@@ -258,7 +258,7 @@ public sealed class WarpRenderer : IDisposable
             float r = col[vi * 4] * boost, g = col[vi * 4 + 1] * boost, b = col[vi * 4 + 2] * boost;
             v[vi] = new VertexPositionColorTexture(
                 new Vector3(pos[vi * 3], pos[vi * 3 + 1], pos[vi * 3 + 2]),
-                new Color((byte)Math.Clamp(r, 0, 255), (byte)Math.Clamp(g, 0, 255), (byte)Math.Clamp(b, 0, 255), col[vi * 4 + 3]),
+                new Color(Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), col[vi * 4 + 3]),   // colours are floats in [0,1] (WarpMesh.Colors)
                 new Vector2(uv[vi * 2], timeFlow + uv[vi * 2 + 1]));
         }
         _lodBuffers[tier].SetData(v);
