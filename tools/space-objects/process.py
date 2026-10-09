@@ -15,6 +15,7 @@ import os, sys, json
 import numpy as np
 from scipy import ndimage
 from PIL import Image, ImageFilter
+import starclean
 
 Image.MAX_IMAGE_PIXELS = None  # allow the 16000px Helix source
 
@@ -119,68 +120,47 @@ def process(src, cfg, slug):
         rgb = np.clip(rgb - subtract[..., None], 0, 1)
         l = lum(rgb)
 
-    # 1) OBJECT EXTENT: the large connected bright emission (galaxy disk / nebula
-    #    body). Built from a STRONG blur so isolated field stars wash out below the
-    #    threshold, while the object's real light stays above it.
-    bl = gblur(l, cfg["obj_sigma"])
-    obj_ext = bl > cfg["obj_thresh"]
-    # erode-then-dilate knocks out tiny islands (a stray blurred star) while the
-    # big object body survives; no connected-component labelling required.
-    ik = cfg.get("island_kill", 2)
-    obj_ext = dilate(erode(obj_ext, ik), ik)
+    # 1) OBJECT ENVELOPE (P589c): a smoothed luminance threshold of the object
+    #    itself (shared with check_hero_objects.py — see starclean.py). A strong
+    #    blur over a small fraction of the frame + a luminance cutoff hugs the
+    #    object body and leaves the surrounding sky OUTSIDE the envelope, so
+    #    field stars (which sit on dark sky) are exterior and removable while
+    #    the object's own disk/arms/H II regions are inside and untouched.
+    env = starclean.envelope(l, slug)
 
-    # 2) star removal: remove COMPACT bright point sources in the surrounding
-    #    sky / outer halo — i.e. NOT on the object's own bright core. Dual-scale
-    #    top-hat catches small and bloated stars.
-    star = np.zeros((H, W), dtype=bool)
-    for k, th, lm in cfg["star_scales"]:
-        tophat = np.maximum(0, l - minfilt(l, k))
-        star |= (tophat > th) & (l > lm)
-    # never remove the object's bright core region here (its own light is kept)
-    star &= ~obj_ext
-
-    # 2b) foreground PSF-star removal ON the object (galaxies): a real foreground
-    #     star is a SHARP, TINY, ISOLATED point (Airy disc + spikes) even when
-    #     silhouetted on the disk, whereas the object's own knots / H II regions
-    #     are extended blobs. So remove only the SMALL connected sharp-bright
-    #     components (a handful of pixels); larger knots are kept. Off for
-    #     planetary nebulae (Ring/Helix/Lions) whose central white-dwarf star IS
-    #     part of the object.
-    if cfg.get("onobj_star"):
-        ssharp = np.maximum(0, l - minfilt(l, cfg.get("sharp_k", 7)))
-        ssharp = ssharp > cfg.get("sharp_th", 0.07)
-        ssharp = ndimage.binary_opening(ssharp, np.ones((3, 3), bool))
-        slab, sn = ndimage.label(ssharp, structure=np.ones((3, 3), bool))
-        ssizes = np.bincount(slab.ravel())
-        maxpx = cfg.get("onobj_maxpx", 9)
-        for i in range(1, sn + 1):
-            if ssizes[i] <= maxpx:
-                star |= slab == i
-
-    star = dilate(star, cfg.get("star_dilate", 4))    # cover halos + spikes
-    n_star = int(star.sum())
-    if n_star:
-        # fill each star with its locally-blurred surroundings (fast; a star on
-        # black collapses to black, one on faint object blends into it)
-        fill = gblur(rgb, cfg.get("fill_sigma", 8))
-        rgb = np.where(star[..., None], fill, rgb)
-
-    # 3) luminance -> alpha with black-point lift
+    # luminance -> alpha with black-point lift, then multiply by the HARD
+    # object envelope (exactly 0 in the surrounding sky, 1 over the object).
+    # The result is the "will it show" alpha the checker uses, so field-star
+    # detection below flags exactly the same VISIBLE specks the check counts.
     fa = soft_alpha_map(cfg["bp"], cfg["wp"], cfg.get("agamma", 1.0))
     alpha = fa(l)
-
-    # 3b) OBJECT ENVELOPE: multiply alpha by an envelope that is EXACTLY 0 in
-    #     the surrounding sky and 1 over the object, with a small smoothstep so
-    #     the object's feathered edge still reads naturally. ANYTHING outside
-    #     the envelope -> alpha 0, which is what clears the scattered field
-    #     stars AROUND the object (Domingo: "we don't want photos with star
-    #     backgrounds, but the natural object itself"). The old blurred env
-    #     decayed slowly, leaving faint star specks in the outer halo.
-    d_in = ndimage.distance_transform_edt(obj_ext)
-    margin = max(2, cfg.get("env_margin", int(0.02 * max(H, W))))
+    d_in = ndimage.distance_transform_edt(env)
+    margin = max(2, cfg.get("env_margin", int(0.012 * max(H, W))))
     tt = np.clip(d_in / margin, 0, 1)
     hard_env = 0.5 - 0.5 * np.cos(np.pi * tt)   # 0 outside, 1 over the object
     alpha = alpha * hard_env
+
+    # 2) FIELD-STAR removal OUTSIDE the envelope ONLY (P589c). A field star is a
+    #    compact bright point (PSF-like, tiny, sharp, isolated, sometimes with
+    #    diffraction spikes) on DARK local surroundings — the same shape cue the
+    #    checker uses (starclean.field_star_mask). include_alpha=False so the RGB
+    #    of every detected star is scrubbed (a star can never reappear even if
+    #    re-blended); the checker's include_alpha=True variant counts only the
+    #    visible ones. Each detected star is inpainted from its locally-blurred
+    #    surroundings (a star on black collapses to black; one near the object
+    #    edge blends into the halo). INSIDE the envelope nothing is touched: the
+    #    object's own H II regions / clusters are preserved unchanged.
+    star = starclean.field_star_mask(l, alpha, env, slug, include_alpha=False)
+    star = dilate(star, cfg.get("star_dilate", 4))   # cover halos + spikes
+    n_star = int(star.sum())
+    if n_star:
+        fill_sigma = max(6, int(0.006 * max(H, W)))
+        fill = gblur(rgb, fill_sigma)
+        rgb = np.where(star[..., None], fill, rgb)
+        l = lum(rgb)
+        # refresh alpha from the de-starred luminance (then re-apply the same
+        # envelope); inpainting only altered a handful of field-star pixels.
+        alpha = fa(l) * hard_env
 
     # 4) radial border feather: force a cosine fade to zero at every edge so no
     #    rectangle/corner seam can appear.

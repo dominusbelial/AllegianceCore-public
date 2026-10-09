@@ -212,7 +212,165 @@ sealed class ProofRunner : Game
                 SavePng(gd, $"{name}_moons_off.png");
             });
         }
+
+        // 7) P589c — a real-window frame + 300% surroundings crop per KEPT
+        //    hero object (none dropped: all reached 0 outside-envelope stars).
+        foreach (var slug in KeptSlugs)
+            AddObjectScenes(slug);
+
         Console.WriteLine($"[p589-proof] {_scenes.Count} scenes queued -> {_o.OutDir}");
+    }
+
+    /// <summary>The hero-object sprites kept after P589c star cleanup. All seven
+    /// reached 0 outside-envelope field stars, so none was dropped. Each gets a
+    /// real-window frame with the sprite drawn as the in-game poster (premul-
+    /// tiplied, on the black starfield) plus a 300% crop of its surroundings.</summary>
+    private static readonly string[] KeptSlugs =
+    [
+        "helix-nebula", "whirlpool-m51", "ring-nebula-m57", "sombrero-m104",
+        "pinwheel-m101", "lion-nebula-miri", "lion-nebula-nasa",
+    ];
+
+    /// <summary>Render one kept hero object as the in-game poster (premultiplied
+    /// billboard on the black starfield), capture the full backbuffer frame and a
+    /// 300% crop of its surroundings — the P589c real-window proof that no field
+    /// star floats around the object.</summary>
+    private void AddObjectScenes(string slug)
+    {
+        _scenes.Enqueue(gd =>
+        {
+            gd.Clear(XnaCol.Black);
+            var cluster = ClusterFor("Obj", 5, "globe5", "nebplnt06bmp", 044, 047, 079, 0.724f, 0.311f, 0.812f);
+            using var black = new BlackSkyRenderer(gd, _assets, moonsOn: false, distantObjectsOn: false, galaxiesOn: false);
+            black.SetCluster(cluster);
+            var view = LookAtDir(XnaVec.UnitZ);
+            SkyDraw(black, view, Proj());
+
+            // Draw the specific object, premultiplied, centered and fairly large
+            // (half-size ~0.16 of the sky shell -> the object reads clearly with
+            // its surrounding sky visible), exactly like DistantObjectRenderer.
+            using var tex = LoadPremultipliedPng(System.IO.Path.Combine(_o.ArtRoot, "p589obj", slug + ".png"));
+            if (tex is not null)
+            {
+                float halfWorld = (float)Math.Tan(MathHelper.ToRadians(5f)) * ObjectDist;
+                DrawBillboard(gd, view, Proj(), XnaVec.UnitZ, halfWorld, tex, XnaCol.White);
+            }
+            SavePng(gd, $"{slug}_realwindow.png");
+            SaveZoomCrop(gd, $"{slug}_crop300.png", 3f);
+        });
+
+        // A second scene for the same object on PURE BLACK with NO ambient
+        // starfield/planet — isolates the sprite itself so the reviewer can see
+        // the object's surrounding sky is clean (the dots in the real-window
+        // frame are the game's intentional ambient pre-P576 starfield, not
+        // photographic field stars baked into the object).
+        _scenes.Enqueue(gd =>
+        {
+            gd.Clear(XnaCol.Black);
+            var view = LookAtDir(XnaVec.UnitZ);
+            using var tex = LoadPremultipliedPng(System.IO.Path.Combine(_o.ArtRoot, "p589obj", slug + ".png"));
+            if (tex is not null)
+            {
+                float halfWorld = (float)Math.Tan(MathHelper.ToRadians(5f)) * ObjectDist;
+                DrawBillboard(gd, view, Proj(), XnaVec.UnitZ, halfWorld, tex, XnaCol.White);
+            }
+            SavePng(gd, $"{slug}_sprite.png");
+            SaveZoomCrop(gd, $"{slug}_sprite_crop300.png", 3f);
+        });
+    }
+
+    private const float ObjectDist = 8500f;
+
+    /// <summary>Load a straight-alpha PNG and premultiply it (mirrors
+    /// DistantObjectRenderer.LoadPremultipliedPng) so the feathered alpha blends
+    /// without dark fringes under the real BlendState.AlphaBlend.</summary>
+    private Texture2D LoadPremultipliedPng(string path)
+    {
+        if (!System.IO.File.Exists(path)) return null!;
+        var tex = Texture2D.FromStream(GraphicsDevice, System.IO.File.OpenRead(path));
+        var data = new XnaCol[tex.Width * tex.Height];
+        tex.GetData(data);
+        for (int i = 0; i < data.Length; i++)
+        {
+            float a = data[i].A / 255f;
+            data[i] = new XnaCol(
+                (byte)(data[i].R * a),
+                (byte)(data[i].G * a),
+                (byte)(data[i].B * a),
+                data[i].A);
+        }
+        tex.SetData(data);
+        return tex;
+    }
+
+    /// <summary>A camera-facing billboard quad at a unit direction (the same
+    /// poster geometry SkyBillboard / PlanetPoster use), premultiplied alpha.</summary>
+    private static void DrawBillboard(GraphicsDevice gd, Matrix view, Matrix proj,
+        XnaVec dir, float halfWorld, Texture2D tex, XnaCol diffuse)
+    {
+        var center = dir * ObjectDist;
+        var up = Math.Abs(dir.Y) > 0.995f ? XnaVec.UnitZ : XnaVec.UnitY;
+        var right = XnaVec.Normalize(XnaVec.Cross(up, dir));
+        var upv = XnaVec.Normalize(XnaVec.Cross(dir, right));
+        var c = new[]
+        {
+            new VertexPositionColorTexture(center - right * halfWorld - upv * halfWorld, XnaCol.White, new Vector2(0, 1)),
+            new VertexPositionColorTexture(center + right * halfWorld - upv * halfWorld, XnaCol.White, new Vector2(1, 1)),
+            new VertexPositionColorTexture(center - right * halfWorld + upv * halfWorld, XnaCol.White, new Vector2(0, 0)),
+            new VertexPositionColorTexture(center + right * halfWorld + upv * halfWorld, XnaCol.White, new Vector2(1, 0)),
+        };
+        var idx = new short[] { 0, 1, 2, 2, 1, 3 };
+        gd.BlendState = BlendState.AlphaBlend;
+        gd.DepthStencilState = DepthStencilState.None;
+        gd.RasterizerState = RasterizerState.CullNone;
+        using var eff = new BasicEffect(gd)
+        {
+            TextureEnabled = true,
+            Texture = tex,
+            VertexColorEnabled = true,
+            DiffuseColor = diffuse.ToVector3(),
+            LightingEnabled = false,
+            View = view,
+            Projection = proj,
+            World = Matrix.Identity,
+        };
+        foreach (var pass in eff.CurrentTechnique.Passes)
+        {
+            pass.Apply();
+            gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, c, 0, c.Length, idx, 0, 2);
+        }
+    }
+
+    /// <summary>Save the central region of the backbuffer scaled up by
+    /// <paramref name="zoom"/> (300%) — a magnified look at the object and its
+    /// surrounding sky, proving no star specks linger around it.</summary>
+    private void SaveZoomCrop(GraphicsDevice gd, string path, float zoom)
+    {
+        int w = gd.PresentationParameters.BackBufferWidth;
+        int h = gd.PresentationParameters.BackBufferHeight;
+        var full = new XnaCol[w * h];
+        gd.GetBackBufferData(full);
+        int cw = (int)(w / zoom), chh = (int)(h / zoom);
+        int sx = (w - cw) / 2, sy = (h - chh) / 2;
+        var crop = new XnaCol[cw * chh];
+        for (int y = 0; y < chh; y++)
+            Array.Copy(full, (sy + y) * w + sx, crop, y * cw, cw);
+        using var tmp = new Texture2D(gd, cw, chh, false, SurfaceFormat.Color);
+        tmp.SetData(crop);
+        // Nearest-neighbour upscale to 300% so the pixels are crisp.
+        using var dst = new Texture2D(gd, cw * 3, chh * 3, false, SurfaceFormat.Color);
+        var srcData = new XnaCol[cw * chh];
+        tmp.GetData(srcData);
+        var outData = new XnaCol[cw * chh * 9];
+        for (int y = 0; y < chh; y++)
+            for (int x = 0; x < cw; x++)
+                for (int dy = 0; dy < 3; dy++)
+                    for (int dx = 0; dx < 3; dx++)
+                        outData[(y * 3 + dy) * (cw * 3) + (x * 3 + dx)] = srcData[y * cw + x];
+        dst.SetData(outData);
+        using var fs = System.IO.File.Create(System.IO.Path.Combine(_o.OutDir, path));
+        dst.SaveAsPng(fs, cw * 3, chh * 3);
+        Console.WriteLine($"[p589-proof] wrote {path}");
     }
 
     protected override void Draw(GameTime gameTime)
