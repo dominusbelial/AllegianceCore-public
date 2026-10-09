@@ -1654,8 +1654,12 @@ public sealed partial class Server
         if (cid == OrderChange.CidDefault && model is not null)
             cid = GetDefaultOrder(drone, model, ot, oid);
 
-        // LegalCommand gate (FedSrv.CPP:3252; shipIGC.h:1604-1721).
-        if (!LegalCommand(drone, cid, model, ot, oid))
+        // LegalCommand gate (FedSrv.CPP:3252; shipIGC.h:1604-1721). `found` — the
+        // port's stand-in for native's non-NULL `pmodel`: a resolved ship/station/
+        // asteroid/warp id is a VALID target even though this port has no Model
+        // object for the non-Ship kinds (native keeps an ImodelIGC for every kind,
+        // so its own `pmodel == NULL` gate is never tripped by a real target).
+        if (!LegalCommand(drone, cid, found, model, ot, oid))
         {
             ConsoleLog.Write($"[drone] ship {sender.Id}: order cid={cid} to NPC {drone.Id} (pilotType {drone.PilotType}) is ILLEGAL — refused, no effect (native LegalCommand, shipIGC.h:1604-1721)");
             return;
@@ -1692,11 +1696,16 @@ public sealed partial class Server
     /// mining ability (<see cref="Asteroid.CanMineHe3"/>) and the configured
     /// station type's build AABM (<see cref="Ship.BuilderStationType"/>).
     /// </summary>
-    private bool LegalCommand(Ship drone, short cid, Model? model, IgcObjectType ot, short oid)
+    private bool LegalCommand(Ship drone, short cid, bool targetValid, Model? model, IgcObjectType ot, short oid)
     {
         // Target-invalid → only DoNothing is legal (shipIGC.h:1608-1617).
+        // `targetValid` is `found` from ResolveChatOrderTarget: a resolved
+        // non-Ship target (warp/asteroid/station/buoy) is a VALID target even
+        // though this port has no Model object for it (native keeps an
+        // ImodelIGC for every kind, so its pmodel==NULL gate never fires on a
+        // real warp/asteroid/station — P591 fixes the port to mirror that).
         bool targetInvalid =
-            model is null ||
+            !targetValid ||
             ReferenceEquals(model, drone) ||
             (model is Ship ms && ms.Mission != drone.Mission);
         if (targetInvalid)
@@ -1872,6 +1881,15 @@ public sealed partial class Server
                 return true;
             }
             case OrderChange.CidBuild:
+                // P591 — a LAYER drone's c_cidBuild is a LAY order (native
+                // c_ptLayer c_cidBuild, shipIGC.cpp:2810-2828 / 4050-4110): fly
+                // to the target (a warp/buoy) and LayExpendable. LegalCommand
+                // already restricted the Layer's Build to Buoy/Warp targets
+                // (shipIGC.h:1697-1698). Until P591 this fell through the
+                // Builder-only asteroid arm below and was logged as "no matching
+                // port sim arm" — the P161 deployment gap.
+                if (drone.PilotType == Ship.PilotTypeLayer)
+                    return ArmLayerBuild(drone, ot, oid);
                 // The P425 direct-NPC-build path: shared legality + construction.
                 if (ot != IgcObjectType.Asteroid) return false;
                 return StartBuildIfLegal(from, sender.Id, drone, new OrderChange
@@ -1898,6 +1916,88 @@ public sealed partial class Server
             default:
                 return false;   // Join/Pickup/Repair/Capture — no matching arm
         }
+    }
+
+    /// <summary>
+    /// P591 — arm a LAYER drone's build order (native <c>c_ptLayer c_cidBuild</c>,
+    /// <c>shipIGC.cpp:4050-4110</c> / <c>2810-2828</c>): resolve the ordered
+    /// target to a lay point and set the drone's
+    /// <see cref="Ship.LayerBuildOrder"/>, which the drone's autopilot then
+    /// flies to and lays at on arrival. Returns <c>true</c> only when armed
+    /// (the caller then replies "Affirmative.").
+    /// <list type="bullet">
+    /// <item><b>Warp target</b> (the MCP's <c>warp:&lt;id&gt;</c>): compute the
+    /// native OT_warp waypoint-buoy position — <c>db.position = p −
+    /// orientation.GetBackward() · pdmt->radius</c> (<c>shipIGC.cpp:4061-4080</c>),
+    /// which with <c>GetBackward() = −GetForward()</c> equals <c>p +
+    /// forward·radius</c>: the lay point sits one radius in front of the aleph,
+    /// into the rendezvous sector, so the arriving enemy fleet flies into the
+    /// field. The port uses the laid mine's <c>MineRadius</c> as the standoff
+    /// (the base model <c>radius</c> field native reads decodes as a corrupt
+    /// value for the real mine type — see the P591 report), else <c>0</c>.</item>
+    /// <item><b>Buoy target</b>: <b>unsupported</b> — this port has no sim buoy
+    /// object (buoys are wire-only, the P403 ChatBuoy path; the drone's internal
+    /// waypoint buoy is created from the warp target above). A direct buoy order
+    /// returns <c>false</c> and is logged as unexecuted, matching the existing
+    /// CommandToDrone buoy limitation (<c>Server.ShipCommands.cs:1648</c>).</item>
+    /// </list>
+    /// </summary>
+    private bool ArmLayerBuild(Ship drone, IgcObjectType ot, short oid)
+    {
+        var mission = drone.Mission;
+        if (mission is null || drone.Sector is null) return false;
+
+        if (ot != IgcObjectType.Warp)
+            return false;   // buoy/probe-position targets: no sim object to resolve (see above)
+
+        ResolvedWarp? w = null;
+        foreach (var sec in mission.Sectors)
+            foreach (var wr in sec.Warps)
+                if (wr.Warp.WarpId == oid) { w = wr; break; }
+        if (w is null)
+        {
+            ConsoleLog.Write($"[layer] ship {drone.Id}: build order to warp {oid} not found — not armed");
+            return false;
+        }
+        var p = w.Warp.Position;
+        if (p is not { Length: 3 })
+        {
+            ConsoleLog.Write($"[layer] ship {drone.Id}: warp {oid} has no position — not armed");
+            return false;
+        }
+        var pos = new Vector3(p[0], p[1], p[2]);
+        var f = w.Warp.Forward;
+        Vector3 forward = f is { Length: 3 } ? new Vector3(f[0], f[1], f[2]) : new Vector3(0f, 0f, 1f);
+        if (forward.LengthSquared() < 1e-6f) forward = new Vector3(0f, 0f, 1f);
+        // P591 — the lay point must CLEAR the warp's transit volume, or the drone
+        // approaching its lay point flies into the aleph and warps through it
+        // forever (measured live: the layer ping-ponged Omega(1053)<->Alderan(1052)
+        // via the very warp it was ordered to lay at, never reaching the field).
+        // The transit fires at warp.Radius + shipRadius (Sector.cs:3249-3251,
+        // shipIGC.cpp:629-636), so the field is placed a full mine-radius BEYOND
+        // that — the drone then lays before it can enter the transit volume (its
+        // 2×AutopilotArrivalRadius reach keeps it well clear), and the field still
+        // sits "at the aleph" inside the mine's blast radius of the transit path.
+        float shipRadius = 0.5f * drone.HullType.Length;
+        float transitRadius = w.Warp.Radius + shipRadius;
+        float offset = 0f;
+        if (drone.LayerLaidExpendableTypeId >= 0
+            && mission.Core.MineTypes.TryGetValue(drone.LayerLaidExpendableTypeId, out var mt))
+            offset = mt.MineRadius;   // the native OT_warp standoff (shipIGC.cpp:4061-4080)
+        float standoff = transitRadius + offset;
+        // Place on the warp's BACKWARD side — into the sector the warp's own
+        // cluster opens into (away from the warp's forward/destination) — so a
+        // drone arriving from the sector interior reaches the lay point without
+        // crossing the warp's transit volume (the measured ping-pong fix).
+        pos -= forward * standoff;
+
+        // Reach = standoff + margin: a drone that emerges AT this aleph (its
+        // transit entry point, i.e. distance `standoff` from the lay point) is
+        // already within reach and lays immediately instead of warping through
+        // the very aleph it is laying at.
+        drone.SetLayerBuild(new Ship.LayerBuildGoal(w.Warp.ClusterId, pos, standoff + 80f));
+        ConsoleLog.Write($"[layer] ship {drone.Id} (pilotType {drone.PilotType}) ordered BUILD at warp {oid} → lay point sector {w.Warp.ClusterId} ({pos.X:0},{pos.Y:0},{pos.Z:0}), lays expendable {drone.LayerLaidExpendableTypeId} (native OT_warp buoy, shipIGC.cpp:4050-4080)");
+        return true;
     }
 
     /// <summary>P469 — resolve the asteroid named by a Mine/Build order's wire

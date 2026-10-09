@@ -935,6 +935,7 @@ internal sealed partial class BotManager : IDisposable
         var ga = commander.World.GlobalAttributesFor(side);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         (string, uint)? layerAny = null;
+        (string, uint)? layerMinefield = null;
         foreach (var v in views)
         {
             if (v.ItemType != Allegiance.Core.Model.BucketItemType.BitDroneType) continue;
@@ -943,9 +944,22 @@ internal sealed partial class BotManager : IDisposable
                 v.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 v.TimeToBuildSec);
             layerAny ??= item;
+            // P591 — the showcase must buy/order a MINEFIELD layer, not a tower
+            // layer. A layer's laid expendable (dt.EtidLaid, the drone type's
+            // GetLaidExpendable()) decides what it deploys: on the 221 civs the
+            // '.Caltrop' layer (drone type 200) lays a MINE (EtidLaid 1, icon
+            // 'minefield'), while '.TowerAC'/'.TowerSC' lay PROBES (towers,
+            // EtidLaid 87/92/102/107) — so a mine-laid layer is the real
+            // minefield. Prefer it so `spawn_scenario … minefields` lays actual
+            // mines (P452 damage + P574 pops) instead of towers.
+            if (core.MineTypes.ContainsKey(dt.EtidLaid))
+            {
+                layerMinefield ??= item;
+                if (v.Name.Contains("Layer", StringComparison.OrdinalIgnoreCase)) return item;
+            }
             if (v.Name.Contains("Layer", StringComparison.OrdinalIgnoreCase)) return item;
         }
-        return layerAny;
+        return layerMinefield ?? layerAny;
     }
 
     /// <summary>P486 — <c>list_drones</c>: every same-side NPC (drone) the

@@ -1590,6 +1590,36 @@ public sealed class Ship : Model, IShipIgc
     /// in the P590 report).</summary>
     public Ship? PickupTarget { get; set; }
 
+    /// <summary>
+    /// P591 — the target where this <see cref="PilotTypeLayer"/> drone has been
+    /// <b>ordered to build/lay</b> (<c>c_cidBuild</c>, native
+    /// <c>shipIGC.cpp:2810-2828</c> / <c>4050-4110</c>): a sector id + the world
+    /// position to fly to and deploy its laid expendable. Set by the server's
+    /// layer build-order arm (<c>Server.ArmLayerBuild</c>) when a commander/MCP
+    /// orders the layer to build at a warp/buoy; the layer steers there
+    /// (<see cref="ApplyNpcAutopilot"/>) and, on arrival, lays its expendable
+    /// and is consumed (<see cref="TryPerformLayerLay"/> /
+    /// <see cref="PerformLayerLay"/> — the port of native
+    /// <c>LayExpendable</c>, <c>FedSrv.CPP:13769-13863</c>). A dedicated slot
+    /// following the per-purpose-slot precedent of every other goal here, so a
+    /// commanded Layer's build objective never contends with the idle default
+    /// order (which would park it at a rock — the P161 gap this closes).
+    /// <c>null</c> = no lay order (the Layer falls back to its idle default
+    /// order). Cleared by <see cref="SetGoto"/> / <see cref="SetLayerBuild"/>
+    /// for mutual exclusion.</summary>
+    public LayerBuildGoal? LayerBuildOrder { get; set; }
+
+    /// <summary>P591 — the goal slot for a commanded Layer's build/lay target:
+    /// the <see cref="ClusterId"/> the lay point lives in, the world-space
+    /// <see cref="Position"/> to fly to and lay at (the port's stand-in for
+    /// native's waypoint buoy the OT_warp/<c>OT_buoy</c> plan case creates,
+    /// <c>shipIGC.cpp:4050-4110</c>), and the <see cref="ReachRadius"/> — how
+    /// close the drone must get before it lays. ArmLayerBuild sizes ReachRadius
+    /// to cover the warp's transit volume + the mine standoff, so a drone that
+    /// emerges right at the aleph it is ordered to lay at lays IMMEDIATELY
+    /// instead of warping through it (the measured live ping-pong fix).</summary>
+    public sealed record LayerBuildGoal(short ClusterId, Vector3 Position, float ReachRadius = 300f);
+
 
     /// <summary>
     /// P165 — the station type this <see cref="PilotTypeBuilder"/> NPC is
@@ -3783,6 +3813,98 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P591 — the per-tick arrival check for a commanded
+    /// <see cref="PilotTypeLayer"/> (<see cref="LayerBuildOrder"/> set): when
+    /// the ship is in the lay sector and within
+    /// <see cref="AutopilotArrivalRadius"/> of the lay point, it lays its
+    /// expendable (<see cref="PerformLayerLay"/>) and is consumed. Returns
+    /// <c>true</c> exactly when the ship laid (or gave up) this tick — the
+    /// caller skips the rest of the update because a laying layer is being
+    /// consumed, matching native where <c>LayExpendable</c> terminates the
+    /// ship (<c>FedSrv.CPP:13842-13860</c>). Otherwise <c>false</c> (not yet
+    /// arrived / not a layer / no order) — the tick proceeds normally. This is
+    /// the port of native <c>shipIGC.cpp:2810-2828</c>: when <c>gotoplan</c>
+    /// completes for a <c>c_ptLayer</c> whose plan command is <c>c_cidBuild</c>,
+    /// the ship calls <c>GetIgcSite()-&gt;LayExpendable(...)</c> at the buoy.
+    /// </summary>
+    private bool TryPerformLayerLay(double now)
+    {
+        if (PilotType != PilotTypeLayer || LayerBuildOrder is not { } lb) return false;
+        if (Sector is not { } sector || sector.Id != lb.ClusterId) return false;
+        // Lay when within the goal's reach radius. ArmLayerBuild sizes this to
+        // span the warp's transit volume + the mine standoff, so a drone that
+        // emerges AT the aleph it is ordered to lay at (its transit entry point)
+        // lays immediately rather than warping through it (the live ping-pong
+        // fix); a drone that must travel lays on approach. Default (a test
+        // constructing the goal directly) covers the autopilot's settle radius.
+        float reach = lb.ReachRadius;
+        if ((lb.Position - Position).Length() > reach) return false;
+        PerformLayerLay(now);
+        return true;
+    }
+
+    /// <summary>
+    /// P591 — actually lay this <see cref="PilotTypeLayer"/>'s expendable at its
+    /// current position and consume the drone, the port of native
+    /// <c>FedSrvSiteBase::LayExpendable</c> (<c>FedSrv.CPP:13769-13863</c>):
+    /// <list type="number">
+    /// <item><b>Resolve the laid expendable</b> from
+    /// <see cref="LayerLaidExpendableTypeId"/> (the drone type's
+    /// <c>GetLaidExpendable()</c>, <c>FedSrv.CPP:11523-11525</c>): a mine type →
+    /// <see cref="DeployMine"/>; a probe type → <see cref="DeployProbe"/>.
+    /// Neither (a non-layer, or an unknown id) → nothing laid, order dropped
+    /// (the drone stands down and returns to its idle default order).</item>
+    /// <item><b>Consume the drone</b> — native's "Quietly kill the ship (after
+    /// nuking its parts to prevent treasure from being created)"
+    /// (<c>FedSrv.CPP:13842-13860</c>): terminate the parts
+    /// (<see cref="ClearLoadout"/>), <c>SetAmmo(0)</c>/<c>SetFuel(0)</c>, then
+    /// <c>KillShipEvent(now, layer, NULL, 0, pos, zero)</c> — the same seam the
+    /// ship-death path uses, which (for this ownerless drone) removes it from
+    /// the sector and marks it dead.</item>
+    /// </list>
+    /// Runs on the sim thread (called from the ship's own
+    /// <see cref="OnUpdate"/>), so both the mine/probe broadcasts and the
+    /// death handling are on the thread that owns them.
+    /// </summary>
+    private void PerformLayerLay(double now)
+    {
+        LayerBuildOrder = null;
+        var mission = Mission;
+        var core = mission?.Core;
+        short etid = LayerLaidExpendableTypeId;
+        bool laid = false;
+        if (etid >= 0 && core is not null && core.MineTypes.TryGetValue(etid, out var mineType))
+        {
+            DeployMine(mineType, now);          // native CreateObject(OT_mine) half of LayExpendable (FedSrv.CPP:13780-13799)
+            laid = true;
+            ConsoleLog.Write($"[layer] ship {Id} (side {SideId}) laid MINE expendable {etid} at ({Position.X:0},{Position.Y:0},{Position.Z:0}) sector {Sector?.Id} — LayExpendable (FedSrv.CPP:13780-13799)");
+        }
+        else if (etid >= 0 && core is not null && core.ProbeTypes.TryGetValue(etid, out var probeType))
+        {
+            DeployProbe(probeType, now);        // native CreateObject(OT_probe) half of LayExpendable (FedSrv.CPP:13801-13818)
+            laid = true;
+            ConsoleLog.Write($"[layer] ship {Id} (side {SideId}) laid PROBE expendable {etid} at ({Position.X:0},{Position.Y:0},{Position.Z:0}) sector {Sector?.Id} — LayExpendable (FedSrv.CPP:13801-13818)");
+        }
+        else
+        {
+            // Unknown/non-expendable id — native asserts OT_mineType/OT_probeType
+            // (shipIGC.cpp:2823-2828); the port logs and stands the layer down.
+            ConsoleLog.Write($"[layer] ship {Id} (side {SideId}) arrived at lay point but laid-expendable {etid} is not a known mine/probe type — nothing laid, order dropped (native assert, shipIGC.cpp:2823-2828)");
+            return;
+        }
+
+        if (!laid) return;
+
+        // Consume the drone (native "Quietly kill the ship (after nuking its
+        // parts to prevent treasure...)", FedSrv.CPP:13842-13860).
+        ClearLoadout();
+        Ammo = 0;
+        SetFuel(0f);
+        Mission?.Site.KillShipEvent(now, this, null, 0.0f, Position, Vector3.Zero);
+        ConsoleLog.Write($"[layer] ship {Id} (side {SideId}) consumed after laying expendable {etid} — KillShipEvent(launcher NULL, 0.0) (FedSrv.CPP:13860)");
+    }
+
+    /// <summary>
     /// P182 — deploy a chaff decoy at this ship's current position, then run
     /// the native missile-retarget ("spoof") loop against every missile in this
     /// ship's cluster whose <see cref="Missile.Target"/> is <em>this</em> ship.
@@ -4773,7 +4895,7 @@ public sealed class Ship : Model, IShipIgc
             // Mutual exclusion (native single c_cmdPlan): exactly one active objective.
             PlanTarget = null; PlanCommandId = OrderChange.CidNone;
             MiningAsteroidTarget = null; LayerAsteroidTarget = null;
-            AttackTarget = null; DefendTarget = null;
+            AttackTarget = null; DefendTarget = null; LayerBuildOrder = null;
             // Re-arm cross-cluster nav + ripcord caches for the fresh target.
             _npcNavCached = false; _npcRipcordCached = false;
             _npcCrossClusterDepartureLogged = false; _npcCrossClusterNoPathLogged = false;
@@ -4785,6 +4907,37 @@ public sealed class Ship : Model, IShipIgc
         {
             ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — goto to sector {current.ClusterId} cancelled");
             GotoWaypoint = null;
+        }
+    }
+
+    /// <summary>
+    /// P591 — issue (or clear) a Layer-drone build/lay order to a target point
+    /// (the port of native's <c>c_cmdPlan == c_cidBuild</c> + waypoint-buoy
+    /// assignment for a <c>c_ptLayer</c>, <c>shipIGC.cpp:4050-4110,2810-2828</c>).
+    /// Setting an order clears every other NPC goal slot (mutual exclusion,
+    /// native's single <c>c_cmdPlan</c>) so the Layer's idle default order does
+    /// not park it at a rock instead; passing <c>null</c> cancels it (the Layer
+    /// falls back to its idle default order cycle). The actual deployment —
+    /// flying here then calling <c>LayExpendable</c> on arrival — is
+    /// <see cref="TryPerformLayerLay"/> / <see cref="PerformLayerLay"/>.
+    /// </summary>
+    public void SetLayerBuild(LayerBuildGoal? goal)
+    {
+        if (goal is { } g)
+        {
+            // Mutual exclusion (native single c_cmdPlan): exactly one objective.
+            GotoWaypoint = null;
+            PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+            MiningAsteroidTarget = null; LayerAsteroidTarget = null;
+            AttackTarget = null; DefendTarget = null; PickupTarget = null;
+            LayerBuildOrder = g;
+            _npcNavCached = false; _npcRipcordCached = false;
+            ConsoleLog.Write($"[layer] ship {Id} (side {SideId}) — layer BUILD order to sector {g.ClusterId} position ({g.Position.X:0},{g.Position.Y:0},{g.Position.Z:0}) armed (native c_cmdPlan=c_cidBuild, shipIGC.cpp:2810-2828)");
+        }
+        else if (LayerBuildOrder is { } cur)
+        {
+            ConsoleLog.Write($"[layer] ship {Id} (side {SideId}) — layer BUILD order to sector {cur.ClusterId} cancelled");
+            LayerBuildOrder = null;
         }
     }
 
@@ -4874,6 +5027,22 @@ public sealed class Ship : Model, IShipIgc
             // is reachable does it fall through to the existing P157 warp leg.
             else if (!TryRipcordOrDefer(st.ClusterId, now, $"station {st.StationId} '{st.Name}'"))
                 goal = CrossClusterWarpGoal(st.ClusterId, $"station {st.StationId} '{st.Name}'");  // P157 — steer toward the first warp toward the target sector
+        }
+        // P591 — the commanded Layer's build/lay objective (native
+        // c_cmdPlan == c_cidBuild for a c_ptLayer, shipIGC.cpp:4050-4110).
+        // Flies to the lay point through the SAME shared resolution as every
+        // other goal: same-cluster direct flight, or the identical cross-cluster
+        // warp/ripcord leg when the lay point is another sector (a layer ordered
+        // to lay in a foreign sector must traverse warps to get there, exactly
+        // like a Miner's/Layer's cross-cluster trip). No new steering logic — the
+        // slot is just another goal source feeding the one shared face+thrust
+        // computation. Arrival is detected in <see cref="TryPerformLayerLay"/>.
+        else if (LayerBuildOrder is { } lb)
+        {
+            if (sector.Id == lb.ClusterId)
+                goal = lb.Position;                       // same-cluster — direct flight
+            else if (!TryRipcordOrDefer(lb.ClusterId, now, $"layer-build {lb.ClusterId}"))
+                goal = CrossClusterWarpGoal(lb.ClusterId, $"layer-build {lb.ClusterId}");
         }
         else if (MiningAsteroidTarget is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
@@ -6967,6 +7136,14 @@ public sealed class Ship : Model, IShipIgc
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
         Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
 
+        // P591 — a commanded Layer lays its expendable the moment it arrives at
+        // its build point (native shipIGC.cpp:2810-2828: gotoplan completes for a
+        // c_ptLayer with c_cmdPlan==c_cidBuild → LayExpendable). Placed right
+        // after the position integration so arrival is judged on this tick's
+        // settled position. Returns true only when it laid and consumed the ship
+        // — then the rest of the update is skipped (the layer is gone).
+        if (TryPerformLayerLay(now)) return;
+
         // P461 — the per-tick energy recharge (CshipIGC::Update,
         // shipIGC.cpp:295-303), run BEFORE the mounted-parts sims below exactly
         // as native recharges before it calls its parts' Update (cloak gets
@@ -7122,7 +7299,10 @@ public sealed class Ship : Model, IShipIgc
                     // Separate slot from the miner's, so the two cycles never
                     // interfere even for ships on the same side.
                     // P403 — an active goto also counts as non-idle.
-                    if (LayerAsteroidTarget is null && StationId is null && GotoWaypoint is null)
+                    // P591 — a commanded build/lay order (LayerBuildOrder) also
+                    // counts as non-idle: the Layer flies to its lay point
+                    // instead of parking at a rock.
+                    if (LayerAsteroidTarget is null && LayerBuildOrder is null && StationId is null && GotoWaypoint is null)
                         DecideLayerDefaultOrder();
                 }
                 else if (PilotType == PilotTypeWingman)
@@ -7208,7 +7388,7 @@ public sealed class Ship : Model, IShipIgc
                 // P403 — an active GotoWaypoint is likewise not idle: a ship
                 // under a player-issued goto is commanded and must not be
                 // diverted into take-cover.
-                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && DefendTarget is null && !IsBuilding && PlanTarget is null && GotoWaypoint is null)
+                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && DefendTarget is null && !IsBuilding && PlanTarget is null && GotoWaypoint is null && LayerBuildOrder is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }

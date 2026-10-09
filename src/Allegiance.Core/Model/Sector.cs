@@ -3290,6 +3290,15 @@ public sealed class Sector : IClusterIgc
             // Ship radius is the half-length, exactly as the combat pass builds
             // its sphere (Sector.cs:174, shipIGC.cpp:1419).
             float shipRadius = 0.5f * ship.HullType.Length;
+            // P591 — a Layer drone that has ARRIVED at its lay target sector is
+            // deploying: it must fly to its lay point and LayExpendable without
+            // warping through the very aleph it was ordered to lay at (measured
+            // live: the layer ping-ponged Omega<->Alderan through its target
+            // warp, never laying). Suppress transit while it is in its lay
+            // target cluster — it still transits freely while travelling cross-
+            // sector to GET there, matching native where the drone lays at the
+            // buoy on arrival rather than being whisked away by the aleph.
+            if (ship.LayerBuildOrder is { } lb && ship.Sector?.Id == lb.ClusterId) continue;
             foreach (var warp in _warps)
             {
                 if (warp.Destination is null) continue;              // dangling edge: nothing to cross into
