@@ -485,6 +485,22 @@ public sealed class Ship : Model, IShipIgc
     public double LastWarpTime { get; set; } = double.NegativeInfinity;
 
     /// <summary>
+    /// P591b — the warp this ship most recently arrived <b>through</b> (the
+    /// destination-side partner warp it emerged at), or <c>-1</c> once it has
+    /// cleared that aleph's transit volume. The warp re-entry guard
+    /// (<c>Model.Sector.ResolveWarpCollisions</c>) refuses to re-transit this
+    /// warp while the ship is still inside its transit volume, completing the
+    /// native "don't re-enter the arrival aleph" behaviour (the emergent
+    /// outward velocity + <c>m_warpState</c> cooldown, <c>fsship.cpp:71-137,
+    /// 1185-1191</c>) that the flat 2&nbsp;s <see cref="LastWarpTime"/>
+    /// cooldown alone cannot guarantee for a slow/heavy ship that turns back
+    /// toward the aleph it just came through (the measured mine-layer
+    /// ping-pong). Set by the host transit on the sim thread and cleared by
+    /// the guard once the ship leaves the volume.
+    /// </summary>
+    public int LastArrivalWarpId { get; set; } = -1;
+
+    /// <summary>
     /// Sim-time of the ship's most recent undock, or <c>NegativeInfinity</c>
     /// if it has never launched. Mirrors <see cref="LastWarpTime"/>'s own
     /// debounce shape for the analogous problem on the dock side: without

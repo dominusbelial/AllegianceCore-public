@@ -966,6 +966,13 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         float entrySpeed = sh.Velocity.Length();
         sh.Velocity = backward * -(entrySpeed + ExitWarpSpeedBonus);
 
+        // P591b — record the warp the ship emerged at (the destination-side
+        // partner) so the re-entry guard (Sector.ResolveWarpCollisions) refuses
+        // to let it bounce straight back out through the very aleph it just
+        // arrived via until it has cleared the transit volume (the measured
+        // mine-layer ping-pong; native fsship.cpp:71-137). Cleared by the guard.
+        sh.LastArrivalWarpId = partner.Warp.WarpId;
+
         // 3. Reposition at the destination warp, offset along up/right minus the
         //    ship's own radius+5 along backward so it emerges right at the aleph,
         //    mirroring native's exit exactly (fsship.cpp:129-132):

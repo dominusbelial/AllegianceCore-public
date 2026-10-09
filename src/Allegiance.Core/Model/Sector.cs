@@ -3290,6 +3290,32 @@ public sealed class Sector : IClusterIgc
             // Ship radius is the half-length, exactly as the combat pass builds
             // its sphere (Sector.cs:174, shipIGC.cpp:1419).
             float shipRadius = 0.5f * ship.HullType.Length;
+
+            // P591b — release the re-entry latch once the ship has clearly left
+            // the vicinity of the aleph it arrived through (it may then
+            // legitimately re-cross it). The release threshold is a HEALTHY
+            // MARGIN (2× the transit volume radius), not the bare sphere edge:
+            // a drone emerging from an aleph often skirts the edge of its
+            // transit volume as it turns toward its next goal, and releasing
+            // the moment it crosses the bare edge lets it swing back and
+            // re-cross the very aleph it just came through (the Debug-geometry
+            // variant of the measured mine-layer ping-pong). Requiring it to
+            // move well clear first gives its steering time to commit to the
+            // onward route. The arrival warp lives in THIS sector (the
+            // destination); if absent (e.g. the ship moved on), release too.
+            if (ship.LastArrivalWarpId >= 0)
+            {
+                var aw = _warps.FirstOrDefault(w => w.Warp.WarpId == ship.LastArrivalWarpId);
+                bool cleared = true;
+                if (aw is not null && aw.Warp.Position is { Length: 3 } ap)
+                {
+                    var av = new Vector3(ap[0], ap[1], ap[2]);
+                    float adx = ship.Position.X - av.X, ady = ship.Position.Y - av.Y, adz = ship.Position.Z - av.Z;
+                    float clearDist = 2f * (aw.Warp.Radius + shipRadius);
+                    cleared = adx * adx + ady * ady + adz * adz > clearDist * clearDist;
+                }
+                if (cleared) ship.LastArrivalWarpId = -1;
+            }
             // P591 — a Layer drone that has ARRIVED at its lay target sector is
             // deploying: it must fly to its lay point and LayExpendable without
             // warping through the very aleph it was ordered to lay at (measured
@@ -3303,6 +3329,14 @@ public sealed class Sector : IClusterIgc
             {
                 if (warp.Destination is null) continue;              // dangling edge: nothing to cross into
                 if (warp.Warp.Position is not { Length: 3 } p) continue;  // no position: can't test
+                // P591b — the re-entry guard: a ship must not immediately
+                // bounce back out through the SAME aleph it just arrived via
+                // while still inside its transit volume (native prevents
+                // re-entering the arrival aleph; the flat LastWarpTime
+                // cooldown lets a slow ship linger and flip back, the measured
+                // mine-layer ping-pong). The latch is released above the moment
+                // the ship clears the volume.
+                if (ship.LastArrivalWarpId == warp.Warp.WarpId) continue;
                 var wpos = new Vector3(p[0], p[1], p[2]);
                 float dx = ship.Position.X - wpos.X;
                 float dy = ship.Position.Y - wpos.Y;
