@@ -63,6 +63,11 @@ bool alephGlimpse = false;
 // low-res asset set (--sky-lowres, for Android).
 float skyIntensity = 1.0f;
 bool skyLowRes = false;
+// P589 — the black-sky space-object toggles (ON by default; --moons off,
+// --distant-objects off, --galaxies off disable each).
+bool moonsOn = true;
+bool distantObjectsOn = true;
+bool galaxiesOn = true;
 // P565 — the offline hull inspector (--inspect) + optional preselect (--inspect-civ / --inspect-hull).
 bool inspectRequested = false;
 string? inspectCiv = null, inspectHull = null;
@@ -295,6 +300,33 @@ for (int i = 0; i < args.Length; i++)
         // P577 — use the Android/low-res HD sky asset set.
         skyLowRes = true;
     }
+    else if (a == "--moons" || a.StartsWith("--moons=", StringComparison.Ordinal))
+    {
+        // P589 — black-sky moons toggle (--moons on|off, default on).
+        string? v = a == "--moons" ? (i + 1 < args.Length ? args[++i] : null)
+                                   : a.Substring("--moons=".Length);
+        if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase)) moonsOn = false;
+        else if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase)) moonsOn = true;
+        else Console.Error.WriteLine($"[monogame] --moons: expected 'on' or 'off', got '{v}' - using the default");
+    }
+    else if (a == "--distant-objects" || a.StartsWith("--distant-objects=", StringComparison.Ordinal))
+    {
+        // P589 — black-sky distant-galaxy/nebula cut-outs toggle (default on).
+        string? v = a == "--distant-objects" ? (i + 1 < args.Length ? args[++i] : null)
+                                             : a.Substring("--distant-objects=".Length);
+        if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase)) distantObjectsOn = false;
+        else if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase)) distantObjectsOn = true;
+        else Console.Error.WriteLine($"[monogame] --distant-objects: expected 'on' or 'off', got '{v}' - using the default");
+    }
+    else if (a == "--galaxies" || a.StartsWith("--galaxies=", StringComparison.Ordinal))
+    {
+        // P589 — black-sky deep-field galaxy + Little-Red-Dot field toggle (default on).
+        string? v = a == "--galaxies" ? (i + 1 < args.Length ? args[++i] : null)
+                                      : a.Substring("--galaxies=".Length);
+        if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase)) galaxiesOn = false;
+        else if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase)) galaxiesOn = true;
+        else Console.Error.WriteLine($"[monogame] --galaxies: expected 'on' or 'off', got '{v}' - using the default");
+    }
     else if (a == "--inspect-shots" || a.StartsWith("--inspect-shots=", StringComparison.Ordinal))
     {
         string? v = a == "--inspect-shots" ? (i + 1 < args.Length ? args[++i] : null)
@@ -419,6 +451,11 @@ var opts = new Game1.LaunchOptions
     // P577 — global HD-sky intensity (default 1.0) + low-res asset set.
     SkyIntensity = skyIntensity,
     SkyLowRes = skyLowRes,
+    // P589 — black-sky space-object toggles (moons / distant objects /
+    // galaxies; ON by default, --… off disables).
+    MoonsOn = moonsOn,
+    DistantObjectsOn = distantObjectsOn,
+    GalaxiesOn = galaxiesOn,
     // P565 — the offline hull inspector (+ optional civ/hull preselect).
     Inspect = inspectRequested,
     InspectCiv = inspectCiv,

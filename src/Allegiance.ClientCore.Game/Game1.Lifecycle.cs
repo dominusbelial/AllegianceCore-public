@@ -311,7 +311,8 @@ public sealed partial class Game1
         // no dome), the new DEFAULT. The three generic parallax starfields above
         // are retained as the pre-cluster fallback backdrop (drawn before any
         // cluster's sky is known — identical to the black sky minus the planet).
-        _blackSky = new Rendering.BlackSkyRenderer(GraphicsDevice, _assets);
+        _blackSky = new Rendering.BlackSkyRenderer(GraphicsDevice, _assets,
+            moonsOn: _moonsOn, distantObjectsOn: _distantObjectsOn, galaxiesOn: _galaxiesOn);
         _nativeSky = new Rendering.NativeSkyRenderer(GraphicsDevice, _assets);
         _alephGlimpseRenderer = new Rendering.AlephGlimpseRenderer(GraphicsDevice, _assets);
         // P577/P588 — the aleph destination-glimpse renders the SAME sky tier

@@ -1,0 +1,32 @@
+================================================================================
+ESA/Hubble Image Licensing — P589 space-object sprites
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+================================================================================
+
+Used in P589 for the distant-object sprites:
+  whirlpool-m51  (image heic0506a)
+  ring-nebula-m57 (image heic1310a)
+  sombrero-m104  (image opo0328a)
+  pinwheel-m101  (image heic0602a)
+
+ESA/Hubble images are released under the Creative Commons Attribution 4.0
+International (CC BY 4.0) licence per the ESA/Hubble copyright/reuse policy
+(https://esahubble.org/copyright/). You may share and adapt them for any
+purpose, including commercial use, provided you give appropriate credit.
+
+Credits (as published by ESA/Hubble):
+  whirlpool-m51:   "NASA, ESA, S. Beckwith (STScI), and The Hubble Heritage
+                    Team (STScI/AURA)"
+  ring-nebula-m57: "NASA, ESA, and C. Robert O'Dell (Vanderbilt University)"
+  sombrero-m104:   "NASA and The Hubble Heritage Team (STScI/AURA)"
+  pinwheel-m101:   "NASA, ESA, K. Kuntz (JHU), F. Bresolin (University of
+                    Hawaii), J. Trauger (Jet Propulsion Lab), J. Mould
+                    (National Australian Observatory), Y.-H. Chu (University
+                    of Illinois, Urbana), and STScI"
+
+These processed sprites are derivative works (feathered alpha cut-outs of the
+single distant object, rendered for the P589 sky). Derivatives are distributed
+under the same CC BY 4.0 terms with attribution as above.
+
+Full licence text: https://creativecommons.org/licenses/by/4.0/legalcode
+================================================================================

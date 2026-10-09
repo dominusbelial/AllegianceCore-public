@@ -1,0 +1,24 @@
+================================================================================
+NASA Imagery — United States Government Work (Public Domain)
+================================================================================
+
+Used in P589 for: lion-nebula-nasa  (NGC 2392 composite, X-ray + optical)
+
+NASA imagery is generally not subject to copyright in the United States.
+Works produced by NASA employees as part of their official duties are
+United States Government works and are in the PUBLIC DOMAIN (17 U.S.C. § 105).
+You may use NASA imagery and video for educational or informational purposes
+including photo collections, textbooks, public exhibits and internet web
+pages, with no special permission required. This applies even where another
+agency or organisation is credited alongside NASA, unless a separate copyright
+notice indicates otherwise.
+
+Source:  https://www.nasa.gov/image-article/beautiful-end-stars-life/
+Image:   https://www.nasa.gov/wp-content/uploads/2023/03/ngc2392_1.jpg
+
+Credit (best practice, as recommended by NASA):
+  "X-ray: NASA/CXC/SAO; Optical: NASA/STScI"
+
+This processed sprite is a derivative work (feathered alpha cut-out of the
+single distant object for the P589 sky) of a US Government public-domain work.
+================================================================================

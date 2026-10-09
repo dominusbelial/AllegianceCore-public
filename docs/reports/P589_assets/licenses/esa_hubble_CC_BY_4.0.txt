@@ -1,0 +1,37 @@
+================================================================================
+ESA/HUBBLE IMAGE LICENCE — CC BY 4.0
+Hubble Ultra Deep Field (HUDF), release heic0406a
+================================================================================
+
+Image:       Hubble Ultra Deep Field (HUDF)
+ID:          heic0406a
+Release:     9 March 2004
+Type:        Observation
+Object:      Early Universe : Galaxy : Grouping : Cluster
+Constellation: Fornax
+Instrument:  Hubble Space Telescope (Advanced Camera for Surveys, ACS)
+             full-depth composite (6200 x 6200 px)
+
+Source:      https://esahubble.org/images/heic0406a/
+Download:    https://cdn.esahubble.org/archives/images/large/heic0406a.jpg
+
+Licence:     Creative Commons Attribution 4.0 International (CC BY 4.0)
+             https://creativecommons.org/licenses/by/4.0/
+
+Credit (full-depth composite, as licensed here):
+             NASA, ESA, H. Teplitz and M. Rafelski (IPAC/Caltech),
+             A. Koekemoer (STScI), R. Windhorst (Arizona State University),
+             and Z. Levay (STScI)
+
+Note on credit: the ESA/Hubble release page heic0406a displays the credit
+"NASA, ESA, and S. Beckwith (STScI) and the HUDF Team" for the original
+2004 release. The 6200x6200 full-depth composite image used here carries the
+official Teplitz/Rafelski/Koekemoer/Windhorst/Levay credit above. Both are
+recorded in the accompanying manifest (galaxy-library.json).
+
+This sprite library is a derivative work: individual galaxies were segmented
+from the field and re-rendered as feathered alpha cut-outs for use as
+procedurally placed deep-field backdrop sprites in the P589 game. Each sprite
+is a single galaxy object with no stars or background. The derivative is
+distributed under the same CC BY 4.0 terms with attribution as above.
+================================================================================

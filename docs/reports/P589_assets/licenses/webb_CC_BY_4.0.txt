@@ -1,0 +1,25 @@
+================================================================================
+NASA/JWST (James Webb Space Telescope) Image Licensing
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+================================================================================
+
+Used in P589 for: lion-nebula-miri  (JWST MIRI image of NGC 2392)
+
+NASA James Webb Space Telescope images (NASA/ESA/CSA/STScI) are released under
+the Creative Commons Attribution 4.0 International (CC BY 4.0) licence, per
+NASA's media usage policy and the STScI/Webb data access policy. You may share
+and adapt them for any purpose, including commercial use, provided you give
+appropriate credit.
+
+Source:    https://science.nasa.gov/asset/webb/lion-nebula-miri-image/
+Download:  https://assets.science.nasa.gov/content/dam/science/missions/webb/science/2026/08/STScI-01KX6E623Z5HQFWJKZ5C10N6X2.png
+
+Credit (as displayed on the source page):
+  "Image: NASA, ESA, CSA, STScI; Image Processing: Alyssa Pagan (STScI)"
+
+This processed sprite is a derivative work (feathered alpha cut-out of the
+single distant object for the P589 sky), distributed under the same CC BY 4.0
+terms with attribution as above.
+
+Full licence text: https://creativecommons.org/licenses/by/4.0/legalcode
+================================================================================

@@ -444,6 +444,11 @@ public sealed partial class Game1 : Game
     // settings, never on the wire.
     private string _skyTier = "black";
     private bool _alephGlimpse = false;
+    // P589 — black-sky space-object toggles (moons / distant objects /
+    // galaxies; all ON by default in the black sky).
+    private bool _moonsOn = true;
+    private bool _distantObjectsOn = true;
+    private bool _galaxiesOn = true;
     private Rendering.AlephGlimpseRenderer _alephGlimpseRenderer = null!;
     // P588 — the black sky tier renderer (point stars + native planet, no
     // dome), the new DEFAULT. Constructed alongside the other tiers; the
@@ -1264,6 +1269,10 @@ public sealed partial class Game1 : Game
         // P577 — HD sky global intensity + low-res asset set (client-only).
         _skyIntensity = Math.Clamp(opts.SkyIntensity, 0f, 2f);
         _skyLowRes = opts.SkyLowRes;
+        // P589 — black-sky space-object toggles (client-only).
+        _moonsOn = opts.MoonsOn;
+        _distantObjectsOn = opts.DistantObjectsOn;
+        _galaxiesOn = opts.GalaxiesOn;
         if (_requestedQuality == EffectsQuality.Native)
             Console.WriteLine("[client] VFX: NATIVE (P263/P545 native-art path)");
         else if (_requestedQuality == EffectsQuality.Volumetric)

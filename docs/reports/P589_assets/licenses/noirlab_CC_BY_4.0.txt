@@ -1,0 +1,29 @@
+================================================================================
+NOIRLab (NSF's National Optical-Infrared Astronomy Research Laboratory)
+Astronomy Image Licence: Attribution 4.0 International (CC BY 4.0)
+================================================================================
+
+Used in P589 for: helix-nebula  (image noao0307a, release noao0307a)
+
+Unless otherwise stated, images and audio on the NOIRLab websites are released
+under the Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+You are free to:
+  Share      - copy and redistribute the material in any medium or format
+  Adapt      - remix, transform, and build upon the material for any purpose,
+               even commercially.
+
+Under the following terms:
+  Attribution - You must give appropriate credit, provide a link to the
+                license, and indicate if changes were made. You may do so in
+                any reasonable manner, but not in any way that suggests the
+                licensor endorses you or your use.
+
+Credit for this image, as published by NOIRLab/NSF:
+  "NASA, NOAO, ESA, the Hubble Helix Nebula Team, M. Meixner (STScI), and
+   T.A. Rector (University of Alaska Anchorage/NSF NOIRLab)"
+
+Full licence text: https://creativecommons.org/licenses/by/4.0/legalcode
+Source: https://storage.noirlab.edu/media/archives/images/large/noao0307a.jpg
+Release: https://noirlab.edu/public/images/noao0307a/
+================================================================================

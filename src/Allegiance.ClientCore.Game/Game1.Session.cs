@@ -215,6 +215,22 @@ public sealed partial class Game1
         /// Client-only; never sent on the wire.</summary>
         public bool SkyLowRes = false;
 
+        /// <summary>P589 — draw the black-sky <b>moons</b> (native moon art,
+        /// 0-2 per sector near the planet). Default <b>ON</b> in the black sky;
+        /// <c>--moons off</c> disables. Client-only; never sent on the wire.</summary>
+        public bool MoonsOn = true;
+
+        /// <summary>P589 — draw the black-sky <b>distant galaxies / small
+        /// nebulae</b> cut-outs (2-4 per sector, planet-like size). Default
+        /// <b>ON</b>; <c>--distant-objects off</c> disables. Client-only.</summary>
+        public bool DistantObjectsOn = true;
+
+        /// <summary>P589 — draw the black-sky <b>deep-field galaxy field +
+        /// Little Red Dots</b> (hundreds of small galaxies + a few dozen
+        /// procedural red dots, one batched draw). Default <b>ON</b>;
+        /// <c>--galaxies off</c> disables. Client-only.</summary>
+        public bool GalaxiesOn = true;
+
         /// <summary>Effective soft-particle enable: only in Enhanced — Native
         /// never constructs the enhanced smoke, so soft particles are absent
         /// there even if the (default-on) toggle is set. Pure + unit-testable.</summary>
