@@ -13,6 +13,7 @@ fully reproducible.
 """
 import os, sys, json
 import numpy as np
+from scipy import ndimage
 from PIL import Image, ImageFilter
 
 Image.MAX_IMAGE_PIXELS = None  # allow the 16000px Helix source
@@ -128,14 +129,34 @@ def process(src, cfg, slug):
     ik = cfg.get("island_kill", 2)
     obj_ext = dilate(erode(obj_ext, ik), ik)
 
-    # 2) star removal: remove COMPACT bright point sources (incl. diffraction
-    #    spikes) that sit in the surrounding sky, i.e. NOT on the object extent.
-    #    Dual-scale top-hat (small + large windows) catches small and bloated stars.
+    # 2) star removal: remove COMPACT bright point sources in the surrounding
+    #    sky / outer halo — i.e. NOT on the object's own bright core. Dual-scale
+    #    top-hat catches small and bloated stars.
     star = np.zeros((H, W), dtype=bool)
     for k, th, lm in cfg["star_scales"]:
         tophat = np.maximum(0, l - minfilt(l, k))
         star |= (tophat > th) & (l > lm)
-    star &= ~dilate(obj_ext, cfg.get("keep_pad", 4))  # keep stars on the object
+    # never remove the object's bright core region here (its own light is kept)
+    star &= ~obj_ext
+
+    # 2b) foreground PSF-star removal ON the object (galaxies): a real foreground
+    #     star is a SHARP, TINY, ISOLATED point (Airy disc + spikes) even when
+    #     silhouetted on the disk, whereas the object's own knots / H II regions
+    #     are extended blobs. So remove only the SMALL connected sharp-bright
+    #     components (a handful of pixels); larger knots are kept. Off for
+    #     planetary nebulae (Ring/Helix/Lions) whose central white-dwarf star IS
+    #     part of the object.
+    if cfg.get("onobj_star"):
+        ssharp = np.maximum(0, l - minfilt(l, cfg.get("sharp_k", 7)))
+        ssharp = ssharp > cfg.get("sharp_th", 0.07)
+        ssharp = ndimage.binary_opening(ssharp, np.ones((3, 3), bool))
+        slab, sn = ndimage.label(ssharp, structure=np.ones((3, 3), bool))
+        ssizes = np.bincount(slab.ravel())
+        maxpx = cfg.get("onobj_maxpx", 9)
+        for i in range(1, sn + 1):
+            if ssizes[i] <= maxpx:
+                star |= slab == i
+
     star = dilate(star, cfg.get("star_dilate", 4))    # cover halos + spikes
     n_star = int(star.sum())
     if n_star:
@@ -148,12 +169,18 @@ def process(src, cfg, slug):
     fa = soft_alpha_map(cfg["bp"], cfg["wp"], cfg.get("agamma", 1.0))
     alpha = fa(l)
 
-    # 3b) OBJECT ENVELOPE: multiply alpha by a smoothly-falling mask derived from
-    #     the object extent. Anything far from the object (residual background
-    #     stars / faint sky glow) is pushed to alpha 0 -> invisible on black,
-    #     guaranteeing no floating specks. Interior keeps its natural alpha.
-    env = gblur(obj_ext.astype(np.float32), cfg.get("env_sigma", 42))
-    alpha = alpha * env
+    # 3b) OBJECT ENVELOPE: multiply alpha by an envelope that is EXACTLY 0 in
+    #     the surrounding sky and 1 over the object, with a small smoothstep so
+    #     the object's feathered edge still reads naturally. ANYTHING outside
+    #     the envelope -> alpha 0, which is what clears the scattered field
+    #     stars AROUND the object (Domingo: "we don't want photos with star
+    #     backgrounds, but the natural object itself"). The old blurred env
+    #     decayed slowly, leaving faint star specks in the outer halo.
+    d_in = ndimage.distance_transform_edt(obj_ext)
+    margin = max(2, cfg.get("env_margin", int(0.02 * max(H, W))))
+    tt = np.clip(d_in / margin, 0, 1)
+    hard_env = 0.5 - 0.5 * np.cos(np.pi * tt)   # 0 outside, 1 over the object
+    alpha = alpha * hard_env
 
     # 4) radial border feather: force a cosine fade to zero at every edge so no
     #    rectangle/corner seam can appear.
@@ -221,17 +248,20 @@ CONFIGS = {
                           obj_sigma=38, obj_thresh=0.032,
                           star_scales=[(13, 0.024, 0.090), (23, 0.018, 0.085), (33, 0.011, 0.070)],
                           star_dilate=5, keep_pad=2, env_sigma=22,
+                          onobj_star=True, sharp_k=7, sharp_th=0.067, onobj_maxpx=10,
                           bp=0.014, wp=0.489, agamma=1.006, feather=30, island_kill=4),
     "sombrero-m104": dict(src="opo0328a.jpg",
                           obj_sigma=34, obj_thresh=0.033,
-                          star_scales=[(13, 0.024, 0.094), (23, 0.018, 0.086), (33, 0.011, 0.068)],
+                          star_scales=[(13, 0.024, 0.096), (23, 0.018, 0.089), (33, 0.011, 0.074)],
                           star_dilate=5, keep_pad=2, env_sigma=20,
-                          bp=0.017, wp=0.539, agamma=0.930, feather=30, island_kill=4),
+                          onobj_star=True, sharp_k=7, sharp_th=0.056, onobj_maxpx=9,
+                          bp=0.017, wp=0.528, agamma=0.938, feather=30, island_kill=4),
     "pinwheel-m101": dict(src="heic0602a.jpg",
                           obj_sigma=36, obj_thresh=0.031,
-                          star_scales=[(13, 0.023, 0.084), (23, 0.017, 0.075), (33, 0.010, 0.058)],
+                          star_scales=[(13, 0.023, 0.087), (23, 0.017, 0.077), (33, 0.010, 0.062)],
                           star_dilate=5, keep_pad=2, env_sigma=24,
-                          bp=0.052, wp=0.617, agamma=0.888, feather=38, island_kill=4),
+                          onobj_star=True, sharp_k=7, sharp_th=0.053, onobj_maxpx=10,
+                          bp=0.051, wp=0.608, agamma=0.892, feather=38, island_kill=4),
 }
 
 

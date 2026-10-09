@@ -136,11 +136,67 @@ def classify_and_cut(rgb, lum, obj, labels, n):
     return candidates, rej
 
 
+def check_alpha_invariants(an, border_tol=0.012, bright_tol=0.55, max_tol=0.895):
+    """P589b — assert the alpha invariants of one final sprite (a float
+    HxWx4 array in 0..1) so it is a FILLED object on black (object only, no
+    edges):
+      * alpha at the tile border is ~0  (no frame edge / box survives),
+      * the brightest raw-RGB pixel of the object sits on a real interior
+        (alpha clearly high — the core is NOT hollow),
+      * a fully-opaque interior exists (max alpha ~1),
+      * the alpha mass sits away from the border (centre is not transparent).
+
+    Returns (True, '') or (False, '<reason>'). This FAILS on the old
+    inverted-mask library: the galaxy core (brightest RGB pixel) had alpha
+    ~0.00 while the box margin held alpha up to 1.
+    """
+    a = an[..., 3]
+    h, w = a.shape
+    border = np.concatenate([a[0, :], a[-1, :], a[:, 0], a[:, -1]])
+    border_mean = float(border.mean())
+    if border_mean > border_tol:
+        return False, f"border_alpha={border_mean:.3f}"
+    # brightest object pixel: the brightest RAW-RGB pixel of the object — under
+    # the old inverted mask this is the galaxy core whose alpha was ~0 (FAIL);
+    # after the fix the core sits at high alpha. Premultiplied luminance is NOT
+    # used here: the old frame (alpha 1 but dim RGB) would masquerade as bright.
+    lum = 0.2126 * an[..., 0] + 0.7152 * an[..., 1] + 0.0722 * an[..., 2]
+    pk = int(np.argmax(lum))
+    pk_a = float(a[pk // w, pk % w])
+    if pk_a < bright_tol:
+        return False, f"bright_pixel_alpha={pk_a:.3f}"
+    if float(a.max()) < max_tol:
+        return False, f"max_alpha={float(a.max()):.3f}"
+    # centre must not be hollow: alpha-mass centroid well away from the border
+    tot = a.sum()
+    if tot <= 0:
+        return False, "empty_alpha"
+    cy = float((np.arange(h)[:, None] * a).sum() / tot)
+    cx = float((np.arange(w)[None, :] * a).sum() / tot)
+    if min(cy, h - 1 - cy) < 0.04 * h or min(cx, w - 1 - cx) < 0.04 * w:
+        return False, f"mass_centroid({cx:.0f},{cy:.0f})"
+    return True, ""
+
+
 def feather_alpha(mask, feather):
-    """Soft alpha: raised-cosine falloff from the object boundary outward."""
-    dm = ndimage.distance_transform_edt(~mask)
+    """Soft alpha: 1 inside the object, raised-cosine falloff to 0 across
+    ``feather`` pixels just OUTSIDE the object boundary — the object stays
+    filled (alpha 1 at its core) and fades to transparent in the surrounding
+    margin, so a sprite is the galaxy itself on black, never a ring/frame.
+
+    ``dm = edt(mask)`` is each pixel's distance to the nearest object pixel:
+    0 in the background and on the boundary rim, growing to the object's
+    medial axis. Mapping dm -> alpha so alpha=0 at dm=0 and alpha=1 at
+    dm>=feather yields: background alpha 0, boundary rim a soft fade, object
+    interior alpha 1 — the object stays FILLED.
+
+    (P589b: this formerly used ``~mask`` — distance from the BACKGROUND to
+    the object, which is 0 inside the object and grows away from it — so the
+    same mapping gave the galaxy interior alpha 0 and the box margin around
+    it alpha up to 1: the hollow-square / frame-edge sprites.)"""
+    dm = ndimage.distance_transform_edt(mask)
     t = np.clip(dm / float(max(1.0, feather)), 0.0, 1.0)
-    alpha = 0.5 * (1.0 - np.cos(np.pi * t))   # smooth 0 -> 1
+    alpha = 0.5 * (1.0 - np.cos(np.pi * t))
     return alpha
 
 
@@ -153,6 +209,14 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
+    # P589b: purge stale sprites so a rebuild never leaves old (inverted-mask)
+    # frames alongside the new ones (the library dir must be exactly the new set).
+    for f in os.listdir(args.out):
+        if f.lower().endswith('.png'):
+            try:
+                os.remove(os.path.join(args.out, f))
+            except OSError:
+                pass
     img = Image.open(args.src).convert('RGB')
     W, H = img.size
     scale = WORK_LONG / float(W)
@@ -231,6 +295,8 @@ def main():
         return math.hypot(cx_s - cx_m, cy_s - cy_m) > 0.5 * span
 
     rejected_multi = 0
+    rejected_alpha = 0
+    alpha_reasons = []
     sprites = []
     for c in keep:
         obj_long = max(c['wid'], c['hgt'])
@@ -287,9 +353,21 @@ def main():
         if has_second_blob(an):
             rejected_multi += 1
             continue
+        # ---- P589b automated alpha invariant check -------------------------
+        # The task's rule (Domingo: "object only, no edges"): every sprite must
+        # be a FILLED object on black — alpha ~0 at the tile border, ~1 at the
+        # brightest object pixel. This is the check that fails on the old
+        # (inverted-mask) library (interior alpha 0, frame alpha 1).
+        ok, why = check_alpha_invariants(an)
+        if not ok:
+            rejected_alpha += 1
+            alpha_reasons.append(f"{c['lab']}:{why}")
+            continue
         sprites.append(Image.fromarray((np.clip(an, 0, 1) * 255).astype(np.uint8), 'RGBA'))
 
     print(f"multi-object/blurry rejects in final cut: {rejected_multi}")
+    print(f"P589b alpha-invariant rejects (hollow/frame sprites): {rejected_alpha}"
+          + (f" e.g. {alpha_reasons[:5]}" if alpha_reasons else ""))
     if len(sprites) > 430:
         sprites = sprites[:430]   # hard cap; selection order favours the largest/niceest
     written = []
@@ -324,6 +402,7 @@ def main():
             "rejected_diffraction_spike": rej['spike'],
             "rejected_streak_remnant": rej['streak'],
             "rejected_neighbour_bleed_final_cut": rejected_multi,
+            "rejected_alpha_invariant_p589b": rejected_alpha,
             "retained_sprites": len(written),
         },
         "seed": SEED,
