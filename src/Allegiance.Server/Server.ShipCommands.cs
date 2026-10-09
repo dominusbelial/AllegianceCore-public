@@ -1068,6 +1068,41 @@ public sealed partial class Server
         // (FedSrv.CPP:7271-7278).
         var target = FindSameSideShip(req.ShipID, ship.SideId, mission) ?? ship;
 
+        // P590 — the c_cidPickup order: a lifepod commands a same-side
+        // rescue-capable friendly to pick it up (the port's client path for
+        // native's individual-chat c_cidPickup, WinTrek.cpp:10666-10680 /
+        // trekigc.cpp:4893-4897). Validated against native's own combos
+        // (shipIGC.h:1661-1678, via LegalCommand): sender must be a lifepod,
+        // target same-side and rescue-capable, both flying (not docked).
+        if (req.CommandId == OrderChange.CidPickup)
+        {
+            if (ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                && target.HullType.HasCapability(DataHullTypeIGC.HabmRescue)
+                && target.SideId == ship.SideId
+                && target.StationId is null && !target.Dead)
+            {
+                // The rescued pod is the SENDER itself (the subject of the pickup).
+                target.PickupTarget = ship;
+                Console.WriteLine($"[pickup] {from} ship {ship.Id} (lifepod) ordered pickup by {target.Id}: target.PickupTarget={ship.Id} — {(target.IsNpc ? "NPC diverter armed" : "real-player rescuer queued")}");
+                if (!target.IsNpc && ConnOf(target) is { } pc)
+                {
+                    // Real-player rescuer: stream the pending order to its client
+                    // so it can show "prepare for recovery. Press [insert] to
+                    // accept." (native trekigc.cpp:4896), and it can accept/act.
+                    var cupd = new QueuedCommandUpdate
+                    {
+                        CommandId = OrderChange.CidPickup,
+                        TargetType = IgcObjectType.Ship,
+                        TargetId = ship.Id,
+                    };
+                    SendPeer(pc, FedPacket.Pack(new[] { cupd.Encode() }));
+                }
+                return;
+            }
+            ConsoleLog.Write($"[orderchange] {from} ship {ship.Id} c_cidPickup: rejected (sender{(ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod) ? "" : " NOT")} a pod, target{(target.HullType.HasCapability(DataHullTypeIGC.HabmRescue) ? "" : " NOT")} rescue-capable, same-side={target.SideId == ship.SideId}, target docked/dead={target.StationId is not null || target.Dead})");
+            return;
+        }
+
         // P425 — DIRECT command of a same-side NPC/drone to BUILD. A drone is
         // never player-piloted (native spawns builders as command-driven drones,
         // FedSrv.CPP:2220,11351); commanding one means naming it as ShipID and
@@ -1850,6 +1885,15 @@ public sealed partial class Server
             case OrderChange.CidDoNothing:
                 drone.StayDocked = true;                            // P148 stay/hold
                 ConsoleLog.Write($"[drone] ship {sender.Id}: ordered NPC {drone.Id} to DO NOTHING (stay/hold — StayDocked=true, P148)");
+                return true;
+            case OrderChange.CidPickup:
+                // P590 — a pod orders a rescue-capable NPC to pick it up. LegalCommand
+                // already validated the (targetPod && myRescue) combos; here we arm the
+                // NPC's pickup-diversion goal. The diverter steers to contact and the
+                // existing ResolveRescueEvents pass performs the actual rescue.
+                if (model is not Ship podShip) return false;
+                drone.PickupTarget = podShip;
+                ConsoleLog.Write($"[pickup] ship {sender.Id}: ordered NPC {drone.Id} (rescue-capable) to PICK UP pod {podShip.Id} (side {podShip.SideId}) — diversion armed");
                 return true;
             default:
                 return false;   // Join/Pickup/Repair/Capture — no matching arm

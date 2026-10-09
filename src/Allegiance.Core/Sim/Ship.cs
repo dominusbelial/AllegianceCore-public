@@ -1572,6 +1572,26 @@ public sealed class Ship : Model, IShipIgc
     public Ship? DefendTarget { get; set; }
 
     /// <summary>
+    /// P590 — the friendly <c>c_habmLifepod</c> pod this rescue-capable ship is
+    /// diverting to pick up (the c_cidPickup order / proactive pickup task). A
+    /// <c>null</c> = no active pickup task. Set by the server's pickup-order
+    /// handler (<c>ApplyDroneCommand</c> CidPickup arm) and by the proactive
+    /// per-tick assignment pass (<c>Server.ResolvePodPickupAssignments</c>);
+    /// <see cref="ApplyNpcAutopilot"/> steers toward the pod's live position
+    /// (same sector), and the goal clears itself when the pod is no longer a
+    /// valid rescuee (rescued/docked/dead/gone) — at which point the ship
+    /// resumes its normal default-order cycle ("returns to task"). The actual
+    /// rescue is performed by the existing <c>Sector.ResolveRescueEvents</c>
+    /// proximity pass the moment the diverter reaches contact (the port's
+    /// stand-in for native <c>CshipIGC::HandleCollision</c> rescue,
+    /// <c>shipIGC.cpp:1027-1035</c>). Only AI-driven (<c>IsNpc</c>) ships are
+    /// server-autopiloted; a client-driven peer that receives the pickup order
+    /// is marked here too, but its diversion is the controller's (documented
+    /// in the P590 report).</summary>
+    public Ship? PickupTarget { get; set; }
+
+
+    /// <summary>
     /// P165 — the station type this <see cref="PilotTypeBuilder"/> NPC is
     /// configured to construct. This port's honest stand-in for native's
     /// <c>m_pbaseData</c>/<c>SetBaseData</c> (<c>Igc/shipIGC.h:2050-2065</c>) —
@@ -4925,6 +4945,42 @@ public sealed class Ship : Model, IShipIgc
         {
             goal = charge.Position;
         }
+        // P590 — the pod-pickup diversion. A rescue-capable ship that has been
+        // tasked to pick up a friendly pod (c_cidPickup order, or the proactive
+        // assignment pass) steers toward the pod's LIVE position through the
+        // SAME shared SteerToward primitive — no new steering code. Being the
+        // LAST goal branch, it only wins when every higher-priority goal is
+        // unset (goto / station plan / mine / layer / attack / defend): a ship
+        // that is mining, attacking, or protecting someone does not abandon
+        // that task to go pick up a pod — the combat-priority rule. Arrival
+        // radius is the contact distance (sum of the two hull radii) so the
+        // ship closes to touching range, at which point the existing
+        // ResolveRescueEvents proximity pass performs the rescue and docks the
+        // pod; once the pod is no longer a valid rescuee the goal clears and
+        // the ship returns to its normal task cycle. Same-sector only (a
+        // cross-sector pod is not approached autonomously).
+        else if (PickupTarget is { } pod)
+        {
+            if (pod.Dead || pod.StationId is not null || pod.Sector != sector
+                || !pod.HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
+            {
+                // Pod rescued / docked / gone / no longer a pod → done; return
+                // to the task cycle (clear the goal, hold this tick).
+                PickupTarget = null;
+                ConsoleLog.Write($"[pickup] ship {Id} (side {SideId}): pickup target pod {pod.Id} no longer valid — cleared, returning to task");
+                return;
+            }
+            goal = pod.Position;
+            // Arrival radius WELL inside the rescue contact distance (a quarter
+            // of the summed hull lengths): SteerToward's throttle ramp reaches 0
+            // exactly at the arrival radius, so settling right ON the contact
+            // threshold (0.5·lenA + 0.5·lenB) can leave the ship a hair outside
+            // and the rescue pass (d² <= threshold²) never trips. Closing well
+            // inside that threshold guarantees penetration, so
+            // ResolveRescueEvents fires reliably (tested from hundreds of units).
+            arrivalRadius = Math.Max(0.25f * (HullType.Length + pod.HullType.Length), 1f);
+            brakeStartDistance = Math.Max(AutopilotBrakeStartDistance, arrivalRadius + 100f);
+        }
 
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
 
@@ -5122,7 +5178,8 @@ public sealed class Ship : Model, IShipIgc
         // Candidates the ship is deliberately heading toward must not count as
         // obstacles (native pmodelSkip, common.cpp:2003); also never self.
         bool ignoreShip(Ship s) => ReferenceEquals(s, this)
-            || ReferenceEquals(s, AttackTarget) || ReferenceEquals(s, DefendTarget);
+            || ReferenceEquals(s, AttackTarget) || ReferenceEquals(s, DefendTarget)
+            || ReferenceEquals(s, PickupTarget);   // P590 — don't dodge the pod being approached
         bool ignoreAsteroid(Asteroid a) => ReferenceEquals(a, MiningAsteroidTarget)
             || ReferenceEquals(a, LayerAsteroidTarget)
             || ReferenceEquals(a, _departingMineAsteroid);   // P528b: the rock a full miner is leaving (until departed)

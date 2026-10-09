@@ -29,9 +29,11 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly object _gate = new();
 
     private LogonAck? _ack;
+    private byte _poseCookie;   // P590 — see PoseCookie
     private SetCluster? _setCluster;
     private readonly List<SetCluster> _assignments = new();
     private readonly List<ShipReset> _shipResets = new();   // P507 (native SHIP_RESET 183)
+    private readonly List<Eject> _ejects = new();           // P590 (EJECT 77)
     private readonly List<ShipObservation> _observations = new();
     private readonly List<ShipObservation> _anyShipObservations = new();
     private readonly List<KillShip> _kills = new();
@@ -160,6 +162,19 @@ public sealed class Bot : ITransportSite, IDisposable
     public bool Connected => _transport?.IsConnected ?? false;
 
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
+
+    /// <summary>P590 — the per-peer pose cookie the server expects the next
+    /// native SHIP_UPDATE to echo. Seeded from the last SET_CLUSTER's cookie
+    /// and rotated by the EJECT message's fresh cookie (native NewCookie(),
+    /// FedSrv.CPP:12019 — the real client's ClientWorld.Apply(Eject) consumes
+    /// it and echoes it on its pod's updates). Without consuming the rotated
+    /// cookie a pose-driving harness sends a stale cookie the P507 gate drops
+    /// whole, freezing its pod at the eject point.</summary>
+    public byte PoseCookie
+    {
+        get { lock (_gate) return _poseCookie; }
+        set { lock (_gate) _poseCookie = value; }
+    }
 
     public SetCluster? ShipAssignment
     {
@@ -917,6 +932,9 @@ public sealed class Bot : ITransportSite, IDisposable
     public void ResetRipcordAborteds() { lock (_gate) _ripcordAborteds.Clear(); }
     public IReadOnlyList<PlayerRescued> PlayerRescueds { get { lock (_gate) return _playerRescueds.ToArray(); } }
     public void ResetPlayerRescueds() { lock (_gate) _playerRescueds.Clear(); }
+
+    /// <summary>P590 — <c>FM_S_EJECT(77)</c> frames received (incl. this bot's own).</summary>
+    public IReadOnlyList<Eject> Ejects { get { lock (_gate) return _ejects.ToArray(); } }
 
     /// <summary>The <c>FM_S_RELAUNCH_SHIP</c>(192) frames received since connect
     /// (P117): each records a carrier-landing relaunch observed by this peer.</summary>
@@ -1710,6 +1728,16 @@ public sealed class Bot : ITransportSite, IDisposable
                         _setCluster = SetCluster.Decode(m);
                         _assignments.Add(_setCluster);
                         _myShipId = _setCluster.Ship.ShipId;
+                        _poseCookie = _setCluster.Cookie;   // P590 — seed pose cookie
+                        break;
+                    case Eject.Fmid:
+                        var ej = Eject.Decode(m);
+                        // P590 — the real client consumes the EJECT cookie
+                        // (ClientWorld.Apply: `if (e.ShipId == MyShipId)`),
+                        // echoing it on its pod's SHIP_UPDATEs. Track it so a
+                        // pose-driving harness keeps flying the pod after eject.
+                        if (ej.ShipId == _myShipId) _poseCookie = ej.Cookie;
+                        _ejects.Add(ej);
                         break;
                     case ShipReset.Fmid:
                         _shipResets.Add(ShipReset.Decode(m));

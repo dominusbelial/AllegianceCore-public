@@ -51,6 +51,12 @@ public sealed partial class Server
             // the loop from the rotation; cost is one tiny array per tick.
             foreach (var m in _missions.ToArray()) m.Update(now);
         });
+        // P590 — the proactive pod-pickup assignment pass. Each tick, every
+        // flying friendly pod that no rescue-capable ship is already diving for
+        // gets an idle same-side rescue-capable diverter assigned (PickupTarget),
+        // so bots come to pick up pods unprompted (scope 3). Runs right after
+        // the mission tick so the assignment steers from the next ship OnUpdate.
+        Step("podPickupAssign", () => ResolvePodPickupAssignments());
         // P424 — auto-reject real players' pending queued orders whose 15s
         // inaction window elapsed this tick (native's client update-loop check
         // at WinTrek.cpp:7686-7687, c_dtRejectQueuedCommand=15.0f). Server-side
@@ -368,6 +374,99 @@ public sealed partial class Server
             }
         });
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // P590 — proactive pod-pickup assignment (bots come to pods unprompted)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>P590 — the per-tick proactive pod-pickup assignment pass (Scope 3:
+    /// \"bots pick up pods\"). For every flying friendly <c>c_habmLifepod</c> pod in
+    /// an in-flight mission that no rescue-capable ship is already diving for, the
+    /// nearest idle same-side rescue-capable AI (<c>IsNpc</c>) ship within
+    /// <see cref=\"PodPickupRange\"/> is assigned to it (<c>Ship.PickupTarget</c> =
+    /// the pod), at most one diverter per pod. The assigned ship's
+    /// <c>ApplyNpcAutopilot</c> then steers it to the pod and the existing
+    /// <c>ResolveRescueEvents</c> contact pass performs the rescue; the goal
+    /// self-clears when the pod is rescued/docked/gone, returning the diverter to
+    /// its task cycle.</para>
+    /// <para><b>Idle + combat-priority gate.</b> Only an <em>idle</em> diverter is
+    /// assigned — a ship that is goto-ing, mining, building, attacking or
+    /// defending keeps its task (no active goal slot is occupied), matching the
+    /// brief's \"don't abandon a dogfight\" rule and the native drone-default-order
+    /// precedence. <em>AI-driven only</em>: a client-driven peer's flight is the
+    /// controller's, so the pass never autopilots one (its pickup order still
+    /// reaches it via the c_cidPickup relay, part 2).</para>
+    /// <para><b>At most one diverter per pod.</b> A pod already being dived for
+    /// (<c>PickupTarget == pod</c> on any ship) is skipped, so two bots never
+    /// swarm the same pod.</summary>
+    private void ResolvePodPickupAssignments()
+    {
+        foreach (var m in _missions)
+        {
+            if (m.Stage != MissionStage.Started) continue;
+            foreach (var sector in m.Sectors)
+            {
+                var ships = sector.GetShipUpdateCandidates();
+                // Flying friendly pods: alive, not docked, lifepod, sided.
+                foreach (var pod in ships)
+                {
+                    if (pod.SideId is not { } podSide) continue;
+                    if (pod.Dead || pod.StationId is not null) continue;
+                    if (!pod.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)) continue;
+
+                    // At most one diverter per pod (already claimed?).
+                    bool claimed = false;
+                    foreach (var s in ships)
+                        if (!ReferenceEquals(s, pod) && ReferenceEquals(s.PickupTarget, pod)) { claimed = true; break; }
+                    if (claimed) continue;
+
+                    // Nearest idle, same-side, rescue-capable AI diverter in range.
+                    Ship? best = null;
+                    float bestD2 = PodPickupRange * PodPickupRange;
+                    foreach (var s in ships)
+                    {
+                        if (ReferenceEquals(s, pod)) continue;
+                        if (!s.IsNpc) continue;                     // AI-driven only
+                        if (s.Dead || s.StationId is not null) continue;
+                        if (s.SideId != podSide) continue;
+                        if (!s.HullType.HasCapability(DataHullTypeIGC.HabmRescue)) continue;
+                        if (!IsPickupIdle(s)) continue;             // combat/task priority
+                        float dx = s.Position.X - pod.Position.X;
+                        float dy = s.Position.Y - pod.Position.Y;
+                        float dz = s.Position.Z - pod.Position.Z;
+                        float d2 = dx * dx + dy * dy + dz * dz;
+                        if (d2 > bestD2) continue;
+                        bestD2 = d2;
+                        best = s;
+                    }
+                    if (best is null) continue;
+
+                    best.PickupTarget = pod;
+                    Console.WriteLine($"[pickup] proactive: pod {pod.Id} (side {podSide}) <- diverter {best.Id} (rescue-capable AI, {MathF.Sqrt(bestD2):0}u) assigned");
+                }
+            }
+        }
+    }
+
+    /// <summary>P590 — is <paramref name=\"s\"/> idle enough to divert to a pod?
+    /// False while any higher-priority NPC goal slot is occupied (goto / station
+    /// plan / mine / layer / attack / defend / an existing pickup) — the combat-
+    /// and-task priority rule. A ship actively attacking (engaged) never abandons
+    /// that dogfight for a pod.</summary>
+    private static bool IsPickupIdle(Ship s)
+        => s.GotoWaypoint is null
+        && s.PlanTarget is null
+        && s.MiningAsteroidTarget is null
+        && s.LayerAsteroidTarget is null
+        && s.AttackTarget is null
+        && s.DefendTarget is null
+        && s.PickupTarget is null;
+
+    /// <summary>P590 — the proactive pickup assignment range (world units). A
+    /// rescue-capable AI diverter must be within this distance of a pod to be
+    /// assigned to it. Generous (several km) so a pod in an active sector is
+    /// picked up promptly; the brief's \"within N km\" knob.</summary>
+    private const float PodPickupRange = 5000f;
 
     /// <summary>For every peer ship that changed position since its last
     /// broadcast, send that peer a <c>FM_S_SINGLE_SHIP_UPDATE(78)</c> carrying the raw
