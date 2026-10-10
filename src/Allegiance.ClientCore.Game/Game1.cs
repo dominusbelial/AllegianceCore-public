@@ -1412,6 +1412,7 @@ public sealed partial class Game1 : Game
             _inspectDemo = opts.InspectDemo;
             _inspectUseRepaired = opts.InspectRepaired;
             _inspectSweepAngles = opts.InspectAngles;
+            _inspectDist = opts.InspectDist;
             _state = ClientState.Inspecting;   // offline; kicked off in Initialize
             Console.WriteLine("[inspect] --inspect: offline hull inspector (no server connect)");
         }

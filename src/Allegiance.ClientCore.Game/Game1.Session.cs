@@ -302,6 +302,10 @@ public sealed partial class Game1
         /// to sweep the raw vs repaired vs native comparison; <c>--inspect-hull</c> preselects
         /// the hull.</summary>
         public int InspectAngles;
+
+        /// <summary>P581c — when &gt; 0 in inspect mode, override the orbit camera
+        /// distance (close-up proof framing, e.g. 12) before any angle sweep.</summary>
+        public float InspectDist;
     }
 
     /// <summary>P306 capture-launch parameters (see

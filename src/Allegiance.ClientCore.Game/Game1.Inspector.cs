@@ -100,6 +100,7 @@ public sealed partial class Game1
     // raw-vs-repaired-vs-native proof.
     private bool _inspectUseRepaired;
     private int _inspectSweepAngles, _inspectSweepStep;
+    private float _inspectDist;
     private bool _inspectSweepDone;
 
     /// <summary>Tags cycled by Tab for the mark-bad ledger.</summary>
@@ -183,6 +184,11 @@ public sealed partial class Game1
         Window.Title = $"{_windowTitleBase} [INSPECT]";
         if (_inspectSweepAngles > 0)
         {
+            // P581c — close-up framing: override the framed distance before sweeping
+            // (--inspect-dist), matching the reviewer's close camera used to spot the
+            // P581 spikes.
+            if (_inspectDist > 0f)
+                _inspectOrbit.Distance = _inspectDist;
             // P581 — the orbit-angle sweep always renders native | meshy side-by-side so
             // each captured frame compares the hull's native model against the meshy side
             // (raw or repaired per --inspect-repaired) from that angle.

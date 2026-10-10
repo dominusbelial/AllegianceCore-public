@@ -77,6 +77,7 @@ int inspectShots = 0;
 bool inspectDemo = false;
 bool inspectRepaired = false;
 int inspectAngles = 0;
+float inspectDist = 0;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -364,6 +365,15 @@ for (int i = 0; i < args.Length; i++)
                                             : a.Substring("--inspect-angles=".Length);
         if (v is not null && int.TryParse(v, out var n)) inspectAngles = Math.Max(0, n);
     }
+    else if (a == "--inspect-dist" || a.StartsWith("--inspect-dist=", StringComparison.Ordinal))
+    {
+        // P581c — close-up inspector framing: override the orbit distance (e.g. 12).
+        string? v = a == "--inspect-dist" ? (i + 1 < args.Length ? args[++i] : null)
+                                          : a.Substring("--inspect-dist=".Length);
+        if (v is not null && float.TryParse(v, System.Globalization.NumberStyles.Float,
+                                             System.Globalization.CultureInfo.InvariantCulture, out var d))
+            inspectDist = d;
+    }
     else if (a == "--inspect")
     {
         // P565 — the offline hull inspector (no server connect).
@@ -491,6 +501,7 @@ var opts = new Game1.LaunchOptions
     InspectDemo = inspectDemo,
     InspectRepaired = inspectRepaired,
     InspectAngles = inspectAngles,
+    InspectDist = inspectDist,
     // P572 — live-proof automation plan (null when no --auto-* flag was given).
     AutoProof = autoPlan.AnyActive ? autoPlan : null,
     WindowWidth = windowWidth,

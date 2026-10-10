@@ -1,31 +1,31 @@
-"""Automatic repair of a Meshy FBX (P581): snap significant detached pieces onto
-the hull (rigid translation along the shortest-gap direction, preserving shape +
-UVs/texture), drop floating crumbs, recalculate normals, export to a NEW file.
-Never modifies the original.
+"""Automatic repair of a Meshy FBX (P581, fixed in P581c): snap significant
+detached pieces onto the hull as ONE rigid unit, drop floating crumbs,
+recalculate normals, export to a NEW file. Never modifies the original.
 
-Deterministic and driven by the same welded-component analysis as `analyze.py`.
-ITERATIVE: after translating pieces onto the hull, re-welding can occasionally
-tear a small sub-fragment off at a piece/piece junction; the loop re-runs the
-snap until no significant detached piece remains (bounded), so no floating
-fragment survives.
+P581c fix: the original moved a piece by matching *individual original vertices*
+whose coordinates lay in the piece's welded-coordinate set. At UV seams / the
+fin root that coordinate test bleeds across face boundaries, so some faces had
+only a subset of their vertices translated and were stretched into spiky shards.
+Now each raw FACE is owned by the single welded component its vertices weld into
+(provably one per face), and a moved piece translates every vertex of every one
+of its faces by the SAME delta. No triangle ever connects a moved and an unmoved
+vertex, so rigid moves cannot stretch geometry. Crumb counts are reported once
+(the old code summed them across passes -> 330 instead of 106).
+
+Deterministic, driven by the same welded-component analysis as `analyze.py`.
+Every run ends with an automated artifact check (no stretched edge, face count
+= raw - dropped, per-piece rigid move) that FAILS the run on any violation.
 
 Usage (Blender headless):
   blender --background --python tools/meshy-repair/repair.py -- \
       <src.fbx> <out.fbx> [--margin 0.01] [--touch 0.002] [--piece 20]
-
-Behaviour per detached component:
-  - significant piece (verts >= PIECE and gap > TOUCH): rigid-translate the whole
-    component toward the hull so it overlaps by MARGIN (gap_before -> -MARGIN).
-  - tiny crumb (verts < PIECE): if it touches the hull (gap <= TOUCH) keep it
-    (surface detail), else delete it (floating junk).
-UV seams are preserved: every original split vertex coincident with a welded
-vertex of a moved piece is translated identically, so UVs/texture are untouched.
 """
 from __future__ import annotations
 import bpy, bmesh, sys, os, json
 from mathutils import Vector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import import_fbx, hull_bvh, ship_length, WELD_DIST  # noqa: E402
+import artifact_check  # noqa: E402
 
 
 def _args():
@@ -46,7 +46,9 @@ def key(c):
     return (round(c[0], 5), round(c[1], 5), round(c[2], 5))
 
 
-def _components(bm):
+def _components_and_roots(bm):
+    """Union-find connected components of the WELDED bmesh (largest first) and a
+    per-welded-vertex component id."""
     parent = list(range(len(bm.verts)))
 
     def find(a):
@@ -61,10 +63,22 @@ def _components(bm):
             parent[rb] = ra
     for e in bm.edges:
         union(e.verts[0].index, e.verts[1].index)
-    comps: dict[int, list[int]] = {}
     for v in bm.verts:
-        comps.setdefault(find(v.index), []).append(v.index)
-    return sorted(comps.values(), key=len, reverse=True)
+        find(v.index)
+    comps = {}
+    root_of = [0] * len(bm.verts)
+    for v in bm.verts:
+        r = find(v.index)
+        root_of[v.index] = r
+        comps.setdefault(r, []).append(v.index)
+    ordered = sorted(comps.values(), key=len, reverse=True)
+    return ordered, root_of
+
+
+def _mesh_arrays(bm):
+    pos = [[v.co[0], v.co[1], v.co[2]] for v in bm.verts]
+    faces = [[v.index for v in f.verts] for f in bm.faces]
+    return pos, faces
 
 
 def repair(src: str, out: str, margin: float = 0.01, touch: float = 0.002,
@@ -72,85 +86,154 @@ def repair(src: str, out: str, margin: float = 0.01, touch: float = 0.002,
     obj = import_fbx(src)
     orig_bm = bmesh.new()
     orig_bm.from_mesh(obj.data)
+    orig_bm.faces.ensure_lookup_table()
+
+    raw_pos, raw_faces = _mesh_arrays(orig_bm)   # immutable reference (pre-edit)
 
     report = {"src": os.path.basename(src), "margin": margin, "touch": touch,
-              "piece_min": piece_min, "ship_length": 0.0, "passes": 0,
+              "piece_min": piece_min, "ship_length": 0.0,
               "attached": [], "crumbs_dropped": 0, "crumbs_kept": 0}
 
-    max_pass = 8
-    for pass_i in range(max_pass):
-        bm = orig_bm.copy()
-        bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=WELD_DIST)
-        bm.verts.ensure_lookup_table(); bm.edges.ensure_lookup_table()
-        bm.faces.ensure_lookup_table()
-        comps = _components(bm)
-        hull = set(comps[0])
-        tree, _ = hull_bvh(bm, hull)
-        if report["ship_length"] == 0.0:
-            report["ship_length"] = ship_length(bm)
+    # ---- welded analysis ONCE (single rigid pass, no re-snapping) ----
+    wb = orig_bm.copy()
+    bmesh.ops.remove_doubles(wb, verts=list(wb.verts), dist=WELD_DIST)
+    wb.verts.ensure_lookup_table(); wb.edges.ensure_lookup_table()
+    wb.faces.ensure_lookup_table()
+    comps, root_of = _components_and_roots(wb)
+    comp_size = {}
+    for c in comps:
+        comp_size[root_of[c[0]]] = len(c)
+    hull_root = root_of[comps[0][0]]
+    tree, _ = hull_bvh(wb, set(comps[0]))
+    report["ship_length"] = ship_length(wb)
 
-        to_move = []    # (snapshotted orig vert objects, delta, gap, n)
-        to_drop = []    # crumb key-sets to delete
-        any_detached = False
+    # coord -> set of welded component ids at that rounded coordinate
+    coord_root = {}
+    for v in wb.verts:
+        coord_root.setdefault(key(v.co), set()).add(root_of[v.index])
 
-        for comp in comps[1:]:
-            n = len(comp)
-            best = None
-            for vi in comp:
-                loc, normal, idx, dist = tree.find_nearest(bm.verts[vi].co)
-                if loc is not None and (best is None or dist < best[0]):
-                    best = (dist, loc, bm.verts[vi].co)
-            gap = best[0] if best else 0.0
-            comp_keys = {key(bm.verts[vi].co) for vi in comp}
+    # assign each raw face to the welded component owning the MAJORITY of its
+    # vertices (vertex-vote majority, NOT largest-component: a fin/hull bridging
+    # face at a UV seam usually has 2 fin verts + 1 shared-coordinate vert and
+    # must travel with the fin, not the hull)
+    from collections import Counter as _Counter
+    faces_by_root = {}
+    for f in orig_bm.faces:
+        votes = _Counter()
+        for v in f.verts:
+            r = coord_root.get(key(v.co))
+            if r is not None:
+                for rr in r:
+                    votes[rr] += 1
+        if not votes:
+            continue
+        owner = votes.most_common(1)[0][0]
+        faces_by_root.setdefault(owner, []).append(f)
 
-            if n >= piece_min and gap > touch:
-                # significant detached piece -> snap onto hull
-                hp, pv = Vector(best[1]), Vector(best[2])
-                if gap < 1e-9:
-                    dirv = Vector((0, 0, 1))
-                else:
-                    dirv = (pv - hp).normalized()
-                delta = -dirv * (gap + margin)
-                # SNAPSHOT exact orig verts NOW — never re-match by live coord,
-                # or a moved piece landing on another piece's keys double-moves.
-                piece_verts = [v for v in orig_bm.verts if key(v.co) in comp_keys]
-                to_move.append((piece_verts, delta, gap, n))
-                any_detached = True
-            elif n < piece_min and gap > touch:
-                to_drop.append(comp_keys)
-            else:
-                report["crumbs_kept"] += 1
+    # ---- classify components; a significant piece = its welded faces + every
+    # face transitively sharing a vertex (whole-face closure), so no triangle is
+    # ever left with only some vertices moved (the P581 spike cause) ----
+    to_move = []    # (root, n, gap, delta, moved_verts)
+    to_drop_faces = []
 
-        # delete floating crumbs (only their own faces+verts; keep UV seams)
-        for ks in to_drop:
-            rem_faces = [f for f in orig_bm.faces
-                         if any(key(v.co) in ks for v in f.verts)]
-            if rem_faces:
-                bmesh.ops.delete(orig_bm, geom=rem_faces, context='FACES')
-            rem_verts = [v for v in orig_bm.verts if key(v.co) in ks]
-            if rem_verts:
-                bmesh.ops.delete(orig_bm, geom=rem_verts, context='VERTS')
-        if to_drop:
-            report["crumbs_dropped"] += len(to_drop)
-            orig_bm.verts.ensure_lookup_table(); orig_bm.edges.ensure_lookup_table()
-            orig_bm.faces.ensure_lookup_table()
+    # face -> verts adjacency using BMFace / BMVert OBJECTS as hash keys
+    # (stable underlying-element hashes; NOT id(), whose wrappers are unstable)
+    face_verts = {}   # BMFace -> list[BMVert]
+    vert_faces = {}   # BMVert -> set[BMFace]
+    for f in orig_bm.faces:
+        face_verts[f] = list(f.verts)
+        for v in f.verts:
+            vert_faces.setdefault(v, set()).add(f)
 
-        # apply translations (each piece only its own snapshotted verts)
-        for piece_verts, delta, gap, n in to_move:
-            for v in piece_verts:
-                if v.is_valid:
-                    v.co += delta
-            report["attached"].append(
-                {"nverts": n, "gap_before": gap, "delta": list(delta),
-                 "gap_after": -margin})
+    def _closure(seed_faces):
+        """Transitively add every face sharing a BMVert with the set, so the
+        result is a union of WHOLE faces (no face can have a subset moved)."""
+        done = set()
+        stack = list(seed_faces)
+        moved_verts = {}
+        while stack:
+            f = stack.pop()
+            if f in done:
+                continue
+            done.add(f)
+            for v in face_verts[f]:
+                if v not in moved_verts:
+                    moved_verts[v] = v.co.copy()
+                for nf in vert_faces.get(v, ()):
+                    if nf not in done:
+                        stack.append(nf)
+        return moved_verts  # dict BMVert -> before-coord
 
-        report["passes"] = pass_i + 1
-        if not any_detached:
-            break
+    for comp in comps[1:]:
+        n = len(comp)
+        rid = root_of[comp[0]]
+        best = None
+        for vi in comp:
+            loc, normal, idx, dist = tree.find_nearest(wb.verts[vi].co)
+            if loc is not None and (best is None or dist < best[0]):
+                best = (dist, loc, wb.verts[vi].co)
+        gap = best[0] if best else 0.0
+        if n >= piece_min and gap > touch:
+            hp, pv = Vector(best[1]), Vector(best[2])
+            dirv = Vector((0, 0, 1)) if gap < 1e-9 else (pv - hp).normalized()
+            delta = -dirv * (gap + margin)
+            seed_faces = faces_by_root.get(rid, [])
+            moved_verts = _closure(seed_faces) if seed_faces else {}
+            to_move.append((rid, n, gap, delta, moved_verts))
+        elif n < piece_min and gap > touch:
+            report["crumbs_dropped"] += 1
+            if rid in faces_by_root:
+                to_drop_faces.extend(faces_by_root[rid])
+        else:
+            report["crumbs_kept"] += 1
+
+    # ---- drop floating crumbs ----
+    if to_drop_faces:
+        bmesh.ops.delete(orig_bm, geom=list(to_drop_faces), context='FACES')
+
+    # ---- apply rigid translations (whole-face closure, each vert once) ----
+    for rid, n, gap, delta, moved_verts in to_move:
+        for v, before in moved_verts.items():
+            if v.is_valid:
+                v.co += delta
+        report["attached"].append(
+            {"nverts": n, "gap_before": gap, "delta": list(delta),
+             "gap_after": -margin})
+
+    # ---- rigid-move artifact check (per piece, before -> after) ----
+    for i, (rid, n, gap, delta, moved_verts) in enumerate(to_move):
+        att = report["attached"][i] if i < len(report["attached"]) else {}
+        bad, tot = artifact_check.check_rigid_move(
+            list(moved_verts.values()),
+            [v.co for v in moved_verts if v.is_valid], list(delta))
+        att["rigid_move_bad"] = bad
+        att["rigid_move_total"] = tot
+        if bad:
+            raise RuntimeError(
+                f"ARTIFACT: piece {n}-verts moved non-rigidly ({bad}/{tot} verts)")
 
     # recalc normals consistently
     bmesh.ops.recalc_face_normals(orig_bm)
     bmesh.ops.recalc_face_normals(orig_bm)
+
+    # ---- edge-stretch + face-count artifact checks ----
+    orig_bm.verts.ensure_lookup_table(); orig_bm.faces.ensure_lookup_table()
+    rep_pos, rep_faces = _mesh_arrays(orig_bm)
+    stretched, deformed_faces, dropped_count = artifact_check.check_edge_stretch(
+        rep_pos, rep_faces, raw_pos, raw_faces)
+    report["dropped_faces"] = len(raw_faces) - len(rep_faces)
+    ok_fc, obs_fc, exp_fc = artifact_check.check_face_count(
+        len(raw_faces), len(rep_faces), report["dropped_faces"])
+    report["edge_stretch_violations"] = deformed_faces
+    report["face_count_ok"] = ok_fc
+    if deformed_faces:
+        raise RuntimeError(
+            f"ARTIFACT: {deformed_faces} repaired faces have no raw counterpart "
+            f"(stretched edges), first: {stretched[:8]}")
+    if dropped_count != report["dropped_faces"]:
+        raise RuntimeError(
+            f"ARTIFACT: dropped-face mismatch: check observed {dropped_count} "
+            f"raw faces unmatched vs repair dropped {report['dropped_faces']}")
 
     orig_bm.to_mesh(obj.data)
     orig_bm.free()
