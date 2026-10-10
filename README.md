@@ -5,6 +5,14 @@ rendering, no networking, no COM.
 
 Scope decision: **headless server + bots first, no render client.**
 
+## Third-party art & credits
+
+The client's optional sky objects, HD sky tier and enhanced effects use
+third-party imagery (ESA/Hubble, ESA/Webb and NOIRLab under CC BY 4.0, NASA
+public-domain imagery, CC0 effect art). Full attributions, licences and
+sources: **[`CREDITS.md`](CREDITS.md)**. The original Allegiance game art is
+not part of this repository; it's loaded from the user's own installation.
+
 ## Build & test
 
 ```bash
