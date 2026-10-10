@@ -432,6 +432,21 @@ public sealed partial class Game1
         _projectileSpriteRenderer = new ProjectileSpriteRenderer(GraphicsDevice, _assets);
         _projectileModelRenderer = new ProjectileModelRenderer(GraphicsDevice, _assets);
 
+        // P593 — startup self-check: every distinct 3D-model projectile round must
+        // resolve its mesh + native texture (0 lit-solid-white fallbacks — the
+        // "white popcorn" defect this task closes). Mirrors P586b's SelfCheck.
+        if (_shopCatalog is { ProjectileTypes: { } pts })
+        {
+            var modelNames = pts.Values
+                .Where(p => !string.IsNullOrWhiteSpace(p.ModelName)
+                            && char.IsLetter(p.ModelName.Trim()[0]))
+                .Select(p => p.ModelName!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            int litSolid = _projectileModelRenderer.AuditDistinctModelTextures(modelNames, s => Console.WriteLine(s));
+            Console.WriteLine($"[monogame] P593 projectile-model audit: {modelNames.Count} model(s), {litSolid} lit-solid fallback(s)");
+        }
+
         // P234 — the shared REAL missile model mesh (the P218/P227 "generated or
         // loaded once, drawn per instance" pattern, but the geometry comes from
         // P233's parsed .mdl rather than a procedural generator). Loaded once

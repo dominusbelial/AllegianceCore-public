@@ -41,8 +41,15 @@ public sealed class ProjectileModelRenderer : IDisposable
     private readonly GraphicsDevice _gd;
     private readonly Assets.IAssetSource _assets;
     private readonly Dictionary<string, Geometry> _models = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, MdlFile> _parsed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingLogged = new(StringComparer.OrdinalIgnoreCase);
+    // P593 — a case-insensitive index of every .mdl basename in the artwork
+    // root (stem -> exact on-disk stem), the P586b proven pattern: a projectile
+    // model's imported texture namespace may be capitalised on disk (e.g.
+    // "Wep07bbmp.mdl") and a case-sensitive File.Exists on Linux would miss it →
+    // lit-solid white. The index makes the texture probe case-insensitive.
+    private readonly Dictionary<string, string> _diskStems = new(StringComparer.OrdinalIgnoreCase);
     private readonly BasicEffect _effect;
     private readonly RasterizerState _cullNone;
 
@@ -52,6 +59,9 @@ public sealed class ProjectileModelRenderer : IDisposable
         _assets = assets;
         _effect = new BasicEffect(gd) { TextureEnabled = true };
         _cullNone = new RasterizerState { CullMode = CullMode.None };
+        foreach (var rel in assets.Enumerate("."))
+            if (rel.EndsWith(".mdl", StringComparison.OrdinalIgnoreCase))
+                _diskStems[Path.GetFileNameWithoutExtension(rel)] = Path.GetFileNameWithoutExtension(rel);
     }
 
     /// <summary>The compiled mesh for a <c>.mdl</c> model stem (parsed + built
@@ -60,14 +70,9 @@ public sealed class ProjectileModelRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(modelName)) return null;
         if (_models.TryGetValue(modelName, out var g)) return g;
+        if (!TryParse(modelName, out var file)) return null;
         try
         {
-            if (!_assets.Exists(modelName + ".mdl"))
-            {
-                LogMissing(modelName, "not present");
-                return null;
-            }
-            var file = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, modelName + ".mdl"));
             var geo = Geometry.Build(_gd, file.Meshes);
             _models[modelName] = geo;
             return geo;
@@ -79,21 +84,78 @@ public sealed class ProjectileModelRenderer : IDisposable
         }
     }
 
-    /// <summary>The decoded diffuse texture for a model stem (its
-    /// <c>&lt;name&gt;bmp.mdl</c>), cached, or null if unavailable (logged once).</summary>
+    /// <summary>Parse + cache the <c>.mdl</c> for a model stem (case-insensitive
+    /// on-disk lookup via the P593 disk-stem index), so both the mesh builder and
+    /// the texture resolver share one parse and the model's real imported texture
+    /// namespaces are available.</summary>
+    private bool TryParse(string modelName, out MdlFile file)
+    {
+        if (_parsed.TryGetValue(modelName, out file!)) return true;
+        if (!_diskStems.TryGetValue(modelName, out var exact))
+        {
+            file = null!;
+            LogMissing(modelName, "not present");
+            return false;
+        }
+        try
+        {
+            file = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
+            _parsed[modelName] = file;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            file = null!;
+            LogMissing(modelName, ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// P593 — the native texture-stem resolution for a 3D-model projectile round,
+    /// factored as a pure, testable static (the exact logic
+    /// <see cref="TextureFor"/> uses). Resolves the model's OWN imported texture
+    /// namespace via <see cref="NativeShipResolver.ResolveTextureStem"/>
+    /// (<c>thinggeo.cpp:1038-1043</c> / <c>xfile.cpp:577</c>), never a hardcoded
+    /// <c>&lt;modelName&gt;bmp</c> guess — so a round whose texture unit is named
+    /// differently (shared namespace, doubled-'b', capitalised on disk) still
+    /// resolves its real bitmap instead of falling back to lit-solid white.
+    /// <paramref name="fileExists"/> is the case-insensitive disk-stem probe
+    /// (<see cref="_diskStems"/> in the renderer).
+    /// </summary>
+    public static string? ResolveTextureStemFor(MdlFile mdl, string modelName, Func<string, bool> fileExists)
+        => NativeShipResolver.ResolveTextureStem(mdl, null, modelName, fileExists);
+
+    /// <summary>The decoded diffuse texture for a model stem — resolved from the
+    /// model's OWN imported texture namespace (native
+    /// <c>m_pgeoMesh-&gt;FindTexture()</c>, <c>thinggeo.cpp:1038-1043</c> /
+    /// <c>xfile.cpp:577</c>), NOT a hardcoded <c>&lt;modelName&gt;bmp</c> guess —
+    /// cached, or null if unavailable (logged once). P593: this closes the
+    /// "white popcorn" defect class — a 3D-model round whose texture unit is
+    /// named differently from <c>&lt;modelName&gt;bmp</c> (shared namespace,
+    /// doubled-'b', or capitalised on disk) previously fell back to lit-solid
+    /// white; the native namespace probe (plus the P586b case-insensitive disk
+    /// index) resolves its real bitmap instead, so a round never renders
+    /// lit-solid.</summary>
     public Texture2D? TextureFor(string modelName)
     {
         if (string.IsNullOrEmpty(modelName)) return null;
         if (_textures.TryGetValue(modelName, out var t)) return t;
-        string rel = modelName + "bmp.mdl";
+        if (!TryParse(modelName, out var mdl)) return null;
+        string? stem = ResolveTextureStemFor(mdl, modelName, s => _diskStems.ContainsKey(s));
+        if (stem is null)
+        {
+            LogMissing(modelName + " (texture)", "no import namespace resolves a texture unit");
+            return null;
+        }
+        if (!_diskStems.TryGetValue(stem, out var exact))
+        {
+            LogMissing(stem, "not present");
+            return null;
+        }
         try
         {
-            if (!_assets.Exists(rel))
-            {
-                LogMissing(modelName + "bmp", "not present");
-                return null;
-            }
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, rel));
+            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
             var cols = new Color[mdlTex.Width * mdlTex.Height];
             int n = 0;
@@ -109,9 +171,34 @@ public sealed class ProjectileModelRenderer : IDisposable
         }
         catch (Exception ex)
         {
-            LogMissing(modelName + "bmp", ex.Message);
+            LogMissing(exact, ex.Message);
             return null;
         }
+    }
+
+    /// <summary>
+    /// P593 — startup self-check: resolve mesh + texture for every distinct
+    /// 3D-model projectile and report any that would fall back to lit-solid
+    /// (texture unresolved). Returns the number of lit-solid fallbacks found
+    /// (0 on the real 221 core). Mirrors P586b's <c>TreasureVisualResolver.SelfCheck</c>.
+    /// </summary>
+    public int AuditDistinctModelTextures(IEnumerable<string> modelNames, Action<string>? log = null)
+    {
+        int litSolid = 0;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var m in modelNames)
+        {
+            if (string.IsNullOrWhiteSpace(m) || !seen.Add(m.Trim())) continue;
+            var stem = m.Trim();
+            var geo = MeshFor(stem);
+            var tex = TextureFor(stem);
+            if (geo is null || tex is null)
+            {
+                litSolid++;
+                log?.Invoke($"[monogame] P593 projectile model '{stem}' mesh={(geo is null ? "MISSING" : "ok")} texture={(tex is null ? "LIT-SOLID" : "ok")}");
+            }
+        }
+        return litSolid;
     }
 
     private void LogMissing(string key, string why)
