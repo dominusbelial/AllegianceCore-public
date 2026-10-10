@@ -1,0 +1,14 @@
+[
+  {
+    "slug": "milkyway_terra",
+    "subject": "Milky Way Galaxy, face-on (our own galaxy)",
+    "sector": "Terra (cluster 1057)",
+    "source": "NASA/JPL-Caltech/R. Hurt (SSC/Caltech), 'Our Milky Way Gets a Makeover' artist's concept, Spitzer release SSC2008-10a1",
+    "source_url": "https://www.spitzer.caltech.edu/image/ssc2008-10a1-the-milky-way-galaxy",
+    "source_file": "MilkyWay_faceon_RHurt_Spitzer_SSC2008-10a1_5600x5600.png",
+    "licence": "Public Domain (US Government work, NASA/JPL)",
+    "credit": "NASA/JPL-Caltech/R. Hurt (SSC/Caltech)",
+    "resolution": "5600x5600",
+    "sprite": "giantobj/milkyway_terra.png (4096x4096 RGBA, feathered)"
+  }
+]

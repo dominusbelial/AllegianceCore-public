@@ -81,9 +81,11 @@ public sealed class CreditsOverlayRenderer
         "domain (US Government works).",
     ];
 
-    /// <summary>P588 — shown when the active sky is NOT the HD tier (black or
-    /// native): no real telescope data is in use, so no external attribution
-    /// applies (Domingo chose the black sky as the default, dropping the dome).</summary>
+    /// <summary>P588/P592 — shown when the active sky is NOT the HD tier (black
+    /// or native): no HD telescope dome data is in use, so no HD-sky attribution
+    /// applies; the native/black sky uses Allegiance's own art PLUS — when the
+    /// P592 giant sky object is active — the externally-sourced galaxy imagery
+    /// (Milky Way / Andromeda), credited here (CC BY / public domain).</summary>
     private static readonly string[] NonHdBody =
     [
         "CREDITS / LICENCES  (F12 TOGGLE)",
@@ -91,15 +93,21 @@ public sealed class CreditsOverlayRenderer
         "The current sky tier (black/native) uses ONLY Allegiance's own native",
         "game art — the seeded point stars, the planet posters (nebplntNNbmp.mdl",
         "and the environment domes (globeN.mdl / environmentNbmp.mdl) when the",
-        "native dome is on (--sky native). No external imagery is used.",
+        "native dome is on (--sky native) — plus the P592 GIANT sky object,",
+        "which IS external astronomy imagery and is credited below.",
+        "",
+        "--- GIANT SKY OBJECTS (P592) ---",
+        "Milky Way (face-on) over Terra - NASA/JPL-Caltech/R. Hurt (SSC/Caltech)",
+        "  artist's concept (Spitzer); US Government work, public domain.",
+        "  https://www.spitzer.caltech.edu/image/ssc2008-10a1-the-milky-way-galaxy",
         "",
         "The HD sky tier (--sky hd) is built from real telescope public data and",
         "carries its own visible CC BY / public-domain attribution; switch to it",
         "and reopen this screen (F12) to see those credits.",
         "",
         "Credits are maintained in docs/reports/P577_assets/licenses/ and",
-        "sky-hd.json. ESA/Hubble/Webb images: CC BY 4.0. NASA images: public",
-        "domain (US Government works).",
+        "sky-hd.json (HD tier) and docs/reports/P592_assets/ (giant objects).",
+        "ESA/Hubble/Webb images: CC BY 4.0. NASA/JPL/Caltech: public domain.",
     ];
 
     /// <summary>Feed keyboard input so the text can be scrolled when long.</summary>

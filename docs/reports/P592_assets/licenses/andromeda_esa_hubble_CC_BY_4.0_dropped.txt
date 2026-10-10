@@ -1,0 +1,15 @@
+P592 GIANT SKY OBJECT — ANDROMEDA (M31) over Alderan — ATTEMPTED, DROPPED
+
+Image obtained for evaluation: NASA, ESA, B. Williams (University of
+Washington) — ESA/Hubble heic2501a (PHAT + PHAST), the full-disk Andromeda
+mosaic, 42208x9870 px, CC BY 4.0 (https://esahubble.org/copyright/).
+Source: https://esahubble.org/images/heic2501a/
+
+DECISION: This image was NOT shipped as a giant object. The ultra-deep PHAST
+mosaic resolves Andromeda's own disk into individual stars across the faint
+halo and outer disc, indistinguishably mingled with foreground Milky Way stars.
+Achieving a clean (zero-star) look requires destroying the galaxy's resolved
+structure — the exact Sombrero failure the task warned about. Per the task
+instruction ("if M31 can't reach zero stars without damage, report it and
+leave Alderan without a giant"), Alderan has NO giant. The 330 MB source is
+kept for reference; the processed sprite was deleted.

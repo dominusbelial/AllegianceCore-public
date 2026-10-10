@@ -54,4 +54,18 @@ public class SpaceObjectLaunchOptionTests
         var o = new Game1.LaunchOptions { GalaxiesOn = false };
         Assert.False(o.GalaxiesOn);
     }
+
+    [Fact]
+    public void GiantObjects_DefaultToOn()
+    {
+        var o = new Game1.LaunchOptions();
+        Assert.True(o.GiantObjectsOn, "the P592 giant sky object must default ON (--giant-objects off to disable)");
+    }
+
+    [Fact]
+    public void GiantObjects_CanBeDisabled()
+    {
+        var o = new Game1.LaunchOptions { GiantObjectsOn = false };
+        Assert.False(o.GiantObjectsOn);
+    }
 }

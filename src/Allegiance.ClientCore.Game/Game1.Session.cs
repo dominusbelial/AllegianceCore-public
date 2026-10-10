@@ -231,6 +231,12 @@ public sealed partial class Game1
         /// <c>--galaxies off</c> disables. Client-only.</summary>
         public bool GalaxiesOn = true;
 
+        /// <summary>P592 — draw the black-sky <b>GIANT sky object</b> (one
+        /// face-on galaxy on a curved sky patch, e.g. the Milky Way over Terra /
+        /// Andromeda over Alderan). Default <b>ON</b>; <c>--giant-objects off</c>
+        /// disables. Client-only.</summary>
+        public bool GiantObjectsOn = true;
+
         /// <summary>Effective soft-particle enable: only in Enhanced — Native
         /// never constructs the enhanced smoke, so soft particles are absent
         /// there even if the (default-on) toggle is set. Pure + unit-testable.</summary>

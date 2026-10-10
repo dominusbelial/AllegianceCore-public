@@ -1,0 +1,16 @@
+P592 GIANT SKY OBJECT — MILKY WAY (over Terra)
+
+Image: NASA/JPL-Caltech/R. Hurt (SSC/Caltech), "Our Milky Way Gets a Makeover"
+artist's concept (based on Spitzer observations), release SSC2008-10a1.
+Source: https://www.spitzer.caltech.edu/image/ssc2008-10a1-the-milky-way-galaxy
+License: US Government work (NASA/JPL) — public domain. Per the official JPL
+Image Use Policy (https://www.jpl.nasa.gov/jpl-image-use-policy/): NASA/JPL
+imagery may be used for any purpose without prior permission, requiring only a
+credit line and no implied NASA endorsement.
+
+Required credit: "NASA/JPL-Caltech/R. Hurt (SSC/Caltech)"
+
+Resolution: 5600x5600 px (the largest rendition available of this artwork at
+any mirror; the source is 5600px by design). No 8k+ version exists.
+
+Attribution is surfaced in-game on the Credits screen (F12) and in this file.

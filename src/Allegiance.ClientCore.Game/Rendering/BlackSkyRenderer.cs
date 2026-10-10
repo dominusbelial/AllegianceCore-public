@@ -52,22 +52,26 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
     private readonly MoonRenderer _moons;
     private readonly DistantObjectRenderer _distant;
     private readonly GalaxyFieldRenderer _galaxies;
+    private readonly GiantObjectRenderer _giants;
 
     private readonly bool _moonsOn;
     private readonly bool _distantObjectsOn;
     private readonly bool _galaxiesOn;
+    private readonly bool _giantObjectsOn;
 
     public BlackSkyRenderer(
         GraphicsDevice gd,
         IAssetSource assets,
         bool moonsOn = true,
         bool distantObjectsOn = true,
-        bool galaxiesOn = true)
+        bool galaxiesOn = true,
+        bool giantObjectsOn = true)
     {
         _gd = gd;
         _moonsOn = moonsOn;
         _distantObjectsOn = distantObjectsOn;
         _galaxiesOn = galaxiesOn;
+        _giantObjectsOn = giantObjectsOn;
         // Restored pre-P576 starfield shells — the exact old look, centred on
         // the origin: near band brighter + sparser (fast, sharp parallax),
         // far band dimmer + denser (slow, backdrop-like). Parameters match the
@@ -80,6 +84,7 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
         _moons = new MoonRenderer(gd, assets);
         _distant = new DistantObjectRenderer(gd, assets);
         _galaxies = new GalaxyFieldRenderer(gd, assets);
+        _giants = new GiantObjectRenderer(gd, assets);
     }
 
     /// <summary>Switch the sky to a cluster's data (planet poster + P589 sun,
@@ -94,6 +99,7 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
         _moons.SetCluster(cluster);
         _distant.SetCluster(cluster);
         _galaxies.SetCluster(cluster);
+        _giants.SetCluster(cluster);
     }
 
     /// <summary>Draw the black sky behind everything: point stars, the native
@@ -122,6 +128,11 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
             _starMid.Draw(view, skyProj, cameraEye);
             _starNear.Draw(view, skyProj, cameraEye);
             _planet.Draw(view, skyProj, cameraEye, PlanetDist);
+
+            // P592 — the GIANT sky object (one curved sky-sphere patch, e.g. the
+            // face-on Milky Way over Terra / Andromeda over Alderan), drawn
+            // right behind the other paintings, before the sun/lens flare.
+            if (_giantObjectsOn) _giants.Draw(view, skyProj, ObjectDist);
 
             // P589 — the space objects (paintings on the black sky), each
             // gated by its toggle (ON by default).
@@ -159,5 +170,6 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
         _moons.Dispose();
         _distant.Dispose();
         _galaxies.Dispose();
+        _giants.Dispose();
     }
 }

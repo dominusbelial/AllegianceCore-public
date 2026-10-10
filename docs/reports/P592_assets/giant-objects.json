@@ -1,0 +1,16 @@
+{
+  "span_deg": 90.0,
+  "objects": [
+    {
+      "cluster_id": 1057,
+      "sector": "Terra",
+      "image": "milkyway_terra.png",
+      "angle_deg": 90.0,
+      "direction": [0.7497, 0.6091, -0.5814],
+      "rot_deg": 0.0,
+      "brightness": 0.82,
+      "credit": "NASA/JPL-Caltech/R. Hurt (SSC/Caltech) - Milky Way face-on artist's concept (Spitzer), US Gov work, public domain"
+    }
+  ],
+  "_notes": "Andromeda (M31) over Alderan (1052) was attempted (ESA/Hubble heic2501a, CC BY 4.0) but DROPPED: the ultra-deep PHAST mosaic resolves Andromeda's own disk into individual stars across the faint halo and outer disc, indistinguishably mingled with foreground Milky Way stars, so reaching a zero-star look destroys the galaxy's resolved structure (the exact Sombrero failure the task warned about). See docs/reports/P592_GIANT_MILKY_WAY_TERRA.md."
+}

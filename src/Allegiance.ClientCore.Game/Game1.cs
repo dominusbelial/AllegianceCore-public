@@ -449,6 +449,8 @@ public sealed partial class Game1 : Game
     private bool _moonsOn = true;
     private bool _distantObjectsOn = true;
     private bool _galaxiesOn = true;
+    // P592 — the black-sky GIANT sky object (face-on galaxy curved sky patch).
+    private bool _giantObjectsOn = true;
     private Rendering.AlephGlimpseRenderer _alephGlimpseRenderer = null!;
     // P585 — the opt-in transit-pulse envelope: when a ship crosses an aleph in
     // the viewer's sector (ClientWorld's AlephTransitSignals) the affected warp
@@ -1284,6 +1286,8 @@ public sealed partial class Game1 : Game
         _moonsOn = opts.MoonsOn;
         _distantObjectsOn = opts.DistantObjectsOn;
         _galaxiesOn = opts.GalaxiesOn;
+        // P592 — the black-sky GIANT object toggle (client-only).
+        _giantObjectsOn = opts.GiantObjectsOn;
         if (_requestedQuality == EffectsQuality.Native)
             Console.WriteLine("[client] VFX: NATIVE (P263/P545 native-art path)");
         else if (_requestedQuality == EffectsQuality.Volumetric)

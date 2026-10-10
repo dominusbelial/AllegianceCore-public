@@ -68,6 +68,8 @@ bool skyLowRes = false;
 bool moonsOn = true;
 bool distantObjectsOn = true;
 bool galaxiesOn = true;
+// P592 — the black-sky GIANT object toggle (ON by default; --giant-objects off).
+bool giantObjectsOn = true;
 // P565 — the offline hull inspector (--inspect) + optional preselect (--inspect-civ / --inspect-hull).
 bool inspectRequested = false;
 string? inspectCiv = null, inspectHull = null;
@@ -327,6 +329,15 @@ for (int i = 0; i < args.Length; i++)
         else if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase)) galaxiesOn = true;
         else Console.Error.WriteLine($"[monogame] --galaxies: expected 'on' or 'off', got '{v}' - using the default");
     }
+    else if (a == "--giant-objects" || a.StartsWith("--giant-objects=", StringComparison.Ordinal))
+    {
+        // P592 — black-sky GIANT sky-object toggle (default on).
+        string? v = a == "--giant-objects" ? (i + 1 < args.Length ? args[++i] : null)
+                                           : a.Substring("--giant-objects=".Length);
+        if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase)) giantObjectsOn = false;
+        else if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase)) giantObjectsOn = true;
+        else Console.Error.WriteLine($"[monogame] --giant-objects: expected 'on' or 'off', got '{v}' - using the default");
+    }
     else if (a == "--inspect-shots" || a.StartsWith("--inspect-shots=", StringComparison.Ordinal))
     {
         string? v = a == "--inspect-shots" ? (i + 1 < args.Length ? args[++i] : null)
@@ -456,6 +467,8 @@ var opts = new Game1.LaunchOptions
     MoonsOn = moonsOn,
     DistantObjectsOn = distantObjectsOn,
     GalaxiesOn = galaxiesOn,
+    // P592 — the black-sky GIANT object (ON by default, --giant-objects off).
+    GiantObjectsOn = giantObjectsOn,
     // P565 — the offline hull inspector (+ optional civ/hull preselect).
     Inspect = inspectRequested,
     InspectCiv = inspectCiv,
