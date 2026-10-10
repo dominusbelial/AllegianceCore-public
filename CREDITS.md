@@ -6,12 +6,35 @@ this repository contains. Licence texts are archived next to the assets
 (links below). The in-game **Credits** screen shows the same attributions to
 players.
 
-**Original Allegiance game art** (`.mdl` models, textures, HUD bitmaps,
-sounds, maps, `PCore001.igc`) is **not** included in this repository. It's
-loaded at runtime from the user's own Allegiance installation
-(`ALLEGIANCE_ARTWORK_PATH`) and remains under its original licence. Some of
-that native art (e.g. planet posters such as `nebplnt06`/`nebplnt33`)
-itself derives from NASA imagery.
+**Original Allegiance game code and art.** AllegianceCore ports Microsoft's
+Allegiance source code (MIT since 2017, "Copyright Microsoft Corporation"); the
+required notice is in [`NOTICE`](NOTICE). Most original game art (`.mdl`
+models, textures, HUD bitmaps, maps, `PCore001.igc`) is **not** in this
+repository: it's loaded at runtime from the FreeAllegiance Artwork set
+(`ALLEGIANCE_ARTWORK_PATH`, https://github.com/FreeAllegiance/Artwork). Some
+of that art (e.g. planet posters such as `nebplnt06`/`nebplnt33`) itself
+derives from NASA imagery.
+
+The following original files **are** included, from the FreeAllegiance Artwork
+repository (MIT, "Copyright (c) 2017 FreeAllegiance"; notice in `NOTICE`):
+
+| Files | Where |
+|---|---|
+| 418 game sounds (`.ogg`) | `src/Allegiance.ClientCore.MonoGame/Content/Sounds/` |
+| `sounddef.mdl`, `quickchat.mdl` (sound and quick-chat definitions) | `src/Allegiance.ClientCore.MonoGame/Content/` |
+
+Renders of original ship models (reference images used to generate the Meshy
+models below) are in `docs/meshy_hints/`, and many screenshots in
+`docs/reports/` show original game art.
+
+## Meshy-generated ship models
+
+108 `.fbx` ship models (`src/Allegiance.ClientCore.MonoGame/Content/Models/`,
+including `repaired/`) and their textures
+(`src/Allegiance.ClientCore.MonoGame/Content/Textures/ships/`) were generated
+with [Meshy](https://www.meshy.ai) (Multi-Image-to-3D) from renders of the
+original Allegiance ship models, then processed for the game (P510–P520,
+P581/P581c). They're an optional alternative to the original models.
 
 ---
 
@@ -33,7 +56,7 @@ Processed cut-outs (stars removed, feathered on black) committed under
 | "Little Red Dots" | Procedural (generated in code) | n/a | n/a |
 
 The Sombrero Galaxy (M104) was evaluated and dropped (field stars could not be
-removed cleanly).
+removed cleanly); its files have been removed from the repository.
 
 ## Giant sky object (P592)
 

@@ -9,7 +9,7 @@ OUT = "/home/domingo/Development/AllegianceCore/docs/reports/P589_assets/sheets/
 
 SLUGS = [
     "helix-nebula", "whirlpool-m51", "ring-nebula-m57",
-    "sombrero-m104", "pinwheel-m101", "lion-nebula-miri", "lion-nebula-nasa",
+    "pinwheel-m101", "lion-nebula-miri", "lion-nebula-nasa",
 ]
 
 CELL = 460          # cell width/height

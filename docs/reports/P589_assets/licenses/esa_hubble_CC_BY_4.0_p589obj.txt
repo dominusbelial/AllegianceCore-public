@@ -30,3 +30,6 @@ under the same CC BY 4.0 terms with attribution as above.
 
 Full licence text: https://creativecommons.org/licenses/by/4.0/legalcode
 ================================================================================
+
+Note (2026-10-10): sombrero-m104 was dropped (field stars could not be removed
+cleanly) and its source, sprite and proof images were removed from the repository.

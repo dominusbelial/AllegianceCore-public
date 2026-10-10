@@ -28,7 +28,7 @@ from scipy import ndimage
 import starclean
 
 DEFAULT_DIR = "/home/domingo/Development/Artwork/p589obj"
-SLUGS = ["helix-nebula", "whirlpool-m51", "ring-nebula-m57", "sombrero-m104",
+SLUGS = ["helix-nebula", "whirlpool-m51", "ring-nebula-m57",
          "pinwheel-m101", "lion-nebula-miri", "lion-nebula-nasa"]
 
 
