@@ -740,7 +740,8 @@ internal static class McpTools
                 string? err = null;
                 try
                 {
-                    var placement = ResolveMinefieldPlacement(atRaw, mgr, rendezvous, core, out var note);
+                    short enemySide = (side == sideA) ? sideB : sideA;
+                    var placement = ResolveMinefieldPlacement(atRaw, mgr, rendezvous, side, enemySide, core, out var note);
                     var invest = mgr.Invest(side, layerId, null, observe);
                     if (invest.Completed && invest.Drone is { } drone && placement is { } pl)
                     {
@@ -777,12 +778,17 @@ internal static class McpTools
         return rows;
     }
 
-    /// <summary>P557 — resolve a minefield placement to an order_drone `build`
-    /// target (native layer drones take a build order naming a location/a warp).
-    /// Default: in front of the enemy's arrival aleph in the rendezvous sector,
-    /// so the arriving fleet flies into the field.</summary>
+    /// <summary>P557/P591d — resolve a minefield placement to an order_drone
+    /// `build` target (native layer drones take a build order naming a
+    /// location/a warp). Default: in front of the ENEMY's arrival aleph in the
+    /// rendezvous sector — the aleph the enemy fleet transits to ENTER the
+    /// rendezvous — so the arriving enemy flies into the field. P591d fixes the
+    /// pre-P591d default (a single arbitrary outbound aleph, same for both
+    /// sides, which landed on the wrong aleph) to be per-side: the enemy's home
+    /// sector is resolved and its arrival aleph computed from the real map
+    /// graph.</summary>
     private static (string TargetDesc, string Note)? ResolveMinefieldPlacement(string atRaw, BotManager mgr,
-        short? rendezvous, StaticCore core, out string note)
+        short? rendezvous, short layingSide, short enemySide, StaticCore core, out string note)
     {
         note = "";
         if (atRaw is { Length: > 0 } && atRaw.StartsWith("aleph:", StringComparison.OrdinalIgnoreCase))
@@ -799,10 +805,23 @@ internal static class McpTools
         }
         if (rendezvous is { } rz)
         {
+            // P591d — the enemy's actual arrival aleph: find the enemy side's
+            // home sector, then the warp the enemy fleet transits through to
+            // enter the rendezvous. Each side lays across ITS enemy's arrival
+            // aleph (so the two fields sit at the two contested alephs, not
+            // both on one arbitrary aleph — the pre-P591d bug).
+            short? enemyHome = mgr.FindSideHomeSector(enemySide);
+            if (enemyHome is { } eh && mgr.FindEnemyArrivalWarp(rz, enemySide, eh) is { } ew)
+            {
+                note = $"in front of enemy ({enemySide}) arrival aleph {ew.WarpId} (from {eh}) in sector {rz}";
+                return ($"warp:{ew.WarpId}", note);
+            }
+            // Fallback: any outbound aleph in the rendezvous (pre-P591d
+            // behaviour) — only when the enemy's route/home cannot be resolved.
             var warp = mgr.FindArrivalWarp(rz);
             if (warp is { } wa)
             {
-                note = $"in front of enemy arrival aleph {wa.WarpId} in sector {rz}";
+                note = $"in front of an arrival aleph {wa.WarpId} in sector {rz} (enemy home unresolved — fallback)";
                 return ($"warp:{wa.WarpId}", note);
             }
             note = $"could not resolve an arrival aleph in sector {rz}";

@@ -648,6 +648,125 @@ internal sealed partial class BotManager : IDisposable
         return null;
     }
 
+    /// <summary>
+    /// P591d — resolve the sector that side <paramref name="side"/>'s fleet
+    /// comes FROM (its home/anchor sector): the cluster containing a station
+    /// owned by that side (preferring the nearest restart-capable one, else any
+    /// of its stations) from the probe's real world. Used to place a minefield
+    /// across the ENEMY's arrival aleph: the enemy fleet transits INTO the
+    /// rendezvous from this side's home region, so the enemy's arrival aleph is
+    /// the warp in the rendezvous whose partner sits on the route from here.
+    /// Returns null when the side owns no observed station yet.
+    /// </summary>
+    public short? FindSideHomeSector(short side)
+    {
+        var core = Catalog.RepresentativeCore();
+        short? restartSector = null, anySector = null;
+        lock (Probe.Gate)
+        {
+            foreach (var st in Probe.World.Stations.Values)
+            {
+                if (st.SideId != side) continue;
+                if (st.ClusterId <= 0) continue;
+                anySector ??= st.ClusterId;
+                // Restart-capable home (c_sabmRestart) is the strongest anchor —
+                // the sector a side's freshly-launched ships sit in.
+                if (core.StationTypes.TryGetValue(st.StationTypeId, out var t)
+                    && t.HasCapability(DataStationTypeIGC.SabmRestart))
+                    restartSector ??= st.ClusterId;
+            }
+        }
+        return restartSector ?? anySector;
+    }
+
+    /// <summary>
+    /// P591d — the warp in the rendezvous sector (<paramref name="rendezvous"/>)
+    /// through which the fleet of side <paramref name="enemySide"/> (whose home
+    /// is <paramref name="enemyHomeSector"/>) transits to ENTER the rendezvous —
+    /// the "enemy's arrival aleph" a minefield should straddle. Mirrors the
+    /// bots' own routing (<c>EnsureCombatPath</c> → <c>ClusterGraph.FindShortestPath</c>:
+    /// undirected edges, neighbouring clusters walked ascending so the chosen
+    /// route is deterministic): the penultimate cluster of the shortest path
+    /// enemyHome→rendezvous is where the enemy arrives from; the arrival aleph
+    /// is the warp located in the rendezvous whose partner sits in that
+    /// penultimate sector. Returns null when the enemy home is unreachable from
+    /// the rendezvous or no such warp resolves. Pure over the probe's world.
+    /// </summary>
+    public (short WarpId, short PenultimateSector)? FindEnemyArrivalWarp(short rendezvous, short enemySide, short enemyHomeSector)
+    {
+        lock (Probe.Gate)
+            return EnemyArrivalWarp(Probe.World.Warps, rendezvous, enemySide, enemyHomeSector);
+    }
+
+    /// <summary>
+    /// P591d — the pure core of <see cref="FindEnemyArrivalWarp"/>: compute the
+    /// enemy's arrival aleph from the raw warp table alone, so the placement
+    /// choice is unit-provable against the real map with no live server.
+    /// Neighbour-cluster order is ascending (deterministic, matching the bots'
+    /// <c>ClusterGraph.FindShortestPath</c>), so the returned path — and thus the
+    /// penultimate arrival sector — is reproducible.
+    /// </summary>
+    internal static (short WarpId, short PenultimateSector)? EnemyArrivalWarp(
+        IReadOnlyDictionary<short, DataWarpIGC> warps, short rendezvous, short enemySide, short enemyHomeSector)
+    {
+        // Undirected adjacency: cluster → sorted neighbour clusters.
+        var adj = new Dictionary<short, List<short>>();
+        foreach (var w in warps.Values)
+        {
+            if (!warps.TryGetValue(w.DestinationId, out var partner)) continue;
+            AddDir(adj, w.ClusterId, partner.ClusterId);
+            AddDir(adj, partner.ClusterId, w.ClusterId);
+        }
+        foreach (var k in adj.Keys) adj[k].Sort();
+
+        var path = BfsShortestPath(adj, enemyHomeSector, rendezvous);
+        if (path.Count < 2) return null;               // unreachable or already there
+        short penult = path[^2];                        // the sector the enemy enters FROM
+        // The arrival aleph = the warp IN the rendezvous whose partner sits in penult.
+        foreach (var w in warps.Values)
+        {
+            if (w.ClusterId != rendezvous) continue;
+            if (!warps.TryGetValue(w.DestinationId, out var partner)) continue;
+            if (partner.ClusterId != penult) continue;
+            return (w.WarpId, penult);
+        }
+        return null;
+    }
+
+    private static void AddDir(Dictionary<short, List<short>> adj, short a, short b)
+    {
+        if (!adj.TryGetValue(a, out var l)) { l = new(); adj[a] = l; }
+        if (!l.Contains(b)) l.Add(b);
+    }
+
+    private static List<short> BfsShortestPath(Dictionary<short, List<short>> adj, short from, short to)
+    {
+        if (from == to) return [from];
+        var prev = new Dictionary<short, short>();
+        var visited = new HashSet<short> { from };
+        var queue = new Queue<short>();
+        queue.Enqueue(from);
+        while (queue.Count > 0)
+        {
+            short cur = queue.Dequeue();
+            if (!adj.TryGetValue(cur, out var nbrs)) continue;
+            foreach (short nb in nbrs)
+            {
+                if (!visited.Add(nb)) continue;
+                prev[nb] = cur;
+                if (nb == to)
+                {
+                    var path = new List<short>();
+                    for (short node = to; ; node = prev[node]) { path.Add(node); if (node == from) break; }
+                    path.Reverse();
+                    return path;
+                }
+                queue.Enqueue(nb);
+            }
+        }
+        return [];
+    }
+
     private readonly Dictionary<short, ConnectionSession> _commanders = new();
 
     /// <summary>

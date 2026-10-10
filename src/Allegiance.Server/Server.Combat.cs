@@ -579,18 +579,25 @@ public sealed partial class Server
     /// fraction 1.0 via the div-240 <see cref="CompactQuant.Percent"/> convention
     /// and sets <c>createNow</c>=true (matching the reference server's
     /// <c>SetCreateNow()</c> after creation, <c>FedSrv.CPP:10072-10073</c>).
-    /// Scope is deliberately <b>same-side only</b>, matching every prior
-    /// multi-peer-visibility broadcast (P58/P62/P63/P85/P86/P88/P90 are all
-    /// same-side only). The recipients are exactly: the laying ship's own peer
-    /// (who always sees it — that peer's ExportShip was sent at join,
-    /// Server.cs:~1010) plus same-side teammates who have already received the
-    /// layer's <c>ExportShip(26)</c> (the <c>_teammateExportSent</c>-gated idiom
-    /// <c>BroadcastShipStates</c>'s teammate loop uses, Server.cs:539-557) — the
-    /// identical idiom <see cref="BroadcastProjectileInstance"/>/
-    /// <see cref="BroadcastFireMissile"/> use, copied exactly. Cross-side/enemy
-    /// mine visibility is NOT attempted — a real mine is arguably a hazard any
-    /// side should see, but that needs Phase 5's cross-side EXPORT first, and is
-    /// not this task's problem. Runs on the sim thread, so no extra locking.
+    /// <para><b>Audience (P591d fix).</b> The pre-P591d gate restricted the mine
+    /// EXPORT to the layer's own peer + same-side teammates who had already
+    /// received the layer's <c>ExportShip</c> (the <c>_teammateExportSent</c>
+    /// latch, which is only ever set for a CONNECTED PEER ship). That works when
+    /// a player lays a mine, but an NPC layer drone — the showcase's
+    /// drone-bucket spawn — is NOT a connected peer, so the latch was never set
+    /// for it and the field went to <b>0 peers</b> (the live P591d bug: "0
+    /// same-side peer(s)"). Native has no such gate: a mine is a static,
+    /// side-visible object (<c>c_mtSeenBySide | c_mtPredictable | c_mtHitable |
+    /// c_mtStatic</c>, mineigc.cpp:103-107) exported to the <b>owning side</b>'s
+    /// players when created (FedSrv LayExpendable → CreateObject → the side's
+    /// clients get the export), and to enemies once their scanner net spots it
+    /// (the P453 cross-side sweep, <see cref="SweepCrossSideMineExports"/>). So
+    /// the deploy export now goes to EVERY same-side seated peer (the field is
+    /// the side's own hazard), independent of the launcher being a peer. The
+    /// client filters mines by its own sector, so a same-side peer in another
+    /// sector simply discards it — no leakage concern. Cross-side/enemy visibility
+    /// is left to the P453 sweep (once spotted). Runs on the sim thread, so no
+    /// extra locking.</para>
     /// </summary>
     private void BroadcastExportMine(Mine m)
     {
@@ -611,24 +618,16 @@ public sealed partial class Server
         var msg = ExportMine.FromMine(m, timeCreate, launcherId: layer.Id, sideId: layerSide);
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
+        // P591d — the owning side sees its own field: every same-side seated peer,
+        // regardless of the launcher being a connected peer (an NPC layer drone
+        // has no peer export, and the field must still reach the side). Enemies
+        // are served by the P453 cross-side sweep once spotted.
         int n = 0;
         foreach (var kv in _peerShips)
         {
-            // Layer's own peer always receives it (that peer's own EXPORT was
-            // sent at join). Teammates receive it only once they already hold
-            // the layer's ExportShip — the exact _teammateExportSent gate (same
-            // as BroadcastProjectileInstance, Server.cs:2002-2010). Everyone
-            // else (cross-side enemies, and same-side peers who never got the
-            // layer's export) is excluded.
-            bool isLayer = ReferenceEquals(kv.Value.Ship, layer);
-            bool isVisibleTeammate = !isLayer
-                                     && kv.Value.Ship.SideId == layerSide
-                                     && _teammateExportSent.Contains((kv.Key, layer.Id));
-            if (isLayer || isVisibleTeammate)
-            {
-                SendPeer(kv.Key, packet);
-                n++;
-            }
+            if (kv.Value.Ship.SideId != layerSide) continue;
+            SendPeer(kv.Key, packet);
+            n++;
         }
         Console.WriteLine($"[mine] ship {layer.Id} deployed -> EXPORT(26)/OT_mine {m.MineType.ExpendableTypeId} " +
                           $"pos {m.Position} life {m.MineType.Lifespan} -> {n} same-side peer(s)");
@@ -661,12 +660,12 @@ public sealed partial class Server
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
         // P453 — the destroy audience is the union of the same-side deploy
-        // audience (the layer + visible teammates, exactly BroadcastExportMine's
-        // _teammateExportSent-gated shape) and every cross-side peer that was
-        // ever sent this mine's EXPORT (the _crossSideMineExportSent latch from
-        // SweepCrossSideMineExports). A client must never keep a phantom field
-        // after the mine is destroyed or expires, so the cross-side reach rides
-        // the latch and is served even when the launcher is unusual (log-only).
+        // audience (P591d: the owning side's seated peers, exactly
+        // BroadcastExportMine's side-wide shape) and every cross-side peer that
+        // was ever sent this mine's EXPORT (the _crossSideMineExportSent latch
+        // from SweepCrossSideMineExports). A client must never keep a phantom
+        // field after the mine is destroyed or expires, so the cross-side reach
+        // rides the latch and is served even when the launcher is unusual (log-only).
         Ship? layer = m.Launcher as Ship;
         short? layerSide = layer?.SideId;
         bool haveLayer = layer is not null && layerSide is not null;
@@ -677,9 +676,10 @@ public sealed partial class Server
         var targets = new List<ConnectionId>();
         foreach (var kv in _peerShips)
         {
-            bool sameSide = haveLayer && (
-                ReferenceEquals(kv.Value.Ship, layer)
-                || (kv.Value.Ship.SideId == layerSide && _teammateExportSent.Contains((kv.Key, layer!.Id))));
+            // P591d — same-side = the owning side (matches the new
+            // BroadcastExportMine audience), not gated on the launcher being a
+            // connected peer.
+            bool sameSide = haveLayer && kv.Value.Ship.SideId == layerSide;
             bool gotCrossSideExport = _crossSideMineExportSent.Contains((kv.Key, m.Id));
             if (sameSide || gotCrossSideExport)
             {
