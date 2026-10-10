@@ -30,7 +30,7 @@ Columns:
 | `Core…GameOverPlayersWireTests.Conquest_win_in_one_mission_does_not_leak_…another` | 3/3 | **Yes** | same two causes | **fixed** |
 | `Core…GameOverPlayersWireTests.Conquest_win_lists_every_connected_player_…side` | 3/3 | **Yes** | shield-less base gate | **fixed** |
 | `Core…LiveMoneyTests.Board_refund_broadcasts_money_change_sidewide_not_cross_side` | 2/3 | No | fixed-sleep MONEY_CHANGE receipt under socket load | load-flake (P472) |
-| `ClientCore…FullSessionKillIntegrationTests.FullSession_ThreePeers_…CrossSideKill` | 1/3 | not run | live-wire timing | suspect (P472) |
+| `ClientCore…FullSessionKillIntegrationTests.FullSession_ThreePeers_…CrossSideKill` | 1/3 → **4/5** | **Yes** | **fixed (P596)** — test-seeding bug, not product: harness assumed spawn-order == connection-order, but P281's async join allocated ship ids at logon-dispatch order (racy), so peer0/peer1 sometimes landed on opposite sides and the (correct) same-side-ready relay skipped peer0. Seating now deterministic via explicit POSITIONREQ side-picks. Verified 32/32 isolated + 10/10 within full ClientCore assembly. |
 | `Core…LiveWinConditionTests.Board_refused_once_mission_over` | 1/3 | No | cross-assembly socket load on the 1200ms board latch | **stable 3/3 after** |
 | `Core…LiveWinConditionTests.Multi_mission_disconnect_scopes_per_mission` | 1/3 | **Yes** | test pumped to stage==Over but not to a0.GameOvers receipt | improved → 2/3 residual (P472) |
 | `Core…LiveRipcordTests.First_activation_broadcasts_…flying_in_sector` | 1/3 | not run | live-wire timing | suspect (P472) |

@@ -203,12 +203,38 @@ public class FullSessionKillIntegrationTests
         using var peer0 = new ConnectionSession();   // observer
         using var peer1 = new ConnectionSession();   // subject / eventual victim (same side as peer0)
         using var peer2 = new ConnectionSession();   // cross-side attacker
-        peer0.Connect(port, "fsk_peer0");
-        peer1.Connect(port, "fsk_peer1");
-        peer2.Connect(port, "fsk_peer2");
-        peer0.SendLogonRequest(Request("fsk_peer0"));
-        peer1.SendLogonRequest(Request("fsk_peer1"));
-        peer2.SendLogonRequest(Request("fsk_peer2"));
+        // P596 — make the 2-same-side + 1-cross-side split deterministic in TWO
+        // ways that must hold together. (1) Every peer seats on an EXPLICIT side
+        // (POSITIONREQ), so the split no longer depends on logon-dispatch order —
+        // the old harness relied on the ShipSpawner's spawn-order (`idx < 2`)
+        // aligning with these three ConnectionSession objects' connection order,
+        // but P281's async join severs that (ship ids are allocated at logon-
+        // DISPATCH order, racy across sockets, while sides are assigned at auto-
+        // seat by JoinSeq), so which peer ended up the "loner" side was a coin-
+        // flip and the ready relay (correctly) skipped the now-opposite peer0.
+        // (2) Each peer is FULLY SEATED before the next connects, so the spawner
+        // counter runs peer0→0, peer1→1, peer2→2 — meaning the explicit picks
+        // MATCH the spawner's `idx<2` assignment and P390's reconcile (which
+        // would otherwise relocate the ship to the side's home SECTOR) never
+        // fires. All three therefore stay in Sectors[0]: peer0/peer1 same side
+        // (phase-2 ready relay) and peer2 cross-side (phase-6 kill) but the same
+        // sector, which the kill's same-sector collision needs.
+        short sideA = server.Missions[0].Sides[0].Id;
+        short sideB = server.Missions[0].Sides[1].Id;
+        Assert.NotEqual(sideA, sideB);
+
+        void Seat(ConnectionSession peer, string name, short side)
+        {
+            peer.Connect(port, name);
+            peer.SendLogonRequest(Request(name));
+            peer.SendPositionReq(side);
+            int seated = PumpUntil(server, () => peer.World.MyShipId is not null, 4000);
+            Assert.True(seated < 4000, $"{name} never seated on side {side}");
+        }
+
+        Seat(peer0, "fsk_peer0", sideA);
+        Seat(peer1, "fsk_peer1", sideA);
+        Seat(peer2, "fsk_peer2", sideB);
 
         // ── PHASE 1: join — all three assigned; peer0/peer1 mutual teammate presence;
         // the cross-side attacker may now legitimately appear in a teammate's table
