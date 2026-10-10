@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -164,9 +165,11 @@ public sealed class NpcCrossSideContentionLiveTests
     /// contention eviction clears ALL THREE with no station redirect, and over a
     /// long window none of them ever mines — even the would-be same-side
     /// least-ore winner is denied, overriding P159's grant entirely.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Enemy_contender_evicts_everyone_no_redirect_and_none_mines()
     {
+        Require.Artwork();
         var (srv, mission, sector, rock, unload, sideA, sideB) = BootFixture(out var bot);
         using (srv)
         using (bot)

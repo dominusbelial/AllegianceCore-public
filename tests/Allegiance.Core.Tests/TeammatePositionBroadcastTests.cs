@@ -5,6 +5,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -60,9 +61,11 @@ public class TeammatePositionBroadcastTests
     /// pair and a cross-side enemy; the subject thrusts, the observer must see
     /// its position move, and the enemy must never appear in the observer's
     /// any-ship observations at all (same-side scope, matching P58/P62/P63).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teammates_commanded_movement_is_broadcast_to_observers_but_enemy_movement_is_not()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -138,9 +141,11 @@ public class TeammatePositionBroadcastTests
     /// once guarantee: the observer must see the idle teammate's real spawn
     /// position, with no movement, exactly once-or-more — and the enemy stays
     /// out (same-side scope preserved).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stationary_teammate_is_still_broadcast_to_observer_once()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass ready-up lobby

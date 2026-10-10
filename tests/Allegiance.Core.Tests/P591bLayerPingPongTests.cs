@@ -10,6 +10,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -122,9 +123,11 @@ public sealed class P591bLayerPingPongTests
     /// test pins a ship at the arrival aleph with its goal pointing back and
     /// asserts it re-crosses (is NOT trapped).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_that_arrives_and_intentionally_recrosses_its_arrival_warp_is_permitted_not_trapped()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null; Sector? sectorA = null, sectorB = null; ResolvedWarp? crossWarp = null;
         short npcSide = 0;
@@ -266,11 +269,19 @@ public sealed class P591bLayerPingPongTests
         Assert.True(crossings <= 2, $"{label}: crossings {crossings} must be <= the 2-hop route length (no ping-pong)");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side0_layer_from_Rigel_reaches_Alderan_and_lays_without_ping_pong()
-        => DriveSide("S0-Rigel", 1059, 2187);
+    {
+        Require.Artwork();
+        DriveSide("S0-Rigel", 1059, 2187);
+    }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side1_layer_from_Organia_reaches_Alderan_and_lays_without_ping_pong()
-        => DriveSide("S1-Organia", 1051, 2152);
+    {
+        Require.Artwork();
+        DriveSide("S1-Organia", 1051, 2152);
+    }
 }

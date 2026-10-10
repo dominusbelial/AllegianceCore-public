@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -107,9 +108,11 @@ public sealed class KillCreditDamageTrackTests
     /// <see cref="DamageTrack.TopDealer"/> is always the highest total-damage
     /// model — even when the last-arriving damage came from a smaller dealer
     /// (the native sort, common.cpp:2624-2665).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DamageTrack_reports_the_top_total_damage_dealer_not_the_last_hitter()
     {
+        Require.Artwork();
         var hull = HullCell.Value.Hull;
         var big = new Ship(901, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
         var small = new Ship(902, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
@@ -140,9 +143,11 @@ public sealed class KillCreditDamageTrackTests
     /// <see cref="IIgcSite.KillShipEvent"/> must be credited to A (top damage
     /// dealer), not B (last hitter). Before P549 the last hitter (B) was passed
     /// straight through, so this fails on the pre-fix code.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kill_credit_goes_to_the_top_damage_dealer_not_the_last_hitter()
     {
+        Require.Artwork();
         var site = new KillCaptureSite();
         var mission = NewStartedMission(site);
         var sector = mission.Sectors[0];
@@ -173,9 +178,11 @@ public sealed class KillCreditDamageTrackTests
 
     /// <summary>⭐ Regression net — a single killer still receives the credit
     /// (the fallback path: a lone attacker is trivially the top dealer).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lone_killer_still_gets_the_credit()
     {
+        Require.Artwork();
         var site = new KillCaptureSite();
         var mission = NewStartedMission(site);
         var sector = mission.Sectors[0];

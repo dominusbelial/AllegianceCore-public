@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -32,7 +33,7 @@ namespace Allegiance.ClientCore.Tests;
 public class HullSwapClientLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -127,9 +128,11 @@ public class HullSwapClientLiveTests
     /// — the value the renderer resolves the model from and that the shop's
     /// "current ship" reads — is the REAL new hull, not the old one. Red before
     /// the ACK's authoritative hull is applied.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_swap_updates_the_clients_ship_entity_to_the_real_new_hull_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetShipSpawner(server, (core, mission, shipId) =>
         {
@@ -178,9 +181,11 @@ public class HullSwapClientLiveTests
     /// into a hull that can't host a requested weapon — the server (P334) DROPS
     /// it — and the client's ShipEntity.Loadout reflects the real (post-drop)
     /// mounted set, never a UI state promising the dropped part.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_swap_into_an_incompatible_hull_drops_the_part_on_the_clients_loadout_Live()
     {
+        Require.Artwork();
         // A (part, fits-hull, nonfits-hull) triple from the REAL core, found by
         // scan (independent of the spawn hull): the part mounts on fitHull but
         // not on badHull, so swapping onto badHull must drop it server-side.

@@ -4,6 +4,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -200,9 +201,11 @@ public class CombatShieldTests
 
     /// <summary>A fresh ship reads 0 shield (no capacity), and mounting a real
     /// shield arms it to 1.0 (<c>CshieldIGC::Arm</c>, <c>shieldIGC.h:99-103</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mounting_a_shield_arms_it_to_full_and_no_shield_is_zero()
     {
+        Require.Artwork();
         var ship = new Ship(8701, SmallHit.Value.Hull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
         Assert.Equal(0f, ship.ShieldFraction);
 
@@ -217,9 +220,11 @@ public class CombatShieldTests
     /// <summary>A mounted shield's fraction round-trips through the wire slot
     /// (<c>byte 41</c>, <c>ServerShipUpdate.FromModel</c> → <c>ShieldFraction</c>),
     /// and a no-shield ship encodes a clean 0.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_fraction_round_trips_the_wire_slot()
     {
+        Require.Artwork();
         var shielded = new Ship(8801, SmallHit.Value.Hull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
         shielded.MountPart(BigHit.Value.ShieldPart, 1, 0, 255);
         var a = ServerShipUpdate.FromModel(8801, shielded, 100);
@@ -236,9 +241,11 @@ public class CombatShieldTests
     /// hull completely untouched and reduces the shield by exactly the computed
     /// absorbed fraction (<c>rawPower · dtmShield / MaxStrength</c>), not merely
     /// "some amount".</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Small_hit_is_fully_absorbed_and_leaves_the_hull_untouched()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var combo = SmallHit.Value;
         var target = NewTarget(0, combo.Hull);
@@ -257,9 +264,11 @@ public class CombatShieldTests
     /// <summary>⭐ A hit larger than remaining shield capacity drains the shield
     /// to ~0 (clamped) AND puts real, computed hull damage on the ship for the
     /// excess. Asserts both the shield-floor and the excess-leak number.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Big_hit_drains_the_shield_and_leaks_the_excess_to_the_hull()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var combo = BigHit.Value;
         var target = NewTarget(0, combo.Hull);
@@ -279,9 +288,11 @@ public class CombatShieldTests
     /// delta as a no-shield ship taking the same raw hit. This is the test that
     /// pins the multiplication order: if <c>dtmArmor</c> were double-applied or
     /// dropped the two deltas would diverge.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Down_shield_leaks_identically_to_unshielded()
     {
+        Require.Artwork();
         var mA = NewStartedMission();                 // shielded ship, shield knocked down to 0
         var a = NewTarget(0, BigHit.Value.Hull);
         a.MountPart(BigHit.Value.ShieldPart, amount: 1, mountId: 0, fractionMounted: 255);  // arms to 1.0
@@ -318,9 +329,11 @@ public class CombatShieldTests
     /// arithmetic at magnitudes that would diverge if <c>dtm</c> were
     /// double-applied or dropped. The down-branch <c>/dtm</c> cancellation and
     /// the partial-branch <c>/dtm</c> are each checked separately.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ApplyShieldDamage_seam_keeps_armor_order_with_non_unit_cell()
     {
+        Require.Artwork();
         var core = RepresentativeCore.Value;
         var (_, shieldType, dmgType, dtm) =
             (from sp in core.PartTypes.Values
@@ -423,9 +436,11 @@ public class CombatShieldTests
     /// gates absorption). Asserts the fraction grew from exactly 0 to the
     /// decoded rate (<c>rateRegen·totalDt/maxStrength</c>) at the part's real
     /// <c>RateRegen</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_regenerates_from_zero_unconditionally_over_real_time()
     {
+        Require.Artwork();
         var m = NewStartedMission();
         var shield = (DataPartTypeIGC.Shield)RegenShield.Value.Type;
         var ship = NewTarget(0, SmallHit.Value.Hull);
@@ -445,9 +460,11 @@ public class CombatShieldTests
     /// regenerate toward 1.0 (not just the zero edge-case) — cumulative growth
     /// stays linear (<c>initial + rateRegen·totalDt/maxStrength</c>) until it
     /// clamps at full charge.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_at_partial_fraction_continues_regenerating()
     {
+        Require.Artwork();
         var m = NewStartedMission();
         var shield = (DataPartTypeIGC.Shield)RegenShield.Value.Type;
         var ship = NewTarget(0, SmallHit.Value.Hull);
@@ -466,9 +483,11 @@ public class CombatShieldTests
     /// <summary>⭐ A shield that has regenerated all the way to full clamps at
     /// 1.0 — regen never overshoots (matches SetFraction's clamp, and the
     /// defensive clamp Station.Regenerate/Asteroid.Regenerate use).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_regeneration_clamps_at_full_charge()
     {
+        Require.Artwork();
         var m = NewStartedMission();
         var ship = NewTarget(0, SmallHit.Value.Hull);
         ship.MountPart(RegenShield.Value, amount: 1, mountId: 0, fractionMounted: 255);   // already 1.0
@@ -481,9 +500,11 @@ public class CombatShieldTests
     /// <summary>⭐ A ship with NO mounted shield is completely unaffected by
     /// the regen tick: it introduces no new behavior or field drift for an
     /// unshielded ship — its <c>ShieldFraction</c> stays 0 throughout.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_without_mounted_shield_is_unaffected_by_regen()
     {
+        Require.Artwork();
         var m = NewStartedMission();
         var ship = NewTarget(0, SmallHit.Value.Hull);
         // NO MountPart call — no shield.

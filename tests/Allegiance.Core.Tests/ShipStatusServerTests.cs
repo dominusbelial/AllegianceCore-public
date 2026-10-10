@@ -9,6 +9,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -59,9 +60,11 @@ public class ShipStatusServerTests
     /// <summary>After the peer's ship is assigned and the join burst has flushed,
     /// it must have received exactly one SHIP_STATUS for its OWN ship, carrying
     /// that ship's id and the sector it was placed in.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PeerReceivesItsOwnShipStatus_InJoinBurst()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var bot = new FltBot();
@@ -100,9 +103,11 @@ public class ShipStatusServerTests
     /// guaranteed to receive one — the reason a single join-burst send is not
     /// enough (P40 live finding: ScoutExploreMap wires its MessageReceiver on
     /// attach, StrategyBase.cs:90, racing the burst).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ServerRefreshesOwnShipStatusPeriodically()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var bot = new FltBot();
@@ -128,9 +133,11 @@ public class ShipStatusServerTests
     /// sends every ship with no self-filter, here narrowed to same-side. Proves
     /// the commander can learn a docked miner teammate exists; the docked-state
     /// carriage is proven separately (DockedState_propagates_to_same_side_peer).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SameSideShips_are_broadcast_to_each_peer_but_enemy_ships_are_not()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
@@ -198,9 +205,11 @@ public class ShipStatusServerTests
     /// and the real <c>StationID</c>. This is the exact datum a commander's
     /// <c>UndockMinersAndStartMining</c> needs: not just that a miner ship exists,
     /// but that it is docked and where.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DockedState_propagates_to_same_side_peer()
     {
+        Require.Artwork();
         using var server = new Srv();
         short? friendlyId = null;
         int spawned = 0;
@@ -266,9 +275,11 @@ public class ShipStatusServerTests
     ///     actually works — a repeat CreateObject would misbehave client-side);
     ///   • a ship on the opposing side is never exported this way (same-side
     ///     scope limit, matching P58).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teammate_ship_is_exported_once_with_real_id_and_name_but_enemy_never()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
@@ -374,9 +385,11 @@ public class ShipStatusServerTests
     ///     P62's export set);
     ///   • the existing own-player PLAYERINFO send (Server.cs:946-954, the join
     ///     burst) is UNCHANGED — still ShipId = the peer's own real id, once.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teammate_ship_playerinfo_is_broadcast_once_after_export_before_status()
     {
+        Require.Artwork();
         using var server = new Srv();
         short? chosenSide = null;
         int spawned = 0;

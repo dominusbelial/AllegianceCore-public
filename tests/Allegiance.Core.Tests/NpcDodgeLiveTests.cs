@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -185,9 +186,11 @@ public sealed class NpcDodgeLiveTests
     /// VISIBLY steer away — its closest approach to the rock stays clear of the
     /// rock's surface (rather than plowing through the centre) — and once the
     /// rock is no longer imminent it RESUMES toward the station.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes()
     {
+        Require.Artwork();
         using var seat = Seat.New();
         var sector = seat.Sector;
         var npcSide = seat.PeerSide;   // same side as the peer so the peer is a friendly-skip, leaving ONLY the rock as an obstacle
@@ -245,9 +248,11 @@ public sealed class NpcDodgeLiveTests
     /// (well off the straight line, so never on a collision course) takes a
     /// near-direct line to the station and arrives — proving the universal dodge
     /// check adds zero behaviour change when nothing is imminent.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Traveling_npc_with_no_imminent_obstacle_is_unaffected_and_arrives()
     {
+        Require.Artwork();
         using var seat = Seat.New();
         var sector = seat.Sector;
         var npcSide = seat.PeerSide;
@@ -291,9 +296,11 @@ public sealed class NpcDodgeLiveTests
     /// placed directly (never runs any decision cycle, so it truly stays put) —
     /// not a spawned Miner, which would immediately start hunting for asteroids
     /// on its own and defeat the "stationary obstacle" setup.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Traveling_npc_steers_around_a_same_side_ship_on_its_path_and_resumes()
     {
+        Require.Artwork();
         using var seat = Seat.New();
         var sector = seat.Sector;
         var npcSide = seat.PeerSide;
@@ -342,9 +349,11 @@ public sealed class NpcDodgeLiveTests
     /// heavier"</c> (<c>common.cpp:1679-1680</c>). Proven here by the mirror
     /// assertion: the NPC's path deviation stays small (no detour around the
     /// enemy), matching the no-obstacle case's own bound.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path()
     {
+        Require.Artwork();
         using var seat = Seat.New();
         var sector = seat.Sector;
         var npcSide = seat.PeerSide;
@@ -393,9 +402,11 @@ public sealed class NpcDodgeLiveTests
     /// <c>B</c> is no longer imminent, RESUME toward and arrive at its real goal
     /// <c>A</c>. Mirrors P168's asteroid-obstacle test shape exactly (goal is a
     /// point; the obstacle is the only placed station).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal()
     {
+        Require.Artwork();
         using var seat = Seat.New();
         var sector = seat.Sector;
         var npcSide = seat.PeerSide;
@@ -464,9 +475,11 @@ public sealed class NpcDodgeLiveTests
     /// the NPC flies a near-direct line in and arrives — proving normal docking
     /// approaches are unbroken (were the exclusion missing, the NPC would dodge
     /// its own destination and never arrive).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Traveling_npc_does_not_dodge_the_station_it_is_docking_at()
     {
+        Require.Artwork();
         using var seat = Seat.New();
         var sector = seat.Sector;
         var npcSide = seat.PeerSide;

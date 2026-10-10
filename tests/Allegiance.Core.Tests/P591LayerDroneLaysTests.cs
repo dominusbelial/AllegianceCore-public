@@ -5,6 +5,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -88,9 +89,11 @@ public sealed class P591LayerDroneLaysTests
     /// <c>FedSrv.CPP:13769-13863</c>), and is consumed. Pre-P591 this never
     /// happened — the layer just parked (fails-first).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ordered_layer_drone_flies_to_its_build_point_and_lays_its_minefield_then_is_consumed()
     {
+        Require.Artwork();
         var d = AssembleLayerDomain();
         d.Layer.SetLayerBuild(new Ship.LayerBuildGoal(d.Sector.Id, LayPoint, 120f));
 
@@ -124,9 +127,11 @@ public sealed class P591LayerDroneLaysTests
     /// a tower-layer (e.g. '.TowerAC', EtidLaid 87) lays a probe, not a mine.
     /// This distinguishes the two layer kinds the showcase must choose between.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ordered_layer_drone_with_a_probe_expendable_lays_a_probe_not_a_mine()
     {
+        Require.Artwork();
         var d = AssembleLayerDomain();
         var probeType = d.Core.ProbeTypes.Values.FirstOrDefault(p => p.Lifespan >= 60f);
         Assert.True(probeType.ExpendableTypeId != 0, "representative core must have a probe type");
@@ -147,9 +152,11 @@ public sealed class P591LayerDroneLaysTests
 
     /// <summary>No build order → the layer never lays (falls back to its idle
     /// default order and parks), confirming laying is driven solely by the order.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Layer_without_a_build_order_never_lays()
     {
+        Require.Artwork();
         var d = AssembleLayerDomain();
         for (int i = 0; i < 1200; i++)
             Step(d);
@@ -169,9 +176,11 @@ public sealed class P591LayerDroneLaysTests
     /// <c>spawn_scenario … minefields</c> lays real mines. This fails-first
     /// on the pre-P591 choice (which bought '.TowerAC' — a tower layer).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Both_221_civs_have_a_minefield_layer_bucket_distinct_from_the_tower_layers()
     {
+        Require.Artwork();
         var core = RepresentativeCore();
         foreach (short civId in new short[] { 25, 3 })   // Iron Coalition, Ga'Taraan
         {

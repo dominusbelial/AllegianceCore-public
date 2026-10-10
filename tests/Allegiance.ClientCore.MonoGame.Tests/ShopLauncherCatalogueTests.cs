@@ -5,6 +5,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -23,7 +24,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ShopLauncherCatalogueTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
@@ -78,9 +79,11 @@ public class ShopLauncherCatalogueTests
         Catalog.Launchers!.FirstOrDefault(l => l.Part.TtbmRequired is { Length: > 0 }
             && l.Part.TtbmRequired.Any(b => b != 0));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CatalogueCarriesRealLaunchersWithRealNamesAndAmmoAcrossAllKinds()
     {
+        Require.Artwork();
         Assert.NotNull(Catalog.Launchers);
         Assert.NotEmpty(Catalog.Launchers!);
         foreach (var lo in Catalog.Launchers!)
@@ -107,9 +110,11 @@ public class ShopLauncherCatalogueTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LauncherPartIdsAreDistinctFromRegularPartIds()
     {
+        Require.Artwork();
         // A launcher PartId must not collide with a core.Parts PartId, else the
         // part/launcher rows would toggle the same id ambiguously. The two
         // tables are keyed separately; assert the offer set stays disjoint.
@@ -118,9 +123,11 @@ public class ShopLauncherCatalogueTests
             Assert.DoesNotContain(lo.Part.PartId, partIds);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MovingOntoALauncherRowAndActivatingBuysItWithItsRealAmmo()
     {
+        Require.Artwork();
         var (lo, yesHull, _) = FitNonFitTriple();
         var m = Model(currentHullId: yesHull.HullId);
         ShopModelTests.MountViaSlots(m, lo.Part.PartId);
@@ -130,9 +137,11 @@ public class ShopLauncherCatalogueTests
         Assert.Equal(lo.Ammo, bought.Amount);   // real ammo reserve, not a default
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BoughtLauncherRendersAsASensiblePendingLoadoutRow()
     {
+        Require.Artwork();
         var (lo, yesHull, _) = FitNonFitTriple();
         var m = Model(currentHullId: yesHull.HullId);
         ShopModelTests.MountViaSlots(m, lo.Part.PartId);
@@ -154,9 +163,11 @@ public class ShopLauncherCatalogueTests
         Assert.Equal(lo.Ammo, bought.Amount);   // real ammo reserve, not a default
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FilteredForAppliesTheSameTechGateToLaunchers()
     {
+        Require.Artwork();
         var req = RequiringLauncher();
         if (req is not { } required)
         {
@@ -188,9 +199,11 @@ public class ShopLauncherCatalogueTests
         Assert.Equal(noTechLaunchers.Count, degraded.Launchers!.Count);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NonMountingLauncherIsNotOfferedInAnySlotOfANonMountingHull()
     {
+        Require.Artwork();
         var (lo, _, noHull) = FitNonFitTriple();
         var m = Model(currentHullId: noHull.HullId);
         m.SwitchTab(ShopTab.Parts);
@@ -227,9 +240,11 @@ public class ShopLauncherCatalogueTests
         return (null, null);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CatalogueOffersAllFourKindsWithTheRightSubtypeMapping()
     {
+        Require.Artwork();
         Assert.Contains(Catalog.Launchers!, l => l.Kind == LauncherKind.Missile);
         Assert.Contains(Catalog.Launchers!, l => l.Kind == LauncherKind.Mine);
         Assert.Contains(Catalog.Launchers!, l => l.Kind == LauncherKind.Chaff);
@@ -240,12 +255,14 @@ public class ShopLauncherCatalogueTests
             Assert.Equal(lo.Kind, LauncherKindUtil.KindOf(lo.Part));
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(LauncherKind.Mine)]
     [InlineData(LauncherKind.Chaff)]
     [InlineData(LauncherKind.Probe)]
     public void MountingADispenserBuysItWithItsRealAmmo(LauncherKind kind)
     {
+        Require.Artwork();
         var (lo, hull) = MountableDispenser(kind);
         if (lo is not { } ov) { AssertDispenserNotOfferedAnywhere(kind); return; }
         var m = Model(currentHullId: hull!.Value.HullId);
@@ -256,12 +273,14 @@ public class ShopLauncherCatalogueTests
         Assert.Equal(ov.Ammo, bought.Amount);           // real ammo reserve, not a default
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(LauncherKind.Mine)]
     [InlineData(LauncherKind.Chaff)]
     [InlineData(LauncherKind.Probe)]
     public void DispenserSlotListsTheDispenserWithItsRealAmmo(LauncherKind kind)
     {
+        Require.Artwork();
         var (lo, hull) = MountableDispenser(kind);
         if (lo is not { } ov) { AssertDispenserNotOfferedAnywhere(kind); return; }
         var m = Model(currentHullId: hull!.Value.HullId);

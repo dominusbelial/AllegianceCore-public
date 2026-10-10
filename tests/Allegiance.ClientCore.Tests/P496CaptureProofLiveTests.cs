@@ -5,6 +5,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -24,7 +25,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P496CaptureProofLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg MapConfig(bool debug) => new()
     {
@@ -100,15 +101,23 @@ public sealed class P496CaptureProofLiveTests
     /// observed the boarder "parks at the aleph". After the fix it must reach the
     /// garrison; the capture_attempt outcome is captured verbatim (size=3 escorts
     /// sustain the downed-shield window for the slow board hull's dock).</summary>
-    [Fact]
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
     public void Capture_attempt_on_the_normal_map()
-        => RunCapture(debug: false, size: 3, timeoutSeconds: 300);
+    {
+        Require.Artwork();
+        RunCapture(debug: false, size: 3, timeoutSeconds: 300);
+    }
 
     /// <summary>Debug map (m2xspiderw, debugMode=true) — the map on which P490
     /// observed the boarder "never leaves its home sector". After the fix it must
     /// leave home and reach the garrison; the capture_attempt outcome is captured
     /// verbatim (the step-3 symptom re-examination).</summary>
-    [Fact]
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
     public void Capture_attempt_on_the_debug_map()
-        => RunCapture(debug: true, size: 3, timeoutSeconds: 300);
+    {
+        Require.Artwork();
+        RunCapture(debug: true, size: 3, timeoutSeconds: 300);
+    }
 }

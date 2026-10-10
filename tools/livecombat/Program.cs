@@ -24,7 +24,7 @@ namespace Allegiance.Tools.LiveCombat;
 internal static class Program
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     private const float TargetZ = -180f;         // target is this far -Z from its shooter (unchanged from P22)
     private const float LaneSpacing = 432f;      // lanes staggered on X: this gap keeps shots lane-isolated
     private const int Pairs = 4;                 // N = 4 → 8 real bot connections. See README/report for rationale.

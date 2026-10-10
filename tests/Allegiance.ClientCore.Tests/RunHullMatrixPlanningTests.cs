@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Allegiance.Tools.McpSpawner;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -27,9 +28,11 @@ public class RunHullMatrixPlanningTests
 {
     // ── Cartesian-product expansion ────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Plan_ExpandsFullCartesianProduct()
     {
+        Require.Artwork();
         // 2 hulls × 3 weapons × 2 sizes = 12 combos.
         var plan = MatrixPlanner.Plan(
             ["Scout", "Bomber"],
@@ -52,9 +55,11 @@ public class RunHullMatrixPlanningTests
         Assert.All(plan, c => Assert.False(string.IsNullOrWhiteSpace(c.WeaponName)));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Plan_DefaultsWeaponToTheStandingDefaultLoadoutGun_WhenWeaponsOmitted()
     {
+        Require.Artwork();
         // The default weapon is the same real gun spawn_bot/spawn_scenario default to
         // (Catalog.DefaultWeaponPart). Passed against a Scout, it is a real
         // capability-mask MISMATCH (the capital cannon has no Scout hardpoint), so the
@@ -68,9 +73,11 @@ public class RunHullMatrixPlanningTests
 
     // ── Real capability-mask compatibility ─────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Plan_LightGunMountsOnFastAndHeavyHulls_AcrossSizes()
     {
+        Require.Artwork();
         // "PW Gat Gun 1" (mask 0x0001) mounts on Scouts, Fighters and Bombers.
         var plan = MatrixPlanner.Plan(
             ["Scout", "Fighter", "Bomber"],
@@ -80,9 +87,11 @@ public class RunHullMatrixPlanningTests
         Assert.All(plan, c => Assert.Null(c.Error));   // every combo runnable
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Plan_HeavyCannonMountsOnlyOnTheHeavyHull_OthersGetASpecificError()
     {
+        Require.Artwork();
         // "PE AutoCan 3" (mask 0x4000) hosts on the Bomber's heavy hardpoint but
         // NOT on the Scout/Fighter (no 0x4000 hardpoint) — the real capability-mask
         // dimension the matrix is built to surface, per-combination, never a crash.
@@ -108,17 +117,21 @@ public class RunHullMatrixPlanningTests
 
     // ── Strict resolution / validation ─────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Plan_UnknownHullAbortsWithASpecificError()
     {
+        Require.Artwork();
         var ex = Assert.Throws<ArgumentException>(() =>
             MatrixPlanner.Plan(["definitely-not-a-real-hull-xyzzy"], ["PW Gat Gun 1"], [5]));
         Assert.Contains("no hull matches", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Plan_NonWeaponPartNameIsRejected()
     {
+        Require.Artwork();
         // The matrix only accepts real weapon parts: resolving a real non-weapon
         // part (whatever it is in the corpus) must abort with a not-a-weapon error.
         var nonWeapon = Catalog.AllParts().First(p => p.Category != "Weapon");
@@ -145,9 +158,11 @@ public class RunHullMatrixPlanningTests
 
     // ── P483 class-1: the loadout must only request hull-mountable parts ────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PartsForWeapon_RequestsOnlyPartsThatMountOnTheTargetHull()
     {
+        Require.Artwork();
         // P483 class-1 regression: PartsForWeapon (the matrix's loadout
         // assembler) must only request the real default AB/cloak/shield that
         // ACTUALLY mount on the target hull — the same
@@ -179,9 +194,11 @@ public class RunHullMatrixPlanningTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PartsForWeapon_UsesAMountingDefaultPerEquipmentType_WhenOneExists()
     {
+        Require.Artwork();
         // P483: when a hull DOES have a slot for an equipment type, the loadout
         // must pick a REAL part that mounts (lowest-PartId first, the
         // DefaultLauncherPart policy) rather than the global lowest-PartId part

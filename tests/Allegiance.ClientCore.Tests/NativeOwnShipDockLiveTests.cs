@@ -11,6 +11,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -41,7 +42,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class NativeOwnShipDockLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -234,9 +235,11 @@ public sealed class NativeOwnShipDockLiveTests
         return (long)pu.GetType().GetField(field)!.GetValue(pu)!;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Own_ship_updates_keep_processing_through_dock_undock_hull_swap_and_warp()
     {
+        Require.Artwork();
         var server = new Srv();
         Ship? captured = null;
         DataStationIGC garrison = default;

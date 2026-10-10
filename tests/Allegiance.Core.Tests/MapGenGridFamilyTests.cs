@@ -5,6 +5,7 @@ using Allegiance.Core.MapGen;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 /// <summary>
 /// P400 — structural verification of the procedural map topologies added on
@@ -140,10 +141,12 @@ public sealed class MapGenGridFamilyTests
         return adj;
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_CorrectSectorCount_AndHomeSectors(TopologyCase c)
     {
+        Require.Artwork();
         var map = Generate(c);
         var m = AssembleMap(c, map);
 
@@ -154,10 +157,12 @@ public sealed class MapGenGridFamilyTests
         Assert.Equal(c.Homes, homeIds);
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_Adjacency_MatchesTracedNativeGraph(TopologyCase c)
     {
+        Require.Artwork();
         var m = AssembleMap(c, Generate(c));
         var actual = ActualAdjacency(m);
 
@@ -180,10 +185,12 @@ public sealed class MapGenGridFamilyTests
         Assert.Equal(c.EdgeCount, degreeSum / 2);
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(TopologyCase c)
     {
+        Require.Artwork();
         var m = AssembleMap(c, Generate(c));
         var homeSet = c.Homes.ToHashSet();
 
@@ -196,10 +203,12 @@ public sealed class MapGenGridFamilyTests
         }
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_MinableAsteroidsPresent(TopologyCase c)
     {
+        Require.Artwork();
         var map = Generate(c);
         if (c.EverySectorMinable)
         {
@@ -227,9 +236,11 @@ public sealed class MapGenGridFamilyTests
     /// rejected before any cluster is generated; a 2-team config is accepted
     /// and generates its 26 sectors.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EastWest_RequiresExactlyTwoTeams()
     {
+        Require.Artwork();
         var bad = new MapGenParams
         {
             Type = MapGenType.EastWest, Teams = 3, CivIds = CivIds(3), MapSize = 0,
@@ -250,9 +261,11 @@ public sealed class MapGenGridFamilyTests
     /// — so, unlike EastWest/DiamondRing, it adds no "must be N teams"
     /// constraint: a 3-team config (legal for the base) is accepted and
     /// generates its 12 sectors.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SplitBase_HasNoExtraValidityConstraint()
     {
+        Require.Artwork();
         var map = MissionMapGenerator.Generate(new MapGenParams
         {
             Type = MapGenType.SplitBase, Teams = 3, CivIds = CivIds(3), MapSize = 0,
@@ -277,9 +290,11 @@ public sealed class MapGenGridFamilyTests
     /// Removing the override would collapse every home to 22 and every neutral
     /// to 18 — this test goes red (verified during development).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EastWest_PopulateCluster_OverrideDrivesPerSectorCounts()
     {
+        Require.Artwork();
         var map = MissionMapGenerator.Generate(new MapGenParams
         {
             Type = MapGenType.EastWest, Teams = 2, CivIds = CivIds(2), MapSize = 0,

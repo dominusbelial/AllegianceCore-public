@@ -9,6 +9,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Mg = global::Allegiance.Server.MapGenConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -71,9 +72,11 @@ public class MapGenBrawlLiveProofTests
     /// one server, two games (Brawl + a plain <c>Map</c>-file regression),
     /// Brawl generating exactly ONE sector with 0 warps, 2 stations and minable
     /// ore through the real <c>ToCoreParams → Generate → Assemble</c> path.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Brawl_BootHeadless_ConfigSelectable()
     {
+        Require.Artwork();
         var games = new (string name, string? type, int teams, int sectors, int stations)[]
         {
             ("Brawl", "Brawl", 2, 1, 2),
@@ -132,9 +135,11 @@ public class MapGenBrawlLiveProofTests
     /// (the default spawner seats peer N → side N and P368 resolves its home to
     /// the sector holding that side's owned station — which for Brawl is the one
     /// sector).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Brawl_TwoSidesShareOneSector_EachDocksAtOwnHomeStation()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(BrawlConfig());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;

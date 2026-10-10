@@ -4,6 +4,7 @@ using Allegiance.Core.Sim;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -51,9 +52,11 @@ public class P551DockOreSaleTests
         return ship;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Dock_ore_sale_honours_sabmunload_and_own_side_gate()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;

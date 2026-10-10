@@ -8,6 +8,7 @@ using Allegiance.Tools.McpSpawner;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -38,7 +39,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class BotAcceptsAndEngagesOrderLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     // Representative "engage that ship" order action id. The port has no dedicated
     // attack constant; the bot's translation keys on TargetType == Ship, so any real
@@ -107,9 +108,11 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
     }
 
     /// <summary>⭐ The live proof.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget()
     {
+        Require.Artwork();
         var server = new Srv();
         server.Boot(Config());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // bypass the ready-up lobby (P180 pattern)

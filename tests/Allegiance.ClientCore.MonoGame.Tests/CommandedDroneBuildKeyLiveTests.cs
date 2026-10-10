@@ -11,6 +11,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -39,7 +40,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class CommandedDroneBuildKeyLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -169,9 +170,11 @@ public sealed class CommandedDroneBuildKeyLiveTests
     /// computes. Construction registers on the commanded rock; ticking to
     /// completion the rock → station transformation fires and the DRONE is
     /// consumed — the full P422 arc from the client.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_client_commands_builder_drone_to_build_creating_real_station()
     {
+        Require.Artwork();
         var (srv, mission, sector, commander, builderDroneId, stationType, rock, _, side) = Boot(out var client);
         using (srv)
         using (client)
@@ -210,9 +213,11 @@ public sealed class CommandedDroneBuildKeyLiveTests
     /// refused by the server AND the refusal is SURFACED to the commanding
     /// MonoGame client as a private "Negative." chat (world.Events.Chats) — the
     /// "don't leave the player guessing why nothing happened" requirement.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_client_illegal_drone_build_refusal_reaches_client_chat()
     {
+        Require.Artwork();
         var (srv, mission, sector, commander, builderDroneId, stationType, _, wrongRock, side) = Boot(out var client);
         using (srv)
         using (client)

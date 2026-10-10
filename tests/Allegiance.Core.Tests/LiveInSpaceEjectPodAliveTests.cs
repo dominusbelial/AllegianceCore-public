@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -128,9 +129,11 @@ public class LiveInSpaceEjectPodAliveTests
     /// false</c>, full hull), shows up in <c>GetShipUpdateCandidates()</c>, and
     /// its teammate can now really trigger <c>ResolveRescueEvents</c> →
     /// <c>PLAYER_RESCUED</c>(16) + the pod is docked at a friendly station.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ejected_pod_is_born_alive_and_can_be_rescued()
     {
+        Require.Artwork();
         // Victim and rescuer start adjacent (same side 0) in the no-station
         // fly sector, so no rescue can pre-fire (no lifepod exists yet) and the
         // pod is born right beside its rescuer.

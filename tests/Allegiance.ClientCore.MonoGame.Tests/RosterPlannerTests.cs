@@ -4,6 +4,7 @@ using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Content;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -16,7 +17,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class RosterPlannerTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
@@ -25,9 +26,11 @@ public class RosterPlannerTests
 
     /// <summary>⭐ The roster is exactly one entry per imported ship asset —
     /// 72 real distinct models, not the 447 hull-stat variants.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Plan_yields_one_entry_per_distinct_ship_asset()
     {
+        Require.Artwork();
         var plan = RosterPlanner.Plan(Catalog.Hulls);
 
         Assert.Equal(HullModelResolver.ShipAssets.Count, plan.Count);          // 72
@@ -39,9 +42,11 @@ public class RosterPlannerTests
 
     /// <summary>Every entry is backed by a real hull that actually resolves to
     /// its asset under its civ — so the launched bot really renders that model.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Every_entry_hull_resolves_to_its_asset()
     {
+        Require.Artwork();
         var resolver = new HullModelResolver();
         var byId = Catalog.Hulls.ToDictionary(h => h.HullId);
         foreach (var e in RosterPlanner.Plan(Catalog.Hulls))
@@ -52,9 +57,11 @@ public class RosterPlannerTests
     }
 
     /// <summary>All 9 factions contribute; the civilisations cover the real ids.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Plan_covers_every_faction()
     {
+        Require.Artwork();
         var plan = RosterPlanner.Plan(Catalog.Hulls);
         Assert.Equal(RosterPlanner.FactionOrder.Length, plan.Select(e => e.Civ).Distinct().Count());
         foreach (var (civ, civId) in RosterPlanner.FactionOrder)
@@ -65,9 +72,11 @@ public class RosterPlannerTests
     }
 
     /// <summary>The grid slots are all distinct — a legible non-overlapping grid.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Grid_positions_are_unique_per_slot()
     {
+        Require.Artwork();
         var plan = RosterPlanner.Plan(Catalog.Hulls);
         var slots = plan.Select(e => (e.WorldX, e.WorldZ)).ToArray();
         Assert.Equal(slots.Length, slots.Distinct().Count());
@@ -81,9 +90,11 @@ public class RosterPlannerTests
 
     /// <summary>Per-column counts are stable and sum to 72 (the P287 witness
     /// census). Guards against a silent regression in the role classifier.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Per_faction_counts_are_stable()
     {
+        Require.Artwork();
         var counts = RosterPlanner.Plan(Catalog.Hulls)
             .GroupBy(e => e.Civ)
             .ToDictionary(g => g.Key, g => g.Count());
@@ -126,9 +137,11 @@ public class RosterPlannerTests
     /// interceptor / stealth-fighter / bomber now resolve to Bios's own
     /// <c>quiz</c> hulls, not a cross-civ neighbour's (GigaCorp's <c>wc_gc</c>,
     /// generic <c>fig17</c> / <c>bom05b</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Bios_combat_classes_resolve_to_bios_own_quiz_hulls()
     {
+        Require.Artwork();
         var plan = RosterPlanner.Plan(Catalog.Hulls);
         var byAsset = plan.ToDictionary(e => e.Asset);
 
@@ -150,7 +163,8 @@ public class RosterPlannerTests
     /// <summary>⭐ P350 — representative cross-civ fixes for the other factions
     /// with dedicated prefix families: each changed class now carries its own
     /// civ's model, not GigaCorp's <c>wc_gcfigx</c> / generic <c>bom05b</c>.</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData("gt", "gt-fighter", "wc_gt")]
     [InlineData("gt", "gt-scout", "wc_gt")]
     [InlineData("gt", "gt-sf", "wc_gt")]
@@ -170,6 +184,7 @@ public class RosterPlannerTests
     [InlineData("phoenix", "phoenix-int", "dn_faphsh")]     // P515
     public void Changed_classes_resolve_to_their_civs_own_prefix(string civ, string asset, string expectPrefix)
     {
+        Require.Artwork();
         var plan = RosterPlanner.Plan(Catalog.Hulls);
         var e = plan.First(x => x.Asset == asset);
         Assert.Equal(civ, e.Civ);
@@ -180,9 +195,11 @@ public class RosterPlannerTests
     /// class, the roster witness is that faction's own ship, never a cross-civ
     /// neighbour's dedicated hull. (Classes with no civ-owned alternative keep
     /// the historical fallback — a documented pre-existing residual.)</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void When_own_dedicated_hull_exists_witness_is_not_cross_civ()
     {
+        Require.Artwork();
         var plan = RosterPlanner.Plan(Catalog.Hulls);
         var resolver = new HullModelResolver();
         foreach (var grp in plan.GroupBy(e => e.Civ))

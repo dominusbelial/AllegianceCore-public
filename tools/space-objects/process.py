@@ -20,7 +20,7 @@ import starclean
 Image.MAX_IMAGE_PIXELS = None  # allow the 16000px Helix source
 
 SRC_DIR = "/tmp/spaceobj_src"
-OUT_DIR = "/home/domingo/Development/Artwork/p589obj"
+OUT_DIR = os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "p589obj")
 
 
 # ---------------------------------------------------------------- primitives

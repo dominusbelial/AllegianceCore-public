@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -91,9 +92,11 @@ public class P446E2eTopSpeedLiveTests
     /// <summary>⭐ End-to-end must-pass: complete real dev 165 'GA: Ship Speed 1'
     /// (gas[0]=1.1, c_gaMaxSpeed) through the real server economy, then show a
     /// ship on that side's real ExecuteMove top speed rises by that factor.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_ship_speed_dev_raises_real_top_speed()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSingleMissionSpawn(server);
         server.Boot(Config());

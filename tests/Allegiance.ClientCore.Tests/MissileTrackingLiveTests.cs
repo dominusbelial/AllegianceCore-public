@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -29,7 +30,7 @@ namespace Allegiance.ClientCore.Tests;
 public class MissileTrackingLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -76,9 +77,11 @@ public class MissileTrackingLiveTests
     /// <summary>⭐ A real missile the client's own ship fires is observed in the
     /// client's ClientWorld — created, kept moving by per-tick 205, then removed
     /// — all over the real transport.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         Ship? placedShip = null;

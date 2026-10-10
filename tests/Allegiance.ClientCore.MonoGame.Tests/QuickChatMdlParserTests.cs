@@ -1,5 +1,6 @@
 using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -13,7 +14,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class QuickChatMdlParserTests
 {
     // ── Fixtures ─────────────────────────────────────────────────────────────
-    // Real declarations lifted verbatim from /home/domingo/Development/Artwork/
+    // Real declarations lifted verbatim from $ALLEGIANCE_ARTWORK_PATH/
     // quickchat.mdl (same construct patterns, real symbols and real values),
     // including the real sonicChats wire-index numbering (7=attackFighter,
     // 9=attackBase, …, 15=Yes, 16=No) and a commented-out entry to prove comment
@@ -107,9 +108,11 @@ voNegativeSound = SerializedSound(MutexVO, DefaultVOTimeout, 20, true, GainSound
         Assert.Equal("Negative!", db.ByVoiceOver(16)!.Caption);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Resolves_SoundIdentifier_ToRealAssetStem_ThroughSounddef()
     {
+        Require.Artwork();
         var db = ParseSample();
         // voAffirmativeSound -> ImportWave("vo_player_affirmative").
         Assert.Equal("vo_player_affirmative", db.ByVoiceOver(15)!.SoundStem);
@@ -204,9 +207,11 @@ voNegativeSound = SerializedSound(MutexVO, DefaultVOTimeout, 20, true, GainSound
 
     // ── Real shipped dataset (regression guard against content/parser drift) ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Parses_TheRealShippedDataset_ToKnownInvariants()
     {
+        Require.Artwork();
         if (FindRepoContent() is not { } contentDir)
             return;   // not running from the repo tree — skip the repo-coupled check
 
@@ -295,9 +300,11 @@ voDefendSound = SerializedSound(MutexVO, DefaultVOTimeout, 20, true, GainSound(V
 voFollowSound = SerializedSound(MutexVO, DefaultVOTimeout, 20, true, GainSound(VoiceOverGain, ImportWave("vo_player_follow")));
 """;
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Parses_cid_and_ttMask_into_the_send_action()
     {
+        Require.Artwork();
         var db = QuickChatMdlParser.Parse(CommandResolutionSample, CommandResolutionSounddef);
         var mm = db.MainMenu!;
 

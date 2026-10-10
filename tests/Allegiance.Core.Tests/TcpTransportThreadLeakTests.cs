@@ -4,6 +4,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -48,9 +49,11 @@ public class TcpTransportThreadLeakTests
         return n;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Server_transport_thread_count_stays_bounded_across_connection_churn()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby

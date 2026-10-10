@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -153,9 +154,11 @@ public class LiveRescueTests
     /// rescue-capable ship broadcasts PLAYER_RESCUED(16) to BOTH ships'
     /// connections with the correct rescuer/rescuee ids, and the rescued pod
     /// ends up docked at a real friendly station (the side-0 garrison in 1053).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lifepod_in_range_of_rescue_ship_is_rescued_and_docked()
     {
+        Require.Artwork();
         // Spawn both ships side 0 but FAR apart so no rescue fires during the
         // join pump (Setup asserts both still flying). Then drift the lifepod
         // onto the rescue ship and verify the rescue.
@@ -194,9 +197,11 @@ public class LiveRescueTests
     /// <summary>⭐ Scenario 2 — an opposite-side pair is never rescued: no
     /// <c>PLAYER_RESCUED</c> reaches either bot and the pod stays flying (no
     /// false positive across many ticks).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Opposite_side_pair_is_not_rescued()
     {
+        Require.Artwork();
         // Lifepod on side 0, rescue-capable ship on side 1, parked on top of
         // each other (would trivially pass the proximity check) — the friendly
         // same-side gate must still reject them.
@@ -216,9 +221,11 @@ public class LiveRescueTests
     /// <summary>⭐ Scenario 3 — wrong capability bits: the partner lacks
     /// <c>c_habmRescue</c> (a lifepod next to a non-rescue ship), so no rescue
     /// fires even in perfect proximity on the same side.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Partner_without_rescue_capability_is_not_rescued()
     {
+        Require.Artwork();
         // Pod has c_habmLifepod; the "rescuer" ship has NEITHER bit -> not a
         // rescue-capable partner.
         var (server, podBot, rescBot, sp) = Setup(
@@ -236,9 +243,11 @@ public class LiveRescueTests
 
     /// <summary>⭐ Scenario 4 — an out-of-range pair (both capable, same side,
     /// far apart) is not rescued: proximity is a hard gate.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Out_of_range_pair_is_not_rescued()
     {
+        Require.Artwork();
         // Same side, both capable, but separated far beyond any plausible
         // sum-of-radii (1 km; ship radii are ~0.5×tens of units).
         var (server, podBot, rescBot, sp) = Setup(
@@ -264,9 +273,11 @@ public class LiveRescueTests
     /// order (rescuer is the first/bot-A ship, lifepod the second/bot-B ship)
     /// must still rescue with the CORRECT roles — the pass derives roles from
     /// capability bits, not from which ship is first in the sector.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Swapped_spawn_order_still_rescues_with_correct_roles()
     {
+        Require.Artwork();
         // Reverse the standard order: the RESCUE-CAPABLE ship is spawned FIRST
         // (so it is sp.Pod by spawn-order naming) and the LIFEPOD second
         // (sp.Rescuer). The pass must still derive the roles from the

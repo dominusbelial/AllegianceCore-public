@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -167,9 +168,11 @@ public sealed class DockAutoRestockLiveTests
     /// (SetAmmo(SHRT_MAX)/SetFuel(FLT_MAX)/SetEnergy(MaxEnergy)/SetFraction(1.0),
     /// FedSrv.CPP:12947-12955), running on OnShipDocked. Red on unfixed code:
     /// the drained pools stay drained.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_ship_get_its_expendables_refilled()
     {
+        Require.Artwork();
         using var server = new Srv();
         DataStationIGC garrison = default;
         server.ShipSpawner = (core, mission, shipId) => OutsideGarrison(mission, shipId);
@@ -218,9 +221,11 @@ public sealed class DockAutoRestockLiveTests
     /// docking replaces the mounted part with the successor and debits the P441
     /// ship-value differential side-wide. Red on unfixed code: the part is never
     /// replaced and the wallet is never debited.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docking_upgrades_mounted_part_to_successor_and_charges_after_research()
     {
+        Require.Artwork();
         using var server = new Srv();
         DataStationIGC garrison = default;
         server.ShipSpawner = (core, mission, shipId) => OutsideGarrison(mission, shipId);
@@ -300,9 +305,11 @@ public sealed class DockAutoRestockLiveTests
     /// native amount" that the free PCore001 part-successors alone cannot show —
     /// a paid DESIRED re-buy is what moves money. Red on unfixed code: the paid
     /// launcher is never re-mounted and the wallet is never debited.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docking_rebuys_paid_desired_launcher_and_charges_the_native_amount()
     {
+        Require.Artwork();
         using var server = new Srv();
         DataStationIGC garrison = default;
         server.ShipSpawner = (core, mission, shipId) => OutsideGarrison(mission, shipId);

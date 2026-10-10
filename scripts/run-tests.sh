@@ -22,10 +22,21 @@
 # Usage:  scripts/run-tests.sh
 # Exit:   0 if every project passed, 1 otherwise (each project's own
 #         Passed!/Failed! line is printed so failures are attributable).
+#
+# Loads the gitignored per-machine local.env (repo root) if present so the
+# test processes resolve the artwork corpus via ALLEGIANCE_ARTWORK_PATH /
+# ALLEGIANCE_NATIVE_SRC_PATH (see docs/P597_PRIVATE_PATHS_AND_CLEAN_CLONE.md).
 set -uo pipefail
 
-DOTNET=/home/domingo/.dotnet/dotnet
+# Portable dotnet (override with DOTNET=/path/to/dotnet).
+DOTNET="${DOTNET:-$(command -v dotnet)}"
 cd "$(dirname "$0")/.."
+
+# Source the gitignored local config if it exists (keys are the env-var names).
+if [ -f local.env ]; then
+  # shellcheck disable=SC1091
+  set -a; . ./local.env; set +a
+fi
 
 PROJECTS=(
   tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj

@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -224,9 +225,11 @@ public class LiveInSpaceEjectTests
     /// Because a friendly station exists for the victim's side, a mis-route to
     /// P105's respawn would have relocated+docked it — asserting it stays put
     /// proves the branches are genuinely mutually exclusive.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Player_ship_lethal_damage_ejects_in_sector_cross_side_broadcast()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? noStationSector = null;
         var spawnCount = 0;
@@ -334,9 +337,11 @@ public class LiveInSpaceEjectTests
     /// respawn (<c>ENTER_LIFEPOD(166)</c> to the owner). This is the exact
     /// <c>bLifepod → bKilled</c> route (FedSrv.CPP:11776-11780) — proving the
     /// two branches are disjoint, not overlapping.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Already_a_lifepod_is_truly_killed_not_re_ejected()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? noStationSector = null;
         var spawnCount = 0;

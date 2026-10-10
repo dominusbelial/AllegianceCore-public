@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -134,9 +135,11 @@ public class LiveChatLeadersWingWireTests
     private static FltBot BotOf(List<(FltBot bot, Srv.LiveShip live)> infos, short shipId) =>
         infos.First(t => t.live.Ship.Id == shipId).bot;
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leaders_and_Wing_chat_targets_relay_to_real_peers_over_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectLayout(server);
         server.Boot(Config());

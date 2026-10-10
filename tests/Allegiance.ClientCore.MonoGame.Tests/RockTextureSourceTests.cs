@@ -1,6 +1,8 @@
 using System.IO;
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -19,8 +21,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class RockTextureSourceTests
 {
     private static string ArtworkDir() =>
-        System.Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     // Expected real surface stem per resource type (native asteroidTypes[] model →
     // its bgrndNNbmp.mdl). Gold (0x04) has NO native rock row → null (procedural).
@@ -35,21 +36,25 @@ public class RockTextureSourceTests
         { RockTextureFactory.AsteroidResourceType.Gold, null },
     };
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Mapping))]
     public void EveryResourceType_ResolvesToItsCorrectRealAsset(
         RockTextureFactory.AsteroidResourceType type, string? expectedStem)
     {
+        Require.Artwork();
         // The resolver must yield EXACTLY the expected stem — no mismatch, no
         // accidental empty string meaning "fall back" when a real asset exists.
         Assert.Equal(expectedStem, RockTextureSource.MdlStemFor(type));
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Mapping))]
     public void RealStem_WhenPresent_DecodesToARealSurfaceTexture(
         RockTextureFactory.AsteroidResourceType type, string? stem)
     {
+        Require.Artwork();
         if (stem is null)
         {
             // Gold has no native rock — the fall-back path is the contract.
@@ -69,18 +74,22 @@ public class RockTextureSourceTests
         Assert.Equal(tex.Width, tex.Height);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Gold_ReportsNoPath_SoCallerUsesProceduralFallback()
     {
+        Require.Artwork();
         // Gold is the one type with no native rock row. Its path must be null so
         // EnsureAsteroidTexture provably falls back to RockTextureFactory.
         Assert.Null(RockTextureSource.MdlStemFor(RockTextureFactory.AsteroidResourceType.Gold));
         Assert.Null(RockTextureSource.PathFor(RockTextureFactory.AsteroidResourceType.Gold));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EachRealSurface_IsDistinctFromTheOthers()
     {
+        Require.Artwork();
         // The real surface FILES must be genuinely distinguishable per resource
         // (so a helium rock reads differently from a carbon rock in a field) —
         // not all resolving to the same bitmap. Two types MAY legitimately share

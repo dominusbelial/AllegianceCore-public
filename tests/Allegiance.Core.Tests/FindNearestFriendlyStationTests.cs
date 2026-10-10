@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -113,9 +114,11 @@ public sealed class FindNearestFriendlyStationTests
 
     /// <summary>⭐ A friendly (same-side) repair-capable station is found —
     /// verification point 1 of the task.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Finds_nearest_friendly_repair_station()
     {
+        Require.Artwork();
         var core = Core();
         var (repair, _) = TypeIds(core);
         var mission = NewMission(core);
@@ -132,9 +135,11 @@ public sealed class FindNearestFriendlyStationTests
 
     /// <summary>⭐ A friendly non-repair-capable station is correctly excluded —
     /// verification point 2.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Excludes_friendly_non_repair_station()
     {
+        Require.Artwork();
         var core = Core();
         var (_, nonRepair) = TypeIds(core);
         var mission = NewMission(core);
@@ -148,9 +153,11 @@ public sealed class FindNearestFriendlyStationTests
 
     /// <summary>⭐ An enemy-side repair-capable station is correctly excluded —
     /// verification point 3.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Excludes_enemy_repair_station()
     {
+        Require.Artwork();
         var core = Core();
         var (repair, _) = TypeIds(core);
         var mission = NewMission(core);
@@ -166,9 +173,11 @@ public sealed class FindNearestFriendlyStationTests
     /// and a still-nearer friendly non-repair station does not steal it —
     /// verification point 4 (nearest-by-squared-distance +
     /// non-repair exclusion combined).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Nearer_of_two_friendly_repair_stations_wins()
     {
+        Require.Artwork();
         var core = Core();
         var (repair, nonRepair) = TypeIds(core);
         var mission = NewMission(core);
@@ -188,9 +197,11 @@ public sealed class FindNearestFriendlyStationTests
     /// <summary>⭐ When nothing qualifies, <c>null</c> is returned — an enemy
     /// repair station plus a friendly non-repair station, neither eligible —
     /// verification point 5.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Returns_null_when_nothing_qualifies()
     {
+        Require.Artwork();
         var core = Core();
         var (repair, nonRepair) = TypeIds(core);
         var mission = NewMission(core);

@@ -9,6 +9,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -29,7 +30,7 @@ namespace Allegiance.ClientCore.Tests;
 public class ChaffDropLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -100,9 +101,11 @@ public class ChaffDropLiveTests
     /// <see cref="Chaff"/> appears in the firing ship's sector and the launcher's
     /// <c>Amount</c> decrements. This is the exact wire path the <c>C</c> key in
     /// <c>Game1.cs</c> drives.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SendFireExpendable_DeploysChaffAndDecrementsAmmo_OverTheWire()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         Ship? placedShip = null;
@@ -160,9 +163,11 @@ public class ChaffDropLiveTests
     /// ClientWorld.Apply). This is the P292 double-wiring proof — it reds if the
     /// ConnectionSession <c>case CreateChaff.Fmid:</c> or the
     /// <c>ClientWorld.Apply(CreateChaff)</c> arm is removed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SendFireExpendable_ClientWorldReceivesCreateChaff_OverTheWire()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         Ship? placedShip = null;

@@ -12,6 +12,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -34,7 +35,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class P541GotoFlyLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -142,9 +143,11 @@ public sealed class P541GotoFlyLiveTests
         return null;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Client_router_navigates_the_goto_from_start_to_a_two_warp_target_on_the_live_map()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? startSector = null;
         short startSectorId = 0;

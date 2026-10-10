@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -127,9 +128,11 @@ public class LiveP378DebugModeTests
         return (ship, measured);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void No_live_settings_preserves_native_300s_endurance()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(0, new Ls()));                         // absent section == all defaults
         var (ship, measured) = JoinAndMeasure(server, server.BoundPort, "P378DEF");
@@ -138,9 +141,11 @@ public class LiveP378DebugModeTests
         Console.WriteLine($"[oxygen] P378 debug-off: real spawned ship {ship.Id} armed deadline = now+{measured:0.#}s (core FloatConstants[31]=300s) — unchanged from pre-P378.");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_mode_defaults_to_1800s_endurance()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(0, new Ls { DebugMode = true }));
         var (ship, measured) = JoinAndMeasure(server, server.BoundPort, "P378DBG");
@@ -149,9 +154,11 @@ public class LiveP378DebugModeTests
         Console.WriteLine($"[oxygen] P378 debug-ON: real spawned ship {ship.Id} armed deadline = now+{measured:0.#}s (30-min testing window).");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Explicit_lifepodEnduranceSeconds_wins_over_debug_off()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(0, new Ls { LifepodEnduranceSeconds = 600.0 }));   // debug off, explicit tunable
         var (ship, measured) = JoinAndMeasure(server, server.BoundPort, "P378EXP");

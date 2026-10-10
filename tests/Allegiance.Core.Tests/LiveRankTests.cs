@@ -3,6 +3,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -78,9 +79,11 @@ public class LiveRankTests
     /// standalone branch, not a simplification). Two bots on different sides
     /// prove it is per-player: neither gets the other's message, and each gets
     /// exactly one — not a repeated broadcast.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_sync_sends_per_player_real_rank_table()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 

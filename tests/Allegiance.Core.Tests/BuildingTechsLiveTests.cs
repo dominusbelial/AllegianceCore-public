@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -152,9 +153,11 @@ public sealed class BuildingTechsLiveTests
     /// current hull — hence P283's two-bot pattern). Under the old
     /// <c>DevelopmentTechs</c>-only gate the flip would never happen — the
     /// must-fail-if-reverted assertion.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Owning_a_supremacy_makes_the_garrison_sell_its_hull_on_the_wire()
     {
+        Require.Artwork();
         var server = new Srv();
         Mission? capM = null; Side? capSide = null;
         DataStationTypeIGC sT = default; DataHullTypeIGC hH = default;
@@ -225,9 +228,11 @@ public sealed class BuildingTechsLiveTests
     /// removal — <see cref="Side.BuildingTechs"/> stays current through all
     /// four station-state changes the native keeps it current through
     /// (AddStation / DeleteStation / capture re-side).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BuildingTechs_tracks_place_capture_and_remove()
     {
+        Require.Artwork();
         using var server = new Srv();
         Start(server);
         var (st, side, garrison) = Garrison(server.Missions[0]);
@@ -266,9 +271,11 @@ public sealed class BuildingTechsLiveTests
     /// the Supremacy-unlocked hull) refuses before the station is placed and
     /// grants the hull after — proving the P441 hull gate reads
     /// <c>Side.Techs</c> too.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BuyLoadout_gate_grants_the_techbase_hull_after_the_station_is_placed()
     {
+        Require.Artwork();
         Mission? m = null; Side? side = null;
         DataStationTypeIGC sT = default; DataHullTypeIGC hH = default;
         short spawnHullId = 0;

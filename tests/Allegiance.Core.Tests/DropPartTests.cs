@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -127,9 +128,11 @@ public class DropPartTests
     /// <summary>Pin the <c>FM_S_TREASURE(28)</c> layout: fixed 48 B (header 4 +
     /// the 44-byte <see cref="DataTreasureIGC"/>), fmid 28, and a lossless
     /// round-trip of the embedded struct.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TreasureSpawn_codec_roundtrips_fixed_48_byte_layout()
     {
+        Require.Artwork();
         var msg = new TreasureSpawn
         {
             Data = new DataTreasureIGC(
@@ -162,9 +165,11 @@ public class DropPartTests
         Assert.False(again.Data.CreateNow);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         // P368: default spawn now seats each side in its own home sector. This

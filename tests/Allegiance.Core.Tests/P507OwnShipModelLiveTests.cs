@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -152,9 +153,11 @@ public sealed class P507OwnShipModelLiveTests
     }
 
     // ── ACCEPT ────────────────────────────────────────────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Native_pose_within_20m_is_accepted_and_applied()
     {
+        Require.Artwork();
         using var s = SeatOne();
         var setCookie = s.Assignment.Cookie;               // P507 per-peer cookie from SET_CLUSTER
         var target = Spawn + new Vector3(0f, 0f, 10f);     // 10 m from the server's stationary pos
@@ -168,9 +171,11 @@ public sealed class P507OwnShipModelLiveTests
     }
 
     // ── REJECT → SHIP_RESET + new cookie ──────────────────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Native_pose_over_20m_is_rejected_and_sends_SHIP_RESET_with_new_cookie()
     {
+        Require.Artwork();
         using var s = SeatOne();
         var setCookie = s.Assignment.Cookie;
         var basePos = s.Ship.Position;
@@ -196,9 +201,11 @@ public sealed class P507OwnShipModelLiveTests
     }
 
     // ── COOKIE MISMATCH ───────────────────────────────────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Wrong_cookie_drops_the_update_whole()
     {
+        Require.Artwork();
         using var s = SeatOne();
         var basePos = s.Ship.Position;
         // Within the 20 m window — would be accepted if the cookie matched — but the
@@ -214,9 +221,11 @@ public sealed class P507OwnShipModelLiveTests
     }
 
     // ── OUT OF DATE ───────────────────────────────────────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stale_update_is_out_of_date_pose_ignored()
     {
+        Require.Artwork();
         using var s = SeatOne();
         var basePos = s.Ship.Position;
         // time 5 s in the past → deltaT ≈ 5 s > ±1.5 s window → c_susOutOfDate.
@@ -231,9 +240,11 @@ public sealed class P507OwnShipModelLiveTests
     }
 
     // ── INVALID POSITION ──────────────────────────────────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Illegal_position_is_invalid_pose_ignored()
     {
+        Require.Artwork();
         using var s = SeatOne();
         var basePos = s.Ship.Position;
         // |pos|² == (90000)² fails LegalPosition (0 < |pos|² < (90000)²) → c_susInvalid.
@@ -248,9 +259,11 @@ public sealed class P507OwnShipModelLiveTests
     }
 
     // ── LEGACY BACKWARD COMPAT ────────────────────────────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Legacy_Time0_zero_pose_update_still_applies_controls()
     {
+        Require.Artwork();
         using var s = SeatOne();
         // CommandControls sends Time=0 / zero pose / Ack-derived cookie (≠ peer cookie).
         // The legacy detector must bypass the cookie gate and apply controls, as before P507.

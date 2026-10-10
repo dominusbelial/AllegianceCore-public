@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -15,7 +16,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class TeleportLayoutTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     private static readonly ShopCatalog Catalog =
         ShopCatalog.TryLoad(ArtRoot) ?? throw new InvalidOperationException($"core not loadable from {ArtRoot}");
 
@@ -33,9 +34,11 @@ public class TeleportLayoutTests
                 Assert.InRange(ch, '\u0020', '\u007e');
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rows_are_pure_ascii_and_list_ship_name_and_turret_count()
     {
+        Require.Artwork();
         var m = ModelWith(
             [new ShipView(Id: 902, SideId: 1, StationId: 977, HullId: TurretHull.HullId)],
             []);
@@ -49,9 +52,11 @@ public class TeleportLayoutTests
         Assert.Contains("[SHIP]", joined);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Highlights_the_cursor_row()
     {
+        Require.Artwork();
         var m = ModelWith(
             [
                 new ShipView(Id: 903, SideId: 1, StationId: 978, HullId: TurretHull.HullId),
@@ -68,9 +73,11 @@ public class TeleportLayoutTests
         Assert.NotEqual(idx0, idx1);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Empty_list_shows_no_boardable_and_has_back_hint()
     {
+        Require.Artwork();
         var m = ModelWith([], []);
         Assert.True(m.IsEmpty);
         var rows = TeleportLayout.Build(m);

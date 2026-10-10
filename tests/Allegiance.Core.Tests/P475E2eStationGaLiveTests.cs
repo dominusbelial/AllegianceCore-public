@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -109,9 +110,11 @@ public class P475E2eStationGaLiveTests
     /// (gas[4]=1.1 = c_gaMaxArmorStation, gas[5]=1.1 = c_gaArmorRegenerationStation)
     /// through the real server economy, then show a station on that side's
     /// effective max armor (and armor regen) scale by exactly that multiplier.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_station_hull_dev_scales_real_station_armor()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSingleMissionSpawn(server);
         server.Boot(Config());

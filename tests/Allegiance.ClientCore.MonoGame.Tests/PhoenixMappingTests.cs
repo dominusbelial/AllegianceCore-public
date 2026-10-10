@@ -4,6 +4,8 @@ using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core.Content;
 using Xunit.Abstractions;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -17,7 +19,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class PhoenixMappingTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
@@ -47,9 +49,11 @@ public class PhoenixMappingTests
     /// <summary>P510 — the phoenix prefix family genuinely owns player-flyable
     /// hulls in PCore001 (verified, not assumed): 26 flyable hulls across 11
     /// distinct native model names.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Phoenix_prefix_owns_real_player_flyable_hulls()
     {
+        Require.Artwork();
         var pf = Catalog.Hulls.Where(h => h.GroupId >= 0);
         var owned = pf.Where(h => h.ModelName.Trim().StartsWith("dn_faphsh", StringComparison.OrdinalIgnoreCase)).ToList();
         Assert.True(owned.Count >= 20, $"expected a sizable phoenix family, got {owned.Count}");
@@ -60,9 +64,11 @@ public class PhoenixMappingTests
     /// <summary>P515 — Phoenix art slots now exist, so every distinct native
     /// phoenix model resolves to a dedicated slot (was the P510 interim
     /// fallback-to-null behaviour, superseded once the slots landed).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Phoenix_models_resolve_to_dedicated_slots_after_P515()
     {
+        Require.Artwork();
         var fig = Catalog.Hulls.First(h => h.ModelName.Trim().Equals("dn_faphshfig", StringComparison.OrdinalIgnoreCase));
         Assert.Equal("fighter", HullModelResolver.RoleOf(fig.ModelName));
         // Each distinct native model resolves to its phoenix-* slot.
@@ -80,7 +86,8 @@ public class PhoenixMappingTests
     /// ModelName census for the remaining civs (dreg 6, tf 10, oh 12, giga 7,
     /// phoenix 11 = 46 total). Guards against a silent drift in the role /
     /// prefix classifiers. Order-independent set equality.</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData("dreg", 6)]
     [InlineData("tf", 10)]
     [InlineData("oh", 12)]
@@ -88,6 +95,7 @@ public class PhoenixMappingTests
     [InlineData("phoenix", 11)]
     public void Remaining_civ_distinct_model_counts(string civ, int expected)
     {
+        Require.Artwork();
         var prefixes = RosterPlanner.CivModelPrefixes[civ];
         var pf = Catalog.Hulls.Where(h => h.GroupId >= 0);
         var models = pf
@@ -100,9 +108,11 @@ public class PhoenixMappingTests
 
     /// <summary>P510 — the exact 46-model list (used to price the Meshy
     /// submission plan). Ensures the plan and the code can never disagree.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Remaining_civ_model_list_is_exactly_the_priced_set()
     {
+        Require.Artwork();
         var expected = new[]
         {
             // dreg

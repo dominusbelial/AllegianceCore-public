@@ -10,6 +10,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -193,9 +194,11 @@ public sealed class P591cDroneRoutingTests
     /// window and oscillates Organia&#8596;Gaia forever (the measured 1453
     /// crossings). After the native fix it transits at cruise speed, clears, and
     /// makes exactly the 2 route-length crossings with 0 guard blocks.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side1_layer_from_Organia_reaches_Alderan_and_lays_with_guard_off()
     {
+        Require.Artwork();
         var (crossings, laid, blocks) = DriveSide("S1-Organia", 1051, 2152, guardEnabled: false, out var d);
         Assert.True(laid, $"{d} — layer must lay even with the re-entry guard OFF");
         Assert.True(crossings <= 2, $"{d} — crossings must equal the 2-hop route length (no ping-pong)");
@@ -209,9 +212,11 @@ public sealed class P591cDroneRoutingTests
     /// it re-crosses back to Rigel (the measured Rigel&#8596;Alderan bounce after
     /// arriving in its target sector). After the fix it clears and lays in the
     /// single route-length crossing with 0 guard blocks.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side0_layer_from_Rigel_reaches_Alderan_and_lays_with_guard_off()
     {
+        Require.Artwork();
         var (crossings, laid, blocks) = DriveSide("S0-Rigel", 1059, 2187, guardEnabled: false, out var d);
         Assert.True(laid, $"{d} — layer must lay even with the re-entry guard OFF");
         Assert.True(crossings <= 1, $"{d} — direct Rigel&#8594;Alderan route must be a single crossing");
@@ -226,9 +231,11 @@ public sealed class P591cDroneRoutingTests
     /// this is exactly the failure: even though FindPathToward returns 2188, the
     /// drone could not clear 2175 because it entered at ~0 speed, so it swung
     /// back through the arrival aleph.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void After_crossing_into_intermediate_sector_plan_target_is_next_warp_not_arrival()
     {
+        Require.Artwork();
         bool priorGuard = Sector.WarpReEntryGuardEnabled;
         Sector.WarpReEntryGuardEnabled = false;   // routing must stand on its own
         try
@@ -314,9 +321,11 @@ public sealed class P591cDroneRoutingTests
     /// NumWarpReEntryBlocks counter stays 0 over a driven layer route. This is
     /// the suite-level proxy for the task's "guard-block counter stays &#8776;0
     /// over a 15v15 showcase" proof.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Re_entry_guard_stays_armed_but_block_counter_stays_zero_after_routing_fix()
     {
+        Require.Artwork();
         // guardEnabled: true (the safety net armed). After the native routing fix
         // a healthy drone never tries to re-enter the aleph it just came through,
         // so the net must not have to block anything.
@@ -358,9 +367,11 @@ public sealed class P591cDroneRoutingTests
     /// guard-off test-toggle, and it must fail on the old default-on code only
     /// via the default-value assertion above; here it re-confirms behaviour is
     /// unchanged now that the default is off.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Drone_reaches_and_lays_with_the_guard_left_at_its_default_off()
     {
+        Require.Artwork();
         // Restore the factory default so the drive exercises the guard's true
         // default (null guardEnabled = do not touch the static).
         bool prior = Sector.WarpReEntryGuardEnabled;

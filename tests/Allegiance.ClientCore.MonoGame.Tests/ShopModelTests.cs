@@ -5,6 +5,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -18,7 +19,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ShopModelTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
@@ -54,9 +55,11 @@ public class ShopModelTests
     /// <summary>⭐ P519 — the slot list for a real hull matches its real slots:
     /// one slot per weapon hardpoint plus a single slot for each equipment type
     /// the hull actually has a socket for (native SlotValidForHull).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Slot_list_matches_the_hulls_real_slots()
     {
+        Require.Artwork();
         var hull = CurrentHull();
         var m = new ShopModel(Catalog, hull.HullId, Array.Empty<ExpandedPartData>());
 
@@ -81,9 +84,11 @@ public class ShopModelTests
     /// <summary>⭐ P519 — the magazine slot lists ONLY missile launchers: every
     /// offered part is ET_Magazine and mountable by the hull, and at least one
     /// real missile launcher is present.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Magazine_slot_lists_only_missile_launchers()
     {
+        Require.Artwork();
         var hull = HullWithMagazine();
         var m = new ShopModel(Catalog, hull.HullId, Array.Empty<ExpandedPartData>());
 
@@ -108,9 +113,11 @@ public class ShopModelTests
 
     /// <summary>⭐ P519 — choosing a part fills the slot (mounting at the slot's
     /// mount) and returns to the slot list; the launcher carries its real ammo.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Choosing_a_magazine_part_fills_the_slot_at_mount_zero_with_real_ammo()
     {
+        Require.Artwork();
         var hull = HullWithMagazine();
         var m = new ShopModel(Catalog, hull.HullId, Array.Empty<ExpandedPartData>());
         m.SwitchTab(ShopTab.Parts);
@@ -139,9 +146,11 @@ public class ShopModelTests
     /// non-obsolete, GroupID≥0 hulls, in a stable (cyclic) order. Uses a
     /// FilteredFor catalogue so the buyable set is the tech/obsolete/group
     /// filtered one (native GetNextHullType predicate).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_cycle_visits_exactly_the_buyable_hulls_in_order()
     {
+        Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(System.IO.Path.Combine(ArtRoot, ShopCatalog.CoreFileName)));
         var station = core.StationTypes.Values.First(s => s.Name.Contains("Garrison", StringComparison.OrdinalIgnoreCase));
         var allTech = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray());
@@ -178,9 +187,11 @@ public class ShopModelTests
 
     /// <summary>⭐ P519 — a forward cycle wraps; the cycle does not change the
     /// chosen hull when there is only one buyable hull.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_cycle_forward_and_backward()
     {
+        Require.Artwork();
         var m = Model();
         short eff = m.EffectiveHullId;
         m.CycleHull(false);
@@ -193,9 +204,11 @@ public class ShopModelTests
     /// <summary>⭐ P519 Bug 3 — launching WITHOUT touching the shop sends the
     /// ship's current mounted parts (N > 0), never 0. This is the regression
     /// that previously stripped the ship to a bare hull.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Launching_without_touching_sends_the_full_current_loadout()
     {
+        Require.Artwork();
         var weapon = FirstWeapon();
         var shield = Catalog.Parts.First(p => p.EquipmentType == EquipmentType.Shield);
         var current = new[]
@@ -215,9 +228,11 @@ public class ShopModelTests
     /// the new hull (native ReplaceLoadout mounts only what fits), so the launch
     /// after a hull change sends the new hull's mountable loadout — every sent
     /// part CanMountPart the new effective hull.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Changing_hull_drops_parts_that_do_not_fit_the_new_hull()
     {
+        Require.Artwork();
         var (cur, w, target) = NonFitTriple();   // w mounts cur, not target
         var m = new ShopModel(Catalog, cur.HullId, new[] { Mounted(w, 0, 20) });
         Assert.Contains(m.ChosenParts, p => p.PartId == w.PartId);
@@ -235,9 +250,11 @@ public class ShopModelTests
 
     // ── preserved behaviour (navigation via slots / cycle) ──────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Effective_hull_defaults_to_current_until_a_hull_is_picked()
     {
+        Require.Artwork();
         var m = Model();
         Assert.Equal(CurrentHull().HullId, m.EffectiveHullId);
         Assert.Null(m.ChosenHullId);
@@ -247,9 +264,11 @@ public class ShopModelTests
     /// mounts (P437): weapon at its hardpoint mount, non-weapon at its single
     /// mount 0. Uses a hull that mounts both (scanned), so no hull-cycling disturbs
     /// the pending loadout.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Buying_weapon_then_shield_keeps_per_type_mounts()
     {
+        Require.Artwork();
         var weapon = FirstWeapon();
         var shield = Catalog.Parts.First(p => p.EquipmentType == EquipmentType.Shield);
         // Find a hull that mounts BOTH a weapon and a shield (scanned; the first
@@ -279,9 +298,11 @@ public class ShopModelTests
 
     /// <summary>⭐ preserved — the pending loadout pre-seeds from the ship's
     /// current parts (P394), verbatim including real amount + fraction.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shop_opens_with_current_parts_pre_seeded()
     {
+        Require.Artwork();
         var weapon = FirstWeapon();
         var current = new[] { Mounted(weapon, 0, 3, 100) };
         var m = new ShopModel(Catalog, CurrentHull().HullId, current);
@@ -293,9 +314,11 @@ public class ShopModelTests
 
     // ── P468 — pricing: loadout value, cost, affordability, grey-out ────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cost_of_a_hull_swap_with_a_weapon()
     {
+        Require.Artwork();
         var current = CurrentHull();
         var target = Catalog.Hulls.Where(h => h.HullId != current.HullId).OrderBy(h => h.HullId).First();
         var weapon = FirstWeapon();
@@ -312,9 +335,11 @@ public class ShopModelTests
         Assert.Equal(expectedNew - expectedCurrent, m.Cost);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Affordability_flag_at_the_exact_money_boundary()
     {
+        Require.Artwork();
         var current = Catalog.Hulls.OrderBy(h => h.Price).First();
         var target = Catalog.Hulls.Where(h => h.Price > current.Price).OrderBy(h => h.Price).First();
         long cost = (long)target.Price - current.Price;
@@ -337,9 +362,11 @@ public class ShopModelTests
 
     /// <summary>⭐ preserved — the PART row grey-out (P468): an expensive,
     /// unowned part is greyed; once chosen it is not.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Expensive_unowned_part_is_greyed_but_chosen_is_not()
     {
+        Require.Artwork();
         var current = CurrentHull();
         var m = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>(), money: 0);
         var pricey = Catalog.Launchers!.First(l => l.Part.Price > 0).Part;

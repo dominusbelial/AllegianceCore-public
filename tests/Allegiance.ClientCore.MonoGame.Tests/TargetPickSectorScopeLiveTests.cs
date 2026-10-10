@@ -10,6 +10,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -43,7 +44,7 @@ public sealed class TargetPickSectorScopeLiveTests
     private const short Alderan = 1052;    // 6 warps, 0 stations, 134 asteroids
 
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -94,9 +95,11 @@ public sealed class TargetPickSectorScopeLiveTests
     /// the per-kind counts equal the same-sector subset of ITS map-wide pool, the
     /// two peers are in different sectors, and the ~134-map-wide asteroid dump
     /// reaches exactly one peer (the one in Alderan) — not both.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TwoClientsInDifferentSectors_EachSeesOnlyItsOwnSectorCandidates()
     {
+        Require.Artwork();
         using var server = new Srv();
         int placed = 0;
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>

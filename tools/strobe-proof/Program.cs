@@ -44,9 +44,9 @@ internal sealed class P367Harness : Game
     private readonly GraphicsDeviceManager _gdm;
     private readonly string _outDir;
 
-    private const string ContentRoot =
-        "/home/domingo/Development/AllegianceCore/src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content";
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ContentRoot =
+        System.IO.Path.GetFullPath("src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content");
+    private static readonly string ArtRoot = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     private const ushort Port = 8802;
 
     private const int Width = 960;
@@ -402,7 +402,7 @@ internal static class Program
     private static void Main(string[] args)
     {
         string outDir = args.Length > 0 ? args[0]
-            : "/home/domingo/Development/AllegianceCore/.verify_p367/frames";
+            : System.IO.Path.GetFullPath(".verify_p367/frames");
         using var g = new P367Harness([outDir]);
         g.Run();
     }

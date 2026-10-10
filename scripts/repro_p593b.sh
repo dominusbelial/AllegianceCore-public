@@ -3,7 +3,8 @@
 # fight with a real-window observer capturing combat frames (white-shard
 # "before" state on current code). Modeled on repro_p591d_final.sh.
 set -uo pipefail
-REPO=/home/domingo/Development/AllegianceCore
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ART="${ALLEGIANCE_ARTWORK_PATH:-$REPO/../Artwork}"
 PORT=${PORT:-6085}
 OUT="${1:-$REPO/p593b-repro}"
 rm -rf "$OUT"; mkdir -p "$OUT"
@@ -13,7 +14,7 @@ MCP_EXE="$REPO/tools/allegiance-mcp/bin/Release/net10.0/allegiance-mcp"
 DRIVER="$REPO/scripts/mcp_driver.py"
 cat > "$OUT/server.json" <<EOF
 {
-  "artPath": "/home/domingo/Development/Artwork", "staticCore": "PCore001.igc", "port": $PORT,
+  "artPath": "$ART", "staticCore": "PCore001.igc", "port": $PORT,
   "updatesPerSecond": 20, "consoleVerbose": true,
   "games": [ { "name": "P593b IC vs GT", "map": "m2xspiderw.igc", "teams": 2, "civIds": [ 25, 3 ], "sideNames": [ "Alpha", "Bravo" ] } ],
   "liveSettings": {
@@ -44,7 +45,7 @@ sleep 8
 grep -o '"mode":[^,]*' "$MCO" | tail -3
 
 echo "== real-window observer capture =="
-export ALLEGIANCE_ARTWORK_PATH="/home/domingo/Development/Artwork"
+export ALLEGIANCE_ARTWORK_PATH="$ART"
 export MONOGAME_GL_PROFILE=OpenGL
 DISPLAY="${DISPLAY:-:0}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
   "$CLIENT_EXE" 127.0.0.1 "$PORT" "proof" --auto-side 0 --auto-ready \

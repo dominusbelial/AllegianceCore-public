@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -166,9 +167,11 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
     /// <summary>⭐ Deterministic discriminator 1: a target moving TOWARD the
     /// Wingman (closing too fast, relativeSpeed &gt; 20) must produce a back-off
     /// throttle of −1. Fails if the band-1 back-off branch is removed or wrong.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Closing_too_fast_backs_off()
     {
+        Require.Artwork();
         var core = Core();
         // Wingman flying slowly +X; target 100 ahead rushing back toward it −X at
         // 60 u/s → relativeSpeed = own(+5) − targetDir(−60) = +65 &gt; 20 → back off.
@@ -182,9 +185,11 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
     /// <summary>⭐ Deterministic discriminator 2: a target fleeing AWAY along +X
     /// (falling behind, relativeSpeed &lt; −20) must produce a press-in throttle
     /// of +1. Fails if the press-in branch is removed or wrong.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Falling_behind_presses_in()
     {
+        Require.Artwork();
         var core = Core();
         // Wingman flying slowly +X; target fleeing +X at 60 → relativeSpeed =
         // own(+5) − targetDir(+60) = −55 &lt; −20 → press in.
@@ -200,9 +205,11 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
     /// formula 2·targetDirSpeed/maxSpeed − 1 exactly (shipIGC.cpp:2507-2509).
     /// Wingman and target both move along +X at 40% of max speed → relativeSpeed
     /// 0 (match), targetDirSpeed = 0.4·maxSpeed → throttle = −0.2.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Match_speed_uses_native_graduated_formula()
     {
+        Require.Artwork();
         var core = Core();
         var hull = core.HullTypes.Values.First(h => h.Speed > 0f);
         float maxSpeed = hull.Speed;
@@ -218,9 +225,11 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
     /// <summary>⭐ Deterministic discriminator 4: the match-speed formula's two
     /// bounds — a target at/above max speed → throttle +1; a stationary target
     /// → throttle −1 (targetDirSpeed ≤ 0).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Match_speed_bounds_match_native()
     {
+        Require.Artwork();
         var core = Core();
         var hull = core.HullTypes.Values.First(h => h.Speed > 0f);
         float maxSpeed = hull.Speed;
@@ -243,9 +252,11 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
     /// throttle responds to the target's closing SPEED. Removing the P171
     /// wiring makes both measurements equal the fixed-standoff value and this
     /// test fails.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Wingman_throttle_responds_to_target_closing_speed()
     {
+        Require.Artwork();
         var (srv, mission, sector, npcSide, peerSide, wingDroneId) = Boot();
         using (srv)
         {

@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -151,9 +152,11 @@ public sealed class NpcPilotTypeGateLiveTests
 
     /// <summary>⭐ Negative: a real non-Miner (Wingman) NPC stands by — no target,
     /// no movement, no ore — even with a minable rock sitting in its sector.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_miner_idle_npc_stands_by_despite_minable_asteroid()
     {
+        Require.Artwork();
         var (mission, sector, npcSide, wingDroneId, rock) = Boot(out var server);
         using var _ = server;
 
@@ -179,9 +182,11 @@ public sealed class NpcPilotTypeGateLiveTests
     /// <summary>⭐ Positive control: an identically-idle MINER NPC in the same
     /// setup still picks the rock — proving the gate is behavior-preserving for
     /// the miner case (the only case P156-P159 exercised).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Miner_idle_npc_still_picks_the_rock()
     {
+        Require.Artwork();
         var (mission, sector, npcSide, _, _) = Boot(out var server);
         using var _ = server;
 

@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -85,9 +86,11 @@ public sealed class P555HullEquipmentMaskTests
     /// improve catastrophically when <c>pmEquipment</c> is read at native offset
     /// 510 vs the buggy 509. Measured: 48,990 → 475 across the corpus (a 103×
     /// reduction; we assert only &gt;20× to stay corpus-content-independent).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PreferredEquipmentMounting_CollapsesToNearZero_AtNativeOffset()
     {
+        Require.Artwork();
         int at509 = CountUnmounted(509);
         int at510 = CountUnmounted(510);
         Assert.True(at510 * 20 < at509,
@@ -99,9 +102,11 @@ public sealed class P555HullEquipmentMaskTests
     /// flagship hulls (#73/#74) prefer Hyper-Jump (mask 0x8000) with no
     /// afterburner socket, and the "Mustang" hull (#129) prefers Ion Booster
     /// (0x0002) into a slot that only covers 0x0001. (Pre-fix: 542.)</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PreferredEquipmentMounts_OnPcore001_ExceptDocumentedAfterburnerQuirks()
     {
+        Require.Artwork();
         var path = Corpus.Files.First(p => Path.GetFileName(p).Equals("PCore001.igc", StringComparison.OrdinalIgnoreCase));
         var core = StaticCore.Load(IgcReader.ParseFile(path));
         var failures = new List<string>();
@@ -122,9 +127,11 @@ public sealed class P555HullEquipmentMaskTests
 
     /// <summary>The P555 proof table — the shield mount masks after the 510 fix,
     /// for the PCore001 hulls the task names.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShieldSlots_MatchNativePartMasks_OnNamedHulls()
     {
+        Require.Artwork();
         var core = Pcore001();
         static short Shield(DataHullTypeIGC h) => h.PmEquipment[(int)EquipmentType.Shield];
 
@@ -139,9 +146,11 @@ public sealed class P555HullEquipmentMaskTests
     /// <summary>The exact case P539b mis-labelled "native rejects Sm Shield 1 on
     /// Adv Scout too, not a bug": at native offset 510, Sm Shield 1 (part 21,
     /// mask 0x0001) mounts on the Adv Scout — and is one of its preferred parts.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SmShield1_MountsOnAdvScout_AndIsPreferred()
     {
+        Require.Artwork();
         var core = Pcore001();
         var advScout = By(core, "Adv Scout");
         var sm = core.PartTypes[(short)21];   // Sm Shield 1

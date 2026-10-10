@@ -9,6 +9,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using PlayerScore = global::Allegiance.Server.PlayerScore;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -174,9 +175,11 @@ public sealed class GameOverPlayersWireTests
     /// m_oldPlayers recently-disconnected tracking — the deliberate
     /// simplification), so the surviving peer's single message carries exactly
     /// its own entry.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Win_by_elimination_broadcasts_game_over_players_to_surviving_peer()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass ready-up
@@ -236,9 +239,11 @@ public sealed class GameOverPlayersWireTests
     /// <c>sideId</c> (not just the winner's roster). Uses the P191 conquest
     /// path because win-by-elimination always empties the losing side; here the
     /// loser is still connected when the game ends.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Conquest_win_lists_every_connected_player_including_losing_side()
     {
+        Require.Artwork();
         using var seat = Seat(new Spec(true, Far), new Spec(false, Far));   // slot0 side A (capturer), slot1 side B
         var capturer = seat.Ships[0];
         var mission = seat.Server.Missions[0];
@@ -297,9 +302,11 @@ public sealed class GameOverPlayersWireTests
     /// GAME_OVER_PLAYERS only to mission A's peers — a peer seated on mission B
     /// hears nothing and mission B stays Started (reuses the P178/P191
     /// multi-mission proof pattern).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Conquest_win_in_one_mission_does_not_leak_game_over_players_to_another()
     {
+        Require.Artwork();
         using var server = new Srv();
         var core = Core();
         bool placedA = false;

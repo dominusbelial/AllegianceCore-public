@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -91,9 +92,11 @@ public class MineBroadcastTests
     /// distinct ids / two distinct destroy events. The mines are deployed by
     /// calling <c>Ship.DeployMine</c> directly (the not-yet-dispatch-wired entry
     /// point).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Directly_deployed_mine_broadcasts_create_and_destroy_to_teammate_but_not_enemy()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby

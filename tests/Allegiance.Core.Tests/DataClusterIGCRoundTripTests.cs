@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -13,12 +14,14 @@ namespace Allegiance.Core.Tests;
 /// corpus) field-by-field, complementing the hand-composed byte-exact test in
 /// <c>ExportClusterWireTests</c>.
 /// </summary>
+[Trait("Requires","Artwork")]
 public class DataClusterIGCRoundTripTests
 {
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(AllMaps))]
     public void EveryClusterRecord_RoundTrips_ThroughEncodeDecode(string path)
     {
+        Require.Artwork();
         var file = IgcReader.ParseFile(path);
         if (file.Wrapper != IgcWrapper.DataSize) return;   // static cores etc.: not a map, skip (like CorpusValidateTests)
         var map = MissionMap.Load(file);

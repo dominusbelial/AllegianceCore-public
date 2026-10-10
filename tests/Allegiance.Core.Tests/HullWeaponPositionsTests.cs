@@ -4,6 +4,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -142,9 +143,11 @@ public class HullWeaponPositionsTests
     /// <summary>⭐ A real PCore001 hull with its real <c>.cvh</c>: the computed
     /// mount-0 weapon position equals <c>frame.position · 0.5·length/radius</c>
     /// (with the HitTest::Load sign flip), exactly native.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_hull_mount0_position_matches_frame_times_scale()
     {
+        Require.Artwork();
         var (hull, _, _, offset) = Muzzle.Value;
         var model = LoadCvh(hull.ModelName);
         Assert.NotNull(model);
@@ -161,9 +164,11 @@ public class HullWeaponPositionsTests
     /// <summary>A model that parses but has <b>no frames</b>: every mount must
     /// fall back to zero (native <c>pfd ? position·scale : Vector::GetZero()</c>,
     /// hullTypeIGC.cpp:102,132).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missing_frame_falls_back_to_zero_even_with_a_model()
     {
+        Require.Artwork();
         var hull = RepresentativeCore.Value.HullTypes.Values.First(h => h.Hardpoints.Length > 0);
         // Minimal valid .cvh: header + 1 hull (1 vertex at origin, 1 adjacency), NO frames.
         var model = CvhReader.Parse("100 1 1 1 1\n1\n1 1 0 0 0\n0 0 0 1\n0\n");
@@ -174,9 +179,11 @@ public class HullWeaponPositionsTests
 
     /// <summary>No <c>.cvh</c> at all (the historic "no hull mesh" case): every
     /// mount is zero, so rounds keep spawning at the ship centre.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Null_model_yields_all_zero_offsets()
     {
+        Require.Artwork();
         var hull = RepresentativeCore.Value.HullTypes.Values.First(h => h.Hardpoints.Length > 0);
         var computed = HullWeaponPositions.Compute(hull, null);
         Assert.Equal(hull.Hardpoints.Length, computed.Length);
@@ -188,9 +195,11 @@ public class HullWeaponPositionsTests
     /// <summary>⭐ Wiring a real <see cref="WeaponMuzzleCache"/> into the
     /// mission, a fired round's spawn equals <c>ship position + offset ·
     /// orientation</c> — it leaves the gun, not the centre.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fired_round_spawns_at_ship_plus_mount_offset_rotated_by_orientation()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         mission.WeaponMuzzles = new WeaponMuzzleCache(LoadCvh);
         var sector = mission.Sectors[0];
@@ -215,9 +224,11 @@ public class HullWeaponPositionsTests
     /// ship-centre spawn (muzzle offset zero). This is what the code under test
     /// returned before P465c wired a cache, and what a bare test mission still
     /// returns.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Without_a_wired_cache_round_spawns_at_ship_centre()
     {
+        Require.Artwork();
         var mission = NewStartedMission();                   // no WeaponMuzzles wired
         var sector = mission.Sectors[0];
         var ship = NewShip();
@@ -233,9 +244,11 @@ public class HullWeaponPositionsTests
     /// <summary>An out-of-range mount never throws and yields zero (the native
     /// guard is implied — <c>m_positionWeapons</c> is indexed by a valid mount;
     /// a defensive zero is the port's contract for an impossible mount).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Out_of_range_mount_yields_zero()
     {
+        Require.Artwork();
         var cache = new WeaponMuzzleCache(_ => null);
         var hull = RepresentativeCore.Value.HullTypes.Values.First(h => h.Hardpoints.Length > 0);
         Assert.Equal(Vector3.Zero, cache.Position(hull, hull.Hardpoints.Length + 5));
@@ -245,9 +258,11 @@ public class HullWeaponPositionsTests
     /// <summary>The cache resolves each distinct hull model ONCE and returns a
     /// stable array (the native once-per-hull-type computation is preserved, not
     /// reparsed per shot).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cache_is_keyed_by_model_name()
     {
+        Require.Artwork();
         var (hull, _, _, offset) = Muzzle.Value;
         var cache = new WeaponMuzzleCache(LoadCvh);
         Assert.Equal(offset.X, cache.Position(hull, 0).X, 4);   // first call resolves + caches

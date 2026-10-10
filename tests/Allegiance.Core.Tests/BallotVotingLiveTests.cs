@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -118,9 +119,11 @@ public class BallotVotingLiveTests
     /// header(4) + VarItem ib/cb@4-7 + otInitiator short@8 + oidInitiator
     /// short@10 + ballotID short@12 + 2 pad@14-15 + uint32 timeExpiration@16 +
     /// bool bHideToLeader@20 + 3 pad@21-23 = 24 fixed; BallotText blob @24.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ballot_codec_round_trips_exact_bytes()
     {
+        Require.Artwork();
         Assert.Equal((ushort)17, Ballot.Fmid);
         Assert.Equal(24, Ballot.FixedSize);
         var bl = new Ballot
@@ -219,9 +222,11 @@ public class BallotVotingLiveTests
     /// <summary>⭐ A non-leader on a side with an existing leader issuing
     /// "#mutiny" creates a real ballot and broadcasts BALLOT(17) to the voting
     /// side (FedSrv.CPP:5184-5199).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mutiny_from_non_leader_creates_ballot_and_broadcasts_to_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -248,9 +253,11 @@ public class BallotVotingLiveTests
 
     /// <summary>⭐ The side's OWN leader issuing "#mutiny" is refused — no
     /// ballot created (FedSrv.CPP:5185-5187 "leader cant mutiny").</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mutiny_from_own_leader_refused_no_ballot()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -274,9 +281,11 @@ public class BallotVotingLiveTests
     /// broadcasting SET_TEAM_LEADER; a failing mutiny leaves leadership
     /// unchanged. Driven through the real all-votes-in resolution (native
     /// MutinyBallot::OnPassed, fsmission.cpp:6117-6168).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mutiny_passing_transfers_leadership_failing_keeps_it()
     {
+        Require.Artwork();
         // Passing case.
         using (var server = new Srv())
         {
@@ -344,9 +353,11 @@ public class BallotVotingLiveTests
 
     /// <summary>⭐ A second "#mutiny" while one is in flight for the same side
     /// is refused with a private reply — no second ballot (FedSrv.CPP:5188-5193).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Second_mutiny_in_flight_refused_with_private_reply()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -373,9 +384,11 @@ public class BallotVotingLiveTests
     /// <summary>⭐ A VOTE from a ship NOT eligible for a ballot (different
     /// side) is ignored: it does not resolve the ballot, and does not change
     /// leadership (native Ballot::CastVote, fsmission.cpp:5847-5865).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Vote_from_non_eligible_ship_is_ignored()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -423,9 +436,11 @@ public class BallotVotingLiveTests
     /// DeactivateSide (out of scope). Must-fail-if-removed: after resolution the
     /// side is empty, both players are gone from the roster, the leader is
     /// cleared, and the survivor observes QUIT_MISSION for the other.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Resign_passing_removes_every_player_on_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -468,9 +483,11 @@ public class BallotVotingLiveTests
     /// side(s); that one passing triggers the reused P178 game-over path — a
     /// real end-to-end chain (OfferDrawBallot::OnPassed → AcceptDrawBallot::
     /// OnPassed → GameOver, fsmission.cpp:6182-6194), not stages in isolation.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Draw_end_to_end_offer_then_accept_then_game_over()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();   // Alpha (side0)
@@ -540,9 +557,11 @@ public class BallotVotingLiveTests
     /// mission A side0 must reach only mission A side0's peers — not a peer on
     /// mission B with the SAME numeric side id (the must-not-regress P180/P178
     /// fixed-bug class), and not a same-mission different-side peer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_ballot_scopes_per_mission_and_per_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

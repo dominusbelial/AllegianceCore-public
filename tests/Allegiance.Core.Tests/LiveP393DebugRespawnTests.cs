@@ -7,6 +7,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -143,9 +144,11 @@ public class LiveP393DebugRespawnTests
         return null;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side0_death_respawns_at_omega_debug_garrison_not_ganymede()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(DebugConfig());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // suicide + dock need Started (P180)
@@ -161,9 +164,11 @@ public class LiveP393DebugRespawnTests
         Console.WriteLine($"[p393] side-0 player death respawned: station {respawned.StationId} '{respawned.HullType.Name}' in sector {respawned.Sector.Name} ({respawned.Sector.Id})");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side1_death_respawns_at_plato_debug_garrison_not_organia()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(DebugConfig());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
@@ -178,9 +183,11 @@ public class LiveP393DebugRespawnTests
         Console.WriteLine($"[p393] side-1 player death respawned: station {respawned.StationId} in sector {respawned.Sector.Name} ({respawned.Sector.Id})");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Normal_game_death_respawn_still_hits_the_pre_p393_real_station()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(NormalConfig());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;

@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -155,9 +156,11 @@ public class LiveLifepodOxygenTests
     /// player respawns via the existing P105 path (ENTER_LIFEPOD(166) to the
     /// owner + docked at a friendly station), with <b>no re-eject</b>. This is
     /// the full AFS flow: eject → 5-minute oxygen → pod explodes → respawn.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Drifting_lifepod_oxygen_expiry_destroys_pod_and_respawns_player()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? noStationSector = null;
         var spawnCount = 0;
@@ -253,9 +256,11 @@ public class LiveLifepodOxygenTests
     /// destruct — no second KILL_SHIP/ENTER_LIFEPOD, still docked. A rescued
     /// pod is in exactly this berthed state, so the cancellation holds for it
     /// too (this is the mechanism; the transport is identical).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_lifepod_does_not_self_destruct_after_oxygen_deadline_passes()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? noStationSector = null;
         var spawnCount = 0;

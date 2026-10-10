@@ -7,6 +7,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Content;
 using Allegiance.Core.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -19,7 +20,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class HullModelResolverTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
@@ -41,9 +42,11 @@ public class HullModelResolverTests
     /// <summary>⭐ P288 — the embedded ShipAssets set matches P287's manifest
     /// exactly (72 ships; asset == "&lt;civ&gt;-&lt;class&gt;"), so the resolver
     /// only ever emits real imported assets.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Embedded_ship_assets_match_P287_manifest()
     {
+        Require.Artwork();
         using var doc = JsonDocument.Parse(File.ReadAllText(RepoManifestPath()));
         var ships = doc.RootElement.GetProperty("models").EnumerateArray()
             .Where(m => m.GetProperty("kind").GetString() == "ship")
@@ -60,9 +63,11 @@ public class HullModelResolverTests
     /// resolver (a hull of role R covers each civ whose class-token for R is in
     /// the manifest, because the underlying native mesh is genuinely shared
     /// across those factions). Prints the per-asset witness civ+hull.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Every_imported_ship_model_is_reachable_from_a_real_hull()
     {
+        Require.Artwork();
         var reachable = HullModelResolver.ReachableAssets(Catalog.Hulls);
 
         var missing = HullModelResolver.ShipAssets.Except(reachable.Keys).OrderBy(x => x).ToList();
@@ -77,9 +82,11 @@ public class HullModelResolverTests
     /// <summary>⭐ A per-asset witness table: each imported model is backed by a
     /// real hull (HullId + native ModelName + display name) for a real civ —
     /// the concrete "hull-to-model mapping entry" the task requires.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Each_asset_has_a_real_witness_hull()
     {
+        Require.Artwork();
         var witnesses = Witnesses();
         Assert.Equal(HullModelResolver.ShipAssets.Count, witnesses.Count);
         // Witness every asset with a real hull that resolves to it.
@@ -118,9 +125,11 @@ public class HullModelResolverTests
     /// <summary>Sanity: a known scout-shaped hull (fig05 → "Scout") resolves for
     /// a faction that has scout art, and a Lifepod (no art class) resolves to
     /// null → fallback.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Known_hull_classes_resolve_and_unmapped_falls_back()
     {
+        Require.Artwork();
         var scout = Catalog.Hulls.First(h => h.ModelName.Trim() == "fig05");
         // GT has scout art → gt-scout; Dreghklar names it scout2. (Bios never
         // had a scout model imported by P287 — only art — so it has no asset.)
@@ -140,9 +149,11 @@ public class HullModelResolverTests
     /// (native <c>wc_gc</c> prefix, GroupId ≥ 0) now resolves to a dedicated
     /// giga asset — no <c>bios_scout</c> fallback (before P512, the three
     /// interceptor-class hulls wc_gchvy/gchvyx/gcint fell back).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void All_giga_player_hulls_resolve_dedicated_no_fallback()
     {
+        Require.Artwork();
         var resolver = new HullModelResolver();
         var giga = Catalog.Hulls
             .Where(h => h.GroupId >= 0)
@@ -158,9 +169,11 @@ public class HullModelResolverTests
     /// GroupId ≥ 0) now resolves to a dedicated tf asset — no
     /// <c>bios_scout</c> fallback (before P513, int/sf/carrier/cruiser/tt
     /// classes fell back to the shared fallback).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void All_tf_player_hulls_resolve_dedicated_no_fallback()
     {
+        Require.Artwork();
         var resolver = new HullModelResolver();
         var tf = Catalog.Hulls
             .Where(h => h.GroupId >= 0)
@@ -177,9 +190,11 @@ public class HullModelResolverTests
             Assert.NotNull(resolver.ResolveAsset("tf", h));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void All_oh_player_hulls_resolve_dedicated_no_fallback()
     {
+        Require.Artwork();
         var resolver = new HullModelResolver();
         var oh = Catalog.Hulls
             .Where(h => h.GroupId >= 0)
@@ -194,9 +209,11 @@ public class HullModelResolverTests
     /// (native <c>dn_faphsh</c> prefix, GroupId ≥ 0) now resolves to a dedicated
     /// phoenix asset — no <c>bios_scout</c> fallback (before P515, all 26 fell
     /// back). 11 distinct native models collapse onto 9 slots by class.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void All_phoenix_player_hulls_resolve_dedicated_no_fallback()
     {
+        Require.Artwork();
         var resolver = new HullModelResolver();
         var phx = Catalog.Hulls
             .Where(h => h.GroupId >= 0)
@@ -236,9 +253,11 @@ public class HullModelResolverTests
         Assert.Null(HullModelResolver.CivKeyByIdShort(999));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missile_types_map_to_imported_assets_or_null()
     {
+        Require.Artwork();
         var types = Catalog.MissileTypes;
         Assert.NotNull(types);
         Assert.Equal("mis05", MissileModelSource.ResolveImportedAsset(34, types));   // demo type

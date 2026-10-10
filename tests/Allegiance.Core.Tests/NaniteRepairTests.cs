@@ -3,6 +3,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -164,9 +165,11 @@ public class NaniteRepairTests
     /// amount. This is the P277 gate fix — without it the friendly round sails
     /// through and the hull never moves.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_nan_round_repairs_friendly_hull()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var shooter = NewShooter();
@@ -202,9 +205,11 @@ public class NaniteRepairTests
     /// port omits). This documents the chosen behavior: the nan is NOT a
     /// damage-dealer and NOT side-discriminating — you must aim it carefully.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_nan_round_also_restores_enemy_hull()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var shooter = NewShooter();
@@ -235,9 +240,11 @@ public class NaniteRepairTests
     /// but re-checks it here as a guard that the nan gate edit didn't open a
     /// hole for real weapons.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_positive_power_round_still_deals_no_damage()
     {
+        Require.Artwork();
         // Reuse the fightable hull+weapon from CombatDamageTests' Fight pick:
         // the cheapest positive-power projectile the fight hull can afford.
         var core = RepresentativeCore.Value;
@@ -267,9 +274,11 @@ public class NaniteRepairTests
     /// not shields, per AFS/Nanning). This is the branch the gate fix now
     /// feeds; it was previously unreachable dead code.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReceiveDamage_negative_amount_repairs_hull_and_does_not_touch_shield()
     {
+        Require.Artwork();
         var ship = NewTarget(-100f);
         DamageHullTo(ship, 0.6f);
         var shield = typeof(Ship).GetField("_shieldFraction", BindingFlags.Instance | BindingFlags.NonPublic)!;

@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -154,9 +155,11 @@ public class ProjectileHullHitCombatTests
     /// is the direct result of real weapon damage, and (via the strictly-growing
     /// count between two windows) that it fires <em>per hit</em>, not once.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shooting_fires_projectile_hit_event_per_landed_hit()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -202,9 +205,11 @@ public class ProjectileHullHitCombatTests
     /// discriminating inverse: it proves the event only follows a genuine
     /// landed hit that dealt damage.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Friendly_fire_suppressed_round_fires_no_projectile_hit_event()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -288,9 +293,11 @@ public class ProjectileHullHitCombatTests
     /// on). This is the discriminating inverse of the P364 hull-hit tests: a
     /// shield-absorbed strike is a real hit that must reach the client, but for
     /// the OTHER purpose (sound/flash), not the hull-impact spark.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_absorbed_hit_raises_projectile_hit_event_with_absorbed_flag()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -325,9 +332,11 @@ public class ProjectileHullHitCombatTests
     /// raises ProjectileHitEvent with <c>absorbedByShield=False</c> — the flag is
     /// explicitly cleared for the hull-impact spark case, so the client knows a
     /// hull spark is warranted.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_hit_raises_projectile_hit_event_with_clear_absorbed_flag()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];

@@ -5,6 +5,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -56,9 +57,11 @@ public class LiveChatWireTests
     private static Dictionary<short, short?> SideById(Srv server) =>
         server.Ships.ToDictionary(kv => kv.Ship.Id, kv => kv.Ship.SideId);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_bots_exchange_chat_Everyone_and_Team_over_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         ushort port = server.BoundPort;

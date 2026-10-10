@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -166,9 +167,11 @@ public sealed class ChaffTests
     /// spoofed onto it — <c>Target</c> becomes the chaff. A missile targeting a
     /// <em>different</em> ship in the same cluster is never touched. Both spoof and
     /// no-op are forced by the injectable RNG, mirroring Weapon's dispersion-RNG pattern.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DeployChaff_creates_chaff_and_spoofs_only_the_missile_targeting_the_firer()
     {
+        Require.Artwork();
         var (mission, sector, ship) = NewDomain();
         double now = mission.LastUpdate;
 
@@ -202,9 +205,11 @@ public sealed class ChaffTests
 
     /// <summary>⭐ The inverse roll: a missile with huge ChaffResistance, against an RNG
     /// pinned to 1.0 (roll = cm ≫ f), is <em>not</em> spoofed and keeps its target.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DeployChaff_does_not_spoof_when_the_roll_favors_the_missile()
     {
+        Require.Artwork();
         var (mission, sector, ship) = NewDomain();
         double now = mission.LastUpdate;
 
@@ -218,9 +223,11 @@ public sealed class ChaffTests
     /// <summary>A chaff fire with no missile currently targeting the firing ship spoofs
     /// nothing — the returned <see cref="Ship.DeployChaffResult.Spoofed"/> list is empty
     /// (the companion to the live "always one END_SPOOFING" assertion below).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DeployChaff_with_no_threatening_missile_spoofs_nothing()
     {
+        Require.Artwork();
         var (mission, sector, ship) = NewDomain();
         double now = mission.LastUpdate;
 
@@ -237,9 +244,11 @@ public sealed class ChaffTests
     /// <c>ChaffType.Radius</c> over its lifetime, and it expires (removed from the
     /// sector) once the mission time passes <c>now + Lifespan</c> — the native
     /// <c>chaffigc.cpp:82-83,78-79</c> behaviour, confirmed by direct time-advance.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Chaff_radius_grows_and_it_expires_after_lifespan()
     {
+        Require.Artwork();
         var (mission, sector, ship) = NewDomain();
         double now = mission.LastUpdate;
         var chaffType = RealChaff(mission.Core);
@@ -265,9 +274,11 @@ public sealed class ChaffTests
     /// target when the chaff leaves the cluster — reusing P179's existing per-tick
     /// <c>!_sector.Models.Contains(t)</c> mechanism (Missile.cs:205-208), confirming it
     /// isn't accidentally bypassed for a chaff-type target.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Spoofed_missile_drops_its_chaff_target_when_the_chaff_leaves_the_cluster()
     {
+        Require.Artwork();
         var (mission, sector, ship) = NewDomain();
         double now = mission.LastUpdate;
 
@@ -338,9 +349,11 @@ public sealed class ChaffTests
     /// report, minetypeigc.h:62-64 / probetypeigc.h:92-94), while chaff keeps its own
     /// <c>ChaffLauncher</c> value. Since mine and probe share <c>Dispenser</c>, the
     /// FIRE_EXPENDABLE dispatch distinguishes them by subtype, not equipment type.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mine_and_probe_launcher_subtypes_mount_under_equipment_type_dispenser()
     {
+        Require.Artwork();
         Assert.Equal(EquipmentType.Dispenser, new DataPartTypeIGC.MineLauncher(1).EquipmentType);
         Assert.Equal(EquipmentType.Dispenser, new DataPartTypeIGC.ProbeLauncher(1).EquipmentType);
         Assert.Equal(EquipmentType.ChaffLauncher, new DataPartTypeIGC.ChaffLauncher(1).EquipmentType);
@@ -503,9 +516,11 @@ public sealed class ChaffTests
     /// creates a real <see cref="Chaff"/> in the ship's sector, decrements the launcher's
     /// <c>Amount</c> by 1, and broadcasts FE(87) + CREATE_CHAFF(109) + END_SPOOFING(111)
     /// to the whole cluster (all sides).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_firing_mounted_chaff_launcher_creates_chaff_decrements_ammo_and_broadcasts()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var shooter = seat.Shooter;
         var observer = seat.ObserverBot;
@@ -534,9 +549,11 @@ public sealed class ChaffTests
     /// <c>Amount == 0</c> is refused — no Chaff is created, no broadcast is sent, and
     /// the <c>Amount</c> is not decremented. Temporarily removing the <c>Amount &lt;= 0</c>
     /// guard in <c>HandleFireExpendable</c> makes this test fail.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_firing_empty_chaff_launcher_is_refused()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var shooter = seat.Shooter;
         var observer = seat.ObserverBot;
@@ -557,9 +574,11 @@ public sealed class ChaffTests
     /// the shooter's sector whose target is the shooter, firing chaff deterministically
     /// breaks its lock — the observer receives MISSILE_SPOOFED(110) naming that missile,
     /// followed by exactly one END_SPOOFING(111).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_chaff_spoofs_a_zero_resistance_missile_targeting_the_firer_over_the_wire()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var shooter = seat.Shooter;
         var observer = seat.ObserverBot;
@@ -590,9 +609,11 @@ public sealed class ChaffTests
     /// decrements the launcher's <c>Amount</c> by 1, and broadcasts FE(87) + the
     /// auto EXPORT(26)/OT_mine to the <b>same side only</b> (the port's mine-object
     /// audience, BroadcastExportMine) — the cross-side enemy receives nothing.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var shooter = seat.Shooter;
         var observer = seat.ObserverBot;
@@ -631,9 +652,11 @@ public sealed class ChaffTests
     /// real <see cref="Probe"/> in the ship's sector, decrements the launcher's
     /// <c>Amount</c>, and broadcasts FE(87) + the auto EXPORT(26)/OT_probe to the
     /// same side only — mirroring the mine test with probe's Dispenser mount.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var shooter = seat.Shooter;
         var observer = seat.ObserverBot;

@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -113,9 +114,11 @@ public class P479SideGaRipcordProbesTests
     /// (raw <c>_hull.RipcordSpeed</c> in <see cref="Ship.ResetRipcordTimeLeft"/>)
     /// the boosted countdown equals the raw one, so the ratio assertion fails —
     /// recorded in the P479 report.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RipcordTime_GA_halves_the_seeded_countdown()
     {
+        Require.Artwork();
         var hull = Hull();
 
         var id = NewMission();
@@ -138,9 +141,11 @@ public class P479SideGaRipcordProbesTests
     /// <c>m_ammo != 0</c> gate of <c>probeigc.cpp:366-368</c>. Pre-fix (raw
     /// speed) the boosted ammo-probe speed equals identity, so it fails —
     /// recorded in the P479 report.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SpeedAmmo_GA_scales_ammo_probe_speed_but_not_energy_probe()
     {
+        Require.Artwork();
         var ammoType = AmmoProbeType();
         var pt = Core.Value.ProjectileTypes[ammoType.ProjectileTypeId];
 
@@ -157,9 +162,11 @@ public class P479SideGaRipcordProbesTests
     /// exact <c>m_ammo == 0</c> gate of <c>probeigc.h:223-233</c>. Pre-fix (raw
     /// lifespan) the boosted energy-probe lifespan equals identity, so it fails
     /// — recorded in the P479 report.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LifespanEnergy_GA_scales_energy_probe_lifespan_but_not_ammo_probe()
     {
+        Require.Artwork();
         var ammoType = AmmoProbeType();
         var pt = Core.Value.ProjectileTypes[ammoType.ProjectileTypeId];
 
@@ -174,9 +181,11 @@ public class P479SideGaRipcordProbesTests
     /// <summary>The projectile-type resolver resolves a real armed probe's
     /// projectile from the launcher's core, and returns null for an unarmed
     /// probe.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_resolves_its_projectile_type_from_the_launcher_core()
     {
+        Require.Artwork();
         var ammoType = AmmoProbeType();
         var probe = ArmedProbe(NewMission(), ammoType);
         var resolved = probe.ResolveProjectileType();
@@ -188,9 +197,11 @@ public class P479SideGaRipcordProbesTests
     }
 
     /// <summary>Indices match native, and a sideless probe reads identity.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Indices_match_native_and_sideless_probe_is_identity()
     {
+        Require.Artwork();
         Assert.Equal(14, GlobalAttributeSet.SpeedAmmo);
         Assert.Equal(15, GlobalAttributeSet.LifespanEnergy);
         Assert.Equal(20, GlobalAttributeSet.RipcordTime);
@@ -215,9 +226,11 @@ public class P479SideGaRipcordProbesTests
     /// per-consumer synthetic tests above are the primary assertions for 14/15,
     /// while the real development and civ scan in the report lists who touches
     /// each attribute.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_dev_155_GA_Ripcord_scales_the_countdown()
     {
+        Require.Artwork();
         // Real development 155, verified by name and gas.
         var dev = Core.Value.Developments[155];
         Assert.Equal("GA: Ripcord 1", dev.Name);

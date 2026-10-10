@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -134,9 +135,11 @@ public sealed class OrderChangeStayDockedLiveTests
     /// its own side to <c>c_cidDoNothing</c>; the server sets the NPC's
     /// <see cref="Ship.StayDocked"/> = true server-side — the first real
     /// player→NPC ORDER_CHANGE producing real state.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_npc_command_do_nothing_sets_stay_docked_true()
     {
+        Require.Artwork();
         using var seat = SeatOne();
 
         // Spawn an NPC on the peer's side and dock it at a real station
@@ -177,9 +180,11 @@ public sealed class OrderChangeStayDockedLiveTests
     /// NPC command in the same test — FIFO over the connection guarantees the
     /// earlier non-NPC message was processed before the NPC one, so observing
     /// the NPC latch set proves the peer's own StayDocked was never touched.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Order_change_on_non_npc_own_ship_is_documented_no_op()
     {
+        Require.Artwork();
         using var seat = SeatOne();
 
         Assert.False(seat.Peer.IsNpc, "the seated peer is a real player, not an NPC");

@@ -9,6 +9,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -31,7 +32,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class ShipDeleteGoneLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -108,9 +109,11 @@ public sealed class ShipDeleteGoneLiveTests
     /// <summary>⭐ Same-side warp-out: the watcher (still in sector A) must latch
     /// the warper as IsGone the moment it transits; the warper's own peer must
     /// NOT hide its own ship. This is the exact reported live-playtest bug.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SameSide_WarperLeavesSector_WatcherLatchesGone_OwnPeerNotHidden()
     {
+        Require.Artwork();
         using var server = new Srv();
         int placed = 0;
         Ship? warper = null; Sector? sec0 = null; ResolvedWarp? awayWarp = null;
@@ -222,9 +225,11 @@ public sealed class ShipDeleteGoneLiveTests
     /// <summary>⭐ Cross-side warp-out: a BRAVO ship warps out of the sector an
     /// ALPHA watcher is in; the cross-side watcher's ClientWorld still latches
     /// IsGone (it had the ship via P369 identity + telemetry).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CrossSide_WarperLeavesSector_WatcherLatchesGone()
     {
+        Require.Artwork();
         using var server = new Srv();
         int placed = 0;
         Ship? warper = null; Sector? sec0 = null;
@@ -296,9 +301,11 @@ public sealed class ShipDeleteGoneLiveTests
     /// watcher's view (SDR_DOCKED -> IsGone); on undock (FM_C_DOCKED) telemetry
     /// resumes and the watcher's ClientWorld clears IsGone — the ship is back in
     /// view, exactly the "comes back into view" requirement.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DockOut_WatcherLatchesGone_UndockReturnsAndClears()
     {
+        Require.Artwork();
         using var server = new Srv();
         int placed = 0;
         Ship? docker = null; Sector? dockSector = null; Vector3 stationPos = default;

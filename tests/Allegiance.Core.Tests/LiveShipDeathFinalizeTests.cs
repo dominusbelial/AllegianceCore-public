@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -130,9 +131,11 @@ public class LiveShipDeathFinalizeTests
     /// <c>_models</c> and kept broadcasting every tick. The wire still carries
     /// the death (KILL_SHIP with launcher NULL + SHIP_DELETE), and NO
     /// ENTER_LIFEPOD arrives (no respawn).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Oxygen_dead_lifepod_with_no_friendly_station_is_finalized_server_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? noStationSector = null;
         var spawnCount = 0;

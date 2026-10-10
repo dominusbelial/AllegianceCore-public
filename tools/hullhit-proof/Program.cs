@@ -138,7 +138,7 @@ sealed class ProofRunner : Game
     private static StaticCore RepresentativeCore()
     {
         var env = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH");
-        string art = env is { Length: > 0 } ? env : "/home/domingo/Development/Artwork";
+        string art = env is { Length: > 0 } ? env : ExternalPaths.Resolve(ExternalResourceKind.Artwork);
         var file = IgcReader.ParseFile(Path.Combine(art, "PCore001.igc"));
         if (file.Wrapper != IgcWrapper.VersionAndDataSize)
             throw new InvalidDataException("PCore001.igc is not a static core");
@@ -147,7 +147,7 @@ sealed class ProofRunner : Game
 
     private static Cfg Config(int port = 0) => new()
     {
-        ArtPath = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") is { Length: > 0 } env ? env : "/home/domingo/Development/Artwork",
+        ArtPath = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") is { Length: > 0 } env ? env : ExternalPaths.Resolve(ExternalResourceKind.Artwork),
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,

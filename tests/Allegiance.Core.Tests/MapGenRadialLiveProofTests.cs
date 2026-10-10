@@ -9,6 +9,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Mg = global::Allegiance.Server.MapGenConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -79,9 +80,11 @@ public class MapGenRadialLiveProofTests
     /// each map generated through the real <c>ToCoreParams →
     /// MissionMapGenerator.Generate → Mission.Assemble</c> boot path with the
     /// expected sector count and a real generated home base + ore.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AllRadialTypes_BootHeadless_AreConfigSelectable()
     {
+        Require.Artwork();
         // (name, topology, teams, expectedSectors); teams null => file-load game.
         var games = new (string name, string? type, int teams, int sectors)[]
         {
@@ -139,9 +142,11 @@ public class MapGenRadialLiveProofTests
     /// generated warp's collision volume, and is transited to a genuine
     /// SnowFlake neighbour sector (per the traced adjacency) — the generated
     /// radial topology is traversable over the real wire path.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedSnowFlake_PeerFliesThroughWarp_ToTracedNeighbour()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         short? spawnSectorId = null;
@@ -203,9 +208,11 @@ public class MapGenRadialLiveProofTests
     /// spawner, which seats it in its side's generated home sector; driving
     /// into the generated home station's dock radius docks it — the generated
     /// SnowFlake base is genuinely dockable.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedSnowFlake_DefaultSpawnedPeer_DocksAtGeneratedHomeStation()
     {
+        Require.Artwork();
         using var server = new Srv();
         // ShipSpawner NOT overridden — exercise the real default spawner.
         server.Boot(SnowConfig());

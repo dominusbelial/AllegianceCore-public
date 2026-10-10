@@ -9,6 +9,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -29,7 +30,7 @@ namespace Allegiance.ClientCore.Tests;
 public class TreasureDropLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     // XXV_simple (measured, P111 report): 1052 = no-station fly sector.
     private const short FlySector = 1052;
@@ -76,9 +77,11 @@ public class TreasureDropLiveTests
     /// part-treasure and broadcasts FM_S_TREASURE(28) sector-wide; the client
     /// world hydrates <see cref="ClientWorld.Treasures"/> at the treasure's real
     /// position. This is the exact path that puts a treasure in the 3D scene.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SendDropPart_ClientWorldReceivesTreasureSpawn_OverTheWire()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         Ship? placedShip = null;

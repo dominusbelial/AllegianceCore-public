@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -172,9 +173,11 @@ public class LiveCountdownStartPingTests
     /// peers. (Readiness is arranged by setting Side.Ready directly, bypassing
     /// the ready-up auto-start, so the manual START_GAME's own NotStarted gate
     /// is exercisable.)</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void StartGame_owner_all_ready_goes_through_real_countdown()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -229,9 +232,11 @@ public class LiveCountdownStartPingTests
     /// <summary>⭐ A non-owner sending START_GAME is refused — the mission stays
     /// NotStarted and no SET_START_TIME is broadcast, even though all sides are
     /// ready.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void StartGame_from_non_owner_is_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -259,9 +264,11 @@ public class LiveCountdownStartPingTests
 
     /// <summary>⭐ The owner's START_GAME while not every occupied side is ready
     /// is refused (the port's own simplified all-ready gate).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void StartGame_not_all_ready_is_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -286,9 +293,11 @@ public class LiveCountdownStartPingTests
     /// <summary>⭐ The owner's START_GAME is refused once the mission is already
     /// Starting (mid-countdown) or already Started — it never re-triggers the
     /// countdown or double-broadcasts SET_START_TIME.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void StartGame_refused_once_starting_or_started()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -330,9 +339,11 @@ public class LiveCountdownStartPingTests
     /// the mission), with a real server timestamp stamped into TimeServer and
     /// the client's own TimeClient preserved — regardless of mission/side state
     /// (here the mission is NotStarted with nobody readied).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ping_echoes_to_sender_only_with_server_timestamp()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -364,9 +375,11 @@ public class LiveCountdownStartPingTests
     /// peers — a peer on mission B (sharing the same numeric side id) sees
     /// neither, and mission B's stage is untouched (the P180/P178 must-not-
     /// regress per-mission-scoping class).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_countdown_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -209,9 +210,11 @@ public class LiveTeleportProbeRipcordTests
     /// probe.Radius + ship.Radius + 25 of the probe. Must-fail pre-P454: no
     /// model is found (only the station and ship tiers existed), so the request
     /// is denied.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Wire_deployed_teleport_probe_is_the_anchor_and_ripcord_lands_near_it()
     {
+        Require.Artwork();
         var (server, bot, ctx) = Setup(out short rid);
         ResetRipcord(bot);
         var core = ctx.Mission.Core;
@@ -262,9 +265,11 @@ public class LiveTeleportProbeRipcordTests
     /// <summary>⭐ The same probe deployed through FIRE_EXPENDABLE is NOT chosen
     /// before its activation delay elapses (a request made immediately, while
     /// <c>(now − DeployTime) &lt; DtRipcord</c>, is denied).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_not_yet_active_is_denied_before_activation_delay()
     {
+        Require.Artwork();
         var (server, bot, ctx) = Setup(out short rid);
         ResetRipcord(bot);
         var core = ctx.Mission.Core;
@@ -284,9 +289,11 @@ public class LiveTeleportProbeRipcordTests
 
     /// <summary>⭐ A NON-teleport probe (DtRipcord &lt; 0) is never a ripcord
     /// anchor even after ample time has passed — the request is denied.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_teleport_probe_is_denied_even_after_long_delay()
     {
+        Require.Artwork();
         var (server, bot, ctx) = Setup(out short rid);
         ResetRipcord(bot);
         var core = ctx.Mission.Core;
@@ -307,9 +314,11 @@ public class LiveTeleportProbeRipcordTests
     /// <summary>⭐ Tier ordering 2&gt;3: when BOTH a friendly ripcord station and
     /// a (non-command) teleport probe sit in the target sector, the STATION wins
     /// (the probe tier runs only after the station tier finds nothing).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Friendly_ripcord_station_wins_over_probe()
     {
+        Require.Artwork();
         var (server, bot, ctx) = Setup(out short rid);
         ResetRipcord(bot);
         var core = ctx.Mission.Core;
@@ -339,9 +348,11 @@ public class LiveTeleportProbeRipcordTests
     /// command-target probe tier runs before the station tier (shipIGC.cpp:
     /// 3803-3814 before 3835-3838). Also proves a Probe CAN be a command target
     /// (Ship.CommandTarget is a <see cref="Model"/>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Command_target_teleport_probe_beats_friendly_station()
     {
+        Require.Artwork();
         var (server, bot, ctx) = Setup(out short rid);
         ResetRipcord(bot);
         var core = ctx.Mission.Core;
@@ -371,9 +382,11 @@ public class LiveTeleportProbeRipcordTests
     /// <summary>⭐ Tier 3, no goal: with TWO same-side teleport probes in the
     /// target sector and no command target, the MOST RECENTLY deployed wins
     /// (native searches the probe list backwards, shipIGC.cpp:3849/3874).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Most_recently_deployed_teleport_probe_wins_without_goal()
     {
+        Require.Artwork();
         var (server, bot, ctx) = Setup(out short rid);
         ResetRipcord(bot);
         var core = ctx.Mission.Core;
@@ -408,9 +421,11 @@ public class LiveTeleportProbeRipcordTests
     /// <summary>⭐ A probe that vanishes mid-countdown (destroyed or expired —
     /// both remove it from the sector) aborts the ripcord: RIPCORD_ABORTED,
     /// state cleared, no teleport.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_destroyed_mid_countdown_aborts_ripcord()
     {
+        Require.Artwork();
         var (server, bot, ctx) = Setup(out short rid);
         ResetRipcord(bot);
         var core = ctx.Mission.Core;

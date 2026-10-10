@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -27,7 +28,7 @@ namespace Allegiance.ClientCore.Tests;
 public class MissileLockLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -82,9 +83,11 @@ public class MissileLockLiveTests
     /// (real server-computed values over the real transport), the partial + acquired
     /// tips post to the chat log, then dragging the target out of range drops the lock
     /// to 0 (same target id) and posts the "lost" tip.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         Ship? placedShip = null;

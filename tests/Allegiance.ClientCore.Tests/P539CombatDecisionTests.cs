@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Tools.McpSpawner;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -17,7 +18,7 @@ namespace Allegiance.ClientCore.Tests;
 public class P539CombatDecisionTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static StaticCore RealCore() =>
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
@@ -62,9 +63,11 @@ public class P539CombatDecisionTests
 
     // ── Dogfight default weapon is NOT the dispersion-0 test gun ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DogfightDefaultWeapon_IsNotTheDispersionZeroTestGun_AndMountsHull()
     {
+        Require.Artwork();
         var fightHull = Catalog.DefaultFighterHull();
         var dogfight = Catalog.DogfightWeaponPart(fightHull.Id);
         var testGun = Catalog.DefaultWeaponPart();
@@ -89,9 +92,11 @@ public class P539CombatDecisionTests
         Assert.False(BotManager.DecidePodBehavior(ownHullIsLifepod: false));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LifepodHullIds_DetectedViaRealCapability()
     {
+        Require.Artwork();
         var core = RealCore();
         var pods = core.HullTypes.Values.Where(h => h.HasCapability(DataHullTypeIGC.HabmLifepod)).ToList();
         Assert.NotEmpty(pods);

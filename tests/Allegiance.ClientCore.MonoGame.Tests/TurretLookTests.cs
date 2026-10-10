@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.ClientCore.MonoGame.Flight;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -19,7 +20,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class TurretLookTests
 {
     private static string ArtRoot =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly Lazy<StaticCore> Core = new(() =>
         StaticCore.Load(IgcReader.ParseFile(System.IO.Path.Combine(ArtRoot, "PCore001.igc"))));
@@ -43,7 +44,8 @@ public sealed class TurretLookTests
         Assert.Equal(ux, bux, 5); Assert.Equal(uy, buy, 5); Assert.Equal(uz, buz, 5);
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(0f, 0f, 0f, -1f)]        // identity neutral — no turn
     [InlineData(1f, 0f, 0f, 1f)]        // full yaw, full throttle
     [InlineData(0f, 1f, 0f, 1f)]        // full pitch
@@ -53,6 +55,7 @@ public sealed class TurretLookTests
     [InlineData(0.9f, 0.9f, 0f, -1f)]
     public void Matches_server_ExecuteTurretMove(float y, float p, float r, float thr)
     {
+        Require.Artwork();
         var controls = new ControlData(y, p, r, thr);
         float dt = 0.083f;                                  // ~12 Hz frame
         var ship = NewShip();
@@ -67,9 +70,11 @@ public sealed class TurretLookTests
         AssertSame(viaServer, viaTurretLook);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Matches_server_over_many_deltas_from_a_yawed_start()
     {
+        Require.Artwork();
         var ship = NewShip();
         var start = Orientation.Identity.Copy();
         start.Yaw(0.7f);

@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -160,9 +161,11 @@ public sealed class DroneBucketSpawnsDroneLiveTests
     /// <c>PilotType == Wingman</c> and the drone type's real hull, and picks a
     /// nearby enemy as its <see cref="Ship.AttackTarget"/>.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Wingman_drone_type_spawns_real_hulled_wingman_that_engages_a_nearby_enemy()
     {
+        Require.Artwork();
         var (server, bot, side, mission) = BootOwnedSide();
         using (server)
         using (bot)
@@ -198,9 +201,11 @@ public sealed class DroneBucketSpawnsDroneLiveTests
     /// <summary>⭐ Miner: funding the real Miner drone-type bucket spawns a NEW
     /// Miner-pilot NPC on the real drone hull and it enters the mine cycle
     /// (acquires a <see cref="Ship.MiningAsteroidTarget"/> on a mineable rock).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_miner_drone_type_bucket_spawns_real_hulled_miner_that_enters_the_mine_cycle()
     {
+        Require.Artwork();
         var (server, bot, side, mission) = BootOwnedSide();
         using (server)
         using (bot)
@@ -236,9 +241,11 @@ public sealed class DroneBucketSpawnsDroneLiveTests
     /// where-to-lay chat (tower text, since these PCore001 layers lay tower
     /// expendables, not mines), and it parks at a rock
     /// (<see cref="Ship.LayerAsteroidTarget"/>, the P161 default; no deploy).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_layer_drone_type_bucket_spawns_real_hulled_layer_sends_chat_and_parks_at_a_rock()
     {
+        Require.Artwork();
         var (server, bot, side, mission) = BootOwnedSide();
         using (server)
         using (bot)
@@ -281,9 +288,11 @@ public sealed class DroneBucketSpawnsDroneLiveTests
     /// <summary>⭐ Carrier: funding a real Carrier drone-type bucket spawns the
     /// carrier (so the investment isn't lost), but it has no behaviour arm — it
     /// sits idle (documented gap). No chat (native sends none for a carrier).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_carrier_drone_type_bucket_spawns_carrier_without_behaviour()
     {
+        Require.Artwork();
         var (server, bot, side, mission) = BootOwnedSide();
         using (server)
         using (bot)

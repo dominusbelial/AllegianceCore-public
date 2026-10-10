@@ -1,3 +1,5 @@
+using Allegiance.TestInfra;
+
 namespace Allegiance.Core.Tests;
 
 /// <summary>
@@ -27,9 +29,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataConstantsIGC V)> ConstantRecords()
         => RawOf(IgcObjectType.Constants).Select(t => (t.File, DataConstantsIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Constants_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in ConstantRecords())
         {
@@ -51,9 +55,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataMissileTypeIGC V)> Missiles()
         => RawOf(IgcObjectType.MissileType).Select(t => (t.File, DataMissileTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MissileType_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Missiles())
         {
@@ -88,9 +94,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataStationTypeIGC V)> Stations()
         => RawOf(IgcObjectType.StationType).Select(t => (t.File, DataStationTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void StationType_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Stations())
         {
@@ -124,9 +132,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataDroneTypeIGC V)> Drones()
         => RawOf(IgcObjectType.DroneType).Select(t => (t.File, DataDroneTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DroneType_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Drones())
         {
@@ -154,9 +164,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataProbeTypeIGC V)> Probes()
         => RawOf(IgcObjectType.ProbeType).Select(t => (t.File, DataProbeTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ProbeType_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Probes())
         {
@@ -189,9 +201,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataChaffTypeIGC V)> Chaffs()
         => RawOf(IgcObjectType.ChaffType).Select(t => (t.File, DataChaffTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ChaffType_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Chaffs())
         {
@@ -221,9 +235,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataMineTypeIGC V)> Mines()
         => RawOf(IgcObjectType.MineType).Select(t => (t.File, DataMineTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MineType_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Mines())
         {
@@ -254,9 +270,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
         => RawOf(IgcObjectType.ProjectileType).Select(t => (t.File, DataProjectileTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ProjectileType_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Projectiles())
         {
@@ -285,9 +303,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataCivilizationIGC V)> Civilizations()
         => RawOf(IgcObjectType.Civilization).Select(t => (t.File, DataCivilizationIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Civilization_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Civilizations())
         {
@@ -315,9 +335,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataDevelopmentIGC V)> Developments()
         => RawOf(IgcObjectType.Development).Select(t => (t.File, DataDevelopmentIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Development_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Developments())
         {
@@ -341,9 +363,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataHullTypeIGC V)> Hulls()
         => RawOf(IgcObjectType.HullType).Select(t => (t.File, DataHullTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Hulls())
         {
@@ -393,9 +417,11 @@ public class PayloadDecodeTests
         => RawOf(IgcObjectType.PartType).Where(t => t.Payload.Length == DataLauncherTypeIGC.Size)
             .Select(t => (t.File, DataLauncherTypeIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PartType_decodes_across_corpus_by_subtype()
     {
+        Require.Artwork();
         // No OT_partType record is a bare DataPartTypeIGC (396 bytes): every one
         // carries a subtype tail, so size dispatch must always pick a subtype.
         Assert.DoesNotContain(DataPartTypeIGC.Size,
@@ -455,9 +481,11 @@ public class PayloadDecodeTests
         Assert.True(counts.GetValueOrDefault(EquipmentType.Pack) >= 200, "pack count");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LauncherType_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Launchers())
         {
@@ -471,9 +499,11 @@ public class PayloadDecodeTests
         Assert.True(n >= 11000, $"expected ~11511 launcher records, saw {n}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PartType_offsets_cross_reference_same_core()
     {
+        Require.Artwork();
         // Per-file id spaces: projectileTypeIds from OT_projectileType,
         // expendable ids from the expendable types, and part ids from
         // OT_partType launcher + part records — all in the SAME file. A weapon
@@ -533,9 +563,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataTreasureSetIGC V)> TreasureSets()
         => RawOf(IgcObjectType.TreasureSet).Select(t => (t.File, DataTreasureSetIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TreasureSet_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in TreasureSets())
         {
@@ -555,9 +587,11 @@ public class PayloadDecodeTests
         Assert.True(n >= 95, $"expected ~99 treasure sets, saw {n}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TreasureSet_offsets_cross_reference_same_core()
     {
+        Require.Artwork();
         // Per-file part ids (from OT_partType) and a sanity set of powerup
         // bitmaps. A Part-coded treasureID absent from the core means a misread
         // entry offset; Powerup ids must be a valid 0x01..0x1F bitmap.
@@ -618,9 +652,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataStationIGC V)> StationsM()
         => RawOf(IgcObjectType.Station).Select(t => (t.File, DataStationIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Station_decodes_across_corpus_with_cross_refs()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in StationsM())
         {
@@ -643,9 +679,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataClusterIGC V)> Clusters()
         => RawOf(IgcObjectType.Cluster).Select(t => (t.File, DataClusterIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cluster_decodes_across_corpus()
     {
+        Require.Artwork();
         var n = 0;
         foreach (var (file, v) in Clusters())
         {
@@ -671,9 +709,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataWarpIGC V)> Warps()
         => RawOf(IgcObjectType.Warp).Select(t => (t.File, DataWarpIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Warp_decodes_across_corpus_with_cross_refs()
     {
+        Require.Artwork();
         // Per-file sets of valid destinations: cluster IDs and warp IDs in the same file.
         var destinationsByFile = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
         foreach (var p in Corpus.Files)
@@ -721,9 +761,11 @@ public class PayloadDecodeTests
     public static IEnumerable<(string File, DataAsteroidIGC V)> Asteroids()
         => RawOf(IgcObjectType.Asteroid).Select(t => (t.File, DataAsteroidIGC.Decode(t.Payload)));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Asteroid_decodes_across_corpus_with_cross_refs()
     {
+        Require.Artwork();
         var clusterIdsByFile = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
         foreach (var p in Corpus.Files)
         {

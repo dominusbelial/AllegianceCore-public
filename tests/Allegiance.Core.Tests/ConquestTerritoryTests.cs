@@ -3,6 +3,7 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -76,9 +77,11 @@ public sealed class ConquestTerritoryTests
     /// #1051 side0 + #1052 side1, both Flag → 50/50), and a side crossing the 65%
     /// threshold is declared the winner — the port of
     /// <c>fsmission.cpp:3581-3625</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Conquest_percent_updates_and_crosses_threshold_declares_winner()
     {
+        Require.Artwork();
         var m = Assembly();
         m.ConquestEnabled = true;
 
@@ -104,9 +107,11 @@ public sealed class ConquestTerritoryTests
     /// the conquest total (the kill-path <c>pstationKilled</c> exclusion,
     /// <c>fsmission.cpp:3596</c>): excluding the sole side0 Flag station leaves
     /// only side1's, so side1 hits 100%.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Conquest_excludes_the_just_killed_station_from_the_total()
     {
+        Require.Artwork();
         var m = Assembly();
         m.ConquestEnabled = true;
 
@@ -124,9 +129,11 @@ public sealed class ConquestTerritoryTests
     /// NOBODY — the proof that zero-station clusters contribute nothing
     /// (<c>fsmission.cpp:3647-3653</c>). Threshold (13 clusters @50%) = 6, so no
     /// winner here.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Territory_counts_unanimous_clusters_and_ignores_empty_ones()
     {
+        Require.Artwork();
         var m = Assembly();
         m.TerritoryEnabled = true;
 
@@ -142,9 +149,11 @@ public sealed class ConquestTerritoryTests
     /// NOBODY — the strict unanimous-ownership rule, not a majority. Adding a
     /// side1 station into Ceto (which held only side0's #1051) makes it mixed, so
     /// side0 loses that territory while side1 keeps its own Quaoar.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Territory_mixed_ownership_cluster_counts_for_nobody()
     {
+        Require.Artwork();
         var m = Assembly();
         m.TerritoryEnabled = true;
 
@@ -162,9 +171,11 @@ public sealed class ConquestTerritoryTests
     /// <summary>⭐ The unanimous test is a strict full-cluster test: a cluster
     /// owned by one side counts even when that side has only ONE station there —
     /// unanimity is about no dissent, not a quorum.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Territory_single_station_cluster_counts_for_its_side()
     {
+        Require.Artwork();
         var m = Assembly();
         m.TerritoryEnabled = true;
 
@@ -184,9 +195,11 @@ public sealed class ConquestTerritoryTests
     /// is a complete no-op: no winner, no change flag, and every side's fields
     /// stay 0 — the regression guarantee that existing missions/tests (which
     /// never set these flags) are unaffected.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Both_flags_default_false_yields_no_change_and_no_winner()
     {
+        Require.Artwork();
         var m = Assembly();
         Assert.False(m.ConquestEnabled);
         Assert.False(m.TerritoryEnabled);
@@ -202,9 +215,11 @@ public sealed class ConquestTerritoryTests
     /// <summary>⭐ A mission not in <c>Started</c>/<c>Starting</c> never recomputes
     /// (the native stage gate, <c>fsmission.cpp:3575-3578</c>) — the idempotency
     /// guard that stops an Over mission from re-broadcasting.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_started_mission_never_recomputes()
     {
+        Require.Artwork();
         var m = Assembly();
         m.ConquestEnabled = true;
         m.Stage = MissionStage.NotStarted;
@@ -263,9 +278,11 @@ public sealed class ConquestTerritoryTests
 
     /// <summary>⭐ <see cref="GameState.ForMission"/> fills conquest/territory from
     /// each real side in side-id order and leaves nFlags/nArtifacts all-zero.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GameState_ForMission_fills_sides_and_zeroes_flags()
     {
+        Require.Artwork();
         var m = Assembly();
         m.ConquestEnabled = true;
         m.RecomputeConquestAndTerritory(null);          // side0=50, side1=50

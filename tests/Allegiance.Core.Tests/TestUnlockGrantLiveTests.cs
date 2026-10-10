@@ -11,6 +11,7 @@ using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using Tu = global::Allegiance.Server.TestUnlockConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -198,9 +199,11 @@ public sealed class TestUnlockGrantLiveTests
     /// money at seat, and the docked Bot buys a real tech-gated capital-class
     /// hull + a gated weapon through BUY_LOADOUT: both granted, wallet charged
     /// the real price.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GrantOn_SideHasUnion_BotBuysCapitalAndGatedWeapon_ChargedRealPrice()
     {
+        Require.Artwork();
         using var h = BootDocked(UnlockConfig());
         short botId = h.BotId;
         var mission = h.Server.Missions[0];
@@ -253,9 +256,11 @@ public sealed class TestUnlockGrantLiveTests
     /// <summary>⭐ Option OFF (absent section) — the same side keeps its starter
     /// dev techs (union NOT granted) and the same capital hull is refused: the
     /// option's only effect is the explicit config.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GrantOff_SideKeepsStarterTechs_SameCapitalRefused()
     {
+        Require.Artwork();
         using var h = BootDocked(NoUnlockConfig());
         short botId = h.BotId;
         var mission = h.Server.Missions[0];

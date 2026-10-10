@@ -5,7 +5,8 @@
 # 15v15 showcase fleet and a windowed client, waiting long enough for the fleets
 # to cross the fields (mine hits + violet pops + real-window field capture).
 set -uo pipefail
-REPO=/home/domingo/Development/AllegianceCore
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ART="${ALLEGIANCE_ARTWORK_PATH:-$REPO/../Artwork}"
 PORT=6078
 OUT="$REPO/p591d-full"
 rm -rf "$OUT"; mkdir -p "$OUT"
@@ -15,7 +16,7 @@ MCP_EXE="$REPO/tools/allegiance-mcp/bin/Release/net10.0/allegiance-mcp"
 DRIVER="$REPO/scripts/mcp_driver.py"
 cat > "$OUT/server.json" <<EOF
 {
-  "artPath": "/home/domingo/Development/Artwork", "staticCore": "PCore001.igc", "port": $PORT,
+  "artPath": "$ART", "staticCore": "PCore001.igc", "port": $PORT,
   "updatesPerSecond": 20, "consoleVerbose": true,
   "games": [ { "name": "P591d Showcase", "map": "m2xspiderw.igc", "teams": 2, "civIds": [ 25, 3 ], "sideNames": [ "Alpha", "Bravo" ] } ],
   "liveSettings": {
@@ -52,7 +53,7 @@ grep -A2 "RESULT spawn_scenario" "$MCO" | tail -3
 grep -o '"minefields":\[[^]]*\]' "$MCO" | tail -c 1200
 
 echo "== launching windowed client (capture field + pops) =="
-export ALLEGIANCE_ARTWORK_PATH="/home/domingo/Development/Artwork"
+export ALLEGIANCE_ARTWORK_PATH="$ART"
 export MONOGAME_GL_PROFILE=OpenGL
 DISPLAY="${DISPLAY:-:0}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
   "$CLIENT_EXE" 127.0.0.1 "$PORT" "proof" --auto-side 0 --auto-ready \

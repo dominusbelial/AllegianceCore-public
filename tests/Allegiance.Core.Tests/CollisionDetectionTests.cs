@@ -1,5 +1,6 @@
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -46,9 +47,11 @@ public class CollisionDetectionTests
         Assert.Equal(9.5f, ev[0].TCollision, 2);   // sphere-sweep is analytic; tolerance 1e-2
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void HeadOn_RealHulls_CollideAtPredictableTime()
     {
+        Require.Artwork();
         // Two identical fig01 fighters head-on. fig01's leading vertex along the
         // approach axis is |x|=1.936683 (fig01.cvh). Centers start at ±20; closing
         // speed = 2·10 = 20. First contact when center separation = 2·1.936683,
@@ -69,9 +72,11 @@ public class CollisionDetectionTests
 
     // ── non-colliding courses ──────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ParallelCourses_NeverCollide()
     {
+        Require.Artwork();
         // Identical fig01 fighters flying parallel +x, separated in z by 8 >
         // hull z-extent sum (2·2.644). No contact ever.
         var a = Hull("A", Fig01.Value, new Vector3(0f, 0f, -4f), new Vector3(20f, 0f, 0f));
@@ -104,9 +109,11 @@ public class CollisionDetectionTests
 
     // ── real hull geometry ─────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipIntoStationHull_Collides()
     {
+        Require.Artwork();
         // fig01 fighter flies +x into a static dgsup hull. Sphere seed predicts
         // contact at ~7.96 s (radii 48.95+2.88), hull refinement locates the true
         // surface contact; both inside the 10 s step.
@@ -123,9 +130,11 @@ public class CollisionDetectionTests
         Assert.Same(station, hit.B);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MultiHullCollider_ExercisesSubHulls()
     {
+        Require.Artwork();
         // p1_sup has 6 convex sub-hulls; a fig01 fighter flies into it. The
         // narrow phase iterates sub-hull combinations (HullCollide). Found.
         var station = Hull("p1_sup", P1Sup.Value, Vector3.Zero, Vector3.Zero, isStatic: true);
@@ -142,9 +151,11 @@ public class CollisionDetectionTests
 
     // ── determinism & ordering ─────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Determinism_IdenticalSetup_YieldsIdenticalListTwice()
     {
+        Require.Artwork();
         CollisionEvent[] Run()
         {
             var d = new CollisionDetector();
@@ -191,9 +202,11 @@ public class CollisionDetectionTests
         protected override void OnUpdate(double now, double dt) { }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Model_GainsOptionalHull_AndCreatesCollider()
     {
+        Require.Artwork();
         var m = new TestModel(1, new Vector3(0f, 0f, 0f)) { Hull = Fig01.Value };
         Assert.Null(new TestModel(2, Vector3.Zero).CreateCollider(Fig01.Value.Radius));   // no hull → null
 

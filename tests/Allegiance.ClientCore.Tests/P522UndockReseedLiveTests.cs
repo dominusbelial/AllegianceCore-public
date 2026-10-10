@@ -10,6 +10,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -48,7 +49,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P522UndockReseedLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -311,9 +312,11 @@ public sealed class P522UndockReseedLiveTests
     /// resumes, so the first post-undock SHIP_UPDATE matches the launch point.
     /// Red when the re-seed is removed (see
     /// <see cref="Without_reseed_each_undock_adds_a_reject_and_SHIP_RESET"/>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed()
     {
+        Require.Artwork();
         var server = new Srv();
         Ship? captured = null;
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
@@ -347,9 +350,11 @@ public sealed class P522UndockReseedLiveTests
     /// resume-from-stale-pose behaviour), each undock adds a reject + SHIP_RESET
     /// — reproducing Domingo's "teleport on every launch". Proves this live test
     /// genuinely fails when the fix is removed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Without_reseed_each_undock_adds_a_reject_and_SHIP_RESET()
     {
+        Require.Artwork();
         var server = new Srv();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {

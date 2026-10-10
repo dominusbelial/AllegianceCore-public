@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -101,9 +102,11 @@ public class SetWingIdTests
         Assert.Equal((short)10, SetWingId.WidMax);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SetWingId_self_tag_relays_sidewide_not_sectorwide_and_mutates()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         // P368: default spawn now seats each side in its own home sector. This
@@ -206,9 +209,11 @@ public class SetWingIdTests
     /// DIFFERENT ship's wing (not the sender's own) is silently ignored — no
     /// broadcast to anyone, no server-side state change (the leader-retag branch,
     /// FedSrv.CPP:5323-5330, is unreachable without a team-leader system).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SetWingId_foreign_ship_target_is_silently_ignored()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var bots = new[] { new FltBot(), new FltBot() };

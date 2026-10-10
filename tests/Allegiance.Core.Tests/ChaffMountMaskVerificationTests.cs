@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -36,9 +37,11 @@ public sealed class ChaffMountMaskVerificationTests
     private static DataHullTypeIGC By(StaticCore core, string name)
         => core.HullTypes.Values.First(x => x.Name == name);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RealChaffLaunchersHaveLowBitMasksMatchingTheDocDataFact()
     {
+        Require.Artwork();
         var core = Core();
 
         var chaffMasks = core.Launchers
@@ -60,9 +63,11 @@ public sealed class ChaffMountMaskVerificationTests
     /// offset-509 decode produced. A Fighter has the Counter socket (0x0001); a
     /// capital (Corvette) has the Hvy-Counter socket (0x0002); no hull carries a
     /// high-bit-space value.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void HullChaffSlots_AreLowBitMasks_NotTheBuggyHighBitSpace()
     {
+        Require.Artwork();
         var core = Core();
 
         var fighter = By(core, "Fighter");
@@ -84,9 +89,11 @@ public sealed class ChaffMountMaskVerificationTests
     /// A Fighter's Counter socket (0x0001) accepts a real Counter chaff
     /// launcher (mask 0x0001); a Corvette's Hvy socket (0x0002) accepts a real
     /// Hvy Counter (0x0002).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Chaff_MountsOnSocketedHulls_AfterNativeOffsetFix()
     {
+        Require.Artwork();
         var core = Core();
 
         var counter = core.Launchers.First(kv =>
@@ -104,9 +111,11 @@ public sealed class ChaffMountMaskVerificationTests
             "a Corvette's 0x0002 chaff socket must accept a Hvy Counter chaff launcher");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MissileAndMineLaunchersStillMountWhereTheyShould_PositiveControl()
     {
+        Require.Artwork();
         var core = Core();
 
         // A real missile launcher that genuinely fits a light fighter's magazine

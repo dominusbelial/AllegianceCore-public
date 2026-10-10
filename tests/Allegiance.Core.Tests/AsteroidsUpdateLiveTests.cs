@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -210,9 +211,11 @@ public sealed class AsteroidsUpdateLiveTests
     /// different side's updates (per-side batching — no whole-mission leak).
     /// A's update carries the rock; B (30 km away, sees nothing) receives no
     /// <c>ASTEROIDS_UPDATE</c> at all.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Visible_asteroid_received_correct_fields_absent_from_unseeing_side()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var rock = seat.Rock;
         // P324 (M2): the visibility sweep runs every 10 sector ticks, so wait for a
@@ -255,9 +258,11 @@ public sealed class AsteroidsUpdateLiveTests
     /// ore pool, not the damage/health pool, proving the two fields are
     /// genuinely non-redundant (fsship.cpp:909 ore=GetOre() vs :911
     /// bpFraction=GetFraction()).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mining_depletion_reflected_in_next_update_while_health_fraction_stays_full()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var rock = seat.Rock;
 

@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -126,9 +127,11 @@ public sealed class P476SideGaVisibilityTests
     /// <c>side.GlobalAttributes = side.GlobalAttributes.Apply(FromArray(dev.Gas))</c>)
     /// and show a real ship on that side's EffectiveScannerRange scales by it —
     /// the dev → side-GA → accessor chain end-to-end with real core data.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_sensor_dev_gas_accumulates_and_scales_effective_scan_range()
     {
+        Require.Artwork();
         // Civ 1 (Dreghklar), the same civ the P446 live E2E seats its bot on.
         var civ = Core.Value.Civilizations[1];
         var m = Mission.Assemble(Core.Value, Map.Value,
@@ -169,9 +172,11 @@ public sealed class P476SideGaVisibilityTests
 
     // ── Plumbing: index constants + identity-is-raw ─────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ScanRange_and_Signature_indices_match_native_and_sideless_is_raw()
     {
+        Require.Artwork();
         Assert.Equal(11, GlobalAttributeSet.ScanRange);    // c_gaScanRange, igc.h:601
         Assert.Equal(12, GlobalAttributeSet.Signature);    // c_gaSignature, igc.h:602
 
@@ -192,9 +197,11 @@ public sealed class P476SideGaVisibilityTests
 
     // ── Accessor unit tests (per consumer: synthetic multiplier → scaled value) ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_EffectiveScannerRange_scales_by_side_ga()
     {
+        Require.Artwork();
         var m = NewMission([(GlobalAttributeSet.ScanRange, 1.5f)], []);
         var (sector, basePos) = CleanBase(m);
         var ship = NewShip(7101, ScannerHull, Side0, basePos);
@@ -203,9 +210,11 @@ public sealed class P476SideGaVisibilityTests
         Assert.Equal(ScannerHull.ScannerRange * 1.5f, ship.EffectiveScannerRange(), 3);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Station_EffectiveScannerRange_scales_by_side_ga()
     {
+        Require.Artwork();
         var m = NewMission([(GlobalAttributeSet.ScanRange, 1.5f)], []);
         var (sector, _) = CleanBase(m);
         var st = MakeStation(Core.Value.StationTypes.Values.First(), Side0);
@@ -214,9 +223,11 @@ public sealed class P476SideGaVisibilityTests
         Assert.Equal(st.Type.ScannerRange * 1.5f, st.EffectiveScannerRange(), 3);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_EffectiveScannerRange_scales_by_side_ga()
     {
+        Require.Artwork();
         var m = NewMission([(GlobalAttributeSet.ScanRange, 1.5f)], []);
         var (sector, basePos) = CleanBase(m);
         var scout = NewShip(7301, ScannerHull, Side0, basePos);
@@ -233,9 +244,11 @@ public sealed class P476SideGaVisibilityTests
     /// With the scanner side's c_gaScanRange = 1.5 it becomes 150 + 2 + 5400·0.5 = 2852.
     /// A target at 2400 (1952 &lt; 2400 &lt; 2852) is beyond the raw radius but inside the
     /// boosted one — pre-P476 (raw) it was NOT seen, post it IS.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_scanRange_ga_extends_the_sweep_detection_radius()
     {
+        Require.Artwork();
         var m = NewMission([(GlobalAttributeSet.ScanRange, 1.5f)], []);
         var (sector, basePos) = CleanBase(m);
 
@@ -255,9 +268,11 @@ public sealed class P476SideGaVisibilityTests
     /// detection signature (0.5 → 0.25): radius drops from 1952 to 1052. A target at
     /// 1500 (1052 &lt; 1500 &lt; 1952) is inside the raw radius but outside the attenuated one —
     /// pre-P476 (target GA ignored) it WAS seen, post it is NOT.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Target_signature_ga_resistance_shrinks_the_sweep_detection_radius()
     {
+        Require.Artwork();
         var m = NewMission([], [(GlobalAttributeSet.Signature, 2.0f)]);
         var (sector, basePos) = CleanBase(m);
 
@@ -277,9 +292,11 @@ public sealed class P476SideGaVisibilityTests
     /// <summary>The probe's boosted scan range also applies in the sweep: with the
     /// probe's side at c_gaScanRange = 1.5, a target beyond the probe's RAW radius but
     /// inside its BOOSTED radius becomes seen (probe is the only side-0 scanner).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_scanRange_ga_extends_detection_in_the_sweep()
     {
+        Require.Artwork();
         var m = NewMission([(GlobalAttributeSet.ScanRange, 1.5f)], []);
         var (sector, basePos) = CleanBase(m);
 

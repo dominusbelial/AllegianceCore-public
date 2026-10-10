@@ -6,6 +6,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -22,7 +23,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class TreasureVisualResolverTests
 {
     private static string ArtRoot =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static ShopCatalog Catalog()
     {
@@ -34,9 +35,11 @@ public class TreasureVisualResolverTests
     private static bool FileExists(string stem) =>
         !string.IsNullOrWhiteSpace(stem) && File.Exists(Path.Combine(ArtRoot, stem + ".mdl"));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cash_ResolvesToAcs14CashIcon()
     {
+        Require.Artwork();
         var v = TreasureVisualResolver.Resolve(TreasureCode.Cash, 9500, Catalog());
         Assert.Equal(TreasureVisualKind.Cash, v.Kind);
         Assert.Equal("acs14", v.ModelStem);
@@ -46,9 +49,11 @@ public class TreasureVisualResolverTests
         Assert.True(FileExists(v.ModelStem!), "acs14.mdl must exist in the artwork tree");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Powerup_ResolvesToAcs14PuIcon()
     {
+        Require.Artwork();
         var v = TreasureVisualResolver.Resolve(TreasureCode.Powerup, 0x1f, Catalog());
         Assert.Equal(TreasureVisualKind.Powerup, v.Kind);
         Assert.Equal("acs14", v.ModelStem);
@@ -56,9 +61,11 @@ public class TreasureVisualResolverTests
         Assert.Equal("Powerup", v.DisplayName);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RealSideFlag_ResolvesToBiosflagDecal()
     {
+        Require.Artwork();
         var v = TreasureVisualResolver.Resolve(TreasureCode.Flag, 3 /* a real side id */, Catalog());
         Assert.Equal(TreasureVisualKind.Flag, v.Kind);
         Assert.Null(v.ModelStem);          // a decal, not a model
@@ -69,9 +76,11 @@ public class TreasureVisualResolverTests
         Assert.True(FileExists(v.TextureStem!), "biosflagbmp.mdl must exist");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SentinelFlag_ResolvesToArtifact()
     {
+        Require.Artwork();
         // SIDE_TEAMLOBBY = -2 (igc.h:514) → the artifact model (treasureIGC.cpp:141-146).
         var v = TreasureVisualResolver.Resolve(TreasureCode.Flag, Side.ArtifactSentinelFlag, Catalog());
         Assert.Equal(TreasureVisualKind.Artifact, v.Kind);
@@ -82,9 +91,11 @@ public class TreasureVisualResolverTests
         Assert.True(FileExists(v.ModelStem!), "artifact.mdl must exist");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RealAmmoPackPart_ResolvesToItsOwnModelAndName()
     {
+        Require.Artwork();
         // Native: a part treasure uses the part's OWN model + icon
         // (treasureIGC.cpp:123-126). Pick the real ammo pack (c_packAmmo,
         // PackType 0) from the real core and assert it resolves to THAT part's
@@ -103,17 +114,21 @@ public class TreasureVisualResolverTests
         Assert.NotEmpty(v.DisplayName);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void UnresolvablePartId_FallsBackToGem()
     {
+        Require.Artwork();
         var v = TreasureVisualResolver.Resolve(TreasureCode.Part, short.MaxValue, Catalog());
         Assert.Equal(TreasureVisualKind.Gem, v.Kind);
         Assert.Null(v.ModelStem);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NullCatalog_StillResolvesCashFlagArtifact()
     {
+        Require.Artwork();
         // A degraded client (no loadable core) must still distinguish the
         // always-known codes; only part/development need the core lookup.
         var cash = TreasureVisualResolver.Resolve(TreasureCode.Cash, 9510, catalog: null);
@@ -136,9 +151,11 @@ public class TreasureVisualResolverTests
     /// in the artwork tree. Enumerated so the report lists exactly what the
     /// client can now render natively.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ContactSheet_EveryTreasureKindResolvesToAnExistingNativeModel()
     {
+        Require.Artwork();
         var catalog = Catalog();
         var rows = new List<string>();
 
@@ -188,9 +205,11 @@ public class TreasureVisualResolverTests
     /// OT_partType, treasureIGC.cpp:118-126; a launcher's model is its
     /// expendable's LauncherDef.modelName, launchertypeigc.h:59-67).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MineDispenser_ResolvesToItsOwnModel_NotGem()
     {
+        Require.Artwork();
         var catalog = Catalog();
         var v = TreasureVisualResolver.Resolve(TreasureCode.Part, 13 /* Mine Pack 1 */, catalog);
         Assert.Equal(TreasureVisualKind.Part, v.Kind);
@@ -205,9 +224,11 @@ public class TreasureVisualResolverTests
     /// resolves to a native model, never the gem. Fails on pre-P586b code,
     /// where all 123 launchers resolved to <see cref="TreasureVisualKind.Gem"/>.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EveryLauncherInCore_ResolvesToItsOwnModel()
     {
+        Require.Artwork();
         var catalog = Catalog();
         foreach (var l in catalog.Launchers!)
         {
@@ -228,9 +249,11 @@ public class TreasureVisualResolverTests
     /// made the renderer look for nonexistent <c>part.mdl</c>/<c>fuel_icon.mdl</c>
     /// texture units and draw lit-solid.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PartAndLauncher_TextureStem_IsNull_NotTheIconName()
     {
+        Require.Artwork();
         var catalog = Catalog();
         // The real ammo pack (plain part) — icon is "ammo_icon".
         var ammo = catalog.Parts.First(p => p.Type is DataPartTypeIGC.Pack pk && pk.PackType == 0);
@@ -249,9 +272,11 @@ public class TreasureVisualResolverTests
     /// the exact set the 15v15 showcase drops. Fails on pre-P586b code because
     /// every launcher resolved to the gem.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SelfCheck_ReportsZeroFallbacks_ForPartsAndLaunchers()
     {
+        Require.Artwork();
         var catalog = Catalog();
         var logged = new List<string>();
         int fallback = TreasureVisualResolver.SelfCheck(catalog, logged.Add);

@@ -7,6 +7,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -200,9 +201,11 @@ public class CargoBayReloadTests
     /// <c>mountNew</c> moves an equipped part into <c>Ship.CargoHold</c>, and a
     /// subsequent <c>SWAP_PART</c> with a negative <c>mountOld</c> moves it back
     /// out to an equipped slot.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SwapPart_negative_mount_roundtrips_equipped_part_into_and_out_of_cargo()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
         var core = Core();
@@ -230,9 +233,11 @@ public class CargoBayReloadTests
     /// cargo ammo-pack into <c>Ship.Ammo</c> updates the ship's live ammo count,
     /// resets ammo-weapons' mounted-fraction to 0, and relays the broadcast to
     /// the sector.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reload_transfers_ammo_updates_ship_ammo_resets_weapon_fraction_and_broadcasts()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
         var core = Core();
@@ -272,9 +277,11 @@ public class CargoBayReloadTests
     /// on an ammo pack terminates the pack — removes it from cargo — rather than
     /// transferring a specific amount (native transfers the whole pack, then
     /// drops it, FedSrv.CPP:6553-6556,6572).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reload_NA_terminates_the_cargo_pack()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
 
@@ -304,9 +311,11 @@ public class CargoBayReloadTests
     /// <summary>⭐ MUST-FAIL-IF-REMOVED: <c>RELOAD</c> swapping a cargo launcher's
     /// ammo into an equipped, partially-loaded launcher of the same type adds the
     /// transferred amount and resets the equipped launcher's mounted-fraction.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reload_swaps_cargo_launcher_ammo_into_equipped_partially_loaded_launcher()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
         var core = Core();
@@ -344,9 +353,11 @@ public class CargoBayReloadTests
     /// more than the cargo item holds) refuses the rest of the batch and sends no
     /// broadcast, but an earlier valid entry in the same message keeps its
     /// applied transfer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reload_malformed_entry_refuses_rest_without_rollback_or_broadcast()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
 
@@ -388,9 +399,11 @@ public class CargoBayReloadTests
     /// and — since P412 gave the ship a real fuel pool — now visibly TOP-UPS
     /// <c>Ship.Fuel</c> (native <c>SetFuel(GetFuel()+amount)</c>, FedSrv.CPP:6587)
     /// instead of being a no-op. Ammo is untouched.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reload_fuel_pack_is_accepted_and_topups_the_fuel_pool()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
 
@@ -432,9 +445,11 @@ public class CargoBayReloadTests
     /// <c>ResolvePart</c>'s <c>_cargo[index]</c>. The wire <c>Mount</c> is a
     /// signed char, so −128..−6 are all reachable from a client but only
     /// [−1,−5] address a real cargo slot.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SwapPart_out_of_range_negative_mount_is_rejected_cleanly_not_thrown()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
         ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);   // real, non-empty source
@@ -471,9 +486,11 @@ public class CargoBayReloadTests
     /// server performs no swap, broadcasts nothing, and the loadout is
     /// untouched — rather than throwing in the dispatch (which would be
     /// swallowed by the generic catch as a misleading "bad SWAP_PART").</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SwapPart_wire_out_of_range_negative_mount_is_rejected_no_broadcast_no_change()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
         ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);

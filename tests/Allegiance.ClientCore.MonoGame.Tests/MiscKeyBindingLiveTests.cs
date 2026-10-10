@@ -13,6 +13,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -45,7 +46,7 @@ public sealed class MiscKeyBindingLiveTests
     private const short Ganymede = 1050;
 
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -82,9 +83,11 @@ public sealed class MiscKeyBindingLiveTests
     /// <summary>⭐ LIVE: the peer's own ship is present and identifiable in its own
     /// real world (the TargetSelf backing datum), and the production
     /// gather + reticle-ranking returns a real in-sector ship for TargetCenter.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_own_ship_is_real_and_center_ranking_selects_a_real_ship()
     {
+        Require.Artwork();
         using var server = new Srv();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {

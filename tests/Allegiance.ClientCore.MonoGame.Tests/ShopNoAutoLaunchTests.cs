@@ -5,6 +5,7 @@ using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -33,11 +34,13 @@ public class ShopNoAutoLaunchTests
     /// laying out the model many times (simulating idle docked frames) never
     /// alters the pending loadout or the effective hull. There is no path for the
     /// model itself to initiate a launch.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shop_model_is_inert_without_user_action()
     {
+        Require.Artwork();
         var cat = ShopCatalog.TryLoad(
-            Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork")
+            ExternalPaths.Resolve(ExternalResourceKind.Artwork))
             ?? throw new InvalidOperationException("core not loadable");
         var hull = cat.Hulls.OrderBy(h => h.HullId).First();
         var m = new ShopModel(cat, hull.HullId, Array.Empty<ExpandedPartData>());

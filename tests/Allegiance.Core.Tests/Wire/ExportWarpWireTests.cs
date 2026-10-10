@@ -6,6 +6,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests.Wire;
 
@@ -178,9 +179,11 @@ public class ExportWarpWireTests
     /// destination sector is the partner warp's <c>ClusterId</c>, never the raw
     /// warp id misread as a sector.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ExportWarp_RealMap_WireCarriesPartnerWarpId_NativeParity()
     {
+        Require.Artwork();
         var corePath = Corpus.Files.First(p => Path.GetFileName(p).Equals("PCore001.igc", System.StringComparison.OrdinalIgnoreCase));
         var mapPath = Corpus.Files.First(p => Path.GetFileName(p).Equals("XXV_simple.igc", System.StringComparison.OrdinalIgnoreCase));
         var core = StaticCore.Load(IgcReader.ParseFile(corePath));

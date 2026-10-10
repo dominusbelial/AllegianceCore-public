@@ -11,6 +11,8 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using Ac = global::Allegiance.Server.AdminCheatsConfig;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -30,7 +32,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P554AdminCheatLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(Ac? adminCheats) => new()
     {
@@ -136,9 +138,11 @@ public sealed class P554AdminCheatLiveTests
 
     // ── Failing-first: non-privileged relocate is refused + broadcast as chat ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_privileged_relocate_is_refused_and_broadcast_as_normal_chat()
     {
+        Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         server.Boot(Config(null));                                   // adminCheats absent → disabled
         using var cs = Seat(server, "RegularJoe");                   // not allow-listed anywhere
@@ -162,9 +166,11 @@ public sealed class P554AdminCheatLiveTests
 
     // ── Failing-first: option disabled → refused even for an allow-listed name ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Relocate_refused_when_option_disabled_even_for_allowlisted_name()
     {
+        Require.Artwork();
         // Configured (section present, name allow-listed) but Disabled — the
         // "never on in a default config" guarantee: a name in AllowNames still
         // cannot cheat when Enabled=false.
@@ -186,9 +192,11 @@ public sealed class P554AdminCheatLiveTests
     // ── Failing-first: privileged relocate moves the ship, sends SET_CLUSTER,
     //    and the bot's ClientWorld shows the new sector ──────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Privileged_relocate_moves_ship_sends_SET_CLUSTER_and_client_world_shows_new_sector()
     {
+        Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         server.Boot(Config(new Ac { Enabled = true, AllowNames = ["mcp-admin"] }));
         using var cs = Seat(server, "mcp-admin");
@@ -224,9 +232,11 @@ public sealed class P554AdminCheatLiveTests
 
     // ── Failing-first: MCP arena against a refusing server returns an explicit error ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Privileged_admin_relocates_an_mcp_harness_bot_it_launched()
     {
+        Require.Artwork();
         // The ownership rule's "launched a bot" leg: an allow-listed admin may
         // relocate an MCP-harness (mcp-prefixed) bot — the exact population the
         // probe drives in the networked arena proof.
@@ -250,9 +260,11 @@ public sealed class P554AdminCheatLiveTests
         Assert.Equal(target, CsSector(bot));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Privileged_admin_cannot_relocate_a_non_harness_human_ship()
     {
+        Require.Artwork();
         // The ownership rule's safety leg: an allow-listed admin may NOT relocate
         // an arbitrary non-harness (human) ship — only own ship or MCP bots.
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
@@ -271,9 +283,11 @@ public sealed class P554AdminCheatLiveTests
         Assert.Equal(home, CsSector(human));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mcp_arena_against_a_refusing_server_returns_an_explicit_error()
     {
+        Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         server.Boot(Config(null));                                     // adminCheats disabled → server refuses
         var ticker = new Ticker(server);

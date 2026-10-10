@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -192,7 +193,7 @@ public sealed class ThreePeerSeed : IDisposable
 public class ThreePeerSeededSessionTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -207,9 +208,11 @@ public class ThreePeerSeededSessionTests
     };
 
     /// <summary>⭐ Deterministic 2-same-side + 1-cross-side seeding, proven live:</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility()
     {
+        Require.Artwork();
         using var seed = ThreePeerSeed.Boot(Config(), "seed0", "seed1", "seed2");
         var (p0, p1, p2) = (seed.Peer0, seed.Peer1, seed.Peer2);
         (short s0, short s1, short s2) = (seed.ShipIds[0], seed.ShipIds[1], seed.ShipIds[2]);

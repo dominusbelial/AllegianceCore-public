@@ -1,5 +1,7 @@
 using System;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -12,11 +14,13 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class MineModelSourceTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolveRadius_ReturnsRealMineRadiusForAKnownType()
     {
+        Require.Artwork();
         var catalog = ShopCatalog.TryLoad(ArtRoot);
         Assert.NotNull(catalog);
         Assert.NotNull(catalog!.MineTypes);
@@ -41,9 +45,11 @@ public class MineModelSourceTests
         Assert.Equal(MineModelSource.DefaultRadius, MineModelSource.ResolveRadius(1, null), 0.001f);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LoadTexture_ParsesTheRealMineSprite()
     {
+        Require.Artwork();
         var tex = MineModelSource.LoadTexture();
         Assert.True(tex.Width > 0 && tex.Height > 0, "the real fxmine sprite must decode to a non-empty texture");
         Assert.True(tex.Width == tex.Height, "the mine sprite is square");

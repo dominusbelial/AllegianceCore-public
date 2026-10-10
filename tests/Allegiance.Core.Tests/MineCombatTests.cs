@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -324,9 +325,11 @@ public sealed class MineCombatTests
     /// mine survives. This is exactly the scenario the old single-hit port broke
     /// (it detonated the mine at full <c>Power</c> and consumed it); under native
     /// semantics (<c>mineigc.h:80-82</c>) a parked ship is immune.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stationary_enemy_ship_parked_inside_an_armed_field_takes_zero_damage_and_the_mine_survives()
     {
+        Require.Artwork();
         var (mineType, hull, _) = (SingleTick.Value.Mine, SingleTick.Value.Hull, 0);
         float rMe = mineType.MineRadius;
         float blastOffset = MathF.Min(ParkDistance, 0.999f * (rMe + 0.5f * hull.Length));
@@ -367,9 +370,11 @@ public sealed class MineCombatTests
     /// damage while the field <em>survives</em> with a reduced
     /// <see cref="Mine.Fraction"/> — the persistence half of the native
     /// minefield (the old port exploded instead).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_moving_ship_is_immune_while_a_cross_side_moving_ship_wears_the_field_without_consuming_it()
     {
+        Require.Artwork();
         var (mineType, hull, _) = (SingleTick.Value.Mine, SingleTick.Value.Hull, 0);
         float rMe = mineType.MineRadius;
         float blastOffset = MathF.Min(ParkDistance, 0.999f * (rMe + 0.5f * hull.Length));
@@ -500,9 +505,11 @@ public sealed class MineCombatTests
     /// the real <c>Power</c>/<c>Endurance</c>/radius of <c>PCore001.igc</c> and
     /// the hull's radius and armor matrix, then asserts the ship's hull fraction
     /// fell by <c>damage·dtm/maxHP</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Moving_cross_side_ship_takes_exact_native_formula_attrition_damage()
     {
+        Require.Artwork();
         var hit = SingleTick.Value;
         var d = AssembleTwoSide(hit.Hull);
         var mine = DeployRemote(d, hit.Mine, Remote);
@@ -523,9 +530,11 @@ public sealed class MineCombatTests
     /// take damage and the field survives with a reduced <see cref="Mine.Fraction"/>
     /// — the native multi-ship-per-tick behaviour (<c>mineigc.h:128</c>: “any
     /// number of ships can be hit by the same field in the same tick”).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Two_enemy_ships_crossing_in_the_same_tick_both_take_damage_and_the_field_survives_worn()
     {
+        Require.Artwork();
         var hit = SingleTick.Value;
         var d = AssembleTwoSide(hit.Hull);
         var mine = DeployRemote(d, hit.Mine, Remote);
@@ -550,9 +559,11 @@ public sealed class MineCombatTests
     /// <summary>⭐ Requirement (d). A faster crossing takes more damage than a
     /// slower one over the same field geometry, scaling with speed²
     /// (<c>amount ∝ dt·speed²</c>): the 2× faster ship takes ~4× the damage.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Faster_crossing_takes_more_damage_scaling_with_speed_squared()
     {
+        Require.Artwork();
         var sp = Speeds.Value;
         var dtm = Dtm(RepresentativeCore(), sp.Mine.DamageType, sp.Hull.DefenseType);
 
@@ -587,9 +598,11 @@ public sealed class MineCombatTests
     /// <summary>⭐ Requirement (e). Repeated crossings eventually wear the field
     /// below endurance 1, and it is destroyed with exactly one
     /// <see cref="IIgcSite.MineDestroyedEvent"/> through the existing path.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Repeated_crossings_wear_the_field_to_destruction_with_mine_destroyed_event()
     {
+        Require.Artwork();
         var wear = Wear.Value;
         var d = AssembleTwoSide(wear.Hull);
         var mine = DeployRemote(d, wear.Mine, Remote);
@@ -617,9 +630,11 @@ public sealed class MineCombatTests
     /// crossing the field takes nothing — even while moving and squarely inside
     /// the radius, the friendly gate (<c>mineigc.h:77</c>) protects it and the
     /// field is unworn.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_moving_ship_crossing_the_field_takes_nothing_and_does_not_wear_it()
     {
+        Require.Artwork();
         var hit = SingleTick.Value;
         var d = AssembleTwoSide(hit.Hull);
         var mine = DeployRemote(d, hit.Mine, Remote);
@@ -642,9 +657,11 @@ public sealed class MineCombatTests
     /// crossing the field takes the attrition hit through the reused
     /// <see cref="Ship.ReceiveDamage"/> shield path — the shield absorbs it and the
     /// hull is untouched, exactly as a weapon/missile hit behaves.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_moving_ship_with_a_mounted_shield_absorbs_the_attrition_hit_like_a_weapon_hit()
     {
+        Require.Artwork();
         var hit = SingleTick.Value;
         var d = AssembleTwoSide(hit.Hull);
         float rMe = hit.Mine.MineRadius, rHim = 0.5f * hit.Hull.Length;
@@ -718,9 +735,11 @@ public sealed class MineCombatTests
     /// failing-first test for the per-hit pop: the pre-P574 port raised no
     /// MineHitEvent at all, so it failed (and sent only the wrong field-centre
     /// blast on death).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Crossing_ship_raises_one_mine_pop_at_the_native_P2_ahead_of_the_ship()
     {
+        Require.Artwork();
         var hit = SingleTick.Value;
         var d = AssembleTwoSide(hit.Hull);
         var mine = DeployRemote(d, hit.Mine, Remote);
@@ -751,9 +770,11 @@ public sealed class MineCombatTests
     /// apart) produce only the FIRST pop — the second is inside the window and
     /// suppressed. The pre-P574 port had no throttle (no per-hit pop at all), so
     /// this failed-first.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Two_consecutive_in_field_ticks_produce_only_the_first_pop()
     {
+        Require.Artwork();
         var hit = SingleTick.Value;
         var d = AssembleTwoSide(hit.Hull);
         var mine = DeployRemote(d, hit.Mine, Remote);
@@ -773,9 +794,11 @@ public sealed class MineCombatTests
     /// window (white-box: stamp the last pop 0.6 s in the past) yields a second
     /// pop. Combined with the window test above, this pins the exact native
     /// boundary <c>m_maxMineTime &gt; m_timeLastMineExplosion + 0.5f</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Throttle_releases_once_more_than_half_a_second_has_elapsed()
     {
+        Require.Artwork();
         var hit = SingleTick.Value;
         var d = AssembleTwoSide(hit.Hull);
         var mine = DeployRemote(d, hit.Mine, Remote);
@@ -795,9 +818,11 @@ public sealed class MineCombatTests
     /// <summary>⭐ Requirement (P574). No pop for a friendly crossing nor a
     /// parked cross-side ship: both are damage-free (<c>mineigc.h:77,80-82</c>),
     /// so no hit, so no <see cref="IIgcSite.MineHitEvent"/>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Friendly_and_stationary_crossings_raise_no_mine_pop()
     {
+        Require.Artwork();
         var hit = SingleTick.Value;
         var d = AssembleTwoSide(hit.Hull);
         var mine = DeployRemote(d, hit.Mine, Remote);
@@ -829,9 +854,11 @@ public sealed class MineCombatTests
     /// pre-P574 port broadcast only ONE centre blast on field DEATH (no per-hit
     /// pops), so this failed-first (no Mine explosion reached the observer while
     /// the field lived).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_crossing_broadcasts_a_mine_pop_ahead_of_the_ship_not_at_the_field_centre()
     {
+        Require.Artwork();
         var (mineType, hull, _) = (SingleTick.Value.Mine, SingleTick.Value.Hull, 0);
         using var seat = SeatThree(100f, hull);
         var shooter = seat.Shooter;
@@ -875,9 +902,11 @@ public sealed class MineCombatTests
     /// the unmodified expiry path, confirmed not to have been disturbed by the
     /// new attrition pass (a mine that never sees a moving hostile ship falls
     /// through to <see cref="Mine.OnUpdate"/>'s own expiry check).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mine_with_no_intruder_expires_via_lifespan_and_broadcasts_destroy_unmodified()
     {
+        Require.Artwork();
         var core = RepresentativeCore();
         var site = new CountingSite();
         var mission = Mission.Assemble(core, SomeMap(), [new SideSpec(0, "Team", core.Civilizations.Values.OrderBy(c => c.CivilizationId).First().CivilizationId)], site);

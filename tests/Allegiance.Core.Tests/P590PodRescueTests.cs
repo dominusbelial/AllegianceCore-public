@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -119,9 +120,11 @@ public class P590PodRescueTests
     /// Bot harness consuming the EJECT cookie (P540b) the pod's pose updates
     /// are dropped and it freezes at the eject point — no rescue (stale
     /// position). Failing-first on today's code before the harness fix.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Client_driven_ejected_pod_rescues_on_reaching_friendly()
     {
+        Require.Artwork();
         // Custom boot: a real destroyable victim peer + a rescue-capable friend.
         var srv = new Srv();
         Ship victim = null!, rescuerShip = null!;
@@ -210,9 +213,11 @@ public class P590PodRescueTests
     /// <summary>⭐ A pod issues a c_cidPickup order to a same-side rescue-capable
     /// NPC: the NPC's pickup-diversion goal is armed, it flies to the pod, and
     /// the contact pass rescues it (PLAYER_RESCUED reaches the pod's peer).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Pod_pickup_order_arms_NPC_diverter_and_rescues()
     {
+        Require.Artwork();
         var podPos = new Vector3(520f, 648f, 880f);
         var (server, podBot, podShip) = BootPodPeer("PODP", DataHullTypeIGC.HabmLifepod, 0, podPos);
         var npc = RescueCapable(server, 0, new Vector3(760f, 642f, 872f), isNpc: true);
@@ -246,9 +251,11 @@ public class P590PodRescueTests
     /// rescue-capable rescuer: the order is queued to the rescuer's client
     /// ("prepare for recovery" state, native trekigc.cpp:4896) and the rescuer
     /// is marked PickupTarget.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Pod_pickup_order_streams_queued_order_to_real_player_rescuer()
     {
+        Require.Artwork();
         var server = new Srv();
         Ship pod = null!, rescuer = null!;
         int n = 0;
@@ -301,9 +308,11 @@ public class P590PodRescueTests
     /// is proactively assigned (no order needed) and rescues it; at most ONE
     /// diverter per pod (the nearer of two idle candidates wins; the other is
     /// never assigned).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Proactive_assignment_diverts_nearest_idle_diverter_and_rescues()
     {
+        Require.Artwork();
         var podPos = new Vector3(520f, 649f, 880f);
         var (server, podBot, podShip) = BootPodPeer("PODQ", DataHullTypeIGC.HabmLifepod, 0, podPos);
 
@@ -343,9 +352,11 @@ public class P590PodRescueTests
     /// assignment. (Assignment-only assertion; the engaged ship sits just
     /// outside the contact radius so its presence never forces a rescue.)
     /// This is the brief's "don't abandon a dogfight at close range" rule.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Engaged_diverter_is_not_proactively_assigned()
     {
+        Require.Artwork();
         var podPos = new Vector3(520f, 649f, 880f);
         var (server, podBot, podShip) = BootPodPeer("PODE", DataHullTypeIGC.HabmLifepod, 0, podPos);
 
@@ -381,9 +392,11 @@ public class P590PodRescueTests
     /// position with a hard arrival brake) a steadily-moving pod is systematically
     /// undershot; the intercept + full-speed fly-through closes the gap. Asserts
     /// the diverser reaches and rescues the moving pod (PLAYER_RESCUED).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Diverter_intercepts_and_rescues_a_moving_pod()
     {
+        Require.Artwork();
         var podPos = new Vector3(820f, 680f, 860f);
         var (server, podBot, podShip) = BootPodPeer("PODM", DataHullTypeIGC.HabmLifepod, 0, podPos);
         var npc = RescueCapable(server, 0, new Vector3(980f, 670f, 850f), isNpc: true);

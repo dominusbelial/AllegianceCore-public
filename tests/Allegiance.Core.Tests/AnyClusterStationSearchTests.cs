@@ -3,6 +3,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -97,9 +98,11 @@ public sealed class AnyClusterStationSearchTests
     /// <summary>⭐ Cross-sector friendly unload found: the ship's own sector has
     /// none (hop 0 <c>null</c> — the same-sector search agrees), but a friendly
     /// unload one synthetic warp away is found by the widening search.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Finds_cross_sector_friendly_unload_when_own_sector_has_none()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var a = Fly(mission);                                          // no-station fly sector (1052)
@@ -119,9 +122,11 @@ public sealed class AnyClusterStationSearchTests
     /// <summary>⭐ Hop 0 wins: a same-sector friendly unload is returned over a
     /// cross-sector one, even when the cross-sector one is "closer" by raw
     /// coordinate distance (meaningless across frames; BFS order is the bar).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Own_sector_unload_beats_a_cross_sector_one()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var a = Fly(mission);
@@ -142,9 +147,11 @@ public sealed class AnyClusterStationSearchTests
     /// ENEMY unload is excluded by the friendly filter, and with the reachable
     /// graph reduced to just that sector there is nothing else — the widening
     /// search respects the same per-sector filters as the same-sector one.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Returns_null_when_no_friendly_unload_is_reachable()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var a = Fly(mission);

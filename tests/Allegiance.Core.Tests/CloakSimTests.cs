@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -208,9 +209,11 @@ public class CloakSimTests
 
     // ── 1. Activation ────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Setting_the_cloak_bit_engages_the_cloak_on_a_mounted_cloak()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -233,9 +236,11 @@ public class CloakSimTests
         Console.WriteLine($"CLOAK-ON: cloak bit set -> IsCloaked={ship.IsCloaked}, Cloaking={ship.Cloaking:F3}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Without_the_bit_or_without_a_cloak_the_ship_never_cloaks()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -259,9 +264,11 @@ public class CloakSimTests
         Console.WriteLine("CLOAK-NONE: neither the bit-less cloak nor the cloak-less bit engages");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_cloak_on_a_non_zero_mount_never_engages()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -283,9 +290,11 @@ public class CloakSimTests
 
     // ── 2. Energy cost ───────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cloaking_drains_energy_each_active_tick_and_not_when_idle()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -308,9 +317,11 @@ public class CloakSimTests
         Console.WriteLine($"CLOAK-ENERGY: idle holds {startEnergy:F1}; one active tick drains to {ship.Energy:F1} (expected {startEnergy - 1.5f:F1})");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_short_energy_pool_throttles_the_cloaks_target_strength()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -336,9 +347,11 @@ public class CloakSimTests
 
     // ── 3. Detection interaction (the sweep) ─────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_cloaked_enemy_becomes_undetectable_within_normal_detection_range()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -378,9 +391,11 @@ public class CloakSimTests
         Console.WriteLine($"CLOAK-DETECT: 2000 u pair -> seen (uncloaked) -> unseen (cloaked) -> seen (decloaked)");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Decloaking_restores_full_visibility_within_one_ramp_period()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 

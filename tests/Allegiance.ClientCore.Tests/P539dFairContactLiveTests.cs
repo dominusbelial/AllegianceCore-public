@@ -10,6 +10,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -35,7 +36,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P539dFairContactLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     /// <summary>The deployed 221 server configuration (NON-debug): 20 Hz,
     /// civIds [25,3], side names Alpha/Bravo, testUnlock via the harness.</summary>
@@ -362,9 +363,11 @@ public sealed class P539dFairContactLiveTests
 
     /// <summary>Topology probe: dump the 221 map sectors/homes + per-side BFS route
     /// lengths to the rendezvous (the premise: Ganymede side-0 home is farther).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_221_topology_and_routes()
     {
+        Require.Artwork();
         if (IsGated()) return;
         var sb = new StringBuilder();
         var (server, ticker, mgr, tee, saved) = Boot(out var port);

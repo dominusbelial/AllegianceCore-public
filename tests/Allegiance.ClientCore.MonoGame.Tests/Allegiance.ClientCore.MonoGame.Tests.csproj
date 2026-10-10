@@ -12,6 +12,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- P597 — corpus-backed tests skip (with a reason) when the external
+         artwork/native corpus is absent on a clean clone. -->
+    <PackageReference Include="Xunit.SkippableFact" Version="1.5.85" />
     <!-- The shared game library builds against the MonoGame API with
          PrivateAssets="All"; the test project supplies its own framework
          package so the 8 tests using MonoGame math types compile + run. -->
@@ -20,6 +23,11 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- P597 — shared skip-helpers for corpus-backed tests (see TestRequire.cs). -->
+  <ItemGroup>
+    <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
   </ItemGroup>
 
   <ItemGroup>

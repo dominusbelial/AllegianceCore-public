@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -147,9 +148,11 @@ public sealed class NpcRipcordTravelLiveTests
     /// pointing at the target cluster) BEFORE the sector changed, and the ship
     /// never approached the connecting warp (min distance stays far above its
     /// collision radius) — warp-pathing never arms a ripcord.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_cluster_npc_rips_to_friendly_station_instead_of_warp_pathing()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sectorA = null, sectorB = null;
@@ -254,9 +257,11 @@ public sealed class NpcRipcordTravelLiveTests
     /// close enough that IsSafeToRipcord's long horizon flags it (so the ripcord
     /// genuinely defers), yet far enough that the P168 dodge (short horizon)
     /// does NOT grab the tick — making the deferral observation deterministic.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unsafe_npc_defers_ripcord_and_retries_after_hazard_clears()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sectorA = null, sectorB = null;

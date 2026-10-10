@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -63,9 +64,11 @@ public class ClusterWarningLiveTests
     /// must make the FRIENDLY client receive a real ClusterWarningUpdate(214)
     /// for that sector at a level above no-threat — while the enemy side's
     /// client receives nothing for it (per-side asymmetry).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Enemy_in_friendly_station_sector_warns_friendly_side_only()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby

@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -78,9 +79,11 @@ public class ShipIdAllocationLiveTests
     /// flood of invalid LOGONREQs does not advance <c>_nextShipId</c> — the
     /// id is allocated only after validation, so a raw request cannot burn ids
     /// toward the 65,536 wrap.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Invalid_logon_flood_does_not_advance_nextShipId()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -103,9 +106,11 @@ public class ShipIdAllocationLiveTests
     /// <summary>Positive control for the above: a VALID logon still allocates
     /// (and thus advances) the counter — proving the reflection read/write is
     /// sound and the fix didn't freeze allocation entirely.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Valid_logon_advances_nextShipId()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -131,9 +136,11 @@ public class ShipIdAllocationLiveTests
     /// This is deterministic (needs only the fast logon ack, not the slower
     /// full seating handshake) and exercises the real skip loop's reservation
     /// branch.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Allocated_ship_id_skips_an_id_already_reserved_by_another_peer()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -215,9 +222,11 @@ public class ShipIdWraparoundUnitTests
         protected override void OnUpdate(double now, double dt) { }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NextObjectId_skips_live_models_across_the_wraparound_boundary()
     {
+        Require.Artwork();
         var mission = Mission.Assemble(Core.Value, Map.Value.Map, TwoSides(), new NullIgcSite());
         var sector = mission.Sectors[0];
 
@@ -239,9 +248,11 @@ public class ShipIdWraparoundUnitTests
         Assert.Equal((short)2, second);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NextObjectId_sequence_is_unchanged_when_nothing_collides()
     {
+        Require.Artwork();
         var mission = Mission.Assemble(Core.Value, Map.Value.Map, TwoSides(), new NullIgcSite());
         var start = GetNextObjectId(mission);
 

@@ -38,7 +38,7 @@ namespace Allegiance.Tools.VizFight;
 internal static class Program
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     /// <summary>The spectator page's real source directory
     /// (<c>tools/vizfight/wwwroot/</c>), computed from the running

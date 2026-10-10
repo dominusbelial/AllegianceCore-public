@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -30,7 +31,7 @@ namespace Allegiance.ClientCore.Tests;
 public class PlayerReadyLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -89,9 +90,11 @@ public class PlayerReadyLiveTests
     /// <summary>⭐ The outbound round trip: A announces ready; the same-side
     /// relay updates BOTH peers' <see cref="ClientWorld.Roster"/> for A's ship,
     /// and each still records it in the append-only echo history.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SendPlayerReady_RelaysToWholeTeam_UpdatesBothRosters()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetShipSpawner(server, (core, mission, shipId) =>
         {
@@ -139,9 +142,11 @@ public class PlayerReadyLiveTests
 
     /// <summary>A later not-ready toggle flips the roster flag but the history
     /// keeps both announces — the roster is current state, not a log.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SendPlayerReady_NotReadyToggle_FlipsRoster_KeepsHistory()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetShipSpawner(server, (core, mission, shipId) =>
         {

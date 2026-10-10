@@ -6,6 +6,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -23,7 +24,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ChatTargetComposeLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(string name = "P456 Chat Default", int port = 0) => new()
     {
@@ -56,9 +57,11 @@ public class ChatTargetComposeLiveTests
     /// <summary>⭐ A fresh compose defaults to Team, and a Team-targeted chat sent
     /// by the composing client over the loopback reaches its teammate's log with
     /// ChatTarget=Team while the enemy-side peer's log stays clean.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ComposeDefault_Team_SendsToTeammate_NotEnemy()
     {
+        Require.Artwork();
         // The client-side decision under test: a fresh compose sends to Team.
         Assert.Equal(ChatTarget.Team, ChatTargetLogic.DefaultTarget);
 

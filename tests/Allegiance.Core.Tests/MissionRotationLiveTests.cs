@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -113,9 +114,11 @@ public class MissionRotationLiveTests
     /// reaches Starting then Started through the real countdown — while the old
     /// peers keep GAME_OVER and their destroyed-station world is replaced by a
     /// pristine rebuild. All four P439 verification assertions.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -212,9 +215,11 @@ public class MissionRotationLiveTests
     /// own, with no human player required, exactly like boot. Proven through a
     /// real #draw → AcceptDraw → game-over chain (draws are not affected by the
     /// P388 win-by-elimination skip, so they remain a legal debug-mode end).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_mode_rebuilt_mission_auto_starts_after_game_over()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(ConfigDebug());
 

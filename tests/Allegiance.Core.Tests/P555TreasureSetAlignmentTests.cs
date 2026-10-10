@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -24,9 +25,11 @@ public sealed class P555TreasureSetAlignmentTests
         return raw[(body + r.PayloadOffset)..(body + r.PayloadOffset + r.Size)];
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TreasureSetId_ComesFromNativeOffset26_AcrossCorpus()
     {
+        Require.Artwork();
         int total = 0;
         foreach (var path in Corpus.Files)
         {
@@ -50,9 +53,11 @@ public sealed class P555TreasureSetAlignmentTests
     /// size-derived entry count — proving the head is native-aligned and that
     /// the previous "count@27 = 256·entries" observation was the off-by-one
     /// read, not a writer quirk.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NativeCountAt28_MatchesSizeDerived_AcrossCorpus()
     {
+        Require.Artwork();
         int total = 0;
         foreach (var path in Corpus.Files)
         {

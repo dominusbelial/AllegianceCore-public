@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -167,9 +168,11 @@ public sealed class NpcBuilderDefaultOrderLiveTests
     /// Builder consumed — P163's mechanic now driven by the AI, not a direct
     /// test call. Asserts <see cref="Ship.IsBuilding"/> <c>true</c> in progress
     /// and <c>false</c> after completion.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Idle_builder_autonomously_builds_station_from_neutral_asteroid()
     {
+        Require.Artwork();
         var (srv, mission, sector, builderDroneId, rock, stationType, npcSide) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -233,9 +236,11 @@ public sealed class NpcBuilderDefaultOrderLiveTests
     /// <see cref="Ship.BuilderStationType"/> has nothing to build and stands by
     /// — no effect registers, the rock is untouched, the builder stays in the
     /// sector — the no-target no-op every other decision cycle uses.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Idle_builder_without_configured_station_type_stands_by()
     {
+        Require.Artwork();
         var (srv, mission, sector, builderDroneId, rock, _, npcSide) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -262,9 +267,11 @@ public sealed class NpcBuilderDefaultOrderLiveTests
     /// builder stands by. The AI-level expression of native rejecting the build
     /// (<c>FindTarget(m_abmOrders)</c>, shipIGC.h:2393-2397; c_cidBuild
     /// legality, shipIGC.h:1695-1707).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Idle_builder_refuses_asteroid_of_wrong_type()
     {
+        Require.Artwork();
         var (srv, mission, sector, builderDroneId, rock, stationType, npcSide) = BootFixture(out var bot);
         using (srv)
         using (bot)

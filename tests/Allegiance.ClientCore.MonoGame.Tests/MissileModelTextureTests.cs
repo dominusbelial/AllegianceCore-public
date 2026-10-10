@@ -5,6 +5,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -34,8 +35,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class MissileModelTextureTests
 {
     private static string ArtRoot =>
-        System.Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static bool FileExists(string stem) => File.Exists(Path.Combine(ArtRoot, stem + ".mdl"));
 
@@ -50,18 +50,22 @@ public class MissileModelTextureTests
     /// <summary>FAILING-FIRST — the MRM Seeker family (mis06, types 7/35/36/55-57),
     /// which the pre-P593b port rendered lit-solid, resolves its native texture
     /// <c>mis06bmp</c> from its own imported namespace.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mis06_seeker_texture_resolves_from_its_own_imported_namespace()
     {
+        Require.Artwork();
         var mdl = Parse("mis06");
         Assert.Equal("mis06bmp", NativeMissileRenderer.ResolveTextureStemFor(mdl, null, "mis06", FileExists));
     }
 
     /// <summary>The MRM Quickfire family (mis08, types 25/45/46/58-60) — the exact
     /// missile family used in the P593b reproduction — resolves <c>mis08bmp</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mis08_quickfire_texture_resolves_from_its_own_imported_namespace()
     {
+        Require.Artwork();
         var mdl = Parse("mis08");
         Assert.Equal("mis08bmp", NativeMissileRenderer.ResolveTextureStemFor(mdl, null, "mis08", FileExists));
     }
@@ -69,9 +73,11 @@ public class MissileModelTextureTests
     /// <summary>The Kinetic Torpedo (mis404, type 77) resolves <c>mis404bmp</c> — and
     /// its mesh is Y-forward, so it needs the nose-alignment prerotation to fly
     /// nose-first (measured: longest axis Y).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mis404_kinetic_torpedo_texture_resolves_and_is_y_forward()
     {
+        Require.Artwork();
         var mdl = Parse("mis404");
         Assert.Equal("mis404bmp", NativeMissileRenderer.ResolveTextureStemFor(mdl, null, "mis404", FileExists));
 
@@ -90,9 +96,11 @@ public class MissileModelTextureTests
     /// texture (0 lit-solid fallbacks) — the widened per-type missile audit.
     /// FAILING-FIRST: the pre-P593b code has no such per-type resolution (all
     /// non-content missiles fell back to the shared mis05 lit-solid demo).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Every_distinct_missile_model_resolves_mesh_and_native_texture()
     {
+        Require.Artwork();
         var core = LoadCore();
         int fallback = 0;
         foreach (var mn in core.MissileTypes.Values
@@ -111,9 +119,11 @@ public class MissileModelTextureTests
     /// draw for projectiles, missiles and probes across the WHOLE core, plus the
     /// mine/chaff sprites — has 0 lit-solid fallbacks (the P593b guarantee).
     /// FAILING-FIRST: pre-P593b, 45/56 missile models render lit-solid.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Widened_render_model_audit_over_whole_core_is_zero()
     {
+        Require.Artwork();
         var core = LoadCore();
         int fallbacks = RenderModelAudit.AuditCore(core, s => Console.WriteLine(s));
         Assert.Equal(0, fallbacks);

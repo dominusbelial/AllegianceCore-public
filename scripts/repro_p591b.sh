@@ -4,9 +4,9 @@
 # spawn the showcase + minefields{both} at Alderan, then observes the drone /
 # layer / warp logs and dumps the interesting lines.
 set -uo pipefail
-DOTNET="${DOTNET:-/home/domingo/.dotnet/dotnet}"
+DOTNET="${DOTNET:-$(command -v dotnet)}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-ART="/home/domingo/Development/Artwork"
+ART="${ALLEGIANCE_ARTWORK_PATH:-$REPO/../Artwork}"
 PORT="${PORT:-6073}"
 OBSERVE="${OBSERVE:-380}"          # seconds of observation after spawn RESULT
 OUT_DIR="${OUT_DIR:-$REPO/repro-p591b-$(date +%Y%m%d-%H%M%S)}"

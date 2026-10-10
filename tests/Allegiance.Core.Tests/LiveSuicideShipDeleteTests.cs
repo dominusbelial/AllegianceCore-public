@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -194,11 +195,13 @@ public class LiveSuicideShipDeleteTests
     /// parallel mechanism. Verified through a <see cref="RecordingIgcSite"/>.
     /// <paramref name="asCombat"/> toggles between simulating the combat death
     /// (ReceiveDamage lethal) and the suicide direct call.</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(true)]
     [InlineData(false)]
     public void Kill_seam_raises_kill_ship_exactly_once_either_way(bool asCombat)
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -309,9 +312,11 @@ public class LiveSuicideShipDeleteTests
     /// <c>bLifepod → bKilled</c>, <c>FedSrv.CPP:11776-11780</c>) — exactly the
     /// scenario P107's tests prove is mutually exclusive with the eject.</para>
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Suiciding_ship_dies_and_both_death_messages_arrive()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.ShipSpawner = (core, mission, id) =>
         {
@@ -354,9 +359,11 @@ public class LiveSuicideShipDeleteTests
     /// <c>SUICIDE(80)</c> is a no-op: nothing dies, no <c>KILL_SHIP(105)</c> and
     /// no <c>SHIP_DELETE(20)</c> arrive — matching the native <c>GetCluster()</c>
     /// gate (<c>FedSrv.CPP:6338</c>). The ship stays docked and alive.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Suiciding_docked_ship_is_a_no_op()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectDockedSpawn(server);
         server.Boot(Config());
@@ -386,9 +393,11 @@ public class LiveSuicideShipDeleteTests
     /// produces a real <c>SHIP_DELETE(20)</c> with <c>sdr = SDR_KILLED</c>
     /// naming the victim — to the same peers <c>KILL_SHIP(105)</c> reaches.
     /// Two armed bots fight; the death is witnessed on <b>both</b> clients.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Combat_death_produces_ship_delete_to_same_audience()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectFightSpawn(server);
         server.Boot(Config());

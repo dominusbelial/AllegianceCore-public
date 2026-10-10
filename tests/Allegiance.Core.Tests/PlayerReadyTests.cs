@@ -3,6 +3,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -68,9 +69,11 @@ public class PlayerReadyTests
     /// click waits for the server to relay PLAYER_READY back before its own
     /// state updates -- before this fix the message was logged "unsupported"
     /// and dropped, so the click had no observable effect at all.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PlayerReady_is_relayed_back_to_the_sender()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var bot = new FltBot();

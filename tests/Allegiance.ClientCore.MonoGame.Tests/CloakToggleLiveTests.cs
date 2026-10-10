@@ -10,6 +10,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -37,7 +38,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class CloakToggleLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -114,9 +115,11 @@ public sealed class CloakToggleLiveTests
             false, false, false, false, false, false, false, false, false, false,
             Cloak: engaged));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CloakToggleKey_FoldsIntoClientControlState_ActivatesAndDeactivatesServerCloakWithTelemetryGate()
     {
+        Require.Artwork();
         using var server = new Srv();
         ConnectionSession? pilot = null;
         FltBot? enemy = null;

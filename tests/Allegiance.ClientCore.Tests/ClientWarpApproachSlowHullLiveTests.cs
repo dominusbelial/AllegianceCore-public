@@ -11,6 +11,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -41,7 +42,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class ClientWarpApproachSlowHullLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     /// <summary>Debug map + the P473 test-harness grant (prefix "mcp-",
     /// ignoreTechGate) so the peer can really BUY_LOADOUT hull 26 — a slow board
@@ -289,9 +290,11 @@ public sealed class ClientWarpApproachSlowHullLiveTests
     /// hull 26 is commanded to stop ~90 u OUTSIDE the transit sphere and never
     /// transits the aleph: it parks above the threshold (asserted) exactly as
     /// P490's live run observed. This measures the mechanism, not assumes it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume()
     {
+        Require.Artwork();
         var (server, bot, core, hullId) = BootSeat();
         using var srv = server;
         using var b = bot;
@@ -315,9 +318,11 @@ public sealed class ClientWarpApproachSlowHullLiveTests
     /// transit sphere), the same slow board hull 26 flies THROUGH both alephs to
     /// the 2-hop target. Fails on the legacy 200/450 law (and did not compile
     /// before the member existed) — the failing-first proof of the fix.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph()
     {
+        Require.Artwork();
         var (server, bot, core, hullId) = BootSeat();
         using var srv = server;
         using var b = bot;

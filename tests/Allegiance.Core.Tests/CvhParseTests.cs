@@ -1,4 +1,5 @@
 using Allegiance.Core.Collision;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -16,10 +17,12 @@ public class CvhParseTests
     /// </list>
     /// A file that parses but whose declared counts disagree is a failure here.
     /// </summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Paths))]
     public void Full_parse_and_oracles(string path)
     {
+        Require.Artwork();
         CvhFile f;
         try { f = CvhReader.Parse(File.ReadAllText(path)); }
         catch (Exception e) { throw new InvalidOperationException($"{path}", e); }
@@ -143,5 +146,5 @@ public class CvhParseTests
         Assert.True(!float.IsNaN(v) && !float.IsInfinity(v), $"{what} not finite ({v})");
     }
 
-    public static IEnumerable<object[]> Paths => CvhCorpus.Files.Select(p => new object[] { p });
+    public static IEnumerable<object[]> Paths => CvhCorpus.Paths();
 }

@@ -9,6 +9,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -34,7 +35,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class P394ShopPreSeedLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -120,9 +121,11 @@ public sealed class P394ShopPreSeedLiveTests
     /// loadout — the shield is STILL mounted afterwards. Pre-fix, the shop's
     /// empty ChosenParts cleared the whole loadout on relaunch and the shield
     /// was silently dropped.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EquippedShield_UntouchedPreseeded_SurvivesRelaunch_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         short friendlyStation = -1;
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
@@ -191,9 +194,11 @@ public sealed class P394ShopPreSeedLiveTests
     /// a stuck or double-added entry): deselect the shield in the shop, relaunch,
     /// and confirm it is gone. This guards against seeding accidentally pinning a
     /// part on.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PreSeededPart_ToggledOff_DropsOnRelaunch_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {

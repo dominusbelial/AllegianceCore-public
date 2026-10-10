@@ -9,6 +9,7 @@ using Allegiance.ClientCore.MonoGame.Flight;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -32,7 +33,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class TurretGunnerFireLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private const short CarrierHullId = 792;   // turret-capable carrier, slots [2,6), price 4000
     private const short BoarderHullId = 504;   // plain 500-credit boarder hull, slots [2,4)
@@ -190,9 +191,11 @@ public class TurretGunnerFireLiveTests
     /// fire button is held, and the server's gunned turret weapon creates
     /// projectiles aimed along the gunner's reported orientation.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Gunner_send_loop_makes_the_server_create_projectiles_along_its_orientation()
     {
+        Require.Artwork();
         var (server, carrier, boarder, sp) = Setup(out short cId, out short bId);
         try
         {

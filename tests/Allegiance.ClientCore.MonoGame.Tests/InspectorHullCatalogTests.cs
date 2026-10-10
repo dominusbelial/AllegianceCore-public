@@ -4,6 +4,7 @@ using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Content;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -13,7 +14,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class InspectorHullCatalogTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog =
         ShopCatalog.TryLoad(ArtRoot)
@@ -24,9 +25,11 @@ public class InspectorHullCatalogTests
     private static bool NativeAvailable(DataHullTypeIGC h)
         => !string.IsNullOrEmpty(h.ModelName) && File.Exists(Path.Combine(ArtRoot, h.ModelName.Trim() + ".mdl"));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flyable_only_excludes_drone_hulls_by_default()
     {
+        Require.Artwork();
         var flyable = InspectorHullCatalog.Enumerate(Catalog.Hulls, Resolver, includeDrones: false, NativeAvailable);
         var all = InspectorHullCatalog.Enumerate(Catalog.Hulls, Resolver, includeDrones: true, NativeAvailable);
         Assert.True(all.Count > flyable.Count, "drones should add hulls");
@@ -41,9 +44,11 @@ public class InspectorHullCatalogTests
         Assert.Contains(all, h => h.IsDrone);   // and the drone list DOES include them
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Walk_order_is_stable_by_hull_id_and_deduplicated()
     {
+        Require.Artwork();
         var all = InspectorHullCatalog.Enumerate(Catalog.Hulls, Resolver, includeDrones: true, NativeAvailable);
         var ids = all.Select(h => h.HullId).ToArray();
         Assert.Equal(ids.OrderBy(x => x).ToArray(), ids);
@@ -51,9 +56,11 @@ public class InspectorHullCatalogTests
         Assert.True(ids.Length > 20, $"expected a substantial hull census, got {ids.Length}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Civ_grouping_partitions_the_fleet()
     {
+        Require.Artwork();
         var all = InspectorHullCatalog.Enumerate(Catalog.Hulls, Resolver, includeDrones: false, NativeAvailable);
         var civs = InspectorHullCatalog.Civs(all);
         Assert.NotEmpty(civs);
@@ -64,9 +71,11 @@ public class InspectorHullCatalogTests
         Assert.True(covered >= all.Count - nullCiv, $"covered {covered} of {all.Count - nullCiv} civ-owned hulls");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Known_bios_scout_hull_is_native_and_meshy_available()
     {
+        Require.Artwork();
         var all = InspectorHullCatalog.Enumerate(Catalog.Hulls, Resolver, includeDrones: false, NativeAvailable);
         // fig05 -> scout role; civ "bios" resolves bios-scout
         var fig05 = all.First(h => h.ModelName.Equals("fig05", StringComparison.OrdinalIgnoreCase));
@@ -75,9 +84,11 @@ public class InspectorHullCatalogTests
         Assert.NotNull(fig05.MeshyAsset);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fallback_flag_is_true_only_when_neither_native_nor_meshy_resolves()
     {
+        Require.Artwork();
         var all = InspectorHullCatalog.Enumerate(Catalog.Hulls, Resolver, includeDrones: true, NativeAvailable);
         foreach (var h in all)
         {
@@ -93,9 +104,11 @@ public class InspectorHullCatalogTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Primary_civ_resolves_a_real_civ_key()
     {
+        Require.Artwork();
         var all = InspectorHullCatalog.Enumerate(Catalog.Hulls, Resolver, includeDrones: false, NativeAvailable);
         foreach (var h in all.Where(h => h.CivKey is not null))
             Assert.Contains(h.CivKey, HullModelResolver.CivKeyById.Values);

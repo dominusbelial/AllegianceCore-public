@@ -15,13 +15,17 @@ public static class Corpus
 {
     private static readonly string[] Roots =
     [
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork",
-        Environment.GetEnvironmentVariable("ALLEGIANCE_NATIVE_SRC_PATH") ?? "/home/domingo/Development/Allegiance",
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork),
+        ExternalPaths.Resolve(ExternalResourceKind.NativeSource),
     ];
 
     public const int ExpectedUniqueFiles = 210;
     public const int ExpectedStaticCores = 99;
     public const int ExpectedMaps = 111;
+
+    /// <summary>True when at least one corpus root exists on disk. Corpus-backed
+    /// tests use <c>Require.Artwork()</c> to skip (not fail) when false.</summary>
+    public static bool Available => Roots.Any(Directory.Exists);
 
     private static readonly Lazy<IReadOnlyList<string>> Cached = new(Discover);
 
@@ -29,10 +33,10 @@ public static class Corpus
 
     private static IReadOnlyList<string> Discover()
     {
+        // No corpus on this host (clean clone) — return empty; tests guard with
+        // Require.Artwork() / the sentinel Theory() row rather than throw here.
         if (!Roots.Any(Directory.Exists))
-            throw new DirectoryNotFoundException(
-                $"no artwork corpus found -- checked {string.Join(", ", Roots)}. " +
-                "Set ALLEGIANCE_ARTWORK_PATH and ALLEGIANCE_NATIVE_SRC_PATH to override.");
+            return [];
 
         var byHash = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var root in Roots)
@@ -50,9 +54,14 @@ public static class Corpus
         return byHash.Values.ToList();
     }
 
+    /// <summary>Theory data over the whole corpus. When the corpus is absent
+    /// (clean clone) it yields a single sentinel row so a <c>[SkippableTheory]</c>
+    /// whose body starts with <c>Require.Artwork()</c> reports a visible skip
+    /// rather than enumerating nothing.</summary>
     public static TheoryData<string> Theory()
     {
         var d = new TheoryData<string>();
+        if (!Available) { d.Add(""); return d; }
         foreach (var f in Files) d.Add(f);
         return d;
     }

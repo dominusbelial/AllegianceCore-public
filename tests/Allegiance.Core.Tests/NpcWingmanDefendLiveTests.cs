@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -138,9 +139,11 @@ public sealed class NpcWingmanDefendLiveTests
     /// charge — native's shouldReturn → return-to-defend (shipIGC.cpp:2373-2407),
     /// evidenced by <see cref="Ship.AttackTarget"/> clearing and a measured
     /// distance decrease back to the charge.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Defender_disengages_when_chased_enemy_flees_and_returns_to_charge()
     {
+        Require.Artwork();
         var (srv, mission, sector, npcSide, peerSide, wingDroneId) = Boot();
         using (srv)
         {
@@ -216,9 +219,11 @@ public sealed class NpcWingmanDefendLiveTests
     /// <see cref="Ship.AttackTarget"/> to the closer threat — native's
     /// <c>SetCommand(c_cmdPlan, pTarget, c_cidAttack)</c> (shipIGC.cpp:2383-2389),
     /// the re-evaluation's other branch.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one()
     {
+        Require.Artwork();
         var (srv, mission, sector, npcSide, peerSide, wingDroneId) = Boot();
         using (srv)
         {

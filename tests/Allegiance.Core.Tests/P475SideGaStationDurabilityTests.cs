@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -137,9 +138,11 @@ public sealed class P475SideGaStationDurabilityTests
     /// documented native constants (igc.h:591-595), and a station with no
     /// resolvable mission reproduces the raw values exactly — so the whole
     /// station half is a no-op for the default (no-mission) case.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Station_indices_match_native_and_no_mission_is_raw()
     {
+        Require.Artwork();
         Assert.Equal(4, GlobalAttributeSet.MaxArmorStation);
         Assert.Equal(5, GlobalAttributeSet.ArmorRegenerationStation);
         Assert.Equal(6, GlobalAttributeSet.MaxShieldStation);
@@ -166,9 +169,11 @@ public sealed class P475SideGaStationDurabilityTests
 
     /// <summary>⭐ The four effective getters scale the raw type value by the
     /// owning side's GA factor.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Effective_getters_scale_by_side_ga()
     {
+        Require.Artwork();
         var m = NewMission(
             (GlobalAttributeSet.MaxArmorStation, 1.5f),
             (GlobalAttributeSet.MaxShieldStation, 2f),
@@ -209,9 +214,11 @@ public sealed class P475SideGaStationDurabilityTests
     /// (native <c>GetMaxArmorHitPoints() · c_gaMaxArmorStation</c>). Pre-fix both
     /// missions used the raw denominator, so the drops were identical and the
     /// ratio assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MaxArmorStation_scales_the_overflow_damage_denominator()
     {
+        Require.Artwork();
         float idDrop = ArmorOverflowDrop(1f);
         float boostDrop = ArmorOverflowDrop(2f);
         Assert.True(idDrop > 0.05f, $"identity overflow must chip the armor; got {idDrop:F4}");
@@ -246,9 +253,11 @@ public sealed class P475SideGaStationDurabilityTests
     /// still takes no damage (native <c>GetMaxShieldHitPoints() ·
     /// c_gaMaxShieldStation</c>). Pre-fix both missions used the raw max, so the
     /// drops were identical and the ratio assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MaxShieldStation_raises_shield_absorption_capacity()
     {
+        Require.Artwork();
         float idDrop = ShieldAbsorbDrop(1f);
         float boostDrop = ShieldAbsorbDrop(2f);
         Assert.InRange(boostDrop / idDrop, 0.44f, 0.56f);   // ~0.5
@@ -282,9 +291,11 @@ public sealed class P475SideGaStationDurabilityTests
     /// the station's shield twice as fast (native <c>GetShieldRegeneration() ·
     /// c_gaShieldRegenerationStation</c>). Pre-fix both missions regenerated at
     /// the raw rate, so the gains were identical and the ratio assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShieldRegenerationStation_speeds_shield_regeneration()
     {
+        Require.Artwork();
         float idGain = ShieldRegenGain(1f);
         float boostGain = ShieldRegenGain(2f);
         Assert.True(idGain > 1e-4f, $"identity shield regen must be measurable; got {idGain:E2}");
@@ -318,9 +329,11 @@ public sealed class P475SideGaStationDurabilityTests
     /// the station's armor twice as fast (native <c>GetArmorRegeneration() ·
     /// c_gaArmorRegenerationStation</c>). Pre-fix both missions regenerated at
     /// the raw rate, so the gains were identical and the ratio assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ArmorRegenerationStation_speeds_armor_regeneration()
     {
+        Require.Artwork();
         float idGain = ArmorRegenGain(1f);
         float boostGain = ArmorRegenGain(2f);
         Assert.True(idGain > 1e-4f, $"identity armor regen must be measurable; got {idGain:E2}");
@@ -336,9 +349,11 @@ public sealed class P475SideGaStationDurabilityTests
     /// the old owner's <c>MaxShieldStation = 2</c> the denominator doubles, so the
     /// boost halves. Pre-fix Capture used raw type values, so the boost ignored the
     /// GA and this assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Capture_heroic_shield_uses_old_owners_ga()
     {
+        Require.Artwork();
         var m = NewMission((GlobalAttributeSet.MaxShieldStation, 2f));   // old owner (side 0) max shield GA = 2
         var st = NewStation(m, 9260, 0, 5000f, 100f, shieldRegen: 10f);
         // Old-owner ratio = ShieldRegen/(MaxShield·2) = 10/200 = 0.05 → boost = 0.05·7 = 0.35.
@@ -354,9 +369,11 @@ public sealed class P475SideGaStationDurabilityTests
     /// <c>MaxArmorStation</c> (native: after <c>pstation-&gt;SetSide</c>,
     /// <c>fsship.cpp:634</c>, the <c>MyStationType</c> getters read the new side).
     /// Pre-fix there was no GA at all, so the switch was invisible.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Capture_switches_max_and_regen_to_new_owners_ga()
     {
+        Require.Artwork();
         var m = NewMission((GlobalAttributeSet.MaxArmorStation, 1.5f));   // side 0
         var arr1 = new float[GlobalAttributeSet.Count];
         Array.Fill(arr1, 1f);
@@ -383,9 +400,11 @@ public sealed class P475SideGaStationDurabilityTests
     /// quantization), so the HUD/target readout doesn't jump against the scaled
     /// max. No client change is needed because the fraction never crosses the wire
     /// unscaled.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stations_update_fraction_tracks_stored_fraction_under_ga()
     {
+        Require.Artwork();
         var m = NewMission((GlobalAttributeSet.MaxShieldStation, 2f));
         const float ms = 500f;
         var st = NewStation(m, 9280, 0, 2000f, ms, shieldRegen: 0f);

@@ -3,6 +3,7 @@
 # Usage: ./before_baseline.sh [ups] [seconds]
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1   # scripts/ -> repo root
+ART="${ALLEGIANCE_ARTWORK_PATH:-$(pwd)/../Artwork}"
 UPS="${1:-20}"
 SECS="${2:-240}"
 TD=tests/Allegiance.ClientCore.Tests
@@ -24,10 +25,10 @@ else
 fi
 
 echo "==> building + running BEFORE log baseline (ups=$UPS secs=$SECS)"
-ALLEGIANCE_ARTWORK_PATH=/home/domingo/Development/Artwork \
+ALLEGIANCE_ARTWORK_PATH="$ART" \
 ALLEGIANCE_LIVE_P539_BASELINE=1 \
 ALLEGIANCE_LIVE_P539_SECONDS="$SECS" \
-/home/domingo/.dotnet/dotnet test "$TD/Allegiance.ClientCore.Tests.csproj" \
+"${DOTNET:-dotnet}" test "$TD/Allegiance.ClientCore.Tests.csproj" \
   --filter "FullyQualifiedName~P539LogBaselineLiveTests.Baseline_${UPS}Hz" \
   --nologo > /tmp/p539_before_${UPS}.log 2>&1
 RC=$?

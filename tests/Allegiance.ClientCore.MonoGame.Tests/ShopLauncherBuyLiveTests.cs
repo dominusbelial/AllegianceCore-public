@@ -12,6 +12,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -36,7 +37,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class ShopLauncherBuyLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -159,9 +160,11 @@ public sealed class ShopLauncherBuyLiveTests
     /// fLaunch) — and the authoritative server-granted loadout carries the real
     /// missile launcher with its real ammo, the identical wire shape a
     /// P433-equipped bot's launcher entry carries.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShopLauncherPurchase_GrantsTheRealLauncher_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
             SpawnDocked(core, mission, id, out _));

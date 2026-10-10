@@ -5,6 +5,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -78,9 +79,11 @@ public class TeammateLoadoutBroadcastTests
     /// P58/P62/P63/P85). 3 bots / 2 teams (round-robin) gives a guaranteed
     /// same-side pair and a cross-side enemy, same construction as
     /// <see cref="TeammatePositionBroadcastTests"/>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teammates_real_loadout_is_broadcast_to_observers_but_enemy_loadout_is_not()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };

@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -133,9 +134,11 @@ public class CombatDeathTests
     /// <see cref="KillShip"/> broadcast — and asserted to fire exactly once. The
     /// dead ship leaves the sector, so later ticks cannot re-kill it.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Enough_hits_kill_the_ship_and_kill_ship_event_fires_once()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -197,9 +200,11 @@ public class CombatDeathTests
     /// <b>no</b> second <c>KillShipEvent</c>. This pins the guard directly,
     /// independent of the collision pass or the sector-removal side effect.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReceiveDamage_on_a_dead_ship_never_re_emits_kill_ship()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -227,9 +232,11 @@ public class CombatDeathTests
 
     /// <summary><c>FM_S_KILL_SHIP(105)</c> round-trips exactly (same shape as
     /// the other ported messages — header + fixed fields, cbmsg = 14).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void KillShip_message_round_trips()
     {
+        Require.Artwork();
         var msg = KillShip.FromVictim(victimId: 777, killerType: IgcObjectType.Ship, killerId: 808);
         msg.SideIdKiller = 3;
         msg.BKillCredit = true;

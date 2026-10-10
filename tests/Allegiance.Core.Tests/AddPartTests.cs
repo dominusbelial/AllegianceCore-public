@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -194,9 +195,11 @@ public class AddPartTests
 
     // ── Scenario 1: pickup destroys immediately + offers only to the picker,
     //    then accepting into an existing mount MERGES the amount ────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Part_pickup_destroys_then_accept_merges_amount_into_existing_mount()
     {
+        Require.Artwork();
         using var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());
@@ -267,9 +270,11 @@ public class AddPartTests
     }
 
     // ── Scenario 2: accepting into an EMPTY mount mounts a FRESH part ───────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Part_pickup_accept_into_empty_mount_mounts_fresh_part()
     {
+        Require.Artwork();
         using var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());
@@ -308,9 +313,11 @@ public class AddPartTests
     }
 
     // ── Scenario 3: declining re-creates a NEW treasure at the current position ──
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Part_pickup_decline_recreates_treasure_at_current_position()
     {
+        Require.Artwork();
         using var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());
@@ -357,9 +364,11 @@ public class AddPartTests
     }
 
     // ── Scenario 4: a second touch while an offer is pending is destroyed but NOT offered ──
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Second_part_touch_while_offer_pending_destroys_but_does_not_reoffer()
     {
+        Require.Artwork();
         using var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());

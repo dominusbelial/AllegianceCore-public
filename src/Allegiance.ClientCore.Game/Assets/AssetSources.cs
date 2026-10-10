@@ -1,22 +1,24 @@
 using System.IO;
 using System.Text;
+using Allegiance.Core;
 
 namespace Allegiance.ClientCore.MonoGame.Assets;
 
 /// <summary>
 /// Central access to the client's asset sources and the single place the
-/// desktop artwork root (<c>ALLEGIANCE_ARTWORK_PATH</c> + fallback) is
-/// resolved — the one remaining environment lookup for asset loading, so heads
-/// and loaders never scatter <c>GetEnvironmentVariable</c> calls.
+/// desktop artwork root (<c>$ALLEGIANCE_ARTWORK_PATH</c>, resolved by
+/// <see cref="ExternalPaths"/>) is obtained — the one remaining environment
+/// lookup for asset loading, so heads and loaders never scatter
+/// <c>GetEnvironmentVariable</c> calls.
 /// </summary>
 public static class AssetSources
 {
-    /// <summary>The canonical artwork-root resolver: the
-    /// <c>ALLEGIANCE_ARTWORK_PATH</c> environment variable, falling back to the
-    /// standard dev location. This is today's exact desktop behaviour.</summary>
+    /// <summary>The canonical artwork-root resolver (see
+    /// <see cref="ExternalPaths"/>). Throws a clear, actionable error when the
+    /// corpus is not configured, so a fresh clone never silently falls back to
+    /// an owner's machine path.</summary>
     public static string ResolveRoot() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Require(ExternalResourceKind.Artwork);
 
     /// <summary>The default desktop source over the resolved artwork root
     /// (lazily built). Heads that need a different source (Android in P499)

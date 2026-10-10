@@ -11,6 +11,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -87,9 +88,11 @@ public sealed class P591dMinefieldExportAudienceTests
     /// side's own hazard). On today's code the NPC launcher's absence from the
     /// peer-export latch zeroes the audience.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Npc_layer_drone_minefield_reaches_same_side_seated_peer()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null; Sector? sector = null; Ship? layer = null;
         DataMineTypeIGC mine = default; DataHullTypeIGC hull = default;
@@ -168,9 +171,11 @@ public sealed class P591dMinefieldExportAudienceTests
     /// Guards that the fix widens the deploy audience to the OWNING side without
     /// leaking the field to a foreign side.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Opposite_side_peer_does_not_receive_the_deploy_mine_export()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null; Sector? sector = null;
         DataMineTypeIGC mine = default; DataHullTypeIGC hull = default;

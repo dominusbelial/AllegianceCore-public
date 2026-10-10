@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -144,9 +145,11 @@ public class KillBonusWireLiveTests
     /// carries exactly <c>50·c/(c+4)</c> (and the streak count) — the real live
     /// value that drives the HUD Kill Bonus gauge. Also proves a fresh ship
     /// streams 0% (an honest readout, never NA).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_kill_streak_streams_climbing_kill_bonus_to_the_client()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)

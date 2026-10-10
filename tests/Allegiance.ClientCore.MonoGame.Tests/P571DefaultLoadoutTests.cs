@@ -5,6 +5,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -16,7 +17,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class P571DefaultLoadoutTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = ShopCatalog.TryLoad(ArtRoot)
         ?? throw new InvalidOperationException($"PCore001.igc not loadable from {ArtRoot}");
@@ -52,9 +53,11 @@ public class P571DefaultLoadoutTests
     /// parts that mount (P555 masks): Counter 1, EWS Probe 1, PW Gat Gun 1, MRM
     /// Seeker 1, Sm Shield 1 — even when the current/docked ship had ZERO parts
     /// (the respawned-lifepod "+0 parts" bug).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Selecting_adv_scout_seeds_native_default_loadout_from_bare_chassis()
     {
+        Require.Artwork();
         var m = OpenAdvScout();
 
         var parts = m.ChosenParts;
@@ -75,9 +78,11 @@ public class P571DefaultLoadoutTests
     /// plus its shield/chaff/dispenser/magazine/afterburner. Uses Adv Fighter
     /// 288 (3 hardpoints): 3× PW Gat Gun + Hvy Booster + Counter + Mine Pack +
     /// Sm Shield + SRM Dumbfire = 8 parts.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Selecting_adv_fighter_mounts_the_gun_in_every_hardpoint()
     {
+        Require.Artwork();
         var m = new ShopModel(Catalog, Hull(1).HullId, Array.Empty<ExpandedPartData>());
         m.CycleHullTo(288);
 
@@ -103,9 +108,11 @@ public class P571DefaultLoadoutTests
     /// <summary>⭐ P571 — a bomber's new hull also gets its default loadout
     /// (N>0), and preferred parts that DON'T mount on it (native CanMount
     /// gate — e.g. the gunship's Prox Mine under P555 masks) are never sent.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Selecting_bomber_carries_only_mountable_preferred_parts()
     {
+        Require.Artwork();
         var m = new ShopModel(Catalog, Hull(1).HullId, Array.Empty<ExpandedPartData>());
         m.CycleHullTo(124); // Bomber
 
@@ -125,9 +132,11 @@ public class P571DefaultLoadoutTests
     /// (native CanMount gate), never shipped. The Gunship (290) lists Prox Mine
     /// (59) and Tower AC Drone (168) as preferred but they don't mount it (P555
     /// masks) — neither appears in the new-hull loadout.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_mountable_preferred_parts_are_skipped()
     {
+        Require.Artwork();
         var m = new ShopModel(Catalog, Hull(1).HullId, Array.Empty<ExpandedPartData>());
         m.CycleHullTo(290); // Gunship
 
@@ -144,9 +153,11 @@ public class P571DefaultLoadoutTests
     /// <summary>⭐ P571 — sending a launch carries the default loadout: after
     /// selecting Adv Scout, shop.ChosenParts (what SendBuyLoadout transmits) is
     /// exactly the hull's mountable preferred parts — never "+0 parts".</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Launch_transmits_the_default_loadout_not_zero_parts()
     {
+        Require.Artwork();
         var m = OpenAdvScout();
         Assert.True(m.TryLaunch());
         Assert.True(m.ChosenParts.Count > 0);
@@ -163,9 +174,11 @@ public class P571DefaultLoadoutTests
     /// pstation->GetSuccessor, clintlib.h:1357 / stationIGC.h:399-435) — the
     /// default is NEVER spuriously empty. This mirrors exactly how the real
     /// client builds its shop (FilteredFor) on the allTech live-proof map.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Filtered_all_tech_hull_swap_yields_non_empty_default()
     {
+        Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(System.IO.Path.Combine(ArtRoot, ShopCatalog.CoreFileName)));
         var gar = core.StationTypes.Values.First(s => s.Name.Contains("Garrison", StringComparison.OrdinalIgnoreCase));
         var allTech = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray());
@@ -189,9 +202,11 @@ public class P571DefaultLoadoutTests
     /// <summary>⭐ P571 — launching an UNCHANGED hull still keeps its current
     /// parts (the shop opens pre-seeded from the docked ship; no hull picked
     /// ⇒ no rebase).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unchanged_hull_keeps_current_parts()
     {
+        Require.Artwork();
         var current = new[]
         {
             new ExpandedPartData(33, 20, 0, ExpandedPartData.FullyMounted),

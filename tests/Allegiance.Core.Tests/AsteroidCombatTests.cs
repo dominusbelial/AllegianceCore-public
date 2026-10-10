@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -133,9 +134,11 @@ public sealed class AsteroidCombatTests
     /// already dead, <c>asteroidigc.h:160-165</c>). All numbers decoded, not
     /// guessed. The exact computed fraction is asserted, and the
     /// caller-owns-removal contract is asserted explicitly.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReceiveDamage_partial_reduces_fraction_lethal_marks_dead_no_double_kill_and_leaves_removal_to_caller()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -190,9 +193,11 @@ public sealed class AsteroidCombatTests
     /// pass (<see cref="Sector.ResolveMining"/>) still drains it and the ship's
     /// <c>Ore</c> grows across further ticks — reusing the MiningTests accrual
     /// recipe to prove no regression. This is verification point 4 of the task.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Damaged_but_alive_asteroid_still_mines_normally()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];

@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -84,9 +85,11 @@ public class LaunchUndockTests
     /// producing a second <see cref="SetCluster"/> on the wire, exactly like a
     /// real <c>FM_C_DOCKED</c> undock does. Before the fix this assertion
     /// fails: the ACK arrives but the ship never leaves the station.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BuyLoadout_with_fLaunch_undocks_a_docked_ship()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.ShipSpawner = (core, mission, shipId) => SpawnDocked(mission, shipId, out _);
 
@@ -126,9 +129,11 @@ public class LaunchUndockTests
     /// not misbehave (no station to clear, no spurious extra SetCluster) --
     /// <see cref="Server.ApplyLoadout"/> only undocks when
     /// <c>live.Ship.StationId != null</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BuyLoadout_with_fLaunch_on_an_undocked_ship_sends_no_extra_SetCluster()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.ShipSpawner = (core, mission, shipId) => SpawnDocked(mission, shipId, out _);
 

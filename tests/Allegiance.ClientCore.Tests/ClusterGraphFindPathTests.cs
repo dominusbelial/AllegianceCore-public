@@ -3,6 +3,7 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.State;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -20,7 +21,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class ClusterGraphFindPathTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     /// <summary>
     /// Build the cluster graph from the real m2xspiderw map the same way the
@@ -44,9 +45,11 @@ public sealed class ClusterGraphFindPathTests
         return new ClusterGraph { Clusters = clusters, Warps = warps };
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShortestGanymedeToOrgania_IsTheThreeHopMinimum_OnRealMap()
     {
+        Require.Artwork();
         // The real shortest route from Ganymede (1050) to Organia (1051) on
         // m2xspiderw is 3 hops via Bug Nebula (1054) and Tellus (1055):
         //   1050 --bugNebula--> 1054 --tellus--> 1055 --organia--> 1051
@@ -63,9 +66,11 @@ public sealed class ClusterGraphFindPathTests
         Assert.Equal(4, path.Count);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AlderanWaypointRoute_IsLongerThanTheTrueMinimum()
     {
+        Require.Artwork();
         // Prove the "Ganymede->Alderan->Organia" waypoint is a real but
         // longer route: 1050 -> Rigel(1059) -> Alderan(1052) -> Juniper(1061)
         // -> Organia(1051) = 4 hops, which FindShortestPath rightly does NOT

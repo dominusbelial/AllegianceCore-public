@@ -2,6 +2,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -76,9 +77,11 @@ public class OwnShipKillBonusUpdateTests
     /// <summary>⭐ <c>FromShip</c> lifts the REAL P278 values off a live ship: a
     /// 2-kill streak streams percent 16.67 and streak 2; a fresh ship streams 0
     /// (an honest readout, never NA).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FromShip_reflects_real_ship_kill_bonus()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.ResetKillBonus();
         Assert.Equal(0f, OwnShipKillBonusUpdate.FromShip(ship).KillBonusPercent);

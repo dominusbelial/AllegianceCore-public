@@ -5,6 +5,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -69,9 +70,11 @@ public sealed class InitialMinerSpawnLiveTests
             .Where(s => s.IsNpc && s.PilotType == Ship.PilotTypeMiner && s.StationId is not null)
             .ToList();
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Normal_mode_spawns_one_docked_miner_per_side_at_real_home_and_auto_undocks()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: false));
         var mission = server.Missions[0];
@@ -100,9 +103,11 @@ public sealed class InitialMinerSpawnLiveTests
         Console.WriteLine("[P382-LIVE] normal mode: both initial miners auto-undocked (P381) with no input.");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_mode_spawns_docked_miners_at_synthetic_omega_plato_not_real_homes()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: true));
         var mission = server.Missions[0];
@@ -167,9 +172,11 @@ public sealed class InitialMinerSpawnLiveTests
     //      peer the mission legitimately stays NotStarted awaiting ready-up,
     //      and the miner therefore never decides. Guards against accidentally
     //      widening the auto-start beyond debug mode.
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_mode_auto_starts_at_boot_and_first_miner_decides_without_any_player()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: true));
         var mission = server.Missions[0];
@@ -203,9 +210,11 @@ public sealed class InitialMinerSpawnLiveTests
         Console.WriteLine($"[P387-LIVE] debug mode, no player: both miners warped into Alderan(1052) on their own (first decision ~{wt * 50}ms of sim, no peer).");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Normal_mode_with_no_player_stays_notstarted_and_miner_never_decides()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: false));
         var mission = server.Missions[0];

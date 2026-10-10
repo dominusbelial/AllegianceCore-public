@@ -9,6 +9,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -37,7 +38,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class RipcordRequestLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private const short FlySector = 1052;        // Borasisi — no station, stays flying
     private const short TargetA = 1054;          // Deucalion — injected side-0 anchor
@@ -143,9 +144,11 @@ public sealed class RipcordRequestLiveTests
         return fx;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RipcordKey_Initiate_Countdown_Teleport_Deny_Cancel_EndToEnd()
     {
+        Require.Artwork();
         var fx = Boot(out _);
         var server = fx.Server;
         ConnectionSession? pilot = null;

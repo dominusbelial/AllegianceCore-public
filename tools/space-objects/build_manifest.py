@@ -2,7 +2,7 @@
 """Build the P589 sky-objects manifest (JSON) + copy provenance sources."""
 import json, os, shutil
 
-BASE = "/home/domingo/Development/AllegianceCore/docs/reports/P589_assets"
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "reports", "P589_assets"))
 SRC_DIR = "/tmp/spaceobj_src"
 SRC_OUT = os.path.join(BASE, "sources")
 os.makedirs(SRC_OUT, exist_ok=True)

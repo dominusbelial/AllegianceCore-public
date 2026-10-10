@@ -9,6 +9,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -150,9 +151,11 @@ public class KillBonusLiveTests
     /// through the REAL server BroadcastKillShip kill-credit path (native
     /// FedSrv.CPP:11824 AddExperience), against distinct cross-side unowned
     /// non-lifepod NPC victims so the credit gate fires every time.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Several_real_kills_climb_the_shooters_kill_bonus_per_native_formula()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)
@@ -193,9 +196,11 @@ public class KillBonusLiveTests
     /// chain, not the reflection shortcut. Victim parked on a side not in the
     /// mission (Server.cs guard fails the eject) so the non-lifepod death is
     /// real and cross-side credit fires.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_end_to_end_projectile_kill_increases_kill_bonus()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)
@@ -235,9 +240,11 @@ public class KillBonusLiveTests
     /// A lifepod hull taking a positive-damage kill is bKilled via bLifepod
     /// (the AFS "your pod is destroyed" trigger), so the KB counter drops from a
     /// non-zero streak straight to 0.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Destroying_the_players_own_pod_resets_the_streak_to_zero()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)
@@ -272,9 +279,11 @@ public class KillBonusLiveTests
     /// changes). Exercises the real damage path with real core data
     /// (shipIGC.cpp:1238-1242 + stationIGC.cpp:142-145), not the no-mission
     /// default.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_mission_damage_scales_with_kill_bonus()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)

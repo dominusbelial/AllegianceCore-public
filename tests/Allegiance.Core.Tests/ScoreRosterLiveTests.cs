@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using PlayerScore = global::Allegiance.Server.PlayerScore;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -74,9 +75,11 @@ public sealed class ScoreRosterLiveTests
     /// <summary>⭐ The periodic roster broadcast reaches a real connected peer
     /// carrying each player's real P193 Kills/Deaths with the right name and own
     /// side id, for BOTH real sides — the wire the MonoGame scoreboard reads.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Periodic_roster_broadcasts_real_player_scores_with_sides()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass ready-up

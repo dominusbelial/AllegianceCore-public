@@ -6,6 +6,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Xunit;
 using Xunit.Abstractions;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -33,7 +34,7 @@ namespace Allegiance.ClientCore.Tests;
 public class P591dShowcaseMinefieldPlacementTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private readonly ITestOutputHelper _output;
     public P591dShowcaseMinefieldPlacementTests(ITestOutputHelper output) => _output = output;
@@ -44,9 +45,11 @@ public class P591dShowcaseMinefieldPlacementTests
         return map.Warps.ToDictionary(w => w.WarpId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side0_field_goes_across_the_enemy_Juniper_aleph_2183_not_Cirrus_2150()
     {
+        Require.Artwork();
         var warps = LoadWarps();
         // Side 0 lays a field; its enemy is side 1, whose home is Organia (1051).
         // The enemy's arrival aleph in Alderan (1052) = Juniper (2183).
@@ -57,9 +60,11 @@ public class P591dShowcaseMinefieldPlacementTests
         _output.WriteLine($"side 0 field -> enemy (side 1) arrival aleph {arrival.Value.WarpId} via {arrival.Value.PenultimateSector}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side1_field_goes_across_the_enemy_Rigel_aleph_2187_not_Cirrus_2150()
     {
+        Require.Artwork();
         var warps = LoadWarps();
         // Side 1 lays a field; its enemy is side 0, whose home is Ganymede (1050).
         // The enemy's arrival aleph in Alderan (1052) = Rigel (2187).
@@ -70,9 +75,11 @@ public class P591dShowcaseMinefieldPlacementTests
         _output.WriteLine($"side 1 field -> enemy (side 0) arrival aleph {arrival.Value.WarpId} via {arrival.Value.PenultimateSector}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Neither_field_lands_at_the_far_Cirrus_aleph_2150()
     {
+        Require.Artwork();
         var warps = LoadWarps();
         var s0 = Allegiance.Tools.McpSpawner.BotManager.EnemyArrivalWarp(warps, 1052, 1, 1051);
         var s1 = Allegiance.Tools.McpSpawner.BotManager.EnemyArrivalWarp(warps, 1052, 0, 1050);
@@ -94,9 +101,11 @@ public class P591dShowcaseMinefieldPlacementTests
     /// aleph genuinely sits across the enemy's inbound lane, not a decorative
     /// aleph the enemy never uses.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Resolver_routes_match_the_bots_shortest_path_machinery()
     {
+        Require.Artwork();
         var warps = LoadWarps();
         var adj = new Dictionary<short, List<short>>();
         foreach (var w in warps.Values)

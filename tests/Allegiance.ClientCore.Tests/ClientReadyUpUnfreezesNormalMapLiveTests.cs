@@ -7,6 +7,7 @@ using Allegiance.Tools.McpSpawner;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -36,7 +37,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class ClientReadyUpUnfreezesNormalMapLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg NormalConfig() => new()
     {
@@ -97,9 +98,11 @@ public sealed class ClientReadyUpUnfreezesNormalMapLiveTests
     }
 
     /// <summary>⭐ The live root-cause + fix proof.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Harness_ready_up_starts_normal_map_mission_and_opposing_combat_bot_moves()
     {
+        Require.Artwork();
         var server = new Srv();
         server.SpawnInitialMinersAtBoot = false;
         server.Boot(NormalConfig());

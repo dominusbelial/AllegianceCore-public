@@ -6,6 +6,8 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -27,7 +29,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P539CombatProofLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg MapConfig(int ups) => new()
     {
@@ -210,11 +212,21 @@ public sealed class P539CombatProofLiveTests
 
     /// <summary>Default 20 Hz server cadence (the rate the 221 log showed bots
     /// firing ~50 shots each).</summary>
-    [Fact]
-    public void Dogfight_at_20Hz() => RunDogfight(ups: 20, size: 5, windowSeconds: 240);
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
+    public void Dogfight_at_20Hz()
+    {
+        Require.Artwork();
+        RunDogfight(ups: 20, size: 5, windowSeconds: 240);
+    }
 
     /// <summary>10 Hz server cadence (221 showed bots firing only ~8 shots each
     /// here — the fire loop must cope with either rate).</summary>
-    [Fact]
-    public void Dogfight_at_10Hz() => RunDogfight(ups: 10, size: 5, windowSeconds: 240);
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
+    public void Dogfight_at_10Hz()
+    {
+        Require.Artwork();
+        RunDogfight(ups: 10, size: 5, windowSeconds: 240);
+    }
 }

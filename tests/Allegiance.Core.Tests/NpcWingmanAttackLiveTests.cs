@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -172,9 +173,11 @@ public sealed class NpcWingmanAttackLiveTests
     /// full decision → pursuit → fire loop, evidenced by the enemy's
     /// <see cref="Ship.Fraction"/> dropping below 1.0 (a real projectile
     /// collision), not merely a <see cref="Ship.StateM"/> bit flip.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Wingman_engages_nearest_enemy_closes_distance_and_deals_damage()
     {
+        Require.Artwork();
         var (srv, mission, sector, npcSide, peerSide, wingDroneId) = Boot();
         using (srv)
         {
@@ -257,9 +260,11 @@ public sealed class NpcWingmanAttackLiveTests
     /// enemy is actually present (the faithful no-op of native
     /// <c>shipIGC.h:2458-2459</c>), and that a same-side ship is never
     /// mistaken for an enemy.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Wingman_with_no_enemy_in_sector_stands_by()
     {
+        Require.Artwork();
         // The peer (the only other-side ship) is parked in the LAST sector, so
         // the Wingman's own sector contains no enemy-side ship at all.
         var (srv, mission, sector, npcSide, _, wingDroneId) = Boot(peerInSeparateSector: true);

@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -120,9 +121,11 @@ public class MissileFireTests
     /// launcher's ammo is untouched. This is the "fire requested but lock not yet
     /// sufficient" refusal (the caller-facing half of UpdateMissileLock's gate 5 —
     /// a MaxLock==0 type needs no lock, a MaxLock&gt;0 type needs a full build).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TryFireMissile_refuses_when_lock_not_yet_sufficient()
     {
+        Require.Artwork();
         var (_, _, lockTyp) = Rep.Value;
         var mission = NewStartedMission(out var sector);
         var (shooter, _) = PlaceDuo(mission, sector, lockTyp);
@@ -144,9 +147,11 @@ public class MissileFireTests
     /// fires: a real <see cref="Missile"/> is created homing at CommandTarget, the
     /// ammo decrements 2 → 1, and the lock is consumed (reset to 0 — the natural
     /// fire-rate limiter).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TryFireMissile_fires_when_lock_has_built_and_homes_at_target()
     {
+        Require.Artwork();
         var (_, _, lockTyp) = Rep.Value;
         var mission = NewStartedMission(out var sector);
         var (shooter, target) = PlaceDuo(mission, sector, lockTyp);
@@ -170,9 +175,11 @@ public class MissileFireTests
     /// and the fire bit set in StateM, a single mission tick fires a real missile
     /// homing at CommandTarget and spends one round. This is the magazineigc.cpp:111
     /// lever wired into OnUpdate; it must-fail if the held-bit check is removed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void OnUpdate_held_missile_fire_bit_fires_on_next_tick()
     {
+        Require.Artwork();
         var (_, noLock, _) = Rep.Value;
         var mission = NewStartedMission(out var sector);
         var (shooter, target) = PlaceDuo(mission, sector, noLock);
@@ -190,9 +197,11 @@ public class MissileFireTests
     /// <summary>Negative case for the held-bit path: a <c>MaxLock &gt; 0</c> type
     /// with the fire bit held but <em>no</em> lock built yet does NOT fire on that
     /// first tick — the lock gate (not merely the presence of the bit) decides.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void OnUpdate_held_bit_does_not_fire_without_built_lock()
     {
+        Require.Artwork();
         var (_, _, lockTyp) = Rep.Value;
         var mission = NewStartedMission(out var sector);
         var (shooter, _) = PlaceDuo(mission, sector, lockTyp);

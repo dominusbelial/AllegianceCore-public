@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -112,11 +113,13 @@ public class DockedHullOrbitTests
     /// <summary>⭐ P519 (kept) — the hull the preview renders is the shop's
     /// EFFECTIVE hull, so cycling/selecting a hull immediately swaps the preview's
     /// model (no hitch, models are already cached).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_selection_drives_the_preview_hull_id()
     {
+        Require.Artwork();
         var cat = ShopCatalog.TryLoad(
-            Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork")
+            ExternalPaths.Resolve(ExternalResourceKind.Artwork))
             ?? throw new InvalidOperationException("core not loadable");
         short current = cat.Hulls.OrderBy(h => h.HullId).First().HullId;
         short other = cat.Hulls.OrderBy(h => h.HullId).Last(h => h.HullId != current).HullId;

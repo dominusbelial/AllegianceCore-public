@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -195,9 +196,11 @@ public sealed class ProbesUpdateLiveTests
     /// probe needs <b>no scan</b> — the same-side rule includes it always, and
     /// both same-side connections (deployer + teammate) receive it. B (30 km
     /// away, sees nothing) receives no <c>PROBES_UPDATE</c> at all.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Visible_probe_received_correct_fields_absent_from_unseeing_side()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var deployer = seat.Deployer;
         var mission = deployer.Mission!;
@@ -253,9 +256,11 @@ public sealed class ProbesUpdateLiveTests
     /// to the div-240 encoding of the probe's new <see cref="Probe.Fraction"/>,
     /// proving the periodic sync carries live health (fsship.cpp:877
     /// bpFraction = GetFraction()).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Combat_damage_reflected_in_next_update()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var deployer = seat.Deployer;
         var mission = deployer.Mission!;

@@ -1,6 +1,7 @@
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -93,9 +94,11 @@ public class StationRescueModelTests
     /// <summary>⭐ Positive — a same-side lifepod 300u from a c_sabmRescue
     /// station is detected for station rescue (real native mechanic,
     /// shipIGC.cpp:862-867).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lifepod_near_rescue_capable_station_is_detected()
     {
+        Require.Artwork();
         var m = Assembly();
         var rescue = AddStation(m, FlySector, 0, 7701, DataStationTypeIGC.SabmRescue, 0, 0, 0);
         var pod = Lifepod(m, FlySector, 1, new Vector3(0, 0, 300), 0);
@@ -117,9 +120,11 @@ public class StationRescueModelTests
     /// LACKS c_sabmRescue (the real standard garrison #15) -> no detection. This
     /// is the real-data heart of the gate: real garrisons do not carry the bit
     /// and so do not rescue pods.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lifepod_near_non_rescue_station_is_NOT_detected()
     {
+        Require.Artwork();
         var m = Assembly();
         var garrison = AddStation(m, FlySector, 0, 7702, 0x0377, 0, 0, 0);  // real garrison caps, no rescue
         var pod = Lifepod(m, FlySector, 1, new Vector3(0, 0, 300), 0);
@@ -135,9 +140,11 @@ public class StationRescueModelTests
     /// <summary>⭐ Side gate — a c_sabmRescue station of the OPPOSITE side does
     /// not rescue the pod (native requires same-side/allied, shipIGC.cpp:865;
     /// the allied leg collapses to same-side in this port).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Opposite_side_rescue_station_is_NOT_detected()
     {
+        Require.Artwork();
         var m = Assembly();
         var rescue = AddStation(m, FlySector, 1, 7703, DataStationTypeIGC.SabmRescue, 0, 0, 0); // side 1
         var pod = Lifepod(m, FlySector, 1, new Vector3(0, 0, 300), 0);                          // side 0
@@ -152,9 +159,11 @@ public class StationRescueModelTests
 
     /// <summary>⭐ Proximity — a rescue-capable station far beyond the
     /// shipR+radius threshold is not detected.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Out_of_range_rescue_station_is_NOT_detected()
     {
+        Require.Artwork();
         var m = Assembly();
         AddStation(m, FlySector, 0, 7704, DataStationTypeIGC.SabmRescue, 0, 0, 0);
         var pod = Lifepod(m, FlySector, 1, new Vector3(0, 0, 1000), 0);   // 1000 > 425.5

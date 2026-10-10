@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -78,9 +79,11 @@ public class P480RotationKeepsPlayersLiveTests
     /// then all four ready up and the new game actually starts (countdown →
     /// Started) — with NO reconnect anywhere.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 

@@ -10,6 +10,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using PlayerScore = global::Allegiance.Server.PlayerScore;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -266,9 +267,11 @@ public class LiveCombatScoringTests
     /// at 0 rating). Verifies the wiring updates BOTH sides by the right amounts
     /// (native FedSrv.CPP:11819-11821 AddKill + AdjustCombatRating, and
     /// FedSrv.CPP:12026-12032 AddDeath).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_two_peer_kill_updates_both_player_scores()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)
@@ -327,9 +330,11 @@ public class LiveCombatScoringTests
     /// kill counter but no death is recorded anywhere and no rating swings
     /// (the bot has no PlayerScore/rating holder — the task's stated
     /// simplification of native). Must not crash.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Player_killing_an_unowned_bot_ship_only_credits_the_player()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)
@@ -360,9 +365,11 @@ public class LiveCombatScoringTests
     /// counted, but no kill credit and no rating swing (the killer has no
     /// PlayerScore). Must not crash — the "only whichever side is a real peer"
     /// behaviour.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Bot_killing_a_player_only_counts_the_victim_death()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)
@@ -391,9 +398,11 @@ public class LiveCombatScoringTests
     /// touch combat rating or grant kill credit (native FedSrv.CPP:11811-11821
     /// requires a cross-side launcher; self-kill is same-side and an
     /// environmental death has no launcher).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Self_kill_and_environmental_death_do_not_touch_combat_rating()
     {
+        Require.Artwork();
         var seat = SeatTwoPeers();
         using (var server = seat.server)
         using (var shooter = seat.shooter)

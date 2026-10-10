@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -137,9 +138,11 @@ public class LiveBuildingEffectWireTests
     /// asteroid's id — every peer on every side, mirroring how
     /// <c>DESTROY_TREASURE(30)</c> reaches all three peers in
     /// LiveTreasurePickupTests.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Interrupted_build_broadcasts_BuildingEffectDestroyed_whole_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby

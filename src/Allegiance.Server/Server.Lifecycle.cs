@@ -643,7 +643,9 @@ public sealed partial class Server
     private void ValidatePaths()
     {
         if (string.IsNullOrWhiteSpace(_config.ArtPath) || !Directory.Exists(_config.ArtPath))
-            throw new InvalidDataException($"artPath '{_config.ArtPath}' does not exist (a real corpus root is required)");
+            throw new InvalidDataException(
+                $"artPath '{_config.ArtPath}' does not exist. " +
+                ExternalPaths.DescribeMissing(ExternalResourceKind.Artwork));
     }
 
     private StaticCore LoadCore()

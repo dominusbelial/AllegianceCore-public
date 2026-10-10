@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -109,9 +110,11 @@ public sealed class P470RemovePlayerFlyableBuilderTests
     /// Constructor hull (GroupId = -1, c_habmBuilder) is REFUSED: the ship
     /// stays on its pre-purchase hull. Fails on the unfixed code, where buying
     /// the constructor succeeds and the ship swaps to it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BuyLoadout_for_a_constructor_hull_is_refused()
     {
+        Require.Artwork();
         var (srv, peer, core) = BootUndocked(out var bot);
         using (srv)
         using (bot)
@@ -140,9 +143,11 @@ public sealed class P470RemovePlayerFlyableBuilderTests
 
     /// <summary>⭐ Control leg — a normal player hull (GroupId >= 0) is still
     /// buyable: the ship swaps to it, so the GroupId gate is not over-broad.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_normal_player_hull_is_still_buyable()
     {
+        Require.Artwork();
         var (srv, peer, core) = BootUndocked(out var bot);
         using (srv)
         using (bot)

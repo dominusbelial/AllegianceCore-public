@@ -27,7 +27,7 @@ from PIL import Image
 from scipy import ndimage
 import starclean
 
-DEFAULT_DIR = "/home/domingo/Development/Artwork/p589obj"
+DEFAULT_DIR = os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "p589obj")
 SLUGS = ["helix-nebula", "whirlpool-m51", "ring-nebula-m57",
          "pinwheel-m101", "lion-nebula-miri", "lion-nebula-nasa"]
 

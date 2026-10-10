@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -101,9 +102,11 @@ public sealed class P550LiveDockGateTests
     /// type (tecsy) whose bay the ship sits genuinely inside (the native
     /// InGarage geometric path). "Unchanged feel": the same SHIP_STATUS(90)
     /// docked broadcast arrives, exactly as a normal dock.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_client_docks_at_geometry_bearing_valid_station()
     {
+        Require.Artwork();
         var tecsy = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc"))).StationTypes[29];
         // Spawn IN the tecsy bay (its capgarage planes bound a bay at y≈-320..-440,
         // x,z near 0; (-50,-400,0) is genuinely InGarage for a fighter).
@@ -128,9 +131,11 @@ public sealed class P550LiveDockGateTests
     /// station type lacking SabmLand (capital-only), so the native land-ability
     /// gate (shipIGC.cpp:725-727) blocks the fighter's dock even though it sits
     /// inside the dock radius.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_client_is_refused_at_station_without_sabml_and()
     {
+        Require.Artwork();
         var tecsy = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc"))).StationTypes[29];
         var capOnly = tecsy with { SabmCapabilities = DataStationTypeIGC.SabmCapLand };
         // Spawn IN the bay (geometry passes) so the ONLY blocker is the native

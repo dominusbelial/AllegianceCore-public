@@ -51,7 +51,7 @@ static class Proof
             if (Directory.Exists(Path.Combine(dir.FullName, "Artwork", "sounddef.mdl"))) return Path.Combine(dir.FullName, "Artwork");
             dir = dir.Parent;
         }
-        return "/home/domingo/Development/Artwork";
+        return ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     }
 
     static StaticCore RepresentativeCore()

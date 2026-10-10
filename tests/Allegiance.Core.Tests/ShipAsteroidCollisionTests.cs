@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -196,9 +197,11 @@ public sealed class ShipAsteroidCollisionTests
     /// impact damage (native <c>|Δv|² · (1/128)</c>, doubled and split against
     /// the rock's hit-point pool). The rock also takes the native share of
     /// damage.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (center, sector, rock) = PlantRock(mission, 8100);
@@ -283,9 +286,11 @@ public sealed class ShipAsteroidCollisionTests
     /// (shipIGC.cpp:836,1006, coeff=1/20) — and 0 for the rock (native never
     /// shakes a rock). Fails before P463c (no <c>CollisionEvent</c> existed), so
     /// it is the "fail first" server proof the task calls for.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (center, sector, rock) = PlantRock(mission, 8240);
@@ -343,9 +348,11 @@ public sealed class ShipAsteroidCollisionTests
     /// <c>shieldIGC.cpp:140-195</c>, routed by <c>Ship.ReceiveDamage</c>) delivers
     /// for the ship-vs-asteroid collision — the "shield should do his thing
     /// too" fix (P392).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram()
     {
+        Require.Artwork();
         (float ShipDrop, float RockFraction) Run(bool shielded)
         {
             var recording = new RecordingIgcSite();
@@ -410,9 +417,11 @@ public sealed class ShipAsteroidCollisionTests
     /// drifting gently inward instead of being thrown out with a reflected
     /// velocity. Without the exclusion this step would yank the ship to the
     /// bounce point with an outward velocity and fail.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (center, sector, rock) = PlantRock(mission, 8110);
@@ -509,9 +518,11 @@ public sealed class ShipAsteroidCollisionTests
     /// with NO new client rendering — the peer decodes that bounced position/velocity
     /// from ordinary server ship updates. This is the client-visibility proof: the
     /// collision is a pure server-side sim fix and the client shows it automatically.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Loopback_bounced_ship_velocity_and_position_reach_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         Asteroid? rock = null;
         Vector3 apos = new(0f, 0f, -900f);   // far down the −z beam (the position AsteroidCombatLiveTests proved clear of warps/stations)
@@ -573,9 +584,11 @@ public sealed class ShipAsteroidCollisionTests
     /// jiggle1, and jiggle2 = 0. This is the live half of the task's "ram an
     /// asteroid" evidence (the audio/jiggle playback itself is a client-side concern
     /// covered by the pure tests; the wire that drives it is proven here).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Loopback_collision_event_reaches_the_wire_as_collision_event_216()
     {
+        Require.Artwork();
         using var server = new Srv();
         Asteroid? rock = null;
         Sector? sec0 = null;

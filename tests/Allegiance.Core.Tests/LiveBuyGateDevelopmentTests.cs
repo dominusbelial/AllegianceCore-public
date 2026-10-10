@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -133,9 +134,11 @@ public class LiveBuyGateDevelopmentTests
     /// <c>SIDE_TECH_CHANGE(75)</c>. Under the old static-civ-mask gate the
     /// AFTER teleport would still report <c>bNewHull = true</c> — the
     /// must-fail-if-reverted assertion.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Researched_development_flips_the_station_buy_gate_on_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectTwoBombers(server);
         server.Boot(Config());

@@ -1,3 +1,5 @@
+using Allegiance.TestInfra;
+
 namespace Allegiance.Core.Tests;
 
 /// <summary>
@@ -16,17 +18,21 @@ public class StaticCoreTests
             .Select(t => (t.Path, t.File, Model.StaticCore.Load(t.File)));
 
     /// <summary>All 99 cores load; loading itself is the duplicate-ID check.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void All_99_static_cores_load_with_no_duplicate_IDs()
     {
+        Require.Artwork();
         var cores = Loaded().ToList();
         Assert.Equal(Corpus.ExpectedStaticCores, cores.Count);
     }
 
     /// <summary>Each core carries exactly one Constants; the version word is a plausible timestamp.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Each_core_has_exactly_one_constants_and_version_is_a_timestamp()
     {
+        Require.Artwork();
         foreach (var (_, f, c) in Loaded())
         {
             Assert.Equal(1, f.CountOf(IgcObjectType.Constants));
@@ -42,9 +48,11 @@ public class StaticCoreTests
     /// every record. <c>OT_partType</c> dispatches into two buckets by size
     /// (launcher vs part), so its raw count equals the two summed.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Per_type_counts_equal_the_raw_record_histogram()
     {
+        Require.Artwork();
         foreach (var (path, f, c) in Loaded())
         {
             var raw = f.Records.GroupBy(r => r.Type).ToDictionary(g => g.Key, g => g.Count());

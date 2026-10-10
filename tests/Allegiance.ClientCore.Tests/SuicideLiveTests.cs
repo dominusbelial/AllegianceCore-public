@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -32,7 +33,7 @@ namespace Allegiance.ClientCore.Tests;
 public class SuicideLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -77,9 +78,11 @@ public class SuicideLiveTests
     /// OWN <see cref="ClientWorld"/> observes the death (entity flagged
     /// <c>IsDead</c> + a <c>Kills</c> event) — the same KILL_SHIP a normal combat
     /// death produces.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SendSuicide_KillsOwnShip_OverTheWire()
     {
+        Require.Artwork();
         using var server = new Srv();
         // An ALREADY-a-lifepod ship so its suicide is a real death (not an
         // in-space eject) — the P107 note (see class doc). Placed flying in

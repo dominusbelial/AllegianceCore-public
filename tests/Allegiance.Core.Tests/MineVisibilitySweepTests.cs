@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -130,9 +131,11 @@ public class MineVisibilitySweepTests
     /// side always sees it — the mine is a target with an owner side, unlike
     /// the sideless asteroids P134 added. The mine is never seen before the
     /// sweep runs.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void An_enemy_scanner_in_range_with_line_of_sight_spots_the_mine()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -155,9 +158,11 @@ public class MineVisibilitySweepTests
     /// <c>SeenBySide</c> true→false on the re-sweep (the sweep rewrites state on
     /// transition, not just an initial check) — while the owner side stays
     /// visible.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Moving_the_scanner_out_of_scope_flips_the_mine_to_unseen()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -184,9 +189,11 @@ public class MineVisibilitySweepTests
     /// <see cref="VisibilityMath.LineOfSightExist"/> for mines, not just the
     /// range half (geometry mirrors the P131 occlusion test: one radius either
     /// side of a radius-644 rock).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void An_asteroid_occluding_an_in_range_pair_flips_the_mine_to_unseen()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
@@ -230,9 +237,11 @@ public class MineVisibilitySweepTests
     /// side's scanner net (native mines aren't <c>c_mtScanner</c>). The same
     /// flip direction also holds the other way: the mine itself is still seen by
     /// side 0 (it is a target).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_mine_is_never_a_scanner_for_its_own_side()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 

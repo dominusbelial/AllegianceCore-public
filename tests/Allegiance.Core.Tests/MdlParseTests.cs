@@ -1,5 +1,6 @@
 using System.IO;
 using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -25,9 +26,11 @@ public class MdlParseTests
         return $"exports=[{string.Join(",", f.Exports)}] meshes=[{m}] frames={f.Frames.Count}";
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mis02_parses_with_expected_mesh_and_frames()
     {
+        Require.Artwork();
         var f = MdlFile.Parse(Mdl("mis02.mdl"));
 
         // Log the actual numbers found (reference oracle, so the next task has
@@ -46,9 +49,11 @@ public class MdlParseTests
             f.Frames.Select(x => x.Name).OrderBy(x => x));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mis08_parses_with_expected_mesh()
     {
+        Require.Artwork();
         var f = MdlFile.Parse(Mdl("mis08.mdl"));
 
         Console.WriteLine($"mis08.mdl: {Fmt(f)}");
@@ -61,9 +66,11 @@ public class MdlParseTests
         Assert.Equal(78, f.Meshes[0].TriangleCount);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mesh_ship_model_walks_all_chunks()
     {
+        Require.Artwork();
         // p1_fig.mdl is a real multi-chunk ship model: the Python reference
         // reports 3 meshes (5578v/5018t, 1993v/1667t, 205v/222t) and 5 frames.
         var f = MdlFile.Parse(Mdl("p1_fig.mdl"));
@@ -84,9 +91,11 @@ public class MdlParseTests
         Assert.Equal(5, f.Frames.Count);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Headers_are_exposed()
     {
+        Require.Artwork();
         var f = MdlFile.Parse(Mdl("mis02.mdl"));
 
         // Matches the Python reference's header dump for mis02.mdl.
@@ -97,9 +106,11 @@ public class MdlParseTests
         Assert.Equal(["frame", "frames", "object"], f.Exports);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mesh_index_order_is_preserved_raw_no_winding_flip()
     {
+        Require.Artwork();
         // The scope explicitly forbids guessing a triangle-winding flip here;
         // indices must survive byte-for-byte in file order. On mis02.mdl the
         // first triangle's indices are read straight off the buffer -- assert
@@ -111,9 +122,11 @@ public class MdlParseTests
             Assert.InRange(i, (ushort)0, (ushort)(f.Meshes[0].VertexCount - 1));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Vertex_arrays_are_sized_and_finite()
     {
+        Require.Artwork();
         var f = MdlFile.Parse(Mdl("mis08.mdl"));
         var m = f.Meshes[0];
 
@@ -129,9 +142,11 @@ public class MdlParseTests
                 "non-finite texcoord component");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missing_or_garbage_file_throws()
     {
+        Require.Artwork();
         Assert.Throws<FileNotFoundException>(() =>
             MdlFile.Parse(Mdl("does_not_exist_xyz.mdl")));
 

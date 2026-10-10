@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -65,9 +66,11 @@ public sealed class MineDomainTests
     /// even at the moment of expiry (no position advance anywhere). Constructed
     /// directly (no mission, no ship, no site): the launcher-less mine raises
     /// nothing on expiry, isolating the sector-removal + no-movement contract.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mine_never_moves_and_expiry_removes_it_from_its_sector()
     {
+        Require.Artwork();
         var sector = new Sector(SomeMap.Value.Clusters[0]);
         var mtype = RealMineType();
         var pos = new Vector3(10f, -20f, 305f);

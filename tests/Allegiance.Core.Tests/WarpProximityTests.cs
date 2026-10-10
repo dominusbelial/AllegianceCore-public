@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -78,9 +79,11 @@ public class WarpProximityTests
 
     /// <summary>⭐ A ship placed just INSIDE a warp's collision radius triggers
     /// HitWarpEvent — the proximity geometry engages.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipInsideWarpRadius_TriggersHitWarpEvent()
     {
+        Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
         var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
@@ -107,9 +110,11 @@ public class WarpProximityTests
     /// transit must still fire). Together with
     /// <see cref="ShipOutsideWarpRadius_NeverTriggersHitWarpEvent"/> this
     /// brackets the P244 trigger onto <c>warp.Radius + shipRadius</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipJustInsideRawRadius_TriggersHitWarpEvent()
     {
+        Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
         var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
@@ -137,9 +142,11 @@ public class WarpProximityTests
     /// never triggers, even after several ticks of dwell. This pins the UPPER
     /// bound of the trigger: it is the raw collision sphere, not the P238-scaled
     /// <c>WarpVisualScale·radius</c> one.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipOutsideWarpRadius_NeverTriggersHitWarpEvent()
     {
+        Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
         var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
@@ -172,9 +179,11 @@ public class WarpProximityTests
     /// Proving the negative here (with the positive in
     /// <see cref="ShipInsideWarpRadius_TriggersHitWarpEvent"/> and the live test)
     /// brackets the trigger back onto the warp's real raw radius.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipBetweenRawAndVisualRadius_DoesNotTriggerHitWarpEvent()
     {
+        Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
         var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
@@ -205,9 +214,11 @@ public class WarpProximityTests
     /// inside the volume shortly after warping. The ship's
     /// <see cref="Ship.LastWarpTime"/> set within the cooldown must silence the
     /// trigger.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RecentlyWarpedShip_InsideVolume_IsDebounced()
     {
+        Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
         var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);

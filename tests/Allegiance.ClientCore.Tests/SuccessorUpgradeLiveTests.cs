@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -23,7 +24,7 @@ namespace Allegiance.ClientCore.Tests;
 public class SuccessorUpgradeLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -118,9 +119,11 @@ public class SuccessorUpgradeLiveTests
     /// the SUCCESSOR hull, and the client (which adopts the BUY_LOADOUT_ACK
     /// verbatim) lands on it. Red before P488 (the ack echoed the requested
     /// hull, so the client stayed on it).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Buy_loadout_grants_the_successor_hull_when_the_side_has_outteched_it_Live()
     {
+        Require.Artwork();
         // A group-0 player hull with a real (≥2-step) successor chain.
         var baseHull = RepresentativeCore.HullTypes.Values
             .First(h => h.GroupId >= 0 && h.SuccessorHullId >= 0);
@@ -159,9 +162,11 @@ public class SuccessorUpgradeLiveTests
     /// <summary>⭐ Live: requesting a part the side has out-teched mounts the
     /// SUCCESSOR part (no hull change — the part chain applies on its own,
     /// shipIGC.h:1033), and the client's loadout reflects it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Buy_loadout_mounts_the_successor_part_when_the_side_has_outteched_it_Live()
     {
+        Require.Artwork();
         // A real weapon part with a ≥2-step successor chain (e.g. PW Lancer 1).
         var basePart = RepresentativeCore.PartTypes.Values
             .First(p => p.EquipmentType == EquipmentType.Weapon && p.SuccessorPartId >= 0);

@@ -6,6 +6,7 @@ using Allegiance.Core.Sim;
 using Allegiance.ClientCore.Flight;
 using Xunit;
 using Xunit.Abstractions;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -33,7 +34,7 @@ namespace Allegiance.ClientCore.Tests;
 public class P560PodWarpLegClosedLoopTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private readonly ITestOutputHelper _output;
     public P560PodWarpLegClosedLoopTests(ITestOutputHelper output) => _output = output;
@@ -56,9 +57,11 @@ public class P560PodWarpLegClosedLoopTests
         return core.HullTypes.Values.OrderBy(h => h.Thrust > 0 ? (h.Thrust / Math.Max(1f, h.Mass)) : float.MaxValue).First();
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Pod_warp_leg_Pursue_never_returns_across_the_exited_aleph_but_slow_crossing_does()
     {
+        Require.Artwork();
         // The 221 Alderan(1052)⇄Rigel(1059) pair from the live report.
         var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "m2xspiderw.igc")));
         var wA = map.Warps.FirstOrDefault(w => w.WarpId == 2187);   // in Alderan

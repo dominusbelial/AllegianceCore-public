@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -41,7 +42,7 @@ namespace Allegiance.ClientCore.Tests;
 public class DockLoadoutLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -126,9 +127,11 @@ public class DockLoadoutLiveTests
             Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted);
 
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DockedNotify_SetsAndClearsStationId_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         short friendlyStation = -1;
         SetShipSpawner(server, (core, mission, shipId) =>
@@ -171,9 +174,11 @@ public class DockLoadoutLiveTests
         Assert.Equal(-1, session.World.Ships[myId].StationId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BuyLoadout_RoundTrips_And_WithFLaunch_Undocks_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         short friendlyStation = -1;
         Vector3 dockedPos = default;
@@ -242,9 +247,11 @@ public class DockLoadoutLiveTests
     /// populates <see cref="ClientWorld"/>'s <c>ShipEntity.Loadout</c> with the
     /// real parts — NOT an empty hull-only list. The part id is pulled from the
     /// same static core the server boots, so it always resolves and mounts.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BuyLoadout_WithRealParts_PopulatesShipLoadout_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetShipSpawner(server, (core, mission, shipId) =>
         {

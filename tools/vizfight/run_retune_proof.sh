@@ -10,8 +10,8 @@
 set -uo pipefail
 
 WEBPORT=$1; DUR=$2; OUT=$3; VHULL=$4; FPS=${5:-20}
-DOTNET=/home/domingo/.dotnet/dotnet
-REPO=/home/domingo/Development/AllegianceCore
+DOTNET="${DOTNET:-$(command -v dotnet)}"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 VIZ="$REPO/tools/vizfight/bin/Release/net10.0/vizfight.dll"
 CLIENTDIR="$REPO/src/Allegiance.ClientCore.MonoGame/bin/Release/net10.0"
 

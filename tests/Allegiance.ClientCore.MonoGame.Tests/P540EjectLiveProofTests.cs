@@ -12,6 +12,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -33,7 +34,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class P540EjectLiveProofTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private const short SpawnSector = 1052;   // the no-real-station fly sector (XXV_simple)
 
@@ -109,9 +110,11 @@ public sealed class P540EjectLiveProofTests
         return st;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks()
     {
+        Require.Artwork();
         using var server = new Srv();
         int spawned = 0;
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short shipId) =>

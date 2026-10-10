@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -251,9 +252,11 @@ public sealed class StationCombatLiveTests
     /// untouched) — a real projectile/missile hit on a real station, asserted
     /// numerically. The station's MaxShield is chosen so the missile's fixed power
     /// absorbs cleanly inside the shield.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_missile_hits_station_shield_exact_fraction_armor_untouched()
     {
+        Require.Artwork();
         var (missile, _, defShield, ds, _) = Combo.Value;
         // MaxShield chosen so absorbed = Power·ds/MaxShield ∈ (0.15, 0.6): survivable, exact.
         float maxShield = MathF.Max(300f, MathF.Round(missile.Power * ds / 0.4f));
@@ -285,9 +288,11 @@ public sealed class StationCombatLiveTests
     /// the friendly-fire gate simplified to same-side-blocked (the teammate shares
     /// the station's side A). Armor and shield both stay at 1.0 even for a round
     /// powerful enough to destroy the base from the cross-side. Verification point 5.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_friendly_missile_deals_no_damage()
     {
+        Require.Artwork();
         var (missile, _, _, ds, _) = Combo.Value;
         float maxShield = MathF.Max(200f, missile.Power * ds / 1.5f);   // one hit would overflow (kill) if it landed
         float fireGap = FireGap(missile);
@@ -313,9 +318,11 @@ public sealed class StationCombatLiveTests
     /// (the WHOLE-mission audience, <c>GetGroupRealSides()</c>), and a ship that was
     /// docked at the base is ejected through the real undock path
     /// (<see cref="Ship.StationId"/> cleared). Verification point 3.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lethal_hit_destroys_station_ejects_docked_ship_and_broadcasts_destroy_to_whole_mission()
     {
+        Require.Artwork();
         var (missile, _, defShield, ds, da) = Combo.Value;
         // Size capacities from the actual missile power so a SINGLE hit both
         // overflows the shield (absorbed = Power·ds/maxShield = 2) and drives the
@@ -375,9 +382,11 @@ public sealed class StationCombatLiveTests
     /// <see cref="Station.ShieldFraction"/> toward max at the documented rate
     /// (<c>dt·ShieldRegeneration/maxShield</c>, native <c>stationIGC.h:201-208</c>).
     /// Verification point 4.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_regenerates_over_real_ticks()
     {
+        Require.Artwork();
         var (missile, _, defShield, ds, _) = Combo.Value;
         // MaxShield chosen so the single hit chips the shield to ~0.5 (armor untouched).
         float maxShield = MathF.Max(300f, MathF.Round(missile.Power * ds / 0.5f));

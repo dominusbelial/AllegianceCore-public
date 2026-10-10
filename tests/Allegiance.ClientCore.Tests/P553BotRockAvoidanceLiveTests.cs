@@ -10,6 +10,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -33,7 +34,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P553BotRockAvoidanceLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg MapConfig(int ups) => new()
     {
@@ -407,9 +408,11 @@ public sealed class P553BotRockAvoidanceLiveTests
 
     /// <summary>Topology/field probe: dump the 221 map sectors + asteroid density
     /// (the premise: Alderan 1052 has 134 asteroids).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_221_field()
     {
+        Require.Artwork();
         if (IsGated()) return;
         var sb = new StringBuilder();
         var (server, ticker, mgr, tee, saved, _) = Boot(out var port);

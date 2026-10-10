@@ -4,6 +4,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -23,16 +24,18 @@ namespace Allegiance.Core.Tests;
 public class P560LayerBucketUniqueIdTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static StaticCore LoadCore() =>
         StaticCore.Load(IgcReader.ParseFile(System.IO.Path.Combine(ArtRoot, "PCore001.igc")));
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData((short)25)]   // Iron Coalition — live 221 side 0
     [InlineData((short)3)]    // Ga'Taraan — live 221 side 1
     public void Layer_drone_bucket_resolves_by_unique_id_despite_shared_names(short civId)
     {
+        Require.Artwork();
         var core = LoadCore();
         var civ = core.Civilizations[civId];
         var techs = TechTreeBitMask.FromBytes(civ.TtbmBaseTechs);

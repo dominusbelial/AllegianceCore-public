@@ -4,6 +4,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using PlayerScore = global::Allegiance.Server.PlayerScore;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -71,9 +72,11 @@ public class PlayerScoreFoundationTests
     /// neutral defaults <c>Rank=0, Score=0</c> — there is no rank data anywhere
     /// to seed it with (no accounts, no historical games), so every connection
     /// begins from zero.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Newly_connected_player_score_starts_at_neutral_defaults()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -101,9 +104,11 @@ public class PlayerScoreFoundationTests
     /// the score, so this is genuinely connection-lifetime-only state, not an
     /// accidental persistence leak. (There is no account identity to carry a
     /// value across connections — reconnect simply allocates a new one.)</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Player_score_is_discarded_across_a_disconnect_and_reconnect()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -141,9 +146,11 @@ public class PlayerScoreFoundationTests
     /// <c>PlayerScore</c> instances. Mutating one player's rank/score leaves
     /// the other untouched — each connection owns its own object, there is no
     /// shared or server-global score record.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Two_players_have_independent_player_score_instances()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 

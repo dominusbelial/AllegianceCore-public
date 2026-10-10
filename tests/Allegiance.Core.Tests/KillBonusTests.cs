@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -39,9 +40,11 @@ public class KillBonusTests
     /// ctor seeds m_experience at 1.0, shipIGC.cpp:52, which would give a brand
     /// new ship an immediate 10% tier — a documented seed divergence; see the
     /// field's SEED DIVERGENCE note. The port matches the wiki/task semantics.)</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fresh_ship_starts_at_zero_bonus()
     {
+        Require.Artwork();
         var ship = NewShip();
         Assert.Equal(0f, ship.KillBonus);
         Assert.Equal(0f, ship.KillBonusPercent);
@@ -52,7 +55,8 @@ public class KillBonusTests
     /// counter c → KB = 50·c/(c+4) → multiplier = 1 + 0.5·c/(c+4). After a
     /// reset (counter 0) the FIRST kill gives counter 1 → KB 10, matching the
     /// task's "1 kill → 10".</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(0f, 0f)]
     [InlineData(1f, 10f)]
     [InlineData(2f, 16.666666f)]
@@ -61,6 +65,7 @@ public class KillBonusTests
     [InlineData(9f, 34.615385f)]
     public void Kill_bonus_percent_matches_native_formula(float counter, float expectedPercent)
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.ResetKillBonus();
         for (int i = 0; i < counter; i++) ship.AddKillBonus();
@@ -73,9 +78,11 @@ public class KillBonusTests
     /// <summary>⭐ Monotonic climb toward — never at — the 50% cap. Every extra
     /// kill strictly increases the multiplier; the KB percent stays ≤ 50 and
     /// the multiplier stays &lt; 1.5 no matter how long the streak.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kill_bonus_climbs_monotonically_and_never_exceeds_the_cap()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.ResetKillBonus();
         float prev = -1f;
@@ -93,9 +100,11 @@ public class KillBonusTests
 
     /// <summary>⭐ Reset clears the streak back to zero bonus (native
     /// <c>SetExperience(0.0f)</c> on a real death, FedSrv.CPP:11783-11787).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reset_clears_the_streak_to_zero_bonus()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.AddKillBonus(); ship.AddKillBonus(); ship.AddKillBonus();
         Assert.True(ship.KillBonusPercent > 0f);
@@ -114,9 +123,11 @@ public class KillBonusTests
     /// ExperienceMultiplier× the drop at KB 0. (A mission-less ship's
     /// DamageConstant is 1.0, constant across both calls, so it cancels in the
     /// ratio.)</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReceiveDamage_scales_a_real_hit_by_the_launcher_kill_bonus()
     {
+        Require.Artwork();
         var hull = RepresentativeCore.Value.HullTypes.Values
             .OrderByDescending(h => h.HitPoints).First();
         float amount = hull.HitPoints * 0.025f;   // modest, no death risk

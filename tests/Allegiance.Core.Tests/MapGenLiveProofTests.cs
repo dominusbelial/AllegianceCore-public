@@ -9,6 +9,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Mg = global::Allegiance.Server.MapGenConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -68,9 +69,11 @@ public class MapGenLiveProofTests
     /// generated sector — SET_CLUSTER over the wire and the server-side sector
     /// change both agree, and the destination is one of the two ring neighbours
     /// (proving transit follows the generated ring, not a file-decoded map).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         short? spawnSectorId = null;
@@ -131,9 +134,11 @@ public class MapGenLiveProofTests
     /// seats it in its side's generated home sector (a station-owned cluster).
     /// Driving the ship into the generated home station's dock radius docks it
     /// there — proving the generated home base is genuinely dockable.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedSingleRing_DefaultSpawnedPeer_DocksAtGeneratedHomeStation()
     {
+        Require.Artwork();
         using var server = new Srv();
         // NOTE: ShipSpawner NOT overridden — exercise the real default spawner,
         // which resolves the peer's side home sector (HomeSectorForSide) and

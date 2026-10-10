@@ -8,6 +8,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -24,7 +25,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class WarpRoutingRealMapTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Mission LoadMission()
     {
@@ -56,9 +57,11 @@ public class WarpRoutingRealMapTests
         return all;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RealMap_EveryEdgeDest_IsThePartnerWarpsCluster_NotAWarpId()
     {
+        Require.Artwork();
         var mission = LoadMission();
         var all = AllWarpsFrom(mission);
         var sectorIds = mission.Sectors.Select(s => s.Id).ToHashSet();
@@ -69,9 +72,11 @@ public class WarpRoutingRealMapTests
             Assert.Contains(aw.DestSector, sectorIds);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RealMap_RouterPicks_ARealWarpTowardTheTargetSector()
     {
+        Require.Artwork();
         var mission = LoadMission();
         var all = AllWarpsFrom(mission);
         Assert.NotEmpty(all);

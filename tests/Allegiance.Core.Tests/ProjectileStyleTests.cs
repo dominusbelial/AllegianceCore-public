@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Visual;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -58,9 +59,11 @@ public class ProjectileStyleTests
     /// <summary>A real PCore001 type with a real width (the 'PE Mini-Gun 1'
     /// family, projectile type 2) preserves its width and radius, and resolves
     /// its (black) colour to the amber tracer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PCore001_real_width_and_radius_are_preserved()
     {
+        Require.Artwork();
         var style = ProjectileStyle.For(2, Core().ProjectileTypes);
         Assert.Equal(0.1f, style.Width);
         Assert.Equal(1f, style.Radius);
@@ -72,9 +75,11 @@ public class ProjectileStyleTests
     /// <summary>A real PCore001 type with zero width (the 'PE Gat Gun 1' family,
     /// projectile type 1) falls back to the default tracer width while keeping
     /// its real radius.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PCore001_zero_width_uses_default_width()
     {
+        Require.Artwork();
         var style = ProjectileStyle.For(1, Core().ProjectileTypes);
         Assert.Equal(ProjectileStyle.DefaultWidth, style.Width);
         Assert.Equal(1f, style.Radius);
@@ -97,9 +102,11 @@ public class ProjectileStyleTests
     }
 
     /// <summary>An unknown type id falls back to the full amber tracer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unknown_type_falls_back_to_amber()
     {
+        Require.Artwork();
         var style = ProjectileStyle.For(9999, Core().ProjectileTypes);
         Assert.Equal(ProjectileStyle.AmberFallback, style);
     }

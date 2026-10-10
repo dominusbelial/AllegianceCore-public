@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -153,9 +154,11 @@ public class LiveSideInactiveTests
     /// false and this is the first inactive side), and broadcasts SideInactive
     /// whole-mission with the real bChangeAET=true / bAET=true reply fields —
     /// a real must-fail-if-removed proof.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Owner_deactivates_empty_side_flips_active_and_aet_whole_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -197,9 +200,11 @@ public class LiveSideInactiveTests
     /// player is silently reverted, not refused: the broadcast reflects the
     /// side's real, unchanged bActive=true (and no AET flip occurs). Matching
     /// native's defensive re-check (FedSrv.CPP:7387-7390), not a harder refusal.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Deactivating_side_with_seated_player_is_silently_reverted()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -235,9 +240,11 @@ public class LiveSideInactiveTests
 
     /// <summary>⭐ Reactivating the LAST inactive side flips AllowEmptyTeams
     /// back to false (AET on iff at least one side is inactive).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reactivating_last_inactive_side_flips_aet_back_to_false()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -274,9 +281,11 @@ public class LiveSideInactiveTests
     /// <summary>⭐ A NON-owner — even another side's team leader — is refused:
     /// no state change, no broadcast (native TrapHackBoot(owner),
     /// FedSrv.CPP:7380).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_owner_refused_even_side_leader()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -309,9 +318,11 @@ public class LiveSideInactiveTests
     /// <summary>⭐ Once the mission has Started, even the owner is refused:
     /// unchanged, no broadcast (native only honors STAGE_NOTSTARTED,
     /// FedSrv.CPP:7380).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Refused_once_started()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -340,9 +351,11 @@ public class LiveSideInactiveTests
     /// side that held an alliance has its membership cleared (and the group it
     /// belonged to dissolves), and a CHANGE_ALLIANCES(197) broadcast reflects
     /// the clear — the #ALLY hook of FedSrv.CPP:7424-7425.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Deactivating_a_side_clears_its_alliance_membership()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -409,9 +422,11 @@ public class LiveSideInactiveTests
     /// SIDE_INACTIVE toggle and its whole-mission broadcast in mission A must
     /// never leak to, or alter, mission B, even though both share the same
     /// numeric side ids.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_side_inactive_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

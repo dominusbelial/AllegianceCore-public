@@ -34,7 +34,7 @@ echo "==> staging Android assets (artwork from P498 manifest + compiled Content)
 bash scripts/pack-android-assets.sh
 
 echo "==> building Android head ($CFG)"
-/home/domingo/.dotnet/dotnet build src/Allegiance.ClientCore.Android/Allegiance.ClientCore.Android.csproj -c "$CFG"
+"${DOTNET:-dotnet}" build src/Allegiance.ClientCore.Android/Allegiance.ClientCore.Android.csproj -c "$CFG"
 
 APK="$REPO/src/Allegiance.ClientCore.Android/bin/$CFG/net10.0-android/org.allegiance.client-Signed.apk"
 if [ -f "$APK" ]; then

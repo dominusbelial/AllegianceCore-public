@@ -55,7 +55,7 @@ namespace Allegiance.Tools.McpSpawner;
 //   "mcpServers": {
 //     "allegiance": {
 //       "command": "dotnet",
-//       "args": ["run", "--project", "/home/domingo/Development/AllegianceCore/tools/allegiance-mcp", "--", "127.0.0.1", "6073"]
+//       "args": ["run", "--project", "../tools/allegiance-mcp", "--", "127.0.0.1", "6073"]
 //     }
 //   }
 // ─────────────────────────────────────────────────────────────────────────────

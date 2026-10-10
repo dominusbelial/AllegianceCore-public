@@ -3,6 +3,7 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -95,9 +96,11 @@ public class TurretGunnerFiringTests
         return g;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Turret_weapon_fires_along_gunner_orientation_not_carrier()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var (hull, turretMount, weaponType, pt) = TurretFight.Value;
@@ -143,9 +146,11 @@ public class TurretGunnerFiringTests
         Assert.NotEqual(carrier.Orientation.GetForward().X, proj.Velocity.Normalize().X, 2);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fixed_weapon_without_gunner_keeps_firing_along_carrier()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var (hull, turretMount, weaponType, _) = TurretFight.Value;
@@ -177,9 +182,11 @@ public class TurretGunnerFiringTests
     /// <summary>Target leading for a blast weapon (gunner's own target) adjusts
     /// the round's lifespan to the intercept time rather than the decoded
     /// value — the gunner-target selection path of the aim slice.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Blast_weapon_uses_gunner_target_and_leads_it()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var (hull, turretMount, weaponType, _) = TurretFight.Value;

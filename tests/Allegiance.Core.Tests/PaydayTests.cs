@@ -9,6 +9,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -120,9 +121,11 @@ public class PaydayTests
     /// before 60s nor twice in an interval. The accrued <c>Side.Money</c>
     /// equals the reference formula computed independently from each civ's
     /// <c>IncomeMoney</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mission_accrues_once_per_boundary_at_the_flat_cadence()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording, sides: 2);
         const double step = 0.25;
@@ -221,9 +224,11 @@ public class PaydayTests
     /// early, none doubled), and each bot decodes a <c>dMoney</c> equal to its
     /// own side's independently computed formula value — proving the cadence,
     /// the formula, and the per-side broadcast scoping over real loopback.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void WirePayday_fires_on_cadence_with_correct_per_side_value()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -278,9 +283,11 @@ public class PaydayTests
     /// never pays out — no divide-by-zero, no crash (the reference
     /// <c>if (np != 0)</c> guard, fsmission.cpp:2298-2299). The bot on the
     /// populated side still receives its normal paydays.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ZeroPlayerSide_does_not_crash_and_accrues_without_paying()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby

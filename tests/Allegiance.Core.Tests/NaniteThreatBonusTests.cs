@@ -5,6 +5,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -79,9 +80,11 @@ public class NaniteThreatBonusTests
     /// each hull's size. The <see cref="Ship.Repair"/> accumulator must-fail if
     /// the 2× is removed (it would then be Δ then 2Δ, not 2Δ then 3Δ).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_threat_target_earns_double_repair_credit()
     {
+        Require.Artwork();
         var bomber = ThreatHull();
         var fighter = NonThreatHull();
         Assert.True(bomber.HasCapability(ThreatBit), "selected threat hull must carry the bit");
@@ -121,9 +124,11 @@ public class NaniteThreatBonusTests
     /// credit for it — exactly native, where the side test exists solely to
     /// award the launcher a repair-stat.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_repair_heals_hull_but_awards_no_credit()
     {
+        Require.Artwork();
         var bomber = ThreatHull();
         var enemyTarget = NewShip(9101, bomber, side: 1);   // enemy side
         var launcher = NewShip(9103, bomber, side: 0);
@@ -142,9 +147,11 @@ public class NaniteThreatBonusTests
     /// <c>shipIGC.cpp:1250-1251</c>) — the bonus can't farm credit by spraying a
     /// topped-up bomber. Guard against the clip producing negative credit.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Repairing_an_already_full_hull_adds_no_credit()
     {
+        Require.Artwork();
         var bomber = ThreatHull();
         var target = NewShip(9201, bomber, side: 0);
         var launcher = NewShip(9203, bomber, side: 0);

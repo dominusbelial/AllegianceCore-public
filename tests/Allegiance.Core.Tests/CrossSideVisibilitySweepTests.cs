@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -133,9 +134,11 @@ public class CrossSideVisibilitySweepTests
     /// native "own side always visible" leg (FedSrv.CPP:10890-10892). They are placed
     /// 50,000 apart (far beyond any scanner range) to prove the result is the own-side
     /// rule, not a range computation.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_ships_are_mutually_visible_without_a_scan()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (sector, basePos) = CleanBase(mission);
 
@@ -159,9 +162,11 @@ public class CrossSideVisibilitySweepTests
 
     /// <summary>A side-1 target 300 units from a side-0 faohshcar scanner (detection
     /// radius 1952, clear LOS) becomes SeenBySide(0) true after the sweep runs.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Enemy_ship_in_scope_becomes_seen_after_the_sweep()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (sector, basePos) = CleanBase(mission);
 
@@ -187,9 +192,11 @@ public class CrossSideVisibilitySweepTests
     /// <summary>The same in-range pair, with the target moved 50,000 away (≫ 1952),
     /// must have SeenBySide(0) FLIP to false on the re-run — proving the sweep rewrites
     /// state on transition, not just an initial-state check.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Moving_the_enemy_out_of_scope_flips_seen_to_unseen()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (sector, basePos) = CleanBase(mission);
 
@@ -220,9 +227,11 @@ public class CrossSideVisibilitySweepTests
     /// mirrors P131's hand-derived occlusion (scanner/target one radius either side of a
     /// radius-644 rock on the x-axis: 30° covered vs 0.06° target extent → decisively
     /// occluded, in range).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void An_asteroid_occluding_an_in_range_enemy_flips_seen_to_unseen()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (sector, basePos) = CleanBase(mission);
 
@@ -260,9 +269,11 @@ public class CrossSideVisibilitySweepTests
     /// <summary>A third side with no ships/stations/probes anywhere in the mission never
     /// sees anything: the sweep reconciles it to false (via the mission side set) rather
     /// than leaving an untouched/possible-true slot.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_scannerless_side_never_sees_another_sides_object()
     {
+        Require.Artwork();
         var mission = NewStartedMission(3);   // sides 0,1,2 — side 2 has no presence at all
         var (sector, basePos) = CleanBase(mission);
 

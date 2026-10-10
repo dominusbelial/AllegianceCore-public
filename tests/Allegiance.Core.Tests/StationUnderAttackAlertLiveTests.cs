@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -213,9 +214,11 @@ public sealed class StationUnderAttackAlertLiveTests
     /// seam and the DEFENDER (station's side) gets a team <c>ChatMessage</c> with
     /// the under-attack text and <c>VoiceOver == UnderAttackSound</c>; the ATTACKER's
     /// side hears nothing.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Defending_side_gets_under_attack_alert_attacker_side_hears_nothing()
     {
+        Require.Artwork();
         using var seat = Seat();
         seat.AttackerBot.ResetChatReceived();
         seat.DefenderBot.ResetChatReceived();
@@ -240,9 +243,11 @@ public sealed class StationUnderAttackAlertLiveTests
 
     /// <summary>⭐ A second hit within the 10-second throttle window produces NO
     /// second alert (FedSrv.CPP:12190) — the station's LastDamageReport gates it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Second_hit_within_throttle_window_produces_no_second_alert()
     {
+        Require.Artwork();
         using var seat = Seat();
         seat.DefenderBot.ResetChatReceived();
 
@@ -263,9 +268,11 @@ public sealed class StationUnderAttackAlertLiveTests
     /// (pre-hit) hull fraction below 0.30 produces the CRITICAL variant with
     /// <c>VoiceOver == CriticalSound</c> and the "critically damaged" text
     /// (FedSrv.CPP:12199-12205).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sub_30_percent_fraction_produces_critical_alert_once_throttle_reopens()
     {
+        Require.Artwork();
         using var seat = Seat();
         seat.DefenderBot.ResetChatReceived();
 

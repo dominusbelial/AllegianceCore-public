@@ -22,9 +22,8 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// exactly the <c>switch</c>'s tail (<c>WinTrek.cpp:11172-11210</c>), ported as
 /// a pure range check rather than a 10-case switch.</para>
 /// <para><b>Asset stems.</b> The per-second cues are the real files
-/// <c>countdown10.ogg</c> … <c>countdown1.ogg</c> in
-/// <c>/home/domingo/Development/Artwork</c> (the port's
-/// <c>ALLEGIANCE_ARTWORK_PATH</c>), loaded via MonoGame content as
+/// <c>countdown10.ogg</c> … <c>countdown1.ogg</c> in the artwork tree
+/// (<c>$ALLEGIANCE_ARTWORK_PATH</c>), loaded via MonoGame content as
 /// <c>Sounds/countdown10</c> … <c>Sounds/countdown1</c>. The countdown-start
 /// callout is <c>countdownstart.ogg</c> — P216's decision to voice the very
 /// first moments rather than leave the first ~4s of the 15s briefing silent

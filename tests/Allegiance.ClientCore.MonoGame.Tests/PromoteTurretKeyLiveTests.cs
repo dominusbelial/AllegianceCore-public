@@ -10,6 +10,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -31,7 +32,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class PromoteTurretKeyLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     // From PCore001.igc (same ids the P108/P140 live suites measure):
     //   792 = turret-capable carrier, slots [2,6); 504 = plain gunner hull.
@@ -84,9 +85,11 @@ public sealed class PromoteTurretKeyLiveTests
     /// does) promotes the gunner over the wire. Server state reflects it: the
     /// gunner is now free on the carrier's hull, the old commander is demoted
     /// into the vacated turret mount.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_promote_turret_key_over_production_send_promotes_the_gunner()
     {
+        Require.Artwork();
         using var server = new Srv();
         Ship carrierShip = null!, gunnerShip = null!;
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>

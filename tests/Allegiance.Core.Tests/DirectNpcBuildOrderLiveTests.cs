@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -194,9 +195,11 @@ public sealed class DirectNpcBuildOrderLiveTests
     /// to completion the rock → station fires, the DRONE is consumed, and the
     /// station appears on the drone's side — the full P422 arc driven by
     /// commanding an owned NPC.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Commander_directs_builder_drone_to_build_creating_real_station()
     {
+        Require.Artwork();
         var (srv, mission, sector, commander, builderDroneId, _, stationType, rock, _, side) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -242,9 +245,11 @@ public sealed class DirectNpcBuildOrderLiveTests
     /// refused (native's Builder-only gate), AND the refusal is SURFACED to the
     /// commanding player's own client as a private "Negative." chat (native's
     /// SendChat(CHAT_INDIVIDUAL, "Negative.") command-refusal ack).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Commander_directing_non_builder_drone_to_build_is_refused_and_acknowledged()
     {
+        Require.Artwork();
         var (srv, mission, sector, _, builderDroneId, nonBuilderDroneId, stationType, rock, _, side) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -276,9 +281,11 @@ public sealed class DirectNpcBuildOrderLiveTests
     /// <summary>⭐ Negative: a Builder drone ordered to build a WRONG-TYPE rock
     /// (capability mismatch) is refused — native HasCapability(m_abmOrders),
     /// shipIGC.h:1702 — with the refusal acked.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Commander_directing_builder_drone_at_wrong_type_rock_is_refused()
     {
+        Require.Artwork();
         var (srv, mission, sector, _, builderDroneId, _, stationType, _, wrongRock, side) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -300,9 +307,11 @@ public sealed class DirectNpcBuildOrderLiveTests
 
     /// <summary>⭐ Negative: a Builder drone with NO configured station type
     /// (nothing to build) is refused — with the refusal acked.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Commander_directing_builder_drone_with_no_station_type_is_refused()
     {
+        Require.Artwork();
         var (srv, mission, sector, _, builderDroneId, _, _, rock, _, side) = BootFixture(out var bot);
         using (srv)
         using (bot)

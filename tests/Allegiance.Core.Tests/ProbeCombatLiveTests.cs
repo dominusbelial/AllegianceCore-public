@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -221,9 +222,11 @@ public sealed class ProbeCombatLiveTests
     /// <c>Power·DamageConstant/maxHP</c> amount — asserted numerically, not just
     /// "some damage" — and the probe survives (still in its sector, no destroy
     /// broadcast). Deployed by the origin ship, shot by the cross-side enemy.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_missile_hits_probe_with_exact_computed_damage_and_it_survives()
     {
+        Require.Artwork();
         var (missile, probeType, delta) = Nonlethal.Value;
         float fireGap = FireGap(missile);
         Assert.True(fireGap < missile.InitialSpeed * missile.Lifespan, "firing gap must be inside missile reach");
@@ -267,9 +270,11 @@ public sealed class ProbeCombatLiveTests
     /// not just asserted in a comment. The observer (same side as the deploying
     /// ship, hence same side as the probe it sits beside) fires its own missile
     /// at the probe and the identical damage lands.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_friendly_missile_damages_the_probe_no_friendly_fire_gate()
     {
+        Require.Artwork();
         var (missile, probeType, delta) = Nonlethal.Value;
         float fireGap = FireGap(missile);
         using var seat = SeatThree(100f, Core().HullTypes.Values.OrderBy(h => h.HitPoints).First());
@@ -309,9 +314,11 @@ public sealed class ProbeCombatLiveTests
     /// the "no <c>Server.cs</c> changes needed" claim (the wire layer was already
     /// bridged by P99's <c>ProbeDestroyedEvent</c>, so a probe killed by any
     /// cause reaches the broadcast unmodified).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lethal_hit_kills_probe_removes_from_sector_and_broadcasts_destroy_to_same_side_peer()
     {
+        Require.Artwork();
         var (missile, probeType) = Lethal.Value;
         float fireGap = FireGap(missile);
         using var seat = SeatThree(100f, Core().HullTypes.Values.OrderBy(h => h.HitPoints).First());

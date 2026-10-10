@@ -7,6 +7,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using Th = global::Allegiance.Server.TestHarnessConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -31,7 +32,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class RunHullMatrixLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -80,9 +81,11 @@ public sealed class RunHullMatrixLiveTests
     /// <summary>⭐ The live proof: run a small real hull/weapon matrix against a
     /// real server and confirm the real per-combination rows + the clean
     /// disposal of each combination's own bots.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RunHullMatrix_ReturnsRealPerCombinationRows_AndClearsEachCombinationsBots()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // bypass the ready-up lobby (P180 pattern)

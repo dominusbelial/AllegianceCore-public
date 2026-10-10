@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Tools.McpSpawner;
 using Boh = Allegiance.Tools.McpSpawner.BotManager;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -32,9 +33,11 @@ public class P556TechHullShieldTests
     /// Adv Scout 13's successor is Hvy Scout 90, whose own successor is NA (-1),
     /// i.e. the chain ENDS at 90 (so floor(N/2) beyond tech 2 clamps to Hvy
     /// Scout). Documents the corpus assumption the other tests rely on.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AdvScout_SuccessorChain_IsHvyScout90_EndingThere()
     {
+        Require.Artwork();
         var core = Core();
         Assert.Equal((short)13, core.HullTypes[13].HullId);
         Assert.Equal("Adv Scout", core.HullTypes[13].Name);
@@ -46,9 +49,11 @@ public class P556TechHullShieldTests
     /// <summary>Tech 0 flies the SCENARIO hull unchanged (floor(0/2) = 0 steps)
     /// with its native preferred loadout — now INCLUDING Sm Shield 1 after P555
     /// (the unshielded-first-contact problem P556 fixes).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Tech0_FliesScenarioHull_WithNativePreferredLoadout_IncludingSmShield1()
     {
+        Require.Artwork();
         Assert.Equal((short)13, Catalog.EffectiveHullAtLevel(13, 0).HullId);   // Adv Scout
         var tl = Catalog.NativePreferredLoadout(13, "Adv Scout", 0);
         Assert.Equal((short)13, tl.HullId);
@@ -62,9 +67,11 @@ public class P556TechHullShieldTests
     /// (Hvy Scout 90, 250 HP) and resolves parts from ITS native preferred parts,
     /// advanced 2 steps each — so the gun becomes PW Gat Gun 3 (72) and the
     /// shield Sm Shield 3 (42). Survivability now changes with tech.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Tech2_FliesSuccessorHull_AndPartsAdvancedTwoSteps()
     {
+        Require.Artwork();
         Assert.Equal((short)90, Catalog.EffectiveHullAtLevel(13, 2).HullId);   // Hvy Scout
         var tl = Catalog.NativePreferredLoadout(13, "Adv Scout", 2);
         Assert.Equal((short)90, tl.HullId);
@@ -79,9 +86,11 @@ public class P556TechHullShieldTests
     /// <summary>Tech 1 keeps the scenario hull (floor(1/2) = 0 hull steps) but
     /// still advances PARTS 1 step — PW Gat Gun 2 (71) and Sm Shield 2 (40). The
     /// hull gate (floor N/2) and the part gate (N) are independent.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Tech1_HullUnchanged_PartsAdvancedOneStep()
     {
+        Require.Artwork();
         Assert.Equal((short)13, Catalog.EffectiveHullAtLevel(13, 1).HullId);   // hull unchanged
         var tl = Catalog.NativePreferredLoadout(13, "Adv Scout", 1);
         Assert.Equal((short)13, tl.HullId);
@@ -95,9 +104,11 @@ public class P556TechHullShieldTests
     /// successor (NA), so the chain END is respected and it stays Hvy Scout 90.
     /// Parts likewise clamp to their chain ends (PW Gat Gun 3 / Sm Shield 3) —
     /// so tech 4 == tech 2 for this short scout chain, never a fabricated step.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Tech4_ChainEndRespected_HullAndPartsClampToFinal()
     {
+        Require.Artwork();
         Assert.Equal((short)90, Catalog.EffectiveHullAtLevel(13, 4).HullId);   // clamps at chain end
         var tl = Catalog.NativePreferredLoadout(13, "Adv Scout", 4);
         Assert.Equal((short)90, tl.HullId);
@@ -109,9 +120,11 @@ public class P556TechHullShieldTests
     /// strength/regen — comes from the real part subtype: Sm Shield 1 = 150/2.0
     /// at tech 0, Sm Shield 3 = 225/3.75 at tech 2. This is the survivability
     /// number a showcase operator reads to see the tech effect.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShieldStats_ReportsMountedShield_StrengthAndRegen()
     {
+        Require.Artwork();
         var tl0 = Catalog.NativePreferredLoadout(13, "Adv Scout", 0);
         var tl2 = Catalog.NativePreferredLoadout(13, "Adv Scout", 2);
         var s0 = Catalog.ShieldStats(tl0.Parts);

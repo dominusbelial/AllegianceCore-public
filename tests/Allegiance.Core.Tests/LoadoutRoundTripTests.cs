@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -87,9 +88,11 @@ public class LoadoutRoundTripTests
         return Task.FromResult(server);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task BuyLoadout_WithRealHullAndWeapon_RoundTrips()
     {
+        Require.Artwork();
         using var server = await BootWithLoop(out var cts, out var loop);
         using var client = new ClientHarness();
         try
@@ -136,9 +139,11 @@ public class LoadoutRoundTripTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task BuyLoadout_ZeroParts_StillReturnsHullOnlyAck()
     {
+        Require.Artwork();
         using var server = await BootWithLoop(out var cts, out var loop);
         using var client = new ClientHarness();
         try

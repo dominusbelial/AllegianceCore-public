@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -92,9 +93,11 @@ public class ProjectileBroadcastTests
     /// Also asserts per-shot multiplicity (≥2 distinct broadcasts from ≥2
     /// distinct shots), proving the broadcast is a real per-shot event and not
     /// a one-time/cached snapshot.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_weapon_fire_broadcasts_projectile_to_teammate_but_not_enemy()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         // P375 — place all three bots in the SAME sector (Sectors[0]) with

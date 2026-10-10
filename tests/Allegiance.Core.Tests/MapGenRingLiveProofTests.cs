@@ -9,6 +9,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Mg = global::Allegiance.Server.MapGenConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -79,9 +80,11 @@ public class MapGenRingLiveProofTests
     /// path with the expected sector count and a real generated home base + ore.
     /// Also re-proves the plain file-load branch is untouched (game 8 loads
     /// <c>Map</c> from a real file, not MapGen).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AllRingTypes_BootHeadless_AreConfigSelectable()
     {
+        Require.Artwork();
         // (name, topology, expectedSectors)
         var games = new (string name, string type, int sectors)[]
         {
@@ -142,9 +145,11 @@ public class MapGenRingLiveProofTests
     /// first generated warp's collision volume, and is transited to a genuine
     /// HiLo neighbour sector (per the traced adjacency) — the generated
     /// non-trivial topology is traversable over the real wire path.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedHiLo_PeerFliesThroughWarp_ToTracedNeighbour()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         short? spawnSectorId = null;
@@ -206,9 +211,11 @@ public class MapGenRingLiveProofTests
     /// which seats it in its side's generated home sector; driving into the
     /// generated home station's dock radius docks it — the generated HiLo base
     /// is genuinely dockable.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedHiLo_DefaultSpawnedPeer_DocksAtGeneratedHomeStation()
     {
+        Require.Artwork();
         using var server = new Srv();
         // ShipSpawner NOT overridden — exercise the real default spawner.
         server.Boot(Config());

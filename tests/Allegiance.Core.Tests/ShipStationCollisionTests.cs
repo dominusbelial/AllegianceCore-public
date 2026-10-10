@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -211,9 +212,11 @@ public sealed class ShipStationCollisionTests
     /// hp·d/(hp+d) share — the "ram an enemy base, hull drops, base hull drops" behaviour.
     /// The pair is not a dock candidate (different side) and not a board candidate
     /// (shields up / not a board hull), so it bounces.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         short sideA = mission.Sides[0].Id;
@@ -307,9 +310,11 @@ public sealed class ShipStationCollisionTests
     /// but neither deals nor takes any damage: the pod's hull fraction stays 1.0 and
     /// the station's armor stays 1.0 — the native c_habmLifepod gate (shipIGC.cpp:803,
     /// the same gate P254 applies to asteroids).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lifepod_bounces_off_station_with_no_damage()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         short sideA = mission.Sides[0].Id;
@@ -362,9 +367,11 @@ public sealed class ShipStationCollisionTests
     /// friendly ship back out at the hull surface and break docking at every base whose
     /// collision radius exceeds <see cref="Sector.DockRadius"/>. End-to-end friendly
     /// docking is separately proven by the existing <see cref="DockDockingTests"/> loopback.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_ship_is_not_bounced_off_its_own_station()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         short sideA = mission.Sides[0].Id;
@@ -417,9 +424,11 @@ public sealed class ShipStationCollisionTests
     /// capturer to a spot already inside the dock radius — <c>AtBase</c>, dist 0).
     /// Passing here proves the SERVER reachability path works; any live-run failure
     /// to capture therefore names the BOT (drive/dodge law), not the server.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         short sideA = mission.Sides[0].Id;

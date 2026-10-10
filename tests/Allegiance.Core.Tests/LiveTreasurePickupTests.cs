@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -152,9 +153,11 @@ public class LiveTreasurePickupTests
 
     // ── Scenario 1: rescue-capable ship picks up a cash treasure ───────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectSpawn(server, DataHullTypeIGC.HabmRescue, Vector3.Zero);
         server.Boot(Config());
@@ -211,9 +214,11 @@ public class LiveTreasurePickupTests
 
     // ── Scenario 1b: P551 — autodonate target receives the cash credit ─────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cash_treasure_credited_to_autodonate_target_wallet_and_moneychange_agrees()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectSpawn(server, DataHullTypeIGC.HabmRescue, Vector3.Zero);
         server.Boot(Config());
@@ -274,9 +279,11 @@ public class LiveTreasurePickupTests
 
     // ── Scenario 2: non-rescue ship does NOT pick up ──────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_rescue_ship_overlapping_cash_treasure_leaves_it_untouched()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectSpawn(server, 0 /* no capabilities — not rescue-capable */, Vector3.Zero);
         server.Boot(Config());
@@ -303,9 +310,11 @@ public class LiveTreasurePickupTests
 
     // ── Scenario 3: join-sync TREASURE_SETS catalog ───────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Joining_a_mission_receives_treasure_sets_with_the_real_catalog()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby

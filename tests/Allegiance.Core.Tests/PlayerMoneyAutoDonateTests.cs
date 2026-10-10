@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -168,9 +169,11 @@ public class PlayerMoneyAutoDonateTests
     /// <summary>⭐ A newly-joined non-leader defaults to auto-donating to the
     /// side's current leader; the leader themselves has no target (native
     /// AddPlayerToSide, fsmission.cpp:720-723).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_defaults_non_leader_to_donate_to_leader_leader_has_none()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -185,9 +188,11 @@ public class PlayerMoneyAutoDonateTests
 
     /// <summary>⭐ Chain redirect: A tries to donate to B, but B already donates
     /// to C ⇒ A ends up donating to C, not B (fsship.cpp:1322-1326).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Chain_redirect_a_to_b_where_b_donates_to_c_yields_a_to_c()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -217,9 +222,11 @@ public class PlayerMoneyAutoDonateTests
     /// <summary>⭐ Mutual donation: A tries to donate to B, but B is already
     /// donating to A ⇒ B's donation to A is cleared first, then A donates to B
     /// (fsship.cpp:1313-1321).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mutual_donation_clears_target_first_then_donates()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -236,9 +243,11 @@ public class PlayerMoneyAutoDonateTests
     /// <summary>⭐ A one-time gift transfers immediately and updates both wallets
     /// (fsship.cpp:1336-1338), driven over the real wire through the
     /// <c>AUTODONATE(112)</c> dispatch.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Autodonate_gift_transfers_wallets_over_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -265,9 +274,11 @@ public class PlayerMoneyAutoDonateTests
     /// <summary>⭐ A leader-only <c>AUTODONATE(amount=-1)</c> toggle from a
     /// non-leader is refused; from the leader it toggles the named subordinate's
     /// donation on/off (FedSrv.CPP:5531-5558).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_only_toggle_refused_for_non_leader_and_toggles_for_leader()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -298,9 +309,11 @@ public class PlayerMoneyAutoDonateTests
     /// must-fail-if-removed proof distinct from the P51 wire-cadence tests (which
     /// only checked the broadcast). B's share lands in A's wallet because B
     /// auto-donates to A (native DoPayday, fsmission.cpp:2310-2324).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Payday_credits_resolved_donate_target_not_the_payer()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -330,9 +343,11 @@ public class PlayerMoneyAutoDonateTests
     /// deposed leader alone (native MutinyBallot::OnPassed, fsmission.cpp:
     /// 6121-6136). NOTE (verified vs live source): native does NOT re-point every
     /// other donor — only the deposed leader is redirected; see PLAYER_MONEY_AUTODONATE_P197.md.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mutiny_transfers_old_leader_wallet_to_new_leader_and_redirects_him()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -406,9 +421,11 @@ public class PlayerMoneyAutoDonateTests
     /// same numeric side id (the AutoDonate broadcast is side-scoped WITHIN a
     /// mission — the P197 BroadcastAutoDonate filter is mission+side, never an
     /// unscoped sweep).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_autodonate_broadcast_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

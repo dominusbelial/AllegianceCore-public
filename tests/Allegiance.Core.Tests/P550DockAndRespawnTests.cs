@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Srv = global::Allegiance.Server.Server;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -117,9 +118,11 @@ public sealed class P550DockAndRespawnTests
 
     /// <summary>⭐ A fighter docks at a SabmLand-capable station (unchanged
     /// feel).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fighter_docks_at_sabml_and_capable_station()
     {
+        Require.Artwork();
         var core = Core();
         var m = NewMission(new LatchingSite());
         var w = Place(m, Tecsy(), 0, 5901, FighterHull(core), Vector3.Zero, attachGeometry: false);
@@ -129,9 +132,11 @@ public sealed class P550DockAndRespawnTests
 
     /// <summary>⭐ A fighter is REFUSED at a station type WITHOUT SabmLand — the
     /// old code docked any same-side ship regardless of station ability.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fighter_is_refused_at_station_without_sabml_and()
     {
+        Require.Artwork();
         var core = Core();
         var m = NewMission(new LatchingSite());
         var noLand = Tecsy() with { SabmCapabilities = DataStationTypeIGC.SabmCapLand };   // capital-only base
@@ -142,9 +147,11 @@ public sealed class P550DockAndRespawnTests
 
     /// <summary>⭐ A capital (non-fighter hull) docks at a SabmCapLand-capable
     /// station, and is REFUSED at one with only SabmLand.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Capital_needs_sabmc_apland()
     {
+        Require.Artwork();
         var core = Core();
         var capital = CapitalHull(core);
         Assert.False(capital.HasCapability(DataHullTypeIGC.HabmFighter), "capital hull must not be a fighter");
@@ -171,9 +178,11 @@ public sealed class P550DockAndRespawnTests
     /// docks; a ship at (0,−100,0) is WELL within DockRadius (200) of the station
     /// centre yet OUTSIDE the bay and is refused. Pre-P550 both docked (the
     /// sphere alone decided).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docking_requires_native_landing_geometry_not_just_a_200u_sphere()
     {
+        Require.Artwork();
         var core = Core();
         var tecsy = Tecsy();
 
@@ -213,9 +222,11 @@ public sealed class P550DockAndRespawnTests
     /// <summary>⭐ The NEAREST restart-capable station wins; a nearer friendly
     /// station WITHOUT restart is skipped (the pre-P550 code ignored the restart
     /// ability entirely).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Respawn_picks_nearest_restart_capable_station_skipping_one_without_restart()
     {
+        Require.Artwork();
         var core = Core();
         var (restart, noRestart) = RestartTypeIds(core);
         var m = NewMission(new NullIgcSite());
@@ -232,9 +243,11 @@ public sealed class P550DockAndRespawnTests
 
     /// <summary>⭐ A nearer restart-capable station beats a farther restart-capable
     /// one.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Respawn_picks_the_nearer_of_two_restart_stations()
     {
+        Require.Artwork();
         var core = Core();
         var (restart, _) = RestartTypeIds(core);
         var m = NewMission(new NullIgcSite());
@@ -254,9 +267,11 @@ public sealed class P550DockAndRespawnTests
     /// c_sabmRestart-filtered, fsmission.cpp:1433-1444). Uses side 503 — a side
     /// that owns no real map station (the map's real side-0 garrison IS
     /// restart-capable, so side 0 would wrongly satisfy the GetBase fallback).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Respawn_returns_null_when_no_restart_capable_friendly_station_exists()
     {
+        Require.Artwork();
         const short lonelySide = 503;
         var core = Core();
         var (_, noRestart) = RestartTypeIds(core);

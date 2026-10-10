@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -110,9 +111,11 @@ public class LiveChatSectorWireTests
     private static Dictionary<short, Srv.LiveShip> ByShip(Srv server) =>
         server.Ships.ToDictionary(l => l.Ship.Id);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Individual_AllSector_and_FriendlySector_relay_to_real_peers_over_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectLayout(server);
         server.Boot(Config());

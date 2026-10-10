@@ -7,6 +7,8 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -27,7 +29,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P539cReproLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg MapConfig(int ups) => new()
     {
@@ -135,9 +137,11 @@ public sealed class P539cReproLiveTests
 
     private static string V(double[] p) => $"({p[0]:F0},{p[1]:F0},{p[2]:F0})";
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Repro_side_dependent_acquisition_and_transit()
     {
+        Require.Artwork();
         if (IsGated()) return;
         int size = int.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_P539C_SIZE"), out var sz) ? sz : 2;
         double window = double.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_P539C_SECONDS"), out var w) && w > 0 ? w : 120;

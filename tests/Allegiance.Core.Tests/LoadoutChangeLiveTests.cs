@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -113,9 +114,11 @@ public class LoadoutChangeLiveTests
     /// own peer and to a same-side teammate (who holds the subject's ExportShip),
     /// carrying the correct hull id + the mounted part; removing it broadcasts one
     /// reflecting the loadout without it; the cross-side enemy receives neither.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy()
     {
+        Require.Artwork();
         using var server = new Srv();
         var bots = BootThree(server, out var ships, out var ids);
         try
@@ -172,9 +175,11 @@ public class LoadoutChangeLiveTests
     /// PARENT ship whose Passengers now includes the boarder's ship id + turret id;
     /// the gunner leaving broadcasts one whose Passengers no longer includes it.
     /// The cross-side enemy receives neither.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Boarding_and_leaving_broadcast_passenger_change_on_parent_but_not_enemy()
     {
+        Require.Artwork();
         using var server = new Srv();
         var bots = BootThree(server, out var ships, out var ids);
         try

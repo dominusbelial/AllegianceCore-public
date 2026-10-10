@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -175,9 +176,11 @@ public sealed class OrderChangeReturnToBaseLiveTests
     /// the <c>c_cmdAccepted</c> slot with the decoded commandID — while setting
     /// <c>StayDocked=true</c> and clearing the Queued slot
     /// (native FedSrv.CPP:7304-7332).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flying_npc_return_to_base_sets_accepted_target_to_nearest_repair_station()
     {
+        Require.Artwork();
         using var seat = SeatOne();
         var sector = FlySectorOf(seat.Mission);
         PlaceRepairStation(seat, stationId: 5101, x: 100f, y: 0f, z: 0f);
@@ -215,9 +218,11 @@ public sealed class OrderChangeReturnToBaseLiveTests
     /// (<c>StayDocked</c>, Queued cleared) but the Accepted slot stays unset —
     /// native's <c>if (pmodel)</c> gate wraps ONLY the slot-store half
     /// (FedSrv.CPP:7323-7331).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flying_npc_return_to_base_with_no_station_leaves_accepted_unset()
     {
+        Require.Artwork();
         using var seat = SeatOne();
         var sector = FlySectorOf(seat.Mission);
         // No station placed in 1052 — nothing qualifies (own-sector scoped, P149).
@@ -244,9 +249,11 @@ public sealed class OrderChangeReturnToBaseLiveTests
     /// weapon-aim <see cref="Ship.CommandTarget"/> (Model?-typed; cannot hold a
     /// station) nor into <see cref="Ship.AcceptedTarget"/> — the port logs and
     /// stores nothing, matching the documented, reachability-safe treatment.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flying_npc_return_to_base_current_slot_is_logged_not_misrouted()
     {
+        Require.Artwork();
         using var seat = SeatOne();
         var sector = FlySectorOf(seat.Mission);
         PlaceRepairStation(seat, stationId: 5199, x: 260f, y: 40f, z: 0f);

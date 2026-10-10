@@ -10,6 +10,7 @@ using Gm = global::Allegiance.Server.GameConfig;
 using Mg = global::Allegiance.Server.MapGenConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -109,9 +110,11 @@ public sealed class P402DebugMapGenArenaLiveTests
     /// (never a synthetic 9000x garrison), auto-undock (P381) and acquire a
     /// mining target (mine) — all unattended, the exact behavior Domingo asked
     /// to preserve, now against the generated arena.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedBrawlDebugMode_EconomyRunsUnattended_NoPlayers()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(BrawlDebugConfig());
         var mission = server.Missions.Single();
@@ -174,9 +177,11 @@ public sealed class P402DebugMapGenArenaLiveTests
     /// shared generated sector; two representatives (one per side) dock at their
     /// OWN correctly-placed generated home station — dock/buy works and the
     /// opposing sides are in the same sector (no warps).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedBrawlDebugMode_TwoSidesDockOwnHomeStation_HullMixAlternates()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(BrawlDebugConfig());
         var mission = server.Missions.Single();
@@ -238,9 +243,11 @@ public sealed class P402DebugMapGenArenaLiveTests
     /// a synthetic garrison (none exist here). Pins <c>FindFriendlyStation</c> /
     /// <c>FindDebugGarrisonStation</c>'s generated-map fallthrough, mirroring the
     /// P393 real-map proof which asserts the opposite (synthetic picked) there.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GeneratedBrawlDebugMode_DeathRespawnsAtOwnGeneratedStation()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(BrawlDebugConfig());
         var mission = server.Missions.Single();

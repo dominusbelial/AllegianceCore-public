@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -42,9 +43,11 @@ public class LandingBayTests
     public void New_capability_bits_match_igc_h(short bit, int expected) =>
         Assert.Equal(expected, bit);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Faohshcar_carrier_hull_carries_the_carrier_bit()
     {
+        Require.Artwork();
         // faohshcar habmCapabilities = 0x1D02 from the corpus; bit 0x400 (Carrier,
         // igc.h:736) is set, LandOnCarrier (0x10) is not (a carrier does not land
         // on another), Rescue (0x02) is set — decoded via HasCapability.
@@ -57,9 +60,11 @@ public class LandingBayTests
 
     // ── slot-geometry reconstruction (real corpus data) ────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Faohshcar_bay_reconstructs_from_real_cvh_frames()
     {
+        Require.Artwork();
         var hull = FindHull("faohshcar");                 // length 300 (real record)
         var cvh = LoadCvh("faohshcar.cvh");               // radius 16.29676056 (real header)
         var bay = HullLandingBay.Reconstruct(cvh, hull.Length);
@@ -87,9 +92,11 @@ public class LandingBayTests
 
     // ── InGarage (simplified predicate) ────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void InGarage_is_true_inside_the_bay_and_false_outside()
     {
+        Require.Artwork();
         // Real carrier at the origin, identity orientation, its real .cvh attached.
         var carrier = new Ship(1, FindHull("faohshcar"), Vector3.Zero, Vector3.Zero, Orientation.Identity)
         {

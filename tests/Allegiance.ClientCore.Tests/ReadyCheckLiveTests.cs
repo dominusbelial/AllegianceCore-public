@@ -5,6 +5,8 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -31,7 +33,7 @@ namespace Allegiance.ClientCore.Tests;
 public class ReadyCheckLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -68,9 +70,11 @@ public class ReadyCheckLiveTests
         s.SendPositionReq(side);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mission_stays_not_started_while_any_same_side_peer_is_unready_then_starts_when_last_readies()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         short side0 = server.Missions[0].Sides[0].Id;
@@ -125,9 +129,11 @@ public class ReadyCheckLiveTests
         Assert.True(b.World.Roster.ReadyByShipId[bId]);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Only_the_mission_owner_can_force_team_ready_and_it_starts_the_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         short side0 = server.Missions[0].Sides[0].Id;

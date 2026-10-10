@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -109,9 +110,11 @@ public sealed class MinerDecisionCycleLiveTests
     /// <summary>⭐ End-to-end: an idle NPC autonomously mines a full bag and
     /// sells it at a friendly station, crediting the side's treasury by the
     /// expected proceeds — the first fully autonomous economic loop in this port.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sector = null;
@@ -228,9 +231,11 @@ public sealed class MinerDecisionCycleLiveTests
     /// travel → dock → sell → (P381 auto-undock) → … — and after each dock asserts
     /// the just-consumed plan slot is cleared (PlanTarget null, AcceptedTarget
     /// null) so the next cycle re-decides instead of re-docking in place.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sector = null;
@@ -342,9 +347,11 @@ public sealed class MinerDecisionCycleLiveTests
     /// ORDER_CHANGE return-to-base), lets it dock via the REAL
     /// Sector.ResolveDockCollisions → ServerHost.DockWithStationEvent path, and
     /// asserts BOTH slots (and their command ids) are cleared.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Accepted_return_to_base_slot_cleared_on_dock()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sector = null;

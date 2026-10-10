@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -119,9 +120,11 @@ public sealed class BuildingConstructionLiveTests
     /// upgrade for builds the <b>successor</b> station type, not the base one.
     /// Red before P488 (unfixed code always builds the requested type).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it()
     {
+        Require.Artwork();
         var core = Core();
         var (baseType, succType) = UpgradableStationPair(core);
         var mission = NewStartedMission(new NullIgcSite());
@@ -152,9 +155,11 @@ public sealed class BuildingConstructionLiveTests
     /// upgrade (empty dev techs) builds the requested BASE station type, exactly
     /// as native (the successor leg of GetSuccessorStationType is skipped,
     /// stationtypeigc.h:185-195).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched()
     {
+        Require.Artwork();
         var core = Core();
         var (baseType, _) = UpgradableStationPair(core);
         var mission = NewStartedMission(new NullIgcSite());
@@ -212,9 +217,11 @@ public sealed class BuildingConstructionLiveTests
     /// Builder — the native self-sacrificing transaction
     /// (<c>buildingeffectigc.h:312-353</c>), end to end through the mission
     /// tick.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completed_build_replaces_asteroid_with_station_and_consumes_builder()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -276,9 +283,11 @@ public sealed class BuildingConstructionLiveTests
     /// the tick passes what would have been completion — the interruption path
     /// of native <c>BuilderTerminated()</c> (<c>buildingeffectigc.h:294-297</c>),
     /// minus the Stage-2 wire.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Interrupted_build_aborts_without_touching_asteroid_or_creating_station()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -322,9 +331,11 @@ public sealed class BuildingConstructionLiveTests
     /// on an asteroid of the WRONG type for the station: <c>StartBuildingEffect</c>
     /// throws (the port of native's c_cidBuild legality gate, shipIGC.h:1695-1707),
     /// no effect registers and the rock is untouched.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void StartBuildingEffect_rejects_asteroid_of_wrong_type()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];

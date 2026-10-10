@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Allegiance.Core;
 
 namespace Allegiance.Server;
 
@@ -308,9 +309,13 @@ public sealed class AdminCheatsConfig
 /// </summary>
 public sealed class ServerConfig
 {
-    /// <summary>Root of the artwork tree (contains the core and map files).</summary>
+    /// <summary>Root of the artwork tree (contains the core and map files).
+    /// Resolved by <see cref="ExternalPaths"/>: <c>$ALLEGIANCE_ARTWORK_PATH</c>,
+    /// else the gitignored <c>local.env</c>, else empty (validation in
+    /// <see cref="Server.ValidatePaths"/> then fails with an actionable
+    /// message). No fallback to an owner's machine path.</summary>
     public string ArtPath { get; set; } =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     /// <summary>Static core file name, relative to <see cref="ArtPath"/>.</summary>
     public string StaticCore { get; set; } = "PCore001.igc";
@@ -392,11 +397,30 @@ public static class ServerConfigLoader
         }
         catch (Exception e) when (e is not InvalidDataException)
         {
+            if (e is FileNotFoundException or DirectoryNotFoundException)
+                throw new InvalidDataException(
+                    $"failed to read config '{path}': {e.Message}. " +
+                    $"Copy '{ExampleFor(path)}' to '{path}' and edit the placeholders " +
+                    "(see the header comment in Program.cs). Artwork path can also come from " +
+                    "$ALLEGIANCE_ARTWORK_PATH or the repo-root local.env.");
             throw new InvalidDataException($"failed to read config '{path}': {e.Message}");
         }
 
         ApplyCli(config, cli);
         return config;
+    }
+
+    /// <summary>Best-effort example file to suggest for a missing config.
+    /// For the default <c>server.json</c> the committed
+    /// <c>server.example.json</c> is the exact match.</summary>
+    private static string ExampleFor(string path)
+    {
+        var dir = Path.GetDirectoryName(path);
+        var name = Path.GetFileName(path);
+        var example = name.Equals("server.json", StringComparison.OrdinalIgnoreCase)
+            ? "server.example.json"
+            : name.Insert(name.LastIndexOf('.') is var i && i > 0 ? i : name.Length, ".example");
+        return string.IsNullOrEmpty(dir) ? example : Path.Combine(dir, example);
     }
 
     /// <summary>Return value: number of CLI keys actually recognized.</summary>

@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -151,9 +152,11 @@ public class LiveTeamLobbyTests
     /// connected peer's real <c>SHIP_UPDATE</c> control input is IGNORED while
     /// it is not started — the ship's <c>Controls</c>/<c>StateM</c> stay at
     /// their defaults after a genuine control frame over the wire.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mission_boots_not_started_and_control_update_ignored_before_start()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         Assert.Equal(MissionStage.NotStarted, server.Missions[0].Stage);
@@ -183,9 +186,11 @@ public class LiveTeamLobbyTests
     /// and BOTH peers receive the single ENTER_GAME broadcast at that point —
     /// not before (both EnterGames lists are empty until then). A subsequent
     /// real control update now actually takes effect.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Both_sides_ready_broadcasts_team_ready_and_autostarts()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -235,9 +240,11 @@ public class LiveTeamLobbyTests
 
     /// <summary>⭐ Only ONE of two sides ready: no auto-start, Stage stays
     /// NotStarted, and nobody has received ENTER_GAME yet.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void One_side_ready_does_not_autostart()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -261,9 +268,11 @@ public class LiveTeamLobbyTests
     /// causes a SECOND whole-mission TEAM_READY(fReady=false) broadcast for
     /// their side — the aggregate flip true→false is reported, and the mission
     /// still has not started (the other side's player never readied).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unready_broadcasts_team_ready_false()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -290,9 +299,11 @@ public class LiveTeamLobbyTests
     /// late-arriving peer) still receives its immediate ENTER_GAME via the
     /// existing join-sync path — the join-sync guard only suppresses the send
     /// while the mission is NotStarted, never when it is already running.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Late_joiner_to_started_mission_still_gets_enter_game()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -317,9 +328,11 @@ public class LiveTeamLobbyTests
     /// gates still refuse their action while genuinely NotStarted — not just
     /// Over as P178 tested. A real SUICIDE while NotStarted is refused and the
     /// ship survives in the sector.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Existing_stage_gates_refuse_while_not_started()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -345,9 +358,11 @@ public class LiveTeamLobbyTests
     /// this is the same class of bug (an unscoped <c>_peerShips</c> sweep) in
     /// the ready-up broadcasts, found and fixed during independent verification
     /// of this task's own landed commit, not part of the original prompt.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_ready_up_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

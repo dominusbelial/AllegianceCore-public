@@ -4,6 +4,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -115,9 +116,11 @@ public sealed class NPCTakeCoverTests
     /// <summary>⭐ A damaged NPC (IsNpc=true, hull fraction below threshold,
     /// not docked) ticks and ends up with <c>PlanTarget</c> pointing at a real
     /// nearby friendly land-capable station — verification point 1 of the task.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Damaged_npc_ticks_into_take_cover_at_nearest_land_capable_station()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);
@@ -138,9 +141,11 @@ public sealed class NPCTakeCoverTests
     /// <summary>⭐ An undamaged NPC's <c>PlanTarget</c> stays null — the
     /// <c>GetFraction() &lt; 1.0f</c> outer gate (shipIGC.h:2230) blocks before
     /// any hide branch — verification point 2.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Undamaged_npc_plan_target_stays_null()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);
@@ -158,9 +163,11 @@ public sealed class NPCTakeCoverTests
     /// <summary>⭐ A docked NPC's <c>PlanTarget</c> stays null — the
     /// <c>!bDocked</c> gate (this port's <see cref="Ship.StationId"/> not null,
     /// shipIGC.h:2230) blocks even when badly damaged — verification point 3.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_npc_plan_target_stays_null()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);
@@ -181,9 +188,11 @@ public sealed class NPCTakeCoverTests
     /// <summary>The <see cref="Ship.IsNpc"/> gate: a damaged REAL player ship
     /// (IsNpc=false) never evaluates take-cover, so its <c>PlanTarget</c> stays
     /// null — confirming "real player ships never evaluate this".</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Damaged_non_npc_player_ship_plan_target_stays_null()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);
@@ -205,9 +214,11 @@ public sealed class NPCTakeCoverTests
     /// "return to base" Accepted order gets that promoted into Plan and is NOT
     /// redirected to take-cover's land station — proving the promotion branch
     /// precedes and wins over the autonomous flee.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Valid_accepted_order_promotes_into_plan_not_overridden_by_take_cover()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);
@@ -236,9 +247,11 @@ public sealed class NPCTakeCoverTests
     /// keeps <c>PlanTarget</c> null — <see cref="Ship.TryFindHidingStation"/>
     /// returning null leaves the slot untouched (native's <c>if (pstationToHide)</c>
     /// gate, shipIGC.h:2239).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Damaged_npc_with_no_hiding_station_leaves_plan_null()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);
@@ -260,9 +273,11 @@ public sealed class NPCTakeCoverTests
     /// ripcord-capable one exists and the shield is below 0.8 — the NPC hides
     /// at the ripcord station directly (no secret-location buoy substitution,
     /// the documented simplification).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Damaged_npc_falls_back_to_ripcord_station_when_no_land_station_and_shield_low()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);

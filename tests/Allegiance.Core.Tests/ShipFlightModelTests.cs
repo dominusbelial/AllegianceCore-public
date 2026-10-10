@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit.Abstractions;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -54,9 +55,11 @@ public class ShipFlightModelTests
 
     // ── determinism ────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Identical_inputs_produce_bit_identical_outputs()
     {
+        Require.Artwork();
         var a = NewShip();
         var b = NewShip();
         a.Controls = new ControlData(Yaw: 0.7123f, Pitch: -0.8801f, Roll: 0.991f, Throttle: 0.784f);
@@ -84,9 +87,11 @@ public class ShipFlightModelTests
 
     // ── zero input ⇔ nothing moves ─────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Neutral_controls_at_rest_move_nothing()
     {
+        Require.Artwork();
         var ship = NewShip();                         // neutral controls, stateM == 0, velocity 0
 
         for (int i = 0; i < 200; i++)
@@ -100,9 +105,11 @@ public class ShipFlightModelTests
 
     // ── forward thrust travels along the facing axis only ─────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Pure_forward_thrust_accelerates_along_the_facing_axis_only()
     {
+        Require.Artwork();
         var ship = NewShip();                         // identity: facing axis is forward = (0,0,-1)
         ship.StateM = ShipControlState.ForwardButton;
 
@@ -118,9 +125,11 @@ public class ShipFlightModelTests
 
     // ── turn rates bounded; speed not hard-clamped ─────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Turn_rate_never_exceeds_the_hull_max()
     {
+        Require.Artwork();
         var ship = NewShip();
         var hull = RepresentativeHull.Value;
         ship.Controls = new ControlData(Yaw: 1f, Pitch: 0f, Roll: 0f, Throttle: -1f); // full yaw, no thrust
@@ -137,9 +146,11 @@ public class ShipFlightModelTests
         Assert.InRange(ship.TurnRates[ControlData.AxisYaw], maxYawRate - 1e-3f, maxYawRate + 1e-5f); // converged to the target
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Speed_is_not_hard_clamped_and_forward_thrust_converges_below_max()
     {
+        Require.Artwork();
         var hull = RepresentativeHull.Value;
         float maxSpeed = hull.Speed;
         Assert.True(maxSpeed > 0f);
@@ -182,9 +193,11 @@ public class ShipFlightModelTests
 
     // ── orthonormality over many steps ────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Orientation_stays_orthonormal_across_ten_thousand_steps()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.Controls = new ControlData(Yaw: 0.871f, Pitch: -0.693f, Roll: 0.917f, Throttle: 0.3f);
         ship.StateM = ShipControlState.ForwardButton | ShipControlState.CoastButton;
@@ -222,9 +235,11 @@ public class ShipFlightModelTests
     /// target speed of <c>-0.5*(1+Throttle)*maxSpeed</c> and cruises there.
     /// Throttle +1 → full max speed forward; throttle -1 → stop (~0).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PersistentThrottle_CruisesToMaxSpeed_AndIdleStops()
     {
+        Require.Artwork();
         var hull = RepresentativeHull.Value;
         float maxSpeed = hull.Speed;
         Assert.True(maxSpeed > 0f, "test hull must have a max speed");
@@ -255,9 +270,11 @@ public class ShipFlightModelTests
         Assert.InRange(idleSpeed, 0f, 0.01f * maxSpeed);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Measure_single_vs_split_step_divergence()
     {
+        Require.Artwork();
         const int chunks = 3;
         const float total = 0.0950523f;               // non-power-of-two so float chunking is not exact
 

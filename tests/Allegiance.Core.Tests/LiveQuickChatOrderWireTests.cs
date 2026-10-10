@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -61,9 +62,11 @@ public sealed class LiveQuickChatOrderWireTests
     /// <summary>⭐ Primary proof: A issues "attack my target" (cidAttack) with C as
     /// the target, to Team. B (same-side real player, not the sender) receives the
     /// queued order naming C; the sender A and the enemy-side C receive nothing.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AttackMyTarget_Team_QueuesOnTeammate_NotSenderOrEnemy()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var mm in server.Missions) mm.Stage = MissionStage.Started;
@@ -111,9 +114,11 @@ public sealed class LiveQuickChatOrderWireTests
     /// <summary>A command chat on <see cref="ChatTarget.Everyone"/> is never
     /// queued anywhere (native FedSrv.CPP:3385-3391) — the voice relays, but no
     /// player gets a queued order.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Everyone_CommandChat_QueuesNobody()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var mm in server.Missions) mm.Stage = MissionStage.Started;

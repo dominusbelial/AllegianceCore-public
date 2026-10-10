@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using PlayerScore = global::Allegiance.Server.PlayerScore;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -163,9 +164,11 @@ public class RandomizeTeamsLiveTests
     /// Final rank sums α=14, β=19 (mean 16.5 — both within one player's worth
     /// of the mean; imbalance 5), versus the pre-rebalance 24/9. Removing the
     /// rebalance leaves the ships on 24/9 and every assertion here fails.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rebalance_distributes_non_leaders_to_balance_rank_sums()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetUnseatedSpawner(server);
         server.Boot(Config());
@@ -227,9 +230,11 @@ public class RandomizeTeamsLiveTests
     /// when its rank would make its side the constant lowest-rank target, the
     /// leader is excluded from the pool and stays put (native fsmission.cpp:
     /// 5161-5182 never moves <c>GetLeader(sideID)</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Team_leaders_are_never_reassigned_during_rebalance()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetUnseatedSpawner(server);
         server.Boot(Config());
@@ -272,9 +277,11 @@ public class RandomizeTeamsLiveTests
     /// <summary>⭐ Pending join requests (P184) for the mission are cleared as
     /// part of the rebalance (native fsmission.cpp:5183-5196) — a mass
     /// reassignment must not leave a stale pending request behind.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rebalance_clears_pending_join_requests()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetUnseatedSpawner(server);
         server.Boot(Config());
@@ -306,9 +313,11 @@ public class RandomizeTeamsLiveTests
     /// sending RANDOMIZE_TEAMS is refused (sides unchanged); the owner's send
     /// afterwards is honoured (FedSrv.CPP:6965-6967,
     /// <c>pfsMission->GetOwner() != pfsPlayer</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Randomize_teams_refused_when_not_mission_owner()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetUnseatedSpawner(server);
         server.Boot(Config());
@@ -346,9 +355,11 @@ public class RandomizeTeamsLiveTests
     /// <summary>⭐ RANDOMIZE_TEAMS is refused once the mission is not
     /// STAGE_NOTSTARTED (FedSrv.CPP:6968-6970), matching the other lobby-era
     /// owner triggers.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Randomize_teams_refused_when_mission_started()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetUnseatedSpawner(server);
         server.Boot(Config());
@@ -380,9 +391,11 @@ public class RandomizeTeamsLiveTests
     /// out there, fsmission.cpp:5258-5259), and this is a privileged
     /// owner-only mass reassignment, not the ordinary player-initiated
     /// side-switch the lock guards.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Randomize_teams_bypasses_lock_sides()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetUnseatedSpawner(server);
         server.Boot(Config());
@@ -421,9 +434,11 @@ public class RandomizeTeamsLiveTests
     /// touches mission B's sides — same-class proof as the P180/P191
     /// per-mission broadcast tests. A rebalances to 14/19; mission B's leader
     /// and non-leader stay exactly where they were.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_rebalance_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         int seq = 0;
         server.ShipSpawner = (core, _, shipId) =>

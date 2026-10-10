@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -143,9 +144,11 @@ public class LiveBucketTests
     /// <c>CREATE_BUCKETS(191)</c> with both 50-byte tech masks zeroed (the
     /// port has no tech-tree infra, P117 finding) and one <c>BUCKET_STATUS(65)</c>
     /// per side bucket (the synthetic catalog seeds exactly one).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_broadcasts_create_buckets_and_per_bucket_status()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -188,9 +191,11 @@ public class LiveBucketTests
     /// price invests exactly the donated amount, deducts exactly that from the
     /// treasury, and broadcasts <c>BUCKET_STATUS</c> to BOTH same-side peers and
     /// to NO peer on the other side.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Small_donation_funds_bucket_and_broadcasts_sidewide_not_cross_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectThreeSpawn(server);
         server.Boot(Config());
@@ -285,9 +290,11 @@ public class LiveBucketTests
     /// price, never over) and the excess is NOT deducted from the treasury
     /// (the native leftover-refund logic, bucketigc.h:284-287 /
     /// FedSrv.CPP:7151-7160, ported as "only spend what's needed").</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Oversized_donation_caps_at_price_and_leaves_excess_in_treasury()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectThreeSpawn(server);
         server.Boot(Config());
@@ -362,9 +369,11 @@ public class LiveBucketTests
     /// (<c>pfsPlayer-&gt;GetMoney() &gt;= moneyGiven</c>, FedSrv.CPP:7148) it is
     /// silently dropped — no BUCKET_STATUS, no MONEY_CHANGE, and no wallet /
     /// side / bucket mutation.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Insufficient_player_wallet_refused_even_if_side_treasury_is_large()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
@@ -429,9 +438,11 @@ public class LiveBucketTests
     /// correctly reports false (probed in P551). On the OLD (pre-CanBuy) port
     /// this donation invested into the bucket and broadcast a BUCKET_STATUS —
     /// the failing-first discriminator.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Donation_to_unbuyable_bucket_refused_and_full_refunded()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
@@ -495,9 +506,11 @@ public class LiveBucketTests
     /// task's explicit "detect but don't act yet" boundary.
     /// Uses UpdatesPerSecond=2 so each TickSim advances 0.5s of sim time,
     /// making the time-to-build traverse quick and deterministic.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Full_funding_plus_build_time_fires_completion_seam_only()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(ups: 2));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby

@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -133,9 +134,11 @@ public class RequestMoneyTests
     /// teammate is richer (FedSrv.CPP:5375-5396). Discriminator: a naive
     /// always-richest implementation would forward to the 500-credit teammate C
     /// instead of the AD target A; the real handler must pick A.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Request_goes_to_auto_donate_target_when_it_holds_enough_even_if_not_richest()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -169,9 +172,11 @@ public class RequestMoneyTests
     /// the request is forwarded to the RICHEST OTHER connected teammate instead
     /// (FedSrv.CPP:5378-5395). Here a (the AD target) holds only 10 &lt; 50, so
     /// c (700) receives the forward, not a.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Request_goes_to_richest_other_teammate_when_auto_donate_target_lacks_funds()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -203,9 +208,11 @@ public class RequestMoneyTests
     /// wallet, exactly ONE of them receives the forward (native's <c>&gt;</c>
     /// comparison picks the first to reach the max — no broadcast, no
     /// double-forward, no last-write).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Tied_richest_teammates_forward_to_exactly_one()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -243,9 +250,11 @@ public class RequestMoneyTests
     /// no auto-donate target) has no resolvable recipient, so the request is
     /// silently dropped — nothing is forwarded to anyone, including back to the
     /// requester (FedSrv.CPP:5398 has no else).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Solo_player_request_is_silently_dropped()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -266,9 +275,11 @@ public class RequestMoneyTests
     /// <summary>⭐ A non-positive requested amount is refused (log-and-ignore,
     /// no forward) even when a recipient with funds exists — native's
     /// TrapHackBoot (FedSrv.CPP:5368) hardened to this port's log-and-stop.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_positive_amount_is_refused_no_forward()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -328,9 +339,11 @@ public class RequestMoneyTests
     /// forwarded to its one recipient on mission A side0 and must NEVER reach a
     /// player on a DIFFERENT mission (even one sharing the same numeric side id)
     /// nor a player on a DIFFERENT side of the same mission.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_request_forward_scopes_per_mission_and_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

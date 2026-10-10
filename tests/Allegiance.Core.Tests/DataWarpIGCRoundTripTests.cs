@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -15,12 +16,14 @@ namespace Allegiance.Core.Tests;
 /// warp (CwarpIGC::Export, warpIGC.cpp:112-130, copies raw), so every field
 /// must round-trip identically.
 /// </summary>
+[Trait("Requires","Artwork")]
 public class DataWarpIGCRoundTripTests
 {
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(AllMaps))]
     public void EveryWarpRecord_RoundTrips_ThroughEncodeDecode(string path)
     {
+        Require.Artwork();
         var file = IgcReader.ParseFile(path);
         if (file.Wrapper != IgcWrapper.DataSize) return;   // static cores etc.: not a map, skip (like CorpusValidateTests)
         var map = MissionMap.Load(file);

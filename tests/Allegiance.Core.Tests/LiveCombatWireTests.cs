@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -210,9 +211,11 @@ public class LiveCombatWireTests
         public void Dispose() => _t.Shutdown();
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_two_party_combat_produces_a_kill_ship_over_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, TargetZ));
         server.Boot(Config());
@@ -295,9 +298,11 @@ public class LiveCombatWireTests
     /// on the target (tiny forward thrust) and asserts the falling hull is then
     /// observable — the gap is broadcast gating, not payload.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Moving_target_streams_its_falling_hull_over_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, TargetZ));
         server.Boot(Config());
@@ -349,9 +354,11 @@ public class LiveCombatWireTests
     /// at the other, and asserts the KILL_SHIP(105) this bot's OnReceive switch
     /// now records.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_Bot_class_observes_its_own_kill_over_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, TargetZ));
         server.Boot(Config());

@@ -7,6 +7,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -211,9 +212,11 @@ public class LiveShieldRegenBroadcastTests
     /// climb is attributed to the P391 shield term, not motion, because the
     /// target never moves (position held constant across every received state).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stationary_ship_streams_its_regenerating_shield_over_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         var targetShipRef = new ShipRef();
         InjectFightSpawn(server, targetShipRef);
@@ -324,9 +327,11 @@ public class LiveShieldRegenBroadcastTests
     /// SINGLE_SHIP_UPDATE (the P332 forced first send) over many idle ticks,
     /// not a per-tick flood. Passes identically with and without the fix.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stationary_unshielded_ship_generates_no_spurious_shield_rebroadcasts()
     {
+        Require.Artwork();
         using var server = new Srv();
         // No custom spawner: the default spawn uses the core's first hull (an
         // Adv Miner) with NO weapon and NO shield mounted — unshielded.

@@ -10,6 +10,7 @@ using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using Th = global::Allegiance.Server.TestHarnessConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -175,9 +176,11 @@ public sealed class TestHarnessEconomyGrantLiveTests
     /// buys a tech-gated hull despite the garrison's tech gate, and its wallet
     /// is debited the hull's real price through the real debit path; (3) the
     /// NON-prefixed plain bot is refused the SAME hull (ship unchanged).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GrantOn_McpBuysTechGatedHull_PaidRealDebit_PlainRefused()
     {
+        Require.Artwork();
         using var h = BootDocked(GrantConfig());
         short mcpId = h.McpId, plainId = h.PlainId;
         var mission = h.Server.Missions[0];
@@ -212,9 +215,11 @@ public sealed class TestHarnessEconomyGrantLiveTests
     /// <summary>⭐ Scenario B — with the grant DISABLED (absent section, the P441
     /// default), the SAME "mcp-" bot is refused the tech-gated hull: the grant's
     /// only effect is the explicit config, and it is never implicit.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GrantOff_McpBotAlsoRefusedTechGatedHull()
     {
+        Require.Artwork();
         using var h = BootDocked(NoGrantConfig());
         short mcpId = h.McpId;
         var mission = h.Server.Missions[0];
@@ -238,9 +243,11 @@ public sealed class TestHarnessEconomyGrantLiveTests
     /// Bot seats, buys a (sellable) hull hull-only, and asserts the decoded ack
     /// round-trips the granted hull and the P441 hull-only
     /// <c>FBoughtEverything=false</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Bot_Decodes_BuyLoadoutAck()
     {
+        Require.Artwork();
         using var srv = new Srv();
         srv.Boot(NoGrantConfig());
         foreach (var m in srv.Missions) m.Stage = MissionStage.Started;

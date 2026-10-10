@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -201,9 +202,11 @@ public class LiveTurretGunnerBindingTests
             o);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Board_binds_gunner_and_active_turret_update_roundtrips_live()
     {
+        Require.Artwork();
         var (server, carrier, boarder, sp) = Setup(out short cId, out short bId);
         WaitDocked(server, (carrier, sp.Carrier), (boarder, sp.Boarder));
 

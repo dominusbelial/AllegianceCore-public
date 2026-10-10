@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -68,9 +69,11 @@ public class RepairAndRefuelTests
 
     /// <summary>⭐ Both <c>c_sabmRepair</c> and <c>c_sabmReload</c>: a damaged,
     /// dry ship is fully restored — hull → 1.0, ammo → max, energy → max.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BothBits_restore_hull_ammo_and_energy()
     {
+        Require.Artwork();
         var ship = NewShip(1, out var hull);
         // Damage the hull to ~0.5 (no mission → dtm=1.0, maxHP=hull.HitPoints).
         ship.ReceiveDamage(0, 0.5f * hull.HitPoints, 0.0, Pos, Pos, null);
@@ -88,9 +91,11 @@ public class RepairAndRefuelTests
     /// <summary>⭐ Negative gate: <c>c_sabmRepair</c> alone heals the HULL but
     /// does NOT top up the ammo magazine — a station without the reload bit
     /// doesn't rearm.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RepairOnly_heals_hull_but_not_ammo()
     {
+        Require.Artwork();
         var ship = NewShip(1, out var hull);
         ship.ReceiveDamage(0, 0.5f * hull.HitPoints, 0.0, Pos, Pos, null);
         ship.Ammo = 5;
@@ -106,9 +111,11 @@ public class RepairAndRefuelTests
     /// <summary>⭐ Negative gate: <c>c_sabmReload</c> alone tops up the ammo
     /// magazine but does NOT heal the hull — a station without the repair bit
     /// doesn't repair.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReloadOnly_refills_ammo_but_not_hull()
     {
+        Require.Artwork();
         var ship = NewShip(1, out var hull);
         ship.ReceiveDamage(0, 0.5f * hull.HitPoints, 0.0, Pos, Pos, null);
         ship.Ammo = 5;
@@ -121,9 +128,11 @@ public class RepairAndRefuelTests
 
     /// <summary>⭐ Negative gate: neither bit → neither hull nor ammo restored;
     /// only the unconditional legs (energy) fire.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NeitherBit_leaves_hull_and_ammo_but_restores_energy()
     {
+        Require.Artwork();
         var ship = NewShip(1, out var hull);
         ship.ReceiveDamage(0, 0.5f * hull.HitPoints, 0.0, Pos, Pos, null);
         ship.Ammo = 5;
@@ -141,9 +150,11 @@ public class RepairAndRefuelTests
     /// a station with neither ability bit. Deterministic setup: mount a real
     /// shield (arms it to 1.0), hit it with 0.5·MaxStrength — the shield stops
     /// the whole hit (leakage 0, hull untouched) and drains to ~0.5.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_restores_to_full_even_without_capability_bits()
     {
+        Require.Artwork();
         var ship = NewShip(1, out _);
         var core = Core();
         var shieldPart = core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Shield);
@@ -166,9 +177,11 @@ public class RepairAndRefuelTests
     /// every part to 1.0, and the reload leg tops every mounted pack's amount to
     /// the hull max (native <c>stationIGC.cpp:476-483</c>). A weapon mounted at a
     /// partial fraction and an ammo pack with a spent amount both get reset.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FullyMounts_parts_and_tops_up_packs()
     {
+        Require.Artwork();
         var ship = NewShip(1, out var hull);
         var core = Core();
 
@@ -196,9 +209,11 @@ public class RepairAndRefuelTests
     /// <summary>A bare hull ship with no parts and no shield survives the restore
     /// unchanged in the parts/shield dimensions (the unconditional legs only act
     /// when the thing exists).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Bare_hull_ship_without_parts_or_shield_is_unharmed()
     {
+        Require.Artwork();
         var ship = NewShip(1, out var hull);
         ship.Ammo = 0;
         ship.Energy = 0f;
@@ -259,9 +274,11 @@ public class RepairAndRefuelTests
     /// STILL DOCKED all of it persists (proof the restore is not at dock); then
     /// undock (launch) and every value is restored to full — hull → 1.0,
     /// ammo → hull max, energy → hull max — the moment it flies again.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_damaged_docked_ship_is_restored_at_launch_not_at_dock()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.ShipSpawner = (core, mission, shipId) =>
         {
@@ -316,9 +333,11 @@ public class RepairAndRefuelTests
     /// A ship damaged + exhausted there and launched is NOT healed or rearmed —
     /// the capability gate is the only thing preventing a restore (energy still
     /// tops up, proving the unconditional legs fire and the wiring runs).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_launch_from_station_without_bits_does_not_heal_or_rearm()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.ShipSpawner = (core, mission, shipId) =>
         {

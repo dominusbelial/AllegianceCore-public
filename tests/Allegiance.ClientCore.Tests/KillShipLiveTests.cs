@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -17,7 +18,7 @@ namespace Allegiance.ClientCore.Tests;
 public class KillShipLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     // A hull that can actually fight (energy+ammo and a fixed hardpoint at
     // mount 0) paired with the cheapest dispersion-0 weapon doing real damage
@@ -146,9 +147,11 @@ public class KillShipLiveTests
     /// on the victim's own death so the cross-side teammate-export question is
     /// irrelevant to this test.)
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void VictimShipEntity_MarkedDead_WhenRealKillCrossesTheWire()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, TargetZ));
         server.Boot(Config());

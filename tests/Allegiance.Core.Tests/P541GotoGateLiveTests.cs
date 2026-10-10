@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -85,9 +86,11 @@ public sealed class P541GotoGateLiveTests
     /// <summary>⭐ A NATIVE client (sends real-time+pose SHIP_UPDATEs — P508) is
     /// NEVER gotoed server-side: it flies its own ship, so the server must not
     /// autopilot it too (that fight is what broke the old path).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Native_client_self_cluster_goto_does_NOT_set_server_GotoWaypoint()
     {
+        Require.Artwork();
         using var server = new Srv();
         BootWithBot(server, out var bot, out var botShip, out var sectorA, out var sectorB);
 
@@ -111,9 +114,11 @@ public sealed class P541GotoGateLiveTests
 
     /// <summary>A legacy/bot client (no native poses — it does not fly itself) keeps
     /// the P403 server-side goto: the server autopilots the ship to the target.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Legacy_bot_self_cluster_goto_STILL_sets_server_GotoWaypoint()
     {
+        Require.Artwork();
         using var server = new Srv();
         BootWithBot(server, out var bot, out var botShip, out _, out var sectorB);
 

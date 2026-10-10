@@ -4,6 +4,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Srv = global::Allegiance.Server.Server;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -139,9 +140,11 @@ public class PartMaskArmingTests
         throw new InvalidOperationException("no hull with divergent fixed-hardpoint weapon selection in the representative core");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Different_fixed_hardpoints_mount_different_weapon_types()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var hull = DivergentHull();
         var cands = Candidates(mission.Core);
@@ -188,9 +191,11 @@ public class PartMaskArmingTests
         throw new InvalidOperationException("no hull with mixed-compatible fixed hardpoints in the representative core");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hardpoint_with_no_compatible_weapon_is_left_unmounted_and_logged()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var hull = MixedHull();
         var cands = Candidates(mission.Core);

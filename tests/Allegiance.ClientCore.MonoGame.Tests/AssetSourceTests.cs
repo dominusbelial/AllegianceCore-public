@@ -2,6 +2,8 @@ using System.IO;
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -118,16 +120,14 @@ public class AssetSourceTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
     public void ShopCatalog_RoutesThroughIAssetSource_SameResultAsLegacyPath()
     {
         // Regression: the desktop shop catalogue must be identical whether loaded
-        // through the legacy string artwork dir or the new IAssetSource. Guarded on
-        // artwork presence, exactly like the existing real-asset tests.
-        string root = System.Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-                      ?? "/home/domingo/Development/Artwork";
-        if (!File.Exists(Path.Combine(root, ShopCatalog.CoreFileName)))
-            return; // artwork not present on this host — nothing to assert
+        // through the legacy string artwork dir or the new IAssetSource.
+        Require.Artwork();
+        string root = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
         var viaSource = ShopCatalog.TryLoad(new DirectoryAssetSource(root));
         var viaLegacy = ShopCatalog.TryLoad(root);

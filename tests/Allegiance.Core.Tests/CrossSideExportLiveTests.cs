@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -178,9 +179,11 @@ public sealed class CrossSideExportLiveTests
     /// ships in the SAME cluster exchange identity EXPORTs (correct hull+side)
     /// regardless of detection distance, exactly once (one-shot latch), and
     /// detection no longer withholds identity from a ship whose telemetry flows.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_same_cluster_ship_exchanges_identity_even_before_detection()
     {
+        Require.Artwork();
         using var seat = SeatPair(sameSide: false);
         Assert.NotEqual(seat.A.SideId, seat.B.SideId);
 
@@ -231,9 +234,11 @@ public sealed class CrossSideExportLiveTests
     /// still receive B's EXPORT. Also proves the early peer is not re-sent
     /// (per-recipient latch → no duplicate) and that the cross-side latch drains
     /// on disconnect (scope item 4).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Late_joining_peer_on_an_already_informed_side_gets_caught_up_cross_side()
     {
+        Require.Artwork();
         using var seat = SeatPair(sameSide: false);
         Assert.NotEqual(seat.A.SideId, seat.B.SideId);
 
@@ -303,9 +308,11 @@ public sealed class CrossSideExportLiveTests
     /// <c>CrossSideIdentityRefreshTicks</c> (600) cadence with them still in
     /// range, each has received ADDITIONAL identity EXPORTs of the other, and
     /// the growth is cadence-bounded (not one per tick).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_identity_refresh_self_heals_on_the_slow_cadence()
     {
+        Require.Artwork();
         using var seat = SeatPair(sameSide: false);
         Assert.NotEqual(seat.A.SideId, seat.B.SideId);
 
@@ -350,9 +357,11 @@ public sealed class CrossSideExportLiveTests
     /// two teammates on the SAME side still get the existing EXPORT of each other
     /// (real hull id + name) — exactly once — with NO cross-side double-export
     /// (the cross-side sweep never fires for a ship's own side).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_teammate_still_gets_teamexport_no_cross_duplicate()
     {
+        Require.Artwork();
         using var seat = SeatPair(sameSide: true);
         Assert.Equal(seat.A.SideId, seat.B.SideId);
 

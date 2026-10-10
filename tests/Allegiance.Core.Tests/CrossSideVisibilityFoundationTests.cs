@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 using VisibilityMath = Allegiance.Core.Sim.VisibilityMath;
 using SightBody = Allegiance.Core.Sim.VisibilityMath.SightBody;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -95,9 +96,11 @@ public class CrossSideVisibilityFoundationTests
 
     // ── InScannerRange: range + cluster, real ship scanner/target ───────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void InScannerRange_true_well_within_range_and_clear_los()
     {
+        Require.Artwork();
         var scanner = ScannerShip(Vector3.Zero);
         var target = TargetShip(new Vector3(100f, 0f, 0f));
         var sr = Hull("faohshcar").ScannerRange;
@@ -107,9 +110,11 @@ public class CrossSideVisibilityFoundationTests
         Assert.True(VisibilityMath.InScannerRange(scanner, sr, ClusterA, target, tsig, ClusterA, []));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void InScannerRange_false_beyond_detection_range()
     {
+        Require.Artwork();
         var scanner = ScannerShip(Vector3.Zero);
         var far = 50_000f;   // far beyond the ~1952 detection radius
         var target = TargetShip(new Vector3(far, 0f, 0f));
@@ -119,9 +124,11 @@ public class CrossSideVisibilityFoundationTests
         Assert.False(VisibilityMath.InScannerRange(scanner, sr, ClusterA, target, tsig, ClusterA, []));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void InScannerRange_false_in_different_cluster_even_when_close()
     {
+        Require.Artwork();
         var scanner = ScannerShip(Vector3.Zero);
         var target = TargetShip(new Vector3(50f, 0f, 0f));
         var sr = Hull("faohshcar").ScannerRange;
@@ -151,9 +158,11 @@ public class CrossSideVisibilityFoundationTests
     /// ≈ 0.089° ≪ 30° covered → decisively occluded. Detection radius 1952 ≥ 1288,
     /// so the target <b>is</b> in range — the false result is purely occlusion.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void InScannerRange_false_when_a_real_asteroid_occludes_the_line()
     {
+        Require.Artwork();
         var occluder = new SightBody(new Vector3(3758.2f, 1133.8f, 3165.1f), 644f);
         var scanner = ScannerShip(new Vector3(3114.2f, 1133.8f, 3165.1f));
         var target = TargetShip(new Vector3(4402.2f, 1133.8f, 3165.1f));
@@ -168,9 +177,11 @@ public class CrossSideVisibilityFoundationTests
 
     // ── Scanner-type coverage: station and probe use the same formula ───────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void InScannerRange_true_for_a_real_station_scanner()
     {
+        Require.Artwork();
         var st = PayloadDecodeTests.Stations().First().V;   // type 2: Radius 302.5, SRange 2400
         var scanner = new SightBody(Vector3.Zero, st.Radius);
         var target = TargetShip(new Vector3(300f, 0f, 0f));
@@ -179,9 +190,11 @@ public class CrossSideVisibilityFoundationTests
         Assert.True(VisibilityMath.InScannerRange(scanner, st.ScannerRange, ClusterA, target, tsig, ClusterA, []));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void InScannerRange_true_for_a_real_probe_scanner()
     {
+        Require.Artwork();
         var pt = PayloadDecodeTests.Probes().First().V;      // utl23: Radius 6, SRange 500
         var scanner = new SightBody(Vector3.Zero, pt.Radius);
         var target = TargetShip(new Vector3(200f, 0f, 0f));
@@ -192,29 +205,39 @@ public class CrossSideVisibilityFoundationTests
 
     // ── LineOfSightExist: the cone test in isolation ────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LineOfSightExist_true_with_no_occluders()
-        => Assert.True(VisibilityMath.LineOfSightExist(Vector3.Zero, TargetShip(new Vector3(500f, 0f, 0f)), []));
+    {
+        Require.Artwork();
+        Assert.True(VisibilityMath.LineOfSightExist(Vector3.Zero, TargetShip(new Vector3(500f, 0f, 0f)), []));
+    }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LineOfSightExist_true_when_obstacle_is_behind_the_eye()
     {
+        Require.Artwork();
         var obstacle = new SightBody(new Vector3(-500f, 0f, 0f), 200f);
         // Obstacle is behind the eye (dot < 0) → can never block the forward ray.
         Assert.True(VisibilityMath.LineOfSightExist(Vector3.Zero, TargetShip(new Vector3(1000f, 0f, 0f)), [obstacle]));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LineOfSightExist_true_when_obstacle_is_farther_than_target()
     {
+        Require.Artwork();
         var obstacle = new SightBody(new Vector3(1000f, 0f, 0f), 200f);
         // Obstacle is beyond the target → the "closer than target" test fails.
         Assert.True(VisibilityMath.LineOfSightExist(Vector3.Zero, TargetShip(new Vector3(500f, 0f, 0f)), [obstacle]));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LineOfSightExist_true_when_obstacle_is_off_to_the_side()
     {
+        Require.Artwork();
         // Obstacle near the eye but far off-axis: separation angle ~63° dwarfs the
         // ~0.23° target extent + ~3.2° obstacle cover → not occluded.
         var obstacle = new SightBody(new Vector3(200f, 400f, 0f), 50f);

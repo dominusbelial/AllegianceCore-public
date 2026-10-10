@@ -9,6 +9,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests.Transport;
 
@@ -118,9 +119,11 @@ public sealed class ConsoleVerbosityLiveTests
     }
 
     /// <summary>⭐ Real measured line-volume reduction with the gate at default (off).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Default_gate_off_emits_far_fewer_console_lines_than_verbose_on()
     {
+        Require.Artwork();
         const int Bots = 24;
         const int Ticks = 240;          // 12 sim-seconds @ 20 Hz
         const int WarmupTicks = 60;     // settle join-burst churn before measuring
@@ -190,9 +193,11 @@ public sealed class ConsoleVerbosityLiveTests
     /// <summary>⭐ The core stability claim: a stalled/slow stdout consumer cannot
     /// block the sim thread even with verbosity ON (worst case, every per-tick line
     /// enabled).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stalled_stdout_does_not_block_the_sim_thread_even_verbose_on()
     {
+        Require.Artwork();
         const int Bots = 24;
         const int Ticks = 300;          // 15 sim-seconds @ 20 Hz
         var oldOut = Console.Out;
@@ -245,9 +250,11 @@ public sealed class ConsoleVerbosityLiveTests
     /// reachable by construction: <c>FindNearestMinableAsteroidAnyCluster</c> returns
     /// null when <c>Sector == null</c>, Ship.cs:1333), which is the deterministic,
     /// repeatable stuck premise.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stuck_npc_standby_logs_once_not_per_tick()
     {
+        Require.Artwork();
         const int Calls = 200;       // pre-fix a stuck miner logs ~1 line per call
         var oldOut = Console.Out;
         var sw = new StringWriter();

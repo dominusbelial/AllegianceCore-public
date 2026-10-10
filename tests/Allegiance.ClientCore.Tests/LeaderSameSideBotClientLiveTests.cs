@@ -9,6 +9,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -35,7 +36,7 @@ namespace Allegiance.ClientCore.Tests;
 public class LeaderSameSideBotClientLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -140,9 +141,11 @@ public class LeaderSameSideBotClientLiveTests
         return rig;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_client_sees_same_side_bot_and_gets_command_non_leader_does_not_live()
     {
+        Require.Artwork();
         using var rig = Build();
 
         // Establish real leadership propagation to the leader's ClientWorld.

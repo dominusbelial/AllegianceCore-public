@@ -1,4 +1,5 @@
 using System.Text;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -10,9 +11,11 @@ public class CrossRefSurveyTests
 {
     private static readonly string OutPath = "/tmp/crossref_survey.txt";
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Survey_aggregates_and_writes_report()
     {
+        Require.Artwork();
         var sb = new StringBuilder();
 
         void Example(Dictionary<string, List<string>> sink, string kind, string detail)

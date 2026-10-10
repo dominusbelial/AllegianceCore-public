@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -137,9 +138,11 @@ public sealed class NpcShipFoundationLiveTests
     /// (verified) and never goes through <c>ExportShip</c>; it is visible purely
     /// because <c>GetShipUpdateCandidates</c> is cluster-membership-only and
     /// <c>BroadcastShipsUpdate</c> relays every candidate to every peer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ownerless_npc_ship_appears_in_peer_heavy_updates_with_position()
     {
+        Require.Artwork();
         using var seat = SeatOne();
 
         // The NPC sits at a position far from the origin peer, at a real side id.

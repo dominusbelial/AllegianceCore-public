@@ -4,6 +4,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -101,9 +102,11 @@ public sealed class NpcAutopilotGateTests
     /// (IsNpc=false) with a stray PlanTarget set must NOT have its Controls
     /// overridden nor move — its Controls remain exclusively wire-driven
     /// (P155 scope: this task only ever touches IsNpc ships).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_player_ship_controls_are_never_overridden()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);
@@ -125,9 +128,11 @@ public sealed class NpcAutopilotGateTests
     /// DIFFERENT cluster than its own <see cref="Sector"/> id does nothing —
     /// it does not guess at unreachable cross-cluster movement (the honest gap
     /// this session also established for FindTarget's c_ttAnyCluster exclusion).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_cluster_plan_target_does_not_move_the_npc()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);
@@ -147,9 +152,11 @@ public sealed class NpcAutopilotGateTests
     /// gets measurably closer to it over real ticks — the primitive the gates
     /// protect, working. Kept here as the fast pure-domain complement to the
     /// live Server.SpawnNpcShip proof in <c>NpcAutopilotLiveTests</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_cluster_npc_with_plan_target_gets_measurably_closer()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewMission(core);
         var sector = Sector(mission);

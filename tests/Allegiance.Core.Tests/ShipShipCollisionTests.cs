@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -179,9 +180,11 @@ public sealed class ShipShipCollisionTests
     /// total linear momentum <c>m1·v1 + m2·v2</c> is conserved, and the heavier
     /// body experiences the smaller velocity change (the lighter one is deflected
     /// more), matching mass-weighted momentum transfer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = FarSpot(mission);
@@ -234,9 +237,11 @@ public sealed class ShipShipCollisionTests
     /// where damage1 = 2·base1+base2 and damage2 = base1+2·base2 with
     /// base_i = |v_i − v_i'|²/128. Fails before P463c (no <c>CollisionEvent</c>
     /// existed), the "fail first" ship-ship server proof.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = FarSpot(mission);
@@ -296,9 +301,11 @@ public sealed class ShipShipCollisionTests
     /// increases to the mass-weighted elastic-launch value predicted by the
     /// native formula (<c>shipIGC.cpp:1093-1124</c>), not merely "no exception".
     /// The bumper's momentum is conserved into the exchange.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = FarSpot(mission);
@@ -352,9 +359,11 @@ public sealed class ShipShipCollisionTests
     /// the shield survivability the native collision HP-pool boost
     /// (<c>shipIGC.cpp:1147-1158</c>) plus <c>ReceiveDamage</c>'s mounted-shield
     /// absorption (<c>Ship.cs:3180-3183</c>) deliver together.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shielded_target_takes_proportionally_less_collision_damage_than_unshielded()
     {
+        Require.Artwork();
         float Drop(bool shielded)
         {
             var recording = new RecordingIgcSite();
@@ -397,9 +406,11 @@ public sealed class ShipShipCollisionTests
     /// skipped by the collision pass (the re-checked native rescue predicate,
     /// <c>shipIGC.cpp:1027-1042</c>) and handed to the rescue pass instead:
     /// velocities/positions are undisturbed AND the pair is drained as a rescue.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_rescue_pair_triggers_rescue_not_a_physics_bump()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = FarSpot(mission);
@@ -450,9 +461,11 @@ public sealed class ShipShipCollisionTests
     /// (<c>shipIGC.cpp:1166-1168</c>) does NOT protect an ENEMY (different-side)
     /// lifepod. A different-side pod colliding with another ship takes real hull
     /// damage, and it is not rescued (cross-side can never rescue).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Enemy_lifepod_takes_real_collision_damage()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = FarSpot(mission);
@@ -496,9 +509,11 @@ public sealed class ShipShipCollisionTests
     /// geometry with DIFFERENT sides the collision deals real damage. Before
     /// P549 the same-side pair took real ramming damage (only a lifepod was
     /// exempt), so this test's friendly-leg fails on the pre-fix code.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry()
     {
+        Require.Artwork();
         float Drop(bool friendly)
         {
             var recording = new RecordingIgcSite();
@@ -534,9 +549,11 @@ public sealed class ShipShipCollisionTests
     /// independent of the ReceiveDamage friendly-fire gate, so both ships' speeds
     /// change as if the collision were cross-side. Guards against a regression
     /// that naively skipped the whole collision response for friendly pairs.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Friendly_ramming_still_bounces_both_ships()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = FarSpot(mission);

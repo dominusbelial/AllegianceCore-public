@@ -24,8 +24,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class P570NativeCullingTests
 {
     private static string ArtRoot =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     /// <summary>Parses a real player .mdl mesh; returns null if artwork is not
     /// present in this environment (test is then inert rather than a false fail).</summary>

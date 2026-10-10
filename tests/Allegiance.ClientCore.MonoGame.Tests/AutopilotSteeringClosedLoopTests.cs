@@ -5,6 +5,7 @@ using Allegiance.Core.Sim;
 using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Xunit.Abstractions;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -30,6 +31,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// off-axis (real turn), near-fast at the old 420-unit threshold, and the
 /// slow/rest approach that already worked and must not regress.
 /// </summary>
+[Trait("Requires","Artwork")]
 public class AutopilotSteeringClosedLoopTests
 {
     private readonly ITestOutputHelper _output;
@@ -63,8 +65,7 @@ public class AutopilotSteeringClosedLoopTests
 
     private static List<DataHullTypeIGC> LoadUsableHulls()
     {
-        string root = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-                      ?? "/home/domingo/Development/Artwork";
+        string root = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
         string corePath = Directory.Exists(root)
             ? Directory.EnumerateFiles(root, "*.igc", SearchOption.AllDirectories)
                 .OrderBy(p => Path.GetFileName(p).Contains("PCore001", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
@@ -86,9 +87,10 @@ public class AutopilotSteeringClosedLoopTests
         catch { return null; }
     }
 
-    [Fact]
+    [SkippableFact]
     public void FastAndSlowApproaches_ConvergeAndHold_NoOscillation()
     {
+        Require.Artwork();
         Report($"core hull: stress Speed={StressHull.Speed:0.#} decel={StressHull.Thrust / StressHull.Mass:0.#} u/s² | " +
                $"mild Speed={MildHull.Speed:0.#} decel={MildHull.Thrust / MildHull.Mass:0.#} u/s²");
 
@@ -141,9 +143,10 @@ public class AutopilotSteeringClosedLoopTests
             $"{label}: re-expanded far past the target after settling (peak {postSettleMax:0.#}) — oscillation not killed");
     }
 
-    [Fact]
+    [SkippableFact]
     public void LowDecelerationHull_VelocityAwareBeatsNaiveRamp_RegressionGuard()
     {
+        Require.Artwork();
         // The regression guard: on the weakest-braking hull's fast nose-on
         // approach, the P343 velocity-aware law must stop the ship noticeably
         // tighter than the old distance-only ramp (whose stopping-distance term

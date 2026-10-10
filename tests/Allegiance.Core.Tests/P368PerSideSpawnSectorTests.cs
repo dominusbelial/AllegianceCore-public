@@ -5,6 +5,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -82,9 +83,11 @@ public class P368PerSideSpawnSectorTests
     private static Ship ShipOf(Srv server, short shipId) =>
         server.Ships.First(s => s.Ship.Id == shipId).Ship;
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Both_sides_spawn_in_their_own_home_sector_not_sector_zero()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 

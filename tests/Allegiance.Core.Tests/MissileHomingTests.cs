@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -124,9 +125,11 @@ public class MissileHomingTests
     /// tick: the real per-tick acceleration (<c>Velocity += Forward·Acceleration·
     /// dt</c>, <c>missileigc.cpp:393-397</c>) is applied. Before P179 this
     /// velocity was constant.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missile_with_target_ahead_accelerates_straight_at_it()
     {
+        Require.Artwork();
         var mType = HomingMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -166,9 +169,11 @@ public class MissileHomingTests
     /// toward it: the angle between its heading and the target direction
     /// converges down toward zero (turn-rate-limited steering, <c>missileigc.cpp
     /// :389</c>) rather than staying fixed at the launch heading.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missile_turns_toward_an_offset_target_over_several_ticks()
     {
+        Require.Artwork();
         var mType = HomingMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -225,9 +230,11 @@ public class MissileHomingTests
     /// this test now asserts the corrected, native-faithful behavior instead
     /// of the bug.
     /// </para></summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missile_with_no_target_flies_straight_and_still_accelerates()
     {
+        Require.Artwork();
         var mType = HomingMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -277,9 +284,11 @@ public class MissileHomingTests
     /// after the drop, which was the same confirmed bug as the no-target
     /// test, not real native behavior.
     /// </para></summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missile_drops_a_target_that_leaves_its_sector()
     {
+        Require.Artwork();
         var mType = HomingMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -324,9 +333,11 @@ public class MissileHomingTests
     /// <summary>⭐ Test 5 — a missile whose type has <c>Acceleration == 0f</c>
     /// (the dumbfire allowance, <c>missileigc.cpp:380-381</c>) never turns even
     /// with a target set: heading stays locked on the launch direction.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Zero_acceleration_missile_never_turns_even_with_a_target()
     {
+        Require.Artwork();
         var homing = HomingMissileType.Value;
         var dumb = homing with { Acceleration = 0f };   // record-struct copy with acceleration zeroed
         var mission = NewStartedMission(out var sector);
@@ -355,9 +366,11 @@ public class MissileHomingTests
     /// Only after the arming instant does it start turning toward the target and
     /// accelerating. Before P549 the missile homed/thrusted from the first tick
     /// (ReadyTime was read but never acted on), so this fails on the pre-fix code.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missile_coasts_inert_until_readyTime_then_homes_and_thrusts()
     {
+        Require.Artwork();
         var instant = HomingMissileType.Value;      // ReadyTime already 0 (isolated homing type)
         var armed = instant with { ReadyTime = 1.0f };
         var mission = NewStartedMission(out var sector);

@@ -25,7 +25,7 @@ import os, sys, argparse
 import numpy as np
 from PIL import Image
 
-DEFAULT_DIR = "/home/domingo/Development/Artwork/p589gal"
+DEFAULT_DIR = os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "p589gal")
 
 
 def check_alpha_invariants(an, border_tol=0.025, bright_tol=0.55, max_tol=0.795):

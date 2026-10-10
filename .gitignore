@@ -4,6 +4,21 @@ obj/
 .vs/
 .verify/
 
+# P597 — private/local files must never be committed to the public repo:
+# per-machine local path overrides (see local.env.example)
+local.env
+# untracked per-task server configs (some carried the owner's machine artPath
+# and admin-cheats; use server.example*.json as the committed template)
+src/Allegiance.Server/server.json
+src/Allegiance.Server/server.p5*.json
+# local docker overrides
+docker-compose.override.yml
+
+# live-proof scratch / working dirs (never committed)
+.verify*/
+graphify-out/
+roster_dump.json
+
 # P499 — generated Android assets (from the P498 artwork manifest + the MGCB
 # content build) are NOT committed; regenerate with scripts/pack-android-assets.sh.
 src/Allegiance.ClientCore.Android/Assets/artwork/

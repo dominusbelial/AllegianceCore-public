@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Tools.McpSpawner;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -15,23 +16,27 @@ namespace Allegiance.ClientCore.Tests;
 public class BotSpawnerResolutionTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static StaticCore RealCore() =>
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesHullByExactNameAgainstRealCorpus()
     {
+        Require.Artwork();
         var first = RealCore().HullTypes.Values.OrderBy(h => h.HullId).First();
         var hull = Catalog.ResolveHull(first.Name);
         Assert.Equal(first.HullId, hull.Id);
         Assert.Equal(first.Name, hull.Name);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesUniqueHullSubstringAgainstRealCorpus()
     {
+        Require.Artwork();
         // A substring of the FIRST hull's name is a good hit only when unique;
         // the first hull by id is a common fighter (e.g. "Scout"), whose first
         // few letters could collide. Use the full name to stay deterministic,
@@ -42,47 +47,59 @@ public class BotSpawnerResolutionTests
         Assert.True(result is null || result is ArgumentException, $"expected resolve-or-ambiguous, got {result}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void UnknownHullThrowsASpecificError()
     {
+        Require.Artwork();
         var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveHull("definitely-not-a-real-hull-xyzzy"));
         Assert.Contains("no hull matches", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BlankHullThrows()
     {
+        Require.Artwork();
         Assert.Throws<ArgumentException>(() => Catalog.ResolveHull("   "));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesPartByExactNameAgainstRealCorpus()
     {
+        Require.Artwork();
         var some = Catalog.AllParts().OrderBy(p => p.Id).First();
         var parts = Catalog.ResolveParts([some.Name]);
         Assert.Single(parts);
         Assert.Equal(some.Id, parts[0].PartId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void UnknownPartThrowsASpecificError()
     {
+        Require.Artwork();
         var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveParts(["definitely-not-a-real-part-xyzzy"]));
         Assert.Contains("no part matches", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AllPartsReportsARealCategoryPerPart()
     {
+        Require.Artwork();
         var all = Catalog.AllParts();
         Assert.NotEmpty(all);
         Assert.All(all, p => Assert.False(string.IsNullOrWhiteSpace(p.Category)));
         Assert.Equal(all.Select(p => p.Id).Count(), all.Select(p => p.Id).Distinct().Count()); // unique ids
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DefaultPartsIsTheRealFourCategoryPlayableLoadout()
     {
+        Require.Artwork();
         // vizfight's FullInventoryParts (P420) equips weapon/afterburner/cloak/shield —
         // all four categories confirmed present in PCore001.igc.
         var parts = Catalog.DefaultParts();
@@ -115,24 +132,30 @@ public class BotSpawnerResolutionTests
             [1054] = Cluster(1054, "Bug Nebula"),
         };
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesSectorByNumericId()
     {
+        Require.Artwork();
         var s = Catalog.ResolveSector("1051", SampleClusters());
         Assert.Equal((short)1051, s.Id);
         Assert.Equal("Organia", s.Name);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesSectorByExactName()
     {
+        Require.Artwork();
         var s = Catalog.ResolveSector("Ganymede", SampleClusters());
         Assert.Equal((short)1050, s.Id);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ExactSectorNameBeatsSubstringMatch()
     {
+        Require.Artwork();
         // "Ganymede" is an exact name AND a substring of "Ganymede Prime":
         // the exact hit must win, so the two distinct-name ambiguity error
         // must NOT fire.
@@ -141,38 +164,48 @@ public class BotSpawnerResolutionTests
         Assert.Equal("Ganymede", s.Name);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void UniqueSectorSubstringResolves()
     {
+        Require.Artwork();
         var s = Catalog.ResolveSector("Organ", SampleClusters());
         Assert.Equal((short)1051, s.Id);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AmbiguousSectorNameThrowsSpecificError()
     {
+        Require.Artwork();
         // "Gan" is a substring of both "Ganymede" and "Ganymede Prime" — two
         // distinct names, so this must fail with the ambiguity error.
         var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("Gan", SampleClusters()));
         Assert.Contains("ambiguous", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void UnknownSectorThrowsSpecificError()
     {
+        Require.Artwork();
         var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("definitely-not-a-sector-xyzzy", SampleClusters()));
         Assert.Contains("no sector matches", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BlankSectorThrows()
     {
+        Require.Artwork();
         Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("   ", SampleClusters()));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EmptySectorMapThrows()
     {
+        Require.Artwork();
         var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("Ganymede", new Dictionary<short, DataClusterIGC>()));
         Assert.Contains("no sector map", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -185,9 +218,11 @@ public class BotSpawnerResolutionTests
     // real anti-base weapon that actually mounts on its bomber hull, and the
     // capture group finds a real c_habmBoard hull.
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BomberPlanResolvesARealAntiBaseWeaponOnABomberHull()
     {
+        Require.Artwork();
         var plan = ScenarioPlanner.PlanBomberRun();
         var core = RealCore();
 
@@ -221,18 +256,22 @@ public class BotSpawnerResolutionTests
         Assert.Equal(maxFitted, chosenProj, 3f);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BomberPlanEscortIsTheRealFighter()
     {
+        Require.Artwork();
         var plan = ScenarioPlanner.PlanBomberRun();
         var expected = Catalog.DefaultFighterHull();
         Assert.Equal(expected.Id, plan.EscortHullId);
         Assert.Equal(expected.Name, plan.EscortHullName);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CapturePlanResolvesARealBoardCapableHull()
     {
+        Require.Artwork();
         var plan = ScenarioPlanner.PlanCaptureAttempt();
         var core = RealCore();
 
@@ -242,9 +281,11 @@ public class BotSpawnerResolutionTests
             "boarding hull must carry c_habmBoard (the P450 capture capability)");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CapturePlanEscortIsTheRealFighter()
     {
+        Require.Artwork();
         var plan = ScenarioPlanner.PlanCaptureAttempt();
         var expected = Catalog.DefaultFighterHull();
         Assert.Equal(expected.Id, plan.EscortHullId);

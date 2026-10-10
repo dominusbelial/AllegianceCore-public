@@ -2,6 +2,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using SimModel = Allegiance.Core.Sim.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -92,9 +93,11 @@ public class ShipUpdateCandidateListTests
     /// every cross-side flag is false) still appears in the list. This is what
     /// separates this message family from the SeenBySide-gated
     /// STATIONS/ASTEROIDS/PROBES updates (P133-135).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Foreign_ships_with_unseen_SeenBySide_flags_are_still_candidates()
     {
+        Require.Artwork();
         var sector = NewSector();
         var own = MakeShip(1001, sideId: 0);
         var foreign = MakeShip(1002, sideId: 1);   // a different side
@@ -116,9 +119,11 @@ public class ShipUpdateCandidateListTests
     /// mixed-side squadron is selected wholesale, in stable membership order —
     /// matching native's cluster-wide <c>rgShips</c> (FedSrv.CPP:3727-3776)
     /// before it qsorts by deviation (deferred to the budget task).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void All_non_boarded_flying_ships_are_candidates_in_stable_order()
     {
+        Require.Artwork();
         var sector = NewSector();
         var a = MakeShip(2001, sideId: 0);
         var b = MakeShip(2002, sideId: 1);
@@ -138,9 +143,11 @@ public class ShipUpdateCandidateListTests
     /// <summary>⭐ A boarded ship (a turret gunner or observer riding on a
     /// <c>ParentShip</c>) is <b>not</b> a candidate — native routes these to the
     /// turret relay lists, not to <c>rgShips</c> (FedSrv.CPP:3779).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Boarded_ships_are_excluded()
     {
+        Require.Artwork();
         var sector = NewSector();
         var carrier = MakeShip(3001);
         var gunner = MakeShip(3002);
@@ -157,9 +164,11 @@ public class ShipUpdateCandidateListTests
     /// <summary>⭐ A docked ship is not physically in the cluster and is not a
     /// candidate (native ships absent from <c>cluster-&gt;GetShips()</c> while
     /// docked). Docking is tracked via <see cref="Ship.StationId"/>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_ships_are_excluded()
     {
+        Require.Artwork();
         var sector = NewSector();
         var docked = MakeShip(4001);
         docked.StationId = 990;      // latched at a station
@@ -179,9 +188,11 @@ public class ShipUpdateCandidateListTests
     /// <c>!Dead</c>, Sector.cs:592-597). Killed via the real damage path with no
     /// mission core, so the hull armor multiplier is 1.0 and the shield is 0
     /// (knocked-down) — every point leaks to hull.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Dead_ships_are_excluded()
     {
+        Require.Artwork();
         var sector = NewSector();
         var dead = MakeShip(5001);
         // No Mission → DamageConstant returns 1.0; no shield (fraction 0, ≤ the
@@ -201,9 +212,11 @@ public class ShipUpdateCandidateListTests
     /// <summary>⭐ Non-ship models in the sector (here a <see cref="Probe"/>) are
     /// <b>not</b> ship-update candidates — only <see cref="Ship"/> instances are.
     /// And the returned list never duplicates an entry.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_ship_models_are_excluded_and_no_duplicates()
     {
+        Require.Artwork();
         var sector = NewSector();
         var shipA = MakeShip(6001);
         var shipB = MakeShip(6002);

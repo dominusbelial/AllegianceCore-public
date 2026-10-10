@@ -1,4 +1,5 @@
 using Allegiance.Core.Collision;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -10,10 +11,12 @@ public class CvhHeaderTests
     /// radius finite and positive, ellipse-equation terms and erm finite.
     /// (Full structural oracles live in <see cref="CvhParseTests"/>.)
     /// </summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Paths))]
     public void Header_fields_are_sane(string path)
     {
+        Require.Artwork();
         var f = CvhReader.Parse(File.ReadAllText(path));
 
         AssertFinite(f.Radius, nameof(CvhFile.Radius));
@@ -29,5 +32,5 @@ public class CvhHeaderTests
         Assert.True(!float.IsNaN(v) && !float.IsInfinity(v), $"{what} not finite ({v})");
     }
 
-    public static IEnumerable<object[]> Paths => CvhCorpus.Files.Select(p => new object[] { p });
+    public static IEnumerable<object[]> Paths => CvhCorpus.Paths();
 }

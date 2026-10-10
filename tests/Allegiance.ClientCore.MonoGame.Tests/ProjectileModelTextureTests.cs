@@ -3,6 +3,7 @@ using System.IO;
 using Allegiance.Core;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -28,8 +29,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ProjectileModelTextureTests
 {
     private static string ArtRoot =>
-        System.Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static bool FileExists(string stem) => File.Exists(Path.Combine(ArtRoot, stem + ".mdl"));
 
@@ -50,9 +50,11 @@ public class ProjectileModelTextureTests
     /// <summary>EW Lsr Can 1 (pid 75) — its texture resolves from the model's own
     /// imported namespace <c>dn_ptlascan1bmp</c>, which is exactly what
     /// ProjectileModelRenderer.TextureFor now looks up.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LsrCan1_texture_resolves_from_its_own_imported_namespace()
     {
+        Require.Artwork();
         var mdl = Parse("dn_ptlascan1");
         Assert.Equal("dn_ptlascan1bmp", ProjectileModelRenderer.ResolveTextureStemFor(mdl, "dn_ptlascan1", FileExists));
     }
@@ -60,9 +62,11 @@ public class ProjectileModelTextureTests
     /// <summary>PE MassDriver (pid 71) — the slug's texture resolves from its own
     /// imported namespace <c>bgrnd55bmp</c> (native: the model's own bitmap), not
     /// a guess.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MassDriver_texture_resolves_from_its_own_imported_namespace()
     {
+        Require.Artwork();
         var mdl = Parse("bgrnd55");
         Assert.Equal("bgrnd55bmp", ProjectileModelRenderer.ResolveTextureStemFor(mdl, "bgrnd55", FileExists));
     }
@@ -72,9 +76,11 @@ public class ProjectileModelTextureTests
     /// guess. <c>utl18a</c> imports the shared <c>utl18bmp</c>; the naive guess
     /// <c>utl18abmp</c> does not exist, so the OLD naive lookup would render
     /// lit-solid white. The native resolution must return <c>utl18bmp</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TextureRule_resolves_shared_namespace_not_naive_namebmp_guess()
     {
+        Require.Artwork();
         var mdl = Parse("utl18a");                       // imports the shared "utl18bmp"
         Assert.NotEqual("utl18abmp", ProjectileModelRenderer.ResolveTextureStemFor(mdl, "utl18a", FileExists));
         Assert.Equal("utl18bmp", ProjectileModelRenderer.ResolveTextureStemFor(mdl, "utl18a", FileExists));
@@ -85,9 +91,11 @@ public class ProjectileModelTextureTests
     /// lowercase-stem probe finds <c>Wep07bbmp.mdl</c> from the model's lowercase
     /// import <c>wep07bbmp</c>. The old naive lookup (case-sensitive
     /// <c>File.Exists</c> on Linux) would miss it → lit-solid white.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TextureRule_resolves_capitalised_on_disk_unit_case_insensitively()
     {
+        Require.Artwork();
         // The EW Disruptor's gun model imports "wep07bbmp"; the on-disk unit is the
         // capitalised "Wep07bbmp.mdl". ResolveTextureStem returns the bare import
         // stem, and the P593 case-insensitive disk index is what maps it to the
@@ -101,9 +109,11 @@ public class ProjectileModelTextureTests
     /// half-length about its centre equals its projectile radius (125), matching
     /// native's <c>SetRadius(radius)</c> = thing half-length
     /// (<c>projectileIGC.cpp:50-56</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LsrCan1_mesh_half_length_matches_its_native_radius()
     {
+        Require.Artwork();
         var mdl = Parse("dn_ptlascan1");
         float minZ = float.MaxValue, maxZ = float.MinValue;
         foreach (var mesh in mdl.Meshes)
@@ -123,9 +133,11 @@ public class ProjectileModelTextureTests
     /// size, and native's radius (20) is the collision thing radius, not a visual
     /// rescale. Guards the "just oversized?" suspicion: the model is NOT scaled up
     /// to radius; it stays at its authored extent (native behaviour).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MassDriver_mesh_authored_extent_is_not_rescaled_to_radius()
     {
+        Require.Artwork();
         var mdl = Parse("bgrnd55");
         float maxAbs = 0f;
         foreach (var mesh in mdl.Meshes)

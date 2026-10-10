@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -113,9 +114,11 @@ public sealed class ProbeCombatTests
     /// <see cref="DamageResult.Killed"/> — and a THIRD call past death does NOT
     /// double-raise (native returns the default HullDamage when already dead,
     /// <c>probeigc.h:91,121</c>). All numbers decoded, not guessed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReceiveDamage_partial_reduces_fraction_lethal_destroys_exactly_once()
     {
+        Require.Artwork();
         var core = Core();
         var site = new CountingSite();
         var mission = NewStartedMission(site);
@@ -214,9 +217,11 @@ public sealed class ProbeCombatTests
     /// squared-falloff blast damage, while the probe takes ONLY its direct hit
     /// (<c>ResolveExplosion</c> targets Ship+Mine, not probes — out of scope,
     /// the named next follow-up) and the launcher takes nothing.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Blast_capable_round_directly_hitting_a_probe_creates_a_real_explosion_splashing_nearby_ships()
     {
+        Require.Artwork();
         var (weapon, pt, probeType, hull, directDelta) = Blast.Value;
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());

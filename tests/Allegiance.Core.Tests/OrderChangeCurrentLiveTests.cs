@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -150,9 +151,11 @@ public sealed class OrderChangeCurrentLiveTests
     /// the everyday SetTarget "lock an enemy ship" action. The server resolves
     /// B cross-side (<c>FindShipAnySide</c> — same-side-only would fail) and
     /// sets <c>A.CommandTarget</c> to B's real <c>Ship</c> reference.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_player_locks_enemy_peer_across_sides_via_c_cmdCurrent()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
         Assert.Null(seat.A.CommandTarget);
 
@@ -174,9 +177,11 @@ public sealed class OrderChangeCurrentLiveTests
     /// <summary>Clearing. After A locks B, A re-issues <c>c_cmdCurrent</c> with
     /// the <c>objectID=NA</c> sentinel (SetTarget's <c>pmodel==NULL</c> case,
     /// WinTrek.cpp:8834-8836) — <c>A.CommandTarget</c> reverts to null.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_player_clears_command_target_with_na_sentinel()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
 
         seat.ABot.SendOrderChange(seat.A.Id, OrderChange.CidNone, OrderChange.CmdCurrent, IgcObjectType.Ship, seat.B.Id);
@@ -199,9 +204,11 @@ public sealed class OrderChangeCurrentLiveTests
     /// <c>SpawnNpcShip</c> (which has NO <c>_peerShips</c> entry — the port's
     /// distinguishing gap the P148/P153 sector-scan closes). The NPC is on the
     /// other side, so this also exercises the cross-side half against an NPC.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_player_locks_ownerless_npc_ship_via_c_cmdCurrent()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
 
         var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.B.SideId!.Value, new Vector3(900f, 880f, 870f));
@@ -224,9 +231,11 @@ public sealed class OrderChangeCurrentLiveTests
     /// <see cref="Ship.CommandTarget"/> cannot hold it — the branch logs and
     /// leaves <c>CommandTarget</c> UNCHANGED (no crash, no silent wrong write,
     /// and importantly no accidental clear).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Station_typed_object_is_documented_no_op_and_does_not_change_target()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
 
         seat.ABot.SendOrderChange(seat.A.Id, OrderChange.CidNone, OrderChange.CmdCurrent, IgcObjectType.Ship, seat.B.Id);

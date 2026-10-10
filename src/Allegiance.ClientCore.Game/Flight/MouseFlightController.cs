@@ -22,7 +22,7 @@ public readonly record struct MouseStickView(
 /// <c>JoystickImageImpl::MouseMove</c> / <c>SetEnabled</c> pair from the
 /// original C++ (<c>src/effect/efimage.cpp:182-209</c> and
 /// <c>efimage.cpp:49-72</c>, reference checkout at
-/// <c>/home/domingo/Development/Allegiance</c>). Deliberately free of any
+/// <c>$ALLEGIANCE_NATIVE_SRC_PATH</c>). Deliberately free of any
 /// MonoGame / <c>Microsoft.Xna.Framework</c> type in its public surface, so
 /// this translation is unit-testable without a graphics device (same
 /// discipline as <see cref="FlightInput"/>).

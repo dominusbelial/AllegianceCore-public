@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -85,9 +86,11 @@ public class MissileUnitTests
     /// <c>Sector.Models</c>), and that its final resting spot is at the expiry
     /// distance, not the launch point.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missile_flies_straight_and_expires_out_of_sector()
     {
+        Require.Artwork();
         var mType = RepresentativeMissileType.Value;
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];

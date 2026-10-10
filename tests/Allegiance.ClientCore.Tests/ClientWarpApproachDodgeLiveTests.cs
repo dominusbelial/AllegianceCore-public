@@ -10,6 +10,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -31,7 +32,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class ClientWarpApproachDodgeLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg DebugConfig() => new()
     {
@@ -244,9 +245,11 @@ public sealed class ClientWarpApproachDodgeLiveTests
     /// native dodge law now transits BOTH alephs to the 2-hop target — where
     /// P484 §5 measured the same flight (without dodge) parked ~7000 u short of
     /// the hop-2 aleph and was destroyed in the field.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Client_bot_with_shared_dodge_transits_two_hops_through_real_alderan_field()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.SpawnInitialMinersAtBoot = false;
         server.Boot(DebugConfig());

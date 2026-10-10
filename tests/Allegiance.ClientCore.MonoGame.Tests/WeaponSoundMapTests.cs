@@ -3,6 +3,7 @@ using System.Linq;
 using Allegiance.ClientCore.MonoGame.Audio;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -20,7 +21,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class WeaponSoundMapTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static StaticCore Core()
     {
@@ -44,9 +45,11 @@ public class WeaponSoundMapTests
     /// to a wave — the coverage contract. The only tolerated miss is the
     /// non-firing Rocket Targeting weapon whose singleShotSound is the reserved
     /// 0 (it never fires a shot); that one falls back to pulselaser.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Every_real_weapon_singleShot_id_resolves_or_is_the_documented_noise_floor()
     {
+        Require.Artwork();
         var weapons = Weapons().ToList();
         Assert.NotEmpty(weapons);
 
@@ -68,9 +71,11 @@ public class WeaponSoundMapTests
     /// waves: PE Vul Can 1 (id 531 → dn_ptvulcan1shoot), EW Lsr Can 1
     /// (id 551 → dn_ptlascan1shoot), PW A-B Hammer 1 (id 628 → faohhammer1).
     /// This is the brief's "at least three real weapons → distinct correct waves".</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Three_real_weapons_resolve_to_distinct_correct_waves()
     {
+        Require.Artwork();
         var core = Core();
         var weapons = core.PartTypes.Values
             .Where(p => p.Type is DataPartTypeIGC.Weapon w && w.SingleShotSound != 0)
@@ -114,9 +119,11 @@ public class WeaponSoundMapTests
     /// <summary>⭐ Every stem the single-shot table references is a bundled .ogg in
     /// Content/Sounds — nothing the client would try to play is missing from the
     /// content pipeline (proving the P465 bundling step).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Every_singleShot_table_stem_is_a_bundled_asset()
     {
+        Require.Artwork();
         string soundsDir = RepoContentSoundsDir();
         foreach (var stem in WeaponSoundMap.SingleShotStemBySoundId.Values.Distinct())
             Assert.True(File.Exists(Path.Combine(soundsDir, stem + ".ogg")),

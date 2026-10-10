@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -122,9 +123,11 @@ public sealed class AcceptRejectQueuedOrderLiveTests
 
     /// <summary>Codec: <see cref="QueuedCommandUpdate"/> (215) round-trips its
     /// full shape — the wire path the helper's queued/clear notifications ride.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void QueuedCommandUpdate_roundtrips_full_shape()
     {
+        Require.Artwork();
         var msg = new QueuedCommandUpdate
         {
             CommandId = OrderChange.CidGoto,
@@ -151,9 +154,11 @@ public sealed class AcceptRejectQueuedOrderLiveTests
     /// ACCEPT (ORDER_CHANGE command=c_cmdQueued echoing the pending id) promotes
     /// queued → accepted (action + target) and clears the queued slot — native
     /// AcceptQueuedCommand, WinTrek.cpp:10626-10712.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Accept_promotes_queued_to_accepted()
     {
+        Require.Artwork();
         var (srv, _, _, peer, targetShip) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -194,9 +199,11 @@ public sealed class AcceptRejectQueuedOrderLiveTests
     /// <summary>⭐ Reject: an ORDER_CHANGE with commandID=c_cidNone on the
     /// queued slot clears the pending queued order (native RejectQueuedCommand,
     /// WinTrek.cpp:10583-10623). The accepted slot is untouched.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reject_clears_the_queued_slot()
     {
+        Require.Artwork();
         var (srv, _, _, peer, targetShip) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -219,9 +226,11 @@ public sealed class AcceptRejectQueuedOrderLiveTests
     /// <summary>⭐ Auto-reject: a queued order left neither accepted nor rejected
     /// survives under 15&nbsp;s but is cleared once the 15&nbsp;s inaction window
     /// elapses (native WinTrek.cpp:7686-7687, c_dtRejectQueuedCommand=15.0f).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_reject_clears_after_15_seconds_of_inaction()
     {
+        Require.Artwork();
         var (srv, _, _, peer, targetShip) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -250,9 +259,11 @@ public sealed class AcceptRejectQueuedOrderLiveTests
 
     /// <summary>Accept with no pending queued order is a safe no-op (native
     /// cid==c_cidNone → nothing to promote, WinTrek.cpp:10628).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Accept_with_no_pending_order_is_noop()
     {
+        Require.Artwork();
         var (srv, _, _, peer, _) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -267,9 +278,11 @@ public sealed class AcceptRejectQueuedOrderLiveTests
     }
 
     /// <summary>Reject with no pending queued order is a safe no-op.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Reject_with_no_pending_order_is_noop()
     {
+        Require.Artwork();
         var (srv, _, _, peer, _) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -286,9 +299,11 @@ public sealed class AcceptRejectQueuedOrderLiveTests
     /// <summary>An accept that echoes a command id different from the one
     /// actually pending is refused (no guessing) — the client only ever echoes
     /// its real pending id (world.MyQueuedCommand).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Accept_echoing_a_different_command_id_is_refused()
     {
+        Require.Artwork();
         var (srv, _, _, peer, targetShip) = BootFixture(out var bot);
         using (srv)
         using (bot)

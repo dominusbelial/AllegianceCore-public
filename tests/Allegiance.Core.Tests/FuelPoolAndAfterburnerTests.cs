@@ -7,6 +7,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit.Abstractions;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -97,9 +98,11 @@ public class FuelPoolAndAfterburnerTests
     /// rate (<c>afterburnerIGC.cpp:148-160</c>). We pin onRate to saturate power
     /// to 1.0 on the first tick, so every tick drains <c>cons·maxThrust·dt</c> —
     /// an exact, not approximate, depletion.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fuel_depletes_at_exactly_natives_rate_while_button_held()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.MountPart(AfterburnerType(fuelConsumption: 2f, maxThrust: 10f, onRate: 1e6f, offRate: 1e6f), amount: 1, mountId: 0, fractionMounted: 255);
         ship.StateM |= ShipControlState.AfterburnerButton;
@@ -127,9 +130,11 @@ public class FuelPoolAndAfterburnerTests
     /// the powered drag-boost ACCELERATION ceases — the per-tick speed gain
     /// collapses at exhaustion (native's power-gated drag term,
     /// shipIGC.cpp:2952-2957).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fuel_runs_out_of_gas_at_zero_and_stops_draining()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.MountPart(AfterburnerType(fuelConsumption: 2f, maxThrust: 200f, onRate: 1e6f, offRate: 1e6f), amount: 1, mountId: 0, fractionMounted: 255);
         ship.StateM |= ShipControlState.AfterburnerButton;
@@ -190,9 +195,11 @@ public class FuelPoolAndAfterburnerTests
     ///                <c>thrustRatio == 0</c> cruise (≤ maxSpeed).
     /// The engaged ship must cruise measurably faster than the unmounted ship
     /// holding the same button — the actual point of the task.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Engaged_afterburner_cruises_faster_than_unmounted_or_inactive()
     {
+        Require.Artwork();
         const float MaxThrust = 5000f;      // >> hull thrust (1000) → clear thrustRatio
 
         Ship Engage() { var s = NewShip(); s.MountPart(AfterburnerType(0.0001f, MaxThrust, 1e6f, 1e6f), 1, 0, 255); s.StateM |= ShipControlState.AfterburnerButton; return s; }
@@ -226,9 +233,11 @@ public class FuelPoolAndAfterburnerTests
     /// the RELOAD applicator (<c>FedSrv.CPP:6583-6591</c>) tops <see cref="Ship.Fuel"/>
     /// up to the REAL hull max (SetFuel clamps, shipIGC.h:629-631) — not an
     /// arbitrary value.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fuel_pack_reload_drain_refills_to_the_real_max()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.SetFuel(0f);
         ship.MountPart(FuelPackType(amount: 5000), amount: 5000, mountId: 1, fractionMounted: 255);
@@ -245,9 +254,11 @@ public class FuelPoolAndAfterburnerTests
     /// <summary>⭐ MUST-FAIL-IF-REMOVED: a station launch top-up
     /// (<c>RepairAndRefuel</c>, <c>stationIGC.cpp:474</c>) restores Fuel to the
     /// real hull max — the previously-documented no-op is now a real refill.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Station_repair_and_refuel_tops_fuel_to_the_real_max()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.SetFuel(0f);
         var garrison = RepresentativeCore.Value.StationTypes[15];     // real Garrison: both sabm bits
@@ -260,9 +271,11 @@ public class FuelPoolAndAfterburnerTests
     /// <summary>⭐ MUST-FAIL-IF-REMOVED: a <c>c_tcPowerup</c> fuel-treasure pickup
     /// (<c>shipIGC.h:1342</c>: <c>if (objectID &amp; c_pcFuel) SetFuel(FLT_MAX)</c>)
     /// refills to the real hull max via <see cref="Ship.ApplyPowerup"/>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fuel_treasure_pickup_refills_to_the_real_max()
     {
+        Require.Artwork();
         var ship = NewShip();
         ship.SetFuel(0f);
 
@@ -303,9 +316,11 @@ public class FuelPoolAndAfterburnerTests
     /// No network bot is seated (avoiding the LiveNetwork collection) — the ship
     /// is still the server's real authoritative sim object in the real loop.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_real_server_afterburner_flight_depletes_fuel_and_cuts_out()
     {
+        Require.Artwork();
         const short FlySector = 1052;   // XXV_simple: no-station fly sector (P111)
 
         using var server = new Srv();

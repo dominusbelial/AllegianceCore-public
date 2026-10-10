@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -94,9 +95,11 @@ public sealed class NpcAutoLaunchLiveTests
     /// <summary>⭐ A docked NPC miner stays docked through the ~10s cooldown,
     /// then auto-undocks on its own (zero commands) and proceeds to mine a real
     /// asteroid; a real non-NPC player ship docked beside it never auto-launches.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_npc_miner_auto_undocks_after_cooldown_then_mines()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sector = null;

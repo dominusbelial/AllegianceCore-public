@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -90,9 +91,11 @@ public class HullSwapLiveTests
     /// hull's max (Energy/Ammo). Before P334 the ship kept simulating the OLD
     /// hull while only the ACK's echoed hullId changed — this assert would be
     /// red on that code.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BuyLoadout_with_a_different_hull_swaps_the_server_simulated_physics_live()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.ShipSpawner = (core, mission, shipId) => SpawnUndocked(mission, shipId, out _);
 
@@ -162,9 +165,11 @@ public class HullSwapLiveTests
     /// silently corrupting state. Here the same part mounts fine on the spawn
     /// hull, then a hull change to an incompatible hull drops it from the ACK
     /// tail — the server's real mounted parts reflect the policy.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_change_into_an_incompatible_hull_drops_nonmountable_parts_live()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.ShipSpawner = (core, mission, shipId) => SpawnUndocked(mission, shipId, out _);
 

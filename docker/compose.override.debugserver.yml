@@ -3,7 +3,9 @@ services:
     network_mode: host
     ports: !reset []
     volumes:
-      - /home/domingo/allegiance-test-artwork:/artwork:ro
+      # Bind a real Artwork checkout via $ALLEGIANCE_ARTWORK_PATH (set it on the
+      # host before `docker compose`), or fall back to the tiny placeholder.
+      - ${ALLEGIANCE_ARTWORK_PATH:-./docker/artwork-placeholder}:/artwork:ro
       - ./docker/compose.server.json:/app/server.json:ro
     cap_add:
       - NET_ADMIN

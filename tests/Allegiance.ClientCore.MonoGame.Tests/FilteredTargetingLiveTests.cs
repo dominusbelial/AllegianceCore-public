@@ -12,6 +12,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -40,7 +41,7 @@ public sealed class FilteredTargetingLiveTests
     private const short Ganymede = 1050;   // 4 warps, 1 station, 0 asteroids (P371)
 
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -79,9 +80,11 @@ public sealed class FilteredTargetingLiveTests
     /// the friendly filter selects ONLY the friendly; the same-by-side base filter
     /// selects the real in-sector station by its side. This is the exact selection
     /// the U / Shift+U / Z / Shift+Z keys drive.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LiveNearestEnemyAndFriendly_SelectTheCorrectlySidedRealShip()
     {
+        Require.Artwork();
         using var server = new Srv();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {

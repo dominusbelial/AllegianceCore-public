@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -150,9 +151,11 @@ public class KillShipLootDropTests
     }
 
     // ── (1) STATISTICAL: parts and ammo each drop at ~1-in-5 ──────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kill_loot_parts_and_ammo_drop_at_one_in_five_odds_statistically()
     {
+        Require.Artwork();
         var (server, mission, sector) = BootEmpty();
         using (server)
         {
@@ -201,9 +204,11 @@ public class KillShipLootDropTests
     }
 
     // ── (2) ZERO AMMO: never spawns an ammo treasure ──────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kill_loot_zero_ammo_never_spawns_ammo_treasure()
     {
+        Require.Artwork();
         var (server, mission, sector) = BootEmpty();
         using (server)
         {
@@ -224,9 +229,11 @@ public class KillShipLootDropTests
     // ── (2b) ZERO AMMO guard, then the P412 FUEL drops ───────────────────────
 
     // ── FUEL: rolls ~1-in-5 when fuel > 0 ────────────────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kill_loot_fuel_drops_at_one_in_five_odds_statistically()
     {
+        Require.Artwork();
         var (server, mission, sector) = BootEmpty();
         using (server)
         {
@@ -264,9 +271,11 @@ public class KillShipLootDropTests
     }
 
     // ── FUEL: zero fuel never spawns a fuel treasure ─────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kill_loot_zero_fuel_never_spawns_fuel_treasure()
     {
+        Require.Artwork();
         var (server, mission, sector) = BootEmpty();
         using (server)
         {
@@ -285,9 +294,11 @@ public class KillShipLootDropTests
     }
 
     // ── (3) CHILD SHIP: parent-ship-only guard ────────────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kill_loot_child_ship_does_not_independently_drop_loot()
     {
+        Require.Artwork();
         var (server, mission, sector) = BootEmpty();
         using (server)
         {
@@ -337,9 +348,11 @@ public class KillShipLootDropTests
         return holder;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_kill_loot_is_actually_pickable_by_a_rescue_ship()
     {
+        Require.Artwork();
         var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());

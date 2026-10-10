@@ -5,6 +5,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Microsoft.Xna.Framework;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -19,7 +20,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class NativeShipResolverTests
 {
     private static string ArtRoot =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static bool FileExists(string stem) => File.Exists(Path.Combine(ArtRoot, stem + ".mdl"));
 
@@ -88,9 +89,11 @@ public class NativeShipResolverTests
             Assert.Equal(0.5f * len, radius * scale, 4);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RealFig05_mesh_radius_and_scale_agree_with_native_radius_math()
     {
+        Require.Artwork();
         // Native sizes every ship so its mesh radius becomes 0.5·HullType.Length
         // (shipIGC.cpp:1419, thinggeo.cpp:1185-1187). For a real fighter mesh the
         // rendered radius must equal half the hull length after the native scale.
@@ -103,34 +106,42 @@ public class NativeShipResolverTests
 
     // ---- Hull → model / texture resolution (real assets) -------------------
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fig05_resolves_its_own_bmp_texture_namespace()
     {
+        Require.Artwork();
         var mdl = Parse("fig05");
         // fig05.mdl imports fig05bmp; no hull override → the model's own texture.
         Assert.Equal("fig05bmp", NativeShipResolver.ResolveTextureStem(mdl, null, "fig05", FileExists));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void WcGcfig_resolves_shared_texture_not_own_stem()
     {
+        Require.Artwork();
         // wc_gcfig.mdl has NO wc_gcfigbmp.mdl — it imports the SHARED fig07bmp
         // (the task's "shared textures": several model variants share one unit).
         var mdl = Parse("wc_gcfig");
         Assert.Equal("fig07bmp", NativeShipResolver.ResolveTextureStem(mdl, null, "wc_gcfig", FileExists));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Utl18a_resolves_shared_utl18bmp_not_utl18abmp()
     {
+        Require.Artwork();
         // The wiki's explicit caution: utl18a.mdl imports utl18bmp, NOT utl18abmp.
         var mdl = Parse("utl18a");
         Assert.Equal("utl18bmp", NativeShipResolver.ResolveTextureStem(mdl, null, "utl18a", FileExists));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void HullTextureName_override_wins_when_present_and_distinct()
     {
+        Require.Artwork();
         // Native LoadModel honours a real alpha-leading texture override that
         // differs from the model name (trekigc.cpp:1837-1839): the override is
         // used even though the model has its own valid texture namespace.
@@ -139,18 +150,22 @@ public class NativeShipResolverTests
         Assert.Equal("rewbmp", NativeShipResolver.ResolveTextureStem(mdl, "rewbmp", "fig05", BothExist));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void HullTextureName_equal_to_model_is_ignored_native_nullout()
     {
+        Require.Artwork();
         // Native nulls a texture override equal to the model name (trekigc.cpp:1837-1839)
         // → falls back to the model's own imported texture.
         var mdl = Parse("fig05");
         Assert.Equal("fig05bmp", NativeShipResolver.ResolveTextureStem(mdl, "fig05", "fig05", FileExists));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void No_resolvable_texture_unit_yields_null()
     {
+        Require.Artwork();
         // A model whose texture unit is missing → null → the renderer draws the
         // hull lit-solid (part of the fallback chain: native → Meshy → placeholder).
         var mdl = Parse("fig05");
@@ -166,9 +181,11 @@ public class NativeShipResolverTests
     /// weapon model textures instead of rendering lit-solid. Fails on pre-P586b
     /// code, where ResolveTextureStem only probed the raw namespace.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void WeaponDoubledB_import_resolves_to_single_b_bmp_unit()
     {
+        Require.Artwork();
         var mdl = Parse("wep08");                       // namespace "wep08bbmp"
         Assert.Equal("wep08bmp", NativeShipResolver.ResolveTextureStem(mdl, null, "wep08", FileExists));
         // And a model whose doubled-b unit ALSO exists on disk keeps it (wep03bbmp.mdl).
@@ -184,9 +201,11 @@ public class NativeShipResolverTests
     /// index; the resolver itself is case-agnostic here because the caller
     /// hands it a case-insensitive probe).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CaseInsensitiveProbe_finds_capitalised_texture_unit()
     {
+        Require.Artwork();
         var mdl = Parse("wep07");                       // namespace "wep07bbmp"
         // A case-insensitive probe (the renderer's ExactStem disk index) finds
         // "Wep07bbmp.mdl" even though File.Exists("wep07bbmp.mdl") is false.

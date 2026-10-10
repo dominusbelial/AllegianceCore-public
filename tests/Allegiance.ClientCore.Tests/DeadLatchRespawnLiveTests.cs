@@ -11,6 +11,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -44,7 +45,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class DeadLatchRespawnLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -255,9 +256,11 @@ public sealed class DeadLatchRespawnLiveTests
         return ship.Dead;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock()
     {
+        Require.Artwork();
         var server = new Srv();
         Ship? captured = null;
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
@@ -373,9 +376,11 @@ public sealed class DeadLatchRespawnLiveTests
     /// reaches same-sector peers), and when A respawns + undocks back into the shared
     /// sector, B's in-cluster HeavyShipsUpdate(176) clears the latch so B sees A
     /// again — the remote counterpart of the own-ship fix.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Remote_client_sees_victim_again_after_death_and_respawn()
     {
+        Require.Artwork();
         var server = new Srv();
         var ships = new List<Ship>();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>

@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -140,9 +141,11 @@ public class CarrierLandingTriggerTests
     /// <summary>⭐ Scenario 1 — a real lander genuinely inside a real carrier's
     /// bay fires the detection, and <b>no ship state changes</b> (the pass is
     /// detection-only; position/velocity/loadout/parts identical before/after).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lander_inside_real_carrier_bay_is_detected_with_no_state_change()
     {
+        Require.Artwork();
         var (sector, carrier, lander) = Setup(Inside, SideA, SideA);
         var beforeCarrier = Snapshot(carrier);
         var beforeLander = Snapshot(lander);
@@ -165,9 +168,11 @@ public class CarrierLandingTriggerTests
 
     /// <summary>⭐ Scenario 2 — opposite sides: a lander parked perfectly inside
     /// the bay is never detected (the same-side friendly gate rejects it).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Opposite_side_pair_is_not_detected()
     {
+        Require.Artwork();
         var (sector, _, _) = Setup(Inside, SideA, SideB);
         double now = 520.0;
 
@@ -180,9 +185,11 @@ public class CarrierLandingTriggerTests
     /// <summary>⭐ Scenario 3 — missing capability bit: a lander lacking
     /// c_habmLandOnCarrier (resp. a carrier lacking c_habmCarrier) is never
     /// detected even parked dead-centre in the bay.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lander_without_land_on_carrier_capability_is_not_detected()
     {
+        Require.Artwork();
         // Lander hull cloned with a mask that omits 0x10 entirely.
         var (sector, _, _) = Setup(Inside, SideA, SideA, landerCaps: 0);
         double now = 530.0;
@@ -197,9 +204,11 @@ public class CarrierLandingTriggerTests
     /// of P114's hand-derived outside points (below the deck plane, outside the
     /// y-band, far in x) is never detected — proving the real geometry, not a
     /// proximity shortcut, governs.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lander_outside_every_bay_half_space_is_not_detected()
     {
+        Require.Artwork();
         foreach (var outside in new[] { OutBelow, OutYBand, OutFarX })
         {
             var (sector, _, _) = Setup(outside, SideA, SideA);
@@ -217,9 +226,11 @@ public class CarrierLandingTriggerTests
     /// atomic-function / no-persistent-docked-state finding: nothing suppresses
     /// repeat detection, because the native has no such latch at this stage and
     /// the eventual relaunch (P117) ends the condition by moving the ship out.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Stationary_lander_is_detected_every_consecutive_tick_no_latch()
     {
+        Require.Artwork();
         var (sector, carrier, lander) = Setup(Inside, SideA, SideA);
         double now = 570.0;
         int detections = 0;
@@ -244,9 +255,11 @@ public class CarrierLandingTriggerTests
     /// InstantiateGames) resolves the real faohshcar bay and drives a real
     /// detection, proving the chosen production <c>.cvh</c> resolution path
     /// (not just the CvhCorpus twin) works against genuine on-disk geometry.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Production_artpath_loader_resolves_real_bay_and_detects()
     {
+        Require.Artwork();
         var sector = new Sector(SomeMap.Value.Clusters[0]) { LandingBays = ProductionStyleArtPathCache() };
         var carrier = new Ship(1, Hull("faohshcar"), Vector3.Zero, Vector3.Zero, Orientation.Identity) { SideId = SideA };
         var lander = new Ship(2, Hull("dreghpod") with { HabmCapabilities = DataHullTypeIGC.HabmLandOnCarrier },

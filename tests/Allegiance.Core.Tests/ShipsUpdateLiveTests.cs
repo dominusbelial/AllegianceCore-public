@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -167,9 +168,11 @@ public sealed class ShipsUpdateLiveTests
     /// neither player's message contains their own ship (their own state rides
     /// SingleShipUpdate, so no double-send). With exactly two candidates in the
     /// sector, each player's heavy list is exactly one entry = the other ship.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_ships_see_each_other_and_not_self()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
         seat.ABot.ResetHeavyShipsUpdates();
         seat.BBot.ResetHeavyShipsUpdates();
@@ -206,9 +209,11 @@ public sealed class ShipsUpdateLiveTests
     /// <c>bpTargetShield</c> scalars reflect A's real hull/shield fractions
     /// (FedSrv.CPP:4075-4104). The target's own ship is not duplicated in the
     /// rest of the list, and B's own ship is still excluded.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Locked_target_fills_first_heavy_slot_with_real_fractions()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
         seat.B.CommandTarget = seat.A;   // SetCommandTarget: B locks A
         seat.BBot.ResetHeavyShipsUpdates();
@@ -239,9 +244,11 @@ public sealed class ShipsUpdateLiveTests
     /// one <c>ReleasePeer</c> uses) is absent from the NEXT update to the peer
     /// that remains. Proves the per-cluster candidate list tracks membership
     /// live, not a one-time snapshot.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_leaving_cluster_disappears_from_next_update()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
         seat.ABot.ResetHeavyShipsUpdates();
 

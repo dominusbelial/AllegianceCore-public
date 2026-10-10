@@ -3,6 +3,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -72,9 +73,11 @@ public sealed class AnyClusterAsteroidSearchTests
     /// wins over any cross-sector one, even when the cross-sector candidate
     /// measures "closer" by raw coordinate distance (which is meaningless across
     /// sector frames anyway; BFS order is the honest bar).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Own_sector_candidate_wins_over_a_cross_sector_one()
     {
+        Require.Artwork();
         var a = Sec(1, "A");
         var b = Sec(2, "B");
         Attach(a, new ResolvedWarp(Warp(10, 1, new Vector3(100f, 0f, 0f)), b));
@@ -92,9 +95,11 @@ public sealed class AnyClusterAsteroidSearchTests
 
     /// <summary>⭐ Empty own sector, one hop away — the search widens across the
     /// warp and returns the rock in the neighbouring sector.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_sector_rock_found_when_own_sector_is_empty()
     {
+        Require.Artwork();
         var a = Sec(1, "A");
         var b = Sec(2, "B");
         Attach(a, new ResolvedWarp(Warp(10, 1, new Vector3(100f, 0f, 0f)), b));
@@ -112,9 +117,11 @@ public sealed class AnyClusterAsteroidSearchTests
     /// rock beats a two-hop sector's rock regardless of raw distance (BFS visit
     /// order is the established honest comparator, the same one
     /// <see cref="Model.Sector.FindPathToward"/> uses).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void One_hop_candidate_beats_a_two_hop_one()
     {
+        Require.Artwork();
         var a = Sec(1, "A");
         var b = Sec(2, "B");
         var c = Sec(3, "C");
@@ -134,9 +141,11 @@ public sealed class AnyClusterAsteroidSearchTests
 
     /// <summary>⭐ Nothing in the whole reachable component → <c>null</c>, cleanly
     /// (no exception, no infinite loop).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Returns_null_when_the_whole_reachable_component_has_no_rock()
     {
+        Require.Artwork();
         var a = Sec(1, "A");
         var b = Sec(2, "B");
         Attach(a, new ResolvedWarp(Warp(10, 1, new Vector3(100f, 0f, 0f)), b));
@@ -150,9 +159,11 @@ public sealed class AnyClusterAsteroidSearchTests
     /// <summary>⭐ A dangling warp (<c>Destination</c> <c>null</c>) is never
     /// traversed — the same rule <c>FindPathToward</c> applies (Sector.cs:370) —
     /// so an unreachable graph returns <c>null</c> rather than crashing or looping.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Does_not_traverse_a_dangling_warp()
     {
+        Require.Artwork();
         var a = Sec(1, "A");
         Attach(a, new ResolvedWarp(Warp(10, 1, new Vector3(100f, 0f, 0f)), null));   // dangling edge
 
@@ -163,9 +174,11 @@ public sealed class AnyClusterAsteroidSearchTests
     }
 
     /// <summary>⭐ No sector at all → <c>null</c> (trivial guard).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Returns_null_when_the_ship_has_no_sector()
     {
+        Require.Artwork();
         var ship = NewShip(Vector3.Zero);
         Assert.Null(ship.FindNearestMinableAsteroidAnyCluster());
     }

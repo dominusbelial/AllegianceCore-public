@@ -13,6 +13,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -44,7 +45,7 @@ public sealed class RadarTargetHighlightLiveTests
     private const short Ganymede = 1050;   // 4 warps, 1 station, 0 asteroids (P371)
 
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -81,9 +82,11 @@ public sealed class RadarTargetHighlightLiveTests
     /// <summary>⭐ LIVE: the real U-key path selects a real ENEMY that is genuinely
     /// OFF-SCREEN (behind the peer's facing), and that exact enemy contact is the
     /// flagged radar highlight while every other ship in the sector is not.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LiveOffScreenEnemy_IsTheFlaggedRadarTargetHighlight()
     {
+        Require.Artwork();
         using var server = new Srv();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {

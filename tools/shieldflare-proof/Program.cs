@@ -90,7 +90,7 @@ static class Proof
     {
         var env = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH");
         if (env is { Length: > 0 }) return env;
-        return "/home/domingo/Development/Artwork";
+        return ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     }
 
     internal static StaticCore RepresentativeCore()

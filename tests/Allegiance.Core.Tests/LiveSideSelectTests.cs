@@ -5,6 +5,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -66,9 +67,11 @@ public class LiveSideSelectTests
         PumpUntil(server, () => bot.SideRosters.Count > 0, 200);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Peer_is_held_at_side_select_until_it_picks_a_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var b = new FltBot();
@@ -104,9 +107,11 @@ public class LiveSideSelectTests
         Assert.Equal(side0, ship.SideId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Two_peers_picking_different_sides_land_on_their_chosen_sides()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -132,9 +137,11 @@ public class LiveSideSelectTests
         Assert.NotEqual(aId, bId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Silent_peer_is_auto_assigned_after_the_side_select_timeout()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var b = new FltBot();
@@ -152,9 +159,11 @@ public class LiveSideSelectTests
         Assert.NotNull(ship.SideId);   // auto-assigned to a real side
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mission_owner_can_randomize_teams_from_the_side_select_flow_but_non_owner_cannot()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();

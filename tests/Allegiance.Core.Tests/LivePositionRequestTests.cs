@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -222,9 +223,11 @@ public class LivePositionRequestTests
     /// SET_TEAM_LEADER broadcasts), no POSITIONREQ(40) is emitted, and nothing
     /// is left pending. Native RequestPosition's leaderless fast path
     /// (fsmission.cpp:4757).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Empty_side_request_auto_accepts()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var b = new FltBot();
@@ -253,9 +256,11 @@ public class LivePositionRequestTests
     /// <summary>⭐ Requesting an already-led side broadcasts POSITIONREQ(40)
     /// whole-mission and does NOT seat the requester yet (the leader must
     /// approve).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Occupied_side_request_broadcasts_and_does_not_seat()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -292,9 +297,11 @@ public class LivePositionRequestTests
     /// <summary>⭐ The occupied side's leader ACCEPTING via POSITIONACK seats
     /// the requester (JOIN_SIDE) and clears the pending request (a second
     /// accept afterwards is a silent no-op).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_accept_seats_requester_and_clears_pending()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -335,9 +342,11 @@ public class LivePositionRequestTests
     /// <summary>⭐ The leader REJECTING via POSITIONACK broadcasts
     /// DELPOSITIONREQ(DPR_Rejected) whole-mission and leaves the requester
     /// unseated.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_reject_broadcasts_and_leaves_unseated()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -375,9 +384,11 @@ public class LivePositionRequestTests
 
     /// <summary>⭐ A NON-leader's POSITIONACK is refused: no state change, no
     /// broadcast, the pending request stays intact.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_leader_ack_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -423,9 +434,11 @@ public class LivePositionRequestTests
     /// <summary>⭐ The requester self-canceling via DELPOSITIONREQ(DPR_Canceled)
     /// clears the pending request (relayed whole-mission); the same message from
     /// someone else with DPR_Canceled is refused.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Self_cancel_clears_and_foreign_cancel_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -478,9 +491,11 @@ public class LivePositionRequestTests
     /// <summary>⭐ The leader rejecting directly via DELPOSITIONREQ(DPR_Rejected)
     /// (not via POSITIONACK) reaches the same end state: request cleared (relayed
     /// whole-mission) and the requester left unseated.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_reject_via_delpositionreq_reaches_same_end_state()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -520,9 +535,11 @@ public class LivePositionRequestTests
     /// <summary>⭐ Requesting a nonexistent side gets an immediate
     /// DELPOSITIONREQ(DPR_SideGone) to the requester ONLY (not a whole-mission
     /// broadcast — other peers hear nothing).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Nonexistent_side_request_gets_sidegone_to_requester_only()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -551,9 +568,11 @@ public class LivePositionRequestTests
     /// request is still pending broadcasts DELPOSITIONREQ(DPR_Rejected) on the
     /// ReleasePeer path (native RemoveJoinRequest(pfsPlayer, NULL) in
     /// RemovePlayerFromMission). Removing that wiring breaks this test.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Requester_disconnect_broadcasts_delpositionreq_rejected()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -586,9 +605,11 @@ public class LivePositionRequestTests
     /// discriminating case: the per-player ready check genuinely could NOT make
     /// the side ready (a teammate is explicitly unready), proving the force-ready
     /// branch is really bypassing it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Force_team_ready_true_auto_starts_even_with_unready_teammate()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -628,9 +649,11 @@ public class LivePositionRequestTests
     /// <summary>⭐ FORCE_TEAM_READY(false) afterward re-applies the normal
     /// per-player check: with a connected player still unready, the side reverts
     /// to not-ready (TEAM_READY(false)).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Force_team_ready_false_reverts_to_normal_check()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -661,9 +684,11 @@ public class LivePositionRequestTests
 
     /// <summary>⭐ FORCE_TEAM_READY from a NON-leader is refused: the flag is
     /// not set and nothing is relayed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Force_team_ready_non_leader_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -694,9 +719,11 @@ public class LivePositionRequestTests
     /// class): a POSITIONREQ(40) broadcast and a FORCE_TEAM_READY relay/flag for
     /// mission A must never leak to a mission B peer sharing the same numeric
     /// side id, nor mutate mission B's side state.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_position_and_force_scope_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -334,9 +335,11 @@ public class LiveViewClusterTests
     /// target (<c>otTarget = NA</c>) — the reply names that cluster with
     /// <c>bUsePosition = false</c> (a bare-cluster preview). Sent only to the
     /// requesting peer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_request_bare_cluster_gets_reply_naming_it()
     {
+        Require.Artwork();
         using var server = new Srv();
         var lay = InjectViewClusterSpawn(server);
         server.Boot(Config());
@@ -366,9 +369,11 @@ public class LiveViewClusterTests
     /// and the object's real position. Both target and requester share the
     /// dock sector. The target is a second live peer (spawn 1), so this also
     /// proves the port resolves a real, running ship, not a fabricated model.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_request_named_visible_object_returns_its_position()
     {
+        Require.Artwork();
         using var server = new Srv();
         var lay = InjectViewClusterSpawn(server);
         server.Boot(Config());
@@ -405,9 +410,11 @@ public class LiveViewClusterTests
     /// <c>ptarget-&gt;GetCluster() == pcluster &amp;&amp; SeenBySide</c> gate, so
     /// both get <c>bUsePosition = false</c> (the cluster is still echoed).
     /// Two separate requests are asserted in one flight.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_request_invisible_or_wrong_cluster_target_gets_bare_reply()
     {
+        Require.Artwork();
         using var server = new Srv();
         var lay = InjectViewClusterSpawn(server);
         server.Boot(Config());
@@ -464,9 +471,11 @@ public class LiveViewClusterTests
     /// request is a no-op — no reply — matching the native <c>GetStation()</c>
     /// gate (<c>FedSrv.CPP:6422</c>). Proved with a dedicated flying requester
     /// (never near a station) rather than an un-dock dance, so it stays clean.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flying_ship_request_gets_no_reply()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.ShipSpawner = (core, mission, id) =>
         {

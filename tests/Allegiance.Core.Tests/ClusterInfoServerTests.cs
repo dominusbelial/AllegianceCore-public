@@ -9,6 +9,7 @@ using FltBot = global::Allegiance.Bot.Bot;
 using MissionMap = global::Allegiance.Core.Model.MissionMap;
 using SideSpec = global::Allegiance.Core.Model.SideSpec;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -85,9 +86,11 @@ public class ClusterInfoServerTests
     /// decoding the right cluster count, the right home-sector flags, and a
     /// warp-connectivity graph identical to the real map's topology (checked
     /// entry-by-entry against the independently assembled mission).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PeerReceivesClusterInfo_InJoinBurst_MatchingMapTopology()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var bot = new FltBot();

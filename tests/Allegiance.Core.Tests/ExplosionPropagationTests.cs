@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -241,9 +242,11 @@ public sealed class ExplosionPropagationTests
     /// cross-side moving ship crossing field A is chewed — field A wears and
     /// persists — while the neighbouring field B stays completely untouched (a
     /// mine never blasts, so there is no cascade).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Two_armed_mines_do_not_blast_cascade_a_moving_cross_side_ship_wears_only_the_field_it_crosses()
     {
+        Require.Artwork();
         var (mineType, hull, _) = CrossHit.Value;
         using var seat = SeatThree(100f, hull);
         var shooter = seat.Shooter;
@@ -306,9 +309,11 @@ public sealed class ExplosionPropagationTests
     /// predicted fractions through the shared <see cref="Ship.ReceiveDamage"/>
     /// path. Confirms the <c>f = 1 − d/radius; amount *= f·f</c> formula
     /// (<c>clusterIGC.cpp:424-429</c>) is real, not a constant.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Falloff_is_real_a_ship_at_the_blast_edge_takes_less_than_one_at_the_centre()
     {
+        Require.Artwork();
         var (mineType, hull, _) = CrossHit.Value;
         var (mission, sector, _) = Domain();
         float dtm = Dtm(RepresentativeCore(), mineType.DamageType, hull.DefenseType);
@@ -345,9 +350,11 @@ public sealed class ExplosionPropagationTests
     /// computed <c>Power·dtmShield/MaxStrength</c>, hull untouched) applied to a
     /// blast centred on the ship. Proves the explosion path shares, not
     /// reimplements, the damage pipeline.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shielded_ship_in_blast_absorbs_like_a_weapon_hit()
     {
+        Require.Artwork();
         var (mineType, shieldPart, shieldType, expectedAbsorbed, hull, _) = ShieldCombo.Value;
         var (mission, sector, _) = Domain();
         short id = 961;
@@ -374,9 +381,11 @@ public sealed class ExplosionPropagationTests
     /// with falloff — no new gate invented, the same one
     /// <see cref="Sector.ResolveCombatCollisions"/>/<see cref="Sector.ResolveMineDetonations"/>
     /// enforce.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Explosion_respects_the_existing_friendly_fire_gate()
     {
+        Require.Artwork();
         var (mineType, hull, _) = CrossHit.Value;
         var (mission, sector, _) = Domain();
         short id = 971;
@@ -405,9 +414,11 @@ public sealed class ExplosionPropagationTests
     /// <see cref="IIgcSite.MineDestroyedEvent"/> raised exactly once. Exercises
     /// <see cref="Sector.ResolveExplosion"/> repeatedly (the integration path),
     /// with the exact exponential-decay fraction asserted after each blast.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Accumulated_blasts_push_a_mine_below_threshold_and_it_is_destroyed_once()
     {
+        Require.Artwork();
         var (mineType, hull, _) = CrossHit.Value;
         var (mission, sector, site) = Domain();
         float endurance = mineType.Endurance;

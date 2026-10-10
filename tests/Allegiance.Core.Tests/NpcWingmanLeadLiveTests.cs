@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -201,9 +202,11 @@ public sealed class NpcWingmanLeadLiveTests
     /// intercepts the target's future position sphere — the round fired along
     /// <c>dir</c> lands on the target's radius at the solved time. Cleanly fails
     /// if lead-solving is removed or wrong; no sim variance.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SolveForLead_intercepts_a_laterally_moving_target()
     {
+        Require.Artwork();
         var core = Core();
         var (hull, weaponType, proj) = FirstFightable(core);
 
@@ -245,9 +248,11 @@ public sealed class NpcWingmanLeadLiveTests
     /// new gate must therefore HOLD FIRE there, even though a raw-facing gate
     /// would have fired. Proves the fire decision is gated on the lead direction,
     /// not the raw position; fails if lead-solving were removed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Wingman_fire_gate_leads_a_laterally_moving_enemy()
     {
+        Require.Artwork();
         var (srv, mission, sector, npcSide, peerSide, wingDroneId) = Boot();
         using (srv)
         {

@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -132,9 +133,11 @@ public sealed class FlagsKillsLiveTests
     /// <see cref="Mission.FlagsWinGoal"/>, and the mission flips Over with that
     /// side as GAME_OVER winner — the port of <c>fsmission.cpp:3883-3887</c>
     /// driven end-to-end through the real pickup → dock-secure pipeline.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Securing_enemy_flag_to_the_goal_wins_the_game_for_that_side()
     {
+        Require.Artwork();
         using var h = SeatFlagCarrier();
         var mission = h.Server.Missions[0];
         mission.FlagsEnabled = true;
@@ -183,9 +186,11 @@ public sealed class FlagsKillsLiveTests
     /// false (the default), securing an enemy flag increments
     /// <see cref="Side.Flags"/> but does NOT end the mission — no GAME_OVER
     /// (existing non-flags missions are unaffected).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flags_disabled_secure_increments_counter_but_does_not_end_game()
     {
+        Require.Artwork();
         using var h = SeatFlagCarrier();
         var mission = h.Server.Missions[0];
         mission.FlagsEnabled = false;             // the default
@@ -267,9 +272,11 @@ public sealed class FlagsKillsLiveTests
     /// <see cref="Mission.KillsWinGoal"/> → mission Over, GAME_OVER winner = the
     /// killing side — the port of <c>fsmission.cpp:3749-3760</c> driven
     /// end-to-end through the real credited-kill path.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Scoring_kill_to_the_team_goal_wins_the_game_for_that_side()
     {
+        Require.Artwork();
         using var h = SeatKiller();
         h.Mission.KillsEnabled = true;
         h.Mission.KillsWinGoal = 1;
@@ -298,9 +305,11 @@ public sealed class FlagsKillsLiveTests
     /// false (the default), a credited kill increments <see cref="Side.Kills"/>
     /// but does NOT end the mission — no GAME_OVER (existing non-deathmatch
     /// missions are unaffected).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kills_disabled_credited_kill_increments_counter_but_does_not_end_game()
     {
+        Require.Artwork();
         using var h = SeatKiller();
         h.Mission.KillsEnabled = false;             // the default
         h.Mission.KillsWinGoal = 1;

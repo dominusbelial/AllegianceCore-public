@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -221,9 +222,11 @@ public class LiveBoardShipTests
 
     // ── pure-unit turret-slot walk ────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Turret_slot_walk_picks_free_equipped_slot_or_observer()
     {
+        Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
         var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "XXV_simple.igc")));
         var civ = core.Civilizations.Values.OrderBy(c => c.CivilizationId).First();
@@ -267,9 +270,11 @@ public class LiveBoardShipTests
     /// fixed walk clamps the start into range and must terminate, falling back
     /// to observer. Executed under a watchdog so a regression FAILS cleanly
     /// instead of hanging the whole suite.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task Reboard_smaller_full_carrier_terminates_observer()
     {
+        Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
         var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "XXV_simple.igc")));
         var civ = core.Civilizations.Values.OrderBy(c => c.CivilizationId).First();
@@ -310,9 +315,11 @@ public class LiveBoardShipTests
     /// out-of-range TurretId is revalidated and lands on a VALID in-range slot
     /// (the same-carrier slot preference is preserved for legal ids, normalized
     /// for illegal ones) — never spinning.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task Stale_out_of_range_start_revalidates_to_valid_slot()
     {
+        Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
         var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "XXV_simple.igc")));
         var civ = core.Civilizations.Values.OrderBy(c => c.CivilizationId).First();
@@ -353,9 +360,11 @@ public class LiveBoardShipTests
     /// ParentId=carrier). Then it leaves (sidParent=NA): parent/turret cleared,
     /// hull restored to the side's Lifepod, and a real LEAVE_SHIP(94) broadcast
     /// to the whole side naming the correct child id.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Board_with_equipped_turret_and_leave()
     {
+        Require.Artwork();
         var (server, carrier, boarder, sp) = Setup(out short cId, out short bId);
         WaitDocked(server, (carrier, sp.Carrier), (boarder, sp.Boarder));
 
@@ -415,9 +424,11 @@ public class LiveBoardShipTests
     /// equipped slot makes the boarder an observer (TurretId null), not a
     /// rejection — the ported empty-loop fallback (<c>FedSrv.CPP:2395-2400</c>).
     /// The wire reflects it as State=c_ssObserver with the carrier's parent id.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Board_without_equipped_turret_becomes_observer()
     {
+        Require.Artwork();
         var server = new Srv();
         InjectBoardSpawn(server, equipTurret: false);         // slots [2,6) but nothing mounted
         server.Boot(Config());
@@ -458,9 +469,11 @@ public class LiveBoardShipTests
     /// <summary>⭐ Scenario 3: boarding a NONEXISTENT ship sends a real
     /// BOARD_NACK(178) naming the requested parent id — to the requester ONLY
     /// (the same-side carrier peer sees nothing).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Board_nonexistent_ship_nacks_only_requester()
     {
+        Require.Artwork();
         var (server, carrier, boarder, _) = Setup(out _, out short bId);
 
         const short bogus = 32150;                            // an id no peer owns
@@ -479,9 +492,11 @@ public class LiveBoardShipTests
     /// <summary>⭐ Scenario 3b: boarding a ship on a DIFFERENT side — the native
     /// resolves the target via <c>GetShip()</c> on the boarder's own side, so a
     /// cross-side id is effectively a no-such-ship and must NACK.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Board_wrong_side_ship_nacks()
     {
+        Require.Artwork();
         var server = new Srv();
         InjectBoardSpawn(server, equipTurret: true);
         server.Boot(Config());
@@ -578,9 +593,11 @@ public class LiveBoardShipTests
     /// </list>
     /// The ticking is guarded by a watchdog so a regression fails fast rather
     /// than hanging the suite.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_reboard_smaller_full_carrier_does_not_hang()
     {
+        Require.Artwork();
         var server = new Srv();
         var sp = InjectReboardSpawn(server);
         server.Boot(Config());

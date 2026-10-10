@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -15,9 +16,11 @@ namespace Allegiance.Core.Tests;
 /// </summary>
 public class CorpusValidateTests
 {
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Aggregate_matches_the_recorded_baseline()
     {
+        Require.Artwork();
         var files = Corpus.Files;
         var cores = new List<StaticCore>();
         var coreFiles = new List<string>();

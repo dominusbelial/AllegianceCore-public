@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -231,9 +232,11 @@ public sealed class StationsUpdateLiveTests
     /// the SAME station is ABSENT from a different side's update (per-side
     /// batching — no whole-mission leak). A's latest update carries SA (not SB);
     /// B's latest carries SB (not SA).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Visible_station_received_correct_fields_absent_from_unseeing_side()
     {
+        Require.Artwork();
         using var seat = SeatTwoBases(maxShield: 1000f, sideAStationId: 9401, sideBStationId: 9501);
 
         // Start counting afresh so every accumulated update below is post-seat.
@@ -270,9 +273,11 @@ public sealed class StationsUpdateLiveTests
     /// <summary>⭐ A real P125 <see cref="Station.ReceiveDamage"/> shield hit lowers
     /// <see cref="Station.ShieldFraction"/> and the side's NEXT <c>STATIONS_UPDATE</c>
     /// carries the new div-240 shield byte while the hull stays full.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Damaged_station_fraction_reflected_in_next_update()
     {
+        Require.Artwork();
         var (dmgType, defShield, ds) = ShieldCombo.Value;
         // Size maxShield so the hit absorbs a comfortable, survivable shield chunk.
         float maxShield = MathF.Max(300f, MathF.Round(1000f * ds / 0.4f));

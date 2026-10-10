@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -131,9 +132,11 @@ public sealed class LiveQuickChatToDroneCommandTests
     /// ONLY be produced by the order path (proved red when the wiring is
     /// removed), whereas an idle Wingman could autonomously pick the nearest
     /// in-sector enemy (P162); the <c>AttackTarget</c> assertion corroborates.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Individual_Attack_OrdersSameSideWingman_AndAffirms()
     {
+        Require.Artwork();
         var (server, mission, sector, side0, side1, wing, bots) = Boot(1);
         using (server)
         {
@@ -177,9 +180,11 @@ public sealed class LiveQuickChatToDroneCommandTests
     /// shipIGC.h:1711) — no slot change and no <c>"Affirmative."</c>. The
     /// Wingman sits in the last sector (no enemies) so it stays idle and its
     /// own default order cannot set any target.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mine_ToWingman_IsIllegal_NoChange_NoAffirmative()
     {
+        Require.Artwork();
         var (server, mission, sector, _, _, wing, bots) = Boot(1);
         using (server)
         {
@@ -208,9 +213,11 @@ public sealed class LiveQuickChatToDroneCommandTests
     /// <summary>Enemy-side sender leg: a sender on the OTHER side issuing an
     /// Individual <c>cidAttack</c> at the drone is ignored (native same-side
     /// gate, FedSrv.CPP:3190-3191) — no slot change, no <c>"Affirmative."</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EnemySide_Sender_IndividualAttack_IsIgnored()
     {
+        Require.Artwork();
         var (server, mission, sector, _, _, wing, bots) = Boot(2);
         using (server)
         {

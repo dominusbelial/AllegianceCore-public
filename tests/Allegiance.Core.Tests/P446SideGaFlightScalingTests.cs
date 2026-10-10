@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit.Abstractions;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -95,9 +96,11 @@ public class P446SideGaFlightScalingTests
 
     // ── accessor-level unit checks ────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Accessors_scale_raw_hull_by_the_side_GA_factors()
     {
+        Require.Artwork();
         var m = NewMission(maxSpeed: 1.5f, thrust: 2f, turnRate: 1.25f, turnTorque: 1.1f);
         var ship = NewGaShip(m);
         var hull = RepresentativeHull.Value;
@@ -111,9 +114,11 @@ public class P446SideGaFlightScalingTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sideless_and_unknown_side_read_identity()
     {
+        Require.Artwork();
         var sideless = NewSidelessShip();
         var hull = RepresentativeHull.Value;
         Assert.Equal(hull.Speed, sideless.EffectiveMaxSpeed(), 6);
@@ -140,9 +145,11 @@ public class P446SideGaFlightScalingTests
     /// <c>hull.Speed</c> regardless of the side's GA — this test fails on that
     /// code (failure recorded in the P446 report).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MaxSpeed_GA_scales_full_throttle_cruise_top_speed()
     {
+        Require.Artwork();
         var m = NewMission(maxSpeed: 1.5f);
         var ship = NewGaShip(m);
         var hull = RepresentativeHull.Value;
@@ -165,9 +172,11 @@ public class P446SideGaFlightScalingTests
     /// <summary>Identity GA (all 1.0) reproduces the pre-P446 behaviour exactly:
     /// the cruise plateau equals the raw-hull top speed, and a GA ship with an
     /// identity side flies identically to a sideless ship.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Identity_GA_reproduces_current_Behaviour_exactly()
     {
+        Require.Artwork();
         var m = NewMission();
         var ship = NewGaShip(m);
         var sideless = NewSidelessShip();
@@ -192,9 +201,11 @@ public class P446SideGaFlightScalingTests
     /// From rest under the manual forward branch the first-step Δv is
     /// <c>dT·thrust/Mass</c> (drag negligible at v=0), so doubling the GA
     /// thrust doubles the early acceleration.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Thrust_GA_scales_acceleration()
     {
+        Require.Artwork();
         var m = NewMission(thrust: 1.5f);
         var ship = NewGaShip(m);
         var id = NewGaShip(NewMission());           // identity side
@@ -218,9 +229,11 @@ public class P446SideGaFlightScalingTests
     /// <summary>Turn rate (<c>c_gaTurnRate</c>) scales the steady-state yaw
     /// rate: full-yaw control eventually converges the turn rate to
     /// <c>EffectiveMaxTurnRate(yaw)</c> = <c>hull.MaxTurnRates[yaw] × 1.5</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TurnRate_GA_scales_steady_state_yaw()
     {
+        Require.Artwork();
         var m = NewMission(turnRate: 1.5f);
         var ship = NewGaShip(m);
         var hull = RepresentativeHull.Value;
@@ -242,9 +255,11 @@ public class P446SideGaFlightScalingTests
     /// per-step <c>maxDelta = tm·EffectiveTurnTorque</c> is 1.5×, so while both
     /// ships are still in the linear ramp the GA ship's rate is ~1.5× the
     /// identity ship's.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TurnTorque_GA_scales_ramp_rate()
     {
+        Require.Artwork();
         var m = NewMission(turnTorque: 1.5f);            // turn rate GA identity
         var ship = NewGaShip(m);
         var id = NewGaShip(NewMission());                // identity

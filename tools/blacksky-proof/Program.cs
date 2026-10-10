@@ -50,7 +50,7 @@ sealed class ProofOptions
         var env = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH");
         return new ProofOptions
         {
-            ArtRoot = art.Length > 0 ? art : (env is { Length: > 0 } ? env : "/home/domingo/Development/Artwork"),
+            ArtRoot = art.Length > 0 ? art : (env is { Length: > 0 } ? env : ExternalPaths.Resolve(ExternalResourceKind.Artwork)),
             OutDir = outDir.Length > 0 ? outDir : "blacksky-proof-out",
         };
     }

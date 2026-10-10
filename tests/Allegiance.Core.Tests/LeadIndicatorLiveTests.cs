@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -101,9 +102,11 @@ public sealed class LeadIndicatorLiveTests
     /// the target's motion by the real solveForLead math. Clearing the command
     /// target clears the indicator (retargeting = none). Fails if the per-tick
     /// broadcast or the lead solve is removed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Moving_enemy_command_target_yields_a_real_offset_lead_over_the_wire()
     {
+        Require.Artwork();
         var server = new Srv();
         Ship? shooter = null;
         short peerSide = 0, npcSide = 0;

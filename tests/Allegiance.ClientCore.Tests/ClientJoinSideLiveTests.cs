@@ -9,6 +9,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -45,7 +46,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class ClientJoinSideLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -129,9 +130,11 @@ public sealed class ClientJoinSideLiveTests
     /// home. Both EXPORT one-shot latches are spent, so A's view of B's side
     /// can only update through the JOIN_SIDE(125) the server broadcasts on
     /// TryJoinSide — which the fixed client now honours.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teammate_side_change_updates_viewer_after_cross_side_stint()
     {
+        Require.Artwork();
         using var server = new Srv();
         short side0 = 0, side1 = 0; Sector? s0 = null; int placed = 0;
         SetShipSpawner(server, (core, mission, id) =>
@@ -191,9 +194,11 @@ public sealed class ClientJoinSideLiveTests
     /// local ship (a lobby side switch of the player themself) must update both
     /// <c>ClientWorld.MySideId</c> and the own <c>ShipEntity.SideId</c> — the
     /// two inputs to the <c>isEnemy</c> classification on <c>Game1.Camera</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Own_ship_join_side_updates_MySideId_and_own_entity()
     {
+        Require.Artwork();
         using var server = new Srv();
         short side0 = 0; Sector? s0 = null;
         SetShipSpawner(server, (core, mission, id) =>

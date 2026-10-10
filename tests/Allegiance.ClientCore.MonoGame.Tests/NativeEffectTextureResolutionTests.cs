@@ -2,6 +2,7 @@ using System.IO;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -28,7 +29,8 @@ public class NativeEffectTextureResolutionTests
 
     /// <summary>Every renderer's native art name → the file it resolves to
     /// (scope item: "each renderer resolves its native texture name").</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(NativeEffectTextures.SmokeStem, "e_smokebmp.mdl")]
     [InlineData(NativeEffectTextures.FireStem, "e_firebmp.mdl")]
     [InlineData(NativeEffectTextures.TeleStem, "e_telebmp.mdl")]
@@ -38,23 +40,28 @@ public class NativeEffectTextureResolutionTests
     [InlineData(NativeEffectTextures.GlowStrobeStem, "f101bmp.mdl")]
     public void Renderer_stem_resolves_to_the_native_art_file(string stem, string expectedFile)
     {
+        Require.Artwork();
         Assert.Equal(expectedFile, NativeEffectTextures.AssetFile(stem));
         Assert.True(File.Exists(Path.Combine(ArtRoot, expectedFile)),
             $"expected artwork '{expectedFile}' present for stem '{stem}'");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Smoke_script_resolves_to_e_smoke_png()
     {
+        Require.Artwork();
         var res = NativeEffectTextures.Resolve(ReadStem(NativeEffectTextures.SmokeStem));
         Assert.Equal(NativeEffectTextures.NativeTextureKind.Png, res.Kind);
         Assert.Equal("e_smoke.png", res.PngName);
         Assert.True(File.Exists(Path.Combine(ArtRoot, res.PngName!)));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fire_and_tele_scripts_resolve_to_their_pngs()
     {
+        Require.Artwork();
         var fire = NativeEffectTextures.Resolve(ReadStem(NativeEffectTextures.FireStem));
         Assert.Equal(NativeEffectTextures.NativeTextureKind.Png, fire.Kind);
         Assert.Equal("e_fire.png", fire.PngName);
@@ -64,9 +71,11 @@ public class NativeEffectTextureResolutionTests
         Assert.Equal("e_tele.png", tele.PngName);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_flare_fx09_is_a_nine_frame_binary_strip()
     {
+        Require.Artwork();
         var res = NativeEffectTextures.Resolve(ReadStem(NativeEffectTextures.ShieldFlareStem));
         Assert.Equal(NativeEffectTextures.NativeTextureKind.Binary, res.Kind);
         Assert.Equal(576, res.Texture!.Width);
@@ -74,9 +83,11 @@ public class NativeEffectTextureResolutionTests
         Assert.Equal(9, res.Frames);   // AnimatedImage slices width/height frames
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_hit_fx11_and_f103_resolve_as_binary_textures()
     {
+        Require.Artwork();
         foreach (string stem in new[]
         {
             NativeEffectTextures.HullHitNormalStem,   // fx11 (AWF_EFFECT_NORMAL)

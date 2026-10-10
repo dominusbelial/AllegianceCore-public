@@ -418,6 +418,24 @@ every run):
 | 2 | 12/12 | 1584/1584 | 560/561 | 3777/3781 | ClientCore: `FullSessionKillIntegrationTests.FullSession_ThreePeers_…_RealCrossSideKill`; Core: `LiveRipcordTests.Re_target_activates_to_requester_only`, `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range…`, `ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget…`, `StationUnderAttackAlertLiveTests.Sub_30_percent_fraction_…` |
 | 3 | 12/12 | 1584/1584 | 561/561 | 3780/3781 | Core: `LiveChatSectorWireTests.Individual_AllSector_and_FriendlySector_relay_to_real_peers_over_the_wire` |
 
+## P597 observation (2026-10-10, `scripts/run-tests.sh` on the P597 tree)
+
+Two consecutive runs on the final P597 tree (corpus present via `local.env`; the
+P597 change is path-resolution/test-skipping — the guards are no-ops with the
+corpus present, so all live tests still run). The only failures are the
+established fixed-sleep / live-wire-receipt **load-flakes**; none fail in
+isolation, none involve the P597 changes.
+
+| run | Lobby | MonoGame | ClientCore | Core | failures |
+|---|---|---|---|---|---|
+| 1 | 12/12 | 1713/1713 | 578/579 | 3869/3872 | (counts captured; run-1 tail did not preserve per-test names — same live-wire load-flake class as run 2 / ledger) |
+| 2 | 12/12 | 1713/1713 | 579/579 | 3866/3872 | Core: `GameOverPlayersWireTests.Conquest_win_in_one_mission_does_not_leak_game_over_players_to_another`, `…Conquest_win_lists_every_connected_player_including_losing_side`, `…Win_by_elimination_broadcasts_game_over_players_to_surviving_peer`; `LiveChatSectorWireTests.Individual_AllSector_and_FriendlySector_relay_to_real_peers_over_the_wire`; `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback`; `P590PodRescueTests.Pod_pickup_order_streams_queued_order_to_real_player_rescuer` (**new** — added below) |
+
+**Newly-observed flake (documented for future runs):**
+`Core…P590PodRescueTests.Pod_pickup_order_streams_queued_order_to_real_player_rescuer` —
+live-wire dock/order-stream timing, passes in isolation (verified 2026-10-10),
+status: load-flake.
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

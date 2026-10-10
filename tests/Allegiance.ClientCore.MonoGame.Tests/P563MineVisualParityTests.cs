@@ -9,7 +9,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// billboard), roughly 10× native — Domingo reported the disks "look a bit big
 /// and too close to each other" live on 221 (2026-10-06).
 ///
-/// Native derivation (authoritative, /home/domingo/Development/Allegiance):
+/// Native derivation (authoritative, $ALLEGIANCE_NATIVE_SRC_PATH):
 ///  <c>MineFieldGeoImpl::Render</c> draws each decal with scale 1, angle 0 and
 ///  zero forward/right (<c>src/effect/efgeo.cpp:74-84</c>). In
 ///  <c>Context::DrawDecal</c> that yields <c>decal.m_scale = mat.GetScale()*1</c>

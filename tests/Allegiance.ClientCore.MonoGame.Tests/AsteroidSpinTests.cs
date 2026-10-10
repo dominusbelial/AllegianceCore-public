@@ -2,6 +2,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -19,7 +20,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class AsteroidSpinTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     [Fact]
     public void FromWire_KeepsWireRateAndNormalizesAxis()
@@ -81,9 +82,11 @@ public class AsteroidSpinTests
         Assert.Equal(0f, AsteroidSpin.FromWire([1f, 0f, 0f]).Rate); // too short
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RealM2XSpiderwData_HasDistinctNonZeroRatesOnValidAxes()
     {
+        Require.Artwork();
         // P252 real-data proof: every asteroid in the shipped demo map spins at
         // its OWN non-zero rate on a non-degenerate axis — so the client must
         // NOT apply a single shared speed, and the defensive fallback is never

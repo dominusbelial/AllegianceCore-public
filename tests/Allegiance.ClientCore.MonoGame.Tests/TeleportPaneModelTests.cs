@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -15,7 +16,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class TeleportPaneModelTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
@@ -52,9 +53,11 @@ public class TeleportPaneModelTests
             stations ?? Array.Empty<StationView>(),
             HullLookup, StationTypeLookup);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Includes_docked_same_side_ship_with_turret_slots()
     {
+        Require.Artwork();
         var m = Build(ships:
         [
             new ShipView(Id: 903, SideId: 1, StationId: 980, HullId: TurretHull.HullId),
@@ -65,9 +68,11 @@ public class TeleportPaneModelTests
         Assert.False(m.IsEmpty);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Excludes_enemy_side_ship()
     {
+        Require.Artwork();
         var m = Build(ships:
         [
             new ShipView(Id: 904, SideId: 2, StationId: 981, HullId: TurretHull.HullId),
@@ -76,9 +81,11 @@ public class TeleportPaneModelTests
         Assert.True(m.IsEmpty);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Excludes_self()
     {
+        Require.Artwork();
         var m = Build(ownShip: 905, ships:
         [
             new ShipView(Id: 906, SideId: 1, StationId: 982, HullId: TurretHull.HullId),
@@ -88,9 +95,11 @@ public class TeleportPaneModelTests
         Assert.Equal(2, m.Ships.Count);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Excludes_flying_ship_not_docked()
     {
+        Require.Artwork();
         var m = Build(ships:
         [
             new ShipView(Id: 911, SideId: 1, StationId: -1, HullId: TurretHull.HullId),  // flying (NA)
@@ -100,9 +109,11 @@ public class TeleportPaneModelTests
         Assert.Equal(912, m.Ships[0].Id);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Excludes_hull_with_no_turret_slots()
     {
+        Require.Artwork();
         var m = Build(ships:
         [
             new ShipView(Id: 913, SideId: 1, StationId: 986, HullId: PlainHull.HullId),
@@ -110,9 +121,11 @@ public class TeleportPaneModelTests
         Assert.Empty(m.Ships);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Excludes_ship_whose_hull_lookup_misses()
     {
+        Require.Artwork();
         var m = Build(ships:
         [
             new ShipView(Id: 914, SideId: 1, StationId: 988, HullId: -7),   // not in the core
@@ -120,9 +133,11 @@ public class TeleportPaneModelTests
         Assert.Empty(m.Ships);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sorts_ships_by_name()
     {
+        Require.Artwork();
         // Pick three turret hulls and build ships whose names sort non-trivially.
         var hulls = Catalog.Hulls.Where(h => h.MaxWeapons > h.MaxFixedWeapons)
             .OrderBy(h => h.Name).Take(3).ToList();
@@ -139,9 +154,11 @@ public class TeleportPaneModelTests
         Assert.Equal(names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase), names);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Includes_same_side_restart_station_excluding_current()
     {
+        Require.Artwork();
         // Need a real restart-capable station type + a station of ours.
         var rstype = FindStationType(t => t.HasCapability(DataStationTypeIGC.SabmRestart));
         // Degrade gracefully if the real core lacks one (extremely unlikely); skip then.
@@ -156,9 +173,11 @@ public class TeleportPaneModelTests
         Assert.Equal(997, m.Stations[0].Id);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Excludes_enemy_and_non_restart_stations()
     {
+        Require.Artwork();
         var restart = FindStationType(t => t.HasCapability(DataStationTypeIGC.SabmRestart));
         var nonRestart = FindStationType(t => !t.HasCapability(DataStationTypeIGC.SabmRestart));
         // Guard: if the real core has no non-restart station type, this can't be exercised.
@@ -174,9 +193,11 @@ public class TeleportPaneModelTests
         Assert.Equal(992, m.Stations[0].Id);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cursor_clamps_and_cycles_across_sections()
     {
+        Require.Artwork();
         var m = Build(ships:
         [
             new ShipView(Id: 922, SideId: 1, StationId: 974, HullId: TurretHull.HullId),
@@ -201,9 +222,11 @@ public class TeleportPaneModelTests
     private static short StationTypeAny() =>
         Catalog.StationTypes!.Values.First().StationTypeId;
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Activate_classifies_board_vs_teleport()
     {
+        Require.Artwork();
         var m = Build(ships:
         [
             new ShipView(Id: 925, SideId: 1, StationId: 976, HullId: TurretHull.HullId),

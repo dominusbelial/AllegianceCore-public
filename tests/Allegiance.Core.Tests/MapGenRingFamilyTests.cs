@@ -5,6 +5,7 @@ using Allegiance.Core.MapGen;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 /// <summary>
 /// P398 — structural verification of the ring-family procedural map topologies
@@ -136,10 +137,12 @@ public sealed class MapGenRingFamilyTests
         return adj;
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_CorrectSectorCount_AndHomeSectors(TopologyCase c)
     {
+        Require.Artwork();
         var map = Generate(c);
         var m = AssembleMap(map);
 
@@ -151,10 +154,12 @@ public sealed class MapGenRingFamilyTests
         Assert.Equal(c.Homes, homeIds);
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_Adjacency_MatchesTracedNativeGraph(TopologyCase c)
     {
+        Require.Artwork();
         var m = AssembleMap(Generate(c));
         var actual = ActualAdjacency(m);
 
@@ -173,10 +178,12 @@ public sealed class MapGenRingFamilyTests
         Assert.True(ok, "adjacency mismatch vs traced native graph:\n" + sb.ToString());
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(TopologyCase c)
     {
+        Require.Artwork();
         var m = AssembleMap(Generate(c));
         var homeSet = c.Homes.ToHashSet();
 
@@ -189,10 +196,12 @@ public sealed class MapGenRingFamilyTests
         }
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_EverySectorHasMinableAsteroids(TopologyCase c)
     {
+        Require.Artwork();
         var m = AssembleMap(Generate(c));
         foreach (var sector in m.Sectors)
         {
@@ -207,9 +216,11 @@ public sealed class MapGenRingFamilyTests
     /// were suppressed entirely the graph would have no edges and this fails;
     /// if it were left as the plain SingleRing ring it would fail the K4 check
     /// (verified red during development — see P398 report).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DoubleRing_TwoTeam_IsFullK4()
     {
+        Require.Artwork();
         var c = Cases().Select(row => (TopologyCase)row[0]).First(x => x.Type == MapGenType.DoubleRing);
         var m = AssembleMap(Generate(c));
         foreach (var sector in m.Sectors)

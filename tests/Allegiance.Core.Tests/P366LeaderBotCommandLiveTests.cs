@@ -8,6 +8,7 @@ using FltBot = global::Allegiance.Bot.Bot;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -134,9 +135,11 @@ public class P366LeaderBotCommandLiveTests
         return rig;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_is_side_leader_and_receives_set_team_leader_but_mate_is_not()
     {
+        Require.Artwork();
         using var rig = Build();
 
         var side0 = rig.Mission.Sides.First(s => s.Id == rig.Side0);
@@ -153,9 +156,11 @@ public class P366LeaderBotCommandLiveTests
         Console.WriteLine($"P366: side {rig.Side0} leader = ship {side0.LeaderShipId} (A={rig.Leader.Id}); B={rig.Mate.Id} is a non-leader teammate");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_commands_same_side_bot_to_return_to_base_effectively_live()
     {
+        Require.Artwork();
         using var rig = Build();
 
         // A real same-side AI bot teammate on the leader's side.
@@ -180,9 +185,11 @@ public class P366LeaderBotCommandLiveTests
         Console.WriteLine($"P366: leader {rig.Leader.Id}(side {rig.Side0}) ORDER_CHANGE(93) c_cidGoto/c_cmdAccepted -> same-side bot {npc.Id} (flying) => StayDocked=true (return to base)");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_commands_docked_same_side_bot_to_launch_effectively_live()
     {
+        Require.Artwork();
         using var rig = Build();
 
         var npc = rig.Server.SpawnNpcShip(rig.Mission, rig.Sector, rig.Side0, new Vector3(911f, 901f, 887f));

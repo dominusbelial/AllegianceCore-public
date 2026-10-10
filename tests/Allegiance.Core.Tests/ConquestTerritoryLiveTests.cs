@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -78,9 +79,11 @@ public sealed class ConquestTerritoryLiveTests
     /// GAME_OVER(62) from a conquest win in mission A reach only mission A's peers
     /// — a peer seated on mission B hears nothing and mission B stays Started
     /// (reuses the P178 multi-mission proof pattern).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Conquest_win_in_one_mission_does_not_leak_to_another()
     {
+        Require.Artwork();
         using var server = new Srv();
         var core = Core();
         bool placedA = false;
@@ -311,9 +314,11 @@ public sealed class ConquestTerritoryLiveTests
     /// the new per-side conquest array reaches EVERY peer, and the mission ends
     /// via the P178 GAME_OVER(62) path (stage Over, winner = side A) — the real
     /// must-fail-if-removed proof of capture → recompute → broadcast → GameOver.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over()
     {
+        Require.Artwork();
         using var seat = Seat(new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
         var capturer = seat.Ships[0];      // slot 0 = side A, boardable
         var target = seat.Target;          // the side-B Flag station
@@ -371,9 +376,11 @@ public sealed class ConquestTerritoryLiveTests
     /// both false (the default), a real capture produces NO GAME_STATE broadcast,
     /// NO GAME_OVER, and the mission stays Started — existing missions are
     /// unaffected by the new win-condition code.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flags_disabled_capture_broadcasts_nothing_and_does_not_end()
     {
+        Require.Artwork();
         // Reuse the Seat harness but disable the flags on the mission it created.
         using var seat = Seat(new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
         seat.Server.Missions[0].ConquestEnabled = false;

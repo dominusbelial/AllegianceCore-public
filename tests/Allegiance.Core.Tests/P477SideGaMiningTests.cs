@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -150,9 +151,11 @@ public class P477SideGaMiningTests
     /// (no-side) case. P528: the identity magnitudes are the native core
     /// constants — rate 1 ore/s, capacity = core FloatConstants[7], value =
     /// core FloatConstants[8] — not the retired ×100/150/5 stand-ins.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Indices_and_accessors_match_native_and_sideless_is_identity()
     {
+        Require.Artwork();
         Assert.Equal(17, GlobalAttributeSet.MiningRate);
         Assert.Equal(18, GlobalAttributeSet.MiningYield);
         Assert.Equal(19, GlobalAttributeSet.MiningCapacity);
@@ -188,9 +191,11 @@ public class P477SideGaMiningTests
     /// identity baseline, far below any capacity cap. The P528 rate seam pins
     /// the base at 100/s so the fill is measurable in two ticks; the GA
     /// multiplier is applied on top and still produces the 2× ratio.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MiningRate_GA_scales_ore_accrued_per_tick()
     {
+        Require.Artwork();
         var mId = NewMission();
         var (s1, sec1) = CleanSpot(mId);
         var (shipId, _) = PlaceMiner(mId, s1, sec1, oreMax: 100000f, shipId: 9201);
@@ -222,9 +227,11 @@ public class P477SideGaMiningTests
     /// GA[c_gaMiningCapacity]</c> clamp (<c>shipIGC.cpp:2213</c>). P528 pins the
     /// base capacity to 150 via the test-only seam (deterministic regardless of
     /// which corpus core loads) and the rate at 100/s for a fast fill.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MiningCapacity_GA_scales_the_capacity_clamp()
     {
+        Require.Artwork();
         var mId = NewMission();
         var (s1, sec1) = CleanSpot(mId);
         var (shipId, _) = PlaceMiner(mId, s1, sec1, oreMax: 100000f, shipId: 9210);
@@ -265,9 +272,11 @@ public class P477SideGaMiningTests
     /// (<c>shipIGC.cpp:1988</c>) — scales the native core value
     /// (<c>FloatConstants[8]</c> = 80 for PCore001) by the side's yield factor:
     /// 1.5 → 120, identity → 80.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MiningYield_GA_scales_credits_per_unit()
     {
+        Require.Artwork();
         var m = NewMission((GlobalAttributeSet.MiningYield, 1.5f));
         var (spot, sector) = CleanSpot(m);
         var hull = m.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
@@ -335,9 +344,11 @@ public sealed class P477E2eMiningRateDevLiveTests
     /// by ~1.1× — the economic driver that makes mining research worth buying.
     /// P528: the rate base is pinned to 100/s via the test seam so both N-tick
     /// windows accrue a measurable quantity; the GA factor still scales it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_dev_145_raises_real_mining_accrual()
     {
+        Require.Artwork();
         using var server = new Srv();
         Asteroid? rock = null;
         Vector3 apos = new(140f, 60f, -30f);

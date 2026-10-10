@@ -9,6 +9,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -31,7 +32,7 @@ namespace Allegiance.ClientCore.Tests;
 public class ClientWalletLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -165,9 +166,11 @@ public class ClientWalletLiveTests
 
     // ── (1) Join: MyMoney is the joiner's own wallet, not the side treasury ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_SetMoney_CarriesTheJoinersWallet_NotTheSideTreasury_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetShipSpawner(server, SpawnSameSide);
         server.Boot(Config());
@@ -191,9 +194,11 @@ public class ClientWalletLiveTests
 
     // ── (2) Payday routes to auto-donate targets (leader/donor/non-donor) ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Payday_CreditsLeader_KeepsDonorsFlat_NonDonorGetsShare_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetShipSpawner(server, SpawnSameSide);
         server.Boot(Config());
@@ -261,9 +266,11 @@ public class ClientWalletLiveTests
 
     // ── (3) Bucket donation decrements the donor's client MyMoney once ─────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BucketDonation_DecrementsDonorClientsMyMoney_ExactlyOnce_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         SetShipSpawner(server, SpawnSameSide);
         server.Boot(Config());

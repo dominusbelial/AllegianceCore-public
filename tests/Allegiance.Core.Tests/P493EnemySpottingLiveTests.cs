@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -79,9 +80,11 @@ public sealed class P493EnemySpottingLiveTests
     /// probe range: the side-0 peer (in a different sector) receives that ship's
     /// status with the correct last-known sector, then the hidden transition when
     /// the ship leaves the probe's range.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer()
     {
+        Require.Artwork();
         using var server = new Srv();
         var core = Core();
         var hull = FighterHull();

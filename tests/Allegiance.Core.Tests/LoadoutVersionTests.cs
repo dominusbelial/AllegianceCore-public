@@ -3,6 +3,7 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -33,13 +34,19 @@ public class LoadoutVersionTests
         return new Ship(1, hull, new Vector3(10f, 0f, 0f), Vector3.Zero, Orientation.Identity);
     }
 
-    [Fact]
-    public void Fresh_ship_starts_at_version_zero() =>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Fresh_ship_starts_at_version_zero()
+    {
+        Require.Artwork();
         Assert.Equal(0, NewShip().LoadoutVersion);
+    }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MountPart_and_ClearLoadout_monotonically_advance_the_version()
     {
+        Require.Artwork();
         var core = Core();
         var anyPart = core.PartTypes.Values.First();
         var ship = NewShip();
@@ -57,9 +64,11 @@ public class LoadoutVersionTests
         Assert.True(ship.LoadoutVersion > v2, "clearing the loadout must bump LoadoutVersion");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TryRemovePart_advances_the_version()
     {
+        Require.Artwork();
         var core = Core();
         var anyPart = core.PartTypes.Values.First();
         var ship = NewShip();
@@ -70,9 +79,11 @@ public class LoadoutVersionTests
         Assert.True(ship.LoadoutVersion > v, "removing a part must bump LoadoutVersion");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SetPartAmount_advances_the_version()
     {
+        Require.Artwork();
         var core = Core();
         var anyPart = core.PartTypes.Values.First();
         var ship = NewShip();

@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -159,9 +160,11 @@ public sealed class ArmedProbeLiveTests
     /// the deployer's peer receives a real <c>PROJECTILE_INSTANCE(12)</c> for the
     /// probe's round, the enemy ship takes real damage, and the probe's ammo
     /// decrements from its decoded pool of 5.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
         var deployer = seat.Deployer;
         var enemy = seat.Enemy;

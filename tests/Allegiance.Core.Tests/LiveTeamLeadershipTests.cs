@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -199,9 +200,11 @@ public class LiveTeamLeadershipTests
     /// asserting the native rules (fsmission.cpp:584-613). The switch also
     /// emits QUIT_SIDE(SwitchingSides) for the old side then JOIN_SIDE plus
     /// the leadership broadcasts to the whole mission.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void First_on_empty_side_becomes_leader_and_mission_owner()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -228,9 +231,11 @@ public class LiveTeamLeadershipTests
 
     /// <summary>⭐ A second player joining an already-occupied side does NOT
     /// become its leader — the existing leader stays (fsmission.cpp:601).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Second_on_occupied_side_does_not_become_leader()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -262,9 +267,11 @@ public class LiveTeamLeadershipTests
     /// <summary>⭐ Multi-mission scoping: a side-switch/leadership broadcast for
     /// mission A must not leak to a peer on mission B that shares the same
     /// numeric side id (the must-not-regress P180/P178 fixed-bug class).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_leadership_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());
@@ -319,9 +326,11 @@ public class LiveTeamLeadershipTests
     /// <summary>⭐ The team leader disconnecting with two teammates still on the
     /// side promotes the deterministic "first other player" (lowest ship id) —
     /// asserted exactly, not just "someone" — and broadcasts SET_TEAM_LEADER.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_disconnect_promotes_first_other_player_exactly()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -363,9 +372,11 @@ public class LiveTeamLeadershipTests
     /// side clears LeaderShipId; because they were also the mission owner and
     /// another occupied side exists, that side's existing leader is promoted to
     /// mission owner (broadcasting SET_MISSION_OWNER).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Leader_last_on_side_migrates_mission_owner_to_other_occupied_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -413,9 +424,11 @@ public class LiveTeamLeadershipTests
     /// Formerly (pre-P548) an auto-assigned B was NOT a leader, so no other
     /// qualified side existed and ownership went null — the behavior this test
     /// originally asserted is exactly the P548 bug.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Owner_side_leader_leaves_migrates_owner_to_auto_elected_leader_and_ends_game()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -457,9 +470,11 @@ public class LiveTeamLeadershipTests
     /// <summary>⭐ Single player (leader+owner) on the only occupied side
     /// disconnects: both roles clear to null (state-only assertions — no one is
     /// left to observe a broadcast, and none is sent).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sole_leader_owner_disconnect_clears_both_roles()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -481,9 +496,11 @@ public class LiveTeamLeadershipTests
     /// <summary>⭐ MUST-FAIL-IF-REMOVED: ANY disconnect broadcasts QUIT_MISSION
     /// to the whole mission's remaining peers — a real, previously-completely-
     /// missing signal (this disconnect path used to send nothing).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Any_disconnect_broadcasts_quit_mission_to_remaining_peers()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -503,9 +520,11 @@ public class LiveTeamLeadershipTests
 
     /// <summary>⭐ A departing NON-leader triggers NO leader-succession
     /// broadcasts at all — only QUIT_MISSION. The side's leader is untouched.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_leader_departure_broadcasts_only_quit_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();

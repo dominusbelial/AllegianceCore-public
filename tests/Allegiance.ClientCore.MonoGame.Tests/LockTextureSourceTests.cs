@@ -2,6 +2,8 @@ using System.IO;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.ClientCore.State;
 using Xunit;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -21,16 +23,17 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class LockTextureSourceTests
 {
     private static string ArtworkDir() =>
-        System.Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(MissileLockFeedback.LockState.None, null)]
     [InlineData(MissileLockFeedback.LockState.Partial, "plockbmp")]
     [InlineData(MissileLockFeedback.LockState.Full, "lockedbmp")]
     public void LockState_ResolvesToItsCorrectRealAsset(
         MissileLockFeedback.LockState state, string? expectedStem)
     {
+        Require.Artwork();
         Assert.Equal(expectedStem, LockTextureSource.MdlStemFor(state));
         if (expectedStem is null)
             Assert.Null(LockTextureSource.PathFor(state));
@@ -38,11 +41,13 @@ public class LockTextureSourceTests
             Assert.Equal(Path.Combine(ArtworkDir(), expectedStem + ".mdl"), LockTextureSource.PathFor(state));
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(MissileLockFeedback.LockState.Partial)]
     [InlineData(MissileLockFeedback.LockState.Full)]
     public void RealSprite_IsPresentAndDecodes_AsASquare64x64(MissileLockFeedback.LockState state)
     {
+        Require.Artwork();
         string path = LockTextureSource.PathFor(state)!;
         Assert.True(File.Exists(path), $"real lock sprite missing: {path}");
 
@@ -57,9 +62,11 @@ public class LockTextureSourceTests
         Assert.True(nonBlack > 100, $"lock sprite '{state}' is (nearly) blank: {nonBlack}/4096 pixels");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FullLockSprite_AddsTheGreenFlowerBurst_OverThePartial()
     {
+        Require.Artwork();
         var partial = MdlTextureDecoder.Decode(
             File.ReadAllBytes(LockTextureSource.PathFor(MissileLockFeedback.LockState.Partial)!));
         var full = MdlTextureDecoder.Decode(
@@ -77,9 +84,11 @@ public class LockTextureSourceTests
         Assert.True(fullGreen > 50, $"full lock should add a green flower, got only {fullGreen} green px");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TheTwoLockSprites_AreDistinctFiles()
     {
+        Require.Artwork();
         // The partial→full transition must swap between two GENUINELY distinct
         // assets (that is the whole native mechanic), not two paths to one file.
         string pHash = Sha(File.ReadAllBytes(LockTextureSource.PathFor(MissileLockFeedback.LockState.Partial)!));
@@ -87,9 +96,11 @@ public class LockTextureSourceTests
         Assert.NotEqual(pHash, fHash);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ToPremultipliedRgba_KeysTheBlackSurround_LeavingOpaqueContent()
     {
+        Require.Artwork();
         // The lock sprites sit over the 3-D scene, so the black surround must be
         // keyed to alpha 0 (the GaugeTextures convention) while the orange/green
         // sprite content stays opaque — otherwise the draw smears a black box.

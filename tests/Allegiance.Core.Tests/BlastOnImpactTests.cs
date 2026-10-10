@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -183,9 +184,11 @@ public sealed class BlastOnImpactTests
     /// (<c>d = projectile radius</c>): the blast centre sits one projectile
     /// radius out from the target's surface (contact point), so the directly-hit
     /// ship receives <c>BlastPower·(1 − d/Radius)²</c> — not the full blast.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Impact_round_deals_direct_plus_own_blast_damage_two_additive_components()
     {
+        Require.Artwork();
         var (weapon, pt, hull, directFrac, blastFrac, totalFrac) = DoubleHit.Value;
         float gap = MathF.Max(120f, 0.5f * pt.Speed * pt.Lifespan);   // a clean stop inside reach
         Assert.True(gap < pt.Speed * pt.Lifespan, "target must be inside the round's reach");
@@ -224,9 +227,11 @@ public sealed class BlastOnImpactTests
     /// surface point on the primary (one projectile radius + one ship-half-length
     /// out along the incoming −z axis), and the second ship's surface distance
     /// yields the computed <c>f = 1 − d/Radius</c> falloff.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Nearby_second_ship_takes_only_the_blast_splash_no_direct_component()
     {
+        Require.Artwork();
         var (weapon, pt, hull) = BigGun.Value;
         float shipRad = 0.5f * hull.Length;
         float projRad = pt.Radius;
@@ -283,9 +288,11 @@ public sealed class BlastOnImpactTests
     /// but within blast radius of that expiry point takes real blast falloff
     /// damage, with no direct hit ever occurring. The same trigger drives the
     /// projectile expiry path (<c>projectileIGC.cpp:128-139</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Round_that_times_out_still_detonates_at_its_expiry_position()
     {
+        Require.Artwork();
         var (weapon, pt, hull) = BigGun.Value;
         float shipRad = 0.5f * hull.Length;
         float expiry = pt.Speed * pt.Lifespan;                            // (0,0,−expiry) = where it burns out

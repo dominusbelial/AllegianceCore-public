@@ -7,6 +7,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -102,9 +103,11 @@ public sealed class P403BuoyGotoLiveTests
     /// the target sector, clearing the goto on arrival — a genuine "goto" journey,
     /// not just a wire round-trip.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cluster_chatbuoy_to_own_ship_files_through_warp_and_clears_on_arrival()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sectorA = null, sectorB = null;
@@ -177,9 +180,11 @@ public sealed class P403BuoyGotoLiveTests
     /// that is then given a cluster goto ends up with ONLY the goto — the station
     /// plan is cleared, so the ship never navigates to both at once.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Issuing_a_cluster_goto_clears_an_existing_station_plantarget()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sectorA = null, sectorB = null;
@@ -235,9 +240,11 @@ public sealed class P403BuoyGotoLiveTests
     /// order sets the goto. This pins the addressing rule and keeps the existing
     /// ChatBuoy relay test's ships from being silently re-routed.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cluster_chatbuoy_addressed_to_a_teammate_does_not_reroute_the_sender()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
@@ -277,9 +284,11 @@ public sealed class P403BuoyGotoLiveTests
     /// <c>c_buoyCluster</c> (cross-sector) orders; the waypoint kind is the
     /// documented, scoped-out follow-up, so it must be inert here.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Waypoint_type_buoy_to_self_does_not_set_a_goto()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;

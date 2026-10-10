@@ -5,6 +5,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -69,9 +70,11 @@ public class LiveMissionStageTests
     /// the bot — and has NOT been told Started. Reverting the join burst to the
     /// old hardcoded Started makes this fail (first received stage would be 2).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_while_mission_not_started_receives_non_started_stage()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -97,9 +100,11 @@ public class LiveMissionStageTests
     /// completes). Before both sides ready, neither has a Started; after the
     /// transition, both have one. Removing the CompleteStartCountdown broadcast
     /// makes the Started assertion fail.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ready_up_auto_start_broadcasts_started_stage_to_already_joined_peers()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -146,9 +151,11 @@ public class LiveMissionStageTests
     /// <summary>A peer joining an already-Started mission is told Started at
     /// join (the real current stage) — the late-join path stays intact with the
     /// real-stage change.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Late_joiner_into_started_mission_receives_started_stage()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 

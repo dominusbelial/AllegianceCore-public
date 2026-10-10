@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -120,9 +121,11 @@ public class StartingMoneyStationIncomeLiveTests
     /// out: each bot receives exactly one FM_S_PAYDAY(114) whose dMoney equals its
     /// side's starting seed, and its server wallet equals that seed. The next
     /// payday arrives 60s later (the periodic one), not immediately.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_start_seeds_starting_money_pays_immediately_then_next_at_60s()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var mission = server.Missions[0];
@@ -195,9 +198,11 @@ public class StartingMoneyStationIncomeLiveTests
     /// (no start money), so the periodic payday's per-player share is purely
     /// income. Place SpecMine(Si) ×2 (2000 each) + Transceiver ×1 (180) for the
     /// bot's side.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Owned_stations_add_their_income_to_the_periodic_payday()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var mission = server.Missions[0];
@@ -237,9 +242,11 @@ public class StartingMoneyStationIncomeLiveTests
     /// (income 2000) owned by side A contributes to A's payday; after
     /// <see cref="Station.Capture"/> it contributes to side B's payday instead,
     /// and no longer to A's — the income moves with the owner on the next payday.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Captured_station_moves_its_income_to_the_new_owner_on_next_payday()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var mission = server.Missions[0];

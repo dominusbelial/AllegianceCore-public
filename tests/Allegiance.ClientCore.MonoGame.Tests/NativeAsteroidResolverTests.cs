@@ -5,6 +5,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -18,7 +19,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class NativeAsteroidResolverTests
 {
     private static string ArtRoot =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static bool FileExists(string stem) => File.Exists(Path.Combine(ArtRoot, stem + ".mdl"));
 
@@ -35,9 +36,11 @@ public class NativeAsteroidResolverTests
     /// real texture namespace on disk (<c>&lt;model&gt;bmp</c> = native FindTexture,
     /// thinggeo.cpp:1038-1043). This is the "render every asteroid from its own
     /// native model + texture" rule anchored to real data.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_spider_map_asteroids_resolve_own_native_model_and_texture()
     {
+        Require.Artwork();
         var map = RealSpiderMap();
         Assert.NotEmpty(map.Asteroids);
 
@@ -67,7 +70,8 @@ public class NativeAsteroidResolverTests
     /// normals are majority-INWARD-from-centroid — the exact opposite of the
     /// naive "make it outward" convention the imported path used to force. This is
     /// the inside-out root cause anchor.</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData("bgrnd03")]
     [InlineData("bgrnd05")]
     [InlineData("bgrnd51")]
@@ -76,6 +80,7 @@ public class NativeAsteroidResolverTests
     [InlineData("tacrock")]
     public void Native_raw_rock_winding_is_majority_inward(string stem)
     {
+        Require.Artwork();
         var mdl = Parse(stem);
         var mesh = Assert.Single(mdl.Meshes);
         float frac = NativeAsteroidResolver.OutwardGeometricFraction(mesh.Positions, mesh.Indices.Select(i => (int)i).ToArray());
@@ -110,9 +115,11 @@ public class NativeAsteroidResolverTests
             Assert.Equal(radius, meshRadius * scale, 4);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_bgrnd05_mesh_radius_feeds_a_sane_native_scale()
     {
+        Require.Artwork();
         var mdl = Parse("bgrnd05");
         float radius = NativeShipResolver.MergedRadius(mdl.Meshes);
         Assert.True(radius > 0f);
@@ -130,12 +137,14 @@ public class NativeAsteroidResolverTests
     /// STAYS majority-INWARD. Before P567 the Finalize heuristic flipped rocks to
     /// majority-OUTWARD — the opposite of native — which is the inside-out cause;
     /// this test failed on that code and passes with the fix.</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData("drgrock")]
     [InlineData("tacrock")]
     [InlineData("bgrnd05")]
     public void ImportedFinalize_preserves_native_raw_winding_polarity(string stem)
     {
+        Require.Artwork();
         var mdl = Parse(stem);
         var mesh = Assert.Single(mdl.Meshes);
 

@@ -4,8 +4,8 @@ labelled contact sheet, then save. Deterministic."""
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-OBJ_DIR = "/home/domingo/Development/Artwork/p589obj"
-OUT = "/home/domingo/Development/AllegianceCore/docs/reports/P589_assets/sheets/contact_objects.png"
+OBJ_DIR = os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "p589obj")
+OUT = os.path.join(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")), "docs", "reports", "P589_assets", "sheets", "contact_objects.png")
 
 SLUGS = [
     "helix-nebula", "whirlpool-m51", "ring-nebula-m57",

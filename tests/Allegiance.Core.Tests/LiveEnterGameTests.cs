@@ -5,6 +5,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -55,9 +56,11 @@ public class LiveEnterGameTests
     /// <summary>⭐ Each player marks ready; only then does the mission
     /// auto-start and each receives exactly one ENTER_GAME(128). Before both
     /// have readied, neither has one (join-sync defers it while NotStarted).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_ready_up_auto_start_sends_one_enter_game_to_each_bot()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 

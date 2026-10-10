@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -55,9 +56,11 @@ public class LivePromoteTests
     /// fraction; every sibling gunner transfers; and the old parent is demoted
     /// into the <b>exact</b> turret slot the promoted gunner vacated.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Promote_transfers_full_role_to_gunner_and_demotes_parent()
     {
+        Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
         var carrierHull = core.HullTypes[CarrierHullId];
         var gunnerHull = core.HullTypes[GunnerHullId];
@@ -136,9 +139,11 @@ public class LivePromoteTests
     /// handler only ever matches genuine turret gunners, and
     /// <see cref="Ship.Promote"/> guards against a misdirected observer call.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Promote_on_observer_throws()
     {
+        Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
         var carrier = new Ship(710, core.HullTypes[CarrierHullId], Vector3.Zero, Vector3.Zero, Orientation.Identity);
         var observer = new Ship(711, core.HullTypes[GunnerHullId], Vector3.Zero, Vector3.Zero, Orientation.Identity);
@@ -311,9 +316,11 @@ public class LivePromoteTests
     /// the former parent is now a child of the promoted ship at the exact same
     /// turret mount, and <c>PROMOTE(189)</c> broadcasts with the correct
     /// <c>shipidPromoted</c> to the sector-wide audience (both peers).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Promote_via_wire_broadcasts_and_swaps_roles()
     {
+        Require.Artwork();
         var (server, carrier, gunner, sp) = Setup(out short cId, out short gId);
         WaitDocked(server, (carrier, sp.Carrier), (gunner, sp.Gunner));
 
@@ -349,9 +356,11 @@ public class LivePromoteTests
     /// <summary>⭐ Scenario 2: a promote request for a turret mount that
     /// doesn't match any real boarded child is a silent no-op — no state
     /// change, no crash, no broadcast.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Promote_nonmatching_mount_is_silent_noop()
     {
+        Require.Artwork();
         var (server, carrier, gunner, sp) = Setup(out short cId, out short gId);
         WaitDocked(server, (carrier, sp.Carrier), (gunner, sp.Gunner));
         short slot = BoardGunner(server, carrier, gunner, cId, sp.Carrier, sp.Gunner);
@@ -375,9 +384,11 @@ public class LivePromoteTests
     /// <summary>⭐ Scenario 3: after a successful promote, pumping further
     /// ticks leaves the new structure stable — no runaway state, no crash, the
     /// role inversion and demotion persist.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Promote_structure_stable_across_ticks()
     {
+        Require.Artwork();
         var (server, carrier, gunner, sp) = Setup(out short cId, out short gId);
         WaitDocked(server, (carrier, sp.Carrier), (gunner, sp.Gunner));
         short slot = BoardGunner(server, carrier, gunner, cId, sp.Carrier, sp.Gunner);

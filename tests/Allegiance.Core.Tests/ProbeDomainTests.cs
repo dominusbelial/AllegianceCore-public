@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -70,9 +71,11 @@ public sealed class ProbeDomainTests
     /// directly (no Ship launcher, so nothing is raised on expiry), with the
     /// side captured from construction — isolating the sector-removal,
     /// no-movement, and day-one-SideId contracts.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_never_moves_expiry_removes_it_and_side_is_captured_day_one()
     {
+        Require.Artwork();
         var sector = new Sector(SomeMap.Value.Clusters[0]);
         var ptype = RealProbeType();
         var pos = new Vector3(7f, -13f, 901f);

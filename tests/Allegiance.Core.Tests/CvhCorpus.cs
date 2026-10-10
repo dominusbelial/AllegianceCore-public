@@ -15,12 +15,15 @@ public static class CvhCorpus
 {
     private static readonly string[] Roots =
     [
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork",
-        Environment.GetEnvironmentVariable("ALLEGIANCE_NATIVE_SRC_PATH") ?? "/home/domingo/Development/Allegiance",
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork),
+        ExternalPaths.Resolve(ExternalResourceKind.NativeSource),
     ];
 
     public const int ExpectedUniqueFiles = 564;
     public const int ExpectedFramedFiles = 414;
+
+    /// <summary>True when at least one cvh corpus root exists on disk.</summary>
+    public static bool Available => Roots.Any(Directory.Exists);
 
     private static readonly Lazy<IReadOnlyList<string>> Cached = new(Discover);
 
@@ -28,10 +31,10 @@ public static class CvhCorpus
 
     private static IReadOnlyList<string> Discover()
     {
+        // No corpus on this host (clean clone) — return empty; tests guard with
+        // Require.Artwork() / the sentinel Theory() row rather than throw here.
         if (!Roots.Any(Directory.Exists))
-            throw new DirectoryNotFoundException(
-                $"no cvh corpus found -- checked {string.Join(", ", Roots)}. " +
-                "Set ALLEGIANCE_ARTWORK_PATH and ALLEGIANCE_NATIVE_SRC_PATH to override.");
+            return [];
 
         var byHash = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var root in Roots)
@@ -53,5 +56,15 @@ public static class CvhCorpus
         var d = new TheoryData<string>();
         foreach (var f in Files) d.Add(f);
         return d;
+    }
+
+    /// <summary>Member-data paths for <c>[SkippableTheory]</c> tests. Yields a
+    /// single sentinel row when the cvh corpus is absent (clean clone) so a test
+    /// whose body starts with <c>Require.Artwork()</c> reports a visible skip
+    /// rather than a parameter-mismatch failure from an empty dataset.</summary>
+    public static IEnumerable<object[]> Paths()
+    {
+        if (!Available) return new object[][] { new object[] { "" } };
+        return Files.Select(p => new object[] { p });
     }
 }

@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -156,9 +157,11 @@ public sealed class NpcLayerDefaultOrderLiveTests
     /// (fewer contenders) — and actually flies to it (position measurably
     /// closer / within range after ticking). Proves least-targeted selection
     /// plus the real autonomous movement, end to end.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Second_idle_layer_picks_the_less_targeted_asteroid_and_arrives()
     {
+        Require.Artwork();
         var (srv, mission, sector, layerDroneId, rockA, rockB, npcSide) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -221,9 +224,11 @@ public sealed class NpcLayerDefaultOrderLiveTests
     /// so the two decision cycles run independently without interfering (the
     /// Miner's arbitration and the Layer's least-targeted search count only
     /// their own slot's holders).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Miner_and_layer_on_the_same_side_never_interfere()
     {
+        Require.Artwork();
         var (srv, mission, sector, layerDroneId, rockA, rockB, npcSide) = BootFixture(out var bot);
         using (srv)
         using (bot)

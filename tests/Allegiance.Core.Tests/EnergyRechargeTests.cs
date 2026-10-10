@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -149,9 +150,11 @@ public class EnergyRechargeTests
     /// recharges, so the recovered-energy assertion and the climb-to-max both
     /// fail (the pool stays where firing left it).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_recharges_energy_in_flight_up_to_hull_max()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
         var ship = NewShip(9901, Hull.Value, basePos);
@@ -201,9 +204,11 @@ public class EnergyRechargeTests
     /// on unfixed code: no recharge ⇒ the small pool drains to 0 and the
     /// positive-energy assertion fails.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void An_active_cloak_with_enough_recharge_never_bottoms_out()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
         var ship = NewShip(9902, Hull.Value, basePos);
@@ -244,9 +249,11 @@ public class EnergyRechargeTests
     /// docked latch (<c>StationId != null</c>) reproduces that early-out for
     /// the recharge step. The pool stays exactly where it was.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_docked_ship_does_not_recharge()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
         var ship = NewShip(9903, Hull.Value, basePos);
@@ -267,9 +274,11 @@ public class EnergyRechargeTests
     /// honours that early-out. (The same guard also gates the cloak's
     /// activation, P269.)
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_boarded_ship_does_not_recharge()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
         var ship = NewShip(9904, Hull.Value, basePos);
@@ -297,9 +306,11 @@ public class EnergyRechargeTests
     /// way. To prove the GATE does not exclude a pod, drive a synthetic
     /// lifepod-capable hull that does carry a real pool and recharge.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void A_lifepod_recharges_in_flight_like_any_in_cluster_hull()
     {
+        Require.Artwork();
         var lifepod = new DataHullTypeIGC(
             Price: 8710, TimeToBuild: 6410, ModelName: "lifepod", IconName: "lifepod",
             Name: "P461 Pod", Description: "test", GroupId: 0,
@@ -346,9 +357,11 @@ public class EnergyRechargeTests
     /// recharge exists, visibly climbs back. MUST-FAIL on unfixed code: a
     /// drained pool reads 1.0 (full) instead of low.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Own_ship_update_reports_real_energy_fraction()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
         var ship = NewShip(9907, Hull.Value, basePos);

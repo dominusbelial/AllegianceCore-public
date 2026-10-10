@@ -5,6 +5,8 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -26,7 +28,7 @@ namespace Allegiance.ClientCore.Tests;
 public class TeammateMovementLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(string name = "Teammate Position", int port = 0) => new()
     {
@@ -68,9 +70,11 @@ public class TeammateMovementLiveTests
     /// distinct positions the teammate's <c>Latest</c> passes through, and we
     /// stop once the table has seen ≥ 3 distinct positions (an initial spawn +
     /// two real movements — proof of a live stream, not a single update).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TeammateMovement_StreamsIntoClientWorld_MultipleObservations_CrossSideEnemyVisible()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var sessions = new[] { new ConnectionSession(), new ConnectionSession(), new ConnectionSession() };
@@ -171,9 +175,11 @@ public class TeammateMovementLiveTests
     /// recipient's <see cref="ClientWorld.Events.Chats"/> must gain the message —
     /// plus the sender gets its own echo. Proves chat flows end-to-end into the
     /// event log, not just the sender.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ChatMessage_RelayedToPeers_LandsInReceiversEventLog()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config("Chat Relay", 0));
 

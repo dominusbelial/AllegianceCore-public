@@ -2,6 +2,8 @@ using System.IO;
 using System.Linq;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -19,15 +21,15 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ExplosionAssetFramesTests
 {
     private static string ArtworkDir() =>
-        System.Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly (string Stem, int Expected)[] Strips =
     {
         ("exp20", 20), ("exp22", 30), ("exp23", 38), ("exp24", 16), ("exp25", 32),
     };
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData("exp20", 20)]
     [InlineData("exp22", 30)]
     [InlineData("exp23", 38)]
@@ -35,6 +37,7 @@ public class ExplosionAssetFramesTests
     [InlineData("exp25", 32)]
     public void RealStrip_DecodesToTheDeclaredFrameCount(string stem, int expectedFrames)
     {
+        Require.Artwork();
         string path = Path.Combine(ArtworkDir(), stem + "bmp.mdl");
         Assert.True(File.Exists(path), $"artwork strip missing: {path}");
         var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(path));
@@ -44,18 +47,22 @@ public class ExplosionAssetFramesTests
         Assert.All(AllFilmsFor(stem), f => Assert.Equal(expectedFrames, f.FrameCount));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShockWaveStrip_DecodesAsASquareRingTexture()
     {
+        Require.Artwork();
         string path = Path.Combine(ArtworkDir(), "fx18bmp.mdl");
         Assert.True(File.Exists(path), $"artwork shockwave missing: {path}");
         var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(path));
         Assert.Equal(tex.Height, tex.Width);                 // square ring texture
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EveryPresetReferencesARealArtworkStrip()
     {
+        Require.Artwork();
         for (int t = Allegiance.Core.Sim.ExplosionType.Mine;
              t <= Allegiance.Core.Sim.ExplosionType.LargeStation; t++)
         {

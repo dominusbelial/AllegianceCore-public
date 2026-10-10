@@ -10,6 +10,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using PlayerScore = global::Allegiance.Server.PlayerScore;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -142,9 +143,11 @@ public class LivePlayerScoringFeedsTests
     /// <summary>⭐ The rescue event feeds the rescuer's <c>Rescues</c> counter
     /// (native <c>AddRescue</c>, FedSrv.CPP:13039): the port's
     /// <c>PerformRescue</c> awards +1 to a peer rescuer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rescue_event_awards_the_rescuer_a_rescue()
     {
+        Require.Artwork();
         var seat = SeatTwo();
         using var server = seat.server;
         using var ab = seat.ab;
@@ -166,9 +169,11 @@ public class LivePlayerScoringFeedsTests
     /// <c>BaseKills</c> counter (native <c>KillBase(true)</c>,
     /// FedSrv.CPP:12252): <c>BroadcastStationDestroyed</c> credits a peer
     /// launcher.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Base_kill_event_credits_the_launcher_a_base_kill()
     {
+        Require.Artwork();
         var seat = SeatTwo();
         using var server = seat.server;
         using var ab = seat.ab;
@@ -184,9 +189,11 @@ public class LivePlayerScoringFeedsTests
     /// <c>BaseCaptures</c> counter (native <c>CaptureBase(true)</c>,
     /// fsship.cpp:600): <c>BroadcastStationCapture</c> credits the capturing
     /// peer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Base_capture_event_credits_the_capturing_pilot()
     {
+        Require.Artwork();
         var seat = SeatTwo();
         using var server = seat.server;
         using var ab = seat.ab;
@@ -202,9 +209,11 @@ public class LivePlayerScoringFeedsTests
     /// <c>KillShip</c> routes <c>c_ptMiner</c> → <c>m_cMinerKills</c>,
     /// igc.h:5680-5683): <c>BroadcastKillShip</c> buckets the peer killer's
     /// credit by the victim's class.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Killing_a_mining_hull_feeds_the_miner_kill_counter()
     {
+        Require.Artwork();
         var seat = SeatTwo();
         using var server = seat.server;
         using var ab = seat.ab;
@@ -229,9 +238,11 @@ public class LivePlayerScoringFeedsTests
     /// <summary>⭐ An ejection (a non-killed ship becoming a lifepod) feeds the
     /// victim's <c>Ejections</c> counter (native <c>AddEjection</c>,
     /// FedSrv.CPP:11919-11921) — NOT a death.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ejecting_a_peer_counts_an_ejection_not_a_death()
     {
+        Require.Artwork();
         var seat = SeatTwo();
         using var server = seat.server;
         using var ab = seat.ab;

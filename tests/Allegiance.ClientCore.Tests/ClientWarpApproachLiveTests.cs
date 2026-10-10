@@ -10,6 +10,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -35,7 +36,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class ClientWarpApproachLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg DebugConfig() => new()
     {
@@ -216,9 +217,11 @@ public sealed class ClientWarpApproachLiveTests
     /// warp-export / coordinate-handling hypothesis P429 floated is disproven
     /// by measurement. The MCP law, the warp wire data, and the server transit
     /// are all correct for a multi-hop client flight.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.SpawnInitialMinersAtBoot = false;   // pristine arena (asteroids still stripped below)
         server.Boot(DebugConfig());

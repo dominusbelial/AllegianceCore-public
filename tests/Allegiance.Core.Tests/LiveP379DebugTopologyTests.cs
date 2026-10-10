@@ -7,6 +7,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -83,9 +84,11 @@ public class LiveP379DebugTopologyTests
     private static Sector Sec(Srv server, short id) =>
         server.Missions[0].Sectors.First(s => s.Id == id);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_on_injects_stations_trims_warps_and_spawns_each_side_at_its_base()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: true));
         var mission = server.Missions[0];
@@ -152,9 +155,11 @@ public class LiveP379DebugTopologyTests
         finally { foreach (var b in boats) b?.Dispose(); }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_station_is_real_and_dockable()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: true));
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // dock pass + status broadcast need a started mission (P180)
@@ -180,9 +185,11 @@ public class LiveP379DebugTopologyTests
         Console.WriteLine($"[P379-LIVE] docked at the synthetic Omega garrison (stationId {OmegaDebugStationId}, StationTypeId 15) — dock/buy loop reachable.");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_off_leaves_the_real_topology_completely_untouched()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: false));
 

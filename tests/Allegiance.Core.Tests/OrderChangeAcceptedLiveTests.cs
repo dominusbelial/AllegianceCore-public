@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -160,9 +161,11 @@ public sealed class OrderChangeAcceptedLiveTests
     /// <c>A.AcceptedShipTarget</c> to B's real <c>Ship</c> reference, storing
     /// the command id — WITHOUT touching A's NPC-specific
     /// <c>AcceptedTarget</c>/<c>AcceptedCommandId</c> (P150).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_player_accepts_enemy_peer_across_sides_via_c_cmdAccepted()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
         Assert.Null(seat.A.AcceptedShipTarget);
 
@@ -194,9 +197,11 @@ public sealed class OrderChangeAcceptedLiveTests
     /// WinTrek.cpp:10404, calls <c>SetAccepted(NULL, c_cidNone)</c>) —
     /// <c>A.AcceptedShipTarget</c> reverts to null and
     /// <c>A.AcceptedShipCommandId</c> to <c>CidNone</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_player_clears_accepted_ship_target_with_na_sentinel()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
 
         seat.ABot.SendOrderChange(seat.A.Id, OrderChange.CidGoto, OrderChange.CmdAccepted, IgcObjectType.Ship, seat.B.Id);
@@ -220,9 +225,11 @@ public sealed class OrderChangeAcceptedLiveTests
     /// <c>SpawnNpcShip</c> (NO <c>_peerShips</c> entry — the gap the P148/P153
     /// sector-scan closes). The NPC is on the other side, exercising the
     /// cross-side half against an NPC for the accepted path.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_player_accepts_ownerless_npc_ship_via_c_cmdAccepted()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
 
         var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.B.SideId!.Value, new Vector3(910f, 890f, 860f));
@@ -245,9 +252,11 @@ public sealed class OrderChangeAcceptedLiveTests
     /// sets the current and accepted ship slots simultaneously, proves neither
     /// bleeds into the NPC accepted slot, and an NA-clear on the accepted pair
     /// leaves <c>CommandTarget</c> intact.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Accepted_current_and_npc_slots_coexist_independently()
     {
+        Require.Artwork();
         using var seat = SeatTwo();
 
         // Establish both real-player slots on A: CommandTarget via c_cmdCurrent

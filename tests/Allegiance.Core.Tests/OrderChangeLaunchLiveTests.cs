@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -147,9 +148,11 @@ public sealed class OrderChangeLaunchLiveTests
     /// INSIDE <c>DockRadius</c>, so the post-launch distance moving outside it is
     /// a real observation of <c>RepositionForLaunch</c> — not a pre-existing
     /// far position.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Commanding_a_docked_npc_to_launch_undocks_and_repositions_it()
     {
+        Require.Artwork();
         using var seat = SeatOne();
 
         // Choose a sector that has a real station; place the NPC there and dock
@@ -217,9 +220,11 @@ public sealed class OrderChangeLaunchLiveTests
     /// <c>StationId</c> untouched and no reposition — proving the new launch
     /// <c>else</c> did not disturb the existing stay-docked half. Issued after a
     /// launch-order in a separate seat to confirm both arms coexist.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_npc_command_do_nothing_still_stays_docked_after_launch_arm_added()
     {
+        Require.Artwork();
         using var seat = SeatOne();
 
         var dockSector = seat.Mission.Sectors.First(s => s.Stations.Count > 0);

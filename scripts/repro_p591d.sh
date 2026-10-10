@@ -3,9 +3,9 @@
 # capture the server log (placement alephs, export audience, mine hits) AND a
 # real-window client for the field visuals + violet pops.
 set -uo pipefail
-DOTNET="${DOTNET:-/home/domingo/.dotnet/dotnet}"
+DOTNET="${DOTNET:-$(command -v dotnet)}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-ART="/home/domingo/Development/Artwork"
+ART="${ALLEGIANCE_ARTWORK_PATH:-$REPO/../Artwork}"
 PORT=6073
 OUT_DIR="${OUT_DIR:-$REPO/p591d-proof-$(date +%Y%m%d-%H%M%S)}"
 SPAWN_JSON='{"preset":"showcase","size_scale":1,"target_sector":"Alderan","minefields":{"side":"both","count":1}}'

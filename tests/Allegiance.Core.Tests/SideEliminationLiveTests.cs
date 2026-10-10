@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -413,9 +414,11 @@ public sealed class SideEliminationLiveTests
     /// (the real damage path → the P455 seam → DeactivateSide) and side A's Bot
     /// receives SIDE_INACTIVE(68) for side B (bActive=false), the "Bravo is no
     /// more." chat, and GAME_OVER(62) naming side 0 with the native reason.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Destroying_last_restart_station_eliminates_side_and_declares_winner()
     {
+        Require.Artwork();
         using var h = Seat([AtBase], new Spec(false, Far), new Spec(false, Far));
         var shooter = h.Ships[0];            // side A
         var bas = h.Side1Bases[0];           // side B's only restart station
@@ -456,9 +459,11 @@ public sealed class SideEliminationLiveTests
     /// winner) plus <c>GAME_OVER_PLAYERS(63)</c> — while side A & side B bots get
     /// <c>SIDE_INACTIVE(68)</c> for side C but NO game-over, and the mission stays
     /// <see cref="MissionStage.Started"/>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Eliminating_side2_sends_side_only_gameover_to_it_alone()
     {
+        Require.Artwork();
         using var h = SeatThree(AtBase);
         var shooter = h.Ships[0];          // side A (Alpha) fires the kill
         var bas = h.CharlieBase!;          // side C's (Charlie) only restart station
@@ -518,9 +523,11 @@ public sealed class SideEliminationLiveTests
     /// <summary>⭐ Negative: a side with TWO restart stations loses one — it still
     /// owns the other, so it is NOT eliminated: no SIDE_INACTIVE, no game-over;
     /// the game continues (side stays active, mission stays Started).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side_with_two_restart_stations_survives_losing_one()
     {
+        Require.Artwork();
         using var h = Seat([AtBase, new Vector3(500f, 0f, -1000f)], new Spec(false, Far), new Spec(false, Far));
         var shooter = h.Ships[0];            // side A
         var first = h.Side1Bases[0];         // the one we destroy
@@ -550,9 +557,11 @@ public sealed class SideEliminationLiveTests
     /// <summary>⭐ The capture path: side B's ONLY restart station is CAPTURED (real
     /// hostile boardable-hull dock with shields down), so the OLD side is
     /// eliminated — SIDE_INACTIVE + chat + GAME_OVER naming side A.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Capturing_last_restart_station_eliminates_old_side()
     {
+        Require.Artwork();
         using var h = Seat([AtBase], new Spec(true, Far), new Spec(false, Far));
         var capturer = h.Ships[0];           // side A, boardable hull
         var bas = h.Side1Bases[0];           // side B's only restart station
@@ -595,9 +604,11 @@ public sealed class SideEliminationLiveTests
     /// ENDS the game — the winner test drops HasPlayers and uses Side.Active
     /// alone, so the 0-player arena crowns side A. Driven by a synthetic (non-peer)
     /// side-A ship firing a real missile.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_mode_elimination_still_declares_winner_with_zero_players()
     {
+        Require.Artwork();
         var h = new Harness();
         var core = Core();
         h.Core = core;

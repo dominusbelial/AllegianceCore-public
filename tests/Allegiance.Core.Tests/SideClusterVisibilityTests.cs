@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -104,9 +105,11 @@ public class SideClusterVisibilityTests
 
     // ── 1. Physical presence grants visibility at distance zero ─────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Physically_present_cluster_is_visible_at_zero_range()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -121,9 +124,11 @@ public class SideClusterVisibilityTests
 
     // ── 2. An owned asset reveals a cluster within strategic range (not present) ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Owned_asset_reveals_cluster_within_strategic_range_even_when_not_present()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -144,9 +149,11 @@ public class SideClusterVisibilityTests
 
     // ── 3. Nothing owned within range is false; other sides' assets don't count ──
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cluster_is_unseen_when_nothing_owned_is_within_range()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -170,9 +177,11 @@ public class SideClusterVisibilityTests
 
     // ── 4. Periodic refresh populates the visible-cluster set ────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Periodic_refresh_populates_the_visible_cluster_set()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -189,9 +198,11 @@ public class SideClusterVisibilityTests
 
     // ── 5. Re-evaluates as a ship moves between clusters over real ticks ─────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Visible_clusters_reevaluate_as_a_ship_moves_between_clusters_over_real_ticks()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -224,9 +235,11 @@ public class SideClusterVisibilityTests
 
     // ── 6. An owned station grants visibility (presence via station) ─────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Owned_station_in_a_cluster_grants_the_side_visibility()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];

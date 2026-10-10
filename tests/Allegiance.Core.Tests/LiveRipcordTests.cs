@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -179,9 +180,11 @@ public class LiveRipcordTests
     /// to <b>everyone</b> flying in the requester's sector, naming the correct
     /// anchor object/type and the requested target cluster. Server-side the
     /// countdown is armed (RipcordModel set, time-left re-seeded).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void First_activation_broadcasts_to_everyone_flying_in_sector()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
 
@@ -225,9 +228,11 @@ public class LiveRipcordTests
     /// <summary>⭐ Scenario 2 — re-target to a DIFFERENT sector while already
     /// active sends RIPCORD_ACTIVATE to the <b>requester only</b> — a real,
     /// precise first-vs-retarget broadcast distinction, asserted explicitly.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Re_target_activates_to_requester_only()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
 
@@ -266,9 +271,11 @@ public class LiveRipcordTests
     /// <summary>⭐ Scenario 3 — a request to a sector with no valid anchor
     /// answers RIPCORD_DENIED(186) to the <b>requester only</b> (bystander
     /// silent).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Request_with_no_anchor_denies_requester_only()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
 
@@ -286,9 +293,11 @@ public class LiveRipcordTests
     /// <summary>⭐ Scenario 4 — a cancel (sidRipcord = NA) while active
     /// broadcasts RIPCORD_ABORTED(187) sector-wide naming the correct ship,
     /// and clears the server-side countdown state.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cancel_while_active_aborts_sector_wide()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
 
@@ -318,9 +327,11 @@ public class LiveRipcordTests
     /// with <b>no</b> ripcord message at all (native does <c>break</c>,
     /// <c>FedSrv.CPP:7717-7721</c>). Each gate is flipped on the same live
     /// flying bot's ship in turn and verified as a no-op.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Gate_violations_are_silently_ignored()
     {
+        Require.Artwork();
         var server = new Srv();
         Ship parent = null!;
         int n = 0;
@@ -392,9 +403,11 @@ public class LiveRipcordTests
     /// tick-over-tick (a live per-tick driver, not a one-shot set). A station-
     /// anchored ripcord stays legal every tick, so RipcordTimeLeft falls by the
     /// per-chunk dt each pump while remaining active.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Countdown_ticks_down_over_real_ticks()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
 
@@ -431,9 +444,11 @@ public class LiveRipcordTests
     /// Asserts the station-launch relocation shape (P69's launch mechanic,
     /// native's <c>UseRipcord</c> station branch, <c>FedSrv.CPP:13441-13443</c>)
     /// and that the ripcord state clears and never re-triggers.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Station_anchor_reaching_zero_relocates_to_launch_shape_and_clears()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
 
@@ -489,9 +504,11 @@ public class LiveRipcordTests
     /// flying in the <b>ripper's own sector</b> (both bots there; the anchor
     /// ship in the target sector receives nothing), matching P111's cancel-path
     /// broadcast style.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mid_countdown_anchor_side_change_aborts_sector_wide()
     {
+        Require.Artwork();
         var server = new Srv();
         Ship ripper = null!, anchor = null!, bystander = null!;
         int n = 0;
@@ -578,9 +595,11 @@ public class LiveRipcordTests
     /// ticking once boarded (the <c>m_pshipParent == NULL</c> gate,
     /// <c>shipIGC.cpp:271</c>). A ripcord armed before boarding is simply frozen
     /// — the countdown does not advance and no abort fires.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Boarded_ship_ripcord_does_not_continue_ticking()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out short bystId);
         ResetRipcord(req); ResetRipcord(byst);
 
@@ -611,9 +630,11 @@ public class LiveRipcordTests
     /// <summary>⭐ P112 — Scenario 5: an inactive (never-requested) ship is
     /// untouched by the new per-tick pass — no state, no messages. A no-
     /// regression guard on the pass's gating.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Inactive_ship_unaffected_by_ripcord_pass()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
 
@@ -732,9 +753,11 @@ public class LiveRipcordTests
     /// it into the target's cluster, pays <c>RipcordCost</c> from the target's
     /// energy, and clears the ripcord state. Pumping further confirms the
     /// attempt is consumed (no re-trigger).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_anchor_reaching_zero_relocates_near_target_and_pays_energy()
     {
+        Require.Artwork();
         var (server, req, anch, byst, rip, tgt) = ShipAnchorSetup(out short rid, out short aid);
         ResetRipcord(req); ResetRipcord(anch); ResetRipcord(byst);
 
@@ -792,9 +815,11 @@ public class LiveRipcordTests
     /// CLEARS the ripcord state — the attempt is CONSUMED, not retried when the
     /// target later regains energy (native's UseRipcord returns true either way,
     /// FedSrv.CPP:13451-13461).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_anchor_insufficient_energy_aborts_consumed_not_retried()
     {
+        Require.Artwork();
         var (server, req, anch, byst, rip, tgt) = ShipAnchorSetup(out short rid, out short aid);
         ResetRipcord(req); ResetRipcord(anch); ResetRipcord(byst);
 
@@ -858,9 +883,11 @@ public class LiveRipcordTests
     /// pumped to the teleport firing, confirming the drift spanned the whole
     /// vulnerable window. Mirrors the unit proof
     /// (<see cref="ShipRipcordFreezeTests"/>) on a real wired server.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ripcord_countdown_freezes_maneuver_and_thrust_until_teleport()
     {
+        Require.Artwork();
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
 

@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -110,9 +111,11 @@ public class LiveStationRescueTests
     /// c_sabmRescue station: it is DOCKED at that station (StationId latched =
     /// the P279 oxygen-cancel) with NO PLAYER_RESCUED(16) wire (native
     /// NULL-rescuer branch, FedSrv.CPP:13037).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lifepod_reaching_rescue_station_is_docked_without_player_rescued()
     {
+        Require.Artwork();
         var (server, bot, pod, station) = Setup(DataStationTypeIGC.SabmRescue, 0, 0);
 
         int seen = PumpUntil(server,
@@ -133,9 +136,11 @@ public class LiveStationRescueTests
     /// <summary>⭐ Negative — the SAME geometry but the station lacks
     /// c_sabmRescue (real garrison #15 caps): the pod is NOT docked and no
     /// rescue occurs, even parked right in front of it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lifepod_at_non_rescue_station_is_not_docked()
     {
+        Require.Artwork();
         var (server, bot, pod, station) = Setup(0x0377, 0, 0);   // real garrison caps, no rescue
 
         for (int i = 0; i < 120; i++) server.TickSim();

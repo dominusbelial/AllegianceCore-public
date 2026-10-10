@@ -178,8 +178,8 @@ internal static class Program
 
     private static List<string> DefaultRoots() => new()
     {
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork",
-        Environment.GetEnvironmentVariable("ALLEGIANCE_NATIVE_SRC_PATH") ?? "/home/domingo/Development/Allegiance",
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork),
+        ExternalPaths.Resolve(ExternalResourceKind.NativeSource),
     };
 
     private static List<string> Discover(IReadOnlyList<string> rootList)

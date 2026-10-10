@@ -30,8 +30,9 @@
 - **`compose.override.debugserver.yml`** — the `docker-compose.override.yml`
   actually in place on that same remote host: `network_mode: host` (so the
   container's TCP listener is directly reachable, no port-mapping NAT),
-  `cap_add: NET_ADMIN`, and volume mounts pointing at that host's real
-  artwork checkout path (`/home/domingo/allegiance-test-artwork`) and
+  `cap_add: NET_ADMIN`, and a volume mount binding the host's real artwork
+  checkout via `$ALLEGIANCE_ARTWORK_PATH` (set it on the host before
+  `docker compose`, or it falls back to `docker/artwork-placeholder`), plus
   `compose.server.json`. Also previously uncommitted/remote-only.
 - **`artwork-placeholder/`** — a tiny stand-in artwork subset for the plain
   local-trial `docker-compose.yml` path (see its own comments).

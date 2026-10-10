@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -33,7 +34,7 @@ namespace Allegiance.ClientCore.Tests;
 public class NaniteRepairLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     // A hull that can carry the nan (fixed hardpoint + enough energy for its
     // 30 energy-per-shot) paired with a real decoded ER Nanite (negative-power
@@ -156,9 +157,11 @@ public class NaniteRepairLiveTests
     /// real margin. Must-fail: disabling the sector friendly-fire-gate fix
     /// leaves the fraction pinned at 0.5 forever.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NanRound_RepairsFriendlyHull_InRealWireData()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectNanSpawn(server);
         server.Boot(Config());

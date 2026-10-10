@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -27,7 +28,7 @@ namespace Allegiance.ClientCore.Tests;
 public class P522ShieldParityLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -120,9 +121,11 @@ public class P522ShieldParityLiveTests
     /// shield is deliberately depleted to 0.4 after docking (restock has topped
     /// it) and a different hull is bought; the P522 fix is the ONLY thing that
     /// restores it to 1.0 — red when that line is removed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Buy_loadout_restores_full_shield_after_hull_swap_Live()
     {
+        Require.Artwork();
         var baseHull = RepresentativeCore.HullTypes.Values
             .First(h => h.GroupId >= 0 && h.SuccessorHullId >= 0);
         short leaf = HullChainLeaf(RepresentativeCore, baseHull.HullId);

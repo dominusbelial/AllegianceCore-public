@@ -5,6 +5,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -62,9 +63,11 @@ public class LiveChatBuoyWireTests
     private static readonly DataBuoyIGC TestBuoy = new(
         [100.0f, -200.5f, 300.75f], ClusterId: 13, Type: 1, BuoyId: 8150, Visible: true);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_bots_exchange_chatbuoy_Individual_Team_Everyone_over_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         ushort port = server.BoundPort;

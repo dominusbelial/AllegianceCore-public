@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -28,7 +29,7 @@ namespace Allegiance.ClientCore.Tests;
 public class ChatBuoyLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(string name = "ChatBuoy Relay", int port = 0) => new()
     {
@@ -69,9 +70,11 @@ public class ChatBuoyLiveTests
     /// with the real sender ship id, the real payload bytes, and the full buoy
     /// block (numeric fields) intact. Everyone-targeting also echoes to the
     /// sender itself, matching <see cref="SendChat"/>'s behaviour.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SendChatBuoy_RelayedToPeers_LandsInReceiversChatBuoys()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -118,9 +121,11 @@ public class ChatBuoyLiveTests
     /// peer's <see cref="ClientWorld.EventLog.ChatBuoys"/>, preserving the
     /// routing semantics <c>SelectChatTargets</c> already proven server-side —
     /// the client now contributes the send half of that end-to-end.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SendChatBuoy_IndividualTarget_AddressesOnlyReceiver()
     {
+        Require.Artwork();
         using var server = new Srv();
         // Round-robin two peers across two teams would sometimes seat them on
         // OPPOSITE sides, where SelectChatTargets deliberately drops an

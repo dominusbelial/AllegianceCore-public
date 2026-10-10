@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Tools.McpSpawner;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -31,9 +32,11 @@ public class P557ShowcaseFleetTests
 
     // ── Fleet parsing + validation ────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolveFleet_Resolves_Real_Hull_And_Validates()
     {
+        Require.Artwork();
         // A real fighter + a real scout both resolve to real ids with mounts.
         var fleet = Showcase.ResolveFleet(Core,
             new[]
@@ -47,17 +50,21 @@ public class P557ShowcaseFleetTests
         Assert.True(Core.HullTypes.ContainsKey(fleet[1].HullId));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolveFleet_Unknown_Hull_Throws()
     {
+        Require.Artwork();
         var ex = Assert.Throws<ArgumentException>(() =>
             Showcase.ResolveFleet(Core, new[] { ("No Such Hull XYZ", 1, 0) }, "a"));
         Assert.Contains("no hull matches", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolveFleet_DroneOrLifepod_Hull_Throws()
     {
+        Require.Artwork();
         // Find a drone/lifepod hull in the real corpus and expect rejection.
         var droneish = Core.HullTypes.Values
             .Cast<DataHullTypeIGC?>()
@@ -68,9 +75,11 @@ public class P557ShowcaseFleetTests
         Assert.Contains("player-buyable", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolveFleet_Zero_Count_Throws()
     {
+        Require.Artwork();
         var ex = Assert.Throws<ArgumentException>(() =>
             Showcase.ResolveFleet(Core, new[] { ("Fighter", 0, 0) }, "a"));
         Assert.Contains("count 0", ex.Message);
@@ -78,9 +87,11 @@ public class P557ShowcaseFleetTests
 
     // ── Per-hull native preferred loadout (P555/P556) ────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NativePreferredLoadout_Fighter_Has_Mountable_Gun()
     {
+        Require.Artwork();
         var hull = Catalog.ResolveHull("Fighter");
         var tl = Catalog.NativePreferredLoadout(hull.Id, hull.Name, 0);
         Assert.NotEmpty(tl.Parts);
@@ -89,9 +100,11 @@ public class P557ShowcaseFleetTests
         Assert.NotEqual(0, gun.PartId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NativePreferredLoadout_Scout_Has_Native_Sm_Shield_After_P555()
     {
+        Require.Artwork();
         // P555 fixed the hull equipment-mask decode so the scout's native
         // preferred `Sm Shield 1` now MOUNTS and is included.
         var hull = Catalog.ResolveHull("Scout");
@@ -104,9 +117,11 @@ public class P557ShowcaseFleetTests
 
     // ── Showcase composition ──────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ComposeShowcaseFleet_Produces_Readable_Mixed_Fleet()
     {
+        Require.Artwork();
         var fleet = Showcase.ComposeShowcaseFleet(Core, 1);
         // Default 15 per side.
         Assert.Equal(15, fleet.Sum(e => e.Count));
@@ -118,18 +133,22 @@ public class P557ShowcaseFleetTests
             $"expected >= 3 distinct roles, got {string.Join(", ", roles)}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ComposeShowcaseFleet_Scales_Exactly()
     {
+        Require.Artwork();
         var fleet = Showcase.ComposeShowcaseFleet(Core, 2);
         Assert.Equal(30, fleet.Sum(e => e.Count));
         var fleet3 = Showcase.ComposeShowcaseFleet(Core, 1);
         Assert.Equal(15, fleet3.Sum(e => e.Count));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ComposeShowcaseFleet_Is_Deterministic()
     {
+        Require.Artwork();
         var a = Showcase.ComposeShowcaseFleet(Core, 1);
         var b = Showcase.ComposeShowcaseFleet(Core, 1);
         Assert.Equal(a.Select(e => (e.HullId, e.Count)), b.Select(e => (e.HullId, e.Count)));
@@ -137,9 +156,11 @@ public class P557ShowcaseFleetTests
 
     // ── Mine-dispenser selection ──────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PickMineDispenser_Returns_A_Mounting_Mine_Dispenser_Or_Null()
     {
+        Require.Artwork();
         int withMine = 0, total = 0;
         foreach (var h in Core.HullTypes.Values)
         {

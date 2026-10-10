@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -77,9 +78,11 @@ public class P528He3MiningConstantsTests
 
     /// <summary>⭐ With GA 1.0 (identity), a ship mines at 1 ore/s — the native
     /// base — not the retired ×100 stand-in.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mining_rate_with_identity_GA_is_1_ore_per_second()
     {
+        Require.Artwork();
         var m = NewMission();
         var hull = m.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var ship = new Ship(9500, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity)
@@ -92,9 +95,11 @@ public class P528He3MiningConstantsTests
 
     /// <summary>⭐ Capacity equals the loaded core's <c>FloatConstants[7]</c> ×
     /// the side's <c>c_gaMiningCapacity</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Capacity_equals_core_FloatConstants7_times_GA_capacity()
     {
+        Require.Artwork();
         float baseCap = Fc(NewMission(), 7);
         Assert.NotEqual(150f, baseCap);   // sanity: the corpus core is not the old stand-in
 
@@ -108,9 +113,11 @@ public class P528He3MiningConstantsTests
 
     /// <summary>⭐ Sale proceeds equal ore × core <c>FloatConstants[8]</c> × the
     /// side's <c>c_gaMiningYield</c> — the native <c>PaydayEvent</c> He3 sale.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sale_proceeds_equal_ore_times_core_FloatConstants8_times_GA_yield()
     {
+        Require.Artwork();
         float baseValue = Fc(NewMission(), 8);
         Assert.NotEqual(5f, baseValue);   // sanity: the corpus core is not the old stand-in
 

@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -188,9 +189,11 @@ public class LivePlayerDeathRespawnTests
     /// only that peer</b> — receives a real <c>ENTER_LIFEPOD(166)</c>. The same
     /// death still produces <c>SHIP_DELETE(20,SDR_KILLED)</c> + <c>KILL_SHIP(105)</c>
     /// to both peers exactly as P103 proved (no regression).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Player_death_relocates_to_docked_lifepod_and_only_owner_gets_enter_lifepod()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? noStationSector = null;
         var placedObserver = false;
@@ -274,9 +277,11 @@ public class LivePlayerDeathRespawnTests
     /// the mission — assert no <c>ENTER_LIFEPOD</c> and no respawn, matching
     /// native's own <c>if (pstationDest)</c> guard (<c>FedSrv.CPP:12055</c>):
     /// the ship stays gone (whatever <c>SHIP_DELETE</c> already said).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Player_death_with_no_friendly_station_does_not_respawn()
     {
+        Require.Artwork();
         using var server = new Srv();
         short absentSide = 0; int spawnCount = 0;
         server.ShipSpawner = (core, mission, id) =>
@@ -326,9 +331,11 @@ public class LivePlayerDeathRespawnTests
     /// bot has a friendly station present AND a valid side (so only the
     /// <c>IsPlayer()</c> gate, not a missing station, blocks the respawn),
     /// but no peer owns it — proving the discriminator is peer-ownership.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Bot_ship_death_never_triggers_respawn()
     {
+        Require.Artwork();
         using var server = new Srv();
         var injectedBot = false;
         short botId = 9701;

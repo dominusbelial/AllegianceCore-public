@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -319,9 +320,11 @@ public class LiveWinConditionTests
     /// the first side's remaining connection receives a real GAME_OVER(62)
     /// with <c>iSideWinner</c> = its own side and the mission is now
     /// <see cref="MissionStage.Over"/>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Second_player_disconnect_declares_first_side_winner()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -358,9 +361,11 @@ public class LiveWinConditionTests
 
     /// <summary>⭐ Three sides, one player each: one disconnects → two sides
     /// still have players, so no GAME_OVER yet and the mission stays Started.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void One_of_three_disconnect_defers_the_decision()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(ConfigThreeSides());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -394,9 +399,11 @@ public class LiveWinConditionTests
     /// <c>Over</c>, and the GAME_OVER is broadcast to nobody (there is no one
     /// left to receive it — the honest outcome). Assert on the stage transition
     /// and on the codec producing the draw payload, not on a peer receipt.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Last_player_disconnect_is_a_draw()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -428,9 +435,11 @@ public class LiveWinConditionTests
     /// <summary>⭐ Idempotency: after a mission is already Over (game decided),
     /// a later disconnect must NOT re-broadcast GAME_OVER — the surviving peer
     /// that witnessed the first one gets exactly one, and Stage stays Over.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void No_second_game_over_after_already_over()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -464,9 +473,11 @@ public class LiveWinConditionTests
     /// <summary>⭐ Multi-mission server (two Games): a disconnect in mission A's
     /// last-standing-side scenario ends mission A but leaves mission B untouched —
     /// its Stage stays Started and its peer receives no GAME_OVER.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_disconnect_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());
@@ -530,9 +541,11 @@ public class LiveWinConditionTests
     /// real SUICIDE reaches the kill path — the ship is removed and the peer
     /// sees the SDR_KILLED delete. Proves the message/handler reachability the
     /// refusal test then negates.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Suicide_kills_the_ship_while_started()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectLifepodSpawn(server);
         server.Boot(Config());
@@ -558,9 +571,11 @@ public class LiveWinConditionTests
     /// SUICIDE handler's <c>mission.Stage != MissionStage.Started</c> gate
     /// (Server.cs, P103, FedSrv.CPP:6337) refuses — the ship is NOT killed and
     /// no SDR_KILLED delete goes out.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Suicide_refused_once_mission_over()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectLifepodSpawn(server);
         server.Boot(Config());
@@ -588,9 +603,11 @@ public class LiveWinConditionTests
     /// (Server.cs, FedSrv.CPP:6388) refuses once the mission is Over — the
     /// boarder's request is answered with BOARD_NACK and its ParentShip stays
     /// null. Control (Started) shown by the docked pair boarding successfully.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Board_refused_once_mission_over()
     {
+        Require.Artwork();
         // ── Control leg: boarding succeeds while Started ──────────────────
         using (var control = new Srv())
         {

@@ -15,11 +15,11 @@ def iter_records(raw, body_start):
         pos += 6 + size
 
 TARGETS = [
-    "/home/domingo/Development/Artwork/static_core.igc",
-    "/home/domingo/Development/Artwork/racecore.igc",
-    "/home/domingo/Development/Artwork/zone_core.igc",
-    "/home/domingo/Development/Artwork/wc_01.igc",
-    "/home/domingo/Development/Artwork/tcor_02.igc",
+    os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "static_core.igc"),
+    os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "racecore.igc"),
+    os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "zone_core.igc"),
+    os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "wc_01.igc"),
+    os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "tcor_02.igc"),
 ]
 
 for p in TARGETS:

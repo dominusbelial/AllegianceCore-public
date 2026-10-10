@@ -9,6 +9,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -152,9 +153,11 @@ public class MiningTests
     /// <see cref="ServerShipUpdate.FromModel"/> and reads back through
     /// <see cref="ServerShipUpdate.OreFraction"/>. Zero for an idle ship, rises
     /// with cargo, saturates at the flat capacity.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FromModel_fills_byte45_ore_fraction_from_ShipOre()
     {
+        Require.Artwork();
         var hull = RepresentativeCore.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
         // Pin a deterministic capacity via the P528 test-only seam (a sideless
         // ship with no mission would otherwise fall back to the native 90).
@@ -178,9 +181,11 @@ public class MiningTests
     /// ticks (linear in dt), and the rock's own pool depletes correspondingly —
     /// the pool shrinks by exactly what the ship gained. The <c>MineAsteroidEvent</c>
     /// seam fires.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Near_rock_accrues_Ore_linearly_and_rock_pool_depletes_in_lockstep()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = CleanSpot(mission);
@@ -227,9 +232,11 @@ public class MiningTests
     /// <c>Ore</c> reaches exactly <see cref="Ship.MineCapacity"/> and then holds
     /// flat (the pass skips <c>Ore &gt;= capacity</c> ships), and the seam stops
     /// firing — no continuous event stream once full.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cap_hits_and_accrual_halts_until_drained()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = CleanSpot(mission);
@@ -275,9 +282,11 @@ public class MiningTests
     /// post-departure state: bag full + a stale pointer to a rock far away.
     /// Discriminating: revert the reset-ordering fix and this stays red
     /// (MiningAsteroid remains the departed rock).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Full_bag_miner_clears_MiningAsteroid_despite_the_bag_full_guard()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = CleanSpot(mission);
@@ -315,9 +324,11 @@ public class MiningTests
     /// sits near-empty. This is the "pool hits zero → mining limited" behaviour
     /// (native asteroids regenerate, asteroidigc.h:47-56, so it is held
     /// near-empty, not permanently destroyed).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Small_pool_gates_yield_and_accrual_collapses_to_regen_trickle()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = CleanSpot(mission);
@@ -350,9 +361,11 @@ public class MiningTests
     /// <summary>⭐ A ship nowhere near any asteroid is unaffected: it accrues no
     /// ore and never becomes a miner, over multiple ticks. This is the
     /// no-regression-to-normal-flight half of the verification.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_far_from_any_asteroid_is_unaffected()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var (spot, sector) = CleanSpot(mission);
@@ -409,9 +422,11 @@ public class MiningTests
     /// ship's position a hair (forcing the dirty-position fmid-78 broadcast that
     /// a perfectly-stationary miner would otherwise suppress), the bot decodes a
     /// non-zero <c>OreFraction</c> matching <c>Ship.Ore/MineCapacity</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Loopback_synthetic_rock_mines_and_ore_reaches_the_wire()
     {
+        Require.Artwork();
         using var server = new Srv();
         Asteroid? placedRock = null;
         Vector3 apos = new(120f, 80f, -40f);
@@ -473,9 +488,11 @@ public class MiningTests
     /// decoded single-ship-update carries OreFraction 0, and it keeps broadcasting
     /// normal flying SHIP_STATUS(90)s (StationID NA, State Flying) — ordinary
     /// flight/status broadcasting is completely unaffected.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Loopback_default_spawn_is_unaffected_and_statuses_stay_normal()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby

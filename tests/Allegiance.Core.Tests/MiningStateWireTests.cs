@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -68,9 +69,11 @@ public class MiningStateWireTests
         Assert.Equal(4, m.ClusterId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ServerShipUpdate_extraStateBits_stamps_the_faithful_mining_bit()
     {
+        Require.Artwork();
         var hull = new DataHullTypeIGC(
             Price: 0, TimeToBuild: 0, ModelName: "mdl", IconName: "ico", Name: "t",
             Description: "", GroupId: 0, TtbmRequired: [], TtbmEffects: [],
@@ -129,9 +132,11 @@ public class MiningStateWireTests
     /// the OWN client is told the exact rock via OwnShipMiningUpdate(206) and the
     /// native miningMaskIGC bit (0x2000) rides its own SingleShipUpdate(78); both
     /// clear when the ship leaves the rock.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Loopback_own_mining_state_reaches_client_and_clears_on_departure()
     {
+        Require.Artwork();
         using var server = new Srv();
         Asteroid? placedRock = null;
         Vector3 apos = new(120f, 80f, -40f);

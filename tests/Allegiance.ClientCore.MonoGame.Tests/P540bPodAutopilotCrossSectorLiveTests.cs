@@ -14,6 +14,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using SimVec = Allegiance.Core.Collision.Vector3;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -36,7 +37,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class P540bPodAutopilotCrossSectorLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -175,9 +176,11 @@ public sealed class P540bPodAutopilotCrossSectorLiveTests
         else throw new InvalidOperationException($"neither session on side 0 (a={SideOf(a)}, b={SideOf(b)})");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets()
     {
+        Require.Artwork();
         using var server = new Srv();
         const short EjectSectorId = 1051;   // exactly TWO real warps from the side-0 garrison's sector 1053
         short spawnCount = 0;

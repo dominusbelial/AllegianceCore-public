@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -139,9 +140,11 @@ public class LiveAllianceTests
     /// <summary>⭐ The mission owner allying side 0 to side 1 while the mission
     /// is NotStarted stores the group on both sides and broadcasts
     /// CHANGE_ALLIANCES(197) whole-mission ([0,0,NA,NA] — sides 2 and 3 solo).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Owner_change_alliance_pre_start_sets_and_broadcasts()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -181,9 +184,11 @@ public class LiveAllianceTests
 
     /// <summary>⭐ A NON-owner — even another side's team leader — is refused:
     /// no state change, no broadcast.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Owner_gate_refuses_non_owner_even_team_leader()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -215,9 +220,11 @@ public class LiveAllianceTests
     /// <summary>⭐ Once the mission has Started, even the owner is refused:
     /// unchanged, no broadcast (native only honors STAGE_NOTSTARTED,
     /// FedSrv.CPP:7474).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Change_alliance_refused_once_started()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -243,9 +250,11 @@ public class LiveAllianceTests
     /// <summary>⭐ Out-of-range sideID / sideAlly is refused (logged, ignored):
     /// no state change, no broadcast (native silently returns,
     /// fsmission.cpp:5642-5647).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Change_alliance_out_of_range_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -275,9 +284,11 @@ public class LiveAllianceTests
 
     /// <summary>⭐ sideAlly == NA clears an existing alliance for sideID: a prior
     /// [0,0,NA,NA] becomes all-NA and the broadcast reflects the clear.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side_ally_na_clears_existing_alliance()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -317,9 +328,11 @@ public class LiveAllianceTests
     /// Native's validation (fsmission.cpp:5786-5792) clears everything if the
     /// single group swallowed every side with no solo left, hence the 4th solo
     /// side is required for this outcome.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Merge_three_sides_into_one_group_leaves_fourth_solo()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -381,9 +394,11 @@ public class LiveAllianceTests
     /// class): a CHANGE_ALLIANCE and its CHANGE_ALLIANCES broadcast in mission A
     /// must never leak to, or alter, mission B, even though both share the same
     /// numeric side ids.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_change_alliances_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -29,7 +30,7 @@ namespace Allegiance.ClientCore.Tests;
 public class NaniteThreatBonusLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     // The same nan-mountable shooter hull + ER Nanite picker P277 uses.
     private static readonly Lazy<(DataHullTypeIGC hull, DataPartTypeIGC.Weapon weapon, DataProjectileTypeIGC pt)> Nan = new(() =>
@@ -213,9 +214,11 @@ public class NaniteThreatBonusLiveTests
         return (credit, healed, targetHull.ModelName);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Threat_target_earns_2x_repair_credit_over_wire()
     {
+        Require.Artwork();
         const float start = 0.5f;   // same fraction of each hull repaired → to full
         var bomber = RunScenario(threat: true, start);
         var fighter = RunScenario(threat: false, start);

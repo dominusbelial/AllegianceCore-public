@@ -19,7 +19,7 @@ internal static class Catalog
     /// uses, so a name that resolves here is a hull/part id the server's own
     /// static core should also carry.</summary>
     internal static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     private static readonly Lazy<StaticCore> Core = new(() =>
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc"))));
 

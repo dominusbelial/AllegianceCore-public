@@ -4,6 +4,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -117,9 +118,11 @@ public class P467bSideGaScaleShipDurabilityTests
     /// native constants, and a sideless ship / identity side reproduces the raw
     /// values exactly — so the whole durability half is a no-op for the default
     /// (no-side) case.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Durability_indices_match_native_and_identity_is_raw()
     {
+        Require.Artwork();
         Assert.Equal(8, GlobalAttributeSet.MaxArmorShip);
         Assert.Equal(9, GlobalAttributeSet.MaxShieldShip);
         Assert.Equal(10, GlobalAttributeSet.ShieldRegenerationShip);
@@ -180,9 +183,11 @@ public class P467bSideGaScaleShipDurabilityTests
     /// (native <c>GetHitPoints() · c_gaMaxArmorShip</c>). Pre-fix both missions
     /// used the raw denominator, so the drops were identical and the ratio
     /// assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MaxArmorShip_scales_the_damage_denominator()
     {
+        Require.Artwork();
         var (hull, dmg, amount) = ArmorHit.Value;
         float idDrop = ArmorDrop(hull, dmg, amount, gaMul: 1f);
         float boostDrop = ArmorDrop(hull, dmg, amount, gaMul: 1.5f);
@@ -217,9 +222,11 @@ public class P467bSideGaScaleShipDurabilityTests
     /// <c>GetMaxStrength() · c_gaMaxShieldShip</c>) while the hull still takes no
     /// damage. Pre-fix both missions used the raw <c>MaxStrength</c>, so the
     /// drops were identical and the ratio assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MaxShieldShip_raises_shield_absorption_capacity()
     {
+        Require.Artwork();
         var (_, shield, dmg) = ShieldPair.Value;
         float idDrop = ShieldAbsorptionDrop(shield, dmg, gaMul: 1f, out float idHullDrop);
         float boostDrop = ShieldAbsorptionDrop(shield, dmg, gaMul: 2f, out float boostHullDrop);
@@ -253,9 +260,11 @@ public class P467bSideGaScaleShipDurabilityTests
     /// shield twice as fast (native <c>GetRegeneration() · c_gaShieldRegenerationShip</c>).
     /// Pre-fix both missions regenerated at the raw rate, so the gains were
     /// identical and the ratio assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShieldRegenerationShip_speeds_regeneration()
     {
+        Require.Artwork();
         var (_, shield, _) = ShieldPair.Value;
         float idGain = RegenGain(shield, gaMul: 1f);
         float boostGain = RegenGain(shield, gaMul: 2f);
@@ -275,9 +284,11 @@ public class P467bSideGaScaleShipDurabilityTests
     /// <c>shipIGC.h:1124</c>). Pre-fix the clamp used the raw ceiling, so energy
     /// topped out at <c>hull.MaxEnergy</c> (half the GA ceiling) and this
     /// assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MaxEnergy_raises_the_ceiling_and_recharge_clamps_to_it()
     {
+        Require.Artwork();
         var hull = RechargeHull.Value;
         var m = NewMission((GlobalAttributeSet.MaxEnergy, 2f));
         var ship = new Ship(8301, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity)

@@ -10,6 +10,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Host = global::Allegiance.Server.ServerHost;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -132,9 +133,11 @@ public class MiningSellTests
     /// the seam fires a <c>PaydayEvent</c> with that amount and side, and the
     /// cargo is zeroed. A <b>redundant</b> dock call (ship already docked) sells
     /// nothing more — the existing "already docked" guard is the boundary.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Dock_transition_sells_ore_into_treasury_and_zeroes_cargo()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -172,9 +175,11 @@ public class MiningSellTests
 
     /// <summary>⭐ Docking with zero ore causes no payday side-effect at all:
     /// no <c>PaydayEvent</c> through the seam, no treasury change, cargo stays 0.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Dock_with_zero_ore_has_no_payday_side_effect()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -200,9 +205,11 @@ public class MiningSellTests
     /// sale: a ship that docks (sells), undocks (<c>StationId</c> cleared the
     /// way the real undock does), loads more ore, and docks again sells a second
     /// time — each transition sells exactly once.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Redock_after_undock_sells_again()
     {
+        Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
         var sector = mission.Sectors[0];
@@ -285,9 +292,11 @@ public class MiningSellTests
     /// the <b>sell</b> zeroes its cargo and broadcasts a real <c>FM_S_PAYDAY(114)</c>
     /// whose <c>dMoney</c> equals the converted <c>ore × OreCreditPerUnit</c>
     /// (one player on the side ⇒ the whole proceeds are paid out and observed).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Loopback_mine_then_dock_sells_ore_and_pays_FM_S_PAYDAY()
     {
+        Require.Artwork();
         using var server = new Srv();
         Asteroid? placedRock = null;
         DataStationIGC friendly = default;
@@ -343,9 +352,11 @@ public class MiningSellTests
     /// mine → dock (sale #1) → undock → mine → dock again (sale #2) produces two
     /// distinct <c>FM_S_PAYDAY</c> payouts, each equal to that trip's ore × the
     /// flat constant — proving the "newly docks" boundary, not a one-shot.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Loopback_redock_sells_again_each_transition()
     {
+        Require.Artwork();
         using var server = new Srv();
         Asteroid? placedRock = null;
         DataStationIGC friendly = default;
@@ -413,9 +424,11 @@ public class MiningSellTests
     /// <summary>⭐ Docking with zero cargo over real TCP triggers no payday:
     /// the ship docks normally but no <c>FM_S_PAYDAY</c> is emitted for the
     /// transition (no spurious sale / no spurious payout).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Loopback_dock_with_no_ore_emits_no_FM_S_PAYDAY()
     {
+        Require.Artwork();
         using var server = new Srv();
         DataStationIGC friendly = default;
         server.ShipSpawner = (core, mission, shipId) =>

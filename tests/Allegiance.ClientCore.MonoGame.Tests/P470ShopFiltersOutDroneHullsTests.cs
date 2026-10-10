@@ -2,6 +2,7 @@ using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -21,7 +22,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class P470ShopFiltersOutDroneHullsTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
@@ -47,9 +48,11 @@ public class P470ShopFiltersOutDroneHullsTests
     /// in the raw core table but is NOT listed in the shop's hull offer
     /// (FilteredFor), with every tech unlocked (the only gate left is P470's
     /// GroupId rule).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shop_offer_does_not_list_any_drone_hull()
     {
+        Require.Artwork();
         // Sanity: the raw core really does carry drone-only hulls (not vacuous).
         var drone = ADroneHull();
         Assert.True(drone.GroupId < 0, $"expected a drone hull with negative group, got {drone.Name} group {drone.GroupId}");
@@ -65,9 +68,11 @@ public class P470ShopFiltersOutDroneHullsTests
 
     /// <summary>⭐ The shop offer still lists a normal player hull (GroupId >= 0),
     /// so the GroupId gate is not over-broad.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shop_offer_still_lists_normal_player_hulls()
     {
+        Require.Artwork();
         var offer = Catalog.FilteredFor(AllTechStation, AllTechDev);
 
         Assert.NotEmpty(offer.Hulls);
@@ -79,9 +84,11 @@ public class P470ShopFiltersOutDroneHullsTests
     /// <summary>⭐ The RAW table still contains the lifepod (GroupId &lt; 0), so
     /// the current-ship / lifepod-oxygen (P377) / model-resolution paths are
     /// unaffected by the shop-offer filter.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Raw_table_still_contains_the_lifepod_for_current_ship_paths()
     {
+        Require.Artwork();
         var lifepod = Catalog.Hulls.FirstOrDefault(h => h.HasCapability(DataHullTypeIGC.HabmLifepod));
         Assert.False(lifepod.HullId == 0, "core must contain a lifepod hull");
         Assert.True(lifepod.GroupId < 0);

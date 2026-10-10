@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -177,9 +178,11 @@ public class MineCrossSideVisibilityLiveTests
     /// <item>Pump past the mine's lifespan: B receives the MINE_DESTROYED(84)
     /// naming that same mine — the field leaves B's world (no phantom).</item>
     /// </list></summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction()
     {
+        Require.Artwork();
         using var seat = SeatPair();
 
         var mission = seat.A.Mission ?? throw new InvalidOperationException("layer must have a mission");

@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -178,9 +179,11 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
     /// cross-cluster autopilot leg (<see cref="Model.Sector.FindPathToward"/>),
     /// (3) transits, and (4) begins mining. Nothing here hands the NPC a target —
     /// the decision cycle finds the far rock by itself.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Idle_npc_in_empty_sector_finds_and_mines_cross_sector_asteroid_on_its_own_initiative()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sectorA = null, sectorB = null;
@@ -261,9 +264,11 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
     /// <see cref="Ship.FindNearestFriendlyStationAnyCluster"/> (own-sector search
     /// null first), travels across the warp, docks, and sells (ore → 0, side
     /// treasury credited).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Full_npc_in_empty_sector_finds_cross_sector_unload_station_and_sells_on_its_own_initiative()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sectorA = null, sectorB = null;

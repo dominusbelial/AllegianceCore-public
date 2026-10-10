@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -165,9 +166,11 @@ public sealed class NpcAsteroidContentionLiveTests
     /// higher-ore one is cleared of the rock and redirected to the friendly
     /// unload station (its <see cref="Ship.Ore"/> never rises — it never mines).
     /// Proves least-ore-wins plus redirect-to-sell (not to a second rock).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Two_same_side_idle_miners_lower_ore_keeps_rock_higher_ore_redirected_to_unload()
     {
+        Require.Artwork();
         var (srv, mission, sector, rock, unload, npcSide) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -247,9 +250,11 @@ public sealed class NpcAsteroidContentionLiveTests
     /// FIRST contender encountered in sector model order; the port matches, so
     /// the first-spawned (earlier in <c>_models</c> insertion order) keeps the
     /// rock and the second is redirected.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Equal_ore_two_same_side_idle_miners_first_spawned_keeps_rock_second_redirected()
     {
+        Require.Artwork();
         var (srv, mission, sector, rock, unload, npcSide) = BootFixture(out var bot);
         using (srv)
         using (bot)

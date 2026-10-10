@@ -2,6 +2,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -87,9 +88,11 @@ public class LifepodEnduranceDisplayTests
     /// non-lifepod hull (native returns 1.0f there too). Uses the P279
     /// <c>LifepodEnduranceOverrideSeconds</c> seam (10 s) so no five-minute
     /// wait is needed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LifepodEnduranceFraction_tracks_formula_and_clamps()
     {
+        Require.Artwork();
         var lp = LifepodHull();
         var ship = new Ship(42, lp, Vector3.Zero, Vector3.Zero, Orientation.Identity);
         ship.LifepodEnduranceOverrideSeconds = 10.0;
@@ -106,9 +109,11 @@ public class LifepodEnduranceDisplayTests
     /// (inactive) — the same <c>StationId is null</c> gate that cancels the
     /// oxygen burn in <see cref="Ship.OnUpdate"/>. Native returns 1.0f when the
     /// pod is not in a cluster (docked).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LifepodEnduranceFraction_is_full_while_docked()
     {
+        Require.Artwork();
         var lp = LifepodHull();
         var ship = new Ship(43, lp, Vector3.Zero, Vector3.Zero, Orientation.Identity);
         ship.LifepodEnduranceOverrideSeconds = 10.0;
@@ -121,9 +126,11 @@ public class LifepodEnduranceDisplayTests
     /// <summary>A non-lifepod ship's fuel/endurance reads a flat 1.0 — the
     /// countdown is a lifepod-only value (native GetEndurance returns 1.0f for
     /// any non-lifepod hull).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LifepodEnduranceFraction_is_full_for_non_lifepod()
     {
+        Require.Artwork();
         var ship = new Ship(44, NonLifepodHull(), Vector3.Zero, Vector3.Zero, Orientation.Identity);
         Assert.Equal(1.0f, ship.LifepodEnduranceFraction(5.0), 3);
     }
@@ -136,9 +143,11 @@ public class LifepodEnduranceDisplayTests
     /// (<c>carryEndurance:false</c> — the teammate relay path) keeps the flat
     /// 1.0 fuel value. A real mission advances the sim clock so the fraction is
     /// genuinely mid-depletion, not a fresh 1.0.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FromModel_endurance_rides_only_the_owner_payload()
     {
+        Require.Artwork();
         var m = NewStartedMission();
         var lp = LifepodHull();
         var ship = new Ship(50, lp, Vector3.Zero, Vector3.Zero, Orientation.Identity);

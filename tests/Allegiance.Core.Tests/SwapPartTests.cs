@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -118,9 +119,11 @@ public class SwapPartTests
     private static Dictionary<byte, short> MountsByPartId(Ship ship) =>
         ship.Parts.ToDictionary(p => p.MountId, p => p.PartId);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SwapPart_swaps_two_occupied_slots_sectorwide_moves_and_silent_noop()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         // P368: default spawn now seats each side in its own home sector. This

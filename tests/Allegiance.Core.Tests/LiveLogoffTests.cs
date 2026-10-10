@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -277,9 +278,11 @@ public class LiveLogoffTests
     /// vanishes from <c>server.Ships</c> AND the ship object is removed from
     /// its sector (no more zombie flight). (This supersedes P127's "ship stays
     /// in the sector" assertion — P128 deliberately retires it.)</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Logoff_echoes_releases_and_retires_the_ship()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -314,9 +317,11 @@ public class LiveLogoffTests
     /// with <c>sdr = SDR_LOGGEDOFF</c> naming the leaver's ship id, and the
     /// leaver's ship is gone from the sector. The observer's own ship is
     /// untouched.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void An_observing_peer_witnesses_loggedoff_ship_delete()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSectorZeroSpawn(server);
         server.Boot(Config());
@@ -369,9 +374,11 @@ public class LiveLogoffTests
     /// <c>SHIP_DELETE(20, SDR_LOGGEDOFF)</c> for the dropped player's ship and
     /// the ship is removed from the sector — the case P127's peer-bookkeeping
     /// test only partly covered, now extended to the ship itself.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Abrupt_drop_retires_the_ship_and_broadcasts_loggedoff()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSectorZeroSpawn(server);
         server.Boot(Config());
@@ -402,9 +409,11 @@ public class LiveLogoffTests
     /// <c>server.Ships</c> and <b>both</b> ship objects are retired from their
     /// sectors. There is no second, parallel mechanism (P127's premise held;
     /// P128 changes both legs identically through the one <c>ReleasePeer</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Logoff_cleanup_matches_an_abrupt_disconnect_footprint()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSectorZeroSpawn(server);
         server.Boot(Config());
@@ -440,9 +449,11 @@ public class LiveLogoffTests
     /// <c>StationId != null</c>) that logs off still has its ship retired —
     /// native's <c>CFSShip::~CFSShip</c> fires on destruction regardless of
     /// dock state (<c>fsship.cpp:58-68</c>), so being docked changes nothing.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_player_logoff_still_retires_the_ship()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectDockedSpawn(server);
         server.Boot(Config());
@@ -475,9 +486,11 @@ public class LiveLogoffTests
     /// cleared and it is out of the carrier's child list, while the carrier
     /// itself is retired from the sector and the (separate, still-connected)
     /// child's ship stays placed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Carrier_logoff_detaches_boarded_children_and_retires_the_carrier()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectBoardSpawn(server);
         server.Boot(Config());

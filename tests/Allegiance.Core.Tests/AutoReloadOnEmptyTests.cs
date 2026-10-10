@@ -8,6 +8,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -146,9 +147,11 @@ public class AutoReloadOnEmptyTests
     /// automatically consumes that pack and brings the pool back above zero —
     /// the port of native <c>SetAmmo</c>'s zero-transition block
     /// (<c>shipIGC.h:603-616</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Firing_ammo_to_zero_auto_reloads_from_cargo_spare()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var ship = NewShip();
@@ -170,9 +173,11 @@ public class AutoReloadOnEmptyTests
     /// NOT crash and correctly stays at zero — native's "Ammo depleted." case
     /// (<c>shipIGC.h:610-612</c>). The failure is distinguished from success via
     /// <see cref="Ship.LastAutoReloadOutcome"/> so P362 can show the two texts.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Firing_ammo_to_zero_with_empty_cargo_stays_depleted()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var ship = NewShip();
@@ -199,9 +204,11 @@ public class AutoReloadOnEmptyTests
     /// <c>0.5 / FloatConstants[c_fcidMountRate]</c> debounce: a second
     /// zero-transition within the interval is NOT attempted, and a later one
     /// past the deadline is.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_reload_respects_the_debounce_rate_limit()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var ship = NewShip();
@@ -236,9 +243,11 @@ public class AutoReloadOnEmptyTests
     /// <c>RELOAD(129)</c> entries sector-wide with <c>shipID</c> filled in —
     /// the same relay the manual <c>FM_CS_RELOAD</c> handler produces
     /// (<c>FedSrv.CPP:6651-6652</c>) — so peers (and P362) observe the transfer.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_reload_relays_RELOAD129_sector_wide()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var ship = seat.Subject;
 

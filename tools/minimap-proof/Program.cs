@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.Core;
 
 // P360 live-proof harness: boots a REAL in-process server on a REAL multi-
 // sector map (m2xspiderw, 13 sectors / 44 warps) and connects a REAL client
@@ -122,7 +123,7 @@ sealed class ProofRunner : Game
     private static string HomeArt()
     {
         var env = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH");
-        return env is { Length: > 0 } e2 ? e2 : "/home/domingo/Development/Artwork";
+        return env is { Length: > 0 } e2 ? e2 : ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     }
 
     private static LogonRequest Request(string name) => new()

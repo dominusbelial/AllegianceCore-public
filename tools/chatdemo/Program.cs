@@ -6,6 +6,7 @@ using BotClass = global::Allegiance.Bot.Bot;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.Core;
 
 namespace Allegiance.Tools.ChatDemo;
 
@@ -27,7 +28,7 @@ namespace Allegiance.Tools.ChatDemo;
 internal static class Program
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     private const short SectorCeto = 1053;    // 'Ceto'  (verified via missiondump: XXV_simple, 13 sectors)
     private const short SectorFarout = 1056;  // 'Farout'
 

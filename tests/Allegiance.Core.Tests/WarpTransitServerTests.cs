@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -65,9 +66,11 @@ public class WarpTransitServerTests
     /// destination and the peer receives a fresh SET_CLUSTER(7) plus a
     /// SHIP_STATUS(90) bearing the new sector.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         // A dedicated spawner so the bot's ship starts just inside the first
@@ -154,9 +157,11 @@ public class WarpTransitServerTests
     /// so together they bracket P244's trigger back onto the warp's real raw
     /// radius without regressing P238's "transit must fire".
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipBetweenRawAndVisualRadius_DoesNotPrematurelyTransit_AndPeerSeesNoSectorChange()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         server.ShipSpawner = (core, mission, shipId) =>
@@ -216,9 +221,11 @@ public class WarpTransitServerTests
     /// the destination warp's backward axis) — only the speed magnitude changes
     /// with this constant.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipExitSpeed_IsEntrySpeedPlusNativeBonus_AfterTransit()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         Sector? spawnSector = null;
@@ -307,9 +314,11 @@ public class WarpTransitServerTests
     /// position is captured with no coasting drift (transit is the last pass of the
     /// tick, Sector.Update: models → combat → warp).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShipExitPosition_IsAtShipRadiusPlusFive_FromDestinationWarp()
     {
+        Require.Artwork();
         using var server = new Srv();
 
         Sector? spawnSector = null;

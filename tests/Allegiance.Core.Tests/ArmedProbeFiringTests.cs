@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -95,9 +96,11 @@ public class ArmedProbeFiringTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Armed_probe_fires_at_hostile_ship_with_ammo_decrement()
     {
+        Require.Artwork();
         var m = NewMission(out _, out _);
         var sector = m.Sectors[0];
         short sideA = m.Sides[0].Id;
@@ -129,9 +132,11 @@ public class ArmedProbeFiringTests
         Console.WriteLine($"P491-UNIT: armed probe fired round vel {round.Velocity}, ammo {probe.Ammo}/5");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Armed_probe_ignores_same_side_ship()
     {
+        Require.Artwork();
         var m = NewMission(out _, out _);
         var sector = m.Sectors[0];
         short sideA = m.Sides[0].Id;
@@ -151,9 +156,11 @@ public class ArmedProbeFiringTests
         Assert.Equal(PlasGen().Ammo, probe.Ammo);   // no ammo spent
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unarmed_probe_never_fires()
     {
+        Require.Artwork();
         var m = NewMission(out _, out _);
         var sector = m.Sectors[0];
         short sideA = m.Sides[0].Id;
@@ -173,9 +180,11 @@ public class ArmedProbeFiringTests
         Assert.Equal(unarmedType.Ammo, probe.Ammo);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Armed_probe_self_destructs_when_ammo_exhausted()
     {
+        Require.Artwork();
         var m = NewMission(out _, out _);
         var sector = m.Sectors[0];
         short sideA = m.Sides[0].Id;
@@ -195,9 +204,11 @@ public class ArmedProbeFiringTests
         Assert.Equal((short)0, probe.Ammo);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Fired_round_uses_the_P479_effective_speed_and_lifespan_seam()
     {
+        Require.Artwork();
         // An AMMO probe on an identity-GA side flies at the raw decoded speed and
         // lifespan (EffectiveProjectileSpeed/Lifespan — the P479 seam this firing
         // builds from, probeigc.cpp:366-368 / probeigc.h:223-233).
@@ -226,9 +237,11 @@ public class ArmedProbeFiringTests
         Console.WriteLine($"P491-UNIT: ammo-probe round speed {probe.EffectiveProjectileSpeed(proj):F1} (raw {proj.Speed}), life {probe.EffectiveProjectileLifespan(proj):F3} (raw {proj.Lifespan})");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ExportProbe_carries_the_persisted_target_on_otTarget_oidTarget()
     {
+        Require.Artwork();
         var m = NewMission(out _, out _);
         var sector = m.Sectors[0];
         short sideA = m.Sides[0].Id;

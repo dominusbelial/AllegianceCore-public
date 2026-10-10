@@ -60,7 +60,7 @@ sealed class ProofOptions
         var env = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH");
         return new ProofOptions
         {
-            ArtRoot = art.Length > 0 ? art : (env is { Length: > 0 } ? env : "/home/domingo/Development/Artwork"),
+            ArtRoot = art.Length > 0 ? art : (env is { Length: > 0 } ? env : ExternalPaths.Resolve(ExternalResourceKind.Artwork)),
             OutDir = outDir.Length > 0 ? outDir : "p592-proof-out",
         };
     }
@@ -125,7 +125,7 @@ sealed class ProofRunner : Game
 
     private static Allegiance.Core.Rendering.GiantObjectConfig ReadConfig()
     {
-        string json = System.IO.File.ReadAllText("/home/domingo/Development/Artwork/giant-objects.json");
+        string json = System.IO.File.ReadAllText(System.IO.Path.Combine(ExternalPaths.Resolve(ExternalResourceKind.Artwork), "giant-objects.json"));
         return Allegiance.Core.Rendering.GiantObjectConfig.Parse(json);
     }
 

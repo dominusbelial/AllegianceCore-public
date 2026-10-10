@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -157,9 +158,11 @@ public class CombatDamageTests
     /// assert the target's hull dropped by exactly the decoded damage while the
     /// shooter's stayed full. The projectile terminates on impact.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Point_blank_hit_reduces_target_hull_and_not_shooter()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var shooter = NewShooter();
@@ -195,9 +198,11 @@ public class CombatDamageTests
     /// anything — then assert both ships still have full hulls. Guards against
     /// the naive bug where the firing ship damages itself on spawn.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Projectile_fired_away_damages_nothing()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var shooter = NewShooter();
@@ -233,9 +238,11 @@ public class CombatDamageTests
     /// launcher self-exclusion). Guard against the gate being inverted (only
     /// same-side foes harmed) or bypassed.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_shot_deals_zero_damage()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var shooter = NewShooter();
@@ -268,9 +275,11 @@ public class CombatDamageTests
     /// decoded per-hit damage (same assertion as the headline point-blank
     /// contract).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_shot_deals_normal_damage()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var shooter = NewShooter();

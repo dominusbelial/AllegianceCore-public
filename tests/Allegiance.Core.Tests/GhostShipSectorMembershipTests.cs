@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -104,9 +105,11 @@ public class GhostShipSectorMembershipTests
     /// DESTINATION sector's <c>_models</c> list exactly once (and nowhere
     /// else), not stranded in no list (the P307 bug: frozen/invisible/ghost).
     /// This is the required live proof for the respawn case.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Respawned_player_lands_in_destination_sectors_model_list()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? noStationSector = null;
         var placedObserver = false;
@@ -171,9 +174,11 @@ public class GhostShipSectorMembershipTests
     /// the DESTINATION (station) sector's <c>_models</c> list exactly once, not
     /// stranded in the fly sector's list (the P307 bug: phantom in the old
     /// sector, absent in the new).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rescued_lifepod_lands_in_destination_sectors_model_list()
     {
+        Require.Artwork();
         const short FlySector = 1052;          // no station (P111 measurement)
         const short Side0StationSector = 1053;
 
@@ -238,9 +243,11 @@ public class GhostShipSectorMembershipTests
     /// destination sector's <c>_models</c> list exactly once, not stay ticked
     /// by its old sector (the P307 bug: both sectors' geometry passes misfire,
     /// and peers in the new sector never see it).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teleported_ship_lands_in_destination_sectors_model_list()
     {
+        Require.Artwork();
         using var server = new Srv();
         DataStationIGC realStation = default;
         Sector realSector = null!;

@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -61,9 +62,11 @@ public class MissionAssemblyTests
             ];
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Every_map_assembles_against_a_real_core()
     {
+        Require.Artwork();
         Assert.Equal(111, AllMaps.Value.Count);
 
         foreach (var (path, map) in AllMaps.Value)
@@ -86,9 +89,11 @@ public class MissionAssemblyTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Warp_destinations_close_over_the_sector_graph()
     {
+        Require.Artwork();
         var (_, map) = AllMaps.Value[0];
         var mission = Mission.Assemble(RepresentativeCore.Value, map, TwoSides(), new NullIgcSite());
 
@@ -106,9 +111,11 @@ public class MissionAssemblyTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sides_resolve_their_civilizations_from_the_core()
     {
+        Require.Artwork();
         var core = RepresentativeCore.Value;
         var spec = new SideSpec(0, "Alpha", core.Civilizations.Keys.First());
         var mission = Mission.Assemble(core, AllMaps.Value[0].Map, new[] { spec }, new NullIgcSite());
@@ -119,9 +126,11 @@ public class MissionAssemblyTests
         Assert.Equal(spec.CivilizationId, side.Civilization.CivilizationId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Assemble_rejects_a_side_whose_civilization_is_absent()
     {
+        Require.Artwork();
         var core = RepresentativeCore.Value;
         // A civilization id that is definitely not present.
         short bogus = (short)(core.Civilizations.Keys.Max() + 777);
@@ -132,9 +141,11 @@ public class MissionAssemblyTests
         Assert.Contains($"civilization {bogus}", ex.Message);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Assemble_binds_the_site_and_rejects_null()
     {
+        Require.Artwork();
         var (_, map) = AllMaps.Value[0];
         var core = RepresentativeCore.Value;
 
@@ -152,9 +163,11 @@ public class MissionAssemblyTests
         Assert.Throws<ArgumentNullException>(() => Mission.Assemble(core, map, TwoSides(), null!));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Representative_core_and_full_corpus_counts_are_sane()
     {
+        Require.Artwork();
         var core = RepresentativeCore.Value;
         Assert.NotEmpty(core.Civilizations);
         Assert.Equal(99, Corpus.Files.Count(f => { try { return IgcReader.ParseFile(f).Wrapper == IgcWrapper.VersionAndDataSize; } catch { return false; } }));

@@ -4,6 +4,7 @@ using Allegiance.Core;
 using Allegiance.Core.MapGen;
 using Allegiance.Core.Model;
 using Xunit;
+using Allegiance.TestInfra;
 
 /// <summary>
 /// P401 — structural verification of <see cref="MapGenType.Brawl"/>, the
@@ -72,9 +73,11 @@ public sealed class MapGenBrawlTests
     /// sector with no warps — a real, confirmed no-op for LinkClusters
     /// (cpp:1732-1734), not an accidental gap. Exactly one neutral cluster and
     /// zero warps in the whole map.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Brawl_SingleSharedCluster_ZeroWarps()
     {
+        Require.Artwork();
         var map = Generate(2);
         Assert.Single(map.Clusters);
         var cluster = map.Clusters[0];
@@ -88,9 +91,11 @@ public sealed class MapGenBrawlTests
     /// 2500-radius circle at angle 2π·side/teams (cpp 1753-1759, 1771).
     /// Removing the override would leave the map with NO stations (there is no
     /// home sector to trigger GenerateStarbase) — this test goes red.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Brawl_TwoTeams_OneStationPerSide_AtCircularPositions()
     {
+        Require.Artwork();
         var map = Generate(2);
         Assert.Equal(2, map.Stations.Count);
 
@@ -110,9 +115,11 @@ public sealed class MapGenBrawlTests
     /// own civilization's INITIAL station type (pSide-&gt;GetCivilization()-&gt;
     /// GetInitialStationType(), cpp 1774-1778) — not a fixed type id — and is
     /// named after that type.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Brawl_StationsUseCorrectInitialStationTypeAndOwner()
     {
+        Require.Artwork();
         int teams = 4;
         var map = Generate(teams);
         Assert.Equal(teams, map.Stations.Count);
@@ -137,9 +144,11 @@ public sealed class MapGenBrawlTests
     /// (randomInt(3,5) inclusive → port Random.Next(3,6)) via GetRandomType(0)
     /// = capabilities 0 (cpp 1790-1793; asteroidigc.cpp:238-240). Removing the
     /// scatter would leave zero capability-0 rocks — this test goes red.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Brawl_ThreeToFiveScatterAsteroids()
     {
+        Require.Artwork();
         var map = Generate(2);
         int scatter = map.Asteroids.Count(a => a.AabmCapabilities == 0);
         Assert.InRange(scatter, 3, 5);
@@ -153,9 +162,11 @@ public sealed class MapGenBrawlTests
     /// base × 1) and generic stays 8 (neutral base × 1, the default 9th arg).
     /// Removing the Brawl branch would collapse special to the base 2 and this
     /// test goes red.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Brawl_NegativeSpecialMultiplier_GivesAbsoluteCount()
     {
+        Require.Artwork();
         var map = Generate(2);
         int mineable = map.Asteroids.Count(a => (a.AabmCapabilities & DataAsteroidIGC.AabmMineHe3) != 0);
         int special = map.Asteroids.Count(a => (a.AabmCapabilities & DataAsteroidIGC.AabmSpecial) != 0);
@@ -171,9 +182,11 @@ public sealed class MapGenBrawlTests
     /// 24 2006 (cpp 1695-1704) — so, like PinWheel/SplitBase, it adds no "must
     /// be N teams" constraint: a 3-team config is accepted and still yields one
     /// shared cluster with one station per side.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Brawl_HasNoExtraValidityConstraint()
     {
+        Require.Artwork();
         var map = Generate(3);
         Assert.Single(map.Clusters);         // still one shared sector
         Assert.Empty(map.Warps);             // still nothing to link

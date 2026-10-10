@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -162,9 +163,11 @@ public class PingDataReqPingDataLiveTests
     /// observes NOTHING (requester-only audience, not a broadcast). Removing
     /// the per-player emission, the requester-only addressing, or the marker
     /// each breaks a distinct assertion here.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReqPingData_full_roster_is_requester_only()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -199,9 +202,11 @@ public class PingDataReqPingDataLiveTests
     /// marker — no per-player entries (native PingQuery debounce,
     /// messagecore.h:217-223). Must-fail-if-removed: disabling the debounce
     /// makes the second response carry the full roster again.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReqPingData_within_5s_is_debounced_to_marker_only()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -226,9 +231,11 @@ public class PingDataReqPingDataLiveTests
     /// <summary>⭐ After the 5-second debounce window elapses (advanced via the
     /// sim clock, 150 ticks @ 20 upd = 7.5s), a subsequent request produces a
     /// full roster again — proving the debounce is time-bound, not sticky.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReqPingData_after_5s_elapse_produces_full_roster_again()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -257,9 +264,11 @@ public class PingDataReqPingDataLiveTests
     /// this port's usual per-mission isolation. A requester receives entries
     /// for players in OTHER missions too. Must-fail-if-removed: a
     /// mission-scoped roster would omit mission B's players.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ReqPingData_roster_spans_all_missions()
     {
+        Require.Artwork();
         using var server = new Srv();
         int seq = 0;
         server.ShipSpawner = (core, _, shipId) =>

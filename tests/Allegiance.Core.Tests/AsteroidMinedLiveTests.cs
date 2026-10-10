@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -189,9 +190,11 @@ public sealed class AsteroidMinedLiveTests
     /// receive it. That cross-side arrival is the whole-mission proof
     /// (<c>GetGroupRealSides()</c>, <c>FedSrv.CPP:12418</c>), exactly the P102
     /// <c>ASTEROID_DESTROYED</c> settlement.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mining_broadcasts_ASTEROID_MINED_to_whole_mission_cross_side_and_same_side()
     {
+        Require.Artwork();
         using var seat = SeatThree();
         var rock = seat.Rock;
         var sector = seat.Sector;
@@ -249,9 +252,11 @@ public sealed class AsteroidMinedLiveTests
     /// <see cref="Asteroid.MineOre"/> reporting gate (which only raises the seam on
     /// a &gt;3.0 ore change) holds exactly the same with the new broadcast wired in.
     /// The observer peers' message counts must stay frozen while the server ticks.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void No_broadcast_fires_once_miner_hits_capacity()
     {
+        Require.Artwork();
         using var seat = SeatThree();
 
         // Let the miner fill to its (GA-scaled) capacity — the miner is on

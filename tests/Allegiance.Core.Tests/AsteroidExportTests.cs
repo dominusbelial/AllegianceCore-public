@@ -9,6 +9,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -31,9 +32,11 @@ public class AsteroidExportTests
     private const string SpiderMap = "m2xspiderw.igc";
 
     // ── (1) codec round-trip over the whole corpus ────────────────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DataAsteroidIGC_encode_roundtrips_across_corpus()
     {
+        Require.Artwork();
         int n = 0;
         foreach (var (file, v) in PayloadDecodeTests.Asteroids())
         {
@@ -65,9 +68,11 @@ public class AsteroidExportTests
     }
 
     // ── (2) real map reaches a wire peer over loopback TCP ───────────────
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Bot_receives_ExportAsteroid_for_every_asteroid_in_m2xspiderw()
     {
+        Require.Artwork();
         // Parse the real map independently (no server internals) to know the
         // expected set of asteroids the server must send.
         var map = MissionMap.Load(IgcReader.ParseFile(

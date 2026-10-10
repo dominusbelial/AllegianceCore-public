@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -156,9 +157,11 @@ public class DockDockingTests
     /// <c>State = c_ssDocked</c>. Moving it away afterwards keeps it latched
     /// docked (proving the latch), until an <c>FM_C_DOCKED(48)</c> undock
     /// announce clears both — visible on the next broadcast.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FriendlyDock_sets_StationId_and_StateDocked_then_Undock_clears()
     {
+        Require.Artwork();
         using var server = new Srv();
         DataStationIGC friendly = default;
         Vector3 favpos = default;
@@ -220,9 +223,11 @@ public class DockDockingTests
     /// shipIGC.h:417-420). Proves it is sent <b>exactly once per dock event</b>,
     /// carries the real <c>StationId</c>, and rounds again on a re-dock — so it
     /// is attributable to the transition, not a periodic broadcast.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FriendlyDock_sends_exactly_one_DockedNotify_per_event_with_correct_station()
     {
+        Require.Artwork();
         using var server = new Srv();
         DataStationIGC friendly = default;
         server.ShipSpawner = (core, mission, shipId) =>
@@ -273,9 +278,11 @@ public class DockDockingTests
     /// dock — the friendly-only gate (only same-side stations dock, the task's
     /// explicit scope) is what blocks it, not geometry (the ship is demonstrably
     /// within <see cref="Sector.DockRadius"/> of the hostile station).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void HostileStation_in_radius_does_not_trigger_dock()
     {
+        Require.Artwork();
         using var server = new Srv();
         DataStationIGC hostile = default;
         server.ShipSpawner = (core, mission, shipId) =>
@@ -313,9 +320,11 @@ public class DockDockingTests
     /// it keeps broadcasting normal flying SHIP_STATUS(90)s with StationID NA,
     /// and its server-side docked state stays null. No regression to ordinary
     /// flight/status broadcasting.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_nowhere_near_a_station_is_unaffected()
     {
+        Require.Artwork();
         using var server = new Srv();   // default spawn: first sector (no stations)
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby

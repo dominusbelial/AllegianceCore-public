@@ -130,7 +130,7 @@ sealed class ProofRunner : Game
     private static string HomeArt()
     {
         var env = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH");
-        return env is { Length: > 0 } ? env : "/home/domingo/Development/Artwork";
+        return env is { Length: > 0 } ? env : ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     }
 
     private static LogonRequest Request(string name) => new()

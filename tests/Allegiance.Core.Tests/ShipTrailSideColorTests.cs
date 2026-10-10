@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -60,9 +61,11 @@ public sealed class ShipTrailSideColorTests
     /// <summary>Assemble seeds each side's colour from the palette by side id —
     /// side 0 is the native Gold, side 1 the native Blue (the "bluish" side of
     /// Domingo's memory is exactly native's side-1 blue).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mission_assemble_seeds_side_colours_from_palette()
     {
+        Require.Artwork();
         var m = Assembly();
         Assert.Equal(188f / 255f, m.Sides[0].ColorR, 6);   // Gold
         Assert.Equal(160f / 255f, m.Sides[0].ColorG, 6);
@@ -76,9 +79,11 @@ public sealed class ShipTrailSideColorTests
     /// wire field was always designed to carry, fsmission.cpp:3073), instead of
     /// the previous neutral-gray stand-in — generalising the same decode
     /// concept to real side colours.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GameOver_ForMission_writes_real_side_colours()
     {
+        Require.Artwork();
         var m = Assembly();
         var go = GameOver.ForMission(m, winnerSideId: 0, reason: "Alpha won.");
         Assert.Equal(188f / 255f, go.Sides[0].R, 6);

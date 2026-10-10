@@ -4,6 +4,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -17,7 +18,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class PartInfoLayoutTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog =
         ShopCatalog.TryLoad(ArtRoot)
@@ -70,9 +71,11 @@ public class PartInfoLayoutTests
 
     // ── CanMountPart: exact native bitwise semantics ───────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Weapon_fits_when_any_hardpoint_mask_covers_it()
     {
+        Require.Artwork();
         var hull = CurrentHull() with
         {
             Hardpoints =
@@ -89,9 +92,11 @@ public class PartInfoLayoutTests
         Assert.False(hull.CanMountPart(baseWeapon with { PartMask = 0x0008 })); // no hardpoint covers bit 3
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_weapon_fits_via_pmEquipment_at_its_et_index()
     {
+        Require.Artwork();
         var hull = CurrentHull() with
         {
             Hardpoints = [],
@@ -103,9 +108,11 @@ public class PartInfoLayoutTests
         Assert.False(hull.CanMountPart(shield with { PartMask = 0x0008 })); // not covered
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Weapon_fit_is_per_hardpoint_not_pmEquipment()
     {
+        Require.Artwork();
         var hull = CurrentHull() with
         {
             Hardpoints = [new DataHullTypeIGC.Hardpoint(0, 0, "", "", 0x0040, false)],
@@ -118,9 +125,11 @@ public class PartInfoLayoutTests
 
     // ── PartInfoLayout: real-data detail rows ─────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Part_info_shows_real_stats_and_fits_verdict()
     {
+        Require.Artwork();
         var m = ModelOnPart(FittingWeapon());
         var rows = PartInfoLayout.Build(m);
         var texts = rows.Select(r => r.Text).ToArray();
@@ -138,9 +147,11 @@ public class PartInfoLayoutTests
     /// present a part the server would drop. This replaces the old flat-list
     /// "marked DOES NOT FIT" case, which required selecting a part that isn't
     /// compatible — impossible under P519's compatible-only rule.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_fitting_weapon_is_never_offered_in_any_slot()
     {
+        Require.Artwork();
         var bad = NonFittingWeapon();
         var m = FreshModel();
         m.SwitchTab(ShopTab.Parts);
@@ -159,9 +170,11 @@ public class PartInfoLayoutTests
     /// <summary>⭐ P519 — swapping to a hull that can't mount a mounted part
     /// DROPS that part eagerly (native ReplaceLoadout mounts only what fits), so
     /// the pending loadout never carries a part the chosen hull can't mount.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Swapping_to_a_non_mounting_hull_drops_the_part()
     {
+        Require.Artwork();
         var current = CurrentHull();
         var w = FittingWeapon();
         var target = Catalog.Hulls.First(h => h.HullId != current.HullId && !h.CanMountPart(w));
@@ -178,18 +191,22 @@ public class PartInfoLayoutTests
     }
 
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Both_fit_and_no_fit_cases_exist_in_the_real_core()
     {
+        Require.Artwork();
         // Guards the premise of the two verdict tests above: the current hull
         // has at least one compatible and one incompatible real weapon.
         _ = FittingWeapon();
         _ = NonFittingWeapon();
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hull_highlight_shows_hull_stats_and_no_compat_section()
     {
+        Require.Artwork();
         var m = ModelOnHull(CurrentHull());
         var texts = PartInfoLayout.Build(m).Select(r => r.Text).ToArray();
 
@@ -200,9 +217,11 @@ public class PartInfoLayoutTests
         Assert.DoesNotContain(texts, t => t.Contains("FITS", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Detail_rows_are_ascii_safe()
     {
+        Require.Artwork();
         // Only parts the current hull actually offers (compatible-only) are
         // focusable; a non-fitting part is never listed (checked separately).
         foreach (var part in new[] { FittingWeapon() })

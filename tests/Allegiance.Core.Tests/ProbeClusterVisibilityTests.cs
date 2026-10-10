@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -111,9 +112,11 @@ public class ProbeClusterVisibilityTests
 
     // ── 1. A live owned probe makes its own cluster visible (presence) ──────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_owned_probe_reveals_its_cluster_after_the_scout_departs()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -140,9 +143,11 @@ public class ProbeClusterVisibilityTests
 
     // ── 2. The reveal clears when the probe is destroyed ────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_reveal_clears_when_the_probe_is_destroyed()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -169,9 +174,11 @@ public class ProbeClusterVisibilityTests
 
     // ── 3. The reveal clears when the probe's lifespan expires ──────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_reveal_clears_when_the_probe_expires()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -204,9 +211,11 @@ public class ProbeClusterVisibilityTests
 
     // ── 4. A probe only grants visibility to its owning side ────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Probe_reveal_is_scoped_to_the_owning_side()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];
@@ -224,9 +233,11 @@ public class ProbeClusterVisibilityTests
 
     // ── 5. Periodic refresh adopts the probe reveal into the visible set ────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Periodic_refresh_adopts_the_probe_reveal()
     {
+        Require.Artwork();
         var mission = NewStartedMission(2);
         var (a, b, _) = ThreeDistinct(mission);
         var side0 = mission.Sides[Side0];

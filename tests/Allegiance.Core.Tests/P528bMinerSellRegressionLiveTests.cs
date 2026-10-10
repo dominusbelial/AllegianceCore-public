@@ -3,6 +3,7 @@ using Allegiance.Core.Sim;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -67,9 +68,11 @@ public sealed class P528bMinerSellRegressionLiveTests
     /// began mining → full → cross-sector warp(s) home → [mine-sell] at the P528
     /// amounts → relaunch → began again. Fails (times out, no second sale) on the
     /// pre-P528b code where a full miner is trapped beside its rock.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Each_initial_miner_completes_two_full_mine_sell_cycles_at_native_rates()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var mission = server.Missions[0];

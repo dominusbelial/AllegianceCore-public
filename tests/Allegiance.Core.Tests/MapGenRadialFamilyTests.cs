@@ -5,6 +5,7 @@ using Allegiance.Core.MapGen;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 /// <summary>
 /// P399 — structural verification of the radial/spoke procedural map
@@ -135,10 +136,12 @@ public sealed class MapGenRadialFamilyTests
         return adj;
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_CorrectSectorCount_AndHomeSectors(TopologyCase c)
     {
+        Require.Artwork();
         var map = Generate(c);
         var m = AssembleMap(c, map);
 
@@ -149,10 +152,12 @@ public sealed class MapGenRadialFamilyTests
         Assert.Equal(c.Homes, homeIds);
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_Adjacency_MatchesTracedNativeGraph(TopologyCase c)
     {
+        Require.Artwork();
         var m = AssembleMap(c, Generate(c));
         var actual = ActualAdjacency(m);
 
@@ -175,10 +180,12 @@ public sealed class MapGenRadialFamilyTests
         Assert.Equal(c.EdgeCount, degreeSum / 2);
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(TopologyCase c)
     {
+        Require.Artwork();
         var m = AssembleMap(c, Generate(c));
         var homeSet = c.Homes.ToHashSet();
 
@@ -191,10 +198,12 @@ public sealed class MapGenRadialFamilyTests
         }
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(Cases))]
     public void Topology_EverySectorHasMinableAsteroids(TopologyCase c)
     {
+        Require.Artwork();
         var m = AssembleMap(c, Generate(c));
         foreach (var sector in m.Sectors)
         {
@@ -213,9 +222,11 @@ public sealed class MapGenRadialFamilyTests
     /// home's 10. If the multiplier were removed the centre would equal a
     /// neutral cluster at 22 — this test goes red (verified during development).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PinWheel_SingleCentreMode_DoublesCentreAsteroids()
     {
+        Require.Artwork();
         var map = MissionMapGenerator.Generate(new MapGenParams
         {
             Type = MapGenType.PinWheel,
@@ -239,9 +250,11 @@ public sealed class MapGenRadialFamilyTests
     /// <summary>⭐ DiamondRing's native <c>IsValid</c> is enforced: 2 teams is
     /// rejected (native requires &gt;2 teams, mapmakerigc.cpp:1930-1937); 3 teams
     /// is accepted and generates.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DiamondRing_RequiresMoreThanTwoTeams()
     {
+        Require.Artwork();
         var bad = new MapGenParams
         {
             Type = MapGenType.DiamondRing, Teams = 2, CivIds = CivIds(2), MapSize = 0,
@@ -262,9 +275,11 @@ public sealed class MapGenRadialFamilyTests
     /// — so unlike DiamondRing it adds no extra constraint and 2 teams is
     /// accepted normally. This pins that honest reading: PinWheel does not reject
     /// anything the base accepts.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PinWheel_HasNoExtraValidityConstraint()
     {
+        Require.Artwork();
         var map = MissionMapGenerator.Generate(new MapGenParams
         {
             Type = MapGenType.PinWheel, Teams = 2, CivIds = CivIds(2), MapSize = 0,

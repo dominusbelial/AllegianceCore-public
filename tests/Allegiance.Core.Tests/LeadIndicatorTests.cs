@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -108,9 +109,11 @@ public class LeadIndicatorTests
         throw new InvalidOperationException("no fightable hull+weapon in the representative core");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SolveLead_swings_toward_a_laterally_moving_target_and_intercepts()
     {
+        Require.Artwork();
         var core = Core();
         var (hull, weaponType, proj) = FirstFightable(core);
 

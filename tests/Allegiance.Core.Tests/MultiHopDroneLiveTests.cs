@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -113,9 +114,11 @@ public sealed class MultiHopDroneLiveTests
     /// in the target's sector, closing on the station. Green only if the
     /// cross-cluster autopilot re-paths after the first transit and the second
     /// transit fires — i.e. server-side drones handle multi-hop routes.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Server_drone_crosses_two_alephs_to_a_station_two_hops_away()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.SpawnInitialMinersAtBoot = false;   // P382: pristine arena — no boot miner to perturb the path
         server.Boot(DebugConfig());

@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -165,9 +166,11 @@ public class LiveRelaunchTests
     /// RELAUNCH_SHIP(192) with the correct shipID/carrierID reaches both bots,
     /// the lander is repositioned to a real launch slot (outside the bay), and
     /// it is no longer InGarage on the very next tick (natural self-termination).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied()
     {
+        Require.Artwork();
         var (server, carBot, lanBot, sp) = Setup("cap502", new Vector3(500f, 950f, 930f));
         var carrier = sp.Carrier;
         var lander = sp.Lander;
@@ -213,9 +216,11 @@ public class LiveRelaunchTests
     /// two real launch slots (the carrier's GetLaunchSlot modulo counter): the
     /// two relaunches use different slots (slot1 then slot0), and further ticks
     /// after each do not re-fire.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Consecutive_landings_round_robin_across_launch_slots()
     {
+        Require.Artwork();
         var (server, carBot, lanBot, sp) = Setup("cap502", new Vector3(900f, 960f, 920f));
         var carrier = sp.Carrier;
         var lander = sp.Lander;
@@ -241,9 +246,11 @@ public class LiveRelaunchTests
     /// single <c>launch</c> frame, not <c>launch1</c>) uses the native's
     /// backward-offset fallback branch: the lander is thrown straight back
     /// along the carrier's backward axis.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Carrier_without_launch_slots_uses_backward_fallback()
     {
+        Require.Artwork();
         var (server, carBot, lanBot, sp) = Setup("faohshcar", new Vector3(1300f, 970f, 910f));
         var carrier = sp.Carrier;
         var lander = sp.Lander;
@@ -273,9 +280,11 @@ public class LiveRelaunchTests
     /// per-tick geometric pass finds nothing new. Asserted on the geometry
     /// (the lander stays not-InGarage over many ticks) rather than on a raw
     /// bot message count, which races the bot's asynchronous receive thread.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void After_relaunch_no_repeat_detection_or_launch()
     {
+        Require.Artwork();
         var (server, carBot, lanBot, sp) = Setup("cap502", new Vector3(1700f, 956f, 924f));
         var carrier = sp.Carrier;
         var lander = sp.Lander;

@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -40,9 +41,11 @@ public sealed class FlagsKillsTests
     /// <see cref="Mission.FlagsWinGoal"/> wins the flags game — the port of
     /// <c>fsmission.cpp:3883-3887</c> (<c>GetFlags() &gt;= nGoalFlagsCount</c>,
     /// the real-flag leg of <c>CheckForVictoryByFlags</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flags_reaching_goal_declares_flags_winner()
     {
+        Require.Artwork();
         var m = Assembly();
         m.FlagsEnabled = true;
         m.FlagsWinGoal = 2;
@@ -65,9 +68,11 @@ public sealed class FlagsKillsTests
     /// <summary>⭐ Selection wiring: with <see cref="Mission.FlagsEnabled"/>
     /// false (the default), securing flags does NOT win — existing non-flags
     /// missions are unaffected.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flags_disabled_goal_does_not_win()
     {
+        Require.Artwork();
         var m = Assembly();
         m.FlagsEnabled = false;
         m.FlagsWinGoal = 1;
@@ -85,9 +90,11 @@ public sealed class FlagsKillsTests
     /// <see cref="Mission.KillsWinGoal"/> wins the deathmatch game — the port of
     /// <c>fsmission.cpp:3749-3760</c> (<c>GetKills() &gt;= nGoalTeamKills</c>,
     /// <c>CheckForVictoryByKills</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kills_reaching_goal_declares_kills_winner()
     {
+        Require.Artwork();
         var m = Assembly();
         m.KillsEnabled = true;
         m.KillsWinGoal = 3;
@@ -110,9 +117,11 @@ public sealed class FlagsKillsTests
     /// <summary>⭐ Selection wiring: with <see cref="Mission.KillsEnabled"/>
     /// false (the default), scoring kills does NOT win — existing non-deathmatch
     /// missions are unaffected.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Kills_disabled_goal_does_not_win()
     {
+        Require.Artwork();
         var m = Assembly();
         m.KillsEnabled = false;
         m.KillsWinGoal = 1;
@@ -129,9 +138,11 @@ public sealed class FlagsKillsTests
     /// (<c>fsmission.cpp:2445-2465</c> precedes the kills tie-break) — a side
     /// that simultaneously qualifies on both is awarded by flags (lowest side
     /// id wins the flags scan).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flags_branch_is_consulted_before_kills()
     {
+        Require.Artwork();
         var m = Assembly();
         m.FlagsEnabled = true;
         m.FlagsWinGoal = 1;
@@ -150,9 +161,11 @@ public sealed class FlagsKillsTests
     /// <summary>⭐ Native stage gate: only a Started/Starting mission recomputes —
     /// the same gate as P191/P302 (<c>fsmission.cpp:3575-3578</c>). A mission
     /// that ended (Over) never re-wins.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Not_started_or_over_mission_never_recomputes_win()
     {
+        Require.Artwork();
         var m = Assembly();
         m.Stage = MissionStage.Over;
         m.FlagsEnabled = true;

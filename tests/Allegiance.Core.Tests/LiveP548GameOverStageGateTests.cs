@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -106,9 +107,11 @@ public class LiveP548GameOverStageGateTests
     /// (fsmission.cpp:1147), so there must be NO GAME_OVER and the mission must
     /// stay NotStarted. Red on today's code: the old check ran the mission-wide
     /// tally on every disconnect, saw one surviving side and declared game-over.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NotStarted_lobby_drop_produces_no_game_over()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -144,9 +147,11 @@ public class LiveP548GameOverStageGateTests
     /// survives): side B is deactivated and EXACTLY ONE GAME_OVER fires with
     /// native's reason/winner. Confirms the side-empty gate still ends a real
     /// game, and the deactivation happens.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Started_last_player_of_side_drops_deactivates_side_and_one_game_over()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -192,9 +197,11 @@ public class LiveP548GameOverStageGateTests
     /// drop used to run the check on the fresh NotStarted mission, which is
     /// under-populated, and declare another game-over. Exactly one GAME_OVER
     /// total.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Four_drops_after_game_over_produce_no_further_game_overs()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -264,9 +271,11 @@ public class LiveP548GameOverStageGateTests
     /// LeaderShipId stayed unset. Two auto-assigned peers, one onto each empty
     /// side: each becomes that side's leader, and the first keeps its role when
     /// the second joins.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_assigned_first_player_on_empty_side_is_leader()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -295,9 +304,11 @@ public class LiveP548GameOverStageGateTests
     /// <c>[gameover]</c> lines), then seat four fresh clients, force the game
     /// STARTED and drop them one by one (expected exactly 1 <c>[gameover]</c>).
     /// Mirrors the quoted server-log count in the P548 report.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_loopback_four_clients_drop_in_lobby_then_started_game()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var mission0 = server.Missions[0];

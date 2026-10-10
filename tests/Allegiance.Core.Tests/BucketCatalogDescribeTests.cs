@@ -2,6 +2,7 @@ using System.IO;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -27,9 +28,11 @@ public class BucketCatalogDescribeTests
     private static StaticCore Core() =>
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Describe_MatchesForSide_IdForId_ForSameInputs()
     {
+        Require.Artwork();
         var core = Core();
         var techs = TechTreeBitMask.Empty;
         var ga = GlobalAttributeSet.Identity;
@@ -51,9 +54,11 @@ public class BucketCatalogDescribeTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Describe_MatchesForSide_AcrossSeveralInitialTechSets()
     {
+        Require.Artwork();
         var core = Core();
         var ga = GlobalAttributeSet.Identity;
         var site = new NullSite();
@@ -75,9 +80,11 @@ public class BucketCatalogDescribeTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Describe_Id1_IsSyntheticShipBucket()
     {
+        Require.Artwork();
         var core = Core();
         var views = BucketCatalog.Describe(core, TechTreeBitMask.Empty, GlobalAttributeSet.Identity);
         Assert.NotEmpty(views);
@@ -86,18 +93,22 @@ public class BucketCatalogDescribeTests
         Assert.Equal(BucketCatalog.SyntheticDroneHullId, views[0].HullIdDrone);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Describe_IdsAreContiguous_StartingAtOne()
     {
+        Require.Artwork();
         var core = Core();
         var views = BucketCatalog.Describe(core, TechTreeBitMask.Empty, GlobalAttributeSet.Identity);
         for (int i = 0; i < views.Count; i++)
             Assert.Equal(i + 1, views[i].Id);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Describe_GroupsAreOrdered_DevDroneStation()
     {
+        Require.Artwork();
         var core = Core();
         // An all-techs mask yields every development (none obsolete), and unlocks
         // all reachable drone/station buckets, exercising all three groups in order.

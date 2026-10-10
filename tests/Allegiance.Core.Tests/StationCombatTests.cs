@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -134,9 +135,11 @@ public sealed class StationCombatTests
     /// <see cref="Station.ShieldFraction"/> by exactly
     /// <c>amount·dtmShield/maxShield</c> and leaves the armor untouched
     /// (<c>stationIGC.cpp:171-177</c>) — verification point 1 of the task.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_up_hit_reduces_shield_fraction_and_leaves_armor_untouched()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -171,9 +174,11 @@ public sealed class StationCombatTests
     /// <c>(overflow·maxShield·dtmArmor)/(maxArmor·dtmShield)</c>
     /// (<c>stationIGC.cpp:186</c>), decreasing <see cref="Station.ArmorFraction"/>
     /// by exactly that — verification point 2 of the task.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Overflowing_hit_depletes_shield_and_converts_surplus_to_hull_by_exact_native_ratio()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -213,9 +218,11 @@ public sealed class StationCombatTests
     /// past death does not double-kill (native <c>dr</c>-stays-default,
     /// <c>stationIGC.cpp:191-194</c>) — the same caller-owns-removal contract the
     /// asteroid established (P102).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lethal_hit_marks_dead_returns_killed_and_leaves_removal_to_caller()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -259,9 +266,11 @@ public sealed class StationCombatTests
     /// <c>!bAllowFriendlyFire &amp;&amp; AlliedSides(...)</c>,
     /// <c>stationIGC.cpp:128-130</c>; no alliance concept here, the P112
     /// <c>bAllowAlliedRip</c> precedent). Verification point 5 of the task.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_friendly_fire_deals_no_damage()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -290,9 +299,11 @@ public sealed class StationCombatTests
     /// takes <b>no damage at all</b> — the native falls to <c>c_drNoDamage</c> in
     /// that case (<c>stationIGC.cpp:161,203-204</c>), NOT a hull-damage fallback.
     /// Confirmed and asserted, so the deliberate simplification is visible.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_less_station_takes_no_damage_not_a_hull_fallback()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -319,9 +330,11 @@ public sealed class StationCombatTests
     /// <summary>⭐ A <c>c_sabmPedestal</c> station is indestructible — the
     /// capability-bit invulnerability gate (<c>stationIGC.cpp:127</c>,
     /// <see cref="Station.SabmPedestal"/>) returns NoDamage for any enemy hit.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flag_pedestal_station_is_indestructible()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -351,9 +364,11 @@ public sealed class StationCombatTests
     /// 1.0 (<c>stationIGC.cpp:147-156</c>) — faithfully ported even though no
     /// repair source exists yet (dead code in practice, the same precedent as
     /// <see cref="Ship.ReceiveDamage"/>'s repair branch, Ship.cs:906-914).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Negative_amount_repairs_hull_fraction()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -391,9 +406,11 @@ public sealed class StationCombatTests
     /// <summary>⭐ Shield regeneration over real ticks: with the armor full, a
     /// damaged shield regrows toward 1.0 at exactly <c>dt·ShieldRegeneration/maxShield</c>
     /// per call (<c>stationIGC.h:201-208</c>) — verification point 4 of the task.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shield_regenerates_toward_max_at_documented_rate()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
@@ -428,9 +445,11 @@ public sealed class StationCombatTests
     /// <summary>⭐ Native regen sequencing: while the armor is not full, ONLY the
     /// armor regenerates and the shield does NOT (<c>stationIGC.h:195-200</c>); the
     /// shield resumes only once the armor is back to full (<c>stationIGC.h:201-208</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Armor_regenerates_first_and_shield_waits_until_armor_full()
     {
+        Require.Artwork();
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];

@@ -1,5 +1,7 @@
 using System;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -12,14 +14,16 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class MissileModelSourceTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData("mis05", 5.803)]
     [InlineData("mis400", 4.520)]
     [InlineData("artifact", 13.328)]
     public void NativeMdlRadius_MatchesTheRealParsedMdlSize(string asset, float expected)
     {
+        Require.Artwork();
         // The native-.mdl path (MissileRenderer) draws raw .mdl coordinates at
         // identity scale, so its real rendered merged-bounding-sphere radius is
         // exactly what NativeMdlRadius measures. This is the reference the
@@ -29,17 +33,21 @@ public class MissileModelSourceTests
         Assert.Equal(expected, r, 3);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NativeMdlRadius_UnknownOrEmpty_ReturnsZero()
     {
+        Require.Artwork();
         Assert.Equal(0f, MissileModelSource.NativeMdlRadius(""));
         Assert.Equal(0f, MissileModelSource.NativeMdlRadius(null!));
         Assert.Equal(0f, MissileModelSource.NativeMdlRadius("does_not_exist"));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ScaleForNativeSize_ScalesSoRenderedEqualsNative()
     {
+        Require.Artwork();
         // A content model rendering at 185 units (the ~100× Meshy bone bake,
         // ~the 200-300-unit over-size 2b complained about) must be scaled to
         // land exactly on the real native radius, e.g. mis05's 5.80.

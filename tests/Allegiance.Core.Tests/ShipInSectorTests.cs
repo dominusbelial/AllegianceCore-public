@@ -4,6 +4,7 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using SimModel = Allegiance.Core.Sim.Model;
 using Xunit.Abstractions;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -138,9 +139,11 @@ public class ShipInSectorTests
     /// teleport across the sector. Bit-identical to the independent seeded
     /// reference (same physics, same cadence).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_placed_late_does_not_jump()
     {
+        Require.Artwork();
         const double bootAge = 120.0;          // mission already 120 s in
         const double deltaT = 0.625;           // 1 + (int)(0.625/0.25) = 3 chunks
         var mission = NewStartedMission();
@@ -179,9 +182,11 @@ public class ShipInSectorTests
     /// force, no extra physics and no double-counting — it only decides the
     /// cadence. Multi-chunk case (deltaT = 0.908 → n = 4).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Mission_tick_does_not_change_the_physics_multi_chunk()
     {
+        Require.Artwork();
         const double deltaT = 0.908;                 // 1 + (int)(0.908/0.25) = 1+3 = 4 chunks
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
@@ -205,9 +210,11 @@ public class ShipInSectorTests
     /// <summary>Single-chunk case: with deltaT &lt; 0.25 (n == 1) the tick is a
     /// lone ExecuteMove over [0, deltaT] + one integration — identical to a
     /// direct call.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Single_chunk_tick_matches_a_lone_ExecuteMove_plus_integration()
     {
+        Require.Artwork();
         const double deltaT = 0.093;
         var mission = NewStartedMission();
         var ship = NewShip();
@@ -227,9 +234,11 @@ public class ShipInSectorTests
 
     // ── an empty mission ticks harmlessly ─────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Empty_mission_tick_touches_nothing()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         Assert.All(mission.Sectors, s => Assert.Empty(s.Models));   // no models anywhere
         var before = mission.Sectors.Select(s => s.UpdateCount).ToArray();
@@ -246,9 +255,11 @@ public class ShipInSectorTests
     }
 
     /// <summary>A sector with a model removed also ticks harmlessly.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Removed_model_is_not_ticked()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var ship = NewShip();
         ApplyControls(ship);
@@ -265,9 +276,11 @@ public class ShipInSectorTests
     // ── sector isolation ──────────────────────────────────────────────────
 
     /// <summary>A ship in sector A is untouched when sector B ticks on its own.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_in_A_is_untouched_when_B_ticks()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         Assert.True(mission.Sectors.Count >= 2, "test map must have ≥ 2 sectors");
         var a = mission.Sectors[0];
@@ -295,9 +308,11 @@ public class ShipInSectorTests
     /// <summary>With a deltaT spanning several increments, a model's Update is
     /// called once per chunk (n times), not once — reproduced through the real
     /// mission path, counted by a model subclass.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Model_sees_n_updates_not_one()
     {
+        Require.Artwork();
         const double deltaT = 1.077;                 // 1 + (int)(1.077/0.25) = 1+4 = 5 chunks
         const int expectedN = 5;
         var mission = NewStartedMission();
@@ -314,9 +329,11 @@ public class ShipInSectorTests
     /// happened: with forward+right thrust, splitting into n sub-steps yields a
     /// measurably different velocity than one big step (the cadence, not the
     /// wrapper).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_reflects_the_full_chunked_cadence()
     {
+        Require.Artwork();
         const double deltaT = 0.903;                 // n = 1 + (int)(0.903/0.25) = 4 chunks
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
@@ -337,9 +354,11 @@ public class ShipInSectorTests
 
     /// <summary>A model's forward-clock guard: a second call at an unchanged or
     /// earlier time does not double-run it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Model_backwards_or_repeated_time_is_a_noop()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var counter = new CountingModel(912, Vector3.Zero);
         mission.Sectors[0].Add(counter);
@@ -366,9 +385,11 @@ public class ShipInSectorTests
     /// rates, torque and throttle) — this is a <b>measurement</b>, printed and
     /// reported, not an assertion of equality.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Measure_mission_tick_vs_one_big_step_divergence()
     {
+        Require.Artwork();
         const double total = 0.905216;               // non-power-of-two, 4 chunks (0.9052/0.25 = 3.62 → n=4)
 
         // One big step: a lone ExecuteMove over [0, total], plus the position step.

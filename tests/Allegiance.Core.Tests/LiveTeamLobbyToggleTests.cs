@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -152,9 +153,11 @@ public class LiveTeamLobbyToggleTests
 
     /// <summary>⭐ The mission owner locking the lobby relays LOCK_LOBBY(43)
     /// whole-mission (sender included) and sets Mission.LockLobby.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lobby_lock_from_owner_relays_and_sets_flag()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -189,9 +192,11 @@ public class LiveTeamLobbyToggleTests
 
     /// <summary>⭐ A non-owner — even another side's TEAM LEADER — is refused:
     /// Mission.LockLobby stays false and nothing is relayed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lobby_lock_from_non_owner_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -224,9 +229,11 @@ public class LiveTeamLobbyToggleTests
     /// <summary>⭐ The mission owner locking sides relays LOCK_SIDES(44)
     /// whole-mission and sets Mission.LockSides; a non-owner (another side's
     /// leader) is refused.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sides_lock_from_owner_relays_and_non_owner_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -264,9 +271,11 @@ public class LiveTeamLobbyToggleTests
     /// DELPOSITIONREQ(DPR_SidesLocked); once unlocked, the existing P184
     /// behavior (leader-gated queued request) is restored — a real regression
     /// check against P184's own assumptions.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sides_lock_refuses_side_switch_and_unlock_restores_p184()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -316,9 +325,11 @@ public class LiveTeamLobbyToggleTests
     /// <summary>⭐ MUST-FAIL-IF-REMOVED: a side's leader turning auto-accept ON
     /// immediately seats a player with a pending request on that side. Without
     /// the SetAutoAccept sweep, the pending requester stays unseated.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_accept_on_seats_pending_requester()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -356,9 +367,11 @@ public class LiveTeamLobbyToggleTests
     /// <summary>⭐ A NEW request to an already-led side with AutoAccept set is
     /// seated immediately (no POSITIONREQ(40) pending), mirroring native
     /// RequestPosition's rgfAutoAccept branch (fsmission.cpp:4759).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_accept_on_seats_new_request_to_led_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -388,9 +401,11 @@ public class LiveTeamLobbyToggleTests
 
     /// <summary>⭐ AUTO_ACCEPT from a NON-leader is refused: the flag is not
     /// set and nothing is relayed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_accept_from_non_leader_refused()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -416,9 +431,11 @@ public class LiveTeamLobbyToggleTests
 
     /// <summary>⭐ The iSide == NA (mission-owner-level auto-accept-of-leaders)
     /// variant is out of scope: refused/ignored, flag unchanged, no relay.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_accept_na_variant_ignored()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -444,9 +461,11 @@ public class LiveTeamLobbyToggleTests
     /// <summary>⭐ A side's leader changing its civilization while the mission is
     /// STAGE_NOTSTARTED relaying CHANGE_TEAM_CIV(51) whole-mission and swapping
     /// the side's Civilization.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Change_team_civ_from_leader_pre_start_changes_and_relays()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -481,9 +500,11 @@ public class LiveTeamLobbyToggleTests
     /// <summary>⭐ CHANGE_TEAM_CIV is refused once the mission has Started: the
     /// civilization is unchanged and nothing is relayed (native only honors it
     /// at STAGE_NOTSTARTED, FedSrv.CPP:7359).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Change_team_civ_refused_once_started()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -506,9 +527,11 @@ public class LiveTeamLobbyToggleTests
     }
 
     /// <summary>⭐ CHANGE_TEAM_CIV from a NON-leader is refused: unchanged, no relay.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Change_team_civ_refused_from_non_leader()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -535,9 +558,11 @@ public class LiveTeamLobbyToggleTests
     /// <summary>⭐ CHANGE_TEAM_CIV naming a civilization absent from the core is
     /// refused (logged and ignored): unchanged, no relay (native
     /// TrapHackBoot(pciv), FedSrv.CPP:7362).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Change_team_civ_refused_for_unknown_civ()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -584,9 +609,11 @@ public class LiveTeamLobbyToggleTests
     /// class): LOCK_SIDES(44) — and its LockSides gate — in mission A must never
     /// leak to, or gate, mission B's side switch, even though both share the same
     /// numeric side id.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_lock_sides_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

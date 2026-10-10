@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -80,9 +81,11 @@ public class P478SideGaDevelopmentCostTimeTests
     /// <summary>⭐ The two economy indices are the documented native constants,
     /// and an identity GA reproduces the raw development price/time exactly —
     /// so the economy half is a no-op for a default (all-1.0) side.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Economy_indices_match_native_and_identity_is_raw()
     {
+        Require.Artwork();
         Assert.Equal(23, GlobalAttributeSet.DevelopmentCost);
         Assert.Equal(24, GlobalAttributeSet.DevelopmentTime);
 
@@ -103,9 +106,11 @@ public class P478SideGaDevelopmentCostTimeTests
     /// <c>Price</c> is 1.5× the raw core price and its <c>TimeToBuild</c> 2.0×
     /// the raw build time — baked at creation (bucketigc.cpp:70-74). Pre-fix the
     /// buckets carried the raw price/time, so this ratio assertion failed.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Development_cost_and_time_scale_development_buckets_at_creation()
     {
+        Require.Artwork();
         var buckets = ForSide(costMul: 1.5f, timeMul: 2.0f);
         var devBuckets = buckets.Where(b => b.ItemType == BucketItemType.BitDevelopment).ToList();
         Assert.NotEmpty(devBuckets);
@@ -126,9 +131,11 @@ public class P478SideGaDevelopmentCostTimeTests
     /// the GA scaling (native bucketigc.cpp:70: <c>!= c_didTeamMoney</c>) — the
     /// prosperity/economic-win shortcut is priced by the core, not by research
     /// GAs. Guarded (the dev may be absent/obsolete in this port's catalog).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TeamMoney_development_is_exempt_from_scaling()
     {
+        Require.Artwork();
         var buckets = ForSide(costMul: 1.5f, timeMul: 2.0f);
         var tm = buckets.FirstOrDefault(b => b.Development?.DevelopmentId == Mission.TeamMoneyDevelopmentId);
         if (tm is null)
@@ -143,9 +150,11 @@ public class P478SideGaDevelopmentCostTimeTests
     /// <summary>⭐ Native scales only <c>OT_development</c> buckets — the
     /// ship-type, drone-type and station-type buckets keep their raw core
     /// price/time (bucketigc.cpp:66-75). Pre-fix/fidelity guard.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_development_buckets_are_not_scaled()
     {
+        Require.Artwork();
         var buckets = ForSide(costMul: 1.5f, timeMul: 2.0f);
 
         var ship = buckets.First(b => b.ItemType == BucketItemType.BitShipType);
@@ -181,9 +190,11 @@ public class P478SideGaDevelopmentCostTimeTests
     /// the strongest available E2E, because no PCore001 <em>development</em>
     /// changes these two GAs (measured); the civ base is the only real source of
     /// a non-1.0 multiplier for them.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Real_civ_base_GA_scales_development_buckets_through_mission_assemble()
     {
+        Require.Artwork();
         var civ = Core.Value.Civilizations.Values.First(c => c.CivilizationId == 35);   // Bios
         Assert.NotEqual(1f, civ.GasBaseAttributes[GlobalAttributeSet.DevelopmentCost]);
         Assert.NotEqual(1f, civ.GasBaseAttributes[GlobalAttributeSet.DevelopmentTime]);

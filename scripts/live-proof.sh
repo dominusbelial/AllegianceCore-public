@@ -20,7 +20,7 @@
 #   --out <dir>              screenshot output dir (default ./live-proof-<ts>)
 #   --port <port>            server port (default 6073)
 #   --map <map.igc>          server map (default m2xspiderw.igc)
-#   --art <path>             artwork root (default /home/domingo/Development/Artwork)
+#   --art <path>             artwork root (default: $ALLEGIANCE_ARTWORK_PATH or local.env)
 #   --auto-side <id>         client side to auto-select (default 0)
 #   --autoshots <t,...>      after-launch screenshot seconds (default "8,12,20")
 #   --exit-after <s>         client exit deadline after launch (default 25)
@@ -39,9 +39,9 @@
 # Prints the absolute path of every real PNG it produced.
 set -uo pipefail
 
-DOTNET="${DOTNET:-/home/domingo/.dotnet/dotnet}"
+DOTNET="${DOTNET:-$(command -v dotnet)}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-ART="/home/domingo/Development/Artwork"
+ART="${ALLEGIANCE_ARTWORK_PATH:-$REPO/../Artwork}"
 
 PORT=6073
 MAP="m2xspiderw.igc"

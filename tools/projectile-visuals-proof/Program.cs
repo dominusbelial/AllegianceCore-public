@@ -55,7 +55,7 @@ sealed class ProofOptions
     }
 
     private static string EnvArt() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") is { Length: > 0 } e ? e : "/home/domingo/Development/Artwork";
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") is { Length: > 0 } e ? e : ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     public static string RepoRoot()
     {
@@ -103,7 +103,7 @@ sealed class ProofRunner : Game
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(EnvArtRoot(), "PCore001.igc")));
 
     private static string EnvArtRoot() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") is { Length: > 0 } e ? e : "/home/domingo/Development/Artwork";
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") is { Length: > 0 } e ? e : ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private void RunProof(GraphicsDevice gd)
     {

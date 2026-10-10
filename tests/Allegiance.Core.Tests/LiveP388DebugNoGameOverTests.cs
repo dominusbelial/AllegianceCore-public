@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -189,9 +190,11 @@ public sealed class LiveP388DebugNoGameOverTests
     /// with ZERO clients connected afterwards. Red when the P388 gate is
     /// removed (the last-player disconnect would declare a draw → Stage Over →
     /// sim frozen → no cycles → the cycle pump times out).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Debug_mode_disconnect_does_not_end_mission_and_miners_keep_cycling()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: true));
 
@@ -249,9 +252,11 @@ public sealed class LiveP388DebugNoGameOverTests
     /// before this change — the mission flips to <see cref="MissionStage.Over"/>
     /// (draw: zero sides with players). Guards against the P388 gate leaking
     /// into production.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Production_last_player_disconnect_still_ends_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(debugMode: false, map: "XXV_simple.igc"));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby (P180)

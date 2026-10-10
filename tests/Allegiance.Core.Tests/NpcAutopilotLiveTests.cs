@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -159,9 +160,11 @@ public sealed class NpcAutopilotLiveTests
     /// <see cref="Srv.SpawnNpcShip"/> with PlanTarget set to a real same-sector
     /// station gets measurably closer to it over many real server ticks — the
     /// first NPC in this port observed to move under its own decision.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flying_npc_with_plan_target_moves_measurably_closer_to_station()
     {
+        Require.Artwork();
         using var seat = SeatOne();
         var npcPos = new Vector3(952f, 936f, 959f);
         var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.PeerSide, npcPos);
@@ -186,9 +189,11 @@ public sealed class NpcAutopilotLiveTests
     /// reaches the target's vicinity and settles: the final distance is small,
     /// and a trailing window shows no runaway overshoot/re-expansion (a
     /// reasonable settling check, not pixel-perfect).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flying_npc_reaches_and_settles_near_target_without_runaway_oscillation()
     {
+        Require.Artwork();
         using var seat = SeatOne();
         var npcPos = new Vector3(898f, 924f, 949f);
         var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.PeerSide, npcPos);
@@ -226,9 +231,11 @@ public sealed class NpcAutopilotLiveTests
     /// PlanTarget on a tick; this task's autopilot then ACTUALLY MOVES it toward
     /// that station over subsequent ticks — the first time P151's decision
     /// becomes observable as real ship movement, not just a recorded reference.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Damaged_npc_take_cover_now_produces_observable_movement()
     {
+        Require.Artwork();
         using var seat = SeatOne();
         var npcPos = new Vector3(878f, 916f, 941f);
         var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.PeerSide, npcPos);

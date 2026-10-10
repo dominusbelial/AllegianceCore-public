@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -184,9 +185,11 @@ public sealed class CloakVisibilityGateLiveTests
         b.HeavyShipsUpdates.SelectMany(u => u.HeavyShipEntries)
             .Any(e => e.ShipId == id && (e.StateM & ShipControlState.CloakActive) != 0);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cloaked_enemy_receives_no_data_while_teammate_still_sees_it_transparent()
     {
+        Require.Artwork();
         using var seat = SeatGate();
 
         // 0) Baseline — uncloaked enemy reaches the enemy peer's HEAVY updates.
@@ -224,9 +227,11 @@ public sealed class CloakVisibilityGateLiveTests
             $"mate side {seat.MateSide} got the entry + cloak bit {ShipControlState.CloakActive:x}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Detectable_enemy_still_receives_the_cloaked_ship_inside_the_collapsed_radius()
     {
+        Require.Artwork();
         using var seat = SeatGate();
 
         seat.Npc.StateM |= ShipControlState.CloakActive;

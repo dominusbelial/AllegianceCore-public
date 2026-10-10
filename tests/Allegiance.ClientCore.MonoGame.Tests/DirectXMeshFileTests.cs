@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Allegiance.Core;
 using Allegiance.ClientCore.MonoGame.Assets;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -41,12 +42,14 @@ public class DirectXMeshFileTests
         return (nVerts, m.TriangleCount, minZ, maxLen, apex);
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData("lens30", 30)]
     [InlineData("lens60", 60)]
     [InlineData("lens90", 90)]
     public void Cap_is_a_unit_radius_spherical_cap_at_the_native_angle(string stem, int degrees)
     {
+        Require.Artwork();
         var m = ParseReal(stem);
         Assert.True(m.VertexCount > 0, "cap has vertices");
         Assert.True(m.TriangleCount > 0, "cap has triangles");
@@ -67,9 +70,11 @@ public class DirectXMeshFileTests
             Assert.True(ix < nVerts, "index out of range");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Caps_differ_in_angular_width()
     {
+        Require.Artwork();
         // lens30 reaches only to cos(30°); lens60 to cos(60°); lens90 to the
         // equator (z≈0) — distinct caps, not identical meshes.
         var z30 = Stats(ParseReal("lens30")).minZ;
@@ -80,9 +85,11 @@ public class DirectXMeshFileTests
         Assert.True(z90 <= 0.051f, "lens90 should reach the equator (minZ ≈ 0)");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Normals_equal_positions_on_the_unit_sphere()
     {
+        Require.Artwork();
         var m = ParseReal("lens30");
         for (int v = 0; v < m.VertexCount; v++)
         {
@@ -92,9 +99,11 @@ public class DirectXMeshFileTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Texture_coords_cover_the_full_cap_disc()
     {
+        Require.Artwork();
         var m = ParseReal("lens30");
         Assert.Equal(m.VertexCount, m.TexCoords.Length / 2);
         // Apex samples the disc centre (0.5,0.5); the widest ring reaches the

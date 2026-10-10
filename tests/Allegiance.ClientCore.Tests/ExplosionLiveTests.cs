@@ -8,6 +8,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -25,7 +26,7 @@ namespace Allegiance.ClientCore.Tests;
 public class ExplosionLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -62,9 +63,11 @@ public class ExplosionLiveTests
     private static void SetShipSpawner(Srv server, Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)> spawner) =>
         ShipSpawnerField.SetValue(server, spawner);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RealKill_BroadcastsExplosionEvent_ReceivedByPeerWorld()
     {
+        Require.Artwork();
         using var server = new Srv();
         // A lifepod-hulled ship so the suicide is a real death (not an in-space
         // eject) — the P107 note; in this core the first lifepod hull is also a

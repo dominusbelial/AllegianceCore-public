@@ -1,10 +1,16 @@
+using Allegiance.TestInfra;
+
 namespace Allegiance.Core.Tests;
 
+[Trait("Requires","Artwork")]
 public class ContainerTests
 {
-    [Fact]
+    [SkippableFact]
     public void Corpus_is_discovered_across_both_trees()
-        => Assert.Equal(Corpus.ExpectedUniqueFiles, Corpus.Files.Count);
+    {
+        Require.Artwork();
+        Assert.Equal(Corpus.ExpectedUniqueFiles, Corpus.Files.Count);
+    }
 
     /// <summary>
     /// The acceptance property. With no Windows host to diff against the
@@ -13,19 +19,21 @@ public class ContainerTests
     /// lands precisely on end-of-body is strong evidence the layout is right.
     /// Measured 210/210 by an independent Python scanner on 2026-08-27.
     /// </summary>
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(Corpus.Theory), MemberType = typeof(Corpus))]
     public void Every_file_is_consumed_exactly(string path)
     {
+        Require.Artwork();
         var f = IgcReader.ParseFile(path);
         Assert.True(f.IsExact,
             $"{Path.GetFileName(path)}: consumed {f.BytesConsumed} of {f.BodyLength} " +
             $"({f.Records.Count} records, wrapper {f.Wrapper})");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Wrapper_split_is_99_cores_and_111_maps()
     {
+        Require.Artwork();
         var cores = 0; var maps = 0;
         foreach (var p in Corpus.Files)
         {
@@ -40,9 +48,10 @@ public class ContainerTests
     }
 
     /// <summary>Every static core carries exactly one 1760-byte OT_constants record.</summary>
-    [Fact]
+    [SkippableFact]
     public void Each_static_core_has_exactly_one_constants_record()
     {
+        Require.Artwork();
         foreach (var p in Corpus.Files)
         {
             var f = IgcReader.ParseFile(p);
@@ -59,9 +68,10 @@ public class ContainerTests
     /// A one-byte stride error would corrupt every field past the first weapon
     /// while still parsing cleanly, so it is worth asserting directly.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     public void Hull_sizes_follow_stride_30_from_base_540()
     {
+        Require.Artwork();
         foreach (var p in Corpus.Files)
         foreach (var r in IgcReader.ParseFile(p).Records)
         {

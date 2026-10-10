@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -149,9 +150,11 @@ public class LiveLifepodEnduranceDisplayTests
     /// same-side watcher exists in the roster, it demonstrably received the
     /// relay at flat 1.0. (3) After the pod's oxygen expires and it respawns
     /// docked, the driver's countdown reads full/inactive.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Driver_sees_countdown_others_do_not_and_dock_cancels()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? noStationSector = null;
         var spawnIndex = 0;

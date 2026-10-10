@@ -9,6 +9,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -35,7 +36,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class CrossSideCombatVisibilityLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -165,9 +166,11 @@ public sealed class CrossSideCombatVisibilityLiveTests
     /// and IsNotVisible == false (exactly the P371 T-gather conditions), (b) see
     /// Bravo's projectile fire (PROJECTILE_INSTANCE) and (c) see Bravo's missile
     /// launch AND its per-tick tracking (FIRE_MISSILE + MISSILE_UPDATE).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CrossSide_WatcherSeesOpponent_Projectile_And_Missile_InRealTime()
     {
+        Require.Artwork();
         using var server = new Srv();
         int placed = 0;
         Sector? s0 = null; Vector3 bravoSpawn = default;
@@ -253,9 +256,11 @@ public sealed class CrossSideCombatVisibilityLiveTests
 
     /// <summary>⭐ Bullet 3 (no regression): a SAME-SIDE pair still sees each
     /// other's projectile fire and missile launch exactly as before P375.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SameSide_pairStillSeesProjectileAndMissile()
     {
+        Require.Artwork();
         using var server = new Srv();
         int placed = 0;
         Sector? s0 = null;
@@ -302,9 +307,11 @@ public sealed class CrossSideCombatVisibilityLiveTests
     /// it warps out (watcher latches IsGone via P370); it warps back into A; the
     /// watcher clears IsGone AND the re-flowing 176 re-stamps SectorId == A —
     /// not a stale one-time value from first contact.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CrossSide_sector_stays_correct_across_warp_return()
     {
+        Require.Artwork();
         using var server = new Srv();
         int placed = 0;
         Ship? bravo = null; Sector? sec0 = null; Vector3 warpCenter = default; Vector3 outDir = default;

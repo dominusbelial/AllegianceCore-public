@@ -3,6 +3,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Visual;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -54,9 +55,11 @@ public class ProjectileVisualTests
 
     /// <summary>PE Gat Gun 1 (pid 1, PCore001) — billboard f99, radius 1,
     /// spin 3.84 rad/s.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GatGun_is_a_spinning_billboard_f99()
     {
+        Require.Artwork();
         var v = ProjectileVisual.Resolve(Core().ProjectileTypes[1]);
         Assert.Equal(ProjectileVisualKind.Billboard, v.Kind);
         Assert.Equal("f99", v.TextureName);
@@ -67,9 +70,11 @@ public class ProjectileVisualTests
 
     /// <summary>EW Pulse Laser (pid 66, PCore001) — directional fx95, width 0.1,
     /// radius 15.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PulseLaser_is_a_directional_fx95_decal()
     {
+        Require.Artwork();
         var v = ProjectileVisual.Resolve(Core().ProjectileTypes[66]);
         Assert.Equal(ProjectileVisualKind.Directional, v.Kind);
         Assert.Equal("fx95", v.TextureName);
@@ -79,9 +84,11 @@ public class ProjectileVisualTests
 
     /// <summary>EW Lsr Can 1 (pid 75, PCore001) — a 3D model named
     /// dn_ptlascan1 at radius 125.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LsrCan_is_a_3d_model()
     {
+        Require.Artwork();
         var v = ProjectileVisual.Resolve(Core().ProjectileTypes[75]);
         Assert.Equal(ProjectileVisualKind.Model, v.Kind);
         Assert.Equal("dn_ptlascan1", v.ModelName);
@@ -90,9 +97,11 @@ public class ProjectileVisualTests
 
     /// <summary>ER Nanite 1 (pid 58, PCore001) — billboard f44 (Domingo's
     /// "donut"), radius 1, spinning.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Nanite_is_a_spinning_billboard_f44()
     {
+        Require.Artwork();
         var v = ProjectileVisual.Resolve(Core().ProjectileTypes[58]);
         Assert.Equal(ProjectileVisualKind.Billboard, v.Kind);
         Assert.Equal("f44", v.TextureName);

@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -108,9 +109,11 @@ public class MissileLockTests
     /// seconds of continuous dead-on aim (the in-cone rate is
     /// <c>1/(lockTime·ECM)</c> per second — ECM the target hull's decoded
     /// <see cref="DataHullTypeIGC.Ecm"/>, <c>magazineigc.cpp:148-167</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MissileLock_builds_to_full_dead_ahead_after_lock_time()
     {
+        Require.Artwork();
         var mType = LockMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -144,9 +147,11 @@ public class MissileLockTests
     /// <summary>⭐ Test 2 — with the target well outside <see cref="DataMissileTypeIGC.LockAngle"/>
     /// (off-cone ⇒ the decay branch, <c>magazineigc.cpp:162-167</c>), the lock
     /// never builds: it stays at 0 from 0.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MissileLock_never_builds_when_target_is_well_off_cone()
     {
+        Require.Artwork();
         var mType = LockMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -167,9 +172,11 @@ public class MissileLockTests
     /// ECM (the two <c>lockTime</c> factors cancel; ECM does not,
     /// <c>magazineigc.cpp:161-167</c>), clamped to 0.
     /// Here angle-off-bow = π (target directly behind).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MissileLock_decays_at_the_derived_off_cone_rate()
     {
+        Require.Artwork();
         var mType = LockMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -204,9 +211,11 @@ public class MissileLockTests
 
     /// <summary>⭐ Test 4 — a mid-ripcord ship (<see cref="Ship.IsRipcordActive"/>) has
     /// its lock reset to 0 immediately, regardless of aim (<c>magazineigc.cpp:104-105</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Active_ripcord_resets_lock_to_zero_regardless_of_aim()
     {
+        Require.Artwork();
         var mType = LockMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -225,9 +234,11 @@ public class MissileLockTests
     }
 
     /// <summary>⭐ Test 5 — no command target ⇒ no lock (stays/resets to 0).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void No_command_target_leaves_lock_at_zero()
     {
+        Require.Artwork();
         var mType = LockMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -240,9 +251,11 @@ public class MissileLockTests
 
     /// <summary>⭐ Test 6 — a same-side command target never builds lock (the
     /// hostile-side gate, <c>magazineigc.cpp:128</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_command_target_never_builds_lock()
     {
+        Require.Artwork();
         var mType = LockMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);
@@ -258,9 +271,11 @@ public class MissileLockTests
     /// == 0 needs no lock at all: instant full lock (1f) regardless of aim
     /// (<c>magazineigc.cpp:145-146</c>), even with the target dead astern
     /// (off-cone).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MaxLock_zero_gives_instant_full_lock_regardless_of_aim()
     {
+        Require.Artwork();
         var mType = LockMissileType.Value;
         var dumb = mType with { MaxLock = 0f };
         var mission = NewStartedMission(out var sector);
@@ -283,9 +298,11 @@ public class MissileLockTests
     /// its current position — a measurable heading difference. The <b>default</b>
     /// (no argument) reproduces Stage 1's exact <c>m_lock ≡ 1.0</c> behavior
     /// (<c>LockFraction == 1f</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FireMissile_lockFraction_threads_through_and_changes_homing()
     {
+        Require.Artwork();
         var mType = LockMissileType.Value;
         var mission = NewStartedMission(out var sector);
         Vector3 forward = new(1f, 0f, 0f);

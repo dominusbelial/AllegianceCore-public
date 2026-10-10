@@ -5,6 +5,7 @@ using Allegiance.Core.MapGen;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 /// <summary>
 /// P397 — structural verification of the procedural SingleRing map generator:
@@ -68,9 +69,11 @@ public sealed class MapGenFoundationTests
 
     /// <summary>The default SingleRing layout (iMapSize=0): teamPerTeam=1,
     /// neutralPerTeam=1 ⇒ (1+1)×2 = 4 sectors.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SingleRing_TwoTeams_ProducesFourSectors()
     {
+        Require.Artwork();
         var map = GenerateTwoTeamRing();
         Assert.Equal(4, map.Clusters.Count);
 
@@ -85,9 +88,11 @@ public sealed class MapGenFoundationTests
     /// <summary>The plain ring: every cluster connects to exactly its two ring
     /// neighbours (i-1 and i+1 mod N) — <c>LinkClusters()</c>'s chain i→i+1
     /// with a last→first wrap (mapmakerigc.cpp:867-870).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SingleRing_EachSectorLinksItsTwoRingNeighbours()
     {
+        Require.Artwork();
         var map = GenerateTwoTeamRing();
         var m = AssembleMap(map);
         int n = m.Sectors.Count;
@@ -105,9 +110,11 @@ public sealed class MapGenFoundationTests
 
     /// <summary>Home (team) sectors get a starbase; neutral sectors do not
     /// (GenerateStarbase is called only for home sectors, mapmakerigc.cpp:962-963).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SingleRing_HomeSectorsGetStations_NeutralSectorsHaveNone()
     {
+        Require.Artwork();
         var m = AssembleMap(GenerateTwoTeamRing());
 
         foreach (var sector in m.Sectors)
@@ -122,9 +129,11 @@ public sealed class MapGenFoundationTests
     /// <summary>Every sector is populated with at least one genuinely minable
     /// He3 asteroid — the PopulateCluster/CreateAsteroid port (an asteroid the
     /// mining pass can drain).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SingleRing_EverySectorHasMinableAsteroids()
     {
+        Require.Artwork();
         var m = AssembleMap(GenerateTwoTeamRing());
 
         foreach (var sector in m.Sectors)
@@ -135,9 +144,11 @@ public sealed class MapGenFoundationTests
     }
 
     /// <summary>Native asserts nTeams >= 2 before generation (mapmakerigc.cpp:172).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SingleRing_RequiresTwoOrMoreTeams()
     {
+        Require.Artwork();
         var pmp = new MapGenParams { Type = MapGenType.SingleRing, Teams = 1, CivIds = [CivPair.Value[0]] };
         Assert.Throws<InvalidDataException>(() =>
             MissionMapGenerator.Generate(pmp, GenCore.Value, 0.0));

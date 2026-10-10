@@ -1,3 +1,5 @@
+using Allegiance.TestInfra;
+
 namespace Allegiance.Core.Tests;
 
 /// <summary>
@@ -14,18 +16,24 @@ public class MissionMapTests
             .Select(t => (t.Path, t.File, Model.MissionMap.Load(t.File)));
 
     /// <summary>All 111 maps load and contain only the four expected object types.</summary>
-    [Fact]
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
     public void All_111_maps_load()
-        => Assert.Equal(Corpus.ExpectedMaps, Loaded().ToList().Count);
+    {
+        Require.Artwork();
+        Assert.Equal(Corpus.ExpectedMaps, Loaded().ToList().Count);
+    }
 
     /// <summary>
     /// Each list's count equals the raw record count IgcReader reports for the
     /// same file — an off-by-one in dispatch shows up here. Maps carry no
     /// static-core records, so this covers every record in the file.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Counts_equal_the_raw_record_histogram()
     {
+        Require.Artwork();
         foreach (var (path, f, m) in Loaded())
         {
             void Check(IgcObjectType type, int actual)

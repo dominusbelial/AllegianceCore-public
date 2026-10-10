@@ -3,6 +3,7 @@ using System.Linq;
 using Allegiance.ClientCore.MonoGame.Audio;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -20,7 +21,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class StationAttackVoiceTableTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static StaticCore Core()
     {
@@ -42,9 +43,11 @@ public class StationAttackVoiceTableTests
     /// vo_critical_station. This is the coverage contract: the server's defending-
     /// team alert sends exactly these ids (FedSrv.CPP:12202-12210), so an uncovered
     /// id means the client would stay silent for that base.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Every_real_station_sound_id_resolves_and_criticals_map_to_vo_critical_station()
     {
+        Require.Artwork();
         var core = Core();
         Assert.NotEmpty(core.StationTypes);
 
@@ -88,9 +91,11 @@ public class StationAttackVoiceTableTests
     /// <summary>⭐ Every stem the table references is a bundled .ogg in
     /// Content/Sounds — nothing the client would try to play is missing from the
     /// content pipeline (proving the P451 bundling step).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Every_table_stem_is_a_bundled_asset()
     {
+        Require.Artwork();
         string soundsDir = RepoContentSoundsDir();
         foreach (var stem in SoundManager.StationAttackVoices.Values.Distinct())
             Assert.True(File.Exists(Path.Combine(soundsDir, stem + ".ogg")),

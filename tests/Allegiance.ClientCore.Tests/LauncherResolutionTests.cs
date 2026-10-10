@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
 using Allegiance.Tools.McpSpawner;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -19,7 +20,7 @@ namespace Allegiance.ClientCore.Tests;
 public class LauncherResolutionTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static StaticCore RealCore() =>
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
@@ -57,9 +58,11 @@ public class LauncherResolutionTests
         throw new InvalidOperationException("no non-mountable launcher found");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesRealMissileLauncherByExactName()
     {
+        Require.Artwork();
         var name = MountableLauncherName();
         var launcher = Catalog.ResolveLauncher(name);
         var core = RealCore();
@@ -69,9 +72,11 @@ public class LauncherResolutionTests
         Assert.True(launcher.Amount > 0, "a real launcher carries real ammo");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesRealMissileLauncherByUniqueSubstring()
     {
+        Require.Artwork();
         var name = MountableLauncherName();
         // A unique-ish substring of a real launcher name either resolves to it
         // or is ambiguous — never a silent no-op.
@@ -80,22 +85,28 @@ public class LauncherResolutionTests
         Assert.True(r is null or ArgumentException, $"expected resolve-or-ambiguous, got {r}");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void UnknownLauncherThrowsASpecificError()
     {
+        Require.Artwork();
         var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveLauncher("definitely-not-a-launcher-xyzzy"));
         Assert.Contains("no launcher matches", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void BlankLauncherThrows()
     {
+        Require.Artwork();
         Assert.Throws<ArgumentException>(() => Catalog.ResolveLauncher("   "));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void DefaultLauncherPartIsARealLauncherThatMountsOnTheDefaultFighterHull()
     {
+        Require.Artwork();
         var core = RealCore();
         var launcher = Catalog.DefaultLauncherPart();
         var hull = core.HullTypes[Catalog.DefaultFighterHull().Id];
@@ -104,9 +115,11 @@ public class LauncherResolutionTests
         Assert.True(hull.CanMountPart(in part), "default launcher must actually mount on the default fighter hull");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AppendLauncherMountsARealCompatibleLauncherIntoALoadout()
     {
+        Require.Artwork();
         var name = MountableLauncherName();
         var launcher = Catalog.ResolveLauncher(name);
         var hull = Catalog.DefaultFighterHull();
@@ -119,9 +132,11 @@ public class LauncherResolutionTests
         Assert.Equal(launcher.Amount, parts[1].Amount);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AppendLauncherThatDoesNotFitFallsBackToGunOnly()
     {
+        Require.Artwork();
         var name = NonMountableLauncherName();
         var launcher = Catalog.ResolveLauncher(name);
         var hull = Catalog.DefaultFighterHull();
@@ -132,9 +147,11 @@ public class LauncherResolutionTests
         Assert.Single(parts);   // no fabricated launcher was added
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void AppendLauncherWithNoRequestLeavesLoadoutUnchanged()
     {
+        Require.Artwork();
         var hull = Catalog.DefaultFighterHull();
         var parts = new List<ExpandedPartData> { new(1234, 1, 0, 255) };
         var note = Catalog.AppendLauncher(parts, null, hull.Id, hull.Name, "");
@@ -142,9 +159,11 @@ public class LauncherResolutionTests
         Assert.Single(parts);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LauncherReadyTimeIsPositiveForARealLauncher()
     {
+        Require.Artwork();
         var launcher = Catalog.ResolveLauncher(MountableLauncherName());
         Assert.True(Catalog.LauncherReadyTime(launcher.Id) > 0);
     }
@@ -185,9 +204,11 @@ public class LauncherResolutionTests
         return (yes, no);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesRealMineDispenserByExactName()
     {
+        Require.Artwork();
         var core = RealCore();
         var (partId, name, _) = FirstDispenser(core, t => t is DataPartTypeIGC.MineLauncher);
         var l = Catalog.ResolveLauncher(name);
@@ -197,9 +218,11 @@ public class LauncherResolutionTests
         Assert.True(core.MineTypes.ContainsKey(core.Launchers[l.Id].ExpendabletypeId), "must be a real mine dispenser");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesRealChaffDispenserByExactName()
     {
+        Require.Artwork();
         var core = RealCore();
         var (partId, name, _) = FirstDispenser(core, t => t is DataPartTypeIGC.ChaffLauncher);
         var l = Catalog.ResolveLauncher(name);
@@ -208,9 +231,11 @@ public class LauncherResolutionTests
         Assert.True(core.ChaffTypes.ContainsKey(core.Launchers[l.Id].ExpendabletypeId), "must be a real chaff dispenser");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolvesRealProbeDispenserByExactName()
     {
+        Require.Artwork();
         var core = RealCore();
         var (partId, name, _) = FirstDispenser(core, t => t is DataPartTypeIGC.ProbeLauncher);
         var l = Catalog.ResolveLauncher(name);
@@ -224,12 +249,14 @@ public class LauncherResolutionTests
     /// with the right kind; <see cref="Catalog.AppendLauncher"/> MOUNTS it into a
     /// loadout when the hull fits (real ammo), and falls back to GUN-ONLY with a
     /// plain note when the hull does not (never a fabricated dispenser).</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(0)]   // mine
     [InlineData(1)]   // chaff
     [InlineData(2)]   // probe
     public void DispenserResolutionAndHullGatedMounting(int kindIdx)
     {
+        Require.Artwork();
         var core = RealCore();
         Func<DataPartTypeIGC.Subtype, bool> isKind = kindIdx switch
         {

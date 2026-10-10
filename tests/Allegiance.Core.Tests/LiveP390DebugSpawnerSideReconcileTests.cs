@@ -7,6 +7,7 @@ using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Ls = global::Allegiance.Server.LiveSettingsConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -104,9 +105,11 @@ public class LiveP390DebugSpawnerSideReconcileTests
         return (ship.Sector!.Id, ship.SideId!.Value);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Explicit_side_one_relocates_first_peer_to_plato_and_it_docks_there()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // dock pass needs a started mission (P180)
@@ -130,9 +133,11 @@ public class LiveP390DebugSpawnerSideReconcileTests
         Assert.Equal(PlatoDebugStationId, ShipOf(server, ship.Id).StationId!.Value);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Explicit_side_zero_relocates_second_peer_to_omega_and_it_docks_there()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
@@ -165,9 +170,11 @@ public class LiveP390DebugSpawnerSideReconcileTests
         Assert.Equal(OmegaDebugStationId, ShipOf(server, ship.Id).StationId!.Value);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Auto_assign_side_matches_the_sector_the_spawner_actually_used()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         var omega = Sec(server, 1053);

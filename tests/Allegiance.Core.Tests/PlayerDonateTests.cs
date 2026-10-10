@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -142,9 +143,11 @@ public class PlayerDonateTests
     /// (donor debited, recipient credited) and broadcasts MONEY_CHANGE to the
     /// donor's side group (both peers on that side observe the same
     /// sidTo=recipient / sidFrom=donor / dMoney frame).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_donation_transfers_and_broadcasts_to_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -176,9 +179,11 @@ public class PlayerDonateTests
     /// alliance group) transfers the money AND broadcasts MONEY_CHANGE to BOTH
     /// sides' peer groups: the sender's side sees it and the recipient's side
     /// sees it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Allied_cross_side_donation_transfers_and_broadcasts_both_sides()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(ConfigFourTeams());
         using var a = new FltBot();
@@ -231,9 +236,11 @@ public class PlayerDonateTests
     /// <summary>⭐ A donation to a non-allied, different-side ship is refused as
     /// a no-op bounce-back: no wallet changes, and a MONEY_CHANGE echo (sidFrom
     /// = NA) reaches ONLY the sender — the would-be recipient sees nothing.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Non_allied_different_side_donation_bounces_back_no_op()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());   // 2 teams, no alliance
         using var a = new FltBot();
@@ -272,9 +279,11 @@ public class PlayerDonateTests
     /// <summary>⭐ A donation exceeding the sender's own wallet balance is
     /// refused (log-and-ignore — the initial hard gate): no forward at all, no
     /// echo, no wallet movement (native TrapHackBoot, FedSrv.CPP:7221).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Over_wallet_donation_refused_no_forward()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -300,9 +309,11 @@ public class PlayerDonateTests
     /// <summary>⭐ A donation to a nonexistent ship id is a no-op bounce-back to
     /// the sender alone (native FedSrv.CPP:7223 + 7247-7256): no wallet change,
     /// a MONEY_CHANGE echo with sidFrom=NA and sidTo = the sender's own ship.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Nonexistent_target_bounces_back_to_sender_alone()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         using var a = new FltBot();
@@ -362,9 +373,11 @@ public class PlayerDonateTests
     /// <summary>⭐ Multi-mission scoping (the P178/P180/P184/P190 must-not-regress
     /// bug class): a PLAYER_DONATE's MONEY_CHANGE broadcast on mission A must
     /// never reach a peer on mission B sharing the same numeric side id.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Multi_mission_donation_broadcast_scopes_per_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

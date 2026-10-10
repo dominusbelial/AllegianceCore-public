@@ -11,6 +11,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests.Transport;
 
@@ -131,9 +132,11 @@ public sealed class InboundFloodSafetyLiveTests
     /// be rejected wholesale — the server emits one framing-failure line and
     /// ZERO per-message "unsupported fmid" lines — while healthy peers keep
     /// receiving per-tick updates and the mission clock keeps advancing.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Oversized_packet_is_rejected_not_dispatched_others_keep_ticking()
     {
+        Require.Artwork();
         var server = Boot();
         List<FltBot> bots = new();
         TcpClient? raw = null;
@@ -194,9 +197,11 @@ public sealed class InboundFloodSafetyLiveTests
     /// processed but only a handful of "unsupported fmid" lines are emitted
     /// (with a periodic summary once >100 are suppressed), and healthy peers
     /// keep ticking.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking()
     {
+        Require.Artwork();
         var server = Boot();
         List<FltBot> bots = new();
         TcpClient? raw = null;

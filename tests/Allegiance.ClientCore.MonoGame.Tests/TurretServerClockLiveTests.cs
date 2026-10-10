@@ -11,6 +11,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -37,7 +38,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class TurretServerClockLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private const short CarrierHullId = 792;   // turret-capable carrier, slots [2,6), price 4000
     private const short BoarderHullId = 504;   // plain 500-credit boarder hull, slots [2,4)
@@ -165,9 +166,11 @@ public sealed class TurretServerClockLiveTests
         return estSec - server.SimNow;                       // sim-seconds error
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Turret_gunner_updates_stamped_from_the_ping_clock_are_accepted_and_fire()
     {
+        Require.Artwork();
         var server = new Srv();
         var sp = InjectBoardSpawn(server);
         server.Boot(Config());

@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -62,9 +63,11 @@ public sealed class StationCaptureTests
     /// <summary>⭐ Capture halves the CURRENT armor fraction and sets the shield
     /// to the heroic-engineer regen-derived value (regen/maxShield·7), and
     /// re-sides the station to the capturing side — <c>fsship.cpp:582,589-596,631</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Capture_halves_armor_sets_heroic_shield_and_resides()
     {
+        Require.Artwork();
         // MaxShield 100, ShieldRegen 10 → regenRatio 0.1 → boost 0.7 (fsship.cpp:592-593).
         var s = Mk(Core(), side: 0, maxArmor: 5000f, maxShield: 100f, shieldRegen: 10f);
         Assert.Equal(1f, s.ArmorFraction);
@@ -79,9 +82,11 @@ public sealed class StationCaptureTests
 
     /// <summary>⭐ The fudge is multiplicative of the CURRENT value, not a reset:
     /// capturing an already-half-damaged base halves it again (0.5 → 0.25).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Capture_again_halves_the_already_halved_fraction()
     {
+        Require.Artwork();
         var s = Mk(Core(), side: 0, maxArmor: 5000f, maxShield: 100f, shieldRegen: 10f);
         s.Capture(1);                        // 1.0 → 0.5
         Assert.Equal(0.5f, s.ArmorFraction, 4);
@@ -93,9 +98,11 @@ public sealed class StationCaptureTests
     /// <summary>⭐ A shield-less station type (MaxShield == 0) starts with zero
     /// shield after capture — the heroic-engineer boost is guarded against
     /// divide-by-zero and defaults to 0 (<c>fsship.cpp:589-590,596</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Capture_on_shield_less_station_sets_shield_zero()
     {
+        Require.Artwork();
         var s = Mk(Core(), side: 0, maxArmor: 5000f, maxShield: 0f, shieldRegen: 10f);
         Assert.False(s.HasShield);
         s.Capture(1);

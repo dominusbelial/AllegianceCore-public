@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -266,9 +267,11 @@ public sealed class BuyLoadoutPricingLiveTests
     /// the launcher's true price, not 0, flows through ShipValue); and a
     /// same-side teammate receives the side-wide MONEY_CHANGE
     /// {dMoney = -cost, sidTo = buyer, sidFrom = NA}.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Funded_Paid_Purchase_Charges_Exact_Delta_And_Broadcasts_SideWide()
     {
+        Require.Artwork();
         using var h = BootUndocked(FreeHull);
         short buyerId = h.BuyerId;
         Assert.Null(LiveShip(h.Server, buyerId).StationId);   // undocked → no tech gate
@@ -309,9 +312,11 @@ public sealed class BuyLoadoutPricingLiveTests
     /// The purchase is refused: the ship stays exactly as it was (same hull +
     /// value), and NO MONEY_CHANGE reaches anyone (the port's log-and-refuse
     /// soft-fail for native's TrapHackBoot disconnect).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unfunded_Buyer_Refused_ShipUnchanged_NoMoneyChange()
     {
+        Require.Artwork();
         using var h = BootUndocked(FreeHull);
         short buyerId = h.BuyerId;
         var core = h.Server.Missions[0].Core;
@@ -344,9 +349,11 @@ public sealed class BuyLoadoutPricingLiveTests
     /// garrison cannot sell (required techs unmet). The whole purchase is
     /// refused (native's CanBuy abort, shipIGC.h:999-1000) and the ship stays
     /// unchanged, even though the buyer has plenty of money.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unsellable_Hull_Refused_ShipUnchanged()
     {
+        Require.Artwork();
         using var h = BootDocked(CheapestSellable);
         short buyerId = h.BuyerId;
         var ctx = DockCtx(h.Server, buyerId);
@@ -377,9 +384,11 @@ public sealed class BuyLoadoutPricingLiveTests
     /// hull: one the garrison sells and mounts, one the garrison cannot sell
     /// (tech-gated). The sellable part mounts; the gated part is skipped
     /// (FBoughtEverything false in the ack).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TechGated_Part_Skipped_Sellable_Part_Still_Mounted()
     {
+        Require.Artwork();
         using var h = BootDocked(CheapestSellable);
         short buyerId = h.BuyerId;
         var ctx = DockCtx(h.Server, buyerId);
@@ -424,9 +433,11 @@ public sealed class BuyLoadoutPricingLiveTests
     /// <summary>⭐ Scenario 4 — a buyer downgrades to a CHEAPER hull. cost is
     /// negative, so the wallet INCREASES (refund) and the MONEY_CHANGE carries
     /// dMoney > 0, exactly as native (FedSrv.CPP:6195-6207).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Downgrade_Refunds_Buyer()
     {
+        Require.Artwork();
         using var h = BootUndocked(PriciestHull);
         short buyerId = h.BuyerId;
         var core = h.Server.Missions[0].Core;

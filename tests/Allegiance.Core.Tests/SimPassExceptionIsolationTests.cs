@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -72,9 +73,11 @@ public class SimPassExceptionIsolationTests
     /// ship's part list grows — must refuse past that, so a ship can never reach
     /// 256 parts and trip <see cref="ExportShip.Encode"/>'s throw. A 255-part
     /// loadout must still encode cleanly.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MountPart_refuses_to_exceed_255_equipped_parts()
     {
+        Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
         var anyPart = core.PartTypes.Values.First();
         var ship = new Ship(1, core.HullTypes.Values.OrderBy(h => h.HullId).First(),
@@ -113,9 +116,11 @@ public class SimPassExceptionIsolationTests
     /// private <c>_parts</c> list — the legacy exploit state — and confirm the
     /// server logs the failure and KEEPS TICKING instead of exiting.
     /// Before P314 this escaped and killed the whole process.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SimPass_contains_a_throwing_export_stage_and_keeps_running()
     {
+        Require.Artwork();
         using var server = new Srv();
         Sector? spawnSector = null;
         server.ShipSpawner = (core, mission, id) =>
@@ -192,9 +197,11 @@ public class SimPassExceptionIsolationTests
     /// vizfight event-feed shape) must be logged and skipped, never allowed to
     /// stall or kill the server. <see cref="Srv"/> routes every raise through
     /// the <c>Notify</c> barrier; a bare <c>Invoke</c> would propagate.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Throwing_notable_subscriber_is_contained_not_fatal()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;

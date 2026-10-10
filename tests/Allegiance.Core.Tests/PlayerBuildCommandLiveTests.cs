@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -47,9 +48,11 @@ public sealed class PlayerBuildCommandLiveTests
     /// igc.h:910) round-trips its full shape — the wire path the live tests
     /// drive sends exactly this and the server decodes it in
     /// <c>HandleOrderChange</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void OrderChange_build_roundtrips_cidBuild_constant()
     {
+        Require.Artwork();
         var msg = new OrderChange
         {
             ShipID = 12,
@@ -216,9 +219,11 @@ public sealed class PlayerBuildCommandLiveTests
     /// gate), and ticking to completion the rock → station transformation fires,
     /// the Builder ship is consumed, and a friendly ship docks at the new
     /// station. The full native construction arc, live.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Legal_build_starts_construction_and_creates_dockable_station()
     {
+        Require.Artwork();
         var (srv, mission, sector, peer, builderHull, _, stationType, rock, _, peerSide) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -275,9 +280,11 @@ public sealed class PlayerBuildCommandLiveTests
     /// Builder (no c_habmBuilder) is refused exactly as native's
     /// LegalCommand rejects a non-c_ptBuilder pilot (shipIGC.h:1699-1702) — no
     /// commitment, no effect.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Build_from_non_builder_hull_is_refused()
     {
+        Require.Artwork();
         var (srv, _, sector, peer, builderHull, nonBuilderHull, stationType, rock, _, _) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -304,9 +311,11 @@ public sealed class PlayerBuildCommandLiveTests
     /// <summary>⭐ Negative: a Build command targeting something that is not an
     /// <c>OT_asteroid</c> is refused (native LegalCommand is legal only against
     /// an OT_asteroid, shipIGC.h:1699-1701).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Build_against_non_asteroid_target_is_refused()
     {
+        Require.Artwork();
         var (srv, _, sector, peer, builderHull, _, stationType, rock, _, _) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -326,9 +335,11 @@ public sealed class PlayerBuildCommandLiveTests
     /// <summary>⭐ Negative: a Build command against an asteroid whose capability
     /// does not match the configured station type (not every rock is buildable)
     /// is refused — native HasCapability(m_abmOrders), shipIGC.h:1702.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Build_against_capability_mismatch_asteroid_is_refused()
     {
+        Require.Artwork();
         var (srv, _, sector, peer, builderHull, _, stationType, _, wrongRock, _) = BootFixture(out var bot);
         using (srv)
         using (bot)
@@ -350,9 +361,11 @@ public sealed class PlayerBuildCommandLiveTests
     /// <summary>⭐ Negative: a Builder with no configured station type (nothing
     /// to build) is refused — native's unset m_abmOrders has no build AABM to
     /// match, so LegalCommand cannot be satisfied.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Build_without_configured_station_type_is_refused()
     {
+        Require.Artwork();
         var (srv, _, sector, peer, builderHull, _, _, rock, _, _) = BootFixture(out var bot);
         using (srv)
         using (bot)

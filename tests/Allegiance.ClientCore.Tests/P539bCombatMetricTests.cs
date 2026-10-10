@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Allegiance.ClientCore.State;
 using Allegiance.Tools.McpSpawner;
 using Boh = Allegiance.Tools.McpSpawner.BotManager;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -153,9 +154,11 @@ public class P539bCombatMetricTests
     /// → Sm Shield 2 (40) → Sm Shield 3 (42). Pre-P555 the garbled shield socket
     /// made a native-faithful bot fly unshielded ("shield-invincible bots");
     /// post-P555 it flies its real preferred shield.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TechLevel0_IsNativePreferred_GunAndShieldMount()
     {
+        Require.Artwork();
         var core = Core();
         // Adv Scout hull id 13; PW Gat Gun 1 = 33; Sm Shield 1 = 21.
         Assert.Equal((short)33, Catalog.ResolvePreferredAtLevel(core, 33, 13, 0));
@@ -167,9 +170,11 @@ public class P539bCombatMetricTests
     /// chain: PW Gat Gun 1 (33) → PW Gat Gun 2 (71) at level 1 → PW Gat Gun 3 (72)
     /// at level 2, and STOPS at the chain end (72 has no successor, so level 3
     /// stays 72).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TechLevel_Advances_PreferredPart_Along_SuccessorChain()
     {
+        Require.Artwork();
         var core = Core();
         Assert.Equal((short)71, Catalog.ResolvePreferredAtLevel(core, 33, 13, 1));
         Assert.Equal((short)72, Catalog.ResolvePreferredAtLevel(core, 33, 13, 2));
@@ -179,9 +184,11 @@ public class P539bCombatMetricTests
     /// <summary>The built level-N loadout reflects the advanced parts: level 0
     /// carries PW Gat Gun 1 + Sm Shield 1; level 2 carries PW Gat Gun 3 + Sm
     /// Shield 3 (the successor chain, P555-corrected).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void NativePreferredLoadout_Levels_ReflectAdvancedGun_AndShield()
     {
+        Require.Artwork();
         var lvl0 = Catalog.NativePreferredLoadout(13, "Adv Scout", 0).Parts;
         var lvl2 = Catalog.NativePreferredLoadout(13, "Adv Scout", 2).Parts;
         Assert.Contains(lvl0, p => p.PartId == 33);

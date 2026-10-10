@@ -12,6 +12,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests.Transport;
 
@@ -138,9 +139,11 @@ public sealed class NonBlockingSendLiveTests
     /// mission clock keeps advancing while a raw, seated peer has stopped reading
     /// its socket; and the stalled peer is eventually disconnected (not queued
     /// forever). This is the core anti-freeze claim of P311.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Others_keep_ticking_and_mission_advances_while_one_peer_stalls_then_disconnects()
     {
+        Require.Artwork();
         var oldT = TcpTransport.OverflowTimeout;
         var oldC = TcpTransport.CapacityBytes;
         TcpTransport.OverflowTimeout = TimeSpan.FromSeconds(1);

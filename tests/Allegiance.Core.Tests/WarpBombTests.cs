@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -156,9 +157,11 @@ public sealed class WarpBombTests
     /// the warp's position when the sim clock reaches <c>timeExplosion</c>,
     /// dealing the exact computed falloff damage to a ship in the blast (a null
     /// launcher → no friendly gate, native <c>warpIGC.h:77</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Domain_missile_in_warp_radius_is_consumed_now_and_the_delayed_blast_hits_a_nearby_ship()
     {
+        Require.Artwork();
         var (missileType, hull) = Blast.Value;
         var (mission, sector, site) = Domain();
         short id = 922;
@@ -223,9 +226,11 @@ public sealed class WarpBombTests
     /// missile-destroy event, and <em>does not</em> raise a warp-bomb event —
     /// even with a warp present in the sector, proving the new pass adds no
     /// behaviour to a missile outside any warp's volume.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Domain_missile_far_from_any_warp_expires_normally_and_raises_no_warp_bomb()
     {
+        Require.Artwork();
         var (missileType, hull) = Blast.Value;   // lifespan is long enough to tick past expiry
         var (mission, sector, site) = Domain();
         short id = 942;
@@ -261,9 +266,11 @@ public sealed class WarpBombTests
     /// same consistency the transit trigger restored. The positive (a missile
     /// actually inside the raw radius still arms) is the sibling
     /// <c>Domain_missile_in_warp_radius_...</c> test.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Domain_missile_between_raw_and_visual_warp_radius_does_not_trigger_warp_bomb()
     {
+        Require.Artwork();
         var (missileType, hull) = Blast.Value;
         var (mission, sector, site) = Domain();
         short id = 914;
@@ -407,9 +414,11 @@ public sealed class WarpBombTests
     /// project, asserted explicitly. Pumping on to <c>timeExplosion</c>, a real
     /// explosion resolves at the warp and deals the exact computed falloff damage
     /// to a ship in the blast; nothing detonates before.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Live_whole_mission_warp_bomb_reaches_the_cross_side_peer_and_the_delayed_blast_lands()
     {
+        Require.Artwork();
         var (missileType, hull) = Blast.Value;
         float gap = 100f;
         using var seat = SeatThree(gap, hull);
@@ -522,9 +531,11 @@ public sealed class WarpBombTests
     /// delayed blast and is NOT consumed. Before P549 any missile touching an
     /// aleph scheduled the 15 s warp-bomb explosion, so this fails on the
     /// pre-fix code.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Domain_non_warp_bomb_missile_in_warp_radius_arms_nothing()
     {
+        Require.Artwork();
         var mType = NonWarpBombMissile.Value;
         var hull = Blast.Value.Hull;
         var (mission, sector, site) = Domain();
@@ -552,9 +563,11 @@ public sealed class WarpBombTests
     /// a warp and otherwise skips the damage path entirely). The missile is still
     /// consumed on impact. Before P549 a warp-bomb missile dealt its full Power to
     /// any ship it hit, so this fails on the pre-fix code.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Domain_warp_bomb_missile_hitting_a_ship_deals_no_damage()
     {
+        Require.Artwork();
         var mType = WarpBombMissile.Value;
         var hull = Blast.Value.Hull;
         var (mission, sector, site) = Domain();

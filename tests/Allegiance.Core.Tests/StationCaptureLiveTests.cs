@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -206,9 +207,11 @@ public sealed class StationCaptureLiveTests
     /// <c>STATION_CAPTURE(58)</c> with the correct
     /// stationID/sidOld/sidNew/shipIDCredit reaches EVERY peer (whole mission),
     /// and the ship then docks at its newly-captured base. Verification point 1.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hostile_boardable_ship_docks_and_captures_enemy_station()
     {
+        Require.Artwork();
         using var seat = Seat(new Spec(false, Far), new Spec(true, Far), new Spec(false, Far));
         var capturer = seat.Ships[1];      // slot 1 = side B, boardable (parked FAR first)
         var bas = seat.Base;
@@ -273,9 +276,11 @@ public sealed class StationCaptureLiveTests
     /// are BELOW <c>c_fcidDownedShield</c>; above it the board attempt falls through
     /// to the collision bounce. This port's <c>continue</c> is that fall-through —
     /// identical to the non-board rejection above (verification point 4).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hostile_boardable_ship_cannot_capture_full_shield_station()
     {
+        Require.Artwork();
         using var seat = Seat(new Spec(false, Far), new Spec(true, Far), new Spec(false, Far));
         var capturer = seat.Ships[1];      // slot 1 = side B, boardable (parked FAR first)
         var bas = seat.Base;
@@ -300,9 +305,11 @@ public sealed class StationCaptureLiveTests
     /// <summary>⭐ A hostile ship WITHOUT <c>c_habmBoard</c> is rejected: no capture
     /// (station side, armor and shield all unchanged), no dock, no broadcast —
     /// the normal cross-side dock rejection this port always had. Verification point 2.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Hostile_non_boardable_ship_does_not_capture_or_dock()
     {
+        Require.Artwork();
         using var seat = Seat(new Spec(false, Far), new Spec(false, AtBase), new Spec(false, Far));
         var wouldBe = seat.Ships[1];       // slot 1 = side B, NON-boardable, parked at the base
         var bas = seat.Base;
@@ -325,9 +332,11 @@ public sealed class StationCaptureLiveTests
     /// <summary>⭐ A same-side ship docking at its OWN station is completely
     /// unaffected — the existing friendly path, no capture, no regression
     /// (side/armor/shield unchanged, plain dock, no broadcast). Verification point 3.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_ship_docks_own_station_unaffected()
     {
+        Require.Artwork();
         using var seat = Seat(new Spec(false, AtBase), new Spec(false, Far), new Spec(false, Far));
         var friend = seat.Ships[0];        // slot 0 = side A = the station's owner
         var bas = seat.Base;

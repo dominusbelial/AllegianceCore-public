@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -170,9 +171,11 @@ public class LiveGainFlagTests
 
     // ── 1. pickup: enemy flag → Ship.Flag + whole-mission GAIN_FLAG + destroy ─
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rescue_ship_picks_up_enemy_flag_sets_ship_flag_and_broadcasts_gainflag_whole_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectPickupSpawn(server, Vector3.Zero);
         server.Boot(Config());
@@ -214,9 +217,11 @@ public class LiveGainFlagTests
 
     // ── 2. refusals: own-side flag, or a second flag while carrying ─────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cannot_pick_up_own_sides_flag_treasure()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectPickupSpawn(server, Vector3.Zero);
         server.Boot(Config());
@@ -236,9 +241,11 @@ public class LiveGainFlagTests
         Console.WriteLine("FLAG-NEG-OWNSIDE: own-side flag treasure refused — treasure remains, ship carries nothing");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cannot_pick_up_a_second_flag_while_already_carrying_one()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectPickupSpawn(server, Vector3.Zero);
         server.Boot(Config());
@@ -262,9 +269,11 @@ public class LiveGainFlagTests
 
     // ── 3. secure: flag-carrying ship docks at OWN side station ────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count()
     {
+        Require.Artwork();
         using var server = new Srv();
         short ownSide = 0, enemySide = 0;
         Vector3 dockPos = default;
@@ -330,9 +339,11 @@ public class LiveGainFlagTests
     /// secures — flag held, no counter, no GAIN_FLAG(NA). Mirrors native where
     /// you cannot secure a flag at an enemy station (the pside == psideOld gate
     /// plus hostile-capture being separate).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flag_carrier_at_hostile_station_does_not_secure()
     {
+        Require.Artwork();
         using var server = new Srv();
         short ownSide = 0, enemySide = 0;
         DataStationIGC hostile = default;
@@ -375,9 +386,11 @@ public class LiveGainFlagTests
     /// station side that differs from the ship's side must NOT secure (even
     /// though the dock pass normally prevents such a dock); calling it with the
     /// matching side secures.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void OnShipDocked_gate_rejects_different_station_side_and_secures_on_match()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectPickupSpawn(server, Vector3.Zero);   // pickup = side 0
         server.Boot(Config());
@@ -418,9 +431,11 @@ public class LiveGainFlagTests
 
     // ── 5. join-sync: a joiner learns about an existing carrier ──────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Joiner_receives_gainflag_for_existing_flag_carrier()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectPickupSpawn(server, Vector3.Zero);
         server.Boot(Config());
@@ -449,9 +464,11 @@ public class LiveGainFlagTests
 
     // ── 6. multi-mission scoping: a pickup announces only to its mission ───
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Flag_pickup_broadcast_scopes_to_acting_mission_only()
     {
+        Require.Artwork();
         using var server = new Srv();
         short shipA0 = 0;
         int seq = 0;

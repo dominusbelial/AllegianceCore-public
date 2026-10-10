@@ -12,6 +12,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -33,7 +34,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class DispenserEquipFireLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -153,7 +154,8 @@ public sealed class DispenserEquipFireLiveTests
     /// the real shop, launch (BUY_LOADOUT fLaunch) so the server's authoritative
     /// ApplyLoadout GRANTS it, then fire the real wire FIRE_EXPENDABLE and confirm
     /// the server deploys the real object and decrements the ammo.</summary>
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     // P519/P555 — chaff is omitted from this LIVE fire proof simply to keep it
     // to the two dispenser kinds; since P555's native-alignment fix chaff now
     // MOUNTS (Counter on fighters, Hvy Counter on capitals), and its
@@ -163,6 +165,7 @@ public sealed class DispenserEquipFireLiveTests
     [InlineData(LauncherKind.Probe)]
     public void BuyMountAndFireARealDispenser_Live(LauncherKind kind)
     {
+        Require.Artwork();
         using var server = new Srv();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
             SpawnDocked(core, mission, id, out _));

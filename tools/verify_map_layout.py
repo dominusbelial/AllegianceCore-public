@@ -20,7 +20,7 @@ def u32(b,o):return struct.unpack_from("<I",b,o)[0]
 def s(b,o,n):return b[o:o+n].split(b"\0")[0].decode("latin1")
 def vec(b,o):return [f32(b,o+4*i) for i in range(3)]
 
-ROOTS=["/home/domingo/Development/Artwork","/home/domingo/Development/Allegiance"]
+ROOTS=[os.environ.get("ALLEGIANCE_ARTWORK_PATH",""), os.environ.get("ALLEGIANCE_NATIVE_SRC_PATH","")]
 files=[];seen=set()
 for root in ROOTS:
   if not os.path.isdir(root):continue

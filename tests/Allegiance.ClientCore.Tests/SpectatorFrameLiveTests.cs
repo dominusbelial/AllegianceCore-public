@@ -10,6 +10,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -17,7 +18,7 @@ namespace Allegiance.ClientCore.Tests;
 public class SpectatorFrameLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly Lazy<Dictionary<short, string>> HullNames = new(() =>
     {
@@ -102,9 +103,11 @@ public class SpectatorFrameLiveTests
     /// (ship id/hull/side/pos/fwd/hp/alive all map from real wire data), and a
     /// real KILL_SHIP crossed over the wire produces a real <c>kill</c> frame.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Translates_ARealWorldAndARealKillShip()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, -180f));
         server.Boot(Config());

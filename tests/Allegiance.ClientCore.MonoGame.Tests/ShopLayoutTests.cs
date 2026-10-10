@@ -4,6 +4,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -16,7 +17,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ShopLayoutTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog =
         ShopCatalog.TryLoad(ArtRoot)
@@ -30,9 +31,11 @@ public class ShopLayoutTests
 
     private static string RowText(ShopLayout.Row r) => r.Text;
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Build_shows_title_current_hull_and_price()
     {
+        Require.Artwork();
         var rows = ShopLayout.Build(FreshModel());
         var texts = rows.Select(RowText).ToArray();
 
@@ -43,9 +46,11 @@ public class ShopLayoutTests
         Assert.Contains(texts, t => t.StartsWith("hull:", StringComparison.Ordinal) && t.Contains(CurrentHull().Name, StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Choosing_a_hull_changes_the_pending_line_and_adds_a_marker()
     {
+        Require.Artwork();
         var m = FreshModel();
         var target = DifferentHull(CurrentHull().HullId);
         var hulls = Catalog.Hulls.ToList();
@@ -59,9 +64,11 @@ public class ShopLayoutTests
         Assert.Contains(texts, t => t.StartsWith("hull:", StringComparison.Ordinal) && t.Contains(target.Name, StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Toggled_part_rows_carry_a_plus_marker()
     {
+        Require.Artwork();
         var weapon = FirstWeapon();
         var hull = Catalog.Hulls.First(h => h.CanMountPart(weapon));
         var m = new ShopModel(Catalog, hull.HullId, Array.Empty<ExpandedPartData>());
@@ -79,9 +86,11 @@ public class ShopLayoutTests
     /// "DROPPED on launch" warning — every part in the pending loadout fits.
     /// Under the new model a part that fits the current hull but not the new one
     /// is simply gone after the swap, with no warning (nothing to warn about).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Pending_loadout_drops_parts_that_do_not_fit_the_new_hull()
     {
+        Require.Artwork();
         // A (current, weapon, non-fitting other hull) triple scanned from the
         // real core (not a naive lowest-hull fixture — see ShopModelTests).
         var (cur, w, target) = NonFitTriple();
@@ -120,9 +129,11 @@ public class ShopLayoutTests
     /// <summary>⭐ Every row is pure ASCII 32..126 (the HUD spritefonts bake ASCII
     /// only), and all rows carry a dollar-cost like the native shop row
     /// (loadout.cpp:289 "$ %d").</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void All_rows_are_ascii_safe_and_carry_cost()
     {
+        Require.Artwork();
         var m = FreshModel();
         var rows = ShopLayout.Build(m);
         foreach (var r in rows)
@@ -141,9 +152,11 @@ public class ShopLayoutTests
     /// <summary>⭐ P468/P519 — a real launcher's slot row shows its REAL price
     /// (P441 threaded the launcher price through From<Kind>Launcher), not the old
     /// "$n/a". Open the magazine slot and check its offered launcher rows.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Launcher_row_shows_a_real_price_not_n_a()
     {
+        Require.Artwork();
         var hull = Catalog.Hulls.First(h => h.PmEquipment.Length > (int)EquipmentType.Magazine
             && h.PmEquipment[(int)EquipmentType.Magazine] != 0);
         var m = new ShopModel(Catalog, hull.HullId, Array.Empty<ExpandedPartData>());
@@ -162,9 +175,11 @@ public class ShopLayoutTests
 
     /// <summary>⭐ P468 — the pending-loadout price summary shows new loadout
     /// value, current ship value and the cost (new − current).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Price_summary_lists_new_value_current_value_and_cost()
     {
+        Require.Artwork();
         var current = CurrentHull();
         var target = DifferentHull(current.HullId);
         var hulls = Catalog.Hulls.ToList();
@@ -183,9 +198,11 @@ public class ShopLayoutTests
     /// Greyed (the renderer styles them muted). PCore001's Parts table is all
     /// price-0, so the greyed row is a real paid launcher from the Launchers
     /// table (P441 priced it).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unaffordable_item_rows_are_greyed()
     {
+        Require.Artwork();
         var m = new ShopModel(Catalog, CurrentHull().HullId, Array.Empty<ExpandedPartData>(), money: 0);
         var rows = ShopLayout.Build(m);
         Assert.Contains(rows, r => r.Kind == ShopLayout.Kind.Item && r.Greyed);
@@ -193,9 +210,11 @@ public class ShopLayoutTests
 
     /// <summary>⭐ P468 — a refused launch renders a visible "cannot afford"
     /// reason row so the player sees why L did nothing.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Refused_launch_renders_visible_reason()
     {
+        Require.Artwork();
         var current = Catalog.Hulls.OrderBy(h => h.Price).First();
         var target = Catalog.Hulls.Where(h => h.Price > current.Price).OrderBy(h => h.Price).First();
         long cost = (long)target.Price - current.Price;

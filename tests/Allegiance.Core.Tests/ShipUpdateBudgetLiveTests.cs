@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -153,9 +154,11 @@ public sealed class ShipUpdateBudgetLiveTests
     /// each peer's HEAVY update carries exactly 4 entries every tick — never the
     /// full 5 "other" ships. Proves the budget bites (cost no longer scales with
     /// ship count) while the fast path (≤ 2 candidates) is untouched elsewhere.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count()
     {
+        Require.Artwork();
         using var seat = SeatBudget(5);
         seat.Bot.ResetHeavyShipsUpdates();
 
@@ -176,9 +179,11 @@ public sealed class ShipUpdateBudgetLiveTests
     /// <summary>⭐ Fairness: with 5 others and a budget of 4, exactly one ship is
     /// dropped per tick; the dropped ship gets its staleness bumped (+1) so it
     /// must be served the NEXT tick — a fair round-robin, no permanent starvation.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation()
     {
+        Require.Artwork();
         using var seat = SeatBudget(5);
         seat.Bot.ResetHeavyShipsUpdates();
 
@@ -211,9 +216,11 @@ public sealed class ShipUpdateBudgetLiveTests
     /// is always promoted to the first heavy slot regardless of its own deviation —
     /// P139's target promotion composes with the budget by consuming one heavy slot
     /// before the other candidates compete.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Locked_target_is_always_included_regardless_of_its_deviation()
     {
+        Require.Artwork();
         using var seat = SeatBudget(5);
         var target = seat.Npcs[0];
         seat.Peer.CommandTarget = target;   // lock the target that would otherwise rotate/starve

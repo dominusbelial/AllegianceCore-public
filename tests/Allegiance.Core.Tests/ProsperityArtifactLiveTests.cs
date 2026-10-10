@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -84,9 +85,11 @@ public sealed class ProsperityArtifactLiveTests
     /// GAME_OVER(62) with that side as winner — the port of
     /// <c>FedSrv.CPP:11274-11279</c> driven end-to-end through the real
     /// bucket-completion pipeline.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_team_money_development_wins_the_game_for_that_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(ups: 2));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
@@ -136,9 +139,11 @@ public sealed class ProsperityArtifactLiveTests
     /// false (the default), completing the team-money development is NOT a win —
     /// the mission stays Started and no GAME_OVER escapes (existing non-prosperity
     /// missions are unaffected).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Prosperity_disabled_team_money_completion_does_not_end_game()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config(ups: 2));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
@@ -241,9 +246,11 @@ public sealed class ProsperityArtifactLiveTests
     /// and the mission flips Over with that side as GAME_OVER winner — the port of
     /// <c>fsmission.cpp:3888-3894</c> driven end-to-end through the real
     /// pickup → dock-secure pipeline.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Possessing_and_returning_an_artifact_wins_the_game_for_that_side()
     {
+        Require.Artwork();
         using var h = SeatArtifactCarrier();
         var mission = h.Server.Missions[0];
         mission.ArtifactEnabled = true;
@@ -292,9 +299,11 @@ public sealed class ProsperityArtifactLiveTests
     /// false (the default), securing a neutral artifact increments
     /// <see cref="Side.Artifacts"/> but does NOT end the mission — no GAME_OVER
     /// (existing non-artifact missions are unaffected).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Artifact_disabled_secure_increments_counter_but_does_not_end_game()
     {
+        Require.Artwork();
         using var h = SeatArtifactCarrier();
         var mission = h.Server.Missions[0];
         mission.ArtifactEnabled = false;             // the default

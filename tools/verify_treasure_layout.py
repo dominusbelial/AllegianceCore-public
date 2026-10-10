@@ -13,7 +13,7 @@ def iter_records(raw, body_start):
         yield typ, raw[pos+6:pos+6+size]
         pos+=6+size
 
-roots=["/home/domingo/Development/Artwork","/home/domingo/Development/Allegiance"]
+roots=[os.environ.get("ALLEGIANCE_ARTWORK_PATH",""), os.environ.get("ALLEGIANCE_NATIVE_SRC_PATH","")]
 by_hash={}
 for r in roots:
     for dp,_,fn in os.walk(r):

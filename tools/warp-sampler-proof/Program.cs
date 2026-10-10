@@ -2,6 +2,7 @@ using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Allegiance.Core;
 
 // P568 real-window proof + failing-first guard.
 //
@@ -61,7 +62,7 @@ sealed class WarpSamplerOptions
     private static string HomeArt()
     {
         var env = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH");
-        return env is { Length: > 0 } env_ ? env_ : "/home/domingo/Development/Artwork";
+        return env is { Length: > 0 } env_ ? env_ : ExternalPaths.Resolve(ExternalResourceKind.Artwork);
     }
 
     private static string RepoRoot()

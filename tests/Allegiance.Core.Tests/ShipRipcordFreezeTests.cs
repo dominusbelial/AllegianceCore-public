@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -65,9 +66,11 @@ public class ShipRipcordFreezeTests
     /// drag factor <c>f</c> over the stepped interval — no thrust contribution
     /// whatsoever, and a strict DECAY (thrust would have grown it). The whole
     /// thing is asserted analytically so the proof is exact, not approximate.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ripcord_active_freezes_turn_rates_and_thrust_only_drag()
     {
+        Require.Artwork();
         var hull = RepresentativeHull.Value;
         Assert.True(hull.MaxTurnRates[ControlData.AxisYaw] > 0f, "test hull must allow turning");
 
@@ -126,9 +129,11 @@ public class ShipRipcordFreezeTests
     /// must-fail control for
     /// <see cref="Ripcord_active_freezes_turn_rates_and_thrust_only_drag"/>:
     /// identical inputs, only the ripcord state differs.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void No_ripcord_ship_is_completely_unaffected()
     {
+        Require.Artwork();
         var hull = RepresentativeHull.Value;
         var ship = NewShip();                           // at rest, no ripcord
         ship.Controls = new ControlData(Yaw: 1f, Pitch: 0f, Roll: 0f, Throttle: +1f);

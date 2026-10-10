@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -258,9 +259,11 @@ public sealed class AsteroidCombatLiveTests
     /// — asserted numerically, not just "some damage" — and the rock survives
     /// (still in <see cref="Sector.Mineable"/>, no destroy). The cross-side enemy
     /// fires its own missile at the unowned rock.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_missile_hits_asteroid_with_exact_computed_damage_and_it_survives()
     {
+        Require.Artwork();
         var (missile, hitPoints, delta) = Nonlethal.Value;
         float fireGap = FireGap(missile);
         Assert.True(fireGap < missile.InitialSpeed * missile.Lifespan, "firing gap must be inside missile reach");
@@ -298,9 +301,11 @@ public sealed class AsteroidCombatLiveTests
     /// same-side teammate ship fires its own missile at the rock and the identical
     /// damage lands. This is deliberately stronger than the probe case (P100), which
     /// still reasoned about an unarmed probe; an asteroid has no SideId whatsoever.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_friendly_missile_damages_the_asteroid_no_friendly_fire_gate()
     {
+        Require.Artwork();
         var (missile, hitPoints, delta) = Nonlethal.Value;
         float fireGap = FireGap(missile);
         using var seat = SeatThree(100f, Core().HullTypes.Values.OrderBy(h => h.HitPoints).First(), hitPoints);
@@ -339,9 +344,11 @@ public sealed class AsteroidCombatLiveTests
     /// the cross-side enemy bot AND the same-side teammate bot — the WHOLE-mission
     /// audience (<c>GetGroupRealSides()</c>, <c>FedSrv.CPP:12418</c>), settling the
     /// broadcast-audience question the same way P101 settled <c>WARP_BOMB</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission()
     {
+        Require.Artwork();
         var (missile, hitPoints) = Lethal.Value;
         float fireGap = FireGap(missile);
         using var seat = SeatThree(100f, Core().HullTypes.Values.OrderBy(h => h.HitPoints).First(), hitPoints);

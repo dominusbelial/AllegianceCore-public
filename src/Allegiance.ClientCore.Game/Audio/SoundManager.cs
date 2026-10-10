@@ -21,8 +21,8 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// </summary>
 /// <remarks>
 /// <para><b>Real assets, from the port's artwork tree</b>
-/// (<c>ALLEGIANCE_ARTWORK_PATH</c>, <c>/home/domingo/Development/Artwork</c>,
-/// the same tree the server already reads), each resolving the original
+/// (<c>$ALLEGIANCE_ARTWORK_PATH</c>, the same tree the server already reads),
+/// each resolving the original
 /// client's <c>soundEngine</c> namespace in
 /// <c>Artwork/sounddef.mdl</c>: the small-ship main-thruster interior loop is
 /// <c>accelsmall.ogg</c> (<c>smallShipThrustInteriorSound</c>, sounddef.mdl),

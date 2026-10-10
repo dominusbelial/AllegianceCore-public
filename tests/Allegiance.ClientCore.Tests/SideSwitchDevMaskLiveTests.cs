@@ -10,6 +10,7 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -34,7 +35,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class SideSwitchDevMaskLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -83,9 +84,11 @@ public sealed class SideSwitchDevMaskLiveTests
     /// KNOWS side 1's development mask and the shop offered set is the
     /// tech-correct (P284) set — not the full catalogue.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side_switch_teaches_the_client_the_new_sides_development_mask()
     {
+        Require.Artwork();
         using var server = new Srv();
         short side0 = 0, side1 = 1;
         SetShipSpawner(server, (core, mission, shipId) =>

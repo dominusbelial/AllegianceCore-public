@@ -9,6 +9,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -111,9 +112,11 @@ public class BotFlightTests
     /// the same hull/spawn/command/cadence and rolled forward itself, never from
     /// the server's output, so a passing match proves the server is simulating.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Bot_trajectory_matches_independent_ExecuteMove_rollout()
     {
+        Require.Artwork();
         using var server = new Srv();
         var placedGetter = InjectKnownSpawn(server, out _);
         server.Boot(Config());
@@ -201,9 +204,11 @@ public class BotFlightTests
     /// position broadcast at least once to each viewer (otherwise it stays
     /// invisible forever), but the dirty-check must NOT then spam re-sends for
     /// a genuinely unchanged position — so exactly one observation, no more.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Zero_thrust_leaves_the_ship_at_rest_and_quiet()
     {
+        Require.Artwork();
         using var server = new Srv();
         var placedGetter = InjectKnownSpawn(server, out _);
         server.Boot(Config());
@@ -240,9 +245,11 @@ public class BotFlightTests
 
     /// <summary>Two bots get different ships and move independently: different
     /// ids, different spawns, and (A thrusting, B idle) they diverge cleanly.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Two_bots_get_distinct_ships_and_fly_independently()
     {
+        Require.Artwork();
         using var server = new Srv();     // default spawner: staggered spawns, first hull
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -275,9 +282,11 @@ public class BotFlightTests
     }
 
     /// <summary>A bot disconnect leaves the server ticking and serving new ships.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Bot_disconnect_leaves_the_server_ticking()
     {
+        Require.Artwork();
         using var server = new Srv();
         var placedGetter = InjectKnownSpawn(server, out _);
         server.Boot(Config());
@@ -323,9 +332,11 @@ public class BotFlightTests
     /// <summary>Three real peers flying, one dropped abruptly mid-tick while a
     /// broadcast is in flight: the send-race must not kill the server (the fix),
     /// and the other two must keep getting their broadcasts the same window.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Abrupt_disconnect_during_broadcast_leaves_server_alive_and_others_served()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby

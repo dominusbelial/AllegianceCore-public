@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -122,9 +123,11 @@ public sealed class StationBucketSpawnsConstructorLiveTests
     /// requesting asteroid.", it does NOT build on its own, and a P425 BUILD
     /// order at a compatible asteroid starts the timed construction.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_station_type_bucket_spawns_waiting_constructor_and_build_order_builds()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSingleMissionSpawn(server);
         server.Boot(Config());
@@ -194,9 +197,11 @@ public sealed class StationBucketSpawnsConstructorLiveTests
     /// <c>CreateStockDrone</c> GetHullTypeID), while a no-drone-type spawn keeps
     /// the lowest-hull fallback.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SpawnNpcShip_uses_the_drone_types_real_hull()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSingleMissionSpawn(server);
         server.Boot(Config());

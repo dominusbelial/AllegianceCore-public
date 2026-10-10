@@ -11,6 +11,7 @@ namespace Allegiance.Core.Tests;
 // 'Server' would bind to the namespace. Declared inside the namespace body so
 // the using-alias reliably wins simple-name resolution.
 using Server = global::Allegiance.Server.Server;
+using Allegiance.TestInfra;
 using Allegiance.Server;   // ServerConfig / GameConfig / ServerConfigLoader
 
 /// <summary>
@@ -69,9 +70,11 @@ public class ServerTests
     /// generous tolerance of 100. This also proves the loop ticks a started
     /// mission and that sim time advanced ~5 s.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FiveSecondsOfWallTime_YieldsAboutAHundredTicks_WithinTolerance()
     {
+        Require.Artwork();
         using var server = new Server();
         server.Boot(Config(ups: 20));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -89,9 +92,11 @@ public class ServerTests
 
     /// <summary>Fast deterministic cadence: 100 sim ticks advance exactly 100
     /// periods (5.0 s) of sim time — the cadence unit test, no wall-clock dependency.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SimTicks_AdvanceExactPeriodPerTick()
     {
+        Require.Artwork();
         using var server = new Server();
         server.Boot(Config(ups: 20));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -110,9 +115,11 @@ public class ServerTests
     /// validation. Proves the whole chain: socket -> frame -> packet(CRC) ->
     /// LOGONREQ decode -> reply.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task ClientConnectsAndCompletesLogonHandshake()
     {
+        Require.Artwork();
         using var server = new Server();
         server.Boot(Config(ups: 20, port: 0)); // ephemeral port for the test
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -142,9 +149,11 @@ public class ServerTests
     /// <summary>The requirement "server survives a client connecting and
     /// disconnecting abruptly" — no exception, no death, the loop keeps ticking
     /// afterwards and a subsequent handshake still works.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task ServerSurvivesAbruptClientDisconnect()
     {
+        Require.Artwork();
         using var server = new Server();
         server.Boot(Config(ups: 20, port: 0));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -176,9 +185,11 @@ public class ServerTests
 
     /// <summary>The config fields are CLI-overridable and that flows through to
     /// boot (here: cadence). Exercises ServerConfigLoader.ApplyCli.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void CliOverride_ChangesCadence()
     {
+        Require.Artwork();
         var cfg = Config(ups: 20);
         var applied = ServerConfigLoader.ApplyCli(cfg, [("port", "64000"), ("ups", "50"), ("artpath", "/tmp")]);
         Assert.Equal(3, applied);
@@ -192,9 +203,11 @@ public class ServerTests
     /// camelCase keys bind case-insensitively, comments are skipped, and trailing
     /// commas are tolerated. Guards the exact behaviours ServerConfigLoader relied
     /// on before the switch to <c>ServerJsonContext</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Load_ParsesRealConfig_WithCommentsAndTrailingCommas()
     {
+        Require.Artwork();
         string path = Path.Combine(Path.GetTempPath(), $"p185-cfg-{Guid.NewGuid():N}.json");
         File.WriteAllText(path, """
         {
@@ -245,9 +258,11 @@ public class ServerTests
         finally { File.Delete(path); }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Boot_WithUnknownCivilization_ThrowsHelpfulError()
     {
+        Require.Artwork();
         using var server = new Server();
         var cfg = Config();
         cfg.Games[0].GetType().GetProperty(nameof(GameConfig.CivIds))!
@@ -259,9 +274,11 @@ public class ServerTests
 
     /// <summary><c>--capture</c> off by default: leaving CapturePath null creates
     /// no file and changes nothing about the handshake.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task Capture_is_off_by_default()
     {
+        Require.Artwork();
         var path = Path.Combine(Path.GetTempPath(), $"nobody-{Guid.NewGuid():N}.cap");
         using var server = new Server();
         server.Boot(Config(ups: 20, port: 0)); // no CapturePath set
@@ -287,9 +304,11 @@ public class ServerTests
     /// <summary>With --capture set, every received and sent packet lands in the
     /// file and fedmsgdump's decoder can read it: both directions present, every
     /// packet's CRC verified, and the handshake is recognizable.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task Capture_writes_both_directions_and_decodes()
     {
+        Require.Artwork();
         var path = Path.Combine(Path.GetTempPath(), $"cap-{Guid.NewGuid():N}.cap");
         using var server = new Server();
         var cfg = Config(ups: 20, port: 0);
@@ -332,9 +351,11 @@ public class ServerTests
         Assert.Equal(capture.Frames.Count, verified);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cli_recognizes_capture_flag()
     {
+        Require.Artwork();
         var cfg = Config();
         int applied = ServerConfigLoader.ApplyCli(cfg, [("capture", "/tmp/handshake.cap")]);
         Assert.Equal(1, applied);

@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -279,9 +280,11 @@ public sealed class MissileCombatTests
     /// sector after impact, and the same-side peer who saw it launch receives a
     /// real <c>FM_S_MISSILE_DESTROYED(83)</c> — the P91 consistency fix proven
     /// live on a hit, not just expiry.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_missile_impact_deals_computed_hull_damage_and_broadcasts_destroy_to_same_side_peer()
     {
+        Require.Artwork();
         var (missile, hull, expectedDelta) = CrossHit.Value;
         float gap = MathF.Min(0.3f * missile.InitialSpeed * missile.Lifespan, 150f);
         using var seat = SeatThree(gap, hull);
@@ -329,9 +332,11 @@ public sealed class MissileCombatTests
     /// stays untouched; knocking the shield down and firing again leaks the full
     /// raw hit to the hull exactly like the no-shield path — both numbers asserted
     /// from decoded data, mirroring <see cref="CombatShieldTests"/>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_side_missile_against_a_mounted_shield_absorbs_then_leaks_exactly_like_a_weapon()
     {
+        Require.Artwork();
         var (missile, shieldPart, _, expectedAbsorbed, hull, dtmHull) = ShieldCombo.Value;
         float gap = MathF.Min(0.3f * missile.InitialSpeed * missile.Lifespan, 150f);
         using var seat = SeatThree(gap, hull);
@@ -377,9 +382,11 @@ public sealed class MissileCombatTests
     /// projectile friendly-fire rule — asserted with a real same-side shot. The
     /// passed-through missile then expires on its own and its destroy is still
     /// broadcast (P90's expiry path, unmodified).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Same_side_missile_passes_through_a_friendly_and_deals_no_damage_then_expires()
     {
+        Require.Artwork();
         var (missile, hull, _) = CrossHit.Value;
         float gap = MathF.Min(0.3f * missile.InitialSpeed * missile.Lifespan, 150f);
         using var seat = SeatThree(gap, hull);
@@ -423,9 +430,11 @@ public sealed class MissileCombatTests
     /// <see cref="IIgcSite.MissileDestroyedEvent"/> exactly once — proving the
     /// projectile and missile paths coexist in the single
     /// <see cref="Sector.ResolveCombatCollisions"/> pass without interfering.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Missile_and_weapon_projectile_coexist_in_one_collision_pass()
     {
+        Require.Artwork();
         var (weapon, proj, missile, pHull, mHull, pDelta, mDelta, weaponTravel) = Coexist.Value;
         var core = RepresentativeCore();
         var site = new CountingSite();

@@ -4,6 +4,8 @@ using Allegiance.ClientCore.Session;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -20,7 +22,7 @@ namespace Allegiance.ClientCore.Tests;
 public class SessionLossLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -61,9 +63,11 @@ public class SessionLossLiveTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         ushort port = server.BoundPort;

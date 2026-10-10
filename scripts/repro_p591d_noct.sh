@@ -2,7 +2,8 @@
 # P591d — server+MCP-only live proof (no client window). Verifies placement
 # alephs + export audience + mine hits in the server log.
 set -uo pipefail
-REPO=/home/domingo/Development/AllegianceCore
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ART="${ALLEGIANCE_ARTWORK_PATH:-$REPO/../Artwork}"
 PORT=6076
 OUT="$REPO/p591d-noct"
 rm -rf "$OUT"; mkdir -p "$OUT"
@@ -11,7 +12,7 @@ MCP_EXE="$REPO/tools/allegiance-mcp/bin/Release/net10.0/allegiance-mcp"
 DRIVER="$REPO/scripts/mcp_driver.py"
 cat > "$OUT/server.json" <<EOF
 {
-  "artPath": "/home/domingo/Development/Artwork", "staticCore": "PCore001.igc", "port": $PORT,
+  "artPath": "$ART", "staticCore": "PCore001.igc", "port": $PORT,
   "updatesPerSecond": 20, "consoleVerbose": true,
   "games": [ { "name": "P591d Showcase", "map": "m2xspiderw.igc", "teams": 2, "civIds": [ 25, 3 ], "sideNames": [ "Alpha", "Bravo" ] } ],
   "liveSettings": {

@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -80,9 +81,11 @@ public class LiveMoneyTests
     /// a large, distinct sentinel (P442: the pre-P442 join-time SET_MONEY sent
     /// the side treasury, a stale pooled-design mapping with no per-player
     /// wallets that P197 had already made false).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_set_money_carries_the_joiners_wallet_not_the_side_treasury()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
@@ -178,9 +181,11 @@ public class LiveMoneyTests
     /// <c>MONEY_CHANGE(60)</c> with dMoney = the surrendered 500, sidTo = the
     /// boarded ship, sidFrom = <c>NA</c> to BOTH same-side peers, and to NO
     /// peer on the other side.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Board_refund_broadcasts_money_change_sidewide_not_cross_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         var sp = InjectSpawn(server);
         server.Boot(Config());

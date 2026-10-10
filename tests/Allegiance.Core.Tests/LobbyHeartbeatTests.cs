@@ -9,6 +9,7 @@ using Gm = global::Allegiance.Server.GameConfig;
 using Lhb = global::Allegiance.Server.LobbyHeartbeat;
 using Lc = global::Allegiance.Server.LobbyConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -51,9 +52,11 @@ public sealed class LobbyHeartbeatTests
         return (new Lhb(http, cfg, count, "Wing War", "PCore001.igc", "0.1.0", 5333), http);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public async Task First_heartbeat_registers_server_in_directory()
     {
+        Require.Artwork();
         using var app = new LobbyHarness();
         using var client = app.CreateClient();
         var (hb, http) = MakeHeartbeat(app, Cfg(app.ClientOptions.BaseAddress), () => 7);
@@ -118,9 +121,11 @@ public sealed class LobbyHeartbeatTests
     /// a heartbeat client (so zero HTTP calls can ever be made). Verified structurally by
     /// reflecting the private <c>_heartbeat</c> field after a real <c>Server.Boot</c>.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Lobby_null_constructs_no_heartbeat_client()
     {
+        Require.Artwork();
         var server = new Srv();
         server.Boot(CfgWithoutLobby());
         try
@@ -145,9 +150,11 @@ public sealed class LobbyHeartbeatTests
     /// payload the heartbeat used to POST under System.Net.Http.Json's Web
     /// defaults (camelCase keys, null Token still emitted). The wire bytes must
     /// not change when AOT swaps in source-gen.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LobbyRegisterRequest_serializes_to_byte_identical_wire_shape()
     {
+        Require.Artwork();
         var req = new global::Allegiance.Server.LobbyRegisterRequest(
             "Srv", "1.2.3.4", 5333, 7, 0, "Wing War", "PCore001.igc", "0.1.0", null);
         string viaContext = JsonSerializer.Serialize(req,
@@ -212,9 +219,11 @@ public sealed class LivePlayerCountTests
         while (!done() && n < max) { server.TickSim(); n++; Thread.Sleep(1); }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LivePlayerCount_tracks_joined_peers()
     {
+        Require.Artwork();
         var server = new Srv();
         server.Boot(Config());
         try

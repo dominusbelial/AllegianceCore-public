@@ -10,6 +10,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -34,7 +35,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class NativeOwnShipFlightLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly Vector3 Spawn = new(500f, 620f, 830f);
 
@@ -167,9 +168,11 @@ public sealed class NativeOwnShipFlightLiveTests
         }
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Native_own_ship_flight_accepts_poses_in_normal_flight_and_recovers_from_reset()
     {
+        Require.Artwork();
         var server = new Srv();
         Ship? captured = null;
         // ShipSpawner is internal to Allegiance.Server (ClientCore.Tests has no

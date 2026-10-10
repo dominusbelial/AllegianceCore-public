@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.ClientCore.State;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -15,11 +17,13 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ChaffModelSourceTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Resolve_ReturnsRealValuesForEveryKnownType_InTheDemoCore()
     {
+        Require.Artwork();
         var catalog = ShopCatalog.TryLoad(ArtRoot);
         Assert.NotNull(catalog);
         Assert.NotNull(catalog!.ChaffTypes);
@@ -44,9 +48,11 @@ public class ChaffModelSourceTests
         Assert.Equal(ChaffEntity.DefaultLifespan, ChaffModelSource.ResolveLifespan(1, null), 0.001f);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ResolveStem_NormalisesCase_AndDefaults_ForUnrealTexture()
     {
+        Require.Artwork();
         // Case-insensitive: "FXMINE" resolves to the canonical real stem.
         Allegiance.Core.DataChaffTypeIGC weirdRec = default;
         var weird = new Dictionary<short, Allegiance.Core.DataChaffTypeIGC>
@@ -72,11 +78,13 @@ public class ChaffModelSourceTests
         Assert.Contains("cc_cmtexbmp", ChaffModelSource.RealStems);
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData("fxminebmp")]
     [InlineData("cc_cmtexbmp")]
     public void LoadTexture_ParsesTheRealChaffSprites(string stem)
     {
+        Require.Artwork();
         var tex = ChaffModelSource.LoadTexture(stem);
         Assert.True(tex.Width > 0 && tex.Height > 0, $"the real {stem}.mdl sprite must decode to a non-empty texture");
         Assert.True(tex.Width == tex.Height, "chaff sprites are square");

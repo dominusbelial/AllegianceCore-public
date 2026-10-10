@@ -11,6 +11,7 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -48,7 +49,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class ShopLauncherMountNumberingLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config() => new()
     {
@@ -148,9 +149,11 @@ public sealed class ShopLauncherMountNumberingLiveTests
     /// shield FIRST, then a real missile launcher, from the real shop model; the
     /// server grants the launcher at MOUNT 0; lock genuinely builds to full; a
     /// real FIRE_MISSILE(70) fires; and a second launcher REPLACES the first.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live()
     {
+        Require.Artwork();
         using var server = new Srv();
         Ship? placedShip = null;
         Ship? placedTarget = null;

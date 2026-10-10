@@ -11,6 +11,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -38,7 +39,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P542RemoteProjectilesLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -302,6 +303,11 @@ public sealed class P542RemoteProjectilesLiveTests
     /// shooter fires the SAME projectile type as the (actively firing) local
     /// player at ≤150 u; the client must receive and DRAW those rounds rather
     /// than swallowing them as its own echo.</summary>
-    [Fact]
-    public void EnemyShots_OfSameTypeAtCloseRange_AreReceivedAndDrawn() => Run(windowSeconds: 8);
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
+    public void EnemyShots_OfSameTypeAtCloseRange_AreReceivedAndDrawn()
+    {
+        Require.Artwork();
+        Run(windowSeconds: 8);
+    }
 }

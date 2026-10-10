@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -46,9 +47,11 @@ public sealed class SuccessorUpgradeTests
     // re-version that renumbers them stays green; the assertions target the
     // CHAIN, not a magic number.
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void HullSuccessor_returns_the_furthest_buyable_hull_in_the_chain()
     {
+        Require.Artwork();
         var core = Core();
         var scout = core.HullTypes.Values.First(h => h.Name == "Scout" && h.SuccessorHullId >= 0);
         // Follow the chain to its leaf under all-tech.
@@ -63,9 +66,11 @@ public sealed class SuccessorUpgradeTests
         Console.WriteLine($"P488-HULL: '{scout.Name}' ({scout.HullId}) -> '{got.Name}' ({got.HullId})");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void HullSuccessor_returns_the_requested_hull_when_no_successor_is_buyable()
     {
+        Require.Artwork();
         var core = Core();
         var scout = core.HullTypes.Values.First(h => h.Name == "Scout" && h.SuccessorHullId >= 0);
         // With NO tech, the scout (reqBits 3) isn't even buyable, so GetSuccessor
@@ -74,9 +79,11 @@ public sealed class SuccessorUpgradeTests
         Assert.Equal(scout.HullId, got.HullId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void PartSuccessor_walks_the_part_chain_to_its_furthest_buyable_version()
     {
+        Require.Artwork();
         var core = Core();
         var lancer1 = core.PartTypes.Values.First(p => p.Name == "PW Lancer 1" && p.SuccessorPartId >= 0);
         var leaf = lancer1;
@@ -90,18 +97,22 @@ public sealed class SuccessorUpgradeTests
         Console.WriteLine($"P488-PART: '{lancer1.Name}' ({lancer1.PartId}) -> '{got.Name}' ({got.PartId})");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void HullIsObsolete_is_true_exactly_when_a_buyable_successor_exists()
     {
+        Require.Artwork();
         var core = Core();
         var scout = core.HullTypes.Values.First(h => h.Name == "Scout" && h.SuccessorHullId >= 0);
         Assert.True(SuccessorUpgrade.HullIsObsolete(core, scout, NoLocal, AllTech));     // out-teched → obsolete
         Assert.False(SuccessorUpgrade.HullIsObsolete(core, scout, NoLocal, TechTreeBitMask.Empty)); // no successor buyable → not obsolete
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void StationSuccessor_advances_only_while_the_direct_successors_tech_is_met()
     {
+        Require.Artwork();
         var core = Core();
         // A garrison family with a direct successor whose tech is NOT covered by
         // the garrison's own required techs (so Empty dev techs ⇒ no advance, but

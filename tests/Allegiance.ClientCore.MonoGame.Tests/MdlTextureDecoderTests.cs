@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -108,9 +109,11 @@ public class MdlTextureDecoderTests
             Assert.False(string.IsNullOrWhiteSpace(GaugeTextureSource.LabelFor(kind)));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Decodes_the_real_hull_gauge_when_artwork_is_present()
     {
+        Require.Artwork();
         string path = GaugeTextureSource.PathFor(GaugeKind.Hull);
         if (!File.Exists(path))
             return; // artwork not present on this host — nothing to assert

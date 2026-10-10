@@ -4,6 +4,7 @@ using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -23,7 +24,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class P509TestUnlockShopVisibilityTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static readonly StaticCore Core = Catalog.Core
@@ -57,9 +58,11 @@ public class P509TestUnlockShopVisibilityTests
     /// <summary>⭐ The garrison's offered hull count goes from the STARTER SET
     /// (fresh side's base-tech mask) to the FULL PLAYER ROSTER (the required-
     /// tech union P509 grants) — and reports both measured numbers.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Shop_offered_hull_count_goes_from_starter_set_to_full_player_roster()
     {
+        Require.Artwork();
         byte[] local = GarrisonLocal();
         var starterDev = StarterDev();
         var fullDev = Core.ComputeRequiredTechUnion();

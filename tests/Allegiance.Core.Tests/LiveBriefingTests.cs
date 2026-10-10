@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -82,9 +83,11 @@ public class LiveBriefingTests
     /// branch). Two bots on different sides (round-robin default spawn, bot A →
     /// side 0, bot B → side 1) prove it is per-player: neither receives the
     /// other's message, and a side owning no friendly station receives none.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_sync_sends_per_player_briefing_with_friendly_cluster_or_skips()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 
@@ -136,9 +139,11 @@ public class LiveBriefingTests
     /// <c>null</c> return for this case, Server.cs:4750-4759; the server logs
     /// and skips rather than fabricating a starting location — the honest
     /// mapping of native's guaranteed-present <c>GetBase(pside)</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Join_on_a_side_with_no_friendly_station_receives_no_briefing()
     {
+        Require.Artwork();
         using var server = new Srv();
         short absentSide = 0;
         server.ShipSpawner = (core, mission, id) =>

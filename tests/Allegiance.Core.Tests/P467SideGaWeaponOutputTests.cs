@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -172,9 +173,11 @@ public class P467SideGaWeaponOutputTests
     /// <c>projectileIGC.cpp:186</c>. Pre-fix (raw <c>ord.Power</c>) the boosted
     /// and identity hits deal the SAME damage, so the ratio assertion fails —
     /// recorded in the P467 report.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GunDamage_GA_scales_a_shieldless_direct_hit()
     {
+        Require.Artwork();
         var (weapon, proj, hull, delta) = GunHit.Value;
         float idFrac = FireGunHit(hull, weapon, gaMul: 1f, out _);
         float boostFrac = FireGunHit(hull, weapon, gaMul: 1.25f, out _);
@@ -234,9 +237,11 @@ public class P467SideGaWeaponOutputTests
     /// <summary>⭐ The same pattern for <c>DamageMissiles = 1.25</c>: a cross-side
     /// missile hit deals 1.25× <c>Power</c> to a shieldless target (native
     /// <c>missileigc.cpp:474</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MissileDamage_GA_scales_a_shieldless_direct_hit()
     {
+        Require.Artwork();
         var (missile, hull, delta) = MissileHit.Value;
         float idFrac = FireMissileHit(hull, missile, gaMul: 1f);
         float boostFrac = FireMissileHit(hull, missile, gaMul: 1.25f);
@@ -300,9 +305,11 @@ public class P467SideGaWeaponOutputTests
     /// <summary>⭐ An ammo weapon's projectile velocity scales with
     /// <c>SpeedAmmo</c> (<c>weaponIGC.cpp:220</c>, condition <c>cAmmoPerShot</c>),
     /// and an energy weapon's does not.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void SpeedAmmo_GA_scales_ammo_weapon_speed_but_not_energy_weapon()
     {
+        Require.Artwork();
         var (ammoW, ammoP) = AmmoWeapon.Value;
         var (energyW, energyP) = EnergyWeapon.Value;
         Assert.NotEqual(ammoW.ProjectileTypeId, energyW.ProjectileTypeId);
@@ -322,9 +329,11 @@ public class P467SideGaWeaponOutputTests
     /// under native's exact condition (<c>weaponIGC.h:167-170</c>: energyPerShot
     /// ≠ 0 — i.e. an energy weapon), while a pure-ammo weapon (energyPerShot == 0)
     /// does NOT scale.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void LifespanEnergy_GA_scales_energy_weapon_lifespan_but_not_ammo_weapon()
     {
+        Require.Artwork();
         var (energyW, energyP) = EnergyWeapon.Value;
         var (pureAmmoW, pureAmmoP) = PureAmmoWeapon.Value;
         var m = NewMission((GlobalAttributeSet.LifespanEnergy, 1.5f));
@@ -386,9 +395,11 @@ public class P467SideGaWeaponOutputTests
     /// <summary>⭐ A missile's turn rate scales with <c>TurnRateMissile</c>
     /// (<c>missileigc.cpp:389</c>): with the factor 2.0 the missile re-orients
     /// twice as far on the first tick as the identity missile.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TurnRateMissile_GA_scales_homing_turn_rate()
     {
+        Require.Artwork();
         var mType = TurningMissile.Value;
         float rotId = FirstTickTurn(mType, NewMission());
         float rotGa = FirstTickTurn(mType, NewMission((GlobalAttributeSet.TurnRateMissile, 2f)));
@@ -402,9 +413,11 @@ public class P467SideGaWeaponOutputTests
     /// <summary>⭐ Side-attribute indices 14,15,16,21,22 are the documented native
     /// constants, and a sideless ship / identity side read identity (1.0) — so the
     /// whole output half is a no-op for the default (no-side) case.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void GlobalAttributeFactor_identity_and_indices_match_native()
     {
+        Require.Artwork();
         Assert.Equal(14, GlobalAttributeSet.SpeedAmmo);
         Assert.Equal(15, GlobalAttributeSet.LifespanEnergy);
         Assert.Equal(16, GlobalAttributeSet.TurnRateMissile);
@@ -500,9 +513,11 @@ public sealed class P467E2eGunDamageDevLiveTests
     /// <summary>⭐ Complete real dev 143 ('GA: PW&amp;EW Damage 1', gas[21]=1.1) on
     /// the shooter's side through the real funding/completion pipeline, then show
     /// a real projectile hit's hull damage rises by ~1.1×.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_dev_143_raises_gun_damage_in_combat()
     {
+        Require.Artwork();
         var core = RepresentativeCore();
         var (weapon, proj) = E2eWeapon(core);
 

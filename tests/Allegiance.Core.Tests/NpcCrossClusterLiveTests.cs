@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -139,9 +140,11 @@ public sealed class NpcCrossClusterLiveTests
     /// changed to the target's sector and that its position is measurably
     /// closer to the station afterward (both overall and, within the new
     /// sector, after the crossing).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_cluster_npc_paths_through_warp_and_continues_to_station_in_new_sector()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sectorA = null, sectorB = null;
@@ -251,9 +254,11 @@ public sealed class NpcCrossClusterLiveTests
     /// <see cref="Ship.PlanTarget"/> names a sector that does not exist in the
     /// mission resolves to "no path" and stands by — the ship never moves, never
     /// crashes, and does not thrash (the whole point of the fallback branch).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Cross_cluster_npc_with_unreachable_target_stands_by_without_moving_or_crashing()
     {
+        Require.Artwork();
         using var server = new Srv();
         Mission? mission = null;
         Sector? sectorA = null;

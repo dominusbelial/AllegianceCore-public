@@ -12,6 +12,7 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -143,7 +144,7 @@ public class RetryCleanupTests
 public class RetriedConnectLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -198,9 +199,11 @@ public class RetriedConnectLiveTests
     /// churn, so a genuine per-attempt leak (+~2 threads × 10 = ~20) would blow the
     /// budget while self-cleaning retries land at ~0.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads()
     {
+        Require.Artwork();
         const int attempts = 10;
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
@@ -280,9 +283,11 @@ public class RetriedConnectLiveTests
     /// null, so the new connection's assignment is free to win), then re-seat and
     /// repopulate from the fresh connection.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
 

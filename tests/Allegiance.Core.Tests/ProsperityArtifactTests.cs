@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -55,9 +56,11 @@ public sealed class ProsperityArtifactTests
     /// The real corpus bucket is driven through the real completion gate
     /// (<see cref="Bucket.AddMoney"/> + <see cref="Bucket.Update"/> accruing
     /// build time), matching the native completion path.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completing_team_money_development_declares_prosperity_winner()
     {
+        Require.Artwork();
         var m = Assembly();
         m.ProsperityEnabled = true;
         var tm = TeamMoneyBucket(m, 0);
@@ -84,9 +87,11 @@ public sealed class ProsperityArtifactTests
     /// <summary>⭐ Selection wiring: with <see cref="Mission.ProsperityEnabled"/>
     /// false (the default), completing the team-money development is NOT a win —
     /// existing non-prosperity missions are unaffected.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Prosperity_disabled_completion_does_not_win()
     {
+        Require.Artwork();
         var m = Assembly();
         m.ProsperityEnabled = false;
         var tm = TeamMoneyBucket(m, 0);
@@ -107,9 +112,11 @@ public sealed class ProsperityArtifactTests
     /// <summary>⭐ A side whose <see cref="Side.Artifacts"/> reaches
     /// <see cref="Mission.ArtifactWinGoal"/> wins the artifact game — the port of
     /// <c>fsmission.cpp:3890</c> (<c>GetArtifacts() &gt;= nGoalArtifactsCount</c>).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Artifacts_reaching_goal_declares_artifact_winner()
     {
+        Require.Artwork();
         var m = Assembly();
         m.ArtifactEnabled = true;
         m.ArtifactWinGoal = 2;
@@ -132,9 +139,11 @@ public sealed class ProsperityArtifactTests
     /// <summary>⭐ Selection wiring: with <see cref="Mission.ArtifactEnabled"/>
     /// false (the default), securing artifacts does NOT win — existing
     /// non-artifact missions are unaffected.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Artifacts_disabled_goal_does_not_win()
     {
+        Require.Artwork();
         var m = Assembly();
         m.ArtifactEnabled = false;
         m.ArtifactWinGoal = 1;
@@ -149,9 +158,11 @@ public sealed class ProsperityArtifactTests
     /// <summary>⭐ Native stage gate: only a Started/Starting mission recomputes —
     /// the same gate as P191 (<c>fsmission.cpp:3575-3578</c>). A mission that
     /// ended (Over) never re-wins.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Not_started_or_over_mission_never_recomputes_win()
     {
+        Require.Artwork();
         var m = Assembly();
         m.Stage = MissionStage.Over;
         m.ArtifactEnabled = true;

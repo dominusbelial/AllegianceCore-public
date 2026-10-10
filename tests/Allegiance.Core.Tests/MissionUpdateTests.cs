@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -108,10 +109,12 @@ public class MissionUpdateTests
         { 0.250, 2 },
     };
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [MemberData(nameof(DeltaTCases))]
     public void Chunk_count_matches_the_Cpp_boundaries(double deltaT, int expectedN)
     {
+        Require.Artwork();
         var mission = NewMission(new NullIgcSite());
         int s = mission.Sectors.Count;
         Assert.True(s > 0, "test map must have at least one sector");
@@ -133,9 +136,11 @@ public class MissionUpdateTests
         Assert.Equal(deltaT, mission.LastUpdate);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Unchanged_now_is_a_no_op()
     {
+        Require.Artwork();
         var site = new RecordingIgcSite();
         var mission = NewMission(site);
         mission.Update(0.75);
@@ -152,17 +157,21 @@ public class MissionUpdateTests
         Assert.Equal(0.75, mission.LastUpdate);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Backwards_clock_throws()
     {
+        Require.Artwork();
         var mission = NewMission(new NullIgcSite());
         mission.Update(1.0);
         Assert.Throws<InvalidOperationException>(() => mission.Update(0.5));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Ten_minute_jump_throws()
     {
+        Require.Artwork();
         var mission = NewMission(new NullIgcSite());
         // The C++ asserts now - m_lastUpdate < 600.0f (missionigc.cpp:3148);
         // we throw rather than silently clamp. Decision documented in README.
@@ -171,11 +180,13 @@ public class MissionUpdateTests
         Assert.Equal(0.0, mission.LastUpdate);  // unchanged after a refused tick
     }
 
-    [Theory]
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
     [InlineData(MissionStage.NotStarted)]
     [InlineData(MissionStage.Over)]
     public void Not_started_or_over_just_advances(MissionStage stage)
     {
+        Require.Artwork();
         var site = new RecordingIgcSite();
         var mission = NewMission(site);
         mission.Stage = stage;
@@ -188,9 +199,11 @@ public class MissionUpdateTests
         Assert.False(site.Any, "not-started path must not touch the site");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Sides_update_before_first_cluster_chunk()
     {
+        Require.Artwork();
         var site = new RecordingIgcSite();
         var mission = NewMission(site);
         int sideCount = mission.Sides.Count;

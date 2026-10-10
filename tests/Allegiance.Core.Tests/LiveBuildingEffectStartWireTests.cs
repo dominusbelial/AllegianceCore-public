@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -111,9 +112,11 @@ public class LiveBuildingEffectStartWireTests
     /// whole-mission with the real target-asteroid data — every peer on every
     /// side receives the fresh construction's id/sector/radii/position, the port
     /// of native FedSrvSiteBase::CreateBuildingEffect (FedSrv.CPP:13733-13767).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Starting_a_build_broadcasts_ExportBuildingEffect_whole_mission()
     {
+        Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby

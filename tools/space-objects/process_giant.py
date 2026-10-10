@@ -27,9 +27,9 @@ Image.MAX_IMAGE_PIXELS = None
 
 import starclean
 
-SOURCES = "/home/domingo/Development/AllegianceCore/docs/reports/P592_assets/sources"
-OUT = "/home/domingo/Development/Artwork/giantobj"
-SPRITES = "/home/domingo/Development/AllegianceCore/docs/reports/P592_assets/sprites"
+SOURCES = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "reports", "P592_assets", "sources"))
+OUT = os.path.join(os.environ.get("ALLEGIANCE_ARTWORK_PATH", ""), "giantobj")
+SPRITES = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "reports", "P592_assets", "sprites"))
 
 
 # ---------------------------------------------------------------- primitives

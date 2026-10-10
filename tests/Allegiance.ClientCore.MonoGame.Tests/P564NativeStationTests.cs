@@ -20,8 +20,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class P564NativeStationTests
 {
     private static string ArtRoot =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static bool FileExists(string stem) => File.Exists(Path.Combine(ArtRoot, stem + ".mdl"));
 

@@ -7,6 +7,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -183,9 +184,11 @@ public class LiveTeleportDockTests
     /// restart-capable) garrison with a hull the garrison sells → the server
     /// replies <c>TELEPORT_ACK</c> echoing the real stationID and
     /// <c>bNewHull = false</c>, and the ship ends up docked at that station.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teleport_to_friendly_station_with_buyable_hull_acks_bNewHull_false()
     {
+        Require.Artwork();
         using var server = new Srv();
         SpawnResult r = null!;
         server.ShipSpawner = (core, mission, shipId) =>
@@ -237,9 +240,11 @@ public class LiveTeleportDockTests
     /// server applies the native's three operations (<c>FedSrv.CPP:7079-7120</c>):
     /// refund the hull+part value to the side treasury, strip all parts, and
     /// swap to the side's Lifepod hull — the ship redocked at the target.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teleport_with_non_buyable_hull_refunds_strips_and_swaps_to_lifepod()
     {
+        Require.Artwork();
         using var server = new Srv();
         SpawnResult r = null!;
         server.ShipSpawner = (core, mission, shipId) =>
@@ -308,9 +313,11 @@ public class LiveTeleportDockTests
     /// <summary>⭐ A request naming a station that does not exist answers
     /// <c>TELEPORT_ACK</c> with <c>stationID = NA</c>, and the ship stays where
     /// it was (FedSrv.CPP:7063,7067-7073).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teleport_to_nonexistent_station_rejects_with_NA()
     {
+        Require.Artwork();
         using var server = new Srv();
         var r = InjectDocked(server, friendlyHullId: null, equipPart: false);
         server.Boot(Config());
@@ -338,9 +345,11 @@ public class LiveTeleportDockTests
     /// <summary>⭐ A request naming an enemy (other side's) station answers
     /// <c>stationID = NA</c> — the friendly/allied gate, not geometry
     /// (FedSrv.CPP:7064). The ship stays put.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teleport_to_enemy_station_rejects_with_NA()
     {
+        Require.Artwork();
         using var server = new Srv();
         var r = InjectDocked(server, friendlyHullId: null, equipPart: false);
         server.Boot(Config());
@@ -377,9 +386,11 @@ public class LiveTeleportDockTests
     /// real stations are Garrisons). The synthetic station is injected into the
     /// sector's station list via reflection, far from the ship so it never
     /// affects normal docking. The ship stays put.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Teleport_to_friendly_non_restart_capable_station_rejects_with_NA()
     {
+        Require.Artwork();
         using var server = new Srv();
         short fakeId = 9001;
         SpawnResult r = null!;
@@ -429,9 +440,11 @@ public class LiveTeleportDockTests
     /// <summary>⭐ Regression: <c>FM_C_DOCKED(48)</c> with <c>stationID == NA</c>
     /// still undocks exactly as before this task — <c>StationId</c> cleared,
     /// a flying status on the wire, no TELEPORT_ACK.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Undock_stationID_NA_still_undocks_with_no_teleport_ack()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectDocked(server, friendlyHullId: null, equipPart: false);
         server.Boot(Config());

@@ -8,6 +8,8 @@ using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -35,7 +37,7 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class GameOverBackLiveTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -98,9 +100,11 @@ public sealed class GameOverBackLiveTests
     /// MyShipId to the fresh ship — without it the client would keep the old
     /// (dead) ship id and its ready would target the wrong ship. Fails on the
     /// pre-P481 tree (MyShipId stays the old id after rotation).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Rotation_after_game_over_client_leaves_and_can_ready()
     {
+        Require.Artwork();
         using var server = new Srv();
         short side0 = 0; Sector? s0 = null;
         SetShipSpawner(server, (core, mission, id) =>
@@ -162,9 +166,11 @@ public sealed class GameOverBackLiveTests
     /// eliminated side (GAME_OVER + SIDE_INACTIVE; stage stays Started); the
     /// Back plan routes to the side-select picker, and a real FM_C_POSITIONREQ
     /// re-seats the peer via TryJoinSide (JOIN_SIDE updates MySideId).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Elimination_after_game_over_client_can_request_and_seat_another_side()
     {
+        Require.Artwork();
         using var server = new Srv();
         short side0 = 0, side2 = 0; Sector? s0 = null;
         SetShipSpawner(server, (core, mission, id) =>

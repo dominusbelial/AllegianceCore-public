@@ -6,6 +6,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Xunit;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -73,9 +74,11 @@ public sealed class TreasureExpiryTests
         return t;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TreasurePastItsExpireAt_IsRemovedAndRaisesTreasureDestroyedEvent()
     {
+        Require.Artwork();
         var site = new CaptureSite();
         var m = BuildStartedMission(site);
         var sector = m.Sectors.First();
@@ -93,9 +96,11 @@ public sealed class TreasureExpiryTests
         Assert.Contains(t.Id, site.Destroyed);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void TreasureWithinItsLifetime_IsNotExpired()
     {
+        Require.Artwork();
         var m = BuildStartedMission(new CaptureSite());
         var sector = m.Sectors.First();
         double baseNow = m.LastUpdate;
@@ -108,9 +113,11 @@ public sealed class TreasureExpiryTests
         Assert.Contains(t, sector.Models.OfType<Treasure>());
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void ExpireAtIsConstructionNowPlusLifespan()
     {
+        Require.Artwork();
         var m = BuildStartedMission(new CaptureSite());
         var sector = m.Sectors.First();
         double baseNow = m.LastUpdate;
@@ -131,9 +138,11 @@ public sealed class TreasureExpiryTests
     /// 0 and all 15 raised the destroy seam, versus the BEFORE count (all 15
     /// alive, pre-P586 behaviour) — the exact divergence this fix closes.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void FifteenShipLootField_AllExpireByTheirNativeLifespans()
     {
+        Require.Artwork();
         var site = new CaptureSite();
         var m = BuildStartedMission(site);
         var sector = m.Sectors.First();

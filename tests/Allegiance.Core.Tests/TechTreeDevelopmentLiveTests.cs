@@ -6,6 +6,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using FltBot = global::Allegiance.Bot.Bot;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -176,9 +177,11 @@ public class TechTreeDevelopmentLiveTests
     /// broadcasts <c>DEV_COMPLETED(8)</c> and <c>SIDE_TECH_CHANGE(75)</c> to the
     /// side's OWN connections only, and broadcasts <c>SIDE_ATTRIBUTE_CHANGE(76)</c>
     /// to the WHOLE mission (both sides).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Completed_development_applies_techs_and_gas_and_broadcasts_scoped_correctly()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSingleMissionSpawn(server);
         server.Boot(Config());
@@ -252,9 +255,11 @@ public class TechTreeDevelopmentLiveTests
     /// <c>DEV_COMPLETED</c> but <em>not</em> <c>SIDE_TECH_CHANGE</c>; once the
     /// stage is <c>Started</c>, the very next completion does send
     /// <c>SIDE_TECH_CHANGE</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side_tech_change_suppressed_before_start_and_sent_after()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSingleMissionSpawn(server);
         server.Boot(Config());
@@ -322,9 +327,11 @@ public class TechTreeDevelopmentLiveTests
     /// effects the side has been given meanwhile applies <em>no new bit</em> —
     /// no <c>SIDE_TECH_CHANGE</c>, and (being tech-only) no
     /// <c>SIDE_ATTRIBUTE_CHANGE</c>.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Obsolete_development_is_never_reapplied_or_rebroadcast()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectSingleMissionSpawn(server);
         server.Boot(Config());
@@ -431,9 +438,11 @@ public class TechTreeDevelopmentLiveTests
     /// <summary>⭐ Multi-mission: completing a dev on mission A broadcasts
     /// <c>SIDE_ATTRIBUTE_CHANGE</c> to BOTH sides of mission A (whole mission)
     /// but to NO peer of mission B.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Side_attribute_change_broadcasts_whole_mission_but_not_across_missions()
     {
+        Require.Artwork();
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());

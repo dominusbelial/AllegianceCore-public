@@ -4,6 +4,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Srv = global::Allegiance.Server.Server;
+using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
@@ -133,9 +134,11 @@ public class CombatWeaponFiringTests
     /// velocity is exactly <c>Speed · (0,0,-1)</c> = <c>(0,0,-Speed)</c>. Speed
     /// and lifespan come from the decoded <c>DataProjectileTypeIGC</c>.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Projectile_travels_along_heading_at_weapon_speed()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var ship = NewShip();
@@ -169,9 +172,11 @@ public class CombatWeaponFiringTests
     /// model list and ticks with it — the sector's model loop advances its
     /// position by <c>velocity·Δt</c> each chunk, exactly like any other model.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Projectile_lives_in_and_ticks_with_the_sector()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var ship = NewShip();
@@ -228,9 +233,11 @@ public class CombatWeaponFiringTests
     /// mission is advanced past the projectile's expiry and asserted empty of
     /// projectiles with the count restored.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Projectile_expires_and_restores_the_model_count()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var ship = NewShip();
@@ -264,9 +271,11 @@ public class CombatWeaponFiringTests
     /// shot lands. Energy is re-fed by the test because ship recharge is a later
     /// task — this isolates the cooldown gate.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Firing_respects_cooldown()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
         var sector = mission.Sectors[0];
         var ship = NewShip();
@@ -308,9 +317,11 @@ public class CombatWeaponFiringTests
     /// is an energy weapon), then drives it through the tick and asserts the
     /// magazine empties after exactly its ammunition's worth of shots.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Projectile_weapon_consumes_ammo_and_stops_when_empty()
     {
+        Require.Artwork();
         var core = RepresentativeCore.Value;
         var ammoWeaponType = core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon)
             .Select(p => (DataPartTypeIGC.Weapon)p.Type)
@@ -364,9 +375,11 @@ public class CombatWeaponFiringTests
     /// receiver. The ship is assembled with the same mission-from-the-core
     /// construction <see cref="NewStartedMission"/> uses.
     /// </remarks>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void MountCombatWeapon_arms_every_fixed_hardpoint_and_no_turrets()
     {
+        Require.Artwork();
         var mission = NewStartedMission();
 
         // From the real decoded core: a fightable hull with both fixed and

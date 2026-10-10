@@ -1,5 +1,6 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -13,7 +14,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class LifepodHudTests
 {
     private static readonly string ArtRoot =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+        ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
@@ -31,9 +32,11 @@ public class LifepodHudTests
     /// <summary>⭐ Adrift (StationId NA/-1) on a real lifepod hull → oxygen is
     /// genuinely burning; the same hull docked (rescued) reads NOT adrift, and
     /// a non-lifepod hull or a missing catalogue never triggers it.</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void IsAdriftLifepod_gates_on_hull_capability_and_in_space()
     {
+        Require.Artwork();
         short lpId = LifepodHull().HullId;
         short nlId = NonLifepodHull().HullId;
 
@@ -46,9 +49,11 @@ public class LifepodHudTests
     /// <summary>⭐ The mm:ss countdown is ceil(fraction × endurance), using the
     /// REAL core endurance (PCore001 bakes FloatConstants[31] = 300 s — the
     /// same value the server arms pods with).</summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void OxygenSeconds_converts_fraction_to_seconds_with_real_endurance()
     {
+        Require.Artwork();
         Assert.Equal(300f, Catalog.LifepodEnduranceSeconds);   // the real PCore001 constant
         Assert.Equal(300, LifepodHud.OxygenSeconds(1.0f, Catalog));    // full → 5:00
         Assert.Equal(272, LifepodHud.OxygenSeconds(0.906f, Catalog));  // ~4:32
