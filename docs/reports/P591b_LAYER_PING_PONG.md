@@ -180,3 +180,39 @@ with **18× P574** per-hit `c_etMine` pops broadcast to the peers.
   guard, failing-first Organia route, Rigel route regression).
 - `scripts/repro_p591b.sh` — live 221 reproduction/proof harness.
 - `docs/reports/P591b_LAYER_PING_PONG.md` — this report.
+
+---
+
+## Addendum (P591c) — correction: the guard is a NON-NATIVE safety net
+
+This report's commit message and §1b claimed native "holds m_warpState until it
+clears" the transit volume. **That reading was wrong**, and P591c corrects it.
+
+**Native has only a timer, no arrival-warp memory.** `CFSShip::HitWarp`
+(`FedSrv/fsship.cpp:71-137`) and the re-arm (`fsship.cpp:1185-1191`) implement
+`warpNoUpdate → warpWaiting → warpReady`, a ~2 s `m_timeNextWarp` debounce with
+nothing remembering which aleph the ship arrived through. On exit native places
+the ship at the destination aleph oriented along it with velocity
+`backward × (speed + c_fcidExitWarpSpeed)` (`fsship.cpp:126`). So a native drone
+does **not** turn back toward its arrival aleph: its `GotoPlan` (`Waypoint::
+GetGotoPosition`, `Igc/common.cpp`) aims at the **next** waypoint, it flies
+**through** the warp at cruise speed ("Hit the front: go through",
+`shipIGC.cpp:629-636`), and the +15 exit push carries it clear of the arrival
+transit volume well inside the 2 s re-arm.
+
+**The P591b guard papered over a real port routing bug (P591c).** The port's
+shared steering (`Ship.SteerToward`) applied its arrival-brake ramp to *every*
+goal, including an intermediate warp on a cross-cluster leg. So our drones
+braked to ~0 before warping, transited at ~0, exited with a weak `0+15` push,
+could not clear the (large) destination aleph's transit volume in 2 s, and
+re-crossed the very aleph they had just arrived through — the measured
+Organia⇄Gaia ping-pong. **P591c fixes the root cause natively** (drones fly
+through warps at cruise speed, exactly as `GotoPlan` does, via a
+`brakeOnArrival` flag on `SteerToward`), so a native-like drone never targets or
+returns through the arrival aleph. **The P591b guard is therefore retained only
+as a documented non-native safety net** — gated by
+`Sector.WarpReEntryGuardEnabled` (default on), with a
+`Ship.NumWarpReEntryBlocks` counter that must stay ≈0 after the routing fix
+(P591c proof: the guard-off tests make 1–2 route-length crossings and lay;
+the guard-on block counter measures 0 over the drive). See
+`docs/reports/P591c_DRONE_ROUTING_ARRIVAL_ALEPH.md`.

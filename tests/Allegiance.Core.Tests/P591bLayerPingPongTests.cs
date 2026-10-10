@@ -108,18 +108,22 @@ public sealed class P591bLayerPingPongTests
     private static float WarpClearance(ResolvedWarp w) => Sector.WarpVisualScale * w.Warp.Radius + 405f;
 
     /// <summary>
-    /// ⭐ FAILING-FIRST — the re-entry guard. A ship that has just arrived
-    /// through a warp (so the host transit stamped its arrival warp) must not
-    /// re-cross the SAME warp while it remains inside that aleph&#39;s transit
-    /// volume — even after the flat 2&nbsp;s cooldown lapses and even with its
-    /// goal now pointing back the way it came. On today&#39;s code the flat
-    /// <see cref="Ship.LastWarpTime"/> cooldown is the ONLY guard, so a ship
-    /// pinned in the arrival aleph&#39;s transit volume with an expired cooldown
-    /// re-transits (the measured mine-layer bounce) — this fails-first. After
-    /// the fix the arrival-warp latch holds until the ship clears the volume.
+    /// ⭐ P591c correction — the re-entry guard must NOT trap a ship that
+    /// INTENTIONALLY re-crosses the aleph it just came through. A ship that
+    /// arrives via a warp and whose route then genuinely leads BACK through that
+    /// same aleph (e.g. a combat bot pursuing an enemy back across the border it
+    /// entered by, or a return-home through the same door) must be permitted to
+    /// re-cross once native's ~2 s re-arm lapses — native has no arrival-warp
+    /// memory and allows it. Blocking such a ship would freeze it forever (its
+    /// goal lies THROUGH the warp, so it can never clear the 2× release volume).
+    /// P591c makes the guard precise via <see cref="Ship.IntendedNextWarpId"/>:
+    /// it holds only an UNINTENTIONAL drift back through the arrival aleph
+    /// (goal is a different warp / none), and permits an intentional one. This
+    /// test pins a ship at the arrival aleph with its goal pointing back and
+    /// asserts it re-crosses (is NOT trapped).
     /// </summary>
     [Fact]
-    public void Ship_that_just_arrived_through_a_warp_does_not_recross_the_same_warp_until_it_clears_it()
+    public void Ship_that_arrives_and_intentionally_recrosses_its_arrival_warp_is_permitted_not_trapped()
     {
         using var server = new Srv();
         Mission? mission = null; Sector? sectorA = null, sectorB = null; ResolvedWarp? crossWarp = null;
@@ -166,18 +170,21 @@ public sealed class P591bLayerPingPongTests
 
         // It is now inside the destination (partner) aleph's transit volume. Pin it
         // there (has not cleared the arrival aleph), expire the flat 2 s cooldown,
-        // and point its goal back through the very warp it just came through — the
-        // exact bounce scenario. The ONLY thing that may hold it now is the guard.
+        // and point its goal back through the very warp it just came through — an
+        // INTENTIONAL re-crossing. The guard must permit this (anti-trap): a ship
+        // whose route genuinely leads back through its arrival aleph re-crosses
+        // once native's ~2 s re-arm lapses, matching native (no arrival-warp memory).
         npc.Position = exit;                        // the arrival aleph centre — not cleared
         npc.Velocity = Vector3.Zero;
         npc.LastWarpTime = npc.Mission!.LastUpdate - 3.0;   // cooldown expired
         npc.SetGoto(new GotoOrder(GotoKind.Waypoint, sectorA!.Id, waPos));
 
         int tb = 0;
-        while (tb < 300 && npc.Sector?.Id == sectorB!.Id) { server.TickSim(); tb++; }
-        Assert.Equal(sectorB!.Id, npc.Sector?.Id);
-        Console.WriteLine($"P591b-GUARD: NPC {npc.Id} stayed in {sectorB!.Name} ({sectorB.Id}) for {tb} ticks inside the " +
-                          $"arrival aleph's transit volume with its goal pointing back — re-entry guard held");
+        while (tb < 4000 && npc.Sector?.Id == sectorB!.Id) { server.TickSim(); tb++; }
+        // NOT trapped: it re-crosses back to sector A (permitted, native-faithful).
+        Assert.Equal(sectorA!.Id, npc.Sector?.Id);
+        Console.WriteLine($"P591c-GUARD: NPC {npc.Id} intentionally re-crossed its arrival aleph back to " +
+                          $"{sectorA!.Name} ({sectorA.Id}) after {tb} ticks — not trapped by the non-native guard");
     }
 
     /// <summary>The real 221 map&#39;s Alderan (1052) lay point for the given warp,

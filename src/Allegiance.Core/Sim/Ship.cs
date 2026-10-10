@@ -501,6 +501,33 @@ public sealed class Ship : Model, IShipIgc
     public int LastArrivalWarpId { get; set; } = -1;
 
     /// <summary>
+    /// P591c — how many times the (non-native) warp re-entry guard has actually
+    /// blocked a re-crossing of this ship's arrival aleph. Incremented by
+    /// <c>Sector.ResolveWarpCollisions</c> each time it refuses to re-transit
+    /// the arrival warp. After the P591c routing fix this must stay ≈0 over a
+    /// showcase (a healthy native-like drone never tries to re-enter the aleph
+    /// it just came through); a non-zero count is the diagnostic signal that
+    /// the routing regressed and the safety net is doing real work.
+    /// </summary>
+    public int NumWarpReEntryBlocks { get; set; }
+
+    /// <summary>
+    /// P591c — the warp this ship's autopilot is CURRENTLY routing toward as its
+    /// next hop, or <c>-1</c> when there is none (same-cluster/final goal, or no
+    /// path). Set every tick by <see cref="CrossClusterWarpGoal"/> when it
+    /// resolves a warp goal; reset to <c>-1</c> at the top of
+    /// <see cref="ApplyNpcAutopilot"/>. Lets the (non-native) re-entry guard
+    /// distinguish an UNINTENTIONAL drift back through the arrival aleph (goal is
+    /// a DIFFERENT warp → hold it) from an INTENTIONAL re-crossing (goal IS the
+    /// arrival aleph → let it through, matching native where a ship that chooses
+    /// to go back through the aleph it just came through may do so after the ~2 s
+    /// re-arm). Without this, the guard would trap any ship whose genuine route
+    /// leads back through its arrival aleph (e.g. a combat bot pursuing an enemy
+    /// back across the border it entered by).
+    /// </summary>
+    public int IntendedNextWarpId { get; set; } = -1;
+
+    /// <summary>
     /// Sim-time of the ship's most recent undock, or <c>NegativeInfinity</c>
     /// if it has never launched. Mirrors <see cref="LastWarpTime"/>'s own
     /// debounce shape for the analogous problem on the dock side: without
@@ -4769,6 +4796,7 @@ public sealed class Ship : Model, IShipIgc
     private long _npcNavKey = long.MinValue;         // (shipSector.Id, targetClusterId) → warp-goal
     private bool _npcNavCached;                      // whether _npcCachedWarpGoal is a valid cached entry (incl. null = unreachable)
     private Vector3? _npcCachedWarpGoal;             // cached steering goal world position (null when unreachable)
+    private int _npcCachedWarpGoalWarpId = -1;       // P591c: the warp id behind _npcCachedWarpGoal (for IntendedNextWarpId on the cached path)
     private long _npcRipcordKey = long.MinValue;     // (shipSector.Id, target.Id) → ripcord anchor
     private bool _npcRipcordCached;                  // whether _npcCachedRipcordAnchor is a valid cached entry
     private Sector? _npcCachedRipcordAnchor;         // cached FindRipcordAnchorCluster result (null = none)
@@ -4985,6 +5013,8 @@ public sealed class Ship : Model, IShipIgc
         // (a ship is one pilot type, so only the slot for its type is ever
         // populated; PlanTarget wins defensively if both were somehow set).
         Vector3? goal = null;
+        bool goalIsWarp = false;          // P591c: true when the goal is an intermediate warp (cross-cluster leg) → fly through, no arrival brake
+        IntendedNextWarpId = -1;          // P591c: re-set each tick; CrossClusterWarpGoal stamps the warp it routes toward
         float arrivalRadius = AutopilotArrivalRadius;
         float brakeStartDistance = AutopilotBrakeStartDistance;
         // P171 — when the Wingman is ENGAGED (within its engagement standoff)
@@ -5015,9 +5045,13 @@ public sealed class Ship : Model, IShipIgc
                     return;
                 }
                 goal = gw.Position;
+                goalIsWarp = false;
             }
             else if (!TryRipcordOrDefer(gw.ClusterId, now, $"goto {gw.ClusterId}"))
+            {
                 goal = CrossClusterWarpGoal(gw.ClusterId, $"goto {gw.ClusterId}");   // P157 leg — steer toward the first warp toward the target sector
+                goalIsWarp = goal is not null;                                        // P591c — a warp goal is flown through, not braked on
+            }
             // If the ripcord path owned this tick (TryRipcordOrDefer true), goal stays
             // null and the ship does not warp-steer — the ripcord owns the journey.
         }
@@ -5035,6 +5069,7 @@ public sealed class Ship : Model, IShipIgc
                 if (TryDockApproach(st, sector))
                     return;
                 goal = new Vector3(sp[0], sp[1], sp[2]);      // same-cluster gate (Sector.cs:33) — direct flight
+                goalIsWarp = false;
             }
             // P172 — when the PlanTarget is cross-cluster, the ripcord pre-check
             // runs first: if a friendly ripcord station is reachable in/around the
@@ -5042,7 +5077,10 @@ public sealed class Ship : Model, IShipIgc
             // retried in 5 s if not) instead of warp-pathing. Only when no anchor
             // is reachable does it fall through to the existing P157 warp leg.
             else if (!TryRipcordOrDefer(st.ClusterId, now, $"station {st.StationId} '{st.Name}'"))
+            {
                 goal = CrossClusterWarpGoal(st.ClusterId, $"station {st.StationId} '{st.Name}'");  // P157 — steer toward the first warp toward the target sector
+                goalIsWarp = goal is not null;
+            }
         }
         // P591 — the commanded Layer's build/lay objective (native
         // c_cmdPlan == c_cidBuild for a c_ptLayer, shipIGC.cpp:4050-4110).
@@ -5056,16 +5094,28 @@ public sealed class Ship : Model, IShipIgc
         else if (LayerBuildOrder is { } lb)
         {
             if (sector.Id == lb.ClusterId)
+            {
                 goal = lb.Position;                       // same-cluster — direct flight
+                goalIsWarp = false;
+            }
             else if (!TryRipcordOrDefer(lb.ClusterId, now, $"layer-build {lb.ClusterId}"))
+            {
                 goal = CrossClusterWarpGoal(lb.ClusterId, $"layer-build {lb.ClusterId}");
+                goalIsWarp = goal is not null;
+            }
         }
         else if (MiningAsteroidTarget is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
             if (sector.Id == rock.Data.ClusterId)
+            {
                 goal = new Vector3(rp[0], rp[1], rp[2]);      // same-cluster — direct flight
+                goalIsWarp = false;
+            }
             else if (!TryRipcordOrDefer(rock.Data.ClusterId, now, $"asteroid {rock.Data.AsteroidId} '{rock.Data.Name}'"))
+            {
                 goal = CrossClusterWarpGoal(rock.Data.ClusterId, $"asteroid {rock.Data.AsteroidId} '{rock.Data.Name}'");  // P158 — fixed: was steering at a foreign-sector raw position as if local
+                goalIsWarp = goal is not null;
+            }
         }
         // P161 — the Layer default order steers toward its chosen low-contention
         // asteroid through the SAME resolution: same-cluster direct flight, or the
@@ -5075,11 +5125,17 @@ public sealed class Ship : Model, IShipIgc
         else if (LayerAsteroidTarget is { } lar && lar.Data.Position is { Length: 3 } lap)
         {
             if (sector.Id == lar.Data.ClusterId)
+            {
                 goal = new Vector3(lap[0], lap[1], lap[2]);      // same-cluster — direct flight
+                goalIsWarp = false;
+            }
             // P172 — the same ripcord pre-check ahead of the Layer's cross-cluster
             // warp leg (native's single c_cmdPlan trigger is pilot-type agnostic).
             else if (!TryRipcordOrDefer(lar.Data.ClusterId, now, $"layer-asteroid {lar.Data.AsteroidId} '{lar.Data.Name}'"))
+            {
                 goal = CrossClusterWarpGoal(lar.Data.ClusterId, $"layer-asteroid {lar.Data.AsteroidId} '{lar.Data.Name}'");
+                goalIsWarp = goal is not null;
+            }
         }
         // P162 — the Wingman's combat approach. Steers toward the enemy's LIVE
         // current position (re-read fresh every tick, exactly like the other
@@ -5169,7 +5225,7 @@ public sealed class Ship : Model, IShipIgc
 
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
 
-        SteerToward(targetPos, arrivalRadius, brakeStartDistance);
+        SteerToward(targetPos, arrivalRadius, brakeStartDistance, brakeOnArrival: !goalIsWarp);
 
         // P171 — override the fixed standoff-hold THROTTLE with the dynamic
         // relative-speed range-maintenance value when engaged (facing from
@@ -5566,7 +5622,7 @@ public sealed class Ship : Model, IShipIgc
     /// <paramref name="brakeStartDistance"/> where the two-zone ramp begins
     /// shedding speed.
     /// </summary>
-    private void SteerToward(Vector3 targetPos, float arrivalRadius, float brakeStartDistance)
+    private void SteerToward(Vector3 targetPos, float arrivalRadius, float brakeStartDistance, bool brakeOnArrival = true)
     {
         Vector3 toTarget = targetPos - Position;
         float distance = toTarget.Length();
@@ -5600,9 +5656,22 @@ public sealed class Ship : Model, IShipIgc
         // forever instead of converging); aligned, it accelerates. This is the
         // "turn then burn" simplification of native's velocity-managed
         // GotoPlan, stated plainly rather than silently hidden.
-        float distFactor = distance >= brakeStartDistance
-            ? 1f
-            : Math.Clamp((distance - arrivalRadius) / (brakeStartDistance - arrivalRadius), 0f, 1f);
+        //
+        // P591c — brakeOnArrival=false for an INTERMEDIATE WARP goal (the
+        // cross-cluster leg): native GotoPlan flies a ship THROUGH a warp at
+        // cruise speed ("Hit the front: go through", shipIGC.cpp:629-636) —
+        // it only decelerates for the FINAL waypoint. The port must mirror
+        // that: collapsing speed on warp approach makes the ship transit at
+        // ~0 and exit with a weak push (fsship.cpp:126, exit = |v|+15), so it
+        // cannot clear the destination aleph's transit volume within native's
+        // ~2 s m_warpState re-arm (fsship.cpp:1185-1191) and re-crosses the
+        // aleph it just came through (the measured mine-layer ping-pong). By
+        // sustaining thrust through the warp the ship transits at speed, exits
+        // with the full +15 push, and clears the arrival aleph on its own —
+        // exactly why a native drone never turns back.
+        float distFactor = (brakeOnArrival && distance < brakeStartDistance)
+            ? Math.Clamp((distance - arrivalRadius) / (brakeStartDistance - arrivalRadius), 0f, 1f)
+            : 1f;
         float alignment = Math.Clamp(-Orientation.TimesInverse(dir).Z, 0f, 1f);   // forward·dir
         float throttle = Math.Clamp(2f * distFactor * alignment - 1f, -1f, 1f);
 
@@ -6066,7 +6135,11 @@ public sealed class Ship : Model, IShipIgc
         long key = NavKey(sector.Id, targetClusterId);
         if (_npcNavCached && _npcNavKey == key)
         {
-            if (_npcCachedWarpGoal is { } cachedGoal) return cachedGoal;
+            if (_npcCachedWarpGoal is { } cachedGoal)
+            {
+                IntendedNextWarpId = _npcCachedWarpGoalWarpId;   // P591c — stamp the warp this leg routes toward
+                return cachedGoal;
+            }
             _npcCrossClusterDepartureLogged = false;
             return null;
         }
@@ -6096,9 +6169,11 @@ public sealed class Ship : Model, IShipIgc
         _npcCrossClusterNoPathLogged = false;     // re-arm the stand-by log — we found a way this tick
 
         var goal = new Vector3(wp[0], wp[1], wp[2]);
+        IntendedNextWarpId = warp.Warp.WarpId;      // P591c — stamp the warp this leg routes toward
         _npcNavKey = key;
         _npcNavCached = true;
         _npcCachedWarpGoal = goal;
+        _npcCachedWarpGoalWarpId = warp.Warp.WarpId;
         return goal;
     }
 

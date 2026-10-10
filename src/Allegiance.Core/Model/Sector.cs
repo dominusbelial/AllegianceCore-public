@@ -1416,6 +1416,21 @@ public sealed class Sector : IClusterIgc
     public const double WarpCooldownSeconds = 2.0;
 
     /// <summary>
+    /// P591c — the P591b warp re-entry guard is a <b>non-native safety net</b>,
+    /// not a faithful port of anything in native: native only has the flat
+    /// <c>m_warpState</c> timer (<c>fsship.cpp:1185-1191</c>) and no arrival-warp
+    /// memory — a native drone simply never turns back toward the aleph it just
+    /// came through (its <c>GotoPlan</c> aims at the next waypoint and the exit
+    /// push carries it clear). The guard was added in P591b to stop a real,
+    /// measured bounce caused by a routing bug this port had; once that root
+    /// cause is fixed (P591c) the guard should fire ≈0 times and acts purely as
+    /// insurance. This flag is the <b>test seam</b>: it lets tests and the live
+    /// proof run with the guard switched OFF to demonstrate the routing fix
+    /// holds on its own (proof requirement of P591c). Production default is
+    /// <c>true</c> (the safety net stays armed).</summary>
+    public static bool WarpReEntryGuardEnabled { get; set; } = true;
+
+    /// <summary>
     /// The <b>warp-bomb delay</b>, in seconds — the time between a warp being
     /// hit by a warp-bomb missile and the real explosion detonating at the
     /// aleph. This is the mission float constant <c>c_fcidWarpBombDelay</c>
@@ -3291,7 +3306,7 @@ public sealed class Sector : IClusterIgc
             // its sphere (Sector.cs:174, shipIGC.cpp:1419).
             float shipRadius = 0.5f * ship.HullType.Length;
 
-            // P591b — release the re-entry latch once the ship has clearly left
+            // P591b/P591c — release the re-entry latch once the ship has clearly left
             // the vicinity of the aleph it arrived through (it may then
             // legitimately re-cross it). The release threshold is a HEALTHY
             // MARGIN (2× the transit volume radius), not the bare sphere edge:
@@ -3303,7 +3318,10 @@ public sealed class Sector : IClusterIgc
             // move well clear first gives its steering time to commit to the
             // onward route. The arrival warp lives in THIS sector (the
             // destination); if absent (e.g. the ship moved on), release too.
-            if (ship.LastArrivalWarpId >= 0)
+            // The guard is the P591c-documented NON-NATIVE safety net, gated by
+            // WarpReEntryGuardEnabled so tests/proof can show the routing fix
+            // holds on its own.
+            if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId >= 0)
             {
                 var aw = _warps.FirstOrDefault(w => w.Warp.WarpId == ship.LastArrivalWarpId);
                 bool cleared = true;
@@ -3329,14 +3347,39 @@ public sealed class Sector : IClusterIgc
             {
                 if (warp.Destination is null) continue;              // dangling edge: nothing to cross into
                 if (warp.Warp.Position is not { Length: 3 } p) continue;  // no position: can't test
-                // P591b — the re-entry guard: a ship must not immediately
+                // P591b/P591c — the re-entry guard (NON-NATIVE safety net, see
+                // WarpReEntryGuardEnabled): a ship must not immediately
                 // bounce back out through the SAME aleph it just arrived via
-                // while still inside its transit volume (native prevents
-                // re-entering the arrival aleph; the flat LastWarpTime
-                // cooldown lets a slow ship linger and flip back, the measured
-                // mine-layer ping-pong). The latch is released above the moment
-                // the ship clears the volume.
-                if (ship.LastArrivalWarpId == warp.Warp.WarpId) continue;
+                // while still inside its transit volume. Native never needs such
+                // a rule (its GotoPlan flies through the warp at speed and the
+                // exit push clears the arrival aleph within the ~2 s m_warpState
+                // re-arm); the flat LastWarpTime cooldown alone lets a slow
+                // ship linger and flip back — the measured mine-layer ping-pong
+                // the P591c routing fix removes at the source. The latch is
+                // released above the moment the ship clears the volume. The
+                // P591c routing fix makes the guard fire ≈0 times in practice;
+                // it is kept armed as insurance.
+                if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId == warp.Warp.WarpId
+                    && ship.IntendedNextWarpId != warp.Warp.WarpId)
+                {
+                    // Only hold the UNINTENTIONAL drift back through the arrival
+                    // aleph (the ship's routing goal is a DIFFERENT warp, or none
+                    // — it is not choosing to go back). An INTENTIONAL re-crossing
+                    // (ship.IntendedNextWarpId == this warp — e.g. a combat bot
+                    // pursuing an enemy back across the border it entered by, or a
+                    // return-home through the same door) is permitted: blocking it
+                    // would trap the ship at the arrival aleph forever, because its
+                    // goal lies THROUGH the warp so it can never clear the 2× volume
+                    // to release the latch. Native likewise lets a ship that chooses
+                    // to go back re-cross after the ~2 s re-arm.
+                    // Count (and log) each real block so a regression that
+                    // reintroduces re-entry shows up as a non-zero guard-block
+                    // count even while the guard itself is preventing the harm.
+                    ship.NumWarpReEntryBlocks++;
+                    ConsoleLog.Write($"[warp] P591b re-entry guard BLOCKED ship {ship.Id} (block #{ship.NumWarpReEntryBlocks}) " +
+                                     $"from re-crossing arrival warp {ship.LastArrivalWarpId} (not its route goal) — routing should have carried it clear (non-native safety net)");
+                    continue;
+                }
                 var wpos = new Vector3(p[0], p[1], p[2]);
                 float dx = ship.Position.X - wpos.X;
                 float dy = ship.Position.Y - wpos.Y;
