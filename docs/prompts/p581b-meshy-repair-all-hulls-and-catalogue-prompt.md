@@ -2,12 +2,30 @@
 
 ## P581b — the rest: run P581's repair pipeline on ALL other Meshy hulls + the replacement catalogue
 
-**Prerequisite:** P581 (Adv Scout pilot pass) has landed and **Domingo
-approved its result**. Reuse P581's `tools/meshy-repair/` pipeline
-unchanged unless his review asked for changes (read P581's report and any
-notes). Then do the full scope below (the audit of every Meshy model, repair of every
-repairable one, the catalogue + `catalogue:<id>` mapping + the inspector
-catalogue browser), skipping the Adv Scout (already done).
+**Prerequisites, done:** P581 (Adv Scout pilot, `ee97108c`) and **P581c**
+(`754ec51c`, `docs/reports/P581c_MESHY_REPAIR_SPIKE_FIX.md`). P581's first
+repair left **saw-tooth spike shards** on the fins: vertices were picked by
+position, so triangles at UV seams got half-moved and stretched. P581c fixed
+`tools/meshy-repair/` to move **whole faces by welded-component root** (rigid,
+one unit per piece) and added **artifact checks that fail the run** on any
+stretched edge, face-count mismatch or non-rigid piece. **Domingo approved
+the result on 2026-10-10 ("mesh looks perfect now").**
+
+**Use the P581c pipeline as is.** For EVERY model you repair:
+- **The P581c artifact checks must pass with 0 violations.** A model that
+  can't pass is graded "poor" and left unrepaired. Never ship one that fails.
+- **Close-up proof**: P581's distant 6-angle frames hid the spikes, and only
+  Domingo's close-up found them. For each repaired model, include inspector
+  frames at close distance (`--inspect-dist` ≤ 12 or the model's equivalent;
+  P581c added the flag) and Blender Solid/matcap close-ups of each moved
+  piece's root and edges. Look at them yourself and state per model whether
+  any spike, serration or gap remains.
+
+**The Adv Scout is done.** Skip its repair: scope item 3 is satisfied by
+P581/P581c. Still list `dreg-scout2` (repaired) in the catalogue. Then do
+the rest of the scope: audit every Meshy model, repair every repairable
+one, build the catalogue + `catalogue:<id>` mapping + the inspector
+catalogue browser.
 
 ## Why this task exists
 
@@ -53,7 +71,7 @@ object colours for review renders (not the applied texture).
    vertices with identical UVs). Export to a **new** file
    `Content/Models/repaired/<model>.fbx`; **never overwrite originals.**
    Before/after renders and gap numbers per model.
-3. **Repair the Adv Scout (`dreg-scout2`) first** and prove it in the real
+3. **(Done in P581/P581c; don't redo.)** ~~Repair the Adv Scout (`dreg-scout2`) first~~ and prove it in the real
    window: the P565 inspector (`--inspect --inspect-hull "Adv Scout"`,
    Meshy art, side-by-side) and in flight, with no black slits from any
    angle. Then run the pipeline over every model graded repairable.
@@ -108,3 +126,32 @@ object colours for review renders (not the applied texture).
 ## ⚠️ Session rule: never end a turn while waiting
 
 This session runs in one-shot mode: **your session ends the moment you finish a message.** Run long commands (the 2× `scripts/run-tests.sh` suite, live proofs, builds) **in the foreground**, blocking, one after another. **Never** start them in the background and then reply "waiting for it to finish". Two earlier sessions (P529, P542) did exactly that: the session ended mid-suite, the background processes were killed, and the suite results were never recorded. If a command might exceed a tool timeout, run each suite run as its own foreground call and record its numbers before starting the next.
+
+## ⛔ Shared-environment rules (Domingo, 2026-10-10)
+
+- **Never modify, build in, check out or run from `~/allegiance-play2` or
+  `~/allegiance-deploy`.** Those are Domingo's live play client and the 221
+  deploy source. For live proofs, create your **own temporary worktree**
+  (`git worktree add /tmp/<task>-proof HEAD`), use it, and remove it when
+  done.
+- **Never connect to, deploy to, or restart the 221 server (`192.168.0.221`).**
+  Use a local server on this workstation (as the P572 tooling does).
+- Stop every local server, client and bot process you started (by exact PID)
+  before ending your session.
+
+## 🔎 Reverse engineering the native binaries (when a task needs compiled-code evidence)
+
+The native C++ source (`~/Development/Allegiance/src`) stays the primary
+reference. When you need what the **compiler actually produced** (resolved
+constants, inlined macros, vtable slots, struct offsets), symbol-aware
+decompiles of our FZDebug builds are available. Use the CLI, not MCP:
+
+```bash
+G=~/Development/allegiance-tools/ghidra/ghidra-pdb.sh
+B=~/Development/allegiance-binaries
+$G $B/server/AllSrv.exe list 'CFSMission::'                     # names + addresses
+$G $B/server/AllSrv.exe decomp 'CFSMission::GetCountSides$' 1   # decompiled C
+# also: $B/client/Allegiance.exe, $B/interop/AllegianceInterop.dll
+```
+Projects are pre-analysed (calls take seconds); never re-import or delete
+`$B/ghidra-projects`. Cite the function name + address in your report.
