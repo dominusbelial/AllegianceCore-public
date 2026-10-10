@@ -1424,11 +1424,15 @@ public sealed class Sector : IClusterIgc
     /// push carries it clear). The guard was added in P591b to stop a real,
     /// measured bounce caused by a routing bug this port had; once that root
     /// cause is fixed (P591c) the guard should fire ≈0 times and acts purely as
-    /// insurance. This flag is the <b>test seam</b>: it lets tests and the live
-    /// proof run with the guard switched OFF to demonstrate the routing fix
-    /// holds on its own (proof requirement of P591c). Production default is
-    /// <c>true</c> (the safety net stays armed).</summary>
-    public static bool WarpReEntryGuardEnabled { get; set; } = true;
+    /// insurance. It is therefore <b>OPT-IN and OFF by default</b> (native needs
+    /// no such rule): opt in via the server config flag
+    /// <c>ServerConfig.WarpReEntryGuard</c> (a.k.a. <c>--warpReEntryGuard</c>)
+    /// or by setting this static directly (the <b>test seam</b> that lets tests
+    /// and the live proof switch the guard for demonstration). The guard's code
+    /// and the <c>Ship.NumWarpReEntryBlocks</c> counter remain in place so
+    /// opting in is a one-line switch and a regression that reintroduces
+    /// re-entry still surfaces as a non-zero block counter.</summary>
+    public static bool WarpReEntryGuardEnabled { get; set; } = false;
 
     /// <summary>
     /// The <b>warp-bomb delay</b>, in seconds — the time between a warp being
@@ -3358,7 +3362,8 @@ public sealed class Sector : IClusterIgc
                 // the P591c routing fix removes at the source. The latch is
                 // released above the moment the ship clears the volume. The
                 // P591c routing fix makes the guard fire ≈0 times in practice;
-                // it is kept armed as insurance.
+                // it is therefore OPT-IN and OFF by default (P594), armed only
+                // when the operator enables WarpReEntryGuard.
                 if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId == warp.Warp.WarpId
                     && ship.IntendedNextWarpId != warp.Warp.WarpId)
                 {

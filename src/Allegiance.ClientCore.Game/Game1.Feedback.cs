@@ -60,6 +60,31 @@ public sealed partial class Game1
             overs = world.TakeCameraOverrideRequests();
         }
 
+        // P594 — announce a newly-arrived QUEUED order (a teammate's "pick me
+        // up" rescue offer, streamed by the server on c_cidPickup) as a HUD tip
+        // + the native "new command" chime, exactly once per order. The player
+        // then presses [Home] to accept, which promotes the order AND engages
+        // the P594 intercept autopilot toward the pod (see the accept handler).
+        short qid;
+        lock (_session.Gate)
+            qid = world.MyQueuedCommand is { } qc ? qc.CommandId : Allegiance.Core.Wire.OrderChange.CidNone;
+        if (qid != Allegiance.Core.Wire.OrderChange.CidNone && qid != _queuedCmdAnnouncedId)
+        {
+            _queuedCmdAnnouncedId = qid;
+            _sound?.PlayNonCriticalMessage();   // native "new command" cue
+            Console.WriteLine($"[monogame] queued order announced: commandID={qid} — press [Home] to accept");
+            _tipLines.Add((
+                qid == Allegiance.Core.Wire.OrderChange.CidPickup
+                    ? "NEW ORDER: pick up a teammate — [Home] to accept"
+                    : "NEW COMMAND RECEIVED — [Home] to accept",
+                false, _nowSeconds + TipDurationSeconds));
+            if (_tipLines.Count > 6) _tipLines.RemoveAt(0);
+        }
+        else if (qid == Allegiance.Core.Wire.OrderChange.CidNone)
+        {
+            _queuedCmdAnnouncedId = -1;   // pending order cleared → a new one re-announces
+        }
+
         foreach (var line in lines)
         {
             if (line.IsCritical)

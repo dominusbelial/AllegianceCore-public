@@ -971,6 +971,12 @@ public sealed partial class Game1 : Game
     private bool _p3TurretKeyWasDown; // P416 — edge-detect 3 (promote turret seat 3)
     private bool _p4TurretKeyWasDown; // P416 — edge-detect 4 (promote turret seat 4)
 
+    // P594 — the last queued-order command id this client announced (HUD tip +
+    // "new command" chime), so a freshly-arriving rescue offer is voiced/shown
+    // exactly once. -1/cleared when no queued order is pending, so a later order
+    // re-announces.
+    private short _queuedCmdAnnouncedId = -1;
+
     // P249+P360 — whole-mission starmap / persistent mini-map. P249 originally
     // hid the map behind Tab (nothing on screen until pressed). P360 restores
     // native's real always-on behaviour (native shows the sector map in the HUD

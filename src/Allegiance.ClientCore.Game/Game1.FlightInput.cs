@@ -1506,6 +1506,27 @@ public sealed partial class Game1
                     {
                         _session.SendOrderChange(me, p.CommandId, Allegiance.Core.Wire.OrderChange.CmdQueued, (IgcObjectType)(-1), -1);
                         Console.WriteLine($"[monogame] ACCEPT queued order commandID={p.CommandId} (ORDER_CHANGE c_cmdQueued promote)");
+
+                        // P594 — accepting a POD-PICKUP offer (CidPickup → a Ship
+                        // target = the pod) engages the autopilot to go get them.
+                        // Native's TK_ExecuteCommand / AcceptQueuedCommand bExecute
+                        // branch (WinTrek.cpp:10626-10712) promotes the order AND
+                        // sets the autopilot toward the target; that is exactly the
+                        // rescue the player wants from "prepare for recovery" — and
+                        // the P594 intercept autopilot now flies the player INTO the
+                        // pod at full speed. Home therefore selects the pod and
+                        // engages, so the offer and the rescue are one keypress.
+                        if (PickupPodIdForQueued(pend) is { } podId)
+                        {
+                            string podName = "pod";
+                            lock (_session.Gate)
+                                if (world.Ships.TryGetValue(podId, out var pe)
+                                    && !string.IsNullOrEmpty(pe.CharacterName))
+                                    podName = pe.CharacterName;
+                            EngageAutopilotToward(
+                                new AutopilotTarget(TargetKind.Ship, podId, $"{podName} #{podId}"),
+                                "pickup accept:");
+                        }
                     }
                     else
                     {
@@ -2060,6 +2081,33 @@ public sealed partial class Game1
             return true;
         }
 
+        // P594 — native "mmf pod pickup" goto (common.cpp:1430-1446): when the
+        // autopilot's same-sector SHIP target is a friendly lifepod, OR the own
+        // ship IS a lifepod converging on a same-sector ship (a rescuer),
+        // steer at the INTERCEPT point at FULL SPEED (c_gpmFast), skip the pod
+        // as a dodge obstacle (pmodelSkip = the pod — the target is already the
+        // dodge skip via SkipGoalFor), and NEVER apply the 60 u "arrived"
+        // disengage (native has no arrival-radius terminal for a pod pickup; it
+        // keeps flying INTO the pod). The engagement ends only when the server
+        // PLAYER_RESCUED fires — the pod vanishes/docks (target pod) or the own
+        // pod is docked (rescued) — at which point we disengage "rescued".
+        if (!routed && tgt.Kind == TargetKind.Ship
+            && ResolvePodPickup(tgt, out var podStillValid, out var podVel, out var ownMaxSpeed))
+        {
+            if (!podStillValid)
+            {
+                // Pod rescued (PLAYER_RESCUED → the pod is gone or docked) or
+                // the own pod was rescued into a docked state: end the autopilot
+                // engagement exactly once, like every other terminal. (Without
+                // this the stale pod target would leave the autopilot hung, since
+                // ResolveTargetPosition above returns false without disengaging.)
+                DisengageAutopilot("rescued");
+                return false;
+            }
+            controls = AutopilotSteering.PodPickup(pos, orient, goal, podVel, ownMaxSpeed);
+            return true;
+        }
+
         // Same-sector arrival/disengage law (existing, unchanged for same-sector
         // targets). A routed cross-sector goal is a warp mouth — distance to the
         // raw target is meaningless until the ship reaches its sector, so the
@@ -2304,6 +2352,84 @@ public sealed partial class Game1
             TargetKind.Asteroid => new ClientAutopilotDodge.SkipGoal(AsteroidId: tgt.Id),
             _ => null,   // Warp — not a dodge obstacle
         };
+
+    /// <summary>
+    /// P594 — the pod <b>ship id</b> a pending queued order asks the local
+    /// player to pick up, or null when it is not a lifepod pickup offer. Native
+    /// <c>AcceptQueuedCommand</c>'s <c>bExecute</c> branch (WinTrek.cpp:10626-
+    /// 10712) accepts the queued order AND sets the autopilot toward its target;
+    /// this is the pure decision for that target: only a <c>CidPickup</c> whose
+    /// target is a <c>Ship</c> (the pod) should engage the intercept autopilot.
+    /// Pure + static so the accept→engage wiring is unit-testable without a
+    /// live world.
+    /// </summary>
+    internal static short? PickupPodIdForQueued(QueuedCommandState? qc)
+    {
+        if (qc is { } q && q.CommandId == Allegiance.Core.Wire.OrderChange.CidPickup
+            && q.TargetType == IgcObjectType.Ship)
+            return q.TargetId;
+        return null;
+    }
+
+    /// <summary>
+    /// P594 — decide whether the current autopilot SHIP target is a native
+    /// "pod pickup" scenario and, if so, supply the live parameters for
+    /// <see cref="AutopilotSteering.PodPickup"/>. Native resolves the case by
+    /// WAYPOINT kind (<c>Waypoint::GetGotoPosition</c>, case <c>OT_ship</c>,
+    /// <c>common.cpp:1430-1446</c>) and fires when <b>either</b> the piloted
+    /// ship or the target is a lifepod (<c>c_habmLifepod</c>): a rescuer diving
+    /// on a friendly pod, or a pod converging on a rescuer. Returns <c>false</c>
+    /// when neither is a pod (not a pickup — fall through to the ordinary law).
+    /// Fills <paramref name="podVel"/> (the target's live world velocity,
+    /// native <c>dv = m_pmodelTarget-&gt;GetVelocity()</c>),
+    /// <paramref name="ownMaxSpeed"/> (the piloted ship's <c>GetMaxSpeed()</c>,
+    /// native <c>common.cpp:1444</c>), and
+    /// <paramref name="podStillValid"/> — whether the pod side of the
+    /// engagement is still a live, present, undocked lifepod. A <c>false</c>
+    /// validity means the pod was rescued (server <c>PLAYER_RESCUED</c> docks /
+    /// removes it) or the own pod was rescued into a docked state, which is the
+    /// native disengage signal for a pod pickup (the pod is gone).
+    /// </summary>
+    private bool ResolvePodPickup(AutopilotTarget tgt, out bool podStillValid,
+        out SimVec podVel, out float ownMaxSpeed)
+    {
+        podVel = default; ownMaxSpeed = 0f; podStillValid = false;
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            bool targetIsPod = world.Ships.TryGetValue(tgt.Id, out var targetShip)
+                && (ShipRoleBits(targetShip.HullId) & DataHullTypeIGC.HabmLifepod) != 0;
+            bool ownIsPod = world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var ownShip)
+                && (ShipRoleBits(ownShip.HullId) & DataHullTypeIGC.HabmLifepod) != 0;
+            if (!targetIsPod && !ownIsPod) return false;   // not a pod pickup
+
+            // Validity of the pod side of the engagement (native: disengage once
+            // the pod is gone — PLAYER_RESCUED docks/removes it).
+            if (targetIsPod)
+                podStillValid = world.Ships.TryGetValue(tgt.Id, out var tp)
+                    && tp.StationId < 0
+                    && (ShipRoleBits(tp.HullId) & DataHullTypeIGC.HabmLifepod) != 0;
+            else // ownIsPod → the own pod must still be adrift to keep converging on the rescuer
+                podStillValid = world.MyShipId is { } me2
+                    && world.Ships.TryGetValue(me2, out var op) && op.StationId < 0;
+
+            // The TARGET's live velocity (the pod's when diving on it; the
+            // rescuer's when the own pod is the pursuer).
+            if (world.Ships.TryGetValue(tgt.Id, out var ts) && ts.Latest is { } tu)
+                podVel = new SimVec(tu.Velocity.X, tu.Velocity.Y, tu.Velocity.Z);
+
+            // Pursuer max speed = the PILOTED ship's GetMaxSpeed (native
+            // common.cpp:1444, pship->GetHullType()->GetMaxSpeed()).
+            if (world.MyShipId is { } ownId && world.Ships.TryGetValue(ownId, out var os)
+                && _shopCatalog is { } cat)
+            {
+                foreach (var h in cat.Hulls)
+                    if (h.HullId == os.HullId) { ownMaxSpeed = h.Speed; break; }
+            }
+            return true;
+        }
+    }
 
     /// <summary>Re-resolve a stored target's live world position. False when the
     /// object is gone, or the ship has died (you cannot steer at a corpse).</summary>

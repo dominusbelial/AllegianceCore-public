@@ -71,6 +71,45 @@ public static class AutopilotSteering
         return new ControlData(yaw, pitch, 0f, +1f);   // full forward — fly through the aleph
     }
 
+    /// <summary>
+    /// P594 — native "mmf pod pickup" goto (<c>Igc/common.cpp:1430-1446</c>,
+    /// <c>Waypoint::GetGotoPosition</c>, case <c>OT_ship</c>): when either the
+    /// piloted ship or the target is a lifepod (<c>c_habmLifepod</c>), the
+    /// autopilot does <b>not</b> steer at the target and stop — it solves for
+    /// the <b>intercept point</b> (where the pod will be when the ship gets
+    /// there) and flies at it at <b>full speed</b> (<c>gpm = c_gpmFast</c>),
+    /// plowing through the pod (native sets <c>*ppmodelSkip = m_pmodelTarget</c>,
+    /// so the pod is not avoided) until contact/rescue. The port expresses this
+    /// as <see cref="Pursue"/> of the intercept point: <c>Pursue</c> already
+    /// holds full forward throttle with no braking (the port of native
+    /// <c>c_gpmFast</c> "keep full speed" mode). The intercept time comes from
+    /// the shared <see cref="NavMath.SolveForImpact"/> port
+    /// (<c>common.cpp:1443-1444</c>, <c>speed = GetMaxSpeed()</c>).
+    /// Callers choose WHEN to use this (a same-sector ship target that is, or
+    /// whose owner is, a friendly lifepod) and must <b>not</b> apply the 60 u
+    /// <see cref="AutopilotArrivalRadius"/> "arrived" disengage for such a
+    /// target (native has no arrival-radius terminal for a pod pickup — it
+    /// keeps flying INTO it until the rescue).
+    /// </summary>
+    /// <param name="position">The piloted ship's own world position.</param>
+    /// <param name="orientation">The piloted ship's own attitude.</param>
+    /// <param name="targetPosition">The pod's (or rescuer's) current world
+    /// position, re-read every frame (the target may be moving).</param>
+    /// <param name="targetVelocity">The target's current world velocity
+    /// (native <c>dv = m_pmodelTarget-&gt;GetVelocity()</c>).</param>
+    /// <param name="ownMaxSpeed">The piloted ship's max speed
+    /// (<c>GetMaxSpeed()</c>) — the pursuer speed native passes to
+    /// <c>solveForImpact</c> (<c>common.cpp:1444</c>).</param>
+    public static ControlData PodPickup(
+        in Vector3 position, Orientation orientation,
+        in Vector3 targetPosition, in Vector3 targetVelocity, float ownMaxSpeed)
+    {
+        Vector3 dp = targetPosition - position;
+        float t = NavMath.SolveForImpact(dp, targetVelocity, ownMaxSpeed, 0f, out _);
+        Vector3 intercept = targetPosition + targetVelocity * t;
+        return Pursue(position, orientation, intercept);
+    }
+
     /// <summary>Default distance at which the two-zone braking ramp begins —
     /// <c>Ship.AutopilotBrakeStartDistance</c> (<c>Ship.cs:3074</c>).</summary>
     public const float AutopilotBrakeStartDistance = 420f;

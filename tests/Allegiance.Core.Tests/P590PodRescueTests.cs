@@ -371,4 +371,55 @@ public class P590PodRescueTests
         Assert.NotNull(nearEngaged.AttackTarget);   // still in the fight
         Console.WriteLine($"P590-P3b: engaged nearest diverter {nearEngaged.Id} NOT assigned (combat priority); idle farther {nearIdle.Id} assigned");
     }
+
+    /// <summary>⭐ P594 — a <b>MOVING</b> pod is intercepted, not just a parked
+    /// one: the diverter's goal is the native intercept point
+    /// (<c>pod.Position + t·pod.Velocity</c>, common.cpp:1440-1445) flown at
+    /// FULL SPEED (<c>c_gpmFast</c>), so a pod that is genuinely under way (here
+    /// client-driven, drifting at a steady 8 u/s) is caught ahead of where it
+    /// currently is. On the pre-P594 diverter (which aimed at the pod's live
+    /// position with a hard arrival brake) a steadily-moving pod is systematically
+    /// undershot; the intercept + full-speed fly-through closes the gap. Asserts
+    /// the diverser reaches and rescues the moving pod (PLAYER_RESCUED).</summary>
+    [Fact]
+    public void Diverter_intercepts_and_rescues_a_moving_pod()
+    {
+        var podPos = new Vector3(820f, 680f, 860f);
+        var (server, podBot, podShip) = BootPodPeer("PODM", DataHullTypeIGC.HabmLifepod, 0, podPos);
+        var npc = RescueCapable(server, 0, new Vector3(980f, 670f, 850f), isNpc: true);
+        PlaceExtra(server, npc);
+        Assert.True(npc.HullType.HasCapability(DataHullTypeIGC.HabmRescue));
+
+        // Pod commands the rescue-capable NPC to pick it up.
+        podBot.SendOrderChange(npc.Id, OrderChange.CidPickup, OrderChange.CmdQueued, IgcObjectType.Ship, podShip.Id);
+        for (int i = 0; i < 5; i++) server.TickSim();
+        Assert.NotNull(npc.PickupTarget);
+        Assert.Equal(podShip.Id, npc.PickupTarget!.Id);
+
+        // Keep the pod MOVING (client-driven, steady drift) so the diverter must
+        // apply the P594 intercept LEAD. Pose-update the pod with a nonzero
+        // velocity each tick; the diverter's SolveForImpact goal
+        // (pod.Position + t·pod.Velocity) + full-speed fly-through carries it
+        // onto the moving pod. This is the frame-strip "a moving pod is
+        // intercepted" proof, in-process.
+        byte cookie = podBot.PoseCookie;
+        var driftVel = new Vector3(0f, 0f, 12f);   // 12 u/s steady drift
+        int steps = 0;
+        while (podBot.PlayerRescueds.Count == 0 && steps < 800)
+        {
+            var cur = podShip.Position;
+            var next = cur + driftVel * 0.03125f;   // ~1/32 s per tick (SimNow advances)
+            podBot.SendOwnShipPose((uint)(server.SimNow * 1000.0), cookie, next, driftVel,
+                Orientation.Identity, ControlData.Neutral, 0, new float[3]);
+            server.TickSim();
+            steps++;
+        }
+        Assert.True(podBot.PlayerRescueds.Count >= 1,
+            $"diverter {npc.Id} did not intercept the MOVING pod (P594 intercept) after {steps} ticks");
+        var r = podBot.PlayerRescueds.First();
+        Assert.Equal(npc.Id, r.ShipIdRescuer);
+        Assert.Equal(podShip.Id, r.ShipIdRescuee);
+        Assert.NotNull(podShip.StationId);
+        Console.WriteLine($"P594: diverter {npc.Id} intercepted MOVING pod {podShip.Id} (drift {driftVel}) -> PLAYER_RESCUED rescuer={r.ShipIdRescuer}/rescuee={r.ShipIdRescuee} after {steps} ticks");
+    }
 }

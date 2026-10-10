@@ -5014,6 +5014,7 @@ public sealed class Ship : Model, IShipIgc
         // populated; PlanTarget wins defensively if both were somehow set).
         Vector3? goal = null;
         bool goalIsWarp = false;          // P591c: true when the goal is an intermediate warp (cross-cluster leg) → fly through, no arrival brake
+        bool podPickupIntercept = false;  // P594: true for a pod-pickup goal → fly at the intercept at full speed (native c_gpmFast)
         IntendedNextWarpId = -1;          // P591c: re-set each tick; CrossClusterWarpGoal stamps the warp it routes toward
         float arrivalRadius = AutopilotArrivalRadius;
         float brakeStartDistance = AutopilotBrakeStartDistance;
@@ -5188,18 +5189,22 @@ public sealed class Ship : Model, IShipIgc
         }
         // P590 — the pod-pickup diversion. A rescue-capable ship that has been
         // tasked to pick up a friendly pod (c_cidPickup order, or the proactive
-        // assignment pass) steers toward the pod's LIVE position through the
-        // SAME shared SteerToward primitive — no new steering code. Being the
-        // LAST goal branch, it only wins when every higher-priority goal is
-        // unset (goto / station plan / mine / layer / attack / defend): a ship
-        // that is mining, attacking, or protecting someone does not abandon
-        // that task to go pick up a pod — the combat-priority rule. Arrival
-        // radius is the contact distance (sum of the two hull radii) so the
-        // ship closes to touching range, at which point the existing
-        // ResolveRescueEvents proximity pass performs the rescue and docks the
-        // pod; once the pod is no longer a valid rescuee the goal clears and
-        // the ship returns to its normal task cycle. Same-sector only (a
+        // assignment pass) steers toward the pod. Being the LAST goal branch, it
+        // only wins when every higher-priority goal is unset (goto / station
+        // plan / mine / layer / attack / defend): a ship that is mining,
+        // attacking, or protecting someone does not abandon that task to go
+        // pick up a pod — the combat-priority rule. Same-sector only (a
         // cross-sector pod is not approached autonomously).
+        //
+        // P594 — the steering is native's "mmf pod pickup" goto
+        // (common.cpp:1430-1446): solve the INTERCEPT point (where the pod will
+        // be when the ship gets there) via NavMath.SolveForImpact
+        // (common.cpp:1443-1444, speed = GetMaxSpeed()) and fly at it at FULL
+        // SPEED (gpm = c_gpmFast, brakeOnArrival:false) plowing THROUGH the pod
+        // (pmodelSkip = the pod — already the dodge skip). The rescue pass
+        // (ResolveRescueEvents, d² <= threshold) fires on penetration and docks
+        // the pod; once it is no longer a valid rescuee the goal clears and the
+        // ship returns to its normal task cycle.
         else if (PickupTarget is { } pod)
         {
             if (pod.Dead || pod.StationId is not null || pod.Sector != sector
@@ -5211,21 +5216,22 @@ public sealed class Ship : Model, IShipIgc
                 ConsoleLog.Write($"[pickup] ship {Id} (side {SideId}): pickup target pod {pod.Id} no longer valid — cleared, returning to task");
                 return;
             }
-            goal = pod.Position;
-            // Arrival radius WELL inside the rescue contact distance (a quarter
-            // of the summed hull lengths): SteerToward's throttle ramp reaches 0
-            // exactly at the arrival radius, so settling right ON the contact
-            // threshold (0.5·lenA + 0.5·lenB) can leave the ship a hair outside
-            // and the rescue pass (d² <= threshold²) never trips. Closing well
-            // inside that threshold guarantees penetration, so
-            // ResolveRescueEvents fires reliably (tested from hundreds of units).
+            // Native: dp = itsPosition − myPosition, dv = target->GetVelocity(),
+            // t = solveForImpact(dp, dv, GetMaxSpeed(), 0, &dir),
+            // *pvectorGoto = itsPosition + t·dv (common.cpp:1440-1445).
+            Vector3 dp = pod.Position - Position;
+            float t = NavMath.SolveForImpact(dp, pod.Velocity, HullType.Speed, 0f, out _);
+            goal = pod.Position + pod.Velocity * t;
+            podPickupIntercept = true;
+            // Brake radii are unused (brakeOnArrival:false below), kept sane.
             arrivalRadius = Math.Max(0.25f * (HullType.Length + pod.HullType.Length), 1f);
             brakeStartDistance = Math.Max(AutopilotBrakeStartDistance, arrivalRadius + 100f);
         }
 
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
 
-        SteerToward(targetPos, arrivalRadius, brakeStartDistance, brakeOnArrival: !goalIsWarp);
+        SteerToward(targetPos, arrivalRadius, brakeStartDistance,
+            brakeOnArrival: !goalIsWarp && !podPickupIntercept);   // P594: pod pickup flies THROUGH at full speed (c_gpmFast)
 
         // P171 — override the fixed standoff-hold THROTTLE with the dynamic
         // relative-speed range-maintenance value when engaged (facing from

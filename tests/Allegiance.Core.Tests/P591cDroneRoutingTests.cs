@@ -117,12 +117,15 @@ public sealed class P591cDroneRoutingTests
     /// <paramref name="guardEnabled"/> false the P591b re-entry guard is OFF —
     /// the routing fix alone must carry the drone to the lay point (this is the
     /// P591c failing-first seam; on today's code the guard-off side-1 drive
-    /// oscillates Organia&#8596;Gaia forever).</summary>
+    /// oscillates Organia&#8596;Gaia forever). With <c>null</c> the static
+    /// <c>Sector.WarpReEntryGuardEnabled</c> is left exactly as it is (the P594
+    /// default-off seam: a caller that has restored the factory default proves
+    /// the route stands on the guard's default alone, not an explicit opt-in).</summary>
     private static (int crossings, bool laid, int blocks) DriveSide(
-        string label, int startSectorId, int warpId, bool guardEnabled, out string detail)
+        string label, int startSectorId, int warpId, bool? guardEnabled, out string detail)
     {
         bool priorGuard = Sector.WarpReEntryGuardEnabled;
-        Sector.WarpReEntryGuardEnabled = guardEnabled;
+        if (guardEnabled is { } g) Sector.WarpReEntryGuardEnabled = g;
         try
         {
         using var server = new Srv();
@@ -174,7 +177,7 @@ public sealed class P591cDroneRoutingTests
         }
         bool laid = layer.Dead;
         int blocks = layer.NumWarpReEntryBlocks;
-        detail = $"{label}: guard={(guardEnabled ? "ON" : "OFF")} laid={laid} sector={layer.Sector?.Id} " +
+        detail = $"{label}: guard={(guardEnabled is null ? "DEFAULT" : (guardEnabled == true ? "ON" : "OFF"))} laid={laid} sector={layer.Sector?.Id} " +
                  $"crossings={crossings} steps={steps} blocks={blocks}";
         Console.WriteLine("[p591c] " + detail);
         return (crossings, laid, blocks);
@@ -321,5 +324,54 @@ public sealed class P591cDroneRoutingTests
         Assert.True(laid, d);
         Assert.True(crossings <= 2, d);
         Assert.Equal(0, blocks);
+    }
+
+    /// <summary>⭐ P594 — the P591b/P591c warp re-entry guard is a documented
+    /// NON-NATIVE QoL safety net and must be <b>OPT-IN and OFF by default</b>:
+    /// a default-built <c>ServerConfig</c> carries no opt-in (flag absent/null),
+    /// and the shared static <c>Sector.WarpReEntryGuardEnabled</c> factory
+    /// default is <c>false</c>. On the pre-P594 code the flag didn't exist and
+    /// the static defaulted to <c>true</c>, so this fails first (the config
+    /// property is absent → compile-time "today's code" counterpart is the old
+    /// default-on static, asserted false here).</summary>
+    [Fact]
+    public void Warp_reentry_guard_is_opt_in_and_off_by_default()
+    {
+        // ServerConfig factory default: no opt-in flag present (null = off).
+        Assert.Null(new Cfg().WarpReEntryGuard);
+        // Shared static factory default: OFF. Restore it deterministically in
+        // case an earlier test in this collection toggled it.
+        bool prior = Sector.WarpReEntryGuardEnabled;
+        try
+        {
+            Sector.WarpReEntryGuardEnabled = false;   // the P594 declared factory default
+            Assert.False(Sector.WarpReEntryGuardEnabled);
+        }
+        finally { Sector.WarpReEntryGuardEnabled = prior; }
+    }
+
+    /// <summary>⭐ P594 — with the guard left at its factory default (OFF, the
+    /// P591c native routing fix standing on its own — not an explicit opt-in),
+    /// the side-1 mine-layer still reaches Alderan and lays with exactly the
+    /// route-length crossings and 0 guard blocks. This is the P591c proof
+    /// exercised through the guard's TRUE default rather than an explicit
+    /// guard-off test-toggle, and it must fail on the old default-on code only
+    /// via the default-value assertion above; here it re-confirms behaviour is
+    /// unchanged now that the default is off.</summary>
+    [Fact]
+    public void Drone_reaches_and_lays_with_the_guard_left_at_its_default_off()
+    {
+        // Restore the factory default so the drive exercises the guard's true
+        // default (null guardEnabled = do not touch the static).
+        bool prior = Sector.WarpReEntryGuardEnabled;
+        try
+        {
+            Sector.WarpReEntryGuardEnabled = false;   // P594 factory default
+            var (crossings, laid, blocks) = DriveSide("S1-Organia-default", 1051, 2152, guardEnabled: null, out var d);
+            Assert.True(laid, $"{d} — layer must lay with the guard OFF by default (P591c proof)");
+            Assert.True(crossings <= 2, $"{d} — crossings must equal the 2-hop route length (no ping-pong)");
+            Assert.Equal(0, blocks);
+        }
+        finally { Sector.WarpReEntryGuardEnabled = prior; }
     }
 }

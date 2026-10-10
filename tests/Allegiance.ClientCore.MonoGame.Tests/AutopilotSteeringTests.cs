@@ -146,6 +146,51 @@ public class AutopilotSteeringTests
             "custom ramp should change the throttle");
     }
 
+    [Fact]
+    public void PodPickup_StationaryPodDeadAhead_FullThrottleNoBrake_EverAtContactRange()
+    {
+        // P594 — native "mmf pod pickup" (common.cpp:1430-1446) flies at the pod
+        // at FULL SPEED (c_gpmFast) and plows through it (pmodelSkip); there is
+        // NO arrival-radius brake (unlike SteerToward, which goes to kill-throttle
+        // inside AutopilotArrivalRadius=60). A pod 20 units dead ahead → PodPickup
+        // keeps +1 (fly INTO it) whereas SteerToward would brake (<0). This is the
+        // exact failing-first case: today's autopilot steers with SteerToward and
+        // hovers at 60 u short of the pod, never touching it.
+        var pickup = AutopilotSteering.PodPickup(
+            Vector3.Zero, Identity, new Vector3(0f, 0f, -20f), Vector3.Zero, ownMaxSpeed: 100f);
+        AssertNear(0f, pickup.Yaw);
+        AssertNear(0f, pickup.Pitch);
+        AssertNear(0f, pickup.Roll);
+        Assert.Equal(1f, pickup.Throttle);   // full speed — no "arrived" stop
+
+        var steer = AutopilotSteering.SteerToward(
+            Vector3.Zero, Identity, new Vector3(0f, 0f, -20f), Vector3.Zero);
+        Assert.True(steer.Throttle < 0f, "plain SteerToward would brake at contact range — the bug");
+    }
+
+    [Fact]
+    public void PodPickup_MovingPod_SteersAtInterceptLead_NotAtCurrentPosition()
+    {
+        // P594 — the pod is moving tangentially (+x at 50) at (0,0,−300); a 100-speed
+        // pursuer must lead it. solveForImpact gives t≈3.464 → intercept ≈
+        // (173.2,0,−300), displaced in +x. So PodPickup must turn toward that lead
+        // (a definite yaw toward +x), whereas a naive steer at the CURRENT pod
+        // position (0,0,−300) is dead ahead (~0 yaw). This is the failing-first
+        // proof that the intercept lead is applied, and that the moving pod is
+        // caught ahead of where it is now.
+        var pickup = AutopilotSteering.PodPickup(
+            Vector3.Zero, Identity, new Vector3(0f, 0f, -300f), new Vector3(50f, 0f, 0f),
+            ownMaxSpeed: 100f);
+        Assert.True(float.IsFinite(pickup.Yaw) && float.IsFinite(pickup.Pitch), "no NaN");
+        AssertNear(0f, pickup.Roll);
+        Assert.Equal(1f, pickup.Throttle);   // full speed pursuit of the lead
+        // Leading +x target ⇒ the ship should be turning toward the pod's RIGHT as
+        // seen from an identity (forward −z) ship → a nonzero YAW (not ~0 like the
+        // straight-at-current-position case). Sign: cross(forward=−z, dir(+x)) = +y
+        // in the port's handedness, and Yaw is driven by body.Y, so expect yaw > 0.
+        Assert.True(MathF.Abs(pickup.Yaw) > 0.1f, $"expected a lead turn, got yaw={pickup.Yaw}");
+    }
+
     private static void AssertNear(float expected, float actual, int places = 3) =>
         Assert.Equal(expected, actual, places);
 }

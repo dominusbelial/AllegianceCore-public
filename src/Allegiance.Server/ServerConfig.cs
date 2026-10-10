@@ -346,6 +346,19 @@ public sealed class ServerConfig
     public LobbyConfig? Lobby { get; init; }
 
     /// <summary>
+    /// P594 — the P591b/P591c warp re-entry guard (<c>Sector.WarpReEntryGuardEnabled</c>)
+    /// is a documented NON-NATIVE quality-of-life safety net and is <b>OFF by
+    /// default</b> (a native ship never needs it — its GotoPlan flies through a
+    /// warp at cruise speed so the +15 exit push clears the arrival aleph inside
+    /// the ~2 s m_warpState re-arm). Set <c>true</c> (server.json
+    /// <c>warpReEntryGuard</c> or CLI <c>--warpReEntryGuard=true</c>) to opt in;
+    /// the guard's block counter <c>Ship.NumWarpReEntryBlocks</c> stays live so a
+    /// routing regression that reintroduces re-entry still surfaces. Null (the
+    /// default) means off.
+    /// </summary>
+    public bool? WarpReEntryGuard { get; set; }
+
+    /// <summary>
     /// P378 — the dedicated live/testing settings section (see
     /// <see cref="LiveSettingsConfig"/>). Absent section = defaults (debug off,
     /// no lifepod override), so a normal server run with no config change is
@@ -420,6 +433,12 @@ public static class ServerConfigLoader
                         config.ConsoleVerbose = verbose;
                     else
                         config.ConsoleVerbose = true;   // bare --verbose / --verbose=true
+                    recognized++; break;
+                case "warpreentryguard":
+                    if (bool.TryParse(value, out var guard))
+                        config.WarpReEntryGuard = guard;
+                    else
+                        config.WarpReEntryGuard = true;
                     recognized++; break;
             }
         }

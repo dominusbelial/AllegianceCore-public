@@ -62,6 +62,16 @@ public sealed partial class Server
         _simNow = 0.0;
         ConsoleLog.Verbose = _config.ConsoleVerbose;   // P318: gate the high-frequency per-tick lines
 
+        // P594 — the P591b/P591c warp re-entry guard is a NON-NATIVE QoL safety
+        // net, OPT-IN and OFF by default. Only arm it (and banner LOUDLY) when
+        // the operator explicitly opts in via the config flag / CLI switch; a
+        // default config (flag absent or false) leaves it off, matching native.
+        bool? warpReEntryGuard = _config.WarpReEntryGuard;
+        Sector.WarpReEntryGuardEnabled = warpReEntryGuard ?? false;
+        if (warpReEntryGuard == true)
+            Console.WriteLine("[boot] *** NON-NATIVE WARP RE-ENTRY GUARD ARMED (warpReEntryGuard=true) — P591b/QoL safety net; " +
+                              "NOT native behaviour (native relies on its GotoPlan exit push). Off by default ***");
+
         // P378 — resolve the live-settings lifepod endurance override and log
         // the debug-mode state LOUDLY at boot so it is never silently left on.
         // Coalesce a null section (absent `liveSettings` key — STJ leaves an
