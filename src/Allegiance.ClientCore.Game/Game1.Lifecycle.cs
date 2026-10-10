@@ -597,6 +597,35 @@ public sealed partial class Game1
                 $"(now draws at {scale * renderedRadius:F2})");
         }
 
+        // P593b — the per-type NATIVE missile renderer: every missile whose type
+        // is not one of the three P287 content assets now draws its OWN real
+        // native .mdl mesh + native texture (closing the lit-solid "white
+        // shard" defect — native loads each missile with its own model + texture,
+        // missileigc.cpp:49-51). Startup audit resolves mesh + texture for every
+        // distinct missile model in the core and reports lit-solid fallbacks.
+        _nativeMissileRenderer = new Rendering.NativeMissileRenderer(GraphicsDevice, _assets);
+        if (_shopCatalog is { MissileTypes: { } mts })
+        {
+            var missileModels = mts.Values
+                .Where(p => p.ModelName is { Length: > 0 } mn && char.IsLetter(mn[0]))
+                .Select(p => p.ModelName!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            int litSolid = _nativeMissileRenderer.AuditDistinctModelTextures(missileModels, s => Console.WriteLine(s));
+            Console.WriteLine($"[monogame] P593b missile-model audit: {missileModels.Count} model(s), {litSolid} lit-solid fallback(s)");
+
+            // P593b — widened render-model audit: every 3D model any renderer can
+            // draw for projectiles/missiles/probes across the whole core, plus the
+            // mine/chaff sprites, must resolve its mesh + native texture (0
+            // lit-solid fallbacks). Complements the treasure SelfCheck (P586b).
+            if (_shopCatalog.Core is { } core)
+            {
+                int renderFallbacks = Rendering.RenderModelAudit.AuditCore(core, s => Console.WriteLine(s));
+                int treasureFallbacks = Rendering.TreasureVisualResolver.SelfCheck(_shopCatalog, s => Console.WriteLine(s));
+                Console.WriteLine($"[monogame] P593b render-model audit: 0-lit-solid guarantee -> {renderFallbacks} model fallback(s), {treasureFallbacks} treasure fallback(s)");
+            }
+        }
+
         // P235 — the missile exhaust-trail billboard renderer (shared generated
         // soft-sprite + additive effect; per-frame vertex data is rebuilt in
         // Draw, so no persistent buffers are held here).

@@ -49,6 +49,11 @@ public sealed partial class Game1 : Game
     // variants), maintained alongside _shipModels for the repaired preview resolver.
     private readonly HashSet<string> _shipModelKeys = new(StringComparer.Ordinal);
     private readonly Dictionary<string, XnaModel> _missileModels = new(StringComparer.Ordinal);
+    // P593b — the per-type NATIVE-<c>.mdl</c> missile renderer (own real mesh +
+    // native texture per missile type), closing the lit-solid "white shard"
+    // defect for the 45/56 missile types that are not P287-imported content
+    // assets. Created in Lifecycle; field declared with the other missile fields.
+    private Rendering.NativeMissileRenderer _nativeMissileRenderer = null!;
     // P337 — the real Meshy baseColor textures for the P287 ship/missile content
     // models, keyed by the same asset names HullModelResolver enumerates and
     // loaded in parallel with the models (the geometry-only FBX has no embedded
@@ -246,7 +251,7 @@ public sealed partial class Game1 : Game
     private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius, string? ModelStem, string? TextureName)> _drawStations = new();
     private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();
     private readonly List<(SimVec Pos, SimVec Dir, float Len, float Spin, ProjectileVisual Visual)> _drawBolts = new();
-    private readonly List<(SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
+    private readonly List<(short TypeId, SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
     private readonly List<TrailMissile> _drawTrailMissiles = new();
     private readonly List<(Vector3 Pos, short SideId)> _drawProbes = new();
     private readonly List<(Vector3 Pos, float Radius, int Seed, float Strength)> _drawMines = new();
@@ -1618,6 +1623,7 @@ public sealed partial class Game1 : Game
         _projectileSpriteRenderer?.Dispose();
         _projectileModelRenderer?.Dispose();
         _missileRenderer?.Dispose();
+        _nativeMissileRenderer?.Dispose();   // P593b
         _probeRenderer?.Dispose();
         _mineRenderer?.Dispose();
         _trailRenderer?.Dispose();

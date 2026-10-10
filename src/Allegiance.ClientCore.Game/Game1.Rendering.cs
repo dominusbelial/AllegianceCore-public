@@ -1045,13 +1045,13 @@ public sealed partial class Game1
                             // the heading to point the nose along real Forward.
                             mo.Set(-ms.Forward);
                             // P288 — per-type imported content model, else null (native demo).
-                            _drawMissiles.Add((ms.Position, mo, PickMissileModel(ms.TypeId)));
+                            _drawMissiles.Add((ms.TypeId, ms.Position, mo, PickMissileModel(ms.TypeId)));
                             _drawTrailMissiles.Add(new TrailMissile(
                                 ms.MissileId, ms.Position, ms.Forward, _trailNowSec));
                         }
                     }
                 }
-                foreach (var (mPos, mOri, mModel) in _drawMissiles)
+                foreach (var (mType, mPos, mOri, mModel) in _drawMissiles)
                 {
                     var mXna = PoseConverter.ToXna(mPos);
                     var mRot = PoseConverter.ToXnaRotation(mOri);
@@ -1068,7 +1068,23 @@ public sealed partial class Game1
                     }
                     else
                     {
-                        _missileRenderer.Draw(mWorld, view, proj, _sectorLighting);
+                        // P593b — the per-type NATIVE path: resolve this type's
+                        // real .mdl modelName + native texture and draw it textured
+                        // (closing the lit-solid white-shard defect). Falls back to
+                        // the legacy shared demo renderer only when the model truly
+                        // can't be parsed (never an invisible missile).
+                        var mName = Rendering.MissileModelSource.ResolveModelName(mType, _shopCatalog?.MissileTypes);
+                        var mTexOverride = Rendering.MissileModelSource.ResolveTextureName(mType, _shopCatalog?.MissileTypes);
+                        var mGeo = _nativeMissileRenderer.MeshFor(mName);
+                        if (mGeo is not null)
+                        {
+                            var mTex = _nativeMissileRenderer.TextureFor(mName, mTexOverride);
+                            _nativeMissileRenderer.Draw(mWorld, view, proj, mName, mTex, _sectorLighting);
+                        }
+                        else
+                        {
+                            _missileRenderer.Draw(mWorld, view, proj, _sectorLighting);
+                        }
                     }
                 }
 

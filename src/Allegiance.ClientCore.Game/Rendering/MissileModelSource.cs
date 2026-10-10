@@ -47,6 +47,36 @@ public static class MissileModelSource
         MdlFile.Parse(AssetSources.ReadAllBytes(assets, DemoModelStem + ".mdl"));
 
     /// <summary>
+    /// P593b — the real native-<c>.mdl</c> stem for a fired missile's type: the
+    /// type's own <c>ModelName</c> when it is a real model name (alpha-leading,
+    /// native <c>missileigc.cpp:49</c>), else the <see cref="DemoModelStem"/>
+    /// fallback. <paramref name="missileTypes"/> is the static core's missile
+    /// table, null-safe (a missing table yields the demo stem, matching the
+    /// renderer's degrade-not-crash rule).
+    /// </summary>
+    public static string ResolveModelName(short typeId, IReadOnlyDictionary<short, DataMissileTypeIGC>? missileTypes)
+    {
+        if (missileTypes is not null && missileTypes.TryGetValue(typeId, out var mt)
+            && mt.ModelName is { Length: > 0 } mn && char.IsLetter(mn[0]))
+            return mn.Trim();
+        return DemoModelStem;
+    }
+
+    /// <summary>
+    /// P593b — the explicit texture-name override for a missile type (native
+    /// <c>Load(0, modelName, textureName, …)</c>, <c>missileigc.cpp:50</c>), or
+    /// null when the type has none (then the model's OWN namespace supplies the
+    /// texture). Empty/whitespace resolves to null.
+    /// </summary>
+    public static string? ResolveTextureName(short typeId, IReadOnlyDictionary<short, DataMissileTypeIGC>? missileTypes)
+    {
+        if (missileTypes is not null && missileTypes.TryGetValue(typeId, out var mt)
+            && mt.TextureName is { Length: > 0 } tn)
+            return tn.Trim();
+        return null;
+    }
+
+    /// <summary>
     /// Map a fired missile's real <c>TypeId</c> to the P287-imported content
     /// asset (<c>mis05</c>/<c>mis400</c>/<c>artifact</c>), or null when that
     /// type's model has no imported art (→ caller uses the native demo model /
