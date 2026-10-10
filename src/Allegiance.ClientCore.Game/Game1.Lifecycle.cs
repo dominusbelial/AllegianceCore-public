@@ -79,6 +79,21 @@ public sealed partial class Game1
                     Console.WriteLine($"[monogame] ship texture '{asset}' unavailable: {inner.Message}");
                 }
             }
+            // P581 — load any REPAIRED Meshy variants shipped in Content/Models/repaired/
+            // (produced by tools/meshy-repair/repair.py). Absent for most assets, so the
+            // per-asset try/catch skips them; the inspector's repaired preview resolves
+            // through these keys. Originals are never overwritten (repaired/ is a new dir).
+            foreach (var asset in HullModelResolver.ShipAssets)
+            {
+                string repKey = Rendering.RepairedModelPreview.RepairedKey(asset);
+                try
+                {
+                    _shipModels[repKey] = Content.Load<XnaModel>("Models/" + repKey);
+                    Console.WriteLine($"[monogame] repaired meshy variant '{repKey}' loaded");
+                }
+                catch { /* no repaired variant for this asset */ }
+            }
+            _shipModelKeys.UnionWith(_shipModels.Keys);
             _hullResolver = new HullModelResolver();
             // P565 — load the committed per-hull art override (assets/ships/ship-art.json);
             // absent file → empty override (all-native default). The ship render path consults

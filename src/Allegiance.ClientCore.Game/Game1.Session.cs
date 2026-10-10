@@ -288,6 +288,20 @@ public sealed partial class Game1
         /// sequence (close-up, cloak, damage+engine+explosion, projectiles+missiles, chaos,
         /// side-by-side, fly-by approach/close/recede), screenshotting each step then exiting.</summary>
         public bool InspectDemo;
+
+        /// <summary>P581 — inspect-only preview of the REPAIRED Meshy model for the selected
+        /// hull (<c>--inspect-repaired</c>). When set, the inspector draws
+        /// <c>Models/repaired/&lt;asset&gt;</c> instead of the raw Meshy model for the meshy
+        /// side (side-by-side still shows native). View-only: never written to ship-art.json,
+        /// so the in-game hull keeps its normal choice (Adv Scout stays native, P581).</summary>
+        public bool InspectRepaired;
+
+        /// <summary>P581 — when &gt; 0 in inspect mode, capture that many real-backbuffer
+        /// screenshots of the SAME hull from evenly spaced orbit angles (each frame tilted
+        /// to show the wing/strut region) then exit. Paired with <see cref="InspectRepaired"/>
+        /// to sweep the raw vs repaired vs native comparison; <c>--inspect-hull</c> preselects
+        /// the hull.</summary>
+        public int InspectAngles;
     }
 
     /// <summary>P306 capture-launch parameters (see

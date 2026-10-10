@@ -96,6 +96,12 @@ public sealed partial class Game1
     private bool _inspectShotNow;
     private static readonly int InspectDemoSteps = 11;
 
+    // P581 — repaired-Meshy preview (view-only) + the orbit-angle sweep for the
+    // raw-vs-repaired-vs-native proof.
+    private bool _inspectUseRepaired;
+    private int _inspectSweepAngles, _inspectSweepStep;
+    private bool _inspectSweepDone;
+
     /// <summary>Tags cycled by Tab for the mark-bad ledger.</summary>
     private static readonly string[] MarkTags =
         ["holes", "transparent", "flat", "scale", "texture", "vfx-overlap", ""];
@@ -111,6 +117,7 @@ public sealed partial class Game1
     private bool _inspectPgDnWasDown, _inspectPgUpWasDown, _inspectRBWasDown, _inspectLBWasDown;
     private bool _inspectDWasDown, _inspectRWasDown, _inspectAWasDown, _inspectFWasDown, _inspectTWasDown;
     private bool _inspectMWasDown, _inspectSWasDown, _inspectKWasDown, _inspectCWasDown, _inspectLWasDown;
+    private bool _inspectJWasDown;
     private bool _inspectQWasDown, _inspectOWasDown, _inspectXWasDown, _inspectZWasDown, _inspectVWasDown, _inspectYWasDown;
     private bool _inspectNum1WasDown, _inspectNum2WasDown, _inspectNum3WasDown, _inspectNum4WasDown, _inspectNum5WasDown;
     private bool _inspectNum6WasDown, _inspectNum9WasDown, _inspectNum0WasDown;
@@ -174,6 +181,17 @@ public sealed partial class Game1
 
         SelectInspectHull(reannounce: true);
         Window.Title = $"{_windowTitleBase} [INSPECT]";
+        if (_inspectSweepAngles > 0)
+        {
+            // P581 — the orbit-angle sweep always renders native | meshy side-by-side so
+            // each captured frame compares the hull's native model against the meshy side
+            // (raw or repaired per --inspect-repaired) from that angle.
+            _inspectSideBySide = true;
+            _inspectShowNative = true;
+            _inspectShowMeshy = true;
+            Console.WriteLine($"[inspect] ANGLE SWEEP: {_inspectSweepAngles} orbit angles, " +
+                $"meshy side = {(_inspectUseRepaired ? "REPAIRED" : "RAW")}");
+        }
         if (_inspectDemo)
             Console.WriteLine("[inspect] DEMO mode: scripted showcase sequence (close-up / cloak / damage+engine+explosion / guns+missiles / chaos / side-by-side / fly-by)");
         else
@@ -228,6 +246,11 @@ public sealed partial class Game1
             _inspectIndex++;
             SelectInspectHull(reannounce: false);
         }
+
+        // P581 — the non-demo shot cooldown never ticked (only demo decremented it), so
+        // --inspect-shots / the angle sweep captured exactly one frame then stalled. Tick
+        // it here once per frame outside demo mode.
+        if (!_inspectDemo && _inspectShotCooldown > 0) _inspectShotCooldown--;
 
         _inspectSoft = _softEnabled;
         _inspectBloom = _bloomEnabled;
@@ -317,6 +340,13 @@ public sealed partial class Game1
         {
             _inspectSideBySide = !_inspectSideBySide;
             if (_inspectSideBySide) { _inspectShowNative = true; _inspectShowMeshy = true; }
+        }
+        if (Edge(ref _inspectJWasDown, XnaKeys.J))
+        {
+            // P581 — view-only toggle: draw the REPAIRED Meshy model (if loaded) instead
+            // of the raw Meshy for the meshy side. Never persisted; preview only.
+            _inspectUseRepaired = !_inspectUseRepaired;
+            Console.WriteLine($"[inspect] repaired preview {( _inspectUseRepaired ? "ON (repaired Meshy model)" : "OFF (raw Meshy model)" )}");
         }
         if (Edge(ref _inspectKWasDown, XnaKeys.K)) SaveInspectArtChoice();
 
@@ -473,7 +503,8 @@ public sealed partial class Game1
 
     private List<string> InspectToggles() => new()
     {
-        $"art={( _inspectShowNative && _inspectShowMeshy ? "both" : _inspectShowNative ? "native" : "meshy" )}",
+        $"art={( _inspectShowNative && _inspectShowMeshy ? "both" : _inspectShowNative ? "native" : "meshy" )}" +
+            (_inspectUseRepaired ? "+repaired" : ""),
         $"cloak={(_inspectCloak > 0f ? _inspectCloak.ToString("0.##") : "off")}",
         $"lighting={_inspectLightingVariant}",
         $"wireframe={_inspectWireframe}",
@@ -689,6 +720,25 @@ public sealed partial class Game1
             _inspectWantShot = false;
             _inspectScreenshotLast = TakeInspectScreenshot();
         }
+        else if (!_inspectDemo && _inspectSweepAngles > 0 && !_inspectSweepDone
+                 && _inspectShotCooldown <= 0 && _nowSeconds > 1.0)
+        {
+            // P581 — orbit-angle sweep: rotate the orbit camera to the next evenly spaced
+            // azimuth, shot a real-backbuffer frame, and exit once all angles are captured.
+            float az = _inspectSweepStep * (360f / _inspectSweepAngles);
+            _inspectOrbit.Yaw = MathHelper.ToRadians(az);
+            _inspectOrbit.Pitch = MathHelper.ToRadians(22f);   // tilt to expose the wings
+            _inspectShotTag = $"angle{_inspectSweepStep}";
+            _inspectScreenshotLast = TakeInspectScreenshot();
+            _inspectSweepStep++;
+            _inspectShotCooldown = 30;
+            if (_inspectSweepStep >= _inspectSweepAngles)
+            {
+                _inspectSweepDone = true;
+                Console.WriteLine($"[inspect] angle sweep complete ({_inspectSweepAngles} angles) — exiting");
+                Exit();
+            }
+        }
         else if (!_inspectDemo && _inspectAutoShotsRemaining > 0 && _inspectShotCooldown <= 0 && _nowSeconds > 1.0)
         {
             _inspectScreenshotLast = TakeInspectScreenshot();
@@ -785,14 +835,14 @@ public sealed partial class Game1
 
     private XnaModel? InspectMeshyModel(InspectorHullCatalog.InspectorHull h)
     {
-        if (h.MeshyAsset is not null && _shipModels.TryGetValue(h.MeshyAsset, out var m)) return m;
-        var civ = h.CivKey;
-        if (civ is not null)
-        {
-            var asset = _hullResolver.ResolveAsset(civ, HullById(h.HullId));
-            if (asset is not null && _shipModels.TryGetValue(asset, out var m2)) return m2;
-        }
-        return null;
+        string? asset = h.MeshyAsset;
+        if (asset is null && h.CivKey is not null)
+            asset = _hullResolver.ResolveAsset(h.CivKey, HullById(h.HullId));
+        if (asset is null) return null;
+        // P581 — the view-only repaired preview prefers Models/repaired/<asset> when the
+        // operator asks for it (--inspect-repaired / J) and that variant is loaded.
+        string drawKey = Rendering.RepairedModelPreview.Resolve(_shipModelKeys, asset, _inspectUseRepaired);
+        return _shipModels.TryGetValue(drawKey, out var m) ? m : null;
     }
 
     private Texture2D? InspectMeshyTexture(InspectorHullCatalog.InspectorHull h)
@@ -1035,7 +1085,8 @@ public sealed partial class Game1
         Line($"HULL {_inspectIndex + 1}/{list.Count}  [{h.CivKey ?? "?"}]  {h.Name}  (id {h.HullId})", Color.White);
         Line($"model={h.ModelName}  length={h.Length:0.#}  native={h.NativeAvailable}  meshy={h.MeshyAsset ?? "-"}  fallback={h.FallbackUsed}", Color.LightGray);
         Line($"cam={( _inspectCam == InspectCamMode.FlyBy ? "flyby" : "orbit" )}  yaw={_inspectOrbit.Yaw:0.##} pitch={_inspectOrbit.Pitch:0.##} dist={_inspectOrbit.Distance:0.#}  cloak={(_inspectCloak > 0f ? _inspectCloak.ToString("0.##") : "off")}", Color.LightGray);
-        Line($"art={( _inspectShowNative && _inspectShowMeshy ? "both" : _inspectShowNative ? "native" : "meshy" )} side={_inspectSideBySide} wire={_inspectWireframe} norm={_inspectNormals} back={_inspectBackfaces} light={_inspectLightingVariant} soft={_inspectSoft} bloom={_inspectBloom}", Color.LightGray);
+        Line($"art={( _inspectShowNative && _inspectShowMeshy ? "both" : _inspectShowNative ? "native" : "meshy" )}" +
+            $"{( _inspectUseRepaired ? "+REPAIRED" : "")} side={_inspectSideBySide} wire={_inspectWireframe} norm={_inspectNormals} back={_inspectBackfaces} light={_inspectLightingVariant} soft={_inspectSoft} bloom={_inspectBloom}", Color.LightGray);
         Line($"vfx: engine={_inspectEngine} smoke={(_inspectSmoke ? _inspectHullFraction.ToString("P0") : "off")} proj={_inspectProjectiles} miss={_inspectMissiles} mines={_inspectMines} chaos={_inspectChaos}  pace={(_inspectPaused ? "PAUSED" : $"x{_inspectTimeScale:0.##}")}", Color.LightGray);
         Line($"pick: proj[{ProjectileName(_inspectProjectilePicker)}]  miss[{MissileName(_inspectMissilePicker)}]  mine[{MineName(_inspectMinePicker)}]", Color.LightGray);
         string tag = MarkTags[Math.Clamp(_inspectTagIndex, 0, MarkTags.Length - 1)];

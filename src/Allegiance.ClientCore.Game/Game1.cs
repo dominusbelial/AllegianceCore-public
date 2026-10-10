@@ -45,6 +45,9 @@ public sealed partial class Game1 : Game
 
     private XnaModel _fallbackModel = null!;
     private readonly Dictionary<string, XnaModel> _shipModels = new(StringComparer.Ordinal);
+    // P581 — the set of loaded model asset keys (incl. any "repaired/<asset>"
+    // variants), maintained alongside _shipModels for the repaired preview resolver.
+    private readonly HashSet<string> _shipModelKeys = new(StringComparer.Ordinal);
     private readonly Dictionary<string, XnaModel> _missileModels = new(StringComparer.Ordinal);
     // P337 — the real Meshy baseColor textures for the P287 ship/missile content
     // models, keyed by the same asset names HullModelResolver enumerates and
@@ -1407,6 +1410,8 @@ public sealed partial class Game1 : Game
             _inspectAutoShotsRemaining = opts.InspectShots;
             _inspectAutoShotsRequested = opts.InspectShots;
             _inspectDemo = opts.InspectDemo;
+            _inspectUseRepaired = opts.InspectRepaired;
+            _inspectSweepAngles = opts.InspectAngles;
             _state = ClientState.Inspecting;   // offline; kicked off in Initialize
             Console.WriteLine("[inspect] --inspect: offline hull inspector (no server connect)");
         }

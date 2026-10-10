@@ -75,6 +75,8 @@ bool inspectRequested = false;
 string? inspectCiv = null, inspectHull = null;
 int inspectShots = 0;
 bool inspectDemo = false;
+bool inspectRepaired = false;
+int inspectAngles = 0;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -350,6 +352,18 @@ for (int i = 0; i < args.Length; i++)
         inspectRequested = true;
         inspectDemo = true;
     }
+    else if (a == "--inspect-repaired")
+    {
+        // P581 — preview the REPAIRED Meshy model in the inspector (view-only).
+        inspectRequested = true;
+        inspectRepaired = true;
+    }
+    else if (a == "--inspect-angles" || a.StartsWith("--inspect-angles=", StringComparison.Ordinal))
+    {
+        string? v = a == "--inspect-angles" ? (i + 1 < args.Length ? args[++i] : null)
+                                            : a.Substring("--inspect-angles=".Length);
+        if (v is not null && int.TryParse(v, out var n)) inspectAngles = Math.Max(0, n);
+    }
     else if (a == "--inspect")
     {
         // P565 — the offline hull inspector (no server connect).
@@ -475,6 +489,8 @@ var opts = new Game1.LaunchOptions
     InspectHull = inspectHull,
     InspectShots = inspectShots,
     InspectDemo = inspectDemo,
+    InspectRepaired = inspectRepaired,
+    InspectAngles = inspectAngles,
     // P572 — live-proof automation plan (null when no --auto-* flag was given).
     AutoProof = autoPlan.AnyActive ? autoPlan : null,
     WindowWidth = windowWidth,
