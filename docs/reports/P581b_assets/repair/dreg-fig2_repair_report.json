@@ -1,0 +1,39 @@
+{
+  "src": "dreg-fig2.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.8990867733955383,
+  "attached": [
+    {
+      "nverts": 257,
+      "gap_before": 0.02550746686756611,
+      "delta": [
+        0.003207579953595996,
+        -0.03297494724392891,
+        0.012772804126143456
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 309
+    },
+    {
+      "nverts": 178,
+      "gap_before": 0.026274826377630234,
+      "delta": [
+        -0.0023671872913837433,
+        0.033489588648080826,
+        0.013737059198319912
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 217
+    }
+  ],
+  "crumbs_dropped": 46,
+  "crumbs_kept": 319,
+  "dropped_faces": 6,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/dreg-fig2.fbx"
+}

@@ -1,0 +1,975 @@
+{
+  "_comment": "P581b replacement catalogue: every usable Meshy ship model any hull can adopt via ship-art.json 'catalogue:<id>'. Preferred source per id is the repaired copy (meshy-repaired) when present; original clean meshy otherwise. scale/orientation are normalised at render time to the adopting hull's native length + forward axis.",
+  "models": [
+    {
+      "id": "belters-bomber",
+      "asset": "belters-bomber",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "belters",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/belters-bomber.png"
+    },
+    {
+      "id": "belters-fig",
+      "asset": "belters-fig",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "belters",
+      "class": "fig",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/belters-fig.png"
+    },
+    {
+      "id": "belters-scout",
+      "asset": "belters-scout",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "belters",
+      "class": "scout",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/belters-scout.png"
+    },
+    {
+      "id": "bios-bomber",
+      "asset": "bios-bomber",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/bios-bomber.png"
+    },
+    {
+      "id": "bios-carrier",
+      "asset": "bios-carrier",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "carrier",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/bios-carrier.png"
+    },
+    {
+      "id": "bios-constructor",
+      "asset": "bios-constructor",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "constructor",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/bios-constructor.png"
+    },
+    {
+      "id": "bios-corvette",
+      "asset": "bios-corvette",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "bios",
+      "class": "corvette",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/bios-corvette.png"
+    },
+    {
+      "id": "bios-cruiser",
+      "asset": "bios-cruiser",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "cruiser",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/bios-cruiser.png"
+    },
+    {
+      "id": "bios-destroyer",
+      "asset": "bios-destroyer",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "destroyer",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/bios-destroyer.png"
+    },
+    {
+      "id": "bios-devastator",
+      "asset": "bios-devastator",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "devastator",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/bios-devastator.png"
+    },
+    {
+      "id": "bios-ejectpod",
+      "asset": "bios-ejectpod",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "ejectpod",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/bios-ejectpod.png"
+    },
+    {
+      "id": "bios-fighter",
+      "asset": "bios-fighter",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "fighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/bios-fighter.png"
+    },
+    {
+      "id": "bios-interceptor",
+      "asset": "bios-interceptor",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "bios",
+      "class": "interceptor",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/bios-interceptor.png"
+    },
+    {
+      "id": "bios-miner",
+      "asset": "bios-miner",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "miner",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/bios-miner.png"
+    },
+    {
+      "id": "bios-stealthfighter",
+      "asset": "bios-stealthfighter",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "bios",
+      "class": "stealthfighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/bios-stealthfighter.png"
+    },
+    {
+      "id": "bios-trooptransport",
+      "asset": "bios-trooptransport",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "bios",
+      "class": "trooptransport",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/bios-trooptransport.png"
+    },
+    {
+      "id": "dreg-bbr2",
+      "asset": "dreg-bbr2",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "dreg",
+      "class": "bbr2",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/dreg-bbr2.png"
+    },
+    {
+      "id": "dreg-carrier",
+      "asset": "dreg-carrier",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "dreg",
+      "class": "carrier",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/dreg-carrier.png"
+    },
+    {
+      "id": "dreg-corvette",
+      "asset": "dreg-corvette",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "dreg",
+      "class": "corvette",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/dreg-corvette.png"
+    },
+    {
+      "id": "dreg-fig2",
+      "asset": "dreg-fig2",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "dreg",
+      "class": "fig2",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/dreg-fig2.png"
+    },
+    {
+      "id": "dreg-frigate",
+      "asset": "dreg-frigate",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "dreg",
+      "class": "frigate",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/dreg-frigate.png"
+    },
+    {
+      "id": "dreg-scout2",
+      "asset": "dreg-scout2",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "dreg",
+      "class": "scout",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/dreg-scout2.png"
+    },
+    {
+      "id": "dreg-stealthfighter",
+      "asset": "dreg-stealthfighter",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "dreg",
+      "class": "stealthfighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/dreg-stealthfighter.png"
+    },
+    {
+      "id": "dreg-trooptransport",
+      "asset": "dreg-trooptransport",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "dreg",
+      "class": "trooptransport",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/dreg-trooptransport.png"
+    },
+    {
+      "id": "giga-bomber",
+      "asset": "giga-bomber",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "giga",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/giga-bomber.png"
+    },
+    {
+      "id": "giga-fighter",
+      "asset": "giga-fighter",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "giga",
+      "class": "fighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/giga-fighter.png"
+    },
+    {
+      "id": "giga-interceptor",
+      "asset": "giga-interceptor",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "giga",
+      "class": "interceptor",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/giga-interceptor.png"
+    },
+    {
+      "id": "giga-scout",
+      "asset": "giga-scout",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "giga",
+      "class": "scout",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/giga-scout.png"
+    },
+    {
+      "id": "gt-ass",
+      "asset": "gt-ass",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "gt",
+      "class": "ass",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/gt-ass.png"
+    },
+    {
+      "id": "gt-bomber",
+      "asset": "gt-bomber",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/gt-bomber.png"
+    },
+    {
+      "id": "gt-carrier",
+      "asset": "gt-carrier",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "carrier",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/gt-carrier.png"
+    },
+    {
+      "id": "gt-con",
+      "asset": "gt-con",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "con",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/gt-con.png"
+    },
+    {
+      "id": "gt-cruiser",
+      "asset": "gt-cruiser",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "cruiser",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/gt-cruiser.png"
+    },
+    {
+      "id": "gt-dev",
+      "asset": "gt-dev",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "dev",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/gt-dev.png"
+    },
+    {
+      "id": "gt-fighter",
+      "asset": "gt-fighter",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "gt",
+      "class": "fighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/gt-fighter.png"
+    },
+    {
+      "id": "gt-hod",
+      "asset": "gt-hod",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "hod",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/gt-hod.png"
+    },
+    {
+      "id": "gt-int",
+      "asset": "gt-int",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "int",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/gt-int.png"
+    },
+    {
+      "id": "gt-miner",
+      "asset": "gt-miner",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "miner",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/gt-miner.png"
+    },
+    {
+      "id": "gt-pod",
+      "asset": "gt-pod",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "pod",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/gt-pod.png"
+    },
+    {
+      "id": "gt-rd",
+      "asset": "gt-rd",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "rd",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/gt-rd.png"
+    },
+    {
+      "id": "gt-scout",
+      "asset": "gt-scout",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "scout",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/gt-scout.png"
+    },
+    {
+      "id": "gt-sf",
+      "asset": "gt-sf",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "gt",
+      "class": "sf",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/gt-sf.png"
+    },
+    {
+      "id": "gt-tt",
+      "asset": "gt-tt",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "gt",
+      "class": "tt",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/gt-tt.png"
+    },
+    {
+      "id": "ic-bomber",
+      "asset": "ic-bomber",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "ic",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-bomber.png"
+    },
+    {
+      "id": "ic-carrier",
+      "asset": "ic-carrier",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "carrier",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/ic-carrier.png"
+    },
+    {
+      "id": "ic-constructor",
+      "asset": "ic-constructor",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "constructor",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-constructor.png"
+    },
+    {
+      "id": "ic-corvette",
+      "asset": "ic-corvette",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "ic",
+      "class": "corvette",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/ic-corvette.png"
+    },
+    {
+      "id": "ic-cruiser",
+      "asset": "ic-cruiser",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "cruiser",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/ic-cruiser.png"
+    },
+    {
+      "id": "ic-dev",
+      "asset": "ic-dev",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "dev",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/ic-dev.png"
+    },
+    {
+      "id": "ic-devastator",
+      "asset": "ic-devastator",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "devastator",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/ic-devastator.png"
+    },
+    {
+      "id": "ic-ejectpod",
+      "asset": "ic-ejectpod",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "ejectpod",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-ejectpod.png"
+    },
+    {
+      "id": "ic-fighter",
+      "asset": "ic-fighter",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "fighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-fighter.png"
+    },
+    {
+      "id": "ic-frigate",
+      "asset": "ic-frigate",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "frigate",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/ic-frigate.png"
+    },
+    {
+      "id": "ic-int",
+      "asset": "ic-int",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "int",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-int.png"
+    },
+    {
+      "id": "ic-interceptor",
+      "asset": "ic-interceptor",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "ic",
+      "class": "interceptor",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-interceptor.png"
+    },
+    {
+      "id": "ic-miner",
+      "asset": "ic-miner",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "miner",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-miner.png"
+    },
+    {
+      "id": "ic-scout",
+      "asset": "ic-scout",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "ic",
+      "class": "scout",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-scout.png"
+    },
+    {
+      "id": "ic-stealthfighter",
+      "asset": "ic-stealthfighter",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "ic",
+      "class": "stealthfighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/ic-stealthfighter.png"
+    },
+    {
+      "id": "ic-trooptransport",
+      "asset": "ic-trooptransport",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "ic",
+      "class": "trooptransport",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/ic-trooptransport.png"
+    },
+    {
+      "id": "oh-bomber",
+      "asset": "oh-bomber",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "oh",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/oh-bomber.png"
+    },
+    {
+      "id": "oh-carrier",
+      "asset": "oh-carrier",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "oh",
+      "class": "carrier",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/oh-carrier.png"
+    },
+    {
+      "id": "oh-corvette",
+      "asset": "oh-corvette",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "oh",
+      "class": "corvette",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/oh-corvette.png"
+    },
+    {
+      "id": "oh-cruiser",
+      "asset": "oh-cruiser",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "oh",
+      "class": "cruiser",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/oh-cruiser.png"
+    },
+    {
+      "id": "oh-devastator",
+      "asset": "oh-devastator",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "oh",
+      "class": "devastator",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/oh-devastator.png"
+    },
+    {
+      "id": "oh-fighter",
+      "asset": "oh-fighter",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "oh",
+      "class": "fighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/oh-fighter.png"
+    },
+    {
+      "id": "oh-int",
+      "asset": "oh-int",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "oh",
+      "class": "int",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/oh-int.png"
+    },
+    {
+      "id": "oh-interceptor",
+      "asset": "oh-interceptor",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "oh",
+      "class": "interceptor",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/oh-interceptor.png"
+    },
+    {
+      "id": "oh-scout",
+      "asset": "oh-scout",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "oh",
+      "class": "scout",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/oh-scout.png"
+    },
+    {
+      "id": "oh-stealthfighter",
+      "asset": "oh-stealthfighter",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "oh",
+      "class": "stealthfighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/oh-stealthfighter.png"
+    },
+    {
+      "id": "phoenix-bomber",
+      "asset": "phoenix-bomber",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "phoenix",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/phoenix-bomber.png"
+    },
+    {
+      "id": "phoenix-carrier",
+      "asset": "phoenix-carrier",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "phoenix",
+      "class": "carrier",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/phoenix-carrier.png"
+    },
+    {
+      "id": "phoenix-corvette",
+      "asset": "phoenix-corvette",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "phoenix",
+      "class": "corvette",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/phoenix-corvette.png"
+    },
+    {
+      "id": "phoenix-cruiser",
+      "asset": "phoenix-cruiser",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "phoenix",
+      "class": "cruiser",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/phoenix-cruiser.png"
+    },
+    {
+      "id": "phoenix-fighter",
+      "asset": "phoenix-fighter",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "phoenix",
+      "class": "fighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/phoenix-fighter.png"
+    },
+    {
+      "id": "phoenix-frigate",
+      "asset": "phoenix-frigate",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "phoenix",
+      "class": "frigate",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/phoenix-frigate.png"
+    },
+    {
+      "id": "phoenix-int",
+      "asset": "phoenix-int",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "phoenix",
+      "class": "int",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/phoenix-int.png"
+    },
+    {
+      "id": "phoenix-stealthfighter",
+      "asset": "phoenix-stealthfighter",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "phoenix",
+      "class": "stealthfighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/phoenix-stealthfighter.png"
+    },
+    {
+      "id": "rix-ass",
+      "asset": "rix-ass",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "ass",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/rix-ass.png"
+    },
+    {
+      "id": "rix-bomber",
+      "asset": "rix-bomber",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/rix-bomber.png"
+    },
+    {
+      "id": "rix-carrier",
+      "asset": "rix-carrier",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "carrier",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/rix-carrier.png"
+    },
+    {
+      "id": "rix-con",
+      "asset": "rix-con",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "con",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/rix-con.png"
+    },
+    {
+      "id": "rix-cruiser",
+      "asset": "rix-cruiser",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "cruiser",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/rix-cruiser.png"
+    },
+    {
+      "id": "rix-fighter",
+      "asset": "rix-fighter",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "fighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/rix-fighter.png"
+    },
+    {
+      "id": "rix-int",
+      "asset": "rix-int",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "int",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/rix-int.png"
+    },
+    {
+      "id": "rix-miner",
+      "asset": "rix-miner",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "miner",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/rix-miner.png"
+    },
+    {
+      "id": "rix-pod",
+      "asset": "rix-pod",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "pod",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/rix-pod.png"
+    },
+    {
+      "id": "rix-scout",
+      "asset": "rix-scout",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "scout",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/rix-scout.png"
+    },
+    {
+      "id": "rix-sf",
+      "asset": "rix-sf",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "sf",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/rix-sf.png"
+    },
+    {
+      "id": "rix-tt",
+      "asset": "rix-tt",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "rix",
+      "class": "tt",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/rix-tt.png"
+    },
+    {
+      "id": "tf-bomber",
+      "asset": "tf-bomber",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "tf",
+      "class": "bomber",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/tf-bomber.png"
+    },
+    {
+      "id": "tf-carrier",
+      "asset": "tf-carrier",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "tf",
+      "class": "carrier",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/tf-carrier.png"
+    },
+    {
+      "id": "tf-cruiser",
+      "asset": "tf-cruiser",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "tf",
+      "class": "cruiser",
+      "size_class": "large",
+      "thumbnail": "assets/ships/thumbs/tf-cruiser.png"
+    },
+    {
+      "id": "tf-fig",
+      "asset": "tf-fig",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "tf",
+      "class": "fig",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/tf-fig.png"
+    },
+    {
+      "id": "tf-int",
+      "asset": "tf-int",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "tf",
+      "class": "int",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/tf-int.png"
+    },
+    {
+      "id": "tf-scout",
+      "asset": "tf-scout",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "tf",
+      "class": "scout",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/tf-scout.png"
+    },
+    {
+      "id": "tf-stealthfighter",
+      "asset": "tf-stealthfighter",
+      "source": "meshy-repaired",
+      "grade": "repairable",
+      "civ": "tf",
+      "class": "stealthfighter",
+      "size_class": "small",
+      "thumbnail": "assets/ships/thumbs/tf-stealthfighter.png"
+    },
+    {
+      "id": "tf-trooptransport",
+      "asset": "tf-trooptransport",
+      "source": "meshy",
+      "grade": "clean",
+      "civ": "tf",
+      "class": "trooptransport",
+      "size_class": "medium",
+      "thumbnail": "assets/ships/thumbs/tf-trooptransport.png"
+    }
+  ]
+}

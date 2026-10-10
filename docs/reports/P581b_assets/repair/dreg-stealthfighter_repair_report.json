@@ -1,0 +1,27 @@
+{
+  "src": "dreg-stealthfighter.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9016550779342651,
+  "attached": [
+    {
+      "nverts": 1090,
+      "gap_before": 0.005525011103600264,
+      "delta": [
+        0.00428002467378974,
+        -0.012194058857858181,
+        -0.008603041060268879
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 1586
+    }
+  ],
+  "crumbs_dropped": 26,
+  "crumbs_kept": 211,
+  "dropped_faces": 9,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/dreg-stealthfighter.fbx"
+}

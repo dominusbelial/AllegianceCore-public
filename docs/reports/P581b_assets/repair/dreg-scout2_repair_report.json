@@ -1,0 +1,63 @@
+{
+  "src": "dreg-scout2.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.8978018164634705,
+  "attached": [
+    {
+      "nverts": 548,
+      "gap_before": 0.06129766255617142,
+      "delta": [
+        0.013813726603984833,
+        -0.0640401765704155,
+        -0.02813170664012432
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 742
+    },
+    {
+      "nverts": 532,
+      "gap_before": 0.060679104179143906,
+      "delta": [
+        0.010238606482744217,
+        0.06341976672410965,
+        -0.02947271056473255
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 727
+    },
+    {
+      "nverts": 302,
+      "gap_before": 0.1482507884502411,
+      "delta": [
+        0.05304962024092674,
+        0.1482953429222107,
+        -0.015412313863635063
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 384
+    },
+    {
+      "nverts": 297,
+      "gap_before": 0.14765970408916473,
+      "delta": [
+        0.06329075992107391,
+        -0.1437794268131256,
+        -0.01335435826331377
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 371
+    }
+  ],
+  "crumbs_dropped": 30,
+  "crumbs_kept": 107,
+  "dropped_faces": 9,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/dreg-scout2.fbx"
+}

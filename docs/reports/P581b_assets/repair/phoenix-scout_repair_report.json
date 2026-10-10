@@ -1,0 +1,4 @@
+{
+  "error": "no report",
+  "log_tail": "Traceback (most recent call last):\n  File \u001b[35m\"/home/domingo/Development/AllegianceCore/tools/meshy-repair/repair.py\"\u001b[0m, line \u001b[35m250\u001b[0m, in \u001b[35m<module>\u001b[0m\n    rep = repair(src, out, **kw)\n  File \u001b[35m\"/home/domingo/Development/AllegianceCore/tools/meshy-repair/repair.py\"\u001b[0m, line \u001b[35m230\u001b[0m, in \u001b[35mrepair\u001b[0m\n    raise RuntimeError(\n        f\"ARTIFACT: {deformed_faces} repaired faces have no raw counterpart \"\n        f\"(stretched edges), first: {stretched[:8]}\")\n\u001b[1;35mRuntimeError\u001b[0m: \u001b[35mARTIFACT: 1 repaired faces have no raw counterpart (stretched edges), first: [(1.0, 0.758, 0.471)]\u001b[0m\nFBX version: 7400\nBlender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)\n\nBlender quit\n"
+}

@@ -1,0 +1,27 @@
+{
+  "src": "phoenix-frigate.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9043124318122864,
+  "attached": [
+    {
+      "nverts": 45,
+      "gap_before": 0.005137687548995018,
+      "delta": [
+        0.0038859257474541664,
+        -0.014446872286498547,
+        -0.002310204552486539
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 47
+    }
+  ],
+  "crumbs_dropped": 407,
+  "crumbs_kept": 784,
+  "dropped_faces": 139,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/phoenix-frigate.fbx"
+}

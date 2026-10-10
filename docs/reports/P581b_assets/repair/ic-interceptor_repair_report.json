@@ -1,0 +1,51 @@
+{
+  "src": "ic-interceptor.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.902991771697998,
+  "attached": [
+    {
+      "nverts": 193,
+      "gap_before": 0.0052879853174090385,
+      "delta": [
+        -0.011863405816257,
+        0.009135551750659943,
+        0.003086067270487547
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 257
+    },
+    {
+      "nverts": 162,
+      "gap_before": 0.003853014437481761,
+      "delta": [
+        -0.0004923560190945864,
+        -0.013304756954312325,
+        0.003827144159004092
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 218
+    },
+    {
+      "nverts": 22,
+      "gap_before": 0.0065681785345077515,
+      "delta": [
+        -0.0023100492544472218,
+        -0.011578024365007877,
+        -0.011624005623161793
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 26
+    }
+  ],
+  "crumbs_dropped": 82,
+  "crumbs_kept": 216,
+  "dropped_faces": 39,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/ic-interceptor.fbx"
+}

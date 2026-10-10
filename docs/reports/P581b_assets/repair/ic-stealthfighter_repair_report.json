@@ -1,0 +1,51 @@
+{
+  "src": "ic-stealthfighter.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9021247625350952,
+  "attached": [
+    {
+      "nverts": 968,
+      "gap_before": 0.011948857456445694,
+      "delta": [
+        -0.0004845929506700486,
+        -0.02174602635204792,
+        -0.0029373245779424906
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 1120
+    },
+    {
+      "nverts": 920,
+      "gap_before": 0.0168065894395113,
+      "delta": [
+        -0.01614939421415329,
+        0.018235744908452034,
+        -0.01119142584502697
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 1103
+    },
+    {
+      "nverts": 21,
+      "gap_before": 0.02164485491812229,
+      "delta": [
+        -0.010647382587194443,
+        -0.024237167090177536,
+        -0.017337530851364136
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 22
+    }
+  ],
+  "crumbs_dropped": 148,
+  "crumbs_kept": 212,
+  "dropped_faces": 166,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/ic-stealthfighter.fbx"
+}

@@ -306,6 +306,12 @@ public sealed partial class Game1
         /// <summary>P581c — when &gt; 0 in inspect mode, override the orbit camera
         /// distance (close-up proof framing, e.g. 12) before any angle sweep.</summary>
         public float InspectDist;
+
+        /// <summary>P581b — when set in inspect mode, drive the catalogue browser to this
+        /// replacement-model id on the current hull (<c>--inspect-catalogue &lt;id&gt;</c>):
+        /// the meshy side draws that catalogue model (repaired preferred). Sets the browser
+        /// index so the run is reproducible for real-window proof. View-only unless K keeps it.</summary>
+        public string? InspectCatalogue;
     }
 
     /// <summary>P306 capture-launch parameters (see

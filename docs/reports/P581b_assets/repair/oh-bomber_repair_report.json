@@ -1,0 +1,27 @@
+{
+  "src": "oh-bomber.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9007468223571777,
+  "attached": [
+    {
+      "nverts": 2552,
+      "gap_before": 0.009017338976264,
+      "delta": [
+        0.0021028192713856697,
+        0.0030286421533674,
+        -0.018656490370631218
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 4095
+    }
+  ],
+  "crumbs_dropped": 1,
+  "crumbs_kept": 3,
+  "dropped_faces": 0,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/oh-bomber.fbx"
+}

@@ -31,6 +31,12 @@ public sealed class ShipArtOverride
 {
     private readonly Dictionary<string, string> _byModel = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _byHullId = new(StringComparer.Ordinal);
+    // P581b — a per-hull override value of the form "catalogue:<model-id>" maps the
+    // hull to a catalogue replacement model (assets/ships/catalogue.json) rather than
+    // its own Meshy counterpart. Stored as a parallel dictionary (value already
+    // stripped of the "catalogue:" prefix).
+    private readonly Dictionary<string, string> _catByModel = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _catByHullId = new(StringComparer.Ordinal);
 
     /// <summary>Whether the operator supplied a global force (<c>--ships meshy|native</c>).
     /// When set, it wins over every per-hull entry.</summary>
@@ -48,6 +54,14 @@ public sealed class ShipArtOverride
             if (root is null) return ov;
             foreach (var (k, v) in root)
             {
+                if (TryCatalogue(v, out var catId))
+                {
+                    if (short.TryParse(k, out var numId))
+                        ov._catByHullId[k] = catId;
+                    else
+                        ov._catByModel[k] = catId;
+                    continue;
+                }
                 if (!TryChoice(v, out var c)) continue;
                 if (short.TryParse(k, out var id))
                     ov._byHullId[k] = ChoiceWord(c);   // numeric id key (as given, ordinal)
@@ -74,13 +88,28 @@ public sealed class ShipArtOverride
     ///   <paramref name="hullId"/>) has an override entry, that is the answer;</item>
     ///   <item>else <see cref="ArtChoice.Native"/> (the P566 default).</item>
     /// </list>
+    /// A "catalogue:&lt;id&gt;" override resolves as <see cref="ArtChoice.Meshy"/> here
+    /// (it draws a Meshy catalogue model); the catalogue id itself is returned by
+    /// <see cref="TryGetCatalogue"/>.
     /// </summary>
     public ArtChoice Resolve(string? modelName, short hullId)
     {
         if (GlobalForce != ArtChoice.None) return GlobalForce;
-        if (modelName is not null && _byModel.TryGetValue(modelName, out var mc)) return ChoiceOf(mc);
-        if (_byHullId.TryGetValue(hullId.ToString(), out var hc)) return ChoiceOf(hc);
+        if (modelName is not null && (_byModel.TryGetValue(modelName, out var mc) || _catByModel.TryGetValue(modelName, out _)))
+            return _byModel.TryGetValue(modelName, out var mcv) ? ChoiceOf(mcv) : ArtChoice.Meshy;
+        if (_byHullId.TryGetValue(hullId.ToString(), out var hc) || _catByHullId.TryGetValue(hullId.ToString(), out _))
+            return _byHullId.TryGetValue(hullId.ToString(), out var hcv) ? ChoiceOf(hcv) : ArtChoice.Meshy;
         return ArtChoice.Native;
+    }
+
+    /// <summary>P581b — when a hull's override is <c>catalogue:&lt;id&gt;</c>, return the
+    /// catalogue model id (prefix stripped); null when the hull has no catalogue override.
+    /// Consults model-name then hull-id, honouring the same precedence as <see cref="Resolve"/>.</summary>
+    public string? TryGetCatalogue(string? modelName, short hullId)
+    {
+        if (modelName is not null && _catByModel.TryGetValue(modelName, out var m)) return m;
+        if (_catByHullId.TryGetValue(hullId.ToString(), out var h)) return h;
+        return null;
     }
 
     /// <summary>Set (or clear) a hull's override choice by its model name. Returns the
@@ -89,13 +118,24 @@ public sealed class ShipArtOverride
     {
         var key = modelName.Trim();
         ArtChoice? prev = _byModel.TryGetValue(key, out var old) ? ChoiceOf(old) : null;
-        if (choice == ArtChoice.None) { _byModel.Remove(key); return prev; }
+        if (choice == ArtChoice.None) { _byModel.Remove(key); _catByModel.Remove(key); return prev; }
         _byModel[key] = ChoiceWord(choice);
+        _catByModel.Remove(key);
         return prev;
     }
 
+    /// <summary>P581b — set (or clear) a hull's catalogue override by model name, removing
+    /// any native/meshy entry for it so the two kinds never coexist. Clears with null.</summary>
+    public void SetCatalogueByModel(string modelName, string? catalogueId)
+    {
+        var key = modelName.Trim();
+        _byModel.Remove(key);
+        if (catalogueId is null) { _catByModel.Remove(key); return; }
+        _catByModel[key] = catalogueId;
+    }
+
     /// <summary>The number of explicit overrides (for logging).</summary>
-    public int Count => _byModel.Count + _byHullId.Count;
+    public int Count => _byModel.Count + _byHullId.Count + _catByModel.Count + _catByHullId.Count;
 
     /// <summary>Serialize to pretty JSON with sorted keys (deterministic commits).</summary>
     public string ToJson()
@@ -103,6 +143,8 @@ public sealed class ShipArtOverride
         var all = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (k, v) in _byModel) all[k] = v;
         foreach (var (k, v) in _byHullId) all[k] = v;
+        foreach (var (k, v) in _catByModel) all[k] = "catalogue:" + v;
+        foreach (var (k, v) in _catByHullId) all[k] = "catalogue:" + v;
         var options = new JsonSerializerOptions { WriteIndented = true };
         return JsonSerializer.Serialize(all.OrderBy(x => x.Key, StringComparer.Ordinal)
                                            .ToDictionary(x => x.Key, x => x.Value), options);
@@ -119,6 +161,15 @@ public sealed class ShipArtOverride
     {
         c = ChoiceOf(v);
         return c != ArtChoice.None;
+    }
+    private static bool TryCatalogue(string v, out string id)
+    {
+        id = "";
+        if (string.IsNullOrEmpty(v) || !v.StartsWith("catalogue:", StringComparison.OrdinalIgnoreCase)) return false;
+        var rest = v.Substring("catalogue:".Length).Trim();
+        if (rest.Length == 0) return false;
+        id = rest;
+        return true;
     }
     private static ArtChoice ChoiceOf(string v) =>
         string.Equals(v, "meshy", StringComparison.OrdinalIgnoreCase) ? ArtChoice.Meshy

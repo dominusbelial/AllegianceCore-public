@@ -1,0 +1,39 @@
+{
+  "src": "gt-fighter.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.903407633304596,
+  "attached": [
+    {
+      "nverts": 405,
+      "gap_before": 0.01801411435008049,
+      "delta": [
+        0.005662948824465275,
+        -0.026966534554958344,
+        -0.005052492953836918
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 465
+    },
+    {
+      "nverts": 341,
+      "gap_before": 0.018879564478993416,
+      "delta": [
+        -0.008616006001830101,
+        0.027385715395212173,
+        -0.0031330795027315617
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 380
+    }
+  ],
+  "crumbs_dropped": 157,
+  "crumbs_kept": 427,
+  "dropped_faces": 8,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/gt-fighter.fbx"
+}

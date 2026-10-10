@@ -1,4 +1,4 @@
 {
-  "_comment": "P565 per-hull ship-art override. Values per hull (by native ModelName or HullId string): \"native\" or \"meshy\". Unlisted hulls default to native (P566). A Meshy entry whose asset is missing falls back to native, logged once. Curate the good Meshy ships here, or use the inspector's M toggle + K 'keep this choice'.",
-  "_example": "{\"fig05\": \"meshy\"}"
+  "_comment": "P565/P581b per-hull ship-art override. Values per hull (by native ModelName or HullId string): \"native\", \"meshy\", or \"catalogue:<model-id>\". Unlisted hulls default to native (P566). A catalogue:<id> maps the hull to ANY model in assets/ships/catalogue.json (repaired copies preferred automatically); a Meshy/catalogue entry whose asset is missing falls back to native, logged once. Curate the good Meshy/catalogue ships here, or use the inspector's M toggle + K 'keep this choice', or N/B catalogue browser + K.",
+  "_example": "{\"fig05\": \"meshy\", \"bom04\": \"catalogue:bios-carrier\"}"
 }

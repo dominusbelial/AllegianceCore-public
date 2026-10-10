@@ -1,0 +1,27 @@
+{
+  "src": "giga-interceptor.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9030529856681824,
+  "attached": [
+    {
+      "nverts": 22,
+      "gap_before": 0.011427910067141056,
+      "delta": [
+        0.008091771975159645,
+        0.018478361889719963,
+        0.007226944901049137
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 24
+    }
+  ],
+  "crumbs_dropped": 797,
+  "crumbs_kept": 1215,
+  "dropped_faces": 243,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/giga-interceptor.fbx"
+}

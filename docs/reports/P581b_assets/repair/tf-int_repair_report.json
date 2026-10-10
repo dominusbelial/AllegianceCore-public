@@ -1,0 +1,39 @@
+{
+  "src": "tf-int.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9071346521377563,
+  "attached": [
+    {
+      "nverts": 24,
+      "gap_before": 0.0028343291487544775,
+      "delta": [
+        -0.012494753114879131,
+        0.0018786730943247676,
+        0.002252046251669526
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 25
+    },
+    {
+      "nverts": 22,
+      "gap_before": 0.006366100162267685,
+      "delta": [
+        0.014794554561376572,
+        -0.0013155039632692933,
+        0.006873124744743109
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 23
+    }
+  ],
+  "crumbs_dropped": 320,
+  "crumbs_kept": 642,
+  "dropped_faces": 115,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/tf-int.fbx"
+}

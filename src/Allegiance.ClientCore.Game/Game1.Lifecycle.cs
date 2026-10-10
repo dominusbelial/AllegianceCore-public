@@ -111,6 +111,22 @@ public sealed partial class Game1
             {
                 Console.WriteLine($"[client] ship-art override load failed ({ex.Message}); using all-native default");
             }
+            // P581b — load the committed replacement-model catalogue (assets/ships/catalogue.json);
+            // absent/malformed → empty catalogue (no "catalogue:<id>" resolutions succeed, so any
+            // such override falls back to native the same way a missing Meshy asset does).
+            try
+            {
+                string catFile = Path.Combine(Directory.GetCurrentDirectory(), "assets", "ships", "catalogue.json");
+                if (System.IO.File.Exists(catFile))
+                {
+                    _shipCatalogue = Rendering.ShipCatalogue.LoadFile(catFile);
+                    Console.WriteLine($"[client] ship catalogue: {_shipCatalogue.Count} replacement models from {catFile}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[client] ship catalogue load failed ({ex.Message}); empty catalogue");
+            }
             _shipRenderer = new ShipRenderer(GraphicsDevice);
             // P566 — the native ship renderer (parses .mdl meshes + native textures
             // at runtime from the artwork source, like ProjectileModelRenderer).

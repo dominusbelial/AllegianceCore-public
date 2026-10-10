@@ -1,0 +1,39 @@
+{
+  "src": "oh-stealthfighter.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.902023732662201,
+  "attached": [
+    {
+      "nverts": 57,
+      "gap_before": 0.3552232086658478,
+      "delta": [
+        0.052879028022289276,
+        0.24625925719738007,
+        -0.2644771635532379
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 62
+    },
+    {
+      "nverts": 26,
+      "gap_before": 0.01607343927025795,
+      "delta": [
+        -9.001591388368979e-05,
+        0.02098250575363636,
+        0.015477419830858707
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 28
+    }
+  ],
+  "crumbs_dropped": 540,
+  "crumbs_kept": 586,
+  "dropped_faces": 295,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/oh-stealthfighter.fbx"
+}

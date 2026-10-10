@@ -1,0 +1,27 @@
+{
+  "src": "bios-trooptransport.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9035744071006775,
+  "attached": [
+    {
+      "nverts": 505,
+      "gap_before": 0.008176074363291264,
+      "delta": [
+        0.018174385651946068,
+        6.459665655711433e-06,
+        -0.00024780273088254035
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 899
+    }
+  ],
+  "crumbs_dropped": 5,
+  "crumbs_kept": 31,
+  "dropped_faces": 0,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/bios-trooptransport.fbx"
+}

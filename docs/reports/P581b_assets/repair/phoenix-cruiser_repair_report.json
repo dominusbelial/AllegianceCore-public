@@ -1,0 +1,51 @@
+{
+  "src": "phoenix-cruiser.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9051721692085266,
+  "attached": [
+    {
+      "nverts": 1397,
+      "gap_before": 0.013397463597357273,
+      "delta": [
+        0.007682902738451958,
+        -0.0044708955101668835,
+        0.0216431375592947
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 1666
+    },
+    {
+      "nverts": 1262,
+      "gap_before": 0.01290985755622387,
+      "delta": [
+        -0.0012003557058051229,
+        -0.0015696409391239285,
+        0.0228244811296463
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 1490
+    },
+    {
+      "nverts": 52,
+      "gap_before": 0.06971345096826553,
+      "delta": [
+        -0.0013429693644866347,
+        -0.008599781431257725,
+        0.07923682779073715
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 56
+    }
+  ],
+  "crumbs_dropped": 105,
+  "crumbs_kept": 232,
+  "dropped_faces": 40,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/phoenix-cruiser.fbx"
+}

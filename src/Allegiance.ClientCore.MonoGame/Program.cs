@@ -73,6 +73,7 @@ bool giantObjectsOn = true;
 // P565 — the offline hull inspector (--inspect) + optional preselect (--inspect-civ / --inspect-hull).
 bool inspectRequested = false;
 string? inspectCiv = null, inspectHull = null;
+string? inspectCatalogue = null;
 int inspectShots = 0;
 bool inspectDemo = false;
 bool inspectRepaired = false;
@@ -359,6 +360,16 @@ for (int i = 0; i < args.Length; i++)
         inspectRequested = true;
         inspectRepaired = true;
     }
+    else if (a == "--inspect-catalogue" || a.StartsWith("--inspect-catalogue=", StringComparison.Ordinal))
+    {
+        // P581b — drive the catalogue browser to a specific replacement model id on the
+        // current hull (e.g. --inspect-catalogue bios-carrier). Sets the browser index so
+        // the meshy side draws that catalogue model (repaired preferred).
+        string? v = a == "--inspect-catalogue" ? (i + 1 < args.Length ? args[++i] : null)
+                                               : a.Substring("--inspect-catalogue=".Length);
+        if (!string.IsNullOrWhiteSpace(v)) inspectCatalogue = v!.Trim();
+        inspectRequested = true;
+    }
     else if (a == "--inspect-angles" || a.StartsWith("--inspect-angles=", StringComparison.Ordinal))
     {
         string? v = a == "--inspect-angles" ? (i + 1 < args.Length ? args[++i] : null)
@@ -502,6 +513,7 @@ var opts = new Game1.LaunchOptions
     InspectRepaired = inspectRepaired,
     InspectAngles = inspectAngles,
     InspectDist = inspectDist,
+    InspectCatalogue = inspectCatalogue,
     // P572 — live-proof automation plan (null when no --auto-* flag was given).
     AutoProof = autoPlan.AnyActive ? autoPlan : null,
     WindowWidth = windowWidth,

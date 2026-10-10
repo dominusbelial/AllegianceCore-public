@@ -1,0 +1,39 @@
+{
+  "src": "phoenix-int.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9000539779663086,
+  "attached": [
+    {
+      "nverts": 74,
+      "gap_before": 0.002004896057769656,
+      "delta": [
+        0.00677184434607625,
+        -0.008418915793299675,
+        -0.005232735071331263
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 81
+    },
+    {
+      "nverts": 28,
+      "gap_before": 0.021357303485274315,
+      "delta": [
+        0.012688855640590191,
+        0.013305569998919964,
+        -0.025401480495929718
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 30
+    }
+  ],
+  "crumbs_dropped": 334,
+  "crumbs_kept": 822,
+  "dropped_faces": 99,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/phoenix-int.fbx"
+}

@@ -1,0 +1,39 @@
+{
+  "src": "bios-interceptor.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9024971723556519,
+  "attached": [
+    {
+      "nverts": 25,
+      "gap_before": 0.021376756951212883,
+      "delta": [
+        -0.0241510309278965,
+        0.0188252255320549,
+        0.006843934301286936
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 26
+    },
+    {
+      "nverts": 22,
+      "gap_before": 0.003290351014584303,
+      "delta": [
+        -0.0033953601960092783,
+        -0.012002693489193916,
+        -0.004586974158883095
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 26
+    }
+  ],
+  "crumbs_dropped": 131,
+  "crumbs_kept": 438,
+  "dropped_faces": 45,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/bios-interceptor.fbx"
+}

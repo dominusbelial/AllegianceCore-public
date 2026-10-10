@@ -1,0 +1,39 @@
+{
+  "src": "phoenix-bomber.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9026341438293457,
+  "attached": [
+    {
+      "nverts": 188,
+      "gap_before": 0.003061385126784444,
+      "delta": [
+        9.790662261366379e-06,
+        -0.013026922009885311,
+        0.0009481445886194706
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 251
+    },
+    {
+      "nverts": 174,
+      "gap_before": 0.004478700924664736,
+      "delta": [
+        0.0003069300146307796,
+        0.014442064799368382,
+        0.000982516910880804
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 215
+    }
+  ],
+  "crumbs_dropped": 222,
+  "crumbs_kept": 352,
+  "dropped_faces": 163,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/phoenix-bomber.fbx"
+}

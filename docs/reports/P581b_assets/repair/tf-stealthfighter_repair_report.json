@@ -1,0 +1,231 @@
+{
+  "src": "tf-stealthfighter.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9047772288322449,
+  "attached": [
+    {
+      "nverts": 4607,
+      "gap_before": 0.5593537092208862,
+      "delta": [
+        0.07659105211496353,
+        -0.5613102316856384,
+        -0.056818265467882156
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 5137
+    },
+    {
+      "nverts": 1362,
+      "gap_before": 0.6510103940963745,
+      "delta": [
+        -0.09430055320262909,
+        -0.6370740532875061,
+        -0.14892545342445374
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 1535
+    },
+    {
+      "nverts": 61,
+      "gap_before": 0.7439791560173035,
+      "delta": [
+        -0.05307505279779434,
+        -0.7517316341400146,
+        0.02381763607263565
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 63
+    },
+    {
+      "nverts": 50,
+      "gap_before": 0.6677296757698059,
+      "delta": [
+        0.06638870388269424,
+        -0.6739094853401184,
+        -0.027495291084051132
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 55
+    },
+    {
+      "nverts": 42,
+      "gap_before": 0.7987473011016846,
+      "delta": [
+        -0.041598327457904816,
+        -0.8001737594604492,
+        0.10983455181121826
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 43
+    },
+    {
+      "nverts": 40,
+      "gap_before": 0.5611732006072998,
+      "delta": [
+        0.07493573427200317,
+        -0.5645390152931213,
+        -0.043807994574308395
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 41
+    },
+    {
+      "nverts": 36,
+      "gap_before": 0.1476036012172699,
+      "delta": [
+        -0.04123843461275101,
+        -0.132733553647995,
+        -0.07429731637239456
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 37
+    },
+    {
+      "nverts": 35,
+      "gap_before": 0.7461742758750916,
+      "delta": [
+        -0.02496909536421299,
+        -0.7556129097938538,
+        -0.015009284019470215
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 36
+    },
+    {
+      "nverts": 34,
+      "gap_before": 0.6493851542472839,
+      "delta": [
+        -0.02252550981938839,
+        -0.6586934924125671,
+        -0.02010507881641388
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 35
+    },
+    {
+      "nverts": 33,
+      "gap_before": 0.6746295094490051,
+      "delta": [
+        0.04730561375617981,
+        -0.6827319860458374,
+        -0.018885068595409393
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 36
+    },
+    {
+      "nverts": 29,
+      "gap_before": 0.6384827494621277,
+      "delta": [
+        0.09383763372898102,
+        -0.6409058570861816,
+        -0.031048959121108055
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 30
+    },
+    {
+      "nverts": 28,
+      "gap_before": 0.6961060166358948,
+      "delta": [
+        -0.007449085358530283,
+        -0.7059621810913086,
+        -0.012150336056947708
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 30
+    },
+    {
+      "nverts": 25,
+      "gap_before": 0.6253098845481873,
+      "delta": [
+        0.13031837344169617,
+        -0.6200076341629028,
+        0.047183964401483536
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 25
+    },
+    {
+      "nverts": 23,
+      "gap_before": 0.6556826829910278,
+      "delta": [
+        -0.004989278502762318,
+        -0.6656315922737122,
+        0.006567520555108786
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 23
+    },
+    {
+      "nverts": 22,
+      "gap_before": 0.5353550314903259,
+      "delta": [
+        0.06359267979860306,
+        -0.5414426922798157,
+        0.01441963016986847
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 22
+    },
+    {
+      "nverts": 22,
+      "gap_before": 0.8093773722648621,
+      "delta": [
+        -0.13842615485191345,
+        -0.8053976893424988,
+        0.059599559754133224
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 23
+    },
+    {
+      "nverts": 21,
+      "gap_before": 0.34772518277168274,
+      "delta": [
+        -0.14074808359146118,
+        -0.3281930983066559,
+        -0.021132081747055054
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 21
+    },
+    {
+      "nverts": 21,
+      "gap_before": 0.02876110188663006,
+      "delta": [
+        -0.0030521689914166927,
+        -0.038351692259311676,
+        -0.004717553500086069
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 21
+    }
+  ],
+  "crumbs_dropped": 779,
+  "crumbs_kept": 230,
+  "dropped_faces": 691,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/tf-stealthfighter.fbx"
+}

@@ -688,6 +688,10 @@ public sealed partial class Game1 : Game
     // the ship render path so the game honours "keep this Meshy hull" choices made in the
     // inspector. Empty (all-native default) when the file is absent. See ShipsNativeFor.
     private Rendering.ShipArtOverride _shipArtOverride = new();
+    // P581b — the committed replacement-model catalogue (assets/ships/catalogue.json),
+    // used to resolve "catalogue:<id>" ship-art overrides to a loaded model (repaired
+    // preferred over raw). Empty when the file is absent or malformed.
+    private Rendering.ShipCatalogue _shipCatalogue = Rendering.ShipCatalogue.Parse("{}");
     // P565 — hulls whose Meshy override pointed at a missing asset (logged once, fall to native).
     private readonly HashSet<string> _missingMeshyLogged = new(StringComparer.OrdinalIgnoreCase);
     // P567 — the native-asteroid renderer switch (--asteroids native|imported; default native).
@@ -1413,6 +1417,7 @@ public sealed partial class Game1 : Game
             _inspectUseRepaired = opts.InspectRepaired;
             _inspectSweepAngles = opts.InspectAngles;
             _inspectDist = opts.InspectDist;
+            _inspectCatalogueArg = opts.InspectCatalogue;
             _state = ClientState.Inspecting;   // offline; kicked off in Initialize
             Console.WriteLine("[inspect] --inspect: offline hull inspector (no server connect)");
         }

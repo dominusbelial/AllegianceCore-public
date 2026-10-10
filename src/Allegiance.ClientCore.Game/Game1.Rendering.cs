@@ -3005,6 +3005,15 @@ public sealed partial class Game1
     {
         if (_hullResolver is null || _shopCatalog is null) return null;
         if (hullId == 0) return null;                              // no SHIP_STATUS/EXPORT yet
+        // P581b — a "catalogue:<id>" override draws that catalogue model (repaired preferred)
+        // instead of the hull's own civ+class Meshy asset. The resolved key is returned
+        // directly; when it can't load, ShipsNativeFor already chose the native fallback.
+        if (_hullById is { } hulls && hulls.TryGetValue(hullId, out var hull)
+            && _shipArtOverride.TryGetCatalogue(hull.ModelName?.Trim(), hullId) is { } catId)
+        {
+            var catKey = _shipCatalogue.ResolveKey(catId, _shipModelKeys);
+            if (catKey is not null) return catKey;
+        }
         var civKey = CivKeyForShipSide(_session.World, sideId);
         if (civKey is null) return null;
         return _hullResolver.ResolveAsset(civKey, hullId, _shopCatalog);
@@ -3083,6 +3092,17 @@ public sealed partial class Game1
         if (_shipArtOverride is null || _hullById is not { } hulls || !hulls.TryGetValue(id, out var hull))
             return _shipsNative;
         var modelName = hull.ModelName?.Trim();
+        // P581b — a "catalogue:<id>" override: use the meshy path ONLY when the catalogue
+        // model actually loads; if it's missing it falls back to native (logged once),
+        // exactly like a missing Meshy asset.
+        if (_shipArtOverride.TryGetCatalogue(modelName, id) is { } catId)
+        {
+            var key = _shipCatalogue.ResolveKey(catId, _shipModelKeys);
+            if (key is not null) return false;                       // draw the catalogue model
+            if (modelName is not null && _missingMeshyLogged.Add(modelName))
+                Console.WriteLine($"[client] ship-art override: catalogue model '{catId}' missing — falling back to native");
+            return true;
+        }
         var choice = _shipArtOverride.Resolve(modelName, id);
         if (choice == Rendering.ShipArtOverride.ArtChoice.Native) return true;
         if (choice == Rendering.ShipArtOverride.ArtChoice.Meshy)

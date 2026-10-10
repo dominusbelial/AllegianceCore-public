@@ -1,0 +1,27 @@
+{
+  "src": "phoenix-carrier.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9022494554519653,
+  "attached": [
+    {
+      "nverts": 20,
+      "gap_before": 0.008574239909648895,
+      "delta": [
+        -0.0004234388761688024,
+        -0.018547626212239265,
+        0.0008992280927486718
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 25
+    }
+  ],
+  "crumbs_dropped": 11,
+  "crumbs_kept": 129,
+  "dropped_faces": 0,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/phoenix-carrier.fbx"
+}

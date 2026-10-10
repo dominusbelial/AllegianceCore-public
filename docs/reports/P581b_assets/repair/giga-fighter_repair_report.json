@@ -1,0 +1,27 @@
+{
+  "src": "giga-fighter.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.8990173935890198,
+  "attached": [
+    {
+      "nverts": 26,
+      "gap_before": 0.03763456642627716,
+      "delta": [
+        0.046117667108774185,
+        -0.0029684274923056364,
+        -0.01154994685202837
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 32
+    }
+  ],
+  "crumbs_dropped": 88,
+  "crumbs_kept": 251,
+  "dropped_faces": 50,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/giga-fighter.fbx"
+}

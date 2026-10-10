@@ -103,6 +103,17 @@ public sealed partial class Game1
     private float _inspectDist;
     private bool _inspectSweepDone;
 
+    // P581b — optional --inspect-catalogue <id> preselection (drives the browser on load).
+    private string? _inspectCatalogueArg;
+
+    // P581b — catalogue browser: cycle replacement models (assets/ships/catalogue.json) on
+    // the current hull. _inspectCatIdx >= 0 selects a catalogue id (repaired preferred);
+    // N and B cycle (next/back), K keeps the choice (writes "catalogue:<id>" to ship-art.json).
+    private int _inspectCatIdx = -1;
+    private bool _inspectNWasDown, _inspectBWasDown;
+    private Rendering.ShipCatalogue _inspectCatalogue = Rendering.ShipCatalogue.Parse("{}");
+    private readonly HashSet<string> _inspectCatLogged = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Tags cycled by Tab for the mark-bad ledger.</summary>
     private static readonly string[] MarkTags =
         ["holes", "transparent", "flat", "scale", "texture", "vfx-overlap", ""];
@@ -146,6 +157,22 @@ public sealed partial class Game1
         {
             _inspectArtOverride = ShipArtOverride.LoadFile(artFile);
             Console.WriteLine($"[inspect] ship-art override: {_inspectArtOverride.Count} entries from {artFile}");
+        }
+
+        // P581b — the replacement-model catalogue (assets/ships/catalogue.json) drives the
+        // [ / ] catalogue browser on each hull.
+        string catFile = Path.Combine(Directory.GetCurrentDirectory(), "assets", "ships", "catalogue.json");
+        if (System.IO.File.Exists(catFile))
+        {
+            _inspectCatalogue = ShipCatalogue.LoadFile(catFile);
+            Console.WriteLine($"[inspect] catalogue: {_inspectCatalogue.Count} replacement models from {catFile}");
+        }
+        _inspectCatIdx = -1;
+        if (_inspectCatalogueArg is { } wantCat)
+        {
+            int catFound = _inspectCatalogue.Ids.ToList().FindIndex(x => string.Equals(x, wantCat, StringComparison.OrdinalIgnoreCase));
+            if (catFound >= 0) { _inspectCatIdx = catFound; Console.WriteLine($"[inspect] catalogue preset: '{wantCat}'"); }
+            else Console.WriteLine($"[inspect] --inspect-catalogue '{wantCat}' not found; starting from none");
         }
 
         Func<DataHullTypeIGC, bool> nativeAvail = h =>
@@ -356,6 +383,11 @@ public sealed partial class Game1
         }
         if (Edge(ref _inspectKWasDown, XnaKeys.K)) SaveInspectArtChoice();
 
+        // P581b — catalogue browser: N and B cycle replacement models on the current hull
+        // (repaired preferred via the catalogue's ResolveKey); K keeps the current choice.
+        if (Edge(ref _inspectNWasDown, XnaKeys.N)) CycleInspectCatalogue(+1);
+        if (Edge(ref _inspectBWasDown, XnaKeys.B)) CycleInspectCatalogue(-1);
+
         if (Edge(ref _inspectCWasDown, XnaKeys.C)) _inspectCloak = _inspectCloak > 0f ? 0f : 0.35f;
         if (Edge(ref _inspectPlusWasDown, XnaKeys.OemPlus)) _inspectCloak = Math.Clamp(_inspectCloak + 0.1f, 0f, 1f);
         if (Edge(ref _inspectMinusWasDown, XnaKeys.OemMinus)) _inspectCloak = Math.Clamp(_inspectCloak - 0.1f, 0f, 1f);
@@ -440,6 +472,16 @@ public sealed partial class Game1
         }
     }
 
+    private void CycleInspectCatalogue(int dir)
+    {
+        if (_inspectCatalogue.Count == 0) { Console.WriteLine("[inspect] no catalogue loaded"); return; }
+        var ids = _inspectCatalogue.Ids;
+        if (ids.Count == 0) return;
+        int n = ids.Count;
+        _inspectCatIdx = _inspectCatIdx < 0 ? (dir > 0 ? 0 : n - 1) : ((_inspectCatIdx + dir + n) % n);
+        Console.WriteLine($"[inspect] catalogue [{_inspectCatIdx + 1}/{n}] = '{ids[_inspectCatIdx]}' (raw {ids[_inspectCatIdx]}, repaired preferred)");
+    }
+
     private void CycleInspectCiv(int dir)
     {
         var civs = InspectorHullCatalog.Civs(_inspectHulls);
@@ -483,6 +525,16 @@ public sealed partial class Game1
     {
         var h = CurrentInspectHull();
         if (h is null) return;
+        // P581b — if the catalogue browser is active, keep that catalogue model id.
+        if (_inspectCatIdx >= 0 && _inspectCatalogue.Ids is { } ids && _inspectCatIdx < ids.Count)
+        {
+            string catId = ids[_inspectCatIdx];
+            _inspectArtOverride.SetCatalogueByModel(h.ModelName, catId);
+            string artFile2 = ShipArtOverridePath();
+            _inspectArtOverride.Save(artFile2);
+            Console.WriteLine($"[inspect] KEEP {h.ModelName} as catalogue:{catId} -> {artFile2}");
+            return;
+        }
         var choice = _inspectShowNative ? ShipArtOverride.ArtChoice.Native : ShipArtOverride.ArtChoice.Meshy;
         _inspectArtOverride.SetByModel(h.ModelName, choice);
         string artFile = ShipArtOverridePath();
@@ -845,6 +897,17 @@ public sealed partial class Game1
         if (asset is null && h.CivKey is not null)
             asset = _hullResolver.ResolveAsset(h.CivKey, HullById(h.HullId));
         if (asset is null) return null;
+        // P581b — the catalogue browser ([ / ]): when a catalogue id is selected, draw that
+        // catalogue model (repaired preferred via ResolveKey) instead of the hull's own Meshy.
+        if (_inspectCatIdx >= 0 && _inspectCatalogue.Ids is { } ids && _inspectCatIdx < ids.Count)
+        {
+            string catId = ids[_inspectCatIdx];
+            string? catKey = _inspectCatalogue.ResolveKey(catId, _shipModelKeys);
+            if (catKey is not null) return _shipModels.TryGetValue(catKey, out var cm) ? cm : null;
+            if (_inspectCatLogged.Add(catId))
+                Console.WriteLine($"[inspect] catalogue model '{catId}' not loaded — native fallback");
+            return null;
+        }
         // P581 — the view-only repaired preview prefers Models/repaired/<asset> when the
         // operator asks for it (--inspect-repaired / J) and that variant is loaded.
         string drawKey = Rendering.RepairedModelPreview.Resolve(_shipModelKeys, asset, _inspectUseRepaired);
@@ -1093,6 +1156,11 @@ public sealed partial class Game1
         Line($"cam={( _inspectCam == InspectCamMode.FlyBy ? "flyby" : "orbit" )}  yaw={_inspectOrbit.Yaw:0.##} pitch={_inspectOrbit.Pitch:0.##} dist={_inspectOrbit.Distance:0.#}  cloak={(_inspectCloak > 0f ? _inspectCloak.ToString("0.##") : "off")}", Color.LightGray);
         Line($"art={( _inspectShowNative && _inspectShowMeshy ? "both" : _inspectShowNative ? "native" : "meshy" )}" +
             $"{( _inspectUseRepaired ? "+REPAIRED" : "")} side={_inspectSideBySide} wire={_inspectWireframe} norm={_inspectNormals} back={_inspectBackfaces} light={_inspectLightingVariant} soft={_inspectSoft} bloom={_inspectBloom}", Color.LightGray);
+        // P581b — catalogue browser status line.
+        if (_inspectCatIdx >= 0 && _inspectCatalogue.Ids is { } ids && _inspectCatIdx < ids.Count)
+            Line($"[CATALOGUE] [{_inspectCatIdx + 1}/{ids.Count}] {ids[_inspectCatIdx]}  ( N/B = next/prev, K = keep as catalogue:<id> )", Color.Cyan);
+        else
+            Line("catalogue: none  ( N/B = browse replacement models, K = keep )", Color.DimGray);
         Line($"vfx: engine={_inspectEngine} smoke={(_inspectSmoke ? _inspectHullFraction.ToString("P0") : "off")} proj={_inspectProjectiles} miss={_inspectMissiles} mines={_inspectMines} chaos={_inspectChaos}  pace={(_inspectPaused ? "PAUSED" : $"x{_inspectTimeScale:0.##}")}", Color.LightGray);
         Line($"pick: proj[{ProjectileName(_inspectProjectilePicker)}]  miss[{MissileName(_inspectMissilePicker)}]  mine[{MineName(_inspectMinePicker)}]", Color.LightGray);
         string tag = MarkTags[Math.Clamp(_inspectTagIndex, 0, MarkTags.Length - 1)];

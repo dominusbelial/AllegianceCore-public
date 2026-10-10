@@ -1,0 +1,39 @@
+{
+  "src": "oh-cruiser.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9023486971855164,
+  "attached": [
+    {
+      "nverts": 603,
+      "gap_before": 0.002913576317951083,
+      "delta": [
+        0.00507820351049304,
+        -0.002111394191160798,
+        0.011683933436870575
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 803
+    },
+    {
+      "nverts": 21,
+      "gap_before": 0.12998731434345245,
+      "delta": [
+        -0.13994936645030975,
+        0.0015974660636857152,
+        -0.0028408297803252935
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 25
+    }
+  ],
+  "crumbs_dropped": 655,
+  "crumbs_kept": 183,
+  "dropped_faces": 200,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/oh-cruiser.fbx"
+}

@@ -1,0 +1,51 @@
+{
+  "src": "giga-bomber.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9011831879615784,
+  "attached": [
+    {
+      "nverts": 332,
+      "gap_before": 0.015016386285424232,
+      "delta": [
+        0.012566323392093182,
+        -0.011574836447834969,
+        0.01827375777065754
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 461
+    },
+    {
+      "nverts": 299,
+      "gap_before": 0.015274619683623314,
+      "delta": [
+        0.015055361203849316,
+        0.015130989253520966,
+        0.01353498175740242
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 416
+    },
+    {
+      "nverts": 20,
+      "gap_before": 0.02702774479985237,
+      "delta": [
+        -0.018714655190706253,
+        -0.03194839879870415,
+        -0.00033927784534171224
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 24
+    }
+  ],
+  "crumbs_dropped": 158,
+  "crumbs_kept": 271,
+  "dropped_faces": 65,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/giga-bomber.fbx"
+}

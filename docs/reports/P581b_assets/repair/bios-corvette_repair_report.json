@@ -1,0 +1,27 @@
+{
+  "src": "bios-corvette.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.895207703113556,
+  "attached": [
+    {
+      "nverts": 421,
+      "gap_before": 0.010489688254892826,
+      "delta": [
+        0.007491234224289656,
+        -0.010142460465431213,
+        -0.016150519251823425
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 614
+    }
+  ],
+  "crumbs_dropped": 3,
+  "crumbs_kept": 107,
+  "dropped_faces": 0,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/bios-corvette.fbx"
+}

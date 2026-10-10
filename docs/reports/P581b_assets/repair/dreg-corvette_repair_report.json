@@ -1,0 +1,27 @@
+{
+  "src": "dreg-corvette.fbx",
+  "margin": 0.01,
+  "touch": 0.002,
+  "piece_min": 20,
+  "ship_length": 1.9030203819274902,
+  "attached": [
+    {
+      "nverts": 507,
+      "gap_before": 0.007689567748457193,
+      "delta": [
+        -0.01718202792108059,
+        0.0017917247023433447,
+        0.003806369611993432
+      ],
+      "gap_after": -0.01,
+      "rigid_move_bad": 0,
+      "rigid_move_total": 734
+    }
+  ],
+  "crumbs_dropped": 1,
+  "crumbs_kept": 14,
+  "dropped_faces": 0,
+  "edge_stretch_violations": 0,
+  "face_count_ok": true,
+  "out": "src/Allegiance.ClientCore.MonoGame/Content/Models/repaired/dreg-corvette.fbx"
+}
