@@ -1,6 +1,7 @@
 namespace Allegiance.Core.Model;
 
 using Allegiance.Core.Collision;
+using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
 
 /// <summary>
@@ -650,7 +651,9 @@ public sealed class Sector : IClusterIgc
         // The C++ collision block sits AFTER the models loop, still inside the
         // same cluster Update, gated on activeF && bStarted (clusterIGC.cpp:255).
         // Ported as the combat pass below (projectile ↔ ship resolution).
-        ResolveCombatCollisions(timeUpdate, (float)dt);
+        // P600 — every pass below is wrapped in a profiling scope (bucket per
+        // subsystem, aggregated across all sectors). No-op when the profiler off.
+        { using (TickProfiler.Enter("sim.combat")) ResolveCombatCollisions(timeUpdate, (float)dt); }
 
         // P254 — ship↔asteroid elastic collision pass. Deliberately a SEPARATE
         // pass rather than a case inside ResolveCombatCollisions: that method is
@@ -658,7 +661,7 @@ public sealed class Sector : IClusterIgc
         // projectile/missile in the sector) and its event loop requires one side
         // of every pair to be IOrdnance — neither holds for a ship bouncing off a
         // rock in an otherwise-empty sector. See ResolveShipAsteroidCollisions.
-        ResolveShipAsteroidCollisions(timeUpdate, (float)dt);
+        { using (TickProfiler.Enter("sim.collision")) ResolveShipAsteroidCollisions(timeUpdate, (float)dt); }
 
         // P354 — ship↔ship real elastic-collision pass. Grouped here with the
         // P254 asteroid pass because both are the elastic-collision PHYSICS
@@ -670,7 +673,7 @@ public sealed class Sector : IClusterIgc
         // predicate for every detected pair and skips physics, exactly as the
         // native rescue check pre-empts the physics via break
         // (shipIGC.cpp:1027-1042). See ResolveShipShipCollisions.
-        ResolveShipShipCollisions(timeUpdate, (float)dt);
+        { using (TickProfiler.Enter("sim.collision")) ResolveShipShipCollisions(timeUpdate, (float)dt); }
 
         // P466 — ship↔station elastic collision pass, grouped here with the P254
         // asteroid and P354 ship-ship physics passes. Like the asteroid bounce it
@@ -682,60 +685,60 @@ public sealed class Sector : IClusterIgc
         // pairs (about to dock) and shield-down board pairs (about to capture)
         // are excluded inside the pass so the dock/rescue/capture passes are never
         // See ResolveShipStationCollisions.
-        ResolveShipStationCollisions(timeUpdate, (float)dt);
+        { using (TickProfiler.Enter("sim.collision")) ResolveShipStationCollisions(timeUpdate, (float)dt); }
 
         // P125 — station health regeneration. Stations are static bodies (not
         // Models), so their regen is a pass of its own here rather than a model
         // Update; native does the same math in CstationIGC::Update
         // (stationIGC.h:189-213) — see Station.Regenerate for the
         // armor-then-shield sequencing.
-        ResolveStationRegen((float)dt);
+        { using (TickProfiler.Enter("sim.station")) ResolveStationRegen((float)dt); }
 
         // Mine attrition proximity pass — an armed, hostile-side mine chews on
         // every moving enemy ship inside its radius (persistent area denial,
         // not a one-shot blast). See ResolveMineDetonations for the spec.
-        ResolveMineDetonations(timeUpdate, (float)dt);
+        { using (TickProfiler.Enter("sim.mines")) ResolveMineDetonations(timeUpdate, (float)dt); }
 
         // Warp-transit proximity pass — a stationary-object test (ship vs the
         // sector's warps), deliberately separate from the moving-object combat
         // collider above. See ResolveWarpCollisions for the spec and scope.
-        ResolveWarpCollisions(timeUpdate);
+        { using (TickProfiler.Enter("sim.warp")) ResolveWarpCollisions(timeUpdate); }
 
         // Warp-bomb (missile vs warp) trigger pass + its scheduled-detonation
         // half. A real missile reaching a warp arms a WARP_BOMB(188) broadcast
         // and a 15 s-delayed explosion at the aleph — see the two passes below.
-        ResolveWarpBombTriggers(timeUpdate);
-        ResolveWarpBombDetonations(timeUpdate);
+        { using (TickProfiler.Enter("sim.combat")) ResolveWarpBombTriggers(timeUpdate); }
+        { using (TickProfiler.Enter("sim.combat")) ResolveWarpBombDetonations(timeUpdate); }
 
         // Dock proximity pass — ship vs the sector's stations. See
         // ResolveDockCollisions for the spec, the friendly gate and the
         // simplified-radius reasoning.
-        ResolveDockCollisions(timeUpdate);
+        { using (TickProfiler.Enter("sim.docking")) ResolveDockCollisions(timeUpdate); }
 
         // Mining proximity pass — ship vs the sector's asteroids. See
         // ResolveMining for the spec (proximity + near-zero velocity, no
         // crowding / no per-side gate) and its simplified-rate reasoning.
-        ResolveMining(timeUpdate, (float)dt);
+        { using (TickProfiler.Enter("sim.mining")) ResolveMining(timeUpdate, (float)dt); }
 
         // Building-effect pass — P163. Every in-progress build is checked each
         // tick: a Builder that died aborts the build (asteroid untouched, no
         // station), and a build past its 40 s completion deadline fires the
         // asteroid→station transformation. See ResolveBuildingEffects for the
         // spec and its port of the native CbuildingEffectIGC lifecycle.
-        ResolveBuildingEffects(timeUpdate);
+        { using (TickProfiler.Enter("sim.economy")) ResolveBuildingEffects(timeUpdate); }
 
         // Ripcord countdown/revalidation pass — P112/P113. For every ship with
         // an active ripcord and no parent, revalidate the anchor and tick the
         // countdown down; on reaching zero with a legal anchor the ripper is
         // handed to the host's UseRipcord (the teleport, P113). See
         // ResolveRipcordCountdowns.
-        ResolveRipcordCountdowns((float)dt);
+        { using (TickProfiler.Enter("sim.navigation")) ResolveRipcordCountdowns((float)dt); }
 
         // Rescue proximity pass — P115. Every friendly same-side ship pair
         // where one carries c_habmLifepod and the other c_habmRescue, within
         // the sum-of-spheres radius, is handed to the host's PerformRescue
         // (PLAYER_RESCUED(16) + placement). See ResolveRescueEvents.
-        ResolveRescueEvents();
+        { using (TickProfiler.Enter("sim.rescue")) ResolveRescueEvents(); }
 
         // P301 — station-side pod rescue proximity pass. A drifting
         // c_habmLifepod within proximity of a SAME-side station whose type
@@ -745,7 +748,7 @@ public sealed class Sector : IClusterIgc
         // base (docking cancels the P279 oxygen timer). Detected here, drained
         // and performed by the host (Server.PerformStationRescue) — no wire
         // half in Core. See ResolveStationRescueEvents for the spec.
-        ResolveStationRescueEvents();
+        { using (TickProfiler.Enter("sim.rescue")) ResolveStationRescueEvents(); }
 
         // Carrier-landing geometric pass — P116. Every friendly same-side ship
         // pair where one carries c_habmCarrier and the other c_habmLandOnCarrier,
@@ -754,14 +757,14 @@ public sealed class Sector : IClusterIgc
         // shortcut. Detection-only (logged, drained) — the resupply/relaunch
         // half of LandOnCarrierEvent is a separate later task. See
         // ResolveCarrierLandings.
-        ResolveCarrierLandings();
+        { using (TickProfiler.Enter("sim.rescue")) ResolveCarrierLandings(); }
 
         // Treasure pickup proximity pass — P123. A rescue-capable, player-typed
         // ship overlapping a c_tcCash treasure picks it up: the sector records
         // the (ship, treasure) pair; the host credits the ship's side, broadcasts
         // MONEY_CHANGE side-wide and DESTROY_TREASURE whole-mission, and removes
         // the treasure. See ResolveTreasurePickups for the spec.
-        ResolveTreasurePickups();
+        { using (TickProfiler.Enter("sim.economy")) ResolveTreasurePickups(); }
 
         // Cross-side visibility sweep — P132. Every ship/station/probe in the
         // sector has its SeenBySide state recomputed against every side's
@@ -774,7 +777,8 @@ public sealed class Sector : IClusterIgc
         // invisible on the same real-world timescale as native, not instantly-
         // every-tick.
         if ((_visPass++ % c_nPassesPerUpdate) == 0)
-            ResolveCrossSideVisibility();
+            using (TickProfiler.Enter("sim.visibility"))
+                ResolveCrossSideVisibility();
     }
 
     /// <summary>

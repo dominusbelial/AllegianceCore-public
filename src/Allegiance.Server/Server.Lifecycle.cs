@@ -4,6 +4,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.MapGen;
 using Allegiance.Core.Model;
+using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
@@ -110,6 +111,19 @@ public sealed partial class Server
             Console.WriteLine("[boot] *** ADMIN CHEATS ACTIVE (liveSettings.adminCheats.enabled=true) *** "
                               + $"allowNames=[{string.Join(", ", ac.AllowNames)}] — those names may issue the 'relocate' cheat on their OWN ship only; "
                               + "port extension (native has no relocate; FedSrv.CPP:2814 DoCheatCode); consumed, never broadcast as chat ***");
+
+        // P600 — the per-tick profiler. OFF by default. A `profiler` config
+        // section (or the ALLEGIANCE_TICK_PROFILER env var) turns it on; banner
+        // it loudly so a measurement run is never mistaken for an uninstrumented
+        // one. The env var is a convenience so a live run can profile without
+        // editing a config file: "1"/"true" enables (log-only), "0"/"false"
+        // forces off, and any other value is treated as the CSV output path.
+        ApplyProfilerConfig(config.Profiler);
+        if (TickProfiler.Instance is { } profiler)
+            Console.WriteLine("[boot] *** TICK PROFILER ACTIVE (profiler.enabled=true) — per-subsystem + per-sector per-tick timing, "
+                              + $"report every {profiler.ReportIntervalSeconds}s"
+                              + (profiler.CsvPath is { Length: > 0 } ? $" → CSV {profiler.CsvPath}" : "")
+                              + "; overhead negligible when off ***");
 
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
@@ -1031,6 +1045,37 @@ public sealed partial class Server
     /// and fast, so tests can drive many ticks without wall-clock dependency.</summary>
     public void TickSim() => SimPass();
 
+    /// <summary>P600 — resolve the per-tick profiler from config + the
+    /// <c>ALLEGIANCE_TICK_PROFILER</c> env var (env wins), and configure the
+    /// static <see cref="TickProfiler"/> singleton. The env var is a
+    /// one-string switch so a live run can profile without touching a config
+    /// file: "1"/"true" enables log-only, "0"/"false" forces off, any other
+    /// value is treated as the CSV output path. Interval comes from config, or
+    /// the <c>ALLEGIANCE_TICK_PROFILER_INTERVAL</c> env var when present.</summary>
+    private static void ApplyProfilerConfig(ProfilerConfig? cfg)
+    {
+        bool enabled = cfg?.Enabled ?? false;
+        int interval = cfg?.ReportIntervalSeconds ?? 5;
+        string? csv = cfg?.CsvPath;
+
+        string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_TICK_PROFILER");
+        if (!string.IsNullOrEmpty(env))
+        {
+            if (env is "0" or "false" or "off") { enabled = false; }
+            else if (env is "1" or "true" or "on") { enabled = true; csv = null; }
+            else { enabled = true; csv = env; }        // a path → enabled with CSV
+        }
+        string? envInt = Environment.GetEnvironmentVariable("ALLEGIANCE_TICK_PROFILER_INTERVAL");
+        if (!string.IsNullOrEmpty(envInt) && int.TryParse(envInt, out var iv) && iv > 0)
+            interval = iv;
+
+        TickProfiler.Configure(enabled, interval, csv);
+    }
+
+    /// <summary>P600 — close the profiler's CSV handle at shutdown so the file is
+    /// flushed and released cleanly (best-effort).</summary>
+    private void ShutdownProfiler() => TickProfiler.Shutdown();
+
     /// <summary>
     /// P314 — run one <see cref="SimPass"/> stage inside an exception barrier.
     /// The per-tick broadcast/drain/post-update section historically had no
@@ -1048,7 +1093,18 @@ public sealed partial class Server
     {
         try
         {
-            action();
+            // P600 — per-stage bucket timing. The "step:"+stage string is built
+            // only when the profiler is on, so the disabled path stays a plain
+            // call with no per-tick allocation.
+            if (TickProfiler.Instance is not null)
+            {
+                using (TickProfiler.Enter("step:" + stage))
+                    action();
+            }
+            else
+            {
+                action();
+            }
             return true;
         }
         catch (Exception e)
@@ -1367,6 +1423,8 @@ public sealed partial class Server
             _captureStream = null;
         }
         Console.WriteLine($"[shutdown] clean: {LoopIterations} ticks, {Overruns} overruns");
+        // P600 — flush + release the profiler's CSV handle (best-effort).
+        ShutdownProfiler();
     }
 
     /// <summary>Dispose = <see cref="Shutdown"/>, so <c>using</c> guarantees the

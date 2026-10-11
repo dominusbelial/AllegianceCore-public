@@ -1,6 +1,7 @@
 namespace Allegiance.Core.Model;
 
 using Allegiance.Core.Collision;
+using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
 
 /// <summary>
@@ -672,7 +673,21 @@ public sealed class Mission
             double timeUpdate = startTime + deltaT * ((double)i / n);
             foreach (var sector in Sectors)
             {
-                sector.Update(timeUpdate);
+                // P600 — per-sector tick timing + population. Guarded on
+                // TickProfiler.Instance so that when the profiler is OFF the
+                // "sector:<id>" string concat and the O(models) ship-count LINQ
+                // are NOT evaluated — a disabled profiler must cost nothing
+                // beyond a null check (verification: negligible when off).
+                if (TickProfiler.Instance is not null)
+                {
+                    using (TickProfiler.Enter("sector:" + sector.Id))
+                        sector.Update(timeUpdate);
+                    TickProfiler.RecordSectorCounts(sector.Id, sector.Models.Count, sector.Models.Count(m => m is Ship));
+                }
+                else
+                {
+                    sector.Update(timeUpdate);
+                }
                 Site.ClusterUpdateEvent(sector);        // faithful site call (c++:357)
             }
             LastUpdate = timeUpdate;

@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
+using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
@@ -30,6 +31,10 @@ public sealed partial class Server
     /// <summary>Pump transport, advance sim by exactly one period, tick every mission.</summary>
     private void SimPass()
     {
+        // P600 — the whole-SimPass wall time is the profiler's "tick" reference.
+        // Closed by EndTick at the bottom of the method, folding per-bucket
+        // samples into the report window. No-op when the profiler is off.
+        TickProfiler.EnterTick();
         // P314 — every stage runs inside its own exception barrier (Step): a
         // bad tick degrades gracefully (log + skip that stage) instead of
         // propagating to the top-level catch and killing the server. Stages are
@@ -373,6 +378,8 @@ public sealed partial class Server
                         : ""));
             }
         });
+        // P600 — close the tick's wall-time reference and roll the profiler window.
+        TickProfiler.EndTick();
     }
 
     // ═══════════════════════════════════════════════════════════════════════

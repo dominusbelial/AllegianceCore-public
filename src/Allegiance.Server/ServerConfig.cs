@@ -301,6 +301,31 @@ public sealed class AdminCheatsConfig
 }
 
 /// <summary>
+/// P600 — the per-tick profiler configuration (top-level <c>profiler</c> section).
+/// A committed, OFF-by-default diagnostic: measuring where the server's single
+/// simulation thread spends its tick is a pre-condition for per-sector parallel
+/// simulation (P600). Absent section (or <c>enabled:false</c>) = profiler off,
+/// with zero hot-path overhead (a null static check). Can also be forced via the
+/// <c>ALLEGIANCE_TICK_PROFILER</c> env var (see Server.Lifecycle boot), so a live
+/// run can profile without editing a config file.
+/// </summary>
+public sealed class ProfilerConfig
+{
+    /// <summary>Master switch. false (the default, and the meaning of an absent
+    /// <c>profiler</c> section) leaves the server's tick un-instrumented.</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>How often to roll the reporting window over and emit an aggregate
+    /// (mean/p95/max ms per tick per bucket). Default 5 s (100 ticks at 20 ups).</summary>
+    public int ReportIntervalSeconds { get; set; } = 5;
+
+    /// <summary>When set, append one CSV row per bucket per report window to this
+    /// file (columns: window_start_unix, window_seconds, bucket, count, mean_ms,
+    /// p95_ms, max_ms, total_ms). Null = log-only.</summary>
+    public string? CsvPath { get; set; }
+}
+
+/// <summary>
 /// Top-level server configuration. Shape is decided (see task): a JSON file at
 /// <c>--config</c> (default <c>server.json</c>), with scalar fields overridable
 /// on the command line (<c>--port</c>, <c>--artpath</c>, <c>--staticcore</c>,
@@ -373,6 +398,12 @@ public sealed class ServerConfig
 
     /// <summary>The game worlds to instantiate at boot.</summary>
     public List<GameConfig> Games { get; init; } = [];
+
+    /// <summary>
+    /// P600 — the per-tick profiler settings. Null/absent (the default) = the
+    /// profiler is OFF, with no hot-path overhead. See <see cref="ProfilerConfig"/>.
+    /// </summary>
+    public ProfilerConfig? Profiler { get; init; }
 }
 
 /// <summary>Static helpers for reading <see cref="ServerConfig"/> from JSON.</summary>
