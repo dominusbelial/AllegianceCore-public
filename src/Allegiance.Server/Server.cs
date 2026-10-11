@@ -119,6 +119,22 @@ public sealed partial class Server : IDisposable
     internal int _broadcastMaxParallelism = 1;
 
     /// <summary>
+    /// P605 — how the server drains its per-peer send queues
+    /// (<c>transport.mode</c> config, overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_MODE</c>; env wins). Resolved once at boot; the
+    /// value is printed at boot and stamped into the profiler report header.
+    /// Default <see cref="TransportMode.ThreadPerPeer"/> = today's behaviour.
+    /// </summary>
+    internal TransportMode _transportMode = TransportMode.ThreadPerPeer;
+
+    /// <summary>
+    /// P605 — pool mode: how many send workers to spin up
+    /// (<c>transport.poolWorkers</c> or <c>ALLEGIANCE_TRANSPORT_POOL_WORKERS</c>,
+    /// default about the core count). Ignored in thread-per-peer mode.
+    /// </summary>
+    internal int _transportPoolWorkers = 1;
+
+    /// <summary>
     /// P603 — internal test seam (InternalsVisibleTo): when set, invoked from
     /// <see cref="SendPeer"/> for every outbound packet (recipient, payload, in
     /// order) so the byte-identity harness can collect the exact per-peer payload

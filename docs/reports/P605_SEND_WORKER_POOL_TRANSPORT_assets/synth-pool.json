@@ -1,0 +1,1 @@
+{"mode":"pool","configuredPoolWorkers":8,"peers":1000,"rateHz":30,"frameBytes":256,"seconds":25,"osThreads":1018,"vmRssKb":90212,"cpuPercent":21.99955267576226,"bytesSent":215296000}

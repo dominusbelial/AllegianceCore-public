@@ -29,5 +29,6 @@
     <Project Path="tools/hullhit-proof/hullhit-proof.csproj" />
     <Project Path="tools/shieldflare-proof/shieldflare-proof.csproj" />
     <Project Path="tools/allegiance-mcp/allegiance-mcp.csproj" />
+    <Project Path="tools/p605synth/p605synth.csproj" />
   </Folder>
 </Solution>

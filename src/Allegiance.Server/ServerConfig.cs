@@ -368,6 +368,33 @@ public sealed class BroadcastConfig
 }
 
 /// <summary>
+/// P605 — the server transport's send-draining mode (top-level
+/// <c>transport</c> section). Absent section (the default) = thread-per-peer,
+/// today's behaviour — each peer's send queue is drained by its own
+/// dedicated writer thread. <c>mode: "pool"</c> selects the fixed send-worker
+/// pool (a bounded set of workers draining hash-partitioned per-peer queues,
+/// per-peer order preserved, slow peers skipped not blocked). See
+/// docs/reports/P605_SEND_WORKER_POOL_TRANSPORT.md.
+/// </summary>
+public sealed class TransportConfig
+{
+    /// <summary>
+    /// <c>"thread-per-peer"</c> (default) or <c>"pool"</c>. Case-insensitive;
+    /// overridable at boot by <c>ALLEGIANCE_TRANSPORT_MODE</c> (env wins).
+    /// An unrecognized value fails loudly at boot.
+    /// </summary>
+    public string? Mode { get; set; }
+
+    /// <summary>
+    /// Pool mode only: how many send workers to spin up. When unset (the
+    /// default), about the core count (<c>ProcessorCount</c>). Overridable at
+    /// boot by <c>ALLEGIANCE_TRANSPORT_POOL_WORKERS</c>. Ignored in
+    /// thread-per-peer mode.
+    /// </summary>
+    public int? PoolWorkers { get; set; }
+}
+
+/// <summary>
 /// Top-level server configuration. Shape is decided (see task): a JSON file at
 /// <c>--config</c> (default <c>server.json</c>), with scalar fields overridable
 /// on the command line (<c>--port</c>, <c>--artpath</c>, <c>--staticcore</c>,
@@ -453,6 +480,13 @@ public sealed class ServerConfig
     /// behaviour. See <see cref="BroadcastConfig"/>.
     /// </summary>
     public BroadcastConfig? Broadcast { get; init; }
+
+    /// <summary>
+    /// P605 — the server transport's send-draining mode. Null/absent (the
+    /// default) = thread-per-peer, today's behaviour (unchanged). See
+    /// <see cref="TransportConfig"/>.
+    /// </summary>
+    public TransportConfig? Transport { get; init; }
 }
 
 /// <summary>Static helpers for reading <see cref="ServerConfig"/> from JSON.</summary>

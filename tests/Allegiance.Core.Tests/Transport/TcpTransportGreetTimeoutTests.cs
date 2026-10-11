@@ -22,8 +22,16 @@ namespace Allegiance.Core.Tests.Transport;
 ///      greet so it never applies to the peer's data session.
 /// </summary>
 [Collection("LiveNetwork")]
-public class TcpTransportGreetTimeoutTests
+public abstract class TcpTransportGreetTimeoutTestsBase
 {
+    // P605 — run the greet-timeout suite under both transport send modes; the
+    // accept/greet path is mode-independent, but proving it on both guards a
+    // future coupling.
+    private readonly TransportMode _mode;
+    protected TcpTransportGreetTimeoutTestsBase(TransportMode mode) => _mode = mode;
+
+    private TcpTransport NewHost(Site site) => new TcpTransport(site, _mode, poolWorkers: 2);
+
     private sealed class Site : ITransportSite
     {
         public readonly List<ConnectionId> Joined = new();
@@ -121,7 +129,7 @@ public class TcpTransportGreetTimeoutTests
     public void Silent_connection_does_not_block_a_second_client_join()
     {
         var site = new Site();
-        var host = new TcpTransport(site);
+        var host = NewHost(site);
         try
         {
             host.Host(0);
@@ -159,7 +167,7 @@ public class TcpTransportGreetTimeoutTests
     {
         using var _ = ShortenGreetTimeout(300);
         var site = new Site();
-        var host = new TcpTransport(site);
+        var host = NewHost(site);
         try
         {
             host.Host(0);
@@ -186,7 +194,7 @@ public class TcpTransportGreetTimeoutTests
     {
         using var _ = LengthenGreetTimeout(30);                // if it waited on the body read, it would stall
         var site = new Site();
-        var host = new TcpTransport(site);
+        var host = NewHost(site);
         try
         {
             host.Host(0);
@@ -219,7 +227,7 @@ public class TcpTransportGreetTimeoutTests
     {
         using var _ = ShortenGreetTimeout(300);
         var site = new Site();
-        var host = new TcpTransport(site);
+        var host = NewHost(site);
         try
         {
             host.Host(0);
@@ -241,4 +249,20 @@ public class TcpTransportGreetTimeoutTests
             host.Shutdown();
         }
     }
+}
+
+/// <summary>P605 — the greet-timeout suite under thread-per-peer (today's
+/// default) transport mode.</summary>
+[Collection("LiveNetwork")]
+public class TcpTransportGreetTimeoutThreadPerPeerTests : TcpTransportGreetTimeoutTestsBase
+{
+    public TcpTransportGreetTimeoutThreadPerPeerTests() : base(TransportMode.ThreadPerPeer) { }
+}
+
+/// <summary>P605 — the greet-timeout suite under pool (fixed send-worker
+/// pool) transport mode.</summary>
+[Collection("LiveNetwork")]
+public class TcpTransportGreetTimeoutPoolTests : TcpTransportGreetTimeoutTestsBase
+{
+    public TcpTransportGreetTimeoutPoolTests() : base(TransportMode.Pool) { }
 }

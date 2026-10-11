@@ -133,6 +133,12 @@ public sealed partial class Server
         // uninstrumented one). Default OFF = today's serial byte-for-byte path.
         ResolveBroadcastParallelBuild();
 
+        // P605 — resolve the transport's send-draining mode (thread-per-peer
+        // default, pool optional) from transport.mode config + the
+        // ALLEGIANCE_TRANSPORT_MODE env var, print it at boot, and stamp it
+        // into the profiler report header.
+        ResolveTransportMode();
+
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild
@@ -749,7 +755,7 @@ public sealed partial class Server
         _host.FlagsKillsComputedHook = OnFlagsKillsComputed;  // P303: wire the flags/kills recompute to GAME_STATE(155) + P178 GameOver
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
-        var transport = new TcpTransport(_host);      // site set; assign the back-ref next
+        var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers); // site set; assign the back-ref next
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
@@ -1120,6 +1126,59 @@ public sealed partial class Server
             ? $"broadcast.parallelBuild=true (maxPar={_broadcastMaxParallelism})"
             : "broadcast.parallelBuild=false");
     }
+
+    /// <summary>
+    /// P605 — resolve the transport's send-draining mode from config +
+    /// the <c>ALLEGIANCE_TRANSPORT_MODE</c> env var (env wins), plus the pool
+    /// worker count from <c>transport.poolWorkers</c> /
+    /// <c>ALLEGIANCE_TRANSPORT_POOL_WORKERS</c> (default about the core count).
+    /// Prints the active mode at boot (so every server run is labelled) and
+    /// stamps it into the profiler report header together with the broadcast
+    /// flag. Default thread-per-peer = today's behaviour, unchanged. An
+    /// unrecognized mode fails loudly (catches typos) rather than silently
+    /// picking a path the operator didn't ask for.
+    /// </summary>
+    private void ResolveTransportMode()
+    {
+        var tc = _config.Transport;
+
+        string modeStr = tc?.Mode is { Length: > 0 } m ? m : "thread-per-peer";
+        string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MODE");
+        if (!string.IsNullOrEmpty(env)) modeStr = env;
+
+        _transportMode = ParseTransportMode(modeStr);
+
+        int ncpu = Math.Max(1, Environment.ProcessorCount);
+        int workers = tc?.PoolWorkers is { } w && w > 0 ? w : ncpu;
+        string? envW = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_POOL_WORKERS");
+        if (!string.IsNullOrEmpty(envW) && int.TryParse(envW, out var ew) && ew > 0)
+            workers = ew;
+        _transportPoolWorkers = workers;
+
+        Console.WriteLine(_transportMode == TransportMode.Pool
+            ? $"[boot] transport mode = pool ({_transportPoolWorkers} workers)"
+            : "[boot] transport mode = thread-per-peer");
+
+        // Compose a single report-header label covering both switchable modes
+        // (P603 broadcast + P605 transport), so no measurement is ambiguous.
+        string bcast = _broadcastParallelBuild
+            ? $"broadcast.parallelBuild=true (maxPar={_broadcastMaxParallelism})"
+            : "broadcast.parallelBuild=false";
+        string trans = _transportMode == TransportMode.Pool
+            ? $"transport=pool ({_transportPoolWorkers} workers)"
+            : "transport=thread-per-peer";
+        TickProfiler.SetLabel($"{bcast}; {trans}");
+    }
+
+    private static TransportMode ParseTransportMode(string modeStr)
+        => modeStr.Trim().ToLowerInvariant() switch
+        {
+            "thread-per-peer" or "threadperpeer" or "thread" or "tpp" or "default" => TransportMode.ThreadPerPeer,
+            "pool" or "workerpool" => TransportMode.Pool,
+            _ => throw new InvalidDataException(
+                $"unknown transport.mode '{modeStr}' (expected 'thread-per-peer' or 'pool'); "
+                + "set it in server.json transport.mode or $ALLEGIANCE_TRANSPORT_MODE"),
+        };
 
     /// <summary>P600 — close the profiler's CSV handle at shutdown so the file is
     /// flushed and released cleanly (best-effort).</summary>

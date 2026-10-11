@@ -7,6 +7,23 @@ using System.Text;
 namespace Allegiance.Core.Transport;
 
 /// <summary>
+/// P605 — how the server drains its per-peer outbound send queues.
+/// <see cref="TransportMode.ThreadPerPeer"/> is today's behaviour: each peer's
+/// <see cref="PeerSender"/> owns a dedicated <c>peer-send</c> writer thread.
+/// <see cref="TransportMode.Pool"/> replaces those per-peer writer threads with
+/// a fixed pool of workers that drain hash-partitioned per-peer queues
+/// (round-robin, per-peer order preserved), so a 1000+-peer server does not
+/// need 1000+ dedicated send threads. Selected at server start via
+/// <c>transport.mode</c> config / <c>ALLEGIANCE_TRANSPORT_MODE</c>; default
+/// thread-per-peer (today's behaviour, unchanged).
+/// </summary>
+public enum TransportMode
+{
+    ThreadPerPeer = 0,
+    Pool = 1,
+}
+
+/// <summary>
 /// <see cref="ITransport"/> over a real TCP socket — a length-delimited framing
 /// layer on top of the byte stream. Connection ids are minted by the host,
 /// mirroring DirectPlay's id assignment (§3.1, §Recommendation-constraint-1 of
@@ -88,6 +105,16 @@ public sealed class TcpTransport : ITransport
     private const int SendTimeoutMs = 10_000;
     private const int SendBufferSize = 8 * 1024;
 
+    // P605 — pool mode: a much tighter per-write socket timeout than the 10 s
+    // thread-per-peer default. Each peer's whole-frame write runs on a SHARED
+    // worker, so a stalled peer must give up its blocking write almost
+    // immediately (and be dropped) rather than tying up the worker (and every
+    // neighbour behind it) for up to 10 s. Healthy writes are instantaneous, so
+    // this budget never bites a normal peer. Steady-state protection is the
+    // not-writable skip in <see cref="PeerSender.TryWriteHead"/>; this bounds
+    // only the rare write-already-started-then-stalled transient.
+    private const int PoolSendTimeoutMs = 250;
+
     // P312: the default greeting-read timeout on an accepted socket (10 s). A
     // real client sends its name in microseconds on connect, so this is very
     // generous for legitimate joins; its sole purpose is to make a connection
@@ -118,6 +145,17 @@ public sealed class TcpTransport : ITransport
     private readonly object _gate = new();
     private readonly Dictionary<ConnectionId, PeerSender> _peers = new();
     private readonly List<Thread> _threads = new();
+    // P605 — send-draining mode and (in pool mode) the fixed worker pool.
+    // The client half always uses a dedicated writer (a single connection gains
+    // nothing from the pool), so _pool is only ever populated on the host.
+    private readonly TransportMode _mode;
+    private readonly int _poolWorkerCount;
+    private SendWorkerPool? _pool;
+    // P605 test seam (InternalsVisibleTo): the mode a transport constructed
+    // without an explicit mode argument falls back to. Lets the transport test
+    // suite run the SAME body under both modes. Default thread-per-peer =
+    // today's behaviour.
+    internal static TransportMode DefaultMode { get; set; } = TransportMode.ThreadPerPeer;
     // Exactly-once guard so <c>OnPeerLeft</c> fires once even when both the peer's
     // read loop and the overflow/disconnect path (DropPeer) try to reap it.
     private readonly ConcurrentDictionary<ConnectionId, byte> _peerEnded = new();
@@ -136,7 +174,22 @@ public sealed class TcpTransport : ITransport
     private ushort _boundPort;
     private int _nextPeerId; // host id fountain (client self is 0); minted via Interlocked.Increment in HandlePeer
 
-    public TcpTransport(ITransportSite site) => _site = site;
+    public TcpTransport(ITransportSite site)
+        : this(site, DefaultMode, poolWorkers: 0) { }
+
+    /// <summary>
+    /// P605 — construct with an explicit send-draining mode and, for pool mode,
+    /// the number of pool workers (0 = the default, about the core count).
+    /// The server passes its resolved <c>transport.mode</c> here at boot.
+    /// </summary>
+    public TcpTransport(ITransportSite site, TransportMode mode, int poolWorkers = 0)
+    {
+        _site = site;
+        _mode = mode;
+        _poolWorkerCount = poolWorkers > 0
+            ? poolWorkers
+            : Math.Max(1, Environment.ProcessorCount);
+    }
 
     public bool IsConnected { get; private set; }
     public ConnectionId LocalId { get; private set; } = ConnectionId.Me;
@@ -151,6 +204,10 @@ public sealed class TcpTransport : ITransport
         _boundPort = (ushort)((IPEndPoint)_listener.LocalEndpoint).Port;
         _running = true;
         IsConnected = true;
+        // P605 — pool mode spins up the fixed worker pool up-front; peer
+        // senders then register with it instead of spawning per-peer threads.
+        if (_mode == TransportMode.Pool)
+            _pool = new SendWorkerPool(_poolWorkerCount);
         Spawn(ReceiveLoopStart, "accept");
     }
 
@@ -247,6 +304,10 @@ public sealed class TcpTransport : ITransport
         }
         foreach (var s in senders) s.Close();
         foreach (var th in threads) th.Join(500);
+        // P605 — stop the worker pool (joins its N threads) so no pooled send
+        // thread or queued buffer outlives the transport.
+        _pool?.Shutdown();
+        _pool = null;
     }
 
     // ---- host accept loop ----------------------------------------------
@@ -321,7 +382,7 @@ public sealed class TcpTransport : ITransport
             id = new ConnectionId(unchecked((uint)Interlocked.Increment(ref _nextPeerId)));
             var sender = new PeerSender(stream, client, () => DropPeer(id));
             lock (_gate) _peers[id] = sender;
-            sender.Start();
+            StartOrPool(id, sender);
             // Constraint: OnPeerJoined BEFORE the app sees any datagram. The
             // greeting above was consumed internally; OnReceive cannot fire
             // until this call has returned.
@@ -348,10 +409,22 @@ public sealed class TcpTransport : ITransport
                 // The read loop ending (remote closed / socket error) also reaps
                 // the peer; OnPeerLeft fires exactly once thanks to _peerEnded.
                 lock (_gate) _peers.Remove(peerId);
+                if (_mode == TransportMode.Pool) _pool?.Unassign(peerSender);
                 peerSender.Close();
                 RaisePeerLeftIfFirst(peerId);
             }
         }, $"peer-{peerId}");
+    }
+
+    /// <summary>P605 — start a peer's send path according to the transport's
+    /// mode: a dedicated <c>peer-send</c> writer thread (thread-per-peer,
+    /// today's behaviour) or registration with the fixed worker pool.</summary>
+    private void StartOrPool(ConnectionId id, PeerSender sender)
+    {
+        if (_mode == TransportMode.Pool && _pool is { } pool)
+            pool.Assign(id, sender);
+        else
+            sender.Start();
     }
 
     /// <summary>A peer's sender hit its overflow/timeout policy or its socket
@@ -364,7 +437,11 @@ public sealed class TcpTransport : ITransport
     {
         PeerSender? ps = null;
         lock (_gate) { if (_peers.TryGetValue(id, out ps)) _peers.Remove(id); }
-        ps?.Close();
+        if (ps != null)
+        {
+            if (_mode == TransportMode.Pool) _pool?.Unassign(ps);
+            ps.Close();
+        }
         RaisePeerLeftIfFirst(id);
     }
 
@@ -492,6 +569,16 @@ public sealed class TcpTransport : ITransport
     /// loop on a host) rather than growing with every connection.</summary>
     internal int TrackedThreadCount() { lock (_gate) return _threads.Count; }
 
+    /// <summary>P605 test seam (InternalsVisibleTo): the number of send-pool
+    /// worker threads this host owns (0 in thread-per-peer mode). Lets a test
+    /// assert the pool stays at about the configured worker count regardless
+    /// of how many peers connect.</summary>
+    internal int PoolWorkerThreadCount() => _pool?.WorkerCount ?? 0;
+
+    /// <summary>P605 test seam: true when this transport runs its sends through
+    /// the fixed worker pool rather than per-peer writer threads.</summary>
+    internal bool IsPoolMode => _mode == TransportMode.Pool;
+
     /// <summary>
     /// The per-peer outbound path: a bounded FIFO send queue drained by a
     /// dedicated background writer thread. The caller (<see cref="Send"/> on the
@@ -518,6 +605,10 @@ public sealed class TcpTransport : ITransport
     /// </summary>
     private sealed class PeerSender
     {
+        /// <summary>P605 — outcome of one worker attempt to drain this peer's
+        /// head frame. Drives the pool's pump decision.</summary>
+        public enum DrainResult { Idle, Wrote, Blocked, Dead }
+
         private readonly NetworkStream _stream;
         private readonly TcpClient _tcpClient;
         private readonly Action _onDead;
@@ -527,6 +618,13 @@ public sealed class TcpTransport : ITransport
         private long _queuedBytes;
         private DateTime? _overflowSinceUtc;
         private volatile bool _disconnected;
+        // P605 — pool mode: the owning worker's Wake callback, pulsed when a
+        // frame is enqueued so the pool never busy-waits. Null in
+        // thread-per-peer mode, where the dedicated writer is woken by Pulse.
+        private Action? _wake;
+        // P605 — pool mode: the worker this peer is partitioned to (used to
+        // unassign on leave). Null in thread-per-peer mode.
+        internal SendWorkerPool.Worker? OwnerWorker;
 
         public PeerSender(NetworkStream stream, TcpClient tcpClient, Action onDead)
         {
@@ -578,6 +676,83 @@ public sealed class TcpTransport : ITransport
             {
                 _cts.Cancel();
                 _onDead();
+            }
+            else
+            {
+                // P605 — wake the owning pool worker (pool mode) so it pumps
+                // this peer without polling. No-op in thread-per-peer mode
+                // (the dedicated writer was already woken by Pulse above).
+                _wake?.Invoke();
+            }
+        }
+
+        /// <summary>P605 — register this peer's queue with a pool worker: from
+        /// now on the worker drains it (via <see cref="TryWriteHead"/>) and is
+        /// woken on every enqueue. No dedicated writer thread is spawned. Also
+        /// tightens the socket write timeout so a stalled peer can't tie up the
+        /// shared worker for the thread-per-peer 10 s default.</summary>
+        public void AttachWorker(Action wake)
+        {
+            _wake = wake;
+            try { _tcpClient.SendTimeout = PoolSendTimeoutMs; } catch { }
+        }
+
+        /// <summary>P605 — detach from the pool worker (peer leaving). Further
+        /// enqueues no longer wake anyone; the worker has already forgotten us.</summary>
+        public void DetachWorker() => _wake = null;
+
+        /// <summary>P605 — non-blocking drain of this peer's head frame, called
+        /// by a pool worker. Returns <see cref=\"DrainResult.Blocked\"/> (and
+        /// sends nothing) when the peer's socket is not currently writable, so a
+        /// slow/stalled client is skipped and never blocks the worker — other
+        /// peers on the same worker keep flowing. Per-peer FIFO order is
+        /// preserved because this peer's queue has exactly one consumer (its
+        /// assigned worker) and only ever drains the head frame.</summary>
+        public DrainResult TryWriteHead()
+        {
+            byte[] frame;
+            lock (_sync)
+            {
+                if (_disconnected) return DrainResult.Dead;
+                if (_queue.First is null) return DrainResult.Idle;
+                if (!SocketReady()) return DrainResult.Blocked;   // skip — not writable now
+                var node = _queue.First!;
+                _queue.RemoveFirst();
+                frame = node.Value.Frame;
+                _queuedBytes -= frame.Length;
+                if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+            }
+            // Outside the lock, like WriterLoop: the only blocking socket write.
+            // SendTimeout on the socket bounds it even against a black-holed
+            // path; because we only write when SocketReady said writable, a
+            // healthy (consuming) peer never blocks here for long.
+            try
+            {
+                _stream.Write(frame, 0, frame.Length);
+                return DrainResult.Wrote;
+            }
+            catch (Exception)
+            {
+                // Socket error / SendTimeout / disposal -> this peer is dead.
+                if (!_disconnected) { _disconnected = true; _cts.Cancel(); _onDead(); }
+                return DrainResult.Dead;
+            }
+        }
+
+        /// <summary>P605 — can this peer's socket take a write right now without
+        /// blocking? Polls with a zero timeout (select-for-write) so a stalled
+        /// client — its OS send buffer full — is reported not-writable and the
+        /// worker simply skips it this pass. Poll never blocks.</summary>
+        private bool SocketReady()
+        {
+            try
+            {
+                var s = _tcpClient.Client;
+                return s is { Connected: true } && s.Poll(0, SelectMode.SelectWrite);
+            }
+            catch (Exception)
+            {
+                return false;   // socket closed / disposed -> not writable
             }
         }
 
@@ -636,6 +811,134 @@ public sealed class TcpTransport : ITransport
             lock (_sync) { _disconnected = true; Monitor.PulseAll(_sync); }
             CloseQuiet(_stream);
             try { _tcpClient.Dispose(); } catch { }
+        }
+    }
+
+    /// <summary>
+    /// P605 — the fixed pool of send workers that replaces per-peer
+    /// <c>peer-send</c> writer threads in pool mode. N workers each own a
+    /// hash-partitioned subset of the peers (stable hash of the connection id),
+    /// so every peer has exactly one consumer → per-peer send order is
+    /// preserved. Each worker drains its peers round-robin (visits every
+    /// assigned peer every pass, so a busy peer cannot starve its neighbours),
+    /// skipping any peer whose socket is not writable — a slow/stalled client
+    /// therefore never blocks the worker or the other peers on it. Enqueues
+    /// wake the owning worker, so an idle pool sleeps instead of polling.
+    /// </summary>
+    private sealed class SendWorkerPool
+    {
+        private readonly Worker[] _workers;
+
+        public SendWorkerPool(int workerCount)
+        {
+            if (workerCount < 1) workerCount = 1;
+            _workers = new Worker[workerCount];
+            for (int i = 0; i < workerCount; i++)
+            {
+                _workers[i] = new Worker();
+                _workers[i].Start();
+            }
+        }
+
+        /// <summary>Number of pool worker threads (test seam).</summary>
+        public int WorkerCount => _workers.Length;
+
+        /// <summary>Stable partition: a peer is always drained by the SAME
+        /// worker, so its queue never has two consumers (that would break
+        /// per-peer order).</summary>
+        private Worker WorkerFor(ConnectionId id)
+            => _workers[unchecked((int)((uint)id.Value % (uint)_workers.Length))];
+
+        public void Assign(ConnectionId id, PeerSender peer)
+        {
+            var w = WorkerFor(id);
+            peer.AttachWorker(w.Wake);
+            w.Assign(peer);
+        }
+
+        public void Unassign(PeerSender peer)
+        {
+            // The peer keeps its own reference to its owner; find it there.
+            peer.OwnerWorker?.Unassign(peer);
+            peer.DetachWorker();
+        }
+
+        public void Shutdown()
+        {
+            foreach (var w in _workers) w.Stop();
+        }
+
+        // internal so sibling-nested PeerSender can hold an OwnerWorker ref to
+        // it (a private nested class would be invisible outside SendWorkerPool).
+        internal sealed class Worker
+        {
+            private readonly LinkedList<PeerSender> _peers = new();
+            private readonly object _sync = new();
+            private Thread? _thread;
+            private volatile bool _running = true;
+
+            public void Assign(PeerSender peer)
+            {
+                peer.OwnerWorker = this;
+                lock (_sync) { _peers.AddLast(peer); Monitor.PulseAll(_sync); }
+            }
+
+            public void Unassign(PeerSender peer)
+            {
+                lock (_sync) { _peers.Remove(peer); }
+            }
+
+            public void Wake()
+            {
+                lock (_sync) { Monitor.PulseAll(_sync); }
+            }
+
+            public void Start()
+            {
+                _thread = new Thread(Loop) { IsBackground = true, Name = "peer-send-pool" };
+                _thread.Start();
+            }
+
+            public void Stop()
+            {
+                _running = false;
+                lock (_sync) { Monitor.PulseAll(_sync); }
+                _thread?.Join(500);
+            }
+
+            /// <summary>Fair drain: visit every assigned peer each pass. Any
+            /// progress (a frame written) keeps the pass pumping immediately;
+            /// only when NO peer on this worker could make progress does the
+            /// worker sleep — briefly if peers are merely blocked (not
+            /// writable), or until a Wake when truly idle. So one stalled peer
+            /// among many writable ones costs the others nothing.</summary>
+            private void Loop()
+            {
+                while (_running)
+                {
+                    PeerSender[] snapshot;
+                    lock (_sync)
+                    {
+                        if (_peers.Count == 0) { Monitor.Wait(_sync, 200); continue; }
+                        snapshot = _peers.ToArray();
+                    }
+
+                    bool progressed = false;
+                    bool anyBlocked = false;
+                    foreach (var p in snapshot)
+                    {
+                        if (!_running) return;
+                        var r = p.TryWriteHead();
+                        if (r == PeerSender.DrainResult.Wrote) progressed = true;
+                        else if (r == PeerSender.DrainResult.Blocked) anyBlocked = true;
+                        // Idle: nothing queued. Dead: peer dropped itself.
+                    }
+
+                    if (progressed) continue;                       // keep pumping
+                    if (anyBlocked) { Thread.Sleep(2); continue; }  // all blocked: re-poll shortly
+                    lock (_sync) { Monitor.Wait(_sync, 50); }       // idle: sleep until a Wake
+                }
+            }
         }
     }
 }

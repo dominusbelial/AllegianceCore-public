@@ -29,8 +29,17 @@ namespace Allegiance.Core.Tests.Transport;
 ///      never be frozen by one slow/unresponsive peer — review finding C1).
 /// </summary>
 [Collection("LiveNetwork")]
-public class TcpTransportSendDropSafetyTests
+public abstract class TcpTransportSendDropSafetyTestsBase
 {
+    // P605 — parameterize the whole transport suite over send-draining mode
+    // (thread-per-peer = today's behaviour, pool = fixed worker pool), so
+    // every regression below is proven on BOTH transports.
+    private readonly TransportMode _mode;
+    protected TcpTransportSendDropSafetyTestsBase(TransportMode mode) => _mode = mode;
+
+    private TcpTransport NewHost(Site site, bool tinyPool = false)
+        => new TcpTransport(site, _mode, poolWorkers: tinyPool ? 2 : 0);
+
     private static readonly FieldInfo PeersField =
         typeof(TcpTransport).GetField("_peers", BindingFlags.Instance | BindingFlags.NonPublic)
         ?? throw new Exception("TcpTransport._peers field not found — did the transport change?");
@@ -127,7 +136,7 @@ public class TcpTransportSendDropSafetyTests
     public void Host_send_to_a_reaped_peer_id_does_not_throw()
     {
         var site = new Site();
-        var host = new TcpTransport(site);
+        var host = NewHost(site);
         try
         {
             host.Host(0);
@@ -154,7 +163,7 @@ public class TcpTransportSendDropSafetyTests
     {
         using var shrink = ShortenOverflowTimer();
         var site = new Site();
-        var host = new TcpTransport(site);
+        var host = NewHost(site);
         try
         {
             host.Host(0);
@@ -206,7 +215,7 @@ public class TcpTransportSendDropSafetyTests
     public void Healthy_host_send_still_arrives_on_the_wire()
     {
         var site = new Site();
-        var host = new TcpTransport(site);
+        var host = NewHost(site);
         try
         {
             host.Host(0);
@@ -237,7 +246,7 @@ public class TcpTransportSendDropSafetyTests
     public void Multiple_sends_to_one_peer_preserve_fifo_order()
     {
         var site = new Site();
-        var host = new TcpTransport(site);
+        var host = NewHost(site);
         try
         {
             host.Host(0);
@@ -276,7 +285,7 @@ public class TcpTransportSendDropSafetyTests
     [Fact]
     public void Client_role_Send_before_join_still_throws()
     {
-        var t = new TcpTransport(new Site());   // neither Host nor Join
+        var t = new TcpTransport(new Site(), _mode);   // neither Host nor Join
         Assert.Throws<InvalidOperationException>(
             () => t.Send(ConnectionId.Server, new byte[] { 1 }, guaranteed: true));
     }
@@ -291,4 +300,20 @@ public class TcpTransportSendDropSafetyTests
             off += n;
         }
     }
+}
+
+/// <summary>P605 — the send/drop-safety suite under thread-per-peer (today's
+/// default) transport mode.</summary>
+[Collection("LiveNetwork")]
+public class TcpTransportSendDropSafetyThreadPerPeerTests : TcpTransportSendDropSafetyTestsBase
+{
+    public TcpTransportSendDropSafetyThreadPerPeerTests() : base(TransportMode.ThreadPerPeer) { }
+}
+
+/// <summary>P605 — the send/drop-safety suite under pool (fixed send-worker
+/// pool) transport mode.</summary>
+[Collection("LiveNetwork")]
+public class TcpTransportSendDropSafetyPoolTests : TcpTransportSendDropSafetyTestsBase
+{
+    public TcpTransportSendDropSafetyPoolTests() : base(TransportMode.Pool) { }
 }
