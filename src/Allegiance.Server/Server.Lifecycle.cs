@@ -126,6 +126,13 @@ public sealed partial class Server
                               + (profiler.CsvPath is { Length: > 0 } ? $" → CSV {profiler.CsvPath}" : "")
                               + "; overhead negligible when off ***");
 
+        // P603 — resolve the parallel per-peer broadcast build from config +
+        // the ALLEGIANCE_BROADCAST_PARALLEL_BUILD env var (env wins), clamp the
+        // degree of parallelism, and PRINT the active value so every server run
+        // is labelled (and a measurement run is never mistaken for an
+        // uninstrumented one). Default OFF = today's serial byte-for-byte path.
+        ResolveBroadcastParallelBuild();
+
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild
@@ -766,6 +773,11 @@ public sealed partial class Server
     {
         lock (_captureLock)
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
+        // P603 — internal test seam (InternalsVisibleTo): observe every outbound
+        // packet per recipient, in order, so the byte-identity harness can collect
+        // the exact per-peer payload stream both broadcast modes produce. Null in
+        // production, so this is a no-op check on the default path.
+        _testSendCapture?.Invoke(target, packet);
         _host.Send(target, packet);   // ServerHost.Send forwards as guaranteed: true
     }
 
@@ -1071,6 +1083,42 @@ public sealed partial class Server
             interval = iv;
 
         TickProfiler.Configure(enabled, interval, csv);
+    }
+
+    /// <summary>
+    /// P603 — resolve the parallel per-peer broadcast build from config +
+    /// the <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c> env var (env wins), clamp
+    /// the degree of parallelism to <c>[1, ProcessorCount-1]</c>, print the
+    /// active value at boot, and stamp it into the profiler's report header so
+    /// every measurement is labelled. Default OFF = today's serial broadcast
+    /// path, byte-for-byte. A missing/disabled config section keeps
+    /// <see cref="Server._broadcastParallelBuild"/> false (no behaviour change).
+    /// </summary>
+    private void ResolveBroadcastParallelBuild()
+    {
+        var bc = _config.Broadcast;
+        bool enabled = bc?.ParallelBuild ?? false;
+
+        string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_PARALLEL_BUILD");
+        if (!string.IsNullOrEmpty(env))
+            enabled = env is not ("0" or "false" or "off" or "");
+
+        _broadcastParallelBuild = enabled;
+
+        int ncpu = Math.Max(2, Environment.ProcessorCount);
+        int maxPar = bc?.MaxDegreeOfParallelism is { } m && m > 0 ? m : ncpu - 1;
+        _broadcastMaxParallelism = Math.Clamp(maxPar, 1, Math.Max(1, ncpu - 1));
+
+        Console.WriteLine(enabled
+            ? $"[boot] broadcast.parallelBuild = true — per-peer broadcast building runs in parallel (max {_broadcastMaxParallelism} workers); "
+              + "payloads are byte-identical to serial mode; see P603."
+            : "[boot] broadcast.parallelBuild = false — serial broadcast building (today's byte-for-byte behaviour)");
+
+        // Stamp the active value into the profiler report header so a parallel
+        // measurement run can never be mistaken for a serial one.
+        TickProfiler.SetLabel(enabled
+            ? $"broadcast.parallelBuild=true (maxPar={_broadcastMaxParallelism})"
+            : "broadcast.parallelBuild=false");
     }
 
     /// <summary>P600 — close the profiler's CSV handle at shutdown so the file is

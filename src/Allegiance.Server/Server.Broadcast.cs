@@ -475,6 +475,22 @@ public sealed partial class Server
     /// picked up promptly; the brief's \"within N km\" knob.</summary>
     private const float PodPickupRange = 5000f;
 
+    /// <summary>
+    /// P603 — dispatcher for the per-peer ship-state broadcast. OFF by default:
+    /// delegates straight to the original serial builder
+    /// (<see cref="BroadcastShipStatesSerial"/>, byte-for-byte today's behaviour).
+    /// When <c>broadcast.parallelBuild</c> is on, runs the snapshot / parallel
+    /// build / enqueue split (<see cref="BroadcastShipStatesParallel"/>), whose
+    /// per-peer payloads are byte-identical to serial mode.
+    /// </summary>
+    private void BroadcastShipStates(uint tickIndex)
+    {
+        if (_broadcastParallelBuild)
+            BroadcastShipStatesParallel(tickIndex);
+        else
+            BroadcastShipStatesSerial(tickIndex);
+    }
+
     /// <summary>For every peer ship that changed position since its last
     /// broadcast, send that peer a <c>FM_S_SINGLE_SHIP_UPDATE(78)</c> carrying the raw
     /// authoritative position/velocity/orientation, timestamped with the tick
@@ -488,8 +504,11 @@ public sealed partial class Server
     /// (recipient, subject) pair by a real <c>FM_S_EXPORT(26)</c> so the
     /// teammate ship object exists client-side at all, so a peer's client
     /// builds a full picture of its own side, matching the reference's
-    /// per-player status send (<c>fsmission.cpp:4303-4323</c>).</summary>
-    private void BroadcastShipStates(uint tickIndex)
+    /// per-player status send (<c>fsmission.cpp:4303-4323</c>).
+    /// <para><b>P603.</b> This is the SERIAL, byte-for-byte original (default
+    /// path). It is invoked unchanged whenever <c>broadcast.parallelBuild</c>
+    /// is off; the parallel twin is <see cref="BroadcastShipStatesParallel"/>.</para></summary>
+    private void BroadcastShipStatesSerial(uint tickIndex)
     {
         // One snapshot reused for both the own-ship walk and the (P58)
         // same-side teammate walk below, so neither mutates mid-iteration.
@@ -918,6 +937,413 @@ public sealed partial class Server
             }
         }
     }
+
+    /// <summary>
+    /// P603 — parallel twin of <see cref="BroadcastShipStatesSerial"/>, enabled
+    /// by <c>broadcast.parallelBuild</c>. Produces <b>byte-identical per-peer
+    /// payloads</b> to the serial builder while spreading the per-peer payload
+    /// construction across cores — the #1 lever P600 identified
+    /// (<c>broadcastShipStates</c> is ~58% of the tick at 241 players, ~O(N²)).
+    ///
+    /// <para><b>Phases (all within one tick, sim thread waits):</b></para>
+    /// <list type="bullet">
+    /// <item><b>(a) Serial snapshot phase (sim thread):</b> freeze the per-tick
+    /// inputs the builders read into read-only shared structures: the <c>peers</c>
+    /// array, the per-side <c>sameSide</c> grouping, the per-(mission,side) NPC
+    /// grouping <c>sameSideNpcBySide</c>, a per-ship prebuilt <c>positionEncode</c>
+    /// (the byte-identical SingleShipUpdate every same-side recipient reuses),
+    /// and the loadout-snapshot cache prewarmed for every ship the build can
+    /// touch. The per-peer latch dictionaries are NOT copied — they are read
+    /// concurrently (multiple readers of a Dictionary are safe; no worker writes
+    /// them), and the writes each worker would have made are recorded as
+    /// per-peer <b>effects</b> applied serially in phase (c).</item>
+    /// <item><b>(b) Parallel build phase:</b> <c>Parallel.For</c> over peers (bounded
+    /// degree <see cref="Server._broadcastMaxParallelism"/>); each worker builds its
+    /// peer's ordered packet list from the snapshot + read-only latches only. No
+    /// worker touches mutable world state, writes a shared collection, or sends —
+    /// it only appends to its own per-peer result (packets + effects + buffered
+    /// log lines). Within-peer Add-then-Contains latch decisions (e.g.
+    /// teamexport before playerinfo/status) use a per-worker local overlay so the
+    /// peer's own writes are visible to itself exactly as in serial.</item>
+    /// <item><b>(c) Serial apply phase (sim thread):</b> walk peers in
+    /// <c>_peerShips</c> order, enqueue each peer's packets via
+    /// <see cref="SendPeer"/> in the exact serial order (so per-peer wire order
+    /// — and the global capture stream — are unchanged), apply the peer's latch /
+    /// <c>_peerShips</c> effects, and emit its buffered logs.</item>
+    /// </list>
+    ///
+    /// <para><b>Byte-identity argument.</b> Every decision in the serial builder
+    /// reads (i) the frozen <c>peers</c> snapshot, (ii) per-peer / per-(peer,mate) /
+    /// per-(peer,npc) latch keys that are <b>disjoint across recipients</b>, and
+    /// (iii) read-only world state (quiescent during the broadcast). Because the
+    /// latch keys are per-recipient, no peer's writes influence another peer's
+    /// decisions within the tick — so building peers in parallel and applying each
+    /// peer's effects serially afterwards yields the exact same decisions, packet
+    /// counts, packet order and final latch state as serial. The byte-identity
+    /// test harness (see docs/reports/P603…) exercises this over seeded worlds.
+    /// The shared per-ship caches (<c>positionEncode</c>, loadout snapshot) are
+    /// pure functions of the frozen world, so precomputing them yields identical
+    /// bytes.</para>
+    /// </summary>
+    private void BroadcastShipStatesParallel(uint tickIndex)
+    {
+        // ── (a) SERIAL SNAPSHOT PHASE ────────────────────────────────────────
+        var peers = _peerShips.ToArray();
+        if (peers.Length == 0) return;
+
+        // Per-side same-side grouping, in `peers` order (mirror of serial :502-510).
+        var sameSide = new Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>>();
+        foreach (var gkv in peers)
+        {
+            if (gkv.Value.Ship.SideId is { } s)
+            {
+                if (!sameSide.TryGetValue(s, out var list)) { list = new(); sameSide[s] = list; }
+                list.Add(gkv);
+            }
+        }
+
+        // Per-(mission, side) same-side NPC grouping, built once (mirror of serial
+        // :527-538). Shared read-only across workers.
+        Dictionary<(Mission, short), List<Ship>>? sameSideNpcBySide = null;
+        foreach (var m in _missions)
+        {
+            if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
+            foreach (var sec in m.Sectors)
+                foreach (var mdl in sec.Models)
+                    if (mdl is Ship npc && npc.IsNpc && npc.SideId is { } npcSide)
+                    {
+                        sameSideNpcBySide ??= new();
+                        if (!sameSideNpcBySide.TryGetValue((m, npcSide), out var list)) { list = new(); sameSideNpcBySide[(m, npcSide)] = list; }
+                        list.Add(npc);
+                    }
+        }
+
+        // Prewarm the loadout-snapshot cache for every ship the build can touch
+        // (all peer ships + all same-side NPCs), so the parallel workers only ever
+        // READ it (no shared write in the build phase).
+        foreach (var kv in peers) EnsureLoadoutSnapshot(kv.Value.Ship);
+        if (sameSideNpcBySide is not null)
+            foreach (var lst in sameSideNpcBySide.Values)
+                foreach (var npc in lst) EnsureLoadoutSnapshot(npc);
+
+        // Prebuild the shared per-ship position encode (mirror of the lazy cache
+        // in serial :812-823 — byte-identical for every same-side recipient).
+        var positionEncode = new Dictionary<short, byte[]>(peers.Length);
+        foreach (var kv in peers)
+        {
+            var ship = kv.Value.Ship;
+            positionEncode[ship.Id] = new SingleShipUpdate
+            {
+                OtTarget = 0,                                // OT_ship
+                OidTarget = ship.Id,
+                Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
+                BIsRipcording = false,
+            }.Encode();
+        }
+
+        // ── (b) PARALLEL BUILD PHASE ─────────────────────────────────────────
+        var results = new BroadcastPeerBuild[peers.Length];
+        var po = new ParallelOptions { MaxDegreeOfParallelism = _broadcastMaxParallelism };
+        Parallel.For(0, peers.Length, po, i =>
+            results[i] = BuildPeerShipStates(peers, sameSide, sameSideNpcBySide, positionEncode, tickIndex, i));
+
+        // ── (c) SERIAL APPLY PHASE (enqueue + effects + logs, in peer order) ──
+        for (int i = 0; i < results.Length; i++)
+        {
+            var conn = peers[i].Key;
+            var r = results[i];
+            foreach (var pkt in r.Packets) SendPeer(conn, pkt);
+            foreach (var line in r.Logs) Console.WriteLine(line);
+            ApplyBroadcastPeerEffects(conn, r);
+        }
+    }
+
+    /// <summary>
+    /// P603 — per-peer result of the parallel build: the ordered packet list for
+    /// this peer, its buffered (unconditional) log lines, and the effect deltas
+    /// to apply serially (the latches / <c>_peerShips</c> write the serial builder
+    /// performs inline). Each peer is built by exactly one worker, so these are
+    /// per-peer-disjoint and safe to apply in <c>_peerShips</c> order afterwards.
+    /// </summary>
+    private sealed class BroadcastPeerBuild
+    {
+        public List<byte[]> Packets = new();          // ordered, ready to enqueue
+        public List<string> Logs = new();             // unconditional log lines, ordered
+        public LiveShip? NewLiveShip;                 // own-ship update, or null
+        public bool SetStatus; public short StatusSector; public long StatusTick;
+        public bool SetClusterInfo; public long ClusterInfoTick;
+        public readonly HashSet<short> ExportSent = new();       // -> _teammateExportSent
+        public readonly HashSet<short> PlayerInfoSent = new();   // -> _teammatePlayerInfoSent
+        public readonly HashSet<short> PositionSent = new();     // -> _teammatePositionSent
+        public readonly HashSet<short> NpcExportSent = new();    // -> _sameSideNpcExportSent
+        public readonly Dictionary<short, long> TeammateStatusTick = new(); // -> _lastTeammateStatusTick
+        public readonly Dictionary<short, long> LoadoutVersionSet = new(); // -> _teammateLoadoutVersionSent
+        public readonly Dictionary<short, long> NpcStatusTick = new();     // -> _lastSameSideNpcStatusTick
+    }
+
+    /// <summary>
+    /// P603 — apply one peer's build effects serially: enqueue-independent latch
+    /// writes and the <c>_peerShips</c> update, exactly the final shared state the
+    /// serial builder leaves. Keyed by this peer (ConnectionId), so no effect here
+    /// collides with any other peer's.
+    /// </summary>
+    private void ApplyBroadcastPeerEffects(ConnectionId conn, BroadcastPeerBuild r)
+    {
+        if (r.NewLiveShip is { } nl) _peerShips[conn] = nl;
+        if (r.SetStatus) { _lastStatusSector[conn] = r.StatusSector; _lastStatusTick[conn] = r.StatusTick; }
+        if (r.SetClusterInfo) _lastClusterInfoTick[conn] = r.ClusterInfoTick;
+        foreach (var mate in r.ExportSent) _teammateExportSent.Add((conn, mate));
+        foreach (var mate in r.PlayerInfoSent) _teammatePlayerInfoSent.Add((conn, mate));
+        foreach (var mate in r.PositionSent) _teammatePositionSent.Add((conn, mate));
+        foreach (var npc in r.NpcExportSent) _sameSideNpcExportSent.Add((conn, npc));
+        foreach (var (mate, t) in r.TeammateStatusTick) _lastTeammateStatusTick[(conn, mate)] = t;
+        foreach (var (mate, v) in r.LoadoutVersionSet) _teammateLoadoutVersionSent[(conn, mate)] = v;
+        foreach (var (npc, t) in r.NpcStatusTick) _lastSameSideNpcStatusTick[(conn, npc)] = t;
+    }
+
+    /// <summary>
+    /// P603 — build ONE peer's ship-state broadcast from the frozen snapshot +
+    /// read-only shared latches, returning the ordered packets + effects. Runs on
+    /// a pool worker (see <see cref="BroadcastShipStatesParallel"/>); it must not
+    /// write any shared collection, send, or mutate world state. Local overlay
+    /// HashSets make a peer's own Add-then-Contains latch decisions visible to
+    /// itself exactly as serial's inline writes are.
+    /// </summary>
+    private BroadcastPeerBuild BuildPeerShipStates(
+        KeyValuePair<ConnectionId, LiveShip>[] peers,
+        Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>> sameSide,
+        Dictionary<(Mission, short), List<Ship>>? sameSideNpcBySide,
+        Dictionary<short, byte[]> positionEncode,
+        uint tickIndex, int idx)
+    {
+        var kv = peers[idx];
+        var conn = kv.Key;
+        var live = kv.Value;
+        var ship = live.Ship;
+        var r = new BroadcastPeerBuild();
+
+        // Local overlays: a peer's own adds, consulted alongside the shared sets
+        // so this peer sees its writes the way serial's inline latches do.
+        var localExportSent = new HashSet<short>();
+        var localPlayerInfoSent = new HashSet<short>();
+        var localPositionSent = new HashSet<short>();
+
+        var fwd = ship.Orientation.GetForward();
+        var up = ship.Orientation.GetUp();
+        bool miningNow = ship.MiningAsteroid is not null;
+        if (!live.PositionEverBroadcast
+            || (ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon
+            || (fwd - live.LastBroadcastForward).Length() >= DirtyEpsilon
+            || (up - live.LastBroadcastUp).Length() >= DirtyEpsilon
+            || miningNow != live.LastBroadcastMining
+            || MathF.Abs(ship.ShieldFraction - live.LastBroadcastShieldFraction) >= ShieldFractionEpsilon)
+        {
+            var msg = new SingleShipUpdate
+            {
+                OtTarget = 0,
+                OidTarget = ship.Id,
+                Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
+                BIsRipcording = false,
+            };
+            r.Packets.Add(FedPacket.Pack(new[] { msg.Encode() }));
+            r.NewLiveShip = live with
+            {
+                LastBroadcastPos = ship.Position,
+                LastBroadcastForward = fwd,
+                LastBroadcastUp = up,
+                LastBroadcastShieldFraction = ship.ShieldFraction,
+                LastBroadcastMining = miningNow,
+                PositionEverBroadcast = true,
+            };
+        }
+
+        short sentSector = _lastStatusSector.TryGetValue(conn, out var s0) ? s0 : (short)-2;
+        long lastTick = _lastStatusTick.TryGetValue(conn, out var t0) ? t0 : -1;
+        bool sectorChanged = live.Sector.Id != sentSector;
+        bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
+        if (sectorChanged || refreshDue)
+        {
+            r.Packets.Add(FedPacket.Pack(new[] { MakeOwnShipStatus(ship.Id, live).Encode() }));
+            r.Logs.Add($"[shipstatus] peer {conn} " +
+                (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
+            r.SetStatus = true; r.StatusSector = live.Sector.Id; r.StatusTick = tickIndex;
+        }
+
+        long lastClusterInfoTick = _lastClusterInfoTick.TryGetValue(conn, out var ci0) ? ci0 : -1;
+        if (lastClusterInfoTick < 0 || (long)tickIndex - lastClusterInfoTick >= ClusterInfoRefreshTicks)
+        {
+            if (_clusterInfoBytes is { } bytes)
+            {
+                r.Packets.Add(FedPacket.Pack(new[] { bytes }));
+                r.SetClusterInfo = true; r.ClusterInfoTick = tickIndex;
+            }
+        }
+
+        if (live.Ship.SideId is { } recipientSide && sameSide.TryGetValue(recipientSide, out var mates))
+        {
+            List<byte[]>? posBatch = null;
+            foreach (var tv in mates)
+            {
+                if (ReferenceEquals(tv.Value.Ship, ship)) continue;   // own ship, handled above
+                short teammateId = tv.Value.Ship.Id;
+
+                // P62 teamexport (one-shot per (recipient, mate))
+                if (!_teammateExportSent.Contains((conn, teammateId))
+                    && !localExportSent.Contains(teammateId)
+                    && _peerNames.TryGetValue(tv.Key, out var peerName))
+                {
+                    var initialParts = ReadLoadoutSnapshotOrCompute(tv.Value.Ship);
+                    var teamExport = new ExportShip
+                    {
+                        ObjectType = ExportShip.OtShip,
+                        CharacterName = peerName,
+                        HullId = tv.Value.Ship.HullType.HullId,
+                        ShipId = teammateId,
+                        SideId = recipientSide,
+                        PilotType = ExportShip.PilotTypePlayer,
+                        Parts = initialParts,
+                    };
+                    r.Packets.Add(FedPacket.Pack(new[] { teamExport.Encode() }));
+                    r.Logs.Add($"[teamexport] peer {conn} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");
+                    localExportSent.Add(teammateId);
+                    r.ExportSent.Add(teammateId);
+                    r.LoadoutVersionSet[teammateId] = tv.Value.Ship.LoadoutVersion;
+                }
+
+                // P63 teamplayerinfo (immediately after its pair's export)
+                if ((_teammateExportSent.Contains((conn, teammateId)) || localExportSent.Contains(teammateId))
+                    && !_teammatePlayerInfoSent.Contains((conn, teammateId))
+                    && !localPlayerInfoSent.Contains(teammateId)
+                    && _peerNames.TryGetValue(tv.Key, out var teammateName))
+                {
+                    var teamInfo = new PlayerInfo
+                    {
+                        CharacterName = teammateName,
+                        Money = 0,
+                        ISide = recipientSide,
+                        ShipId = teammateId,
+                        PilotType = PlayerInfo.PilotTypePlayer,
+                    };
+                    r.Packets.Add(FedPacket.Pack(new[] { teamInfo.Encode() }));
+                    r.Logs.Add($"[teamplayerinfo] peer {conn} <- ship {teammateId} '{teammateName}' side {recipientSide}");
+                    localPlayerInfoSent.Add(teammateId);
+                    r.PlayerInfoSent.Add(teammateId);
+                }
+
+                if (_teammateExportSent.Contains((conn, teammateId)) || localExportSent.Contains(teammateId))
+                {
+                    long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((conn, teammateId), out var tt0) ? tt0 : -1;
+                    if (lastTeammateTick < 0 || (long)tickIndex - lastTeammateTick >= TeammateStatusRefreshTicks)
+                    {
+                        r.Packets.Add(FedPacket.Pack(new[] { MakeOwnShipStatus(teammateId, tv.Value).Encode() }));
+                        r.Logs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
+                            (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
+                        r.TeammateStatusTick[teammateId] = tickIndex;
+                    }
+
+                    bool firstPos = !_teammatePositionSent.Contains((conn, teammateId)) && !localPositionSent.Contains(teammateId);
+                    if (firstPos
+                        || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
+                        || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
+                        || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
+                    {
+                        // Prebuilt shared position encode (byte-identical per subject).
+                        (posBatch ??= new()).Add(positionEncode[teammateId]);
+                        localPositionSent.Add(teammateId);
+                        r.PositionSent.Add(teammateId);
+                    }
+
+                    long currentVersion = tv.Value.Ship.LoadoutVersion;
+                    // P603 — the teamexport above records this mate's loadout
+                    // version as a PENDING effect (r.LoadoutVersionSet), not yet in
+                    // the shared dict. Mirror serial's immediate-write semantics by
+                    // consulting the pending effect too, so a just-exported mate is
+                    // NOT re-exported as a "loadout changed" (currentVersion != -1).
+                    long sentVersion = _teammateLoadoutVersionSent.TryGetValue((conn, teammateId), out var sv)
+                        ? sv
+                        : (r.LoadoutVersionSet.TryGetValue(teammateId, out var pv) ? pv : -1);
+                    if (currentVersion != sentVersion &&
+                        _peerNames.TryGetValue(tv.Key, out var currentPeerName))
+                    {
+                        var currentParts = ReadLoadoutSnapshotOrCompute(tv.Value.Ship);
+                        var loadoutExport = new ExportShip
+                        {
+                            ObjectType = ExportShip.OtShip,
+                            CharacterName = currentPeerName,
+                            HullId = tv.Value.Ship.HullType.HullId,
+                            ShipId = teammateId,
+                            SideId = recipientSide,
+                            PilotType = ExportShip.PilotTypePlayer,
+                            Parts = currentParts,
+                        };
+                        r.Packets.Add(FedPacket.Pack(new[] { loadoutExport.Encode() }));
+                        r.Logs.Add($"[teamloadout] peer {conn} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");
+                        r.LoadoutVersionSet[teammateId] = currentVersion;
+                    }
+                }
+            }
+            if (posBatch is { Count: > 0 })
+            {
+                if (posBatch.Count <= FedPacket.MaxMessagesPerPacket)
+                    r.Packets.Add(FedPacket.Pack(posBatch));
+                else
+                    foreach (var chunk in posBatch.Chunk(FedPacket.MaxMessagesPerPacket))
+                        r.Packets.Add(FedPacket.Pack(chunk));
+            }
+
+            // P366 same-side NPC identity + status
+            if (ship.Mission is { } npcMission && recipientSide is { } npcSide &&
+                sameSideNpcBySide is not null && sameSideNpcBySide.TryGetValue((npcMission, npcSide), out var npcs))
+            {
+                // Local overlay mirroring serial's `_sameSideNpcExportSent.Add()`
+                // (which dedups within a peer's own walk via its bool return): in
+                // parallel the shared set can't be written mid-walk, so this peer's
+                // own adds must be visible to itself, exactly as in serial.
+                var localNpcExportSent = new HashSet<short>();
+                foreach (var npc in npcs)
+                {
+                    if (!_sameSideNpcExportSent.Contains((conn, npc.Id)) && !localNpcExportSent.Contains(npc.Id))
+                    {
+                        var npcExport = new ExportShip
+                        {
+                            ObjectType = ExportShip.OtShip,
+                            CharacterName = PeerName(npc) ?? $"Ship {npc.Id}",
+                            HullId = npc.HullType.HullId,
+                            ShipId = npc.Id,
+                            SideId = npcSide,
+                            PilotType = ExportShip.PilotTypePlayer,
+                            Parts = ReadLoadoutSnapshotOrCompute(npc),
+                        };
+                        r.Packets.Add(FedPacket.Pack(new[] { npcExport.Encode() }));
+                        r.Logs.Add($"[samestidenpc] peer {conn} <- NPC ship {npc.Id} side {npcSide}");
+                        localNpcExportSent.Add(npc.Id);
+                        r.NpcExportSent.Add(npc.Id);
+                    }
+
+                    long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((conn, npc.Id), out var nt0) ? nt0 : -1;
+                    if (lastNpcTick < 0 || (long)tickIndex - lastNpcTick >= TeammateStatusRefreshTicks)
+                    {
+                        r.Packets.Add(FedPacket.Pack(new[] { MakeNpcShipStatus(npc).Encode() }));
+                        r.Logs.Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
+                            (npc.StationId is not null ? $" DOCKED@{npc.StationId}" : " flying"));
+                        r.NpcStatusTick[npc.Id] = tickIndex;
+                    }
+                }
+            }
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// P603 — read-only loadout snapshot for the parallel build: returns the
+    /// prewarmed cached snapshot only, and never writes the shared cache. The
+    /// caller prewarms the cache for every ship the build can touch, so a miss is
+    /// a defensive fallback that computes locally (safe, just not cached).
+    /// </summary>
+    private IReadOnlyList<PartData> ReadLoadoutSnapshotOrCompute(Ship ship)
+        => _teammateLoadoutCache.TryGetValue(ship.Id, out var c) && c.Version == ship.LoadoutVersion
+            ? c.Snapshot
+            : SnapshotParts(ship);
 
     /// <summary>Build a peer's own-ship SHIP_STATUS(90) from its live record:
     /// docked (carrying the real StationId + State=c_ssDocked) when the ship is
@@ -1836,10 +2262,52 @@ public sealed partial class Server
     private void BroadcastShipsUpdate(uint tickIndex)
     {
         var peers = _peerShips.ToArray();
+
+        // P603 — default (broadcast.parallelBuild off): the original serial
+        // per-peer loop, byte-for-byte.
+        if (!_broadcastParallelBuild)
+        {
+            foreach (var kv in peers) BroadcastShipsUpdatePeer(kv, tickIndex);
+            return;
+        }
+
+        // P603 — parallel across SECTORS, not across peers. The per-peer body
+        // mutates each candidate ship's `Deviation` staleness accumulator, and a
+        // later peer IN THE SAME SECTOR reads that mutated value back this same
+        // tick (it orders its own serve/bump by Deviation). That is cross-peer,
+        // order-dependent shared mutable state — not safely parallelisable across
+        // peers while staying byte-identical. Peers in DIFFERENT sectors touch
+        // disjoint candidate lists / Deviation sets, so they are fully independent:
+        // partition peers by sector (preserving `_peerShips` order within each)
+        // and run each sector's peers serially on one worker. For the single-
+        // sector (concentrated-fight) case this yields no speedup — documented in
+        // docs/reports/P603_PARALLEL_BROADCAST_BUILD.md; broadcastShipStates (the
+        // dominant O(N²) bucket) is the per-peer-parallel one.
+        var bySector = new Dictionary<Sector, List<KeyValuePair<ConnectionId, LiveShip>>>();
         foreach (var kv in peers)
         {
-            var self = kv.Value.Ship;
-            var sector = kv.Value.Sector;
+            if (!bySector.TryGetValue(kv.Value.Sector, out var list)) { list = new(); bySector[kv.Value.Sector] = list; }
+            list.Add(kv);
+        }
+        var po = new ParallelOptions { MaxDegreeOfParallelism = _broadcastMaxParallelism };
+        Parallel.ForEach(bySector, po, grp =>
+        {
+            foreach (var kv in grp.Value) BroadcastShipsUpdatePeer(kv, tickIndex);
+        });
+    }
+
+    /// <summary>
+    /// P603 — build and send ONE peer's <c>HEAVY_SHIPS_UPDATE(176)</c> (the body of
+    /// the former inline loop). Runs in serial <c>_peerShips</c> order in default
+    /// mode; in parallel mode it runs serially within each sector (one worker per
+    /// sector) so the per-ship <c>Deviation</c> staleness accumulator — cross-peer,
+    /// order-dependent shared state read back by same-sector peers this tick — is
+    /// preserved exactly.
+    /// </summary>
+    private void BroadcastShipsUpdatePeer(KeyValuePair<ConnectionId, LiveShip> kv, uint tickIndex)
+    {
+        var self = kv.Value.Ship;
+        var sector = kv.Value.Sector;
 
             // P270 — data-level cloak invisibility: when a ship is actually
             // CLOAKED, an enemy peer that cannot detect it (the P269 cross-side
@@ -2012,7 +2480,6 @@ public sealed partial class Server
             ConsoleLog.Write($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
                               $"target={(targetShip?.Id.ToString() ?? "none")} " +
                               $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count} [PER PLAYER]");
-        }
     }
 
     /// <summary>

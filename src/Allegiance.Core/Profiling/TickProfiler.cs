@@ -63,6 +63,14 @@ public sealed class TickProfiler
     /// boot banner).</summary>
     public string? CsvPath => _csvPath;
 
+    /// <summary>
+    /// P603 — an optional short label (e.g. the active broadcast build mode)
+    /// stamped into every report header so a measurement run is identifiable.
+    /// Set via <see cref="SetLabel"/>; null (the default) = no label, so the
+    /// pre-P603 report line is unchanged when nothing labels the run.
+    /// </summary>
+    private static string? _label;
+
     // Per-tick accumulator: bucket name -> elapsed ms accumulated THIS tick.
     private readonly Dictionary<string, double> _cur = new();
 
@@ -108,6 +116,13 @@ public sealed class TickProfiler
 
     /// <summary>Flush and release the CSV handle (best-effort; called at shutdown).</summary>
     public static void Shutdown() => Configure(false, 5, null);
+
+    /// <summary>P603 — set the short label stamped into every report header
+    /// (e.g. the active broadcast build mode). Null clears it.</summary>
+    public static void SetLabel(string? label)
+    {
+        lock (StaticGate) _label = label;
+    }
 
     // Guards the Instance pointer swap in Configure/Shutdown (only those two
     // mutate Instance; readers read the static field, which is an atomic reference).
@@ -214,8 +229,11 @@ public sealed class TickProfiler
             _windowStartUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             double totSum = _tickWallList.Sum();
+            // P603 — stamp the optional label (e.g. broadcast build mode) into the
+            // report header so a measurement run is identifiable at a glance.
+            string label = _label is { Length: > 0 } ? $" [{_label}]" : "";
             Console.WriteLine(
-                $"[tickprof] window {seconds:0.##}s ticks={_ticksInWindow} " +
+                $"[tickprof] window {seconds:0.##}s ticks={_ticksInWindow}{label} " +
                 $"tick-wall mean={MeanOf(_tickWallList):0.00}ms p95={P95Of(_tickWallList):0.00}ms max={_tickWallMax:0.00}ms");
 
             foreach (var bucket in _hist.Keys.OrderByDescending(b => MeanOf(_hist[b])))

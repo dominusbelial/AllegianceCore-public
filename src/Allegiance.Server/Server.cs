@@ -100,6 +100,33 @@ public sealed partial class Server : IDisposable
     private int _nextShipId = 8096;
 
     /// <summary>
+    /// P603 — whether the per-peer broadcast builders run in parallel
+    /// (<c>broadcast.parallelBuild</c> config, overridable by the
+    /// <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c> env var; env wins). Resolved
+    /// once at boot; the value is printed at boot and stamped into the profiler
+    /// report header so every measurement is labelled. When false (the default)
+    /// the broadcast code path is byte-for-byte today's serial behaviour.
+    /// </summary>
+    internal bool _broadcastParallelBuild;
+
+    /// <summary>
+    /// P603 — the bounded degree of parallelism for the parallel broadcast build
+    /// phase (<c>Parallel.ForEach</c> <c>MaxDegreeOfParallelism</c>), resolved at
+    /// boot from <c>broadcast.maxDegreeOfParallelism</c> (clamped to
+    /// <c>[1, ProcessorCount-1]</c>) or the default <c>ProcessorCount - 1</c>.
+    /// Diagnostic only — it never changes which bytes are produced.
+    /// </summary>
+    internal int _broadcastMaxParallelism = 1;
+
+    /// <summary>
+    /// P603 — internal test seam (InternalsVisibleTo): when set, invoked from
+    /// <see cref="SendPeer"/> for every outbound packet (recipient, payload, in
+    /// order) so the byte-identity harness can collect the exact per-peer payload
+    /// stream both broadcast modes produce. Null in production (no behaviour).
+    /// </summary>
+    internal Action<ConnectionId, byte[]>? _testSendCapture;
+
+    /// <summary>
     /// P507 — per-peer state for the native own-ship model: the current cookie
     /// the client must echo in <c>FM_C_SHIP_UPDATE(24)</c> and the rolling
     /// acceptance counters the every-~10s summary log reports. Keyed by the

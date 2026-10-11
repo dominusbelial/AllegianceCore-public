@@ -337,6 +337,37 @@ public sealed class ProfilerConfig
 }
 
 /// <summary>
+/// P603 — the parallel per-peer broadcast-build configuration (top-level
+/// <c>broadcast</c> section). OFF by default (an absent section, or
+/// <c>parallelBuild:false</c>, preserves today's serial, byte-for-byte
+/// behaviour). When on, <c>BroadcastShipStates</c> splits into a serial
+/// snapshot phase + a parallel per-peer build phase + a serial enqueue phase,
+/// and <c>BroadcastShipsUpdate</c> parallelises across sectors (within-sector
+/// peer order — and the per-ship Deviation staleness accumulator — stay
+/// serial). See docs/reports/P603_PARALLEL_BROADCAST_BUILD.md.
+/// </summary>
+public sealed class BroadcastConfig
+{
+    /// <summary>
+    /// Master switch. <c>false</c> (the default, and the meaning of an absent
+    /// <c>broadcast</c> section) leaves both broadcast builders running exactly
+    /// as they did before P603 — the same serial code path, byte-for-byte.
+    /// <c>true</c> enables the parallel per-peer build path (gated per build).
+    /// </summary>
+    public bool ParallelBuild { get; set; }
+
+    /// <summary>
+    /// P603 — cap on the parallel build phase's degree of parallelism
+    /// (<c>Parallel.ForEach</c> <c>MaxDegreeOfParallelism</c>). When set, it is
+    /// clamped to <c>[1, ProcessorCount-1]</c>; when null, the default
+    /// <c>ProcessorCount - 1</c> is used (leaving one core free for the
+    /// transport / OS, per the task's bounded-degree guidance). Diagnostic only —
+    /// it never changes which bytes are produced, only how fast.
+    /// </summary>
+    public int? MaxDegreeOfParallelism { get; set; }
+}
+
+/// <summary>
 /// Top-level server configuration. Shape is decided (see task): a JSON file at
 /// <c>--config</c> (default <c>server.json</c>), with scalar fields overridable
 /// on the command line (<c>--port</c>, <c>--artpath</c>, <c>--staticcore</c>,
@@ -415,6 +446,13 @@ public sealed class ServerConfig
     /// profiler is OFF, with no hot-path overhead. See <see cref="ProfilerConfig"/>.
     /// </summary>
     public ProfilerConfig? Profiler { get; init; }
+
+    /// <summary>
+    /// P603 — the parallel per-peer broadcast-build settings. Null/absent (the
+    /// default) = OFF: both broadcast builders keep today's serial, byte-for-byte
+    /// behaviour. See <see cref="BroadcastConfig"/>.
+    /// </summary>
+    public BroadcastConfig? Broadcast { get; init; }
 }
 
 /// <summary>Static helpers for reading <see cref="ServerConfig"/> from JSON.</summary>
