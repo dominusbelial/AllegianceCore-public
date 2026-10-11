@@ -298,6 +298,17 @@ public sealed class AdminCheatsConfig
     /// A privileged player may issue the <c>relocate</c> cheat on their OWN
     /// ship only (see the token docs) — never on an arbitrary ship.</summary>
     public List<string> AllowNames { get; set; } = [];
+
+    /// <summary>P602 — optional shared secret. When set (non-empty), an
+    /// allow-listed connection is trusted ONLY if its cheat line presents this
+    /// secret as the leading whitespace-delimited token
+    /// (<c>"&lt;secret&gt; relocate …"</c>); a line without it is treated as
+    /// ordinary chat and never as a cheat. When unset (the default), the
+    /// LAN/demo behaviour is unchanged: name-only matching. The 221 test server
+    /// and allegiance-mcp rely on the unset (name-only) default; leave it unset
+    /// unless you need defence-in-depth against a spoofed name on a shared
+    /// network.</summary>
+    public string? Secret { get; set; }
 }
 
 /// <summary>

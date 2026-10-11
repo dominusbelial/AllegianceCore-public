@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
@@ -51,6 +52,62 @@ public sealed partial class Server
         return allowed.Equals(name, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// P602 — when a shared secret is configured, a privileged connection is
+    /// trusted only if its cheat line presents that secret as the leading
+    /// whitespace-delimited token (<c>"&lt;secret&gt; relocate …"</c>). Returns
+    /// true and yields the remainder (the actual cheat line) when the first
+    /// token equals <paramref name="secret"/> (constant-time comparison); false
+    /// when the secret is absent/unset or the first token doesn't match —
+    /// the line is then ordinary chat, never a cheat. <c>remainder</c> is the
+    /// stripped rest of the line ("" when the line was just the secret).
+    /// </summary>
+    internal static bool ConsumeSecretPrefix(string? secret, string message, out string remainder)
+    {
+        remainder = "";
+        if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(message)) return false;
+        string trimmed = message.TrimStart();
+        int sp = IndexWhitespace(trimmed);
+        string first = sp < 0 ? trimmed : trimmed[..sp];
+        if (!FixedTimeEquals(secret!, first)) return false;
+        remainder = sp < 0 ? "" : trimmed[(sp + 1)..].Trim();
+        return true;
+    }
+
+    /// <summary>Constant-time secret comparison (length + bytes), so the
+    /// presence/absence of a single correct prefix character doesn't leak via
+    /// timing on a shared network.</summary>
+    private static bool FixedTimeEquals(string a, string b)
+    {
+        byte[] ab = System.Text.Encoding.UTF8.GetBytes(a);
+        byte[] bb = System.Text.Encoding.UTF8.GetBytes(b);
+        return CryptographicOperations.FixedTimeEquals(ab, bb);
+    }
+
+    /// <summary>
+    /// P602 — the boot banner for the admin-cheat hook. Returns null when admin
+    /// cheats are not enabled (nothing printed, matching P554's silent default).
+    /// When enabled, returns the active banner; when additionally bound to a
+    /// NON-loopback address (this server always binds 0.0.0.0/all interfaces),
+    /// appends a LOUD never-run-on-a-public-server warning, because name-based
+    /// trust is self-declared and spoofable.
+    /// </summary>
+    internal static string? AdminCheatBootWarning(AdminCheatsConfig? cfg, bool boundToLoopbackOnly)
+    {
+        if (cfg is not { Enabled: true }) return null;
+        string banner = "[boot] *** ADMIN CHEATS ACTIVE (liveSettings.adminCheats.enabled=true) *** "
+            + $"allowNames=[{string.Join(", ", cfg.AllowNames)}] — those names may issue the 'relocate' cheat on their OWN ship only; "
+            + "port extension (native has no relocate; FedSrv.CPP:2814 DoCheatCode); consumed, never broadcast as chat";
+        if (boundToLoopbackOnly)
+            return banner + " ***";
+        string secretNote = string.IsNullOrEmpty(cfg.Secret)
+            ? "NO shared secret set (name-only trust)."
+            : "A shared secret is set — a cheat line must present it as its first token.";
+        return banner + "; *** WARNING: THE SERVER LISTENS ON A NON-LOOPBACK ADDRESS WITH ADMIN CHEATS ENABLED — "
+            + "NEVER ENABLE ADMIN CHEATS ON A PUBLIC/SHARED SERVER (NAME-BASED TRUST IS SELF-DECLARED AND SPOOFABLE, P602). "
+            + secretNote + " ***";
+    }
+
     private bool CanUseAdminCheats(ConnectionId from, Ship ship)
     {
         var cfg = _config.LiveSettings?.AdminCheats;
@@ -75,6 +132,16 @@ public sealed partial class Server
     {
         if (chat.Message is not { Length: > 0 } msg) return false;
         if (!CanUseAdminCheats(from, ship)) return false;   // not privileged → ordinary chat
+
+        // P602 — optional shared secret: when configured, the leading token of
+        // the line must present the secret (a bearer). A line without it is
+        // ordinary chat, never a cheat — only clients that present the secret
+        // are trusted (in addition to the allow-listed name).
+        var cfg = _config.LiveSettings?.AdminCheats;
+        if (cfg is { Secret: { Length: > 0 } }
+            && !ConsumeSecretPrefix(cfg.Secret, msg, out msg))
+            return false;
+        if (msg.Length == 0) return false;
 
         // Token = first whitespace-delimited word (native ZString::GetToken,
         // FedSrv.CPP:2819), matched case-insensitively like native's lstrcmpi.

@@ -106,11 +106,12 @@ public sealed partial class Server
         // no teleport/relocate cheat; DoCheatCode's tokens are FedSrv.CPP:2822-
         // 3022) that must never be silently on: banner it LOUDLY at boot. A
         // default config (no adminCheats section) prints nothing and no chat
-        // line is ever interpreted as a cheat.
-        if (live.AdminCheats is { Enabled: true } ac)
-            Console.WriteLine("[boot] *** ADMIN CHEATS ACTIVE (liveSettings.adminCheats.enabled=true) *** "
-                              + $"allowNames=[{string.Join(", ", ac.AllowNames)}] — those names may issue the 'relocate' cheat on their OWN ship only; "
-                              + "port extension (native has no relocate; FedSrv.CPP:2814 DoCheatCode); consumed, never broadcast as chat ***");
+        // line is ever interpreted as a cheat. P602 — because this server always
+        // binds 0.0.0.0 (all interfaces, never loopback-only), enabling admin
+        // cheats also appends the loud never-enable-on-a-public-server warning.
+        var adminCheatWarning = Server.AdminCheatBootWarning(live.AdminCheats, boundToLoopbackOnly: false);
+        if (adminCheatWarning is not null)
+            Console.WriteLine(adminCheatWarning);
 
         // P600 — the per-tick profiler. OFF by default. A `profiler` config
         // section (or the ALLEGIANCE_TICK_PROFILER env var) turns it on; banner

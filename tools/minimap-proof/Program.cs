@@ -195,7 +195,7 @@ sealed class ProofRunner : Game
             _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
             _sb.DrawString(_font, "P360 - collapsed mini-map (always-on, no toggle)", new Vector2(12f, 8f), Color.Orange);
             _sb.End();
-            _starmap.DrawMini(sites, edges, current, vp);
+            _starmap.DrawMini(sites, edges, current, warnings: null, flashOn: true, vp);
         });
 
         // 2) EXPANDED — the full centred pane (Tab) + the real info pane for the
@@ -217,7 +217,7 @@ sealed class ProofRunner : Game
             _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
             _sb.DrawString(_font, "P360 - expanded full starmap (Tab)", new Vector2(12f, 8f), Color.Orange);
             _sb.End();
-            _starmap.Draw(sites, edges, current, vp, panelW, panelH);
+            _starmap.Draw(sites, edges, current, selectedSectorId: current, warnings: null, flashOn: true, vp, panelW, panelH);
             _infoPane.Draw(pane, vp, panelX, panelY, panelW, panelH);
         });
 

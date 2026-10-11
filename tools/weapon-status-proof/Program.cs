@@ -398,7 +398,9 @@ sealed class ProofRunner : Game
         Flashing: false, WarpFlash: 0f, Mining: false, Cloaked: false,
         KillBonusPercent: 0f, KillBonusStreak: 0,
         RollDegrees: up.Orientation.GetRollDegrees(),
-        WeaponSystems: rows);
+        WeaponSystems: rows,
+        IsAdriftLifepod: false,
+        OxygenSecondsRemaining: 0);
 
     private void RenderHud(GraphicsDevice gd, string label, HudFrame frame, ServerShipUpdate up)
     {

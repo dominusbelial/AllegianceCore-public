@@ -314,6 +314,64 @@ public sealed class P554AdminCheatLiveTests
         }
     }
 
+    // ── P602: shared secret — trusted only when the line presents it ───────
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Relocate_without_the_secret_is_refused_and_broadcast_as_chat()
+    {
+        Require.Artwork();
+        // Allow-listed name BUT a shared secret is configured: name alone no
+        // longer confers trust — the line must present the secret first.
+        using var server = new Srv { SpawnInitialMinersAtBoot = false };
+        server.Boot(Config(new Ac { Enabled = true, AllowNames = ["mcp-admin"], Secret = "s3cr3t" }));
+        using var cs = Seat(server, "mcp-admin");
+        short shipId = cs.World.MyShipId!.Value;
+        short home = CsSector(cs);
+        short target = PickTargetSector(server, home);
+        var pos = new Vector3(4000f, 4000f, 4000f);
+
+        using var observer = Seat(server, "Observer");
+        Flush(server);
+        int chatsBefore = observer.World.Events.Chats.Count;
+
+        // No secret prefix → ordinary chat, never a cheat.
+        cs.SendChat(RelocateCmd(shipId, target, pos), ChatTarget.Everyone);
+        PumpUntil(server, () => observer.World.Events.Chats.Count > chatsBefore, 400);
+
+        Assert.Equal(home, ServerShipById(server, shipId)!.Sector!.Id);   // never moved
+        Assert.Contains(observer.World.Events.Chats, c => c.Message is { } m && m.StartsWith("relocate ", StringComparison.Ordinal));
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Relocate_with_the_secret_moves_the_ship()
+    {
+        Require.Artwork();
+        using var server = new Srv { SpawnInitialMinersAtBoot = false };
+        server.Boot(Config(new Ac { Enabled = true, AllowNames = ["mcp-admin"], Secret = "s3cr3t" }));
+        using var cs = Seat(server, "mcp-admin");
+        short shipId = cs.World.MyShipId!.Value;
+        short home = CsSector(cs);
+        short target = PickTargetSector(server, home);
+        PumpUntil(server, () =>
+        {
+            lock (cs.Gate) return cs.World.Warps.Count > 0 && cs.World.Stations.Count > 0;
+        }, 1000);
+        var destPos = WorldCenter(cs, target) + new Vector3(0f, 0f, 650f);
+        Assert.NotEqual(home, target);
+
+        // Present the secret as the leading token: "<secret> relocate …".
+        string cmd = $"s3cr3t {RelocateCmd(shipId, target, destPos)}";
+        cs.SendChat(cmd, ChatTarget.Individual, oidRecipient: shipId);
+        int n = PumpUntil(server, () => CsSector(cs) == target, 1000);
+        Assert.True(n < 1000, $"client world never showed sector {target} after the secret-bearing relocate");
+
+        var ship = ServerShipById(server, shipId)!;
+        Assert.Equal(target, ship.Sector!.Id);
+        Assert.True((ship.Position - destPos).Length() < 1f, $"server position {ship.Position} != {destPos}");
+    }
+
     private sealed class Ticker : IDisposable
     {
         private readonly Srv _server;
