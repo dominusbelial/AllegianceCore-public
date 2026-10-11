@@ -43,8 +43,8 @@ from the brief: `remove_doubles(0.0005)` → connected components → hull BVH �
   flipped-normal estimate, ship length, **grade** (clean/repairable/poor with the rule),
   and `after_repair` metrics for repaired models.
 - `docs/reports/P581b_assets/audit/index.html` — the review sheet (all 99, thumbnails +
-  numbers).
-- `docs/reports/P581b_assets/audit/<model>.png` — 4-view coloured composite
+  numbers) *(screenshot of Meshy models, kept in the private asset pack)*.
+- `docs/reports/P581b_assets/audit/<model>.png` — 4-view coloured composite *(screenshot of a Meshy model, kept in the private asset pack)*
   (top/front/side/persp) per model; the raw per-view frames under
   `docs/reports/P581b_assets/renders/audit/<model>/`.
 
@@ -106,7 +106,7 @@ the independent after-analysis (§1) confirms each former piece merges/touches t
 
 ### 3. Close-up proof per repaired model
 
-`docs/reports/P581b_assets/closeup/<model>/piece<N>/{raw,repaired}_angle{i}.png` —
+`docs/reports/P581b_assets/closeup/<model>/piece<N>/{raw,repaired}_angle{i}.png` — *(screenshots of Meshy models, kept in the private asset pack)*
 Blender Solid/Workbench close-up orbits of each moved piece's root/edge (6 angles;
 raw vs repaired side by side). A representative subset (1 angle per piece, both raw &
 repaired) is committed under `docs/reports/P581b_assets/closeup_sample/`. The

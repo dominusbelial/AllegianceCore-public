@@ -92,7 +92,10 @@ public static class ExternalPaths
         $"The FreeAllegiance artwork corpus is cloned from https://github.com/FreeAllegiance/Artwork. " +
         $"See docs/P597_PRIVATE_PATHS_AND_CLEAN_CLONE.md.";
 
-    private static string? ReadLocalConfig(string key)
+    /// <summary>Read a single key from the gitignored repo-root <c>local.env</c>,
+    /// or null when absent. Public so sibling resolvers (e.g.
+    /// <see cref="MeshyPack"/>) share the same per-machine config file.</summary>
+    public static string? ReadLocalConfig(string key)
     {
         var root = FindRepoRoot();
         if (root is null) return null;

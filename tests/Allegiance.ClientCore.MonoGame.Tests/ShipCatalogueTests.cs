@@ -111,4 +111,45 @@ public class ShipCatalogueTests
         Assert.Equal(ShipArtOverride.ArtChoice.Native, ov.Resolve("fig05", 0));
         Assert.Equal(0, ov.Count);
     }
+
+    // ---- P601 — public catalogue schema stays; Meshy entries come from the pack ----
+
+    [Fact]
+    public void Merge_overlays_pack_entries_on_public_native_only()
+    {
+        // The public file keeps the schema + native entries (empty models here,
+        // exactly as P601 ships it); the pack supplies the Meshy entries.
+        var publicCat = ShipCatalogue.Parse("{ \"models\": [] }");
+        var packCat = ShipCatalogue.Parse(
+            "{ \"models\": [" +
+            " { \"id\":\"dreg-scout2\",\"asset\":\"dreg-scout2\",\"source\":\"meshy-repaired\",\"civ\":\"dreg\",\"class\":\"scout\",\"size_class\":\"small\",\"thumbnail\":\"assets/ships/thumbs/dreg-scout2.png\" }," +
+            " { \"id\":\"bios-carrier\",\"asset\":\"bios-carrier\",\"source\":\"meshy\",\"civ\":\"bios\",\"class\":\"carrier\",\"size_class\":\"large\",\"thumbnail\":\"assets/ships/thumbs/bios-carrier.png\" }" +
+            "] }");
+        var merged = ShipCatalogue.Merge(publicCat, packCat);
+        Assert.Equal(2, merged.Count);
+        Assert.Equal("meshy-repaired", merged.ById("dreg-scout2")!.Source);
+    }
+
+    [Fact]
+    public void Merge_pack_wins_on_duplicate_id()
+    {
+        var publicCat = ShipCatalogue.Parse("{ \"models\": [ { \"id\":\"a\",\"asset\":\"nat-a\",\"source\":\"native\" } ] }");
+        var packCat = ShipCatalogue.Parse("{ \"models\": [ { \"id\":\"a\",\"asset\":\"meshy-a\",\"source\":\"meshy\" } ] }");
+        var merged = ShipCatalogue.Merge(publicCat, packCat);
+        Assert.Equal(1, merged.Count);
+        Assert.Equal("meshy-a", merged.ById("a")!.Asset);
+    }
+
+    [Fact]
+    public void NoPack_empty_catalogue_resolves_nothing_and_defaults_native()
+    {
+        // The public (native-only) catalogue when the pack is absent has no Meshy
+        // models, so any "catalogue:<id>" override must fall back to native.
+        var publicCat = ShipCatalogue.Parse("{ \"models\": [] }");
+        Assert.Equal(0, publicCat.Count);
+        Assert.Null(publicCat.ResolveKey("bios-carrier", new HashSet<string>()));
+        // and a ShipArtOverride with no entries defaults every hull to native
+        var ov = ShipArtOverride.Parse("{ }");
+        Assert.Equal(ShipArtOverride.ArtChoice.Native, ov.Resolve("fig05", 1));
+    }
 }

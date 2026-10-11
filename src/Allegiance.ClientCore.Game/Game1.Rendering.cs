@@ -3126,6 +3126,14 @@ public sealed partial class Game1
     /// </summary>
     private bool ShipsNativeFor(short id)
     {
+        // P601 — when the optional Meshy pack is absent, every hull renders
+        // native and any Meshy/catalogue option logs once then falls back
+        // (never a broken or invisible ship).
+        if (!_meshyPackAvailable)
+        {
+            LogMeshyUnavailableOnce();
+            return true;
+        }
         if (_shipArtOverride is null || _hullById is not { } hulls || !hulls.TryGetValue(id, out var hull))
             return _shipsNative;
         var modelName = hull.ModelName?.Trim();

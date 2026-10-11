@@ -699,6 +699,21 @@ public sealed partial class Game1 : Game
     private Rendering.ShipCatalogue _shipCatalogue = Rendering.ShipCatalogue.Parse("{}");
     // P565 — hulls whose Meshy override pointed at a missing asset (logged once, fall to native).
     private readonly HashSet<string> _missingMeshyLogged = new(StringComparer.OrdinalIgnoreCase);
+    // P601 — the private Meshy asset pack (optional). True only when the pack is
+    // configured AND its compiled content exists (MeshyPack.IsAvailable); when
+    // false every hull renders native and Meshy options log once then fall back.
+    private bool _meshyPackAvailable;
+    // P601 — the optional ContentManager rooted at the pack's compiled content
+    // directory (MeshyPack.BuiltContentDir), or null when the pack is absent.
+    private Microsoft.Xna.Framework.Content.ContentManager? _meshyContent;
+    // P601 — once-logged flag for the "pack unavailable → native" message.
+    private bool _meshyUnavailableLogged;
+    private void LogMeshyUnavailableOnce()
+    {
+        if (_meshyUnavailableLogged) return;
+        _meshyUnavailableLogged = true;
+        Console.WriteLine("[client] " + MeshyPack.DescribeUnavailable());
+    }
     // P567 — the native-asteroid renderer switch (--asteroids native|imported; default native).
     private readonly bool _asteroidsNative;
     // P566 — the GPU native ship renderer (parses .mdl meshes + native textures).
@@ -1332,9 +1347,15 @@ public sealed partial class Game1 : Game
         // P566 — the ship renderer: native .mdl meshes (default) vs Meshy content
         // models. Log so a bare --ships meshy run is obvious in the console.
         _shipsNative = opts.ShipsNative;
-        Console.WriteLine(_shipsNative
+        // P601 — the optional Meshy pack availability affects whether Meshy art can
+        // load at all; report it next to the --ships mode so a bare --ships meshy
+        // run without the pack is obviously going to render native.
+        bool meshyPackHere = MeshyPack.IsAvailable();
+        Console.WriteLine((_shipsNative
             ? "[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models)"
-            : "[client] ships: MESHY content models (--ships native to use the original .mdl meshes)");
+            : "[client] ships: MESHY content models (--ships native to use the original .mdl meshes)")
+            + (meshyPackHere ? $" (Meshy pack: {MeshyPack.ResolveRoot()})"
+                             : " (NO Meshy pack — native only; see ALLEGIANCE_MESHY_PACK_PATH)"));
         // P567 — the asteroid renderer: each rock's own native .mdl mesh (default)
         // vs the shared imported/procedural variants. Log so a bare --asteroids
         // imported run is obvious in the console.

@@ -72,6 +72,29 @@ public sealed class ShipCatalogue
         catch { return new ShipCatalogue(Array.Empty<Entry>()); }
     }
 
+    /// <summary>
+    /// P601 — merge catalogues, later arguments winning on id. The client loads
+    /// the PUBLIC catalogue (schema + native entries) then overlays the PRIVATE
+    /// pack's Meshy catalogue fragment, so the pack can redefine/append entries
+    /// without the public file carrying any Meshy content.
+    /// </summary>
+    public static ShipCatalogue Merge(params ShipCatalogue[] parts)
+    {
+        var byId = new Dictionary<string, Entry>(StringComparer.Ordinal);
+        var order = new List<string>();
+        foreach (var p in parts)
+        {
+            if (p is null) continue;
+            foreach (var id in p.Ids)
+            {
+                if (!p._byId.TryGetValue(id, out var e)) continue;
+                if (!byId.ContainsKey(id)) order.Add(id);
+                byId[id] = e;   // later argument wins on a duplicate id
+            }
+        }
+        return new ShipCatalogue(order.Select(id => byId[id]).ToList());
+    }
+
     public Entry? ById(string id) => _byId.TryGetValue(id, out var e) ? e : null;
 
     /// <summary>

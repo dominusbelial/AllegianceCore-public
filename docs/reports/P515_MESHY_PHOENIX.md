@@ -137,7 +137,7 @@ close-ups in the assets dir confirm the flip. The P520 gate test was extended to
 accept overrides for any raw **non-forward** mesh (not only decisively-flagged
 ones) — otherwise the near-square rotation case would be unrepresentable.
 
-Contact sheet: `P515_MESHY_PHOENIX_assets/orient_before.jpg` (global-only, the
+Contact sheet: `P515_MESHY_PHOENIX_assets/orient_before.jpg *(screenshot of a Meshy model, kept in the private asset pack)*` (global-only, the
 two ships crosswise) + `orient_after.jpg` (fixed) + per-asset
 `orient_flag_phoenix-{bomber,stealthfighter}_{before,after}.jpg`;
 `orient_extents.json` (full 99-row data).

@@ -76,9 +76,9 @@ contact sheet, so no override.
 Fixed top view of the whole 72-ship fleet, each ship upright so its raw long
 axis is legible (a yawed mesh reads crosswise to its forward-X siblings).
 
-- **`P520_SHIP_ORIENTATION_AUDIT_assets/orient_before.jpg`** — global
+- **`P520_SHIP_ORIENTATION_AUDIT_assets/orient_before.jpg *(screenshot of a Meshy model, kept in the private asset pack)*`** — global
   correction only. `ic-dev`/`gt-dev`/`rix-con`/`rix-miner` sit crosswise.
-- **`P520_SHIP_ORIENTATION_AUDIT_assets/orient_after.jpg`** — overrides
+- **`P520_SHIP_ORIENTATION_AUDIT_assets/orient_after.jpg *(screenshot of a Meshy model, kept in the private asset pack)*`** — overrides
   applied. All four now align with their siblings.
 - Close-ups (`orient_flag_ic-dev_before/after.jpg`) and side-by-side proofs
   (`orient_compare_ic-dev_vs_ic-devastator.jpg`,

@@ -35,6 +35,15 @@ public sealed partial class Game1
     protected override void LoadContent()
     {
         base.LoadContent();
+        // P601 — the optional private Meshy asset pack. When it is configured and
+        // built (MeshyPack.IsAvailable) we root a second ContentManager at its
+        // compiled content and load every Meshy model/texture through it; when it
+        // is absent we load nothing Meshy and every hull renders native.
+        _meshyPackAvailable = MeshyPack.IsAvailable();
+        if (_meshyPackAvailable)
+            _meshyContent = new Microsoft.Xna.Framework.Content.ContentManager(Services)
+            { RootDirectory = MeshyPack.BuiltContentDir() };
+        var mcm = _meshyContent;   // null when the pack is absent
         try
         {
             // P288 — the per-ship/per-civ model catalog. The fallback is the
@@ -42,11 +51,18 @@ public sealed partial class Game1
             // alongside it so the resolver can pick real per-faction geometry.
             // P337 — each model's real Meshy baseColor texture loads alongside
             // it (the geometry-only FBX has no embedded material; the texture is
-            // bound explicitly in the render loop).
-            _fallbackModel = Content.Load<XnaModel>("Models/" + HullModelResolver.FallbackAsset);
+            // bound explicitly in the render loop). P601 — all of this loads from
+            // the optional Meshy pack's ContentManager (mcm) when it is present.
+            if (mcm is not null)
+            {
+            try { _fallbackModel = mcm.Load<XnaModel>("Models/" + HullModelResolver.FallbackAsset); }
+            catch (Exception inner)
+            {
+                Console.WriteLine($"[monogame] fallback model unavailable: {inner.Message}");
+            }
             try
             {
-                _fallbackTexture = Content.Load<Texture2D>(
+                _fallbackTexture = mcm.Load<Texture2D>(
                     "Textures/ships/" + HullModelResolver.FallbackAsset);
             }
             catch (Exception inner)
@@ -57,7 +73,7 @@ public sealed partial class Game1
             {
                 try
                 {
-                    _shipModels[asset] = Content.Load<XnaModel>("Models/" + asset);
+                    _shipModels[asset] = mcm.Load<XnaModel>("Models/" + asset);
                     // P520 — fold the per-asset orientation override (e.g. ic-dev
                     // −90° about Y) into the mesh bones once at load, on top of the
                     // global NoseAlignmentCorrection, so a Meshy model that came
@@ -72,7 +88,7 @@ public sealed partial class Game1
                 }
                 try
                 {
-                    _shipTextures[asset] = Content.Load<Texture2D>("Textures/ships/" + asset);
+                    _shipTextures[asset] = mcm.Load<Texture2D>("Textures/ships/" + asset);
                 }
                 catch (Exception inner)
                 {
@@ -88,11 +104,12 @@ public sealed partial class Game1
                 string repKey = Rendering.RepairedModelPreview.RepairedKey(asset);
                 try
                 {
-                    _shipModels[repKey] = Content.Load<XnaModel>("Models/" + repKey);
+                    _shipModels[repKey] = mcm.Load<XnaModel>("Models/" + repKey);
                     Console.WriteLine($"[monogame] repaired meshy variant '{repKey}' loaded");
                 }
                 catch { /* no repaired variant for this asset */ }
             }
+            }   // end if (mcm is not null)
             _shipModelKeys.UnionWith(_shipModels.Keys);
             _hullResolver = new HullModelResolver();
             // P565 — load the committed per-hull art override (assets/ships/ship-art.json);
@@ -114,13 +131,34 @@ public sealed partial class Game1
             // P581b — load the committed replacement-model catalogue (assets/ships/catalogue.json);
             // absent/malformed → empty catalogue (no "catalogue:<id>" resolutions succeed, so any
             // such override falls back to native the same way a missing Meshy asset does).
+            // P601 — the public file keeps the schema + native entries only; the Meshy entries
+            // live in the private pack's catalogue.json and are MERGED on top when the pack is
+            // present. When the pack is absent the public (native-only) catalogue stands.
             try
             {
+                var publicCat = Rendering.ShipCatalogue.Parse("{}");
                 string catFile = Path.Combine(Directory.GetCurrentDirectory(), "assets", "ships", "catalogue.json");
                 if (System.IO.File.Exists(catFile))
+                    publicCat = Rendering.ShipCatalogue.LoadFile(catFile);
+                if (_meshyPackAvailable)
                 {
-                    _shipCatalogue = Rendering.ShipCatalogue.LoadFile(catFile);
-                    Console.WriteLine($"[client] ship catalogue: {_shipCatalogue.Count} replacement models from {catFile}");
+                    string packCatFile = MeshyPack.CatalogueFile();
+                    if (packCatFile.Length > 0 && System.IO.File.Exists(packCatFile))
+                    {
+                        var packCat = Rendering.ShipCatalogue.LoadFile(packCatFile);
+                        _shipCatalogue = Rendering.ShipCatalogue.Merge(publicCat, packCat);
+                        Console.WriteLine($"[client] ship catalogue: {_shipCatalogue.Count} replacement models (public {publicCat.Count} + pack {packCat.Count})");
+                    }
+                    else
+                    {
+                        _shipCatalogue = publicCat;
+                        Console.WriteLine($"[client] ship catalogue: {_shipCatalogue.Count} public entries; pack catalogue.json not found ({packCatFile})");
+                    }
+                }
+                else
+                {
+                    _shipCatalogue = publicCat;
+                    Console.WriteLine($"[client] ship catalogue: {_shipCatalogue.Count} public entries (no Meshy pack)");
                 }
             }
             catch (Exception ex)
@@ -391,8 +429,15 @@ public sealed partial class Game1
             RockMesh imported;
             try
             {
-                imported = ImportedRockMeshLoader.FromModel(Content.Load<XnaModel>(meshAssets[i]));
-                Console.WriteLine($"[monogame] asteroid mesh '{meshAssets[i]}': {imported.VertexCount} verts, {imported.TriangleCount} tris");
+                if (mcm is not null)
+                {
+                    imported = ImportedRockMeshLoader.FromModel(mcm.Load<XnaModel>(meshAssets[i]));
+                    Console.WriteLine($"[monogame] asteroid mesh '{meshAssets[i]}': {imported.VertexCount} verts, {imported.TriangleCount} tris");
+                }
+                else
+                {
+                    imported = RockMeshFactory.Generate();
+                }
             }
             catch (Exception ex)
             {
@@ -555,7 +600,8 @@ public sealed partial class Game1
         {
             try
             {
-                _missileModels[asset] = Content.Load<XnaModel>("Models/" + asset);
+                if (mcm is not null)
+                    _missileModels[asset] = mcm.Load<XnaModel>("Models/" + asset);
             }
             catch (Exception inner)
             {
@@ -565,7 +611,8 @@ public sealed partial class Game1
             // DrawMissileContentModel the same way as the ship textures.
             try
             {
-                _missileTextures[asset] = Content.Load<Texture2D>("Textures/ships/" + asset);
+                if (mcm is not null)
+                    _missileTextures[asset] = mcm.Load<Texture2D>("Textures/ships/" + asset);
             }
             catch (Exception inner)
             {

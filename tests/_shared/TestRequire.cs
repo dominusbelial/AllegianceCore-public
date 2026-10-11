@@ -15,6 +15,7 @@ public static class Require
 {
     public static bool ArtworkAvailable => ExternalPaths.IsAvailable(ExternalResourceKind.Artwork);
     public static bool NativeSourceAvailable => ExternalPaths.IsAvailable(ExternalResourceKind.NativeSource);
+    public static bool MeshyPackAvailable => Allegiance.Core.MeshyPack.IsAvailable();
 
     /// <summary>Skips the running <c>[SkippableFact]</c>/<c>[SkippableTheory]</c>
     /// test (with the reason) when the artwork corpus is not configured/present.</summary>
@@ -23,4 +24,10 @@ public static class Require
     /// <summary>Skips the running test when the native C++ source checkout is
     /// not configured/present.</summary>
     public static void NativeSource() => Xunit.Skip.IfNot(NativeSourceAvailable, ExternalPaths.DescribeMissing(ExternalResourceKind.NativeSource));
+
+    /// <summary>Skips the running <c>[SkippableFact]</c> test when the private
+    /// Meshy asset pack is not configured/built. Used by the P601 Meshy-coupling
+    /// tests: on a clean clone (no pack) they skip with a reason rather than fail,
+    /// exactly like the P597 corpus tests.</summary>
+    public static void MeshyPack() => Xunit.Skip.IfNot(MeshyPackAvailable, Allegiance.Core.MeshyPack.DescribeUnavailable());
 }

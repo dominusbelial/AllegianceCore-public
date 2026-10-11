@@ -96,7 +96,7 @@ override needed** (contrast P511's dreg, which had two Z-long flags):
 | giga-fighter | 189.902 | 79.462 | 80.997 | X | Ok |
 | giga-interceptor | 190.305 | 32.980 | 109.299 | X | Ok |
 
-Contact sheet: `P512_MESHY_GIGA_assets/orient_after.jpg`.
+Contact sheet: `P512_MESHY_GIGA_assets/orient_after.jpg *(screenshot of a Meshy model, kept in the private asset pack)*`.
 
 ## 5. Build
 

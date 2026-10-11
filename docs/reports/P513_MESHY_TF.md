@@ -126,7 +126,7 @@ override table is unchanged (P520's six + P511's two):
 | tf-stealthfighter | 190.478 | 57.815 | 142.273 | X | Ok (ambiguous) |
 | tf-trooptransport | 190.340 | 47.822 | 95.218 | X | Ok |
 
-Contact sheet: `P513_MESHY_TF_assets/orient_after.jpg`
+Contact sheet: `P513_MESHY_TF_assets/orient_after.jpg *(screenshot of a Meshy model, kept in the private asset pack)*`
 (`orient_before.jpg` + `orient_extents.json` alongside).
 
 ## 5. Build

@@ -859,8 +859,11 @@ public sealed partial class Game1
             if (!drew)
             {
                 var model = InspectMeshyModel(h) ?? _fallbackModel;
-                var tex = InspectMeshyTexture(h) ?? _fallbackTexture;
-                _shipRenderer.Draw(model, worldRel, view, proj, opacity, scale, tex, _sectorLighting);
+                if (model is not null)
+                {
+                    var tex = InspectMeshyTexture(h) ?? _fallbackTexture;
+                    _shipRenderer.Draw(model, worldRel, view, proj, opacity, scale, tex, _sectorLighting);
+                }
             }
         }
     }
@@ -870,6 +873,14 @@ public sealed partial class Game1
     private IEnumerable<(Matrix World, float MeshyScale, bool IsNative)> InspectHullDrawSlots(InspectorHullCatalog.InspectorHull h)
     {
         bool native = _inspectShowNative, meshy = _inspectShowMeshy;
+        // P601 — without the optional Meshy pack there is no Meshy art to show,
+        // so the inspector's meshy slots fall back to native (logged once).
+        if (!_meshyPackAvailable)
+        {
+            if (meshy) LogMeshyUnavailableOnce();
+            meshy = false;
+            native = true;
+        }
         float meshyScale = 1f;
         var model = InspectMeshyModel(h);
         if (model is not null && model != _fallbackModel)

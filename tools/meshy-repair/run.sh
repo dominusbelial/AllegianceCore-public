@@ -14,12 +14,19 @@
 #   ./run.sh render   [model]      colored per-piece 4-view renders (before or
 #                                  after; point MODEL at the file you want)
 #
-# All three operate on Content/Models/<model>.fbx by default.
+# All three operate on the private Meshy pack's Content/Models/<model>.fbx by
+# default (P601 — Meshy assets no longer live in the public repo). The pack root
+# comes from ALLEGIANCE_MESHY_PACK_PATH (or local.env); falls back to the
+# conventional local pack location.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 ROOT="$PWD"
-MODELS="$ROOT/src/Allegiance.ClientCore.MonoGame/Content/Models"
-OUT="$ROOT/docs/reports/P581_assets"
+PACK="${ALLEGIANCE_MESHY_PACK_PATH:-}"
+if [ -z "$PACK" ] || [ ! -d "$PACK" ]; then
+  PACK="$HOME/Development/AllegianceCore-meshy-pack"
+fi
+MODELS="$PACK/Content/Models"
+OUT="$PACK/screenshots/meshy-repair-output"
 CMD="${1:-help}"; MODEL="${2:-dreg-scout2}"
 SRC="$MODELS/$MODEL.fbx"
 mkdir -p "$OUT/audit" "$OUT/renders"
