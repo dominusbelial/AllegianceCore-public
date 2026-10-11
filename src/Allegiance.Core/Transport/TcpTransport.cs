@@ -36,9 +36,17 @@ public enum DisconnectReason
     /// <summary>The peer's guaranteed backlog sat over capacity for the whole
     /// <see cref="TcpTransport.OverflowTimeout"/> window (nothing droppable
     /// left to shed) — the client genuinely cannot keep up.</summary>
-    QueueOverflow,
-    /// <summary>A blocking socket write failed or hit the socket's SendTimeout
-    /// (dead / black-holed peer).</summary>
+    QueueOverCapacity,
+    /// <summary>The peer's socket made NO write progress for the whole
+    /// <see cref="TcpTransport.NoWriteProgressTimeout"/> window while its send
+    /// queue held data (no bytes accepted by the OS) — the peer is dead/link
+    /// dead, however small its (coalesced) backlog is.</summary>
+    NoWriteProgress,
+    /// <summary>A blocking socket write hit the socket's SendTimeout (a single
+    /// write stalled for the full per-write budget).</summary>
+    SendTimeout,
+    /// <summary>A blocking socket write failed outright (connection reset /
+    /// broken pipe / disposal — not a timeout).</summary>
     SendError,
     /// <summary>The peer's read loop ended: remote closed (EOF) or a read
     /// error/socket error on the connection.</summary>
@@ -158,6 +166,15 @@ public sealed class TcpTransport : ITransport
     /// capacity before the peer is disconnected outright. Internal so the test
     /// suite can tighten it for a fast, deterministic overflow test.</summary>
     internal static TimeSpan OverflowTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>P611 — the real liveness timeout that replaces the old
+    /// "never-drained" anti-zombie rule: a peer whose send queue holds data but
+    /// whose socket has accepted NO bytes for this long is dead and is
+    /// disconnected (<see cref="DisconnectReason.NoWriteProgress"/>). Matches
+    /// the native client's link-dead tolerance of 30 s (clintlib.cpp:2047,
+    /// <c>g_sDeadTime = 30</c>). Internal so tests can tighten it for a fast,
+    /// deterministic liveness test.</summary>
+    internal static TimeSpan NoWriteProgressTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>P311 test seam: the per-peer queued-byte bound (8 MiB in
     /// production). Internal so tests can shrink it to force an overflow
@@ -474,7 +491,7 @@ public sealed class TcpTransport : ITransport
             // ReadErrorOrEof), or sent a bad/oversize frame (ProtocolError).
             DisconnectReason gr;
             if (ex is EndOfStreamException) gr = DisconnectReason.ReadErrorOrEof;
-            else if (IsReadTimeout(ex)) gr = DisconnectReason.GreetTimeout;
+            else if (IsSocketTimeout(ex)) gr = DisconnectReason.GreetTimeout;
             else gr = DisconnectReason.ProtocolError;
             if (stream != null) CloseQuiet(stream);
             client.Dispose();
@@ -528,12 +545,18 @@ public sealed class TcpTransport : ITransport
     {
         PeerSender? ps = null;
         lock (_gate) { if (_peers.TryGetValue(id, out ps)) _peers.Remove(id); }
+        // Attribute the reason BEFORE tearing down the socket: Close() wakes the
+        // peer's read loop with a socket error, and the read loop would otherwise
+        // race to reap this peer with ReadErrorOrEof — hiding the real send-side
+        // cause (NoWriteProgress / QueueOverCapacity / SendTimeout). Recording
+        // first guarantees the exactly-once attribution is the initiating path's
+        // reason.
+        RaisePeerLeftIfFirst(id, reason, logLine: true);
         if (ps != null)
         {
             if (_mode == TransportMode.Pool) _pool?.Unassign(ps);
             ps.Close();
         }
-        RaisePeerLeftIfFirst(id, reason, logLine: true);
     }
 
     /// <summary>Raise <see cref="ITransportSite.OnPeerLeft"/> exactly once per
@@ -562,8 +585,9 @@ public sealed class TcpTransport : ITransport
     }
 
     /// <summary>Does <paramref name="ex"/> (or its inner exception) indicate a
-    /// socket receive timeout?</summary>
-    private static bool IsReadTimeout(Exception ex)
+    /// socket timeout (either a receive timeout or a send/SendTimeout)? Both
+    /// surface as <see cref="SocketError.TimedOut"/>.</summary>
+    private static bool IsSocketTimeout(Exception ex)
     {
         for (Exception? e = ex; e is not null; e = e.InnerException)
             if (e is SocketException se && se.SocketErrorCode == SocketError.TimedOut)
@@ -764,14 +788,18 @@ public sealed class TcpTransport : ITransport
         private readonly Dictionary<int, LinkedListNode<QueuedFrame>> _coalesceNodes = new();
         private long _queuedBytes;
         private DateTime? _overflowSinceUtc;
-        // P606 — how long the queue has been continuously non-empty (never
-        // fully drained). Cleared whenever the writer empties it; a peer whose
-        // queue stays non-empty for the whole OverflowTimeout is stuck (its
-        // socket hasn't accepted a write in that long) and is disconnected.
-        // This is what keeps coalescing from turning a forever-stalled peer
-        // into a silent zombie: coalescing shrinks the backlog, but a peer that
-        // never drains is still dead and gets dropped (anti-Zombie fail-safe).
-        private DateTime? _undrainedSinceUtc;
+        // P611 — the peer's liveness clock, in ticks: the last time the socket
+        // accepted ANY bytes (a send completed partially or fully). Updated by
+        // the writer/pool worker on every successful write. A peer whose socket
+        // keeps accepting bytes is never "stuck", however full its queue — the
+        // liveness rule disconnects ONLY when this clock goes stale (no bytes
+        // accepted for NoWriteProgressTimeout) while the queue holds data. This
+        // replaces P606's flawed "continuously non-empty queue" proxy, which
+        // misclassified a healthy-but-overloaded peer (queue never momentarily
+        // empty under sustained load) as dead and mass-disconnected it. Long +
+        // Interlocked so the writer thread and the enqueue (sim) thread can
+        // update/read it without tearing (DateTime is not volatile-able).
+        private long _lastWriteProgressUtcTicks;
         private volatile bool _disconnected;
         private volatile DisconnectReason _reason;
         // P605 — pool mode: the owning worker's Wake callback, pulsed when a
@@ -787,6 +815,11 @@ public sealed class TcpTransport : ITransport
             _stream = stream;
             _tcpClient = tcpClient;
             _onDead = onDead;
+            // Liveness baseline: a freshly-created peer has made no writes yet,
+            // so its clock starts now. The first enqueue on an empty queue also
+            // resets it (see Enqueue), so an idle-then-active peer is never
+            // misjudged stale before its writer gets a chance to run.
+            _lastWriteProgressUtcTicks = DateTime.UtcNow.Ticks;
         }
 
         public void Start()
@@ -805,6 +838,12 @@ public sealed class TcpTransport : ITransport
             lock (_sync)
             {
                 if (_disconnected) return;
+                // Was the queue fully drained before this enqueue? If so the
+                // peer is current (idle or caught up); its writer gets a fresh
+                // liveness window rather than being judged stale from an old
+                // baseline (an idle-then-active peer must never be dropped for
+                // sitting quiet before its next frame arrived).
+                bool wasEmpty = _queue.First is null;
 
                 if (coalesceKey != 0 && _coalesceNodes.TryGetValue(coalesceKey, out var existing))
                 {
@@ -829,34 +868,47 @@ public sealed class TcpTransport : ITransport
                 }
                 Monitor.Pulse(_sync);
 
-                // Overflow policy (P606 revision): the peer is disconnected only
-                // when it is genuinely STUCK — never merely because its streaming
-                // backlog is large (coalescing keeps that small). Two signals,
-                // both gated on the whole OverflowTimeout so a healthy (if slow)
-                // peer is never dropped for a brief burst:
-                //   (a) a guaranteed-only backlog sits over capacity — the classic
-                //       "cannot keep up" case (nothing droppable left);
-                //   (b) the queue has been continuously non-empty (never fully
-                //       drained) the whole window — the socket hasn't accepted a
-                //       write in that long, so the peer is dead even though its
-                //       (coalesced) backlog is small. Prevents a forever-stalled
-                //       peer from lingering as a silent zombie now that
-                //       coalescing keeps its queue under the byte cap.
+                // Overflow policy (P611): the peer is disconnected only when it
+                // is genuinely STUCK — never merely because its streaming backlog
+                // is large (coalescing keeps that small) and never because its
+                // queue fails to momentarily drain under sustained load (that is
+                // healthy backpressure, not death). Two signals, each gated on
+                // its own timeout so a healthy (if slow) peer is never dropped
+                // for a brief burst:
+                //   (a) QueueOverCapacity — a guaranteed-only backlog sits over
+                //       the byte cap for OverflowTimeout (nothing droppable or
+                //       coalescable left to shed): the classic "cannot keep up",
+                //       and the memory bound (P606);
+                //   (b) NoWriteProgress — the socket has accepted NO bytes for
+                //       NoWriteProgressTimeout while the queue holds data: the
+                //       peer is dead/link-dead, however small its (coalesced)
+                //       backlog is. This is the REAL anti-zombie signal,
+                //       measured by actual write progress, not by queue
+                //       emptiness. A peer that keeps accepting bytes is never
+                //       "stuck", however full its queue — the 2026-10-11 mass
+                //       disconnect misread that backpressure as death.
                 var now = DateTime.UtcNow;
-                if (_queue.First is null)
+                if (wasEmpty)
                 {
-                    _undrainedSinceUtc = null;
+                    Interlocked.Exchange(ref _lastWriteProgressUtcTicks, now.Ticks);
                     _overflowSinceUtc = null;
                 }
-                else
+                else if (_queue.First is not null)
                 {
-                    _undrainedSinceUtc ??= now;
                     _overflowSinceUtc = _queuedBytes > CapacityBytes ? (_overflowSinceUtc ?? now) : null;
-                    if ((now - _undrainedSinceUtc) >= OverflowTimeout
-                        || (_overflowSinceUtc is { } os && now - os >= OverflowTimeout))
+                    long lastProg = Interlocked.Read(ref _lastWriteProgressUtcTicks);
+                    bool noProgress = (now - new DateTime(lastProg)) >= NoWriteProgressTimeout;
+                    bool overCap = _overflowSinceUtc is { } os && now - os >= OverflowTimeout;
+                    if (noProgress)
                     {
                         _disconnected = true;
-                        _reason = DisconnectReason.QueueOverflow;
+                        _reason = DisconnectReason.NoWriteProgress;
+                        fireDisconnect = true;
+                    }
+                    else if (overCap)
+                    {
+                        _disconnected = true;
+                        _reason = DisconnectReason.QueueOverCapacity;
                         fireDisconnect = true;
                     }
                 }
@@ -914,7 +966,7 @@ public sealed class TcpTransport : ITransport
                 if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                 frame = node.Value.Frame;
                 _queuedBytes -= frame.Length;
-                if (_queue.First is null) { _undrainedSinceUtc = null; _overflowSinceUtc = null; }
+                if (_queue.First is null) _overflowSinceUtc = null;
                 else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
             }
             // Outside the lock, like WriterLoop: the only blocking socket write.
@@ -924,17 +976,25 @@ public sealed class TcpTransport : ITransport
             try
             {
                 _stream.Write(frame, 0, frame.Length);
+                // P611 — the socket accepted bytes: real write progress. Stamp
+                // the liveness clock so the no-progress rule can never drop a
+                // peer whose socket is actually consuming, no matter how full
+                // (or never-empty) its queue is.
+                Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
                 return DrainResult.Wrote;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Socket error / SendTimeout / disposal -> this peer is dead.
                 if (!_disconnected)
                 {
                     _disconnected = true;
-                    _reason = DisconnectReason.SendError;
+                    // P611 — split the reason: a write that stalled for the
+                    // socket's SendTimeout is a distinct, diagnosable cause,
+                    // separable from an outright connection error.
+                    _reason = IsSocketTimeout(ex) ? DisconnectReason.SendTimeout : DisconnectReason.SendError;
                     _cts.Cancel();
-                    _onDead(DisconnectReason.SendError);
+                    _onDead(_reason);
                 }
                 return DrainResult.Dead;
             }
@@ -991,24 +1051,30 @@ public sealed class TcpTransport : ITransport
                         if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                         frame = node.Value.Frame;
                         _queuedBytes -= frame.Length;
-                        if (_queue.First is null) { _undrainedSinceUtc = null; _overflowSinceUtc = null; }
+                        if (_queue.First is null) _overflowSinceUtc = null;
                         else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
                     }
                     // The only blocking socket write, on this dedicated thread.
                     // SendTimeout on the socket bounds it even against a
                     // black-holed path.
                     _stream.Write(frame, 0, frame.Length);
+                    // P611 — real write progress: the socket accepted these
+                    // bytes, so the no-progress liveness rule has fresh ground.
+                    Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Socket error / SendTimeout / disposal -> this peer is dead.
                 if (!_disconnected)
                 {
                     _disconnected = true;
-                    _reason = DisconnectReason.SendError;
+                    // P611 — split the reason: a write that stalled for the
+                    // socket's SendTimeout is a distinct, diagnosable cause,
+                    // separable from an outright connection error.
+                    _reason = IsSocketTimeout(ex) ? DisconnectReason.SendTimeout : DisconnectReason.SendError;
                     _cts.Cancel();
-                    _onDead(DisconnectReason.SendError);
+                    _onDead(_reason);
                 }
             }
         }

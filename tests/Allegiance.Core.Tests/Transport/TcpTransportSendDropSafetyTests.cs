@@ -111,12 +111,15 @@ public abstract class TcpTransportSendDropSafetyTestsBase
     private static IDisposable ShortenOverflowTimer()
     {
         var origT = TcpTransport.OverflowTimeout;
+        var origN = TcpTransport.NoWriteProgressTimeout;
         var origC = TcpTransport.CapacityBytes;
         TcpTransport.OverflowTimeout = TimeSpan.FromMilliseconds(400);
+        TcpTransport.NoWriteProgressTimeout = TimeSpan.FromMilliseconds(400);
         TcpTransport.CapacityBytes = 64 * 1024;
         return new Restorer(() =>
         {
             TcpTransport.OverflowTimeout = origT;
+            TcpTransport.NoWriteProgressTimeout = origN;
             TcpTransport.CapacityBytes = origC;
         });
     }

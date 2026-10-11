@@ -145,8 +145,10 @@ public sealed class NonBlockingSendLiveTests
     {
         Require.Artwork();
         var oldT = TcpTransport.OverflowTimeout;
+        var oldN = TcpTransport.NoWriteProgressTimeout;
         var oldC = TcpTransport.CapacityBytes;
         TcpTransport.OverflowTimeout = TimeSpan.FromSeconds(1);
+        TcpTransport.NoWriteProgressTimeout = TimeSpan.FromSeconds(1);
         TcpTransport.CapacityBytes = 64 * 1024;
         var server = Boot();
         List<FltBot> bots = new();
@@ -212,6 +214,7 @@ public sealed class NonBlockingSendLiveTests
             foreach (var b in bots) b.Dispose();
             server.Dispose();
             TcpTransport.OverflowTimeout = oldT;
+            TcpTransport.NoWriteProgressTimeout = oldN;
             TcpTransport.CapacityBytes = oldC;
         }
     }

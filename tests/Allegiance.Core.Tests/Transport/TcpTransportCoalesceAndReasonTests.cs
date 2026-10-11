@@ -120,10 +120,12 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
     private static IDisposable ShortenOverflow()
     {
         var oT = TcpTransport.OverflowTimeout;
+        var oN = TcpTransport.NoWriteProgressTimeout;
         var oC = TcpTransport.CapacityBytes;
         TcpTransport.OverflowTimeout = TimeSpan.FromMilliseconds(400);
+        TcpTransport.NoWriteProgressTimeout = TimeSpan.FromMilliseconds(400);
         TcpTransport.CapacityBytes = 64 * 1024;
-        return new Restore(() => { TcpTransport.OverflowTimeout = oT; TcpTransport.CapacityBytes = oC; });
+        return new Restore(() => { TcpTransport.OverflowTimeout = oT; TcpTransport.NoWriteProgressTimeout = oN; TcpTransport.CapacityBytes = oC; });
     }
 
     private sealed class Restore : IDisposable
