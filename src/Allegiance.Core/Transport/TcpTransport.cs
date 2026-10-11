@@ -24,6 +24,36 @@ public enum TransportMode
 }
 
 /// <summary>
+/// P606 — why a peer's connection ended. Previously the transport recorded no
+/// reason, so a mass disconnect (the 2026-10-11 390-bot live test: 346 of ~392
+/// connections dropped, "SESSION LOST", with no explanation) could not be told
+/// apart from a graceful logout. Every disconnect now stamps exactly one of
+/// these and it is logged (one line per peer) plus summed per report window.
+/// </summary>
+public enum DisconnectReason
+{
+    None = 0,
+    /// <summary>The peer's guaranteed backlog sat over capacity for the whole
+    /// <see cref="TcpTransport.OverflowTimeout"/> window (nothing droppable
+    /// left to shed) — the client genuinely cannot keep up.</summary>
+    QueueOverflow,
+    /// <summary>A blocking socket write failed or hit the socket's SendTimeout
+    /// (dead / black-holed peer).</summary>
+    SendError,
+    /// <summary>The peer's read loop ended: remote closed (EOF) or a read
+    /// error/socket error on the connection.</summary>
+    ReadErrorOrEof,
+    /// <summary>A malformed frame / wrong frame type / oversize greeting was
+    /// received during the join handshake.</summary>
+    ProtocolError,
+    /// <summary>A peer connected and sent nothing (or a partial frame) within
+    /// the greeting timeout.</summary>
+    GreetTimeout,
+    /// <summary>The server shut down the session (explicit Shutdown).</summary>
+    Shutdown,
+}
+
+/// <summary>
 /// <see cref="ITransport"/> over a real TCP socket — a length-delimited framing
 /// layer on top of the byte stream. Connection ids are minted by the host,
 /// mirroring DirectPlay's id assignment (§3.1, §Recommendation-constraint-1 of
@@ -159,6 +189,12 @@ public sealed class TcpTransport : ITransport
     // Exactly-once guard so <c>OnPeerLeft</c> fires once even when both the peer's
     // read loop and the overflow/disconnect path (DropPeer) try to reap it.
     private readonly ConcurrentDictionary<ConnectionId, byte> _peerEnded = new();
+    // P606 — per-window disconnect counts by reason. Incremented on every peer
+    // disconnect (reader thread / sender thread), drained by the server each
+    // report window via <see cref="DrainDisconnectCounts"/> so the profiler log
+    // shows a "by reason" summary. Thread-safe (disconnects are not on the sim
+    // thread).
+    private readonly ConcurrentDictionary<DisconnectReason, int> _disconnectCounts = new();
     private TcpListener? _listener;
     private NetworkStream? _clientStream;
     private PeerSender? _clientSender;
@@ -171,6 +207,9 @@ public sealed class TcpTransport : ITransport
     // P320 — exactly-once guard so OnSessionLost fires once per lost session
     // even though several paths (read-loop finally, DropClient) can unwind.
     private volatile bool _clientSessionLostRaised;
+    // P606 — the exception / reason that ended the client's read loop, so a
+    // "SESSION LOST" is logged WITH its cause instead of silently.
+    private volatile string? _clientReadFailure;
     private ushort _boundPort;
     private int _nextPeerId; // host id fountain (client self is 0); minted via Interlocked.Increment in HandlePeer
 
@@ -235,10 +274,13 @@ public sealed class TcpTransport : ITransport
         LocalId = ConnectionId.Me; // client self id 0, mirroring Messages.cpp:1603
         // Set up the per-connection send queue; the greeting travels through it
         // (first in the queue, so ordering is preserved) instead of a raw write.
-        var sender = new PeerSender(_clientStream, client, DropClient);
+        // P606 — the client half stamps a reason on its sender's death, but
+        // DropClient needs none (it just tears the socket down so the read loop
+        // unwinds and surfaces OnSessionLost with the real reason).
+        var sender = new PeerSender(_clientStream, client, _ => DropClient());
         lock (_gate) _clientSender = sender;
         sender.Start();
-        sender.Enqueue(BuildFrame(FrameType.Greet, Encoding.UTF8.GetBytes(playerName)), guaranteed: true);
+        sender.Enqueue(BuildFrame(FrameType.Greet, Encoding.UTF8.GetBytes(playerName)), guaranteed: true, coalesceKey: 0);
         Spawn(() =>
         {
             // P320 — the client read loop ending (server closed / socket error /
@@ -252,6 +294,19 @@ public sealed class TcpTransport : ITransport
     }
 
     public void Send(ConnectionId target, ReadOnlySpan<byte> data, bool guaranteed)
+        => Send(target, data, guaranteed, coalesceKey: 0);
+
+    /// <summary>
+    /// P606 — <see cref="Send"/> with an optional per-peer coalesce key. When
+    /// <paramref name="coalesceKey"/> is non-zero the packet is treated as a
+    /// <b>latest-wins</b> stream frame: if this peer's queue already holds a
+    /// pending frame for the same key (e.g. a previous tick's ship-state batch),
+    /// the older one is <em>superseded in place</em> by the new one, so a slow
+    /// client's queue keeps at most the newest pending entry per key instead of
+    /// accumulating every tick's stale snapshot. Zero = ordinary ordered traffic
+    /// (chat, kills, joins, events) which is never coalesced.
+    /// </summary>
+    public void Send(ConnectionId target, ReadOnlySpan<byte> data, bool guaranteed, int coalesceKey)
     {
         PeerSender? ps;
         lock (_gate)
@@ -278,8 +333,19 @@ public sealed class TcpTransport : ITransport
         }
         // Enqueue-and-return: never blocks on socket I/O. A dead/disconnected
         // peer's sender no-ops its enqueue internally.
-        ps.Enqueue(BuildFrame(FrameType.Data, data), guaranteed);
+        ps.Enqueue(BuildFrame(FrameType.Data, data), guaranteed, coalesceKey);
     }
+
+    /// <summary>
+    /// P606 — <see cref="SendCoalescing"/> sends a latest-wins stream frame as
+    /// <b>non-guaranteed</b> (best-effort): it is the natural overflow-shed
+    /// candidate (native sends HEAVY/LIGHT_SHIPS_UPDATE with FM_NOT_GUARANTEED,
+    /// FedSrv.CPP:4189) and it supersedes any older pending frame with the same
+    /// key, so a slow client's queue stays small and current instead of
+    /// accumulating stale ship-state snapshots.
+    /// </summary>
+    public void SendCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
+        => Send(target, data, guaranteed: false, coalesceKey);
 
     public void Shutdown()
     {
@@ -369,7 +435,14 @@ public sealed class TcpTransport : ITransport
             // body never arrives is still bounded by the socket's ReceiveTimeout
             // (set in ConfigureAcceptedSocket), so it drops rather than parking.
             (byte type, byte[] body) = ReadFrame(stream, MaximumGreeting);   // peer's greeting
-            if (type != (byte)FrameType.Greet) { CloseQuiet(stream); client.Dispose(); return; }
+            if (type != (byte)FrameType.Greet)
+            {
+                // P606 — a connection that speaks a non-greet frame is a
+                // protocol violation (not a client we can talk to).
+                CloseQuiet(stream); client.Dispose();
+                RecordDisconnectRaw(DisconnectReason.ProtocolError, "peer sent non-greet frame");
+                return;
+            }
             // Greeting done and the peer is legitimate: restore indefinite reads
             // for its data session, so an idle-but-healthy player is never
             // dropped merely for not sending within the greeting timeout.
@@ -380,7 +453,7 @@ public sealed class TcpTransport : ITransport
             // never produce the same id. (_nextPeerId starts at 0 and
             // Interlocked.Increment yields 1 for the first peer.)
             id = new ConnectionId(unchecked((uint)Interlocked.Increment(ref _nextPeerId)));
-            var sender = new PeerSender(stream, client, () => DropPeer(id));
+            var sender = new PeerSender(stream, client, r => DropPeer(id, r));
             lock (_gate) _peers[id] = sender;
             StartOrPool(id, sender);
             // Constraint: OnPeerJoined BEFORE the app sees any datagram. The
@@ -388,10 +461,18 @@ public sealed class TcpTransport : ITransport
             // until this call has returned.
             _site.OnPeerJoined(id, name);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            // P606 — the greeting read failed: the peer connected but sent
+            // nothing (ReceiveTimeout → GreetTimeout), closed early (EOF →
+            // ReadErrorOrEof), or sent a bad/oversize frame (ProtocolError).
+            DisconnectReason gr;
+            if (ex is EndOfStreamException) gr = DisconnectReason.ReadErrorOrEof;
+            else if (IsReadTimeout(ex)) gr = DisconnectReason.GreetTimeout;
+            else gr = DisconnectReason.ProtocolError;
             if (stream != null) CloseQuiet(stream);
             client.Dispose();
+            RecordDisconnectRaw(gr, $"greeting failed ({gr})");
             return;
         }
 
@@ -411,7 +492,11 @@ public sealed class TcpTransport : ITransport
                 lock (_gate) _peers.Remove(peerId);
                 if (_mode == TransportMode.Pool) _pool?.Unassign(peerSender);
                 peerSender.Close();
-                RaisePeerLeftIfFirst(peerId);
+                // P606 — the read loop terminating IS a disconnect; record its
+                // reason (a clean server Shutdown is the only non-error close).
+                bool intentional = _intentionalShutdown;
+                RaisePeerLeftIfFirst(peerId, intentional ? DisconnectReason.Shutdown : DisconnectReason.ReadErrorOrEof,
+                                     logLine: !intentional);
             }
         }, $"peer-{peerId}");
     }
@@ -433,7 +518,7 @@ public sealed class TcpTransport : ITransport
     /// once) rather than depending on the read loop noticing — so an overflow
     /// disconnect always surfaces to the server even if the read loop is parked
     /// on a stalled socket.</summary>
-    private void DropPeer(ConnectionId id)
+    private void DropPeer(ConnectionId id, DisconnectReason reason)
     {
         PeerSender? ps = null;
         lock (_gate) { if (_peers.TryGetValue(id, out ps)) _peers.Remove(id); }
@@ -442,15 +527,63 @@ public sealed class TcpTransport : ITransport
             if (_mode == TransportMode.Pool) _pool?.Unassign(ps);
             ps.Close();
         }
-        RaisePeerLeftIfFirst(id);
+        RaisePeerLeftIfFirst(id, reason, logLine: true);
     }
 
     /// <summary>Raise <see cref="ITransportSite.OnPeerLeft"/> exactly once per
-    /// peer, whichever of the read-loop finally / DropPeer gets there first.</summary>
-    private void RaisePeerLeftIfFirst(ConnectionId id)
+    /// peer, whichever of the read-loop finally / DropPeer gets there first.
+    /// The <paramref name="reason"/> is counted into the per-window disconnect
+    /// summary (and, unless suppressed for a benign close, logged one line per
+    /// peer) the FIRST time this peer is reaped — so exactly one reason is
+    /// attributed to each disconnect.</summary>
+    private void RaisePeerLeftIfFirst(ConnectionId id, DisconnectReason reason, bool logLine)
     {
         if (_peerEnded.TryAdd(id, 0))
+        {
+            _disconnectCounts.AddOrUpdate(reason, 1, (_, c) => c + 1);
+            if (logLine)
+                Console.WriteLine($"[conn-drop] peer {id} left reason={reason}");
             _site.OnPeerLeft(id);
+        }
+    }
+
+    /// <summary>P606 — record a disconnect that never earned a connection id
+    /// (a failed greeting), so it still shows in the by-reason summary.</summary>
+    private void RecordDisconnectRaw(DisconnectReason reason, string detail)
+    {
+        _disconnectCounts.AddOrUpdate(reason, 1, (_, c) => c + 1);
+        Console.WriteLine($"[conn-drop] (pre-join) {detail} reason={reason}");
+    }
+
+    /// <summary>Does <paramref name="ex"/> (or its inner exception) indicate a
+    /// socket receive timeout?</summary>
+    private static bool IsReadTimeout(Exception ex)
+    {
+        for (Exception? e = ex; e is not null; e = e.InnerException)
+            if (e is SocketException se && se.SocketErrorCode == SocketError.TimedOut)
+                return true;
+        return false;
+    }
+
+    /// <summary>P606 — drain (and clear) the per-window disconnect counts by
+    /// reason. Called by the server each report window so the profiler log gets
+    /// a "disconnects by reason" line; resets the window counter.</summary>
+    public IReadOnlyDictionary<DisconnectReason, int> DrainDisconnectCounts()
+    {
+        var snap = new Dictionary<DisconnectReason, int>();
+        foreach (var kv in _disconnectCounts) snap[kv.Key] = kv.Value;
+        _disconnectCounts.Clear();
+        return snap;
+    }
+
+    /// <summary>P606 test seam: total disconnects recorded since boot (all
+    /// reasons, never drained) — lets a test assert a disconnect occurred and
+    /// its reason without racing the server's window drain.</summary>
+    internal int TotalDisconnects()
+    {
+        int total = 0;
+        foreach (var v in _disconnectCounts.Values) total += v;
+        return total;
     }
 
     /// <summary>The client-half sender died (server closed / send timeout):
@@ -476,6 +609,9 @@ public sealed class TcpTransport : ITransport
         if (_clientSessionLostRaised) return;
         _clientSessionLostRaised = true;
         IsConnected = false;
+        // P606 — log WHY the session was lost (the read-loop's recorded failure)
+        // so a client-side "SESSION LOST" is never unexplained again.
+        Console.WriteLine($"[client] SESSION LOST reason={_clientReadFailure ?? "read loop ended"}");
         _site.OnSessionLost();
     }
 
@@ -491,11 +627,11 @@ public sealed class TcpTransport : ITransport
                 _site.OnReceive(from, body);
             }
         }
-        catch (EndOfStreamException) { /* remote closed */ }
-        catch (IOException) { /* remote closed */ }
-        catch (SocketException) { /* closed */ }
-        catch (ObjectDisposedException) { /* closed */ }
-        catch (ArgumentException) { /* invalid codec body forwarded anyway */ }
+        catch (EndOfStreamException) { _clientReadFailure = "server closed connection (EOF)"; }
+        catch (IOException) { _clientReadFailure = "read I/O error"; }
+        catch (SocketException) { _clientReadFailure = "socket error"; }
+        catch (ObjectDisposedException) { _clientReadFailure = "connection disposed"; }
+        catch (ArgumentException) { _clientReadFailure = "invalid frame"; }
     }
 
     // ---- framing primitives ---------------------------------------------
@@ -611,13 +747,27 @@ public sealed class TcpTransport : ITransport
 
         private readonly NetworkStream _stream;
         private readonly TcpClient _tcpClient;
-        private readonly Action _onDead;
+        private readonly Action<DisconnectReason> _onDead;
         private readonly CancellationTokenSource _cts = new();
-        private readonly LinkedList<(byte[] Frame, bool Guaranteed)> _queue = new();
+        private readonly LinkedList<QueuedFrame> _queue = new();
         private readonly object _sync = new();
+        // P606 — latest-wins coalescing: coalesceKey -> the queue node holding
+        // that key's newest pending frame. Lets Enqueue supersede an older
+        // pending stream frame in place (O(1)) instead of queueing every stale
+        // snapshot; removed when the writer pops the node.
+        private readonly Dictionary<int, LinkedListNode<QueuedFrame>> _coalesceNodes = new();
         private long _queuedBytes;
         private DateTime? _overflowSinceUtc;
+        // P606 — how long the queue has been continuously non-empty (never
+        // fully drained). Cleared whenever the writer empties it; a peer whose
+        // queue stays non-empty for the whole OverflowTimeout is stuck (its
+        // socket hasn't accepted a write in that long) and is disconnected.
+        // This is what keeps coalescing from turning a forever-stalled peer
+        // into a silent zombie: coalescing shrinks the backlog, but a peer that
+        // never drains is still dead and gets dropped (anti-Zombie fail-safe).
+        private DateTime? _undrainedSinceUtc;
         private volatile bool _disconnected;
+        private volatile DisconnectReason _reason;
         // P605 — pool mode: the owning worker's Wake callback, pulsed when a
         // frame is enqueued so the pool never busy-waits. Null in
         // thread-per-peer mode, where the dedicated writer is woken by Pulse.
@@ -626,7 +776,7 @@ public sealed class TcpTransport : ITransport
         // unassign on leave). Null in thread-per-peer mode.
         internal SendWorkerPool.Worker? OwnerWorker;
 
-        public PeerSender(NetworkStream stream, TcpClient tcpClient, Action onDead)
+        public PeerSender(NetworkStream stream, TcpClient tcpClient, Action<DisconnectReason> onDead)
         {
             _stream = stream;
             _tcpClient = tcpClient;
@@ -639,43 +789,77 @@ public sealed class TcpTransport : ITransport
             t.Start();
         }
 
-        /// <summary>Queue a fully-framed datagram. Never blocks; no socket I/O.</summary>
-        public void Enqueue(byte[] frame, bool guaranteed)
+        /// <summary>Queue a fully-framed datagram. Never blocks; no socket I/O.
+        /// When <paramref name="coalesceKey"/> is non-zero, supersedes (in
+        /// place) any older pending frame for the same peer+key — latest-wins —
+        /// instead of appending a stale duplicate (P606).</summary>
+        public void Enqueue(byte[] frame, bool guaranteed, int coalesceKey)
         {
             bool fireDisconnect = false;
             lock (_sync)
             {
                 if (_disconnected) return;
-                // Shed oldest best-effort frames while over capacity (guaranteed
-                // traffic is never dropped here).
-                while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                _queue.AddLast((frame, guaranteed));
-                _queuedBytes += frame.Length;
-                Monitor.Pulse(_sync);
 
-                if (_queuedBytes > CapacityBytes)
+                if (coalesceKey != 0 && _coalesceNodes.TryGetValue(coalesceKey, out var existing))
                 {
-                    // Over capacity with nothing droppable left -> only guaranteed
-                    // traffic is backing up. Clock how long that persists; after
-                    // OverflowTimeout the peer is deemed unable to keep up.
-                    var now = DateTime.UtcNow;
-                    _overflowSinceUtc ??= now;
-                    if (now - _overflowSinceUtc >= OverflowTimeout)
-                    {
-                        _disconnected = true;
-                        fireDisconnect = true;
-                    }
+                    // Latest-wins: an older pending frame for this same key is
+                    // superseded. Replace in place so the collapsed frame keeps
+                    // its queue position (relative order vs guaranteed messages
+                    // is preserved) and the byte accounting stays exact.
+                    _queuedBytes -= existing.Value.Frame.Length;
+                    existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey);
+                    _queuedBytes += frame.Length;
                 }
                 else
                 {
+                    // Shed oldest best-effort frames while over capacity
+                    // (guaranteed traffic is never dropped here). Streaming
+                    // ship-state frames are sent non-guaranteed, so they are the
+                    // natural shed candidates.
+                    while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                    var node = _queue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey));
+                    if (coalesceKey != 0) _coalesceNodes[coalesceKey] = node;
+                    _queuedBytes += frame.Length;
+                }
+                Monitor.Pulse(_sync);
+
+                // Overflow policy (P606 revision): the peer is disconnected only
+                // when it is genuinely STUCK — never merely because its streaming
+                // backlog is large (coalescing keeps that small). Two signals,
+                // both gated on the whole OverflowTimeout so a healthy (if slow)
+                // peer is never dropped for a brief burst:
+                //   (a) a guaranteed-only backlog sits over capacity — the classic
+                //       "cannot keep up" case (nothing droppable left);
+                //   (b) the queue has been continuously non-empty (never fully
+                //       drained) the whole window — the socket hasn't accepted a
+                //       write in that long, so the peer is dead even though its
+                //       (coalesced) backlog is small. Prevents a forever-stalled
+                //       peer from lingering as a silent zombie now that
+                //       coalescing keeps its queue under the byte cap.
+                var now = DateTime.UtcNow;
+                if (_queue.First is null)
+                {
+                    _undrainedSinceUtc = null;
                     _overflowSinceUtc = null;
+                }
+                else
+                {
+                    _undrainedSinceUtc ??= now;
+                    _overflowSinceUtc = _queuedBytes > CapacityBytes ? (_overflowSinceUtc ?? now) : null;
+                    if ((now - _undrainedSinceUtc) >= OverflowTimeout
+                        || (_overflowSinceUtc is { } os && now - os >= OverflowTimeout))
+                    {
+                        _disconnected = true;
+                        _reason = DisconnectReason.QueueOverflow;
+                        fireDisconnect = true;
+                    }
                 }
             }
 
             if (fireDisconnect)
             {
                 _cts.Cancel();
-                _onDead();
+                _onDead(_reason);
             }
             else
             {
@@ -718,9 +902,14 @@ public sealed class TcpTransport : ITransport
                 if (!SocketReady()) return DrainResult.Blocked;   // skip — not writable now
                 var node = _queue.First!;
                 _queue.RemoveFirst();
+                // P606 — a coalescable frame leaving the queue releases its key
+                // so the NEXT enqueue for that key appends fresh instead of
+                // pointing at this (now-consumed) node.
+                if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                 frame = node.Value.Frame;
                 _queuedBytes -= frame.Length;
-                if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+                if (_queue.First is null) { _undrainedSinceUtc = null; _overflowSinceUtc = null; }
+                else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
             }
             // Outside the lock, like WriterLoop: the only blocking socket write.
             // SendTimeout on the socket bounds it even against a black-holed
@@ -734,7 +923,13 @@ public sealed class TcpTransport : ITransport
             catch (Exception)
             {
                 // Socket error / SendTimeout / disposal -> this peer is dead.
-                if (!_disconnected) { _disconnected = true; _cts.Cancel(); _onDead(); }
+                if (!_disconnected)
+                {
+                    _disconnected = true;
+                    _reason = DisconnectReason.SendError;
+                    _cts.Cancel();
+                    _onDead(DisconnectReason.SendError);
+                }
                 return DrainResult.Dead;
             }
         }
@@ -765,6 +960,7 @@ public sealed class TcpTransport : ITransport
                 if (!node.Value.Guaranteed)
                 {
                     _queuedBytes -= node.Value.Frame.Length;
+                    if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                     _queue.Remove(node);
                     return true;
                 }
@@ -786,9 +982,11 @@ public sealed class TcpTransport : ITransport
                         if (_disconnected || _cts.IsCancellationRequested) break;
                         var node = _queue.First!;
                         _queue.RemoveFirst();
+                        if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                         frame = node.Value.Frame;
                         _queuedBytes -= frame.Length;
-                        if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+                        if (_queue.First is null) { _undrainedSinceUtc = null; _overflowSinceUtc = null; }
+                        else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
                     }
                     // The only blocking socket write, on this dedicated thread.
                     // SendTimeout on the socket bounds it even against a
@@ -799,7 +997,13 @@ public sealed class TcpTransport : ITransport
             catch (Exception)
             {
                 // Socket error / SendTimeout / disposal -> this peer is dead.
-                if (!_disconnected) { _disconnected = true; _cts.Cancel(); _onDead(); }
+                if (!_disconnected)
+                {
+                    _disconnected = true;
+                    _reason = DisconnectReason.SendError;
+                    _cts.Cancel();
+                    _onDead(DisconnectReason.SendError);
+                }
             }
         }
 
@@ -811,6 +1015,23 @@ public sealed class TcpTransport : ITransport
             lock (_sync) { _disconnected = true; Monitor.PulseAll(_sync); }
             CloseQuiet(_stream);
             try { _tcpClient.Dispose(); } catch { }
+        }
+
+        /// <summary>One element of the peer's send queue: a fully-framed byte[]
+        /// plus its delivery contract. <see cref="CoalesceKey"/> is 0 for
+        /// ordinary ordered traffic; non-zero marks a latest-wins stream frame
+        /// (only the newest pending entry per key is ever retained, P606).</summary>
+        private readonly struct QueuedFrame
+        {
+            public readonly byte[] Frame;
+            public readonly bool Guaranteed;
+            public readonly int CoalesceKey;
+            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey)
+            {
+                Frame = frame;
+                Guaranteed = guaranteed;
+                CoalesceKey = coalesceKey;
+            }
         }
     }
 

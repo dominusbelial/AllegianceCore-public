@@ -1089,4 +1089,11 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>Send bytes to <paramref name="target"/> through the bound transport.</summary>
     public void Send(ConnectionId target, byte[] data) => Transport!.Send(target, data, guaranteed: true);
+
+    /// <summary>P606 — send a <b>latest-wins</b> stream frame (ship-state
+    /// broadcasts) as non-guaranteed, coalescing per <paramref name="coalesceKey"/>
+    /// so a slow client keeps only the newest pending snapshot per key. See
+    /// <see cref="ITransport.SendCoalescing"/>.</summary>
+    public void SendCoalescing(ConnectionId target, byte[] data, int coalesceKey)
+        => Transport!.SendCoalescing(target, data, coalesceKey);
 }

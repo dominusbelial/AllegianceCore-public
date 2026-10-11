@@ -49,6 +49,20 @@ public interface ITransport
     /// call sites in the C++, §3.2 of TRANSPORT_SEAM.md, are covered by a
     /// runtime bool and not on the bot path).</remarks>
     void Send(ConnectionId target, ReadOnlySpan<byte> data, bool guaranteed);
+
+    /// <summary>
+    /// P606 — send with a per-peer <b>coalesce key</b>. When <paramref name="coalesceKey"/>
+    /// is non-zero the frame is a <b>latest-wins</b> stream packet: if the
+    /// peer's send queue already holds a pending frame for the same key (e.g. a
+    /// previous tick's ship-state batch), the older one is superseded in place
+    /// rather than queued as a stale duplicate, so a slow client's backlog stays
+    /// small and current. Zero = ordinary ordered traffic (never coalesced).
+    /// Mirrors native's DPNSEND_NONGUARANTEED + DPNSEND_COALESCE split — see
+    /// Messages.cpp:548-563 (guaranteed: DPNSEND_GUARANTEED|COALESCE, never
+    /// times out; best-effort: DPNSEND_NONSEQUENTIAL, drops at 500 ms) and
+    /// FedSrv.CPP:4189-4196 (HEAVY/LIGHT_SHIPS_UPDATE sent FM_NOT_GUARANTEED).
+    /// </summary>
+    void SendCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey);
 }
 
 /// <summary>
