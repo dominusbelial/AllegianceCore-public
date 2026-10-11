@@ -98,4 +98,25 @@ public class WarpPulseControllerTests
         c.Trigger(5, now: 0.0);
         Assert.Equal(0f, c.Strength(99, 0.5));   // an untouched warp never pulses
     }
+
+    /// <summary>
+    /// P599 — a single ship transit can be observed by TWO independent paths in
+    /// the same frame (the renderer's sector-change arrival in DetectTransitSwells
+    /// AND the ClientWorld arrival signal drained in DrainAlephTransitSignals,
+    /// both hitting the SAME warp id). The controller's same-warp coalescing must
+    /// collapse them to exactly ONE pulse — no flicker, one retained start.
+    /// </summary>
+    [Fact]
+    public void SameWarpTransitFromTwoSources_YieldsExactlyOnePulse()
+    {
+        var c = new WarpPulseController();
+        c.Trigger(4, now: 5.0);                 // DetectTransitSwells arrival (sector change)
+        c.Trigger(4, now: 5.003);               // ClientWorld arrival signal, same frame
+        Assert.Equal(1, c.ActiveCount);          // one warp pulsing, not two stacked pulses
+
+        // The retained start is the ORIGINAL trigger: by now=5.12 the pulse has
+        // aged 0.12s and reached ~peak. A restarted pulse (had it not coalesced)
+        // would be younger and weaker — proving no double-fire took hold.
+        Assert.InRange(c.Strength(4, 5.0 + WarpPulseController.AttackSeconds), 0.995f, 1.011f);
+    }
 }

@@ -2107,7 +2107,10 @@ public sealed partial class Game1
             {
                 _warpPulses.Trigger(sig.WarpId, _nowSeconds);
                 _warpRenderer.TriggerTransit(sig.WarpId);
-                Console.WriteLine($"[transit-pulse] warp #{sig.WarpId} transit signal @t={_nowSeconds:0.00}");
+                // P599 — log WHOSE transit pulsed (OWN / TEAM / ENEMY vs the
+                // viewer's side): the objective evidence that the flare fires
+                // for visible ENEMY ships, not only teammates.
+                Console.WriteLine($"[transit-pulse] warp #{sig.WarpId} {TransitActorLabel(world, sig.ShipId)} transit signal (ship {sig.ShipId}) @t={_nowSeconds:0.00}");
             }
         }
         else
@@ -2115,6 +2118,24 @@ public sealed partial class Game1
             world.DrainAlephTransits();
         }
         _warpPulses.Update(_nowSeconds);
+    }
+
+    /// <summary>
+    /// P599 — classify the actor behind an aleph-transit signal relative to the
+    /// viewer: OWN (the local ship), ENEMY (a different side), TEAM (same side),
+    /// UNKNOWN (never seen — cannot happen for a real signal, but never crashes).
+    /// Used to label the <c>[transit-pulse]</c> log so the live proof shows the
+    /// flare firing for ENEMY ships, not only teammates.
+    /// </summary>
+    private static string TransitActorLabel(ClientWorld world, short shipId)
+    {
+        if (world.MyShipId == shipId) return "OWN";
+        if (world.Ships.TryGetValue(shipId, out var e))
+        {
+            if (world.MySideId is { } my && e.SideId != my) return "ENEMY";
+            return "TEAM";
+        }
+        return "UNKNOWN";
     }
 
     /// <summary>

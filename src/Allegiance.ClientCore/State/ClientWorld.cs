@@ -1471,7 +1471,7 @@ public sealed class ClientWorld
         {
             var warp = NearestWarpInSector(set.SectorId, ownPos);
             if (warp is not null)
-                SignalAlephTransit(warp.Value.WarpId, NowSeconds());
+                SignalAlephTransit(warp.Value.WarpId, set.Ship.ShipId, NowSeconds());
         }
     }
 
@@ -1744,9 +1744,16 @@ public sealed class ClientWorld
         foreach (var entry in heavy.HeavyShipEntries)
         {
             var e = Upsert(entry.ShipId);
-            // P585 — remember whether this ship was out of view (IsGone) so a
-            // re-sighting here can be attributed as an aleph ARRIVAL below.
+            // P585/P599 — remember whether this ship was out of view (IsGone)
+            // OR had never been posed in our sector (no Latest yet) so a
+            // (re/first-)sighting here can be attributed as an aleph ARRIVAL
+            // below. The second clause is the P599 widening: an ENEMY crossing
+            // into our sector via an aleph is a FIRST-ever sighting (the server
+            // only sends cross-side ships while they fly in our sector, so the
+            // entity may already exist from its cross-side EXPORT without ever
+            // having had a pose here — the first 176 record is the sighting).
             bool wasGone = e.IsGone;
+            bool hadPose = e.Latest is not null;
             e.SectorId = ownSector;   // P375 — every 176 entry is in our own cluster (see above)
             e.Latest = ServerShipUpdate.FromValues(
                 entry.ShipId, entry.StateM, entry.Controls,
@@ -1784,11 +1791,15 @@ public sealed class ClientWorld
             // fires from Apply(ExportShip) instead.
             if (e.HasRealIdentity)
                 AnnounceNewContactIfNew(e);
-            // P585 — a ship that was out of view (IsGone) and is now re-sighted
-            // near an aleph just ARRIVED through it into our sector; signal that
-            // arrival aleph so the opt-in transit pulse flares it.
-            if (wasGone && ownSector != 0)
-                MaybeSignalArrival(ownSector, e.Latest?.Position, e.IsMine);
+            // P585/P599 — a ship that was out of view (IsGone) or never seen in
+            // our sector before (no pose yet) is now (re/)first-sighted here;
+            // if it lies just past an aleph moving outward it just ARRIVED
+            // through that aleph. (P599 widened the arrival to first-ever
+            // sightings — an enemy crossing INTO our sector — and added the
+            // outward-velocity gate so a ship merely passing near an aleph
+            // never fakes an arrival.)
+            if ((wasGone || !hadPose) && ownSector != 0)
+                MaybeSignalArrival(ownSector, e.ShipId, e.Latest?.Position, entry.Velocity, e.IsMine);
         }
     }
 
@@ -3231,8 +3242,8 @@ public sealed class ClientWorld
     /// via <see cref="DrainAlephTransits"/> to drive the opt-in transit pulse).
     /// <paramref name="time"/> is the monotonic clock (seconds) at detection.
     /// </summary>
-    public void SignalAlephTransit(short warpId, double time)
-        => _alephTransits.Add(new AlephTransitSignal(warpId, time));
+    public void SignalAlephTransit(short warpId, short shipId, double time)
+        => _alephTransits.Add(new AlephTransitSignal(warpId, shipId, time));
 
     /// <summary>P585 — drain (and clear) the pending aleph transit signals.</summary>
     public IReadOnlyList<AlephTransitSignal> DrainAlephTransits()
@@ -3252,6 +3263,23 @@ public sealed class ClientWorld
     /// </summary>
     private static float TransitAttributionRadius(DataWarpIGC w)
         => Math.Max(w.Radius * 2f, 90f);
+
+    /// <summary>
+    /// P599 — minimum cosine of the angle between an arriving ship's velocity
+    /// and the straight-out-from-the-aleph direction for it to count as a warp
+    /// ARRIVAL rather than a ship merely passing near the aleph. Native places
+    /// an arriving ship just BEHIND the destination aleph and launches it
+    /// straight outward along the warp axis — position = destination
+    /// <c>+ up·rand(2..5) + right·rand(2..5) − (shipRadius+5)·backward</c>,
+    /// velocity = <c>backward·−(speed + exitWarpSpeed)</c>, i.e. net motion
+    /// along <c>forward</c> (trekigc.cpp:4407-4413) — so a fresh post-emergence
+    /// velocity is essentially PARALLEL to the radial-outward direction (dot ≈
+    /// 1; only the tiny ±5u lateral jitter perturbs it). 0.5 (cos 60°) is a
+    /// deliberately generous cone that still rejects a ship crossing the sector
+    /// tangentially or flying IN toward the aleph (an imminent departure, cued
+    /// by SDR_LEFTSECTOR, not an arrival).
+    /// </summary>
+    private const float ArrivalOutwardMinDot = 0.5f;
 
     /// <summary>
     /// P585 — nearest aleph to <paramref name="pos"/> in <paramref name="sectorId"/>
@@ -3283,28 +3311,43 @@ public sealed class ClientWorld
         if (MyShipId is not { } me || !_ships.TryGetValue(me, out var own)) return;
         var warp = NearestWarpInSector(own.SectorId, p);
         if (warp is not null)
-            SignalAlephTransit(warp.Value.WarpId, NowSeconds());
+            SignalAlephTransit(warp.Value.WarpId, e.ShipId, NowSeconds());
     }
 
-    /// <summary>P585 — a ship ARRIVED into the viewer's sector near an aleph
-    /// (re-sighted after being out of view): signal that arrival aleph. Skips
-    /// the own ship (its arrival is signalled from SET_CLUSTER).</summary>
-    private void MaybeSignalArrival(short sectorId, Vector3? pos, bool isMine)
+    /// <summary>P585/P599 — a ship ARRIVED into the viewer's sector near an aleph
+    /// (first or re-sighted, at <paramref name="pos"/> with
+    /// <paramref name="velocity"/>): signal that arrival aleph, but ONLY when it
+    /// lies just past the aleph AND is moving outward along the warp axis —
+    /// i.e. it genuinely emerged from the aleph rather than passing near it.
+    /// Skips the own ship (its arrival is signalled from SET_CLUSTER).</summary>
+    private void MaybeSignalArrival(short sectorId, short shipId, Vector3? pos, Vector3 velocity, bool isMine)
     {
         if (isMine) return;
         if (pos is not Vector3 p) return;
+        if (velocity.LengthSquared() <= 1e-9f) return;   // stationary: not an emergence
         var warp = NearestWarpInSector(sectorId, p);
-        if (warp is not null)
-            SignalAlephTransit(warp.Value.WarpId, NowSeconds());
+        if (warp is null) return;
+
+        // The outward gate: the ship must be moving AWAY from the aleph centre
+        // along the warp axis (a transit exit), not drifting past it.
+        Vector3 fromAleph = p - new Vector3(warp.Value.Position[0], warp.Value.Position[1], warp.Value.Position[2]);
+        if (fromAleph.LengthSquared() <= 1e-9f) return;  // dead on centre: no direction
+        if ((velocity.Normalize()) * (fromAleph.Normalize()) < ArrivalOutwardMinDot)
+            return;                                       // not an arrival through this aleph
+
+        SignalAlephTransit(warp.Value.WarpId, shipId, NowSeconds());
     }
 }
 
 /// <summary>
-/// P585 — a client-detected aleph transit: some ship crossed the aleph
+/// P585/P599 — a client-detected aleph transit: some ship crossed the aleph
 /// <see cref="WarpId"/> in the viewer's current sector at monotonic clock
-/// <see cref="Time"/> (seconds). Recorded by <see cref="ClientWorld"/> from the
-/// wire signals (SHIP_DELETE SDR_LEFTSECTOR for departures, SET_CLUSTER for the
+/// <see cref="Time"/> (seconds). Carries the triggering <see cref="ShipId"/> so
+/// the renderer can log WHOSE transit pulsed (the ship's side vs the viewer's),
+/// the objective evidence the live proof uses to show an ENEMY (not a
+/// teammate) crossing. Recorded by <see cref="ClientWorld"/> from the wire
+/// signals (SHIP_DELETE SDR_LEFTSECTOR for departures, SET_CLUSTER for the
 /// own arrival, re-sighting for other arrivals) and drained each frame by the
 /// renderer to drive the opt-in transit pulse.
 /// </summary>
-public readonly record struct AlephTransitSignal(short WarpId, double Time);
+public readonly record struct AlephTransitSignal(short WarpId, short ShipId, double Time);

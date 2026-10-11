@@ -41,7 +41,7 @@ public class ClientWorldAlephTransitTests
         Cookie = 0x1,
     };
 
-    private static void FlyShip(ClientWorld w, short id, Vector3 pos, uint time = 100u)
+    private static void FlyShip(ClientWorld w, short id, Vector3 pos, uint time = 100u, Vector3? velocity = null)
     {
         var posRef = new Vector3(pos.X, pos.Y, pos.Z);
         w.Apply(new HeavyShipsUpdate
@@ -52,7 +52,7 @@ public class ClientWorldAlephTransitTests
             [
                 HeavyShipUpdateEntry.From(time, posRef, id, 0,
                     new ControlData(0f, 0f, 0f, 0f), time, posRef,
-                    new Orientation(), new Vector3(0f, 0f, 0f), new[] { 0f, 0f, 0f },
+                    new Orientation(), velocity ?? Vector3.Zero, new[] { 0f, 0f, 0f },
                     1f, 1f, 1f),
             ],
         });
@@ -158,9 +158,103 @@ public class ClientWorldAlephTransitTests
         w.Apply(new ShipDelete { ShipId = 9, Sdr = ShipDelete.SdrLoggedOff }); // out of view
         Assert.Empty(w.DrainAlephTransits());
 
-        FlyShip(w, 9, new Vector3(300f, 0f, 0f), time: 200u);    // re-sighted beside the aleph
+        // Re-sighted beside the aleph, moving OUTWARD from it (a warp arrival).
+        FlyShip(w, 9, new Vector3(320f, 0f, 0f), time: 200u, velocity: new Vector3(70f, 0f, 0f));
         var signals = w.DrainAlephTransits();
         Assert.Single(signals);
         Assert.Equal(warp.WarpId, signals[0].WarpId);
+    }
+
+    // ── P599 — the transit pulse also fires for VISIBLE ENEMY ships ─────────
+
+    /// <summary>
+    /// P599 failing-first: an ENEMY crossing into the viewer's sector is a
+    /// FIRST-EVER sighting (the server only sends cross-side ships while they
+    /// fly in our sector, so there is no prior IsGone for it to re-sight). It
+    /// must still flare the arrival aleph when it first appears just past the
+    /// aleph moving outward. Fails on P585 code (which only signed re-sightings
+    /// after IsGone), passes with the P599 first-sighting widening.
+    /// </summary>
+    [Fact]
+    public void EnemyFirstSighting_AtAlephMovingOutward_SignalsThatAleph()
+    {
+        var w = new ClientWorld();
+        w.Apply(SetClusterFor(5, sector: 1, Vector3.Zero));   // I'm in sector 1
+        var warp = Warp(50, cluster: 1, new Vector3(200f, 0f, 0f));  // radius 60 → attribution 120
+        SeedWarp(w, warp);
+
+        // Brand-new enemy ship 8: first ever pose in my sector, 20u past the
+        // aleph centre, moving straight OUT (right along the warp axis).
+        FlyShip(w, 8, new Vector3(220f, 0f, 0f), velocity: new Vector3(60f, 0f, 0f));
+
+        var signals = w.DrainAlephTransits();
+        Assert.Single(signals);
+        Assert.Equal(warp.WarpId, signals[0].WarpId);
+        Assert.Equal((short)8, signals[0].ShipId);   // P599 — the signal names the enemy ship (side evidence)
+    }
+
+    [Fact]
+    public void FirstSighting_NearAlephMovingInward_DoesNotSignal()
+    {
+        var w = new ClientWorld();
+        w.Apply(SetClusterFor(5, sector: 1, Vector3.Zero));
+        var warp = Warp(51, cluster: 1, new Vector3(200f, 0f, 0f));
+        SeedWarp(w, warp);
+
+        // New ship PAST the aleph but flying IN TOWARD it (about to depart,
+        // not arriving) — the outward gate must suppress the arrival pulse.
+        FlyShip(w, 8, new Vector3(220f, 0f, 0f), velocity: new Vector3(-60f, 0f, 0f));
+
+        Assert.Empty(w.DrainAlephTransits());
+    }
+
+    [Fact]
+    public void FirstSighting_FarFromAnyAleph_DoesNotSignal()
+    {
+        var w = new ClientWorld();
+        w.Apply(SetClusterFor(5, sector: 1, Vector3.Zero));
+        SeedWarp(w, Warp(52, cluster: 1, new Vector3(500f, 0f, 0f)));
+
+        // New ship far from every aleph, whatever its velocity.
+        FlyShip(w, 8, new Vector3(10f, 10f, 10f), velocity: new Vector3(60f, 0f, 0f));
+
+        Assert.Empty(w.DrainAlephTransits());                    // no fake pulse
+    }
+
+    /// <summary>P599 — an enemy that was VISIBLE and vanishes via SDR_LEFTSECTOR
+    /// while inside an aleph's radius IS a departure (non-kill): pulse it. This
+    /// pins that the departure path serves cross-side ships too, not just the
+    /// same-side path P585 keyed on.</summary>
+    [Fact]
+    public void VisibleEnemyVanishing_InsideAleph_NonKill_SignalsIt()
+    {
+        var w = new ClientWorld();
+        w.Apply(SetClusterFor(5, sector: 1, Vector3.Zero));
+        var warp = Warp(53, cluster: 1, new Vector3(200f, 0f, 0f));
+        SeedWarp(w, warp);
+        FlyShip(w, 8, new Vector3(205f, 0f, 0f));                // enemy 8 visible at the aleph
+
+        w.Apply(new ShipDelete { ShipId = 8, Sdr = ShipDelete.SdrLeftSector });
+
+        var signals = w.DrainAlephTransits();
+        Assert.Single(signals);
+        Assert.Equal(warp.WarpId, signals[0].WarpId);
+        Assert.Equal((short)8, signals[0].ShipId);   // P599 — the departing ship is named too
+    }
+
+    /// <summary>P599 — a KILL (SDR_KILLED) inside an aleph's radius must NEVER
+    /// pulse: dying is not a warp crossing.</summary>
+    [Fact]
+    public void Kill_InsideAleph_DoesNotSignal()
+    {
+        var w = new ClientWorld();
+        w.Apply(SetClusterFor(5, sector: 1, Vector3.Zero));
+        var warp = Warp(54, cluster: 1, new Vector3(200f, 0f, 0f));
+        SeedWarp(w, warp);
+        FlyShip(w, 8, new Vector3(205f, 0f, 0f));                // enemy 8 visible at the aleph
+
+        w.Apply(new ShipDelete { ShipId = 8, Sdr = ShipDelete.SdrKilled });
+
+        Assert.Empty(w.DrainAlephTransits());                    // death ≠ transit
     }
 }

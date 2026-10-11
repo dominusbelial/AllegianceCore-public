@@ -1,0 +1,26 @@
+P599 — live client `[transit-pulse]` log (real-window run, local server, m2xspiderw,
+observer side-0 ship in Omega parked at hub aleph #2153; enemy (side-1) bots crossed
+into Omega through that same aleph; --aleph-glimpse on).
+
+Observer was at hub #2153; the ship-side labels are the NEW P599 additions
+(OWN/TEAM/ENEMY vs the viewer's side).
+
+--- run A (p599-o, spawn_scenario target_sector=Omega, observer auto-goto Omega) ---
+[transit-pulse] warp #2153 ENEMY transit signal (ship 8106) @t=32.42
+[transit-pulse] warp #2153 ENEMY transit signal (ship 8104) @t=33.87
+[transit-pulse] warp #2153 ENEMY transit signal (ship 8102) @t=33.87
+[transit-pulse] warp #2153 ENEMY transit signal (ship 8100) @t=33.87
+[transit-pulse] warp #2153 TEAM transit signal (ship 8096) @t=36.77
+[transit-pulse] warp #2153 TEAM transit signal (ship 8096) @t=159.05   <- side-1-labeled DEPARTURE-style transit, same aleph
+(server: ship 8096 sdr=LEFTSECTOR -> peers flying in sector 1053 = Omega, i.e. it LEFT the observed sector)
+
+--- run B (p599-a, spawn_scenario target_sector=Omega, observer auto-goto Omega + auto-target Aleph) ---
+[transit-pulse] warp #2152 OWN transit signal (ship 8107) @t=31.93
+[transit-pulse] warp #2153 OWN transit signal (ship 8107) @t=32.42
+[transit-pulse] warp #2153 ENEMY transit signal (ship 8106) @t=33.87   <- the flare captured in frames t034.8 vs t036.0
+[transit-pulse] warp #2153 TEAM transit signal (ship 8096) @t=37.73
+
+Every label is resolved against the viewer's side (TransitActorLabel): the four
+side-1 ships (8100/8102/8104/8106) are labelled ENEMY, the same-side bot (8096)
+TEAM, and the local ship (8107) OWN — proving the flare now fires for visible
+ENEMY ships, not only teammates, and the log names the ship.
