@@ -3,74 +3,113 @@ using System.Diagnostics;
 namespace Allegiance.Core.Tests;
 
 /// <summary>
-/// P601 — repository-hygiene guard. Fails if any TRACKED file under <c>src/</c>
-/// or <c>assets/</c> is a Meshy-generated output, because the public MIT repo
-/// may not redistribute Meshy models/textures (they live in the private
-/// optional asset pack). Also fails if any previously-moved Meshy screenshot /
-/// render path has crept back into <c>docs/</c> (the moved set is listed in
-/// <c>docs/release/moved-meshy-screenshots.txt</c>).
+/// P601/P601b — repository-hygiene guard, repo-wide. Fails if ANY tracked file
+/// anywhere is a Meshy-generated output (a model, texture, render, screenshot,
+/// contact sheet or thumbnail that shows a Meshy model, raw or repaired), because
+/// the public MIT repo may not redistribute Meshy content — it lives in the private
+/// optional asset pack (<c>~/Development/AllegianceCore-meshy-pack</c>,
+/// <c>screenshots/&lt;repo path&gt;</c> for images).
 /// </summary>
-/// <remarks>Like <see cref="PrivatePathGuardTests"/>, only <c>git ls-files</c>
-/// -tracked files are inspected, so gitignored local state is correctly excluded.
+/// <remarks>
+/// Detection is belt-and-suspenders, so it degrades safely if a data file goes
+/// stale:
+/// 1. Location — anything under <c>assets/ships/thumbs</c>, <c>Content/Models</c>
+///    (<c>.fbx</c>/<c>.fbm</c>), or <c>Content/Textures/ships</c>.
+/// 2. Extension — any 3D/model/toolchain output (<c>.fbx .fbm .obj .glb .gltf
+///    .blend .mtl</c>) tracked anywhere outside an explicit allowlist.
+/// 3. Name — any IMAGE/VIDEO/MODEL file whose path contains <c>MESHY</c> /
+///    <c>meshy</c>, except the native-input renders under <c>docs/meshy_hints/</c>
+///    and the (non-output) tooling under <c>tools/meshy-repair/</c>.
+/// 4. Authoritative list — every path marked class <c>a</c> in
+///    <c>docs/release/media-inventory.csv</c> must not be tracked.
+/// As with <see cref="PrivatePathGuardTests"/>, only <c>git ls-files</c>-tracked
+/// files are inspected, so gitignored local state is correctly excluded.
 /// </remarks>
 public class MeshyGuardTests
 {
+    // Meshy 3D/model/toolchain extensions (nothing native is tracked with these
+    // today; extend this list if a legitimately native model is ever added).
+    private static readonly string[] ModelExtensions =
+        [".fbx", ".fbm", ".obj", ".glb", ".gltf", ".blend", ".mtl"];
+    // Image/video/model extensions used for the name-based check.
+    private static readonly string[] MediaExtensions =
+        [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tga",
+         ".mp4", ".webm", ".fbx", ".fbm", ".obj", ".glb", ".gltf", ".blend", ".mtl"];
+    // Directories that legitimately contain Meshy-named content but no Meshy output.
+    private static readonly string[] NameAllowDirPrefixes =
+        ["docs/meshy_hints/", "tools/meshy-repair/"];
+
     [Fact]
-    public void NoTrackedMeshyModelTextureOrThumbnailRemains()
+    public void NoTrackedMeshyOutputRemainsAnywhere()
     {
         var root = FindRepoRoot();
         Assert.False(string.IsNullOrEmpty(root), "could not locate the repo root (AllegianceCore.slnx marker)");
 
         var offenders = new List<string>();
 
-        // 1. Any .fbx/.fbm model under Content/Models (a Meshy ship / prop model).
-        foreach (var rel in GitLsFiles(root, "src/Allegiance.ClientCore.MonoGame/Content/Models"))
+        // 1. Location-based.
+        offenders.AddRange(Locate(root, "src/Allegiance.ClientCore.MonoGame/Content/Models"));
+        offenders.AddRange(Locate(root, "src/Allegiance.ClientCore.MonoGame/Content/Textures/ships"));
+        offenders.AddRange(Locate(root, "assets/ships/thumbs"));
+
+        // 2. Extension-based across the whole repo.
+        foreach (var rel in GitLsFilesAll(root))
         {
             var lower = rel.ToLowerInvariant();
-            if (lower.EndsWith(".fbx") || lower.Contains(".fbm")) offenders.Add(rel);
+            if (ModelExtensions.Any(e => lower.EndsWith(e, StringComparison.Ordinal)))
+                offenders.Add(rel);
         }
 
-        // 2. Any file under Content/Textures/ships (Meshy ship textures).
-        foreach (var rel in GitLsFiles(root, "src/Allegiance.ClientCore.MonoGame/Content/Textures/ships"))
-            offenders.Add(rel);
-
-        // 3. Any Meshy thumbnail under assets/ships/thumbs.
-        foreach (var rel in GitLsFiles(root, "assets/ships/thumbs"))
-            offenders.Add(rel);
-
-        // 4. A catalogue.json entry whose source is meshy/meshy-repaired.
-        var catPath = Path.Combine(root!, "assets", "ships", "catalogue.json");
-        if (File.Exists(catPath))
+        // 3. Name-based across the whole repo (media files only), excluding allowed dirs.
+        foreach (var rel in GitLsFilesAll(root))
         {
-            try
-            {
-                using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(catPath));
-                if (doc.RootElement.TryGetProperty("models", out var arr) && arr.ValueKind == System.Text.Json.JsonValueKind.Array)
-                    foreach (var el in arr.EnumerateArray())
-                        if (el.TryGetProperty("source", out var src))
-                        {
-                            var s = src.GetString();
-                            if (s is not null && s.StartsWith("meshy", StringComparison.OrdinalIgnoreCase))
-                                offenders.Add($"catalogue.json entry source={s}");
-                        }
-            }
-            catch { /* malformed catalogue → covered by other tests */ }
+            var lower = rel.ToLowerInvariant();
+            if (!MediaExtensions.Any(e => lower.EndsWith(e, StringComparison.Ordinal))) continue;
+            if (NameAllowDirPrefixes.Any(d => rel.StartsWith(d, StringComparison.Ordinal))) continue;
+            if (lower.Contains("meshy"))
+                offenders.Add(rel);
         }
 
-        // 5. Any previously-moved Meshy screenshot/render path that reappeared under docs/.
-        var moved = Path.Combine(root!, "docs", "release", "moved-meshy-screenshots.txt");
-        if (File.Exists(moved))
-            foreach (var line in File.ReadAllLines(moved))
+        // 4. Authoritative list from media-inventory.csv (class = a).
+        var inv = Path.Combine(root!, "docs", "release", "media-inventory.csv");
+        if (File.Exists(inv))
+        {
+            foreach (var line in File.ReadAllLines(inv))
             {
-                var rel = line.Trim();
-                if (rel.Length == 0 || rel.StartsWith('#')) continue;
-                if (GitLsFiles(root, rel).Count > 0)
-                    offenders.Add($"(reappeared) {rel}");
+                if (line.StartsWith("path,")) continue; // header
+                var cols = line.Split(',');
+                if (cols.Length < 3) continue;
+                var cls = cols[2].Trim();
+                if (!string.Equals(cls, "a", StringComparison.Ordinal)) continue;
+                var rel = cols[0].Trim();
+                if (GitLsFilesAll(root).Contains(rel))
+                    offenders.Add($"media-inventory.csv class=a: {rel}");
             }
+        }
 
         Assert.True(offenders.Count == 0,
             "Meshy-generated output(s) found in tracked files (these must live in the private pack):\n"
             + string.Join("\n", offenders));
+    }
+
+    /// <summary>Files under a location that are Meshy outputs (models/textures/thumbs).</summary>
+    private static List<string> Locate(string root, string path)
+        => GitLsFiles(root, path);
+
+    private static List<string> GitLsFilesAll(string root)
+    {
+        var psi = new ProcessStartInfo("git", "ls-files")
+        {
+            WorkingDirectory = root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        using var p = Process.Start(psi)!;
+        var stdout = p.StandardOutput.ReadToEnd();
+        p.WaitForExit();
+        return stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                     .Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
     }
 
     private static List<string> GitLsFiles(string root, string path)

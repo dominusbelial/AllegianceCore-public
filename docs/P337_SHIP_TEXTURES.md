@@ -62,7 +62,7 @@ Inspected every source `.glb`'s JSON chunk directly:
 Sources were downscaled 2048² → 1024² (LANCZOS) — ample for low-poly ships
 seen mostly minified, and it keeps the repo + GPU footprint sane.
 
-## Live proof (`docs/P337_ship_textures/`)
+## Live proof ((screenshots of Meshy models, kept in the private asset pack))
 
 Real `HullModelResolver` + real `ShipRenderer.Draw` + compiled P287 content
 models + the new real textures, driven two ways (both through `tools/roster-capture`,
@@ -119,6 +119,6 @@ which reuses the exact in-game render path):
 - `tools/roster-capture/Program.cs` — binds textures in the reference renderer
   and fixes a pre-existing unlocked `world.Ships` gather in `wire` mode (the
   P319/P306 "collection modified" race) so the networked proof can run.
-- `docs/P337_ship_textures/` — the live-proof screenshots.
+- (screenshots of Meshy models, kept in the private asset pack).
 
 Committed on `master` (Domingo pushes). Native reference source untouched.

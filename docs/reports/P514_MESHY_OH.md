@@ -130,7 +130,7 @@ override needed** (contrast P511's dreg, which had two Z-long flags):
 | oh-scout | 190.385 | 58.341 | 57.163 | X | Ok |
 | oh-stealthfighter | 190.202 | 169.093 | 172.450 | X | Ok |
 
-Contact sheet: `P514_MESHY_OH_assets/orient_after.jpg` (all 90 ships) +
+Contact sheet: (screenshots of Meshy models, kept in the private asset pack)
 `orient_extents.json` (per-asset raw extents).
 
 ## 5. Build
@@ -243,7 +243,7 @@ run to run:
 - `tools/extract_meshy_textures.py` (SHIP_ASSETS)
 - tests: `HullModelResolverTests` (+1 OH coverage, 83→90), `RosterPlannerTests`
   (83→90, oh 3→10)
-- this report + `docs/P514_MESHY_OH_assets/` (proof screenshots)
+- this report; proof screenshots kept in (screenshots of Meshy models, kept in the private asset pack)
 
 Large binary assets committed directly (no LFS) per the P351–P353/P511–P513
 convention (`.glb` source files are untracked; only the converted `.fbx` +

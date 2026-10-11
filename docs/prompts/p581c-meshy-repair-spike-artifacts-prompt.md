@@ -10,7 +10,7 @@ fin pieces onto the hull. Domingo reviewed it in the live inspector
 shards along the fin edges and around the fin roots** ("fins are attached
 but now it has extra geometry"). Evidence:
 
-- `docs/prompts/p581c-raw-scout-detached.png`: raw Meshy, fins float
+- `(screenshots of Meshy models, kept in the private asset pack)`: raw Meshy, fins float
   (upper-left fin and lower fin pair visibly detached). Smooth fin edges.
 - `docs/prompts/p581c-repaired-scout-spikes.png`: repaired, fins attached,
   but saw-tooth spikes along both yellow fins and green spiky fringe at
