@@ -76,6 +76,43 @@ public sealed partial class Server
     internal void TestSetClusterInfoBytes(byte[]? bytes) => _clusterInfoBytes = bytes;
 
     /// <summary>
+    /// P608 — test seam like <see cref="TestCollectBroadcast"/> but records each
+    /// coalesced frame's coalesce key AND guaranteed flag alongside its payload
+    /// (via <c>_testSendCoalescingCapture</c>), so a test can verify the
+    /// coalesce-key CONTRACT (e.g. the owner's own-ship SingleShipUpdate uses a
+    /// distinct key from the teammate position batch, and is guaranteed)
+    /// deterministically, without live-client timing. Ordinary (key 0) frames are
+    /// excluded — they are not coalescable.
+    /// </summary>
+    internal Dictionary<ConnectionId, List<(byte[] Pkt, int Key, bool Guaranteed)>> TestCollectBroadcastKeys(
+        uint tickIndex, bool parallel, string step = "both")
+    {
+        _broadcastParallelBuild = parallel;
+        var outp = new Dictionary<ConnectionId, List<(byte[], int, bool)>>();
+        var gate = new object();
+        _testSendCoalescingCapture = (conn, pkt, key, guaranteed) =>
+        {
+            if (key == 0) return;
+            lock (gate)
+            {
+                if (!outp.TryGetValue(conn, out var l)) { l = new(); outp[conn] = l; }
+                l.Add((pkt, key, guaranteed));
+            }
+        };
+        try
+        {
+            if (step is "shipStates") BroadcastShipStates(tickIndex);
+            else if (step is "shipsUpdate") BroadcastShipsUpdate(tickIndex);
+            else { BroadcastShipStates(tickIndex); BroadcastShipsUpdate(tickIndex); }
+        }
+        finally
+        {
+            _testSendCoalescingCapture = null;
+        }
+        return outp;
+    }
+
+    /// <summary>
     /// P603 test seam — run the named broadcast step(s) in the given mode
     /// (serial / parallel) against the CURRENT seeded state, collecting each
     /// recipient's outbound packets in order. <paramref name="step"/> is

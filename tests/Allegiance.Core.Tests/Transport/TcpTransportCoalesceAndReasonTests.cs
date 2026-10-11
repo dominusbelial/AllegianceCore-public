@@ -301,6 +301,54 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
         finally { host.Shutdown(); }
     }
 
+    /// <summary>P608 — a coalesce-keyed frame sent GUARANTEED
+    /// (<c>SendGuaranteedCoalescing</c>) is (a) still coalesced (at most one
+    /// pending copy per key → bounded, P606 intact) and (b) NEVER shed by the
+    /// capacity-overflow shedder — the transport realisation of "the owner's
+    /// own-ship state is never dropped". Flood a tiny-window, never-reading peer
+    /// well past capacity with guaranteed-coalesce frames of one key interleaved
+    /// with non-guaranteed frames of another key: the guaranteed frame survives
+    /// (exactly one pending) while the non-guaranteed one is the shed candidate
+    /// and never crowds the guaranteed copy out.</summary>
+    [Fact]
+    public void Guaranteed_coalesced_frames_are_never_shed_but_still_bounded()
+    {
+        var site = new Site();
+        var host = NewHost(site);
+        try
+        {
+            host.Host(0);
+            var (id, client) = ConnectRawPeer(host, site, "GCOAL", tinyReceiveWindow: true);
+            var ps = PeerSenderFor(host, id);
+
+            var frame = new byte[8192];
+            for (int i = 0; i < 4000; i++)
+            {
+                host.Send(id, frame, guaranteed: true, coalesceKey: 77);     // own-ship: guaranteed, never shed
+                host.Send(id, frame, guaranteed: false, coalesceKey: 78);    // teammate stream: shed first
+            }
+            Thread.Sleep(80);
+
+            var q = (IEnumerable)QField.GetValue(ps)!;
+            int g77 = 0, g78 = 0;
+            foreach (var item in q)
+            {
+                int ck = (int)item.GetType().GetField("CoalesceKey")!.GetValue(item)!;
+                bool guar = (bool)item.GetType().GetField("Guaranteed")!.GetValue(item)!;
+                if (ck == 77) { g77++; Assert.True(guar, "key-77 frames must be guaranteed"); }
+                if (ck == 78) g78++;
+            }
+            // Guaranteed stream: coalesced (<=1 pending, bounded) and never shed
+            // (present) even though 4000 guaranteed frames were enqueued past capacity.
+            Assert.Equal(1, g77);
+            // The non-guaranteed stream is the shed candidate and stays at <=1 too.
+            Assert.True(g78 <= 1, $"non-guaranteed key-78 backlog must stay <=1, got {g78}");
+
+            client.Dispose();
+        }
+        finally { host.Shutdown(); }
+    }
+
     /// <summary>Anti-zombie: a stalled peer whose backlog is entirely COALESCABLE
     /// streaming frames still gets disconnected once its queue stays undrained
     /// for the whole OverflowTimeout — it cannot silently linger forever even

@@ -788,20 +788,26 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// P606 — central send path for the latest-wins <b>streaming</b> broadcasts
+    /// P606/P608 — central send path for the latest-wins <b>streaming</b> broadcasts
     /// (ship-state / heavy-light / per-side periodic syncs): same capture +
     /// test-seam as <see cref="SendPeer"/>, but routed as non-guaranteed and
     /// coalesced per <paramref name="coalesceKey"/> so a slow peer keeps at most
     /// the newest pending frame per key. Everything that must be ordered/never
     /// dropped (chat, kills, joins, exports, status, events) stays on
-    /// <see cref="SendPeer"/>.
+    /// <see cref="SendPeer"/>. P608: the OWNER's own-ship SingleShipUpdate passes
+    /// <paramref name="guaranteed"/>=true so it is coalesce-keyed (bounded) yet
+    /// never shed under capacity — on its own key, never superseded by teammate
+    /// traffic (native: own ship SINGLE_SHIP_UPDATE sent FM_GUARANTEED,
+    /// fsship.cpp:544).
     /// </summary>
-    private void SendPeerCoalescing(ConnectionId target, byte[] packet, int coalesceKey)
+    private void SendPeerCoalescing(ConnectionId target, byte[] packet, int coalesceKey, bool guaranteed = false)
     {
         lock (_captureLock)
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
         _testSendCapture?.Invoke(target, packet);
-        _host.SendCoalescing(target, packet, coalesceKey);
+        _testSendCoalescingCapture?.Invoke(target, packet, coalesceKey, guaranteed);
+        if (guaranteed) _host.SendGuaranteedCoalescing(target, packet, coalesceKey);
+        else _host.SendCoalescing(target, packet, coalesceKey);
     }
 
     /// <summary>Capture one received packet before it is processed. Called from

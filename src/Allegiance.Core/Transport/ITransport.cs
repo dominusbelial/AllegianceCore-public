@@ -63,6 +63,21 @@ public interface ITransport
     /// FedSrv.CPP:4189-4196 (HEAVY/LIGHT_SHIPS_UPDATE sent FM_NOT_GUARANTEED).
     /// </summary>
     void SendCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey);
+
+    /// <summary>
+    /// P608 — send a <b>latest-wins</b> stream frame that is nevertheless
+    /// <b>guaranteed</b> (never shed under capacity): a coalesce-keyed frame with
+    /// the guaranteed bit set. Coalescing still supersedes an older pending frame
+    /// for the same key in place (so a slow peer keeps at most one pending copy —
+    /// bounded, exactly like <see cref="SendCoalescing"/>), but <c>DropOldestNonGuaranteed</c>
+    /// will never discard it, so it reaches the peer at its drain cadence no
+    /// matter how much streaming traffic is shed around it. This is the transport
+    /// realisation of native's own-ship model, where the owner's own
+    /// <c>SINGLE_SHIP_UPDATE</c> is sent <c>FM_GUARANTEED</c> (fsship.cpp:544) and
+    /// guaranteed DirectPlay messages use <c>DPNSEND_GUARANTEED|COALESCE</c>,
+    /// never timing out (Messages.cpp:548-563).
+    /// </summary>
+    void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey);
 }
 
 /// <summary>

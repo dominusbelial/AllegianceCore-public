@@ -347,6 +347,12 @@ public sealed class TcpTransport : ITransport
     public void SendCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
         => Send(target, data, guaranteed: false, coalesceKey);
 
+    /// <summary>P608 — coalesce-keyed latest-wins frame sent GUARANTEED (never
+    /// shed under capacity, but still superseded in place per key so the backlog
+    /// stays bounded). See <see cref="ITransport.SendGuaranteedCoalescing"/>.</summary>
+    public void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
+        => Send(target, data, guaranteed: true, coalesceKey);
+
     public void Shutdown()
     {
         if (!_running) return;

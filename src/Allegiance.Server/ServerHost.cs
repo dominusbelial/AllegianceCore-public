@@ -1096,4 +1096,11 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <see cref="ITransport.SendCoalescing"/>.</summary>
     public void SendCoalescing(ConnectionId target, byte[] data, int coalesceKey)
         => Transport!.SendCoalescing(target, data, coalesceKey);
+
+    /// <summary>P608 — coalesce-keyed frame sent guaranteed (see
+    /// <see cref="ITransport.SendGuaranteedCoalescing"/>); the owner's own-ship
+    /// SingleShipUpdate uses this so it is never superseded by teammate traffic
+    /// nor shed under load.</summary>
+    public void SendGuaranteedCoalescing(ConnectionId target, byte[] data, int coalesceKey)
+        => Transport!.SendGuaranteedCoalescing(target, data, coalesceKey);
 }

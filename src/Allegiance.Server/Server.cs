@@ -143,6 +143,16 @@ public sealed partial class Server : IDisposable
     internal Action<ConnectionId, byte[]>? _testSendCapture;
 
     /// <summary>
+    /// P608 — internal test seam (InternalsVisibleTo): when set, invoked from
+    /// <see cref="SendPeerCoalescing"/> for every latest-wins stream frame with
+    /// the recipient, payload, its coalesce key and its guaranteed flag. Lets a
+    /// test verify the coalesce-key contract (e.g. that the owner's own-ship
+    /// SingleShipUpdate uses a distinct key from the teammate position batch,
+    /// and is guaranteed). Null in production (no behaviour).
+    /// </summary>
+    internal Action<ConnectionId, byte[], int, bool>? _testSendCoalescingCapture;
+
+    /// <summary>
     /// P507 — per-peer state for the native own-ship model: the current cookie
     /// the client must echo in <c>FM_C_SHIP_UPDATE(24)</c> and the rolling
     /// acceptance counters the every-~10s summary log reports. Keyed by the
