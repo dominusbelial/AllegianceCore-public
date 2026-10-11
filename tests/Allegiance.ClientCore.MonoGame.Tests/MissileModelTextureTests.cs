@@ -128,4 +128,43 @@ public class MissileModelTextureTests
         int fallbacks = RenderModelAudit.AuditCore(core, s => Console.WriteLine(s));
         Assert.Equal(0, fallbacks);
     }
+
+    /// <summary>
+    /// P609 — the hull-hit debris bit (utl10 → utl10bmp) resolves its native
+    /// texture from the model's own imported namespace (native
+    /// <c>m_pgeoMesh-&gt;FindTexture()</c>, thinggeo.cpp:1038-1043), and the
+    /// renderer is wired to APPLY it (<see cref="HullHitSparkRenderer.BitsTextured"/>),
+    /// not draw lit-solid. FAILING-FIRST: before P609 the bits were hardcoded
+    /// <c>TextureEnabled=false</c> — there was no <c>BitsTextured</c> contract at
+    /// all — so this fails on the pre-P609 code and passes with the fix.
+    /// </summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Hull_hit_bit_resolves_native_texture_and_renders_textured()
+    {
+        Require.Artwork();
+        var mdl = Parse("utl10");
+        // utl10.mdl is a TextureGeo importing utl10bmp (its texture namespace).
+        Assert.Equal("utl10bmp", NativeShipResolver.ResolveTextureStem(mdl, null, "utl10", FileExists));
+        // The renderer actually applies the texture (the pre-P609 audit blind spot).
+        Assert.True(HullHitSparkRenderer.BitsTextured(FileExists));
+    }
+
+    /// <summary>
+    /// P609 — the widened render-model audit covers the hull-hit bit too and
+    /// still reports 0 untextured native models across the whole client
+    /// (projectiles + missiles + probes + mines + chaff + the hull-hit bit).
+    /// FAILING-FIRST: the pre-P609 audit knew nothing of the deliberately
+    /// untextured bits, so it reported 0 while the bits drew as solid-white
+    /// chunks — the blind spot this closes.
+    /// </summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Whole_client_render_model_audit_including_hull_hit_bit_is_zero()
+    {
+        Require.Artwork();
+        var core = LoadCore();
+        int fallbacks = RenderModelAudit.AuditCore(core, s => Console.WriteLine(s));
+        Assert.Equal(0, fallbacks);
+    }
 }

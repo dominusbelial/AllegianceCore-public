@@ -33,11 +33,43 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <para><b>Blend.</b> The flash decals are additive (native default). The
 /// debris bits are lit opaque geometry (BasicEffect default lighting, as
 /// <see cref="ProbeRenderer"/>) — no blend change.</para>
+/// <para><b>P609 — the bits are textured.</b> The bits used to be drawn with
+/// <c>TextureEnabled = false</c>, so the real <c>utl10</c> chunks (which scale
+/// to <c>radius/2</c> of the hit object — big on asteroids) rendered as
+/// scene-lit <em>solid white</em> blocks. Native's <c>utl10.mdl</c> is a
+/// <c>TextureGeo</c> that imports <c>utl10bmp</c> (the model's texture
+/// namespace, <c>xfile.cpp:577</c>), so the bits are now drawn textured with
+/// that native <c>utl10bmp</c> (<see cref="BitsTextured"/>), keeping the
+/// native scene-lit look while painting the real fragment pattern. If the
+/// texture is genuinely unavailable it is logged once and the bits fall back
+/// to lit-solid (never invisible).</para>
 /// </remarks>
 public sealed class HullHitSparkRenderer : IDisposable
 {
     /// <summary>Native flash max size and growth (efgeo.cpp:716-724).</summary>
     private const float FlashMaxSize = 2.0f;
+
+    /// <summary>Native debris-bit mesh <c>utl10</c> (<c>AWF_EFFECT_BIT</c>,
+    /// efart.h:18 / efgeo.cpp:795).</summary>
+    public const string BitModelStem = "utl10";
+
+    /// <summary>The native texture the bit mesh imports: <c>utl10.mdl</c> is a
+    /// <c>TextureGeo</c> importing <c>utl10bmp</c> (its texture namespace,
+    /// <c>xfile.cpp:577</c>).</summary>
+    public const string BitTextureStem = "utl10bmp";
+
+    /// <summary>
+    /// P609 — whether the debris bits are drawn with their native texture: the
+    /// single rule both the renderer (the constructor decides
+    /// <c>TextureEnabled</c>) and the startup audit (<see cref="RenderModelAudit"/>)
+    /// share, so the deliberate-untextured blind spot can't reopen. True iff the
+    /// native <c>utl10bmp</c> unit resolves in the artwork — the bit mesh's own
+    /// imported texture namespace (native <c>m_pgeoMesh-&gt;FindTexture()</c>,
+    /// thinggeo.cpp:1038-1043).
+    /// </summary>
+    public static bool BitsTextured(Func<string, bool> fileExists) =>
+        fileExists(BitTextureStem);
+
     /// <summary>Native flash growth rate <c>maxSize·5 = 10</c>/s.</summary>
     private const float FlashGrowthRate = 10.0f;
 
@@ -48,6 +80,7 @@ public sealed class HullHitSparkRenderer : IDisposable
     private readonly VertexBuffer _bitVertices;
     private readonly IndexBuffer _bitIndices;
     private readonly int _bitTriangleCount;
+    private readonly Texture2D? _bitTexture;
     private readonly BasicEffect _bitEffect;
     private readonly RasterizerState _bitRasterizer;
 
@@ -64,11 +97,18 @@ public sealed class HullHitSparkRenderer : IDisposable
         _bitIndices = mesh.Indices;
         _bitTriangleCount = mesh.TriangleCount;
 
+        // P609 — the bits are now textured with their native utl10bmp (the
+        // utl10 mesh's imported texture namespace), closing the solid-white
+        // chunk look. If the texture is unavailable we fall back to the old
+        // lit-solid (never invisible, logged once).
+        _bitTexture = LoadBitTexture(gd, assets);
+
         _bitEffect = new BasicEffect(gd)
         {
             AmbientLightColor = new Vector3(0.32f, 0.34f, 0.36f),
-            TextureEnabled = false,
+            TextureEnabled = _bitTexture != null,
         };
+        if (_bitTexture != null) _bitEffect.Texture = _bitTexture;
         _bitRasterizer = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
 
@@ -222,11 +262,36 @@ public sealed class HullHitSparkRenderer : IDisposable
         return (vb, ib, idx.Length / 3);
     }
 
+    /// <summary>
+    /// P609 — decode the native bit texture (<c>utl10bmp.mdl</c>, a binary
+    /// RGB565 <c>.mdl</c>) and upload it premultiplied for BasicEffect — the
+    /// same <c>MdlTextureDecoder</c> pipeline as <see cref="NativeMissileRenderer"/>
+    /// / <see cref="NativeAsteroidRenderer"/> — or null when unavailable
+    /// (logged once → the bits keep their lit-solid fallback, never invisible).
+    /// </summary>
+    private static Texture2D? LoadBitTexture(GraphicsDevice gd, IAssetSource assets)
+    {
+        if (!BitsTextured(s => assets.Exists(s + ".mdl"))) return null;
+        try
+        {
+            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, BitTextureStem + ".mdl"));
+            var surf = new Texture2D(gd, mdlTex.Width, mdlTex.Height);
+            surf.SetData(MdlTextureDecoder.ToPremultipliedRgba(mdlTex));
+            return surf;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[monogame] hull-hit bit texture '{BitTextureStem}.mdl' unavailable ({ex.Message}) — lit-solid fallback");
+            return null;
+        }
+    }
+
     public void Dispose()
     {
         _batcher.Dispose();
         _bitVertices.Dispose();
         _bitIndices.Dispose();
+        _bitTexture?.Dispose();
         _bitEffect.Dispose();
         _bitRasterizer.Dispose();
     }

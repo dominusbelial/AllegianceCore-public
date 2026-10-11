@@ -30,7 +30,10 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// type's own native model — the P593b fix), probe models, the mine sprite
 /// (<see cref="MineModelSource.SpriteStem"/>) and the chaff sprites
 /// (<see cref="ChaffModelSource.RealStems"/>). Treasure model resolution is
-/// audited separately by <see cref="TreasureVisualResolver.SelfCheck"/>.</para>
+/// audited separately by <see cref="TreasureVisualResolver.SelfCheck"/>.
+/// P609 adds the hull-hit debris bit (<see cref="HullHitSparkRenderer"/> —
+/// <c>utl10</c> → <c>utl10bmp</c>), the one renderer that was <em>deliberately</em>
+/// untextured, closing the audit's blind spot.</para>
 ///
 /// <para>Case sensitivity: the on-disk stem probe is a case-insensitive index
 /// of every <c>.mdl</c> basename (the P593/P586b lesson — a capitalised on-disk
@@ -64,6 +67,7 @@ public static class RenderModelAudit
 
         fallback += AuditSprites("mine", new[] { MineModelSource.SpriteStem }, disk, log);
         fallback += AuditSprites("chaff", ChaffModelSource.RealStems, disk, log);
+        fallback += AuditBits(disk, log);
         return fallback;
     }
 
@@ -116,5 +120,40 @@ public static class RenderModelAudit
             }
         }
         return fallback;
+    }
+
+    /// <summary>
+    /// P609 — the hull-hit debris bit (<c>utl10</c> → <c>utl10bmp</c>): the one
+    /// 3D model that was <em>deliberately</em> untextured
+    /// (<c>TextureEnabled=false</c>, so native asteroid/ship-hit chunks drew as
+    /// big solid-white blocks) — exactly the blind spot P593b's lit-solid audit
+    /// missed because it never "fell back". The audit now asserts the renderer
+    /// applies the bit's native texture via the SAME rule the renderer uses
+    /// (<see cref="HullHitSparkRenderer.BitsTextured"/>), plus that the
+    /// <c>utl10.mdl</c> mesh itself parses. Returns the number of failures (0
+    /// on the real core).
+    /// </summary>
+    private static int AuditBits(Dictionary<string, string> disk, Action<string> log)
+    {
+        if (!HullHitSparkRenderer.BitsTextured(disk.ContainsKey))
+        {
+            log("[monogame] P609 hull-hit bit 'utl10': LIT-SOLID (native texture utl10bmp not applied)");
+            return 1;
+        }
+        try
+        {
+            if (!disk.TryGetValue(HullHitSparkRenderer.BitModelStem, out var exact))
+            {
+                log("[monogame] P609 hull-hit bit 'utl10': mesh MISSING");
+                return 1;
+            }
+            MdlFile.Parse(AssetSources.ReadAllBytes(AssetSources.Artwork, exact + ".mdl"));
+            return 0;
+        }
+        catch
+        {
+            log("[monogame] P609 hull-hit bit 'utl10': mesh UNDECODABLE");
+            return 1;
+        }
     }
 }

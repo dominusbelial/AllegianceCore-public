@@ -42,9 +42,18 @@ sealed class ProofOptions
     public string ContentRoot = "";
     public string OutDir = "";
 
+    /// <summary>P609 — render the close-up frames into the REAL window backbuffer
+    /// (2560x1440) and capture the presented frame, so the before/after debris-bit
+    /// proof is a genuine window frame (not an offscreen render target).</summary>
+    public bool RealWindow = false;
+    public int WinW = 2560;
+    public int WinH = 1440;
+
     public static ProofOptions Parse(string[] args)
     {
         string art = "", outDir = "";
+        bool realWindow = false;
+        int winW = 2560, winH = 1440;
         int i = 0;
         while (i < args.Length)
         {
@@ -52,6 +61,12 @@ sealed class ProofOptions
             {
                 case "--art": art = args[++i]; break;
                 case "--out": outDir = args[++i]; break;
+                case "--real-window": realWindow = true; break;
+                case "--window":
+                    var wh = args[++i].Split('x');
+                    if (wh.Length == 2 && int.TryParse(wh[0], out var ww) && int.TryParse(wh[1], out var hh) && ww > 0 && hh > 0)
+                    { winW = ww; winH = hh; }
+                    break;
                 default: throw new ArgumentException($"unknown option {args[i]}");
             }
             i++;
@@ -62,6 +77,9 @@ sealed class ProofOptions
             ArtRoot = art.Length > 0 ? art : repo,
             ContentRoot = Path.Combine(repo, "src", "Allegiance.ClientCore.MonoGame", "Content"),
             OutDir = outDir.Length > 0 ? outDir : Path.Combine(repo, ".verify_p364"),
+            RealWindow = realWindow,
+            WinW = winW,
+            WinH = winH,
         };
     }
 
@@ -88,18 +106,31 @@ sealed class ProofRunner : Game
     private const float TargetZ = -180f;          // same nose-to-nose gap as vizfight/livecombat
     private static readonly float FovRad = MathHelper.ToRadians(52f);
 
+    /// <summary>Aspect ratio of the actual draw surface (the real window when
+    /// <c>--real-window</c>, else the offscreen RT) — used for the projections so
+    /// the captured frame isn't squashed.</summary>
+    private float Aspect => _o.RealWindow ? (float)_o.WinW / _o.WinH : (float)Width / Height;
+
     // ── real combat outcome (filled by RunProof, read by the render pass) ──
     private List<HullHitEntity> _hits = new();
     private SimVec _targetPos;
     private float _targetRadius = 50f;
     private Ship _target = null!;
 
+    /// <summary>P609 — when true, the real-window backbuffer close-up is
+    /// rendered + captured during the normal Draw pass (where the presented
+    /// backbuffer is readable), once the first present has happened.</summary>
+    private bool _pendingRW;
+    private int _rwPhase;
+
     public ProofRunner(ProofOptions o)
     {
         _o = o;
         _gdm = new GraphicsDeviceManager(this);
-        _gdm.PreferredBackBufferWidth = Width;
-        _gdm.PreferredBackBufferHeight = Height;
+        // P609 — a real-window proof renders into the full 2560x1440 presented
+        // backbuffer (the documented proof size), not the offscreen 960x720 RT.
+        _gdm.PreferredBackBufferWidth = o.RealWindow ? o.WinW : Width;
+        _gdm.PreferredBackBufferHeight = o.RealWindow ? o.WinH : Height;
         Content.RootDirectory = o.ContentRoot;
         Directory.CreateDirectory(o.OutDir);
     }
@@ -111,7 +142,42 @@ sealed class ProofRunner : Game
         try { _font = Content.Load<SpriteFont>("HUD"); } catch { _font = null!; }
         try { RunProof(GraphicsDevice); }
         catch (Exception ex) { Console.WriteLine($"[hullhit] FATAL: {ex}"); }
-        Exit();
+        // NOTE: real-window captures happen in Draw() (after the first present);
+        // a non-RealWindow run exits here as before.
+        if (!_pendingRW) Exit();
+    }
+
+    /// <summary>
+    /// P609 — draw the real-window close-up into the presented backbuffer on the
+    /// first Draw pass(es) and capture it, then exit. Runs inside the normal
+    /// render/present cycle (the Draw-end context where <c>GetBackBufferData</c>
+    /// returns the real presented frame — the client's autoshot path).
+    /// </summary>
+    protected override void Draw(GameTime gameTime)
+    {
+        if (_pendingRW)
+        {
+            try
+            {
+                if (_rwPhase == 0)
+                    RenderBackbuffer(GraphicsDevice, "realwindow_bits_textured", 0.003f);
+                else
+                    RenderBackbuffer(GraphicsDevice, "realwindow_bits_drift", 0.7f);
+                _rwPhase++;
+                if (_rwPhase >= 2)
+                {
+                    _pendingRW = false;
+                    Console.WriteLine("[hullhit] REAL-WINDOW proof done — exiting");
+                    Exit();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[hullhit] REAL-WINDOW capture FAILED: {ex}");
+                Exit();
+            }
+        }
+        base.Draw(gameTime);
     }
 
     // ── the fightable hull+weapon (weakest dispersion-0 damaging gun, so the
@@ -359,7 +425,7 @@ sealed class ProofRunner : Game
         float bitSize = imp.Radius * 0.5f;                  // thinggeo.cpp:1328
         var eyeClose = impXna - normalXna * (bitSize * 2.2f);
         var viewC = Matrix.CreateLookAt(Xna.Vector3.Zero, impXna - eyeClose, OrthogonalUp(normalXna));
-        var projC = Matrix.CreatePerspectiveFieldOfView(FovRad, (float)Width / Height, 1f, 80000f);
+        var projC = Matrix.CreatePerspectiveFieldOfView(FovRad, Aspect, 1f, 80000f);
 
         var closePool = new HullHitSparkParticles();
         closePool.Emit(imp.Position, imp.Normal, imp.Radius, new RandomTrailSource());
@@ -368,12 +434,19 @@ sealed class ProofRunner : Game
         RenderCloseup(gd, sparkRenderer, closePool, debrisRenderer, debrisPool,
             viewC, projC, eyeClose, vents, "closeup_drift", dt, ageSec: 0.7f);
 
+        // P609 — the REAL-WINDOW proof: the close-up is redrawn into the
+        // presented 2560x1440 backbuffer during a normal Draw pass (where the
+        // real backbuffer holds the frame, mirroring the client's autoshot
+        // Draw-end capture, Game1.AutoProof.cs:425-445) — not an offscreen RT.
+        if (_o.RealWindow)
+            _pendingRW = true;
+
         // ── WIDE (the distinctness shot): frame the target centre so its grey
         // vent smoke AND the ring of bright impact sparks sit in one scene.
         var anchor = ToXna(_targetPos);
         var eyeWide = anchor + new Xna.Vector3(0f, 0f, _targetRadius * 3f);
         var viewW = Matrix.CreateLookAt(Xna.Vector3.Zero, anchor - eyeWide, Xna.Vector3.Up);
-        var projW = Matrix.CreatePerspectiveFieldOfView(FovRad, (float)Width / Height, 1f, 80000f);
+        var projW = Matrix.CreatePerspectiveFieldOfView(FovRad, Aspect, 1f, 80000f);
         int shown = Math.Min(_hits.Count, 10);
         for (int i = 0; i < shown; i++)
             sparkPool.Emit(_hits[i].Position, _hits[i].Normal, _hits[i].Radius, new RandomTrailSource());
@@ -407,6 +480,74 @@ sealed class ProofRunner : Game
         Caption(gd, $"SPARK (bright) + DAMAGE SMOKE (grey) — {name}   bits={drawSparks.Count} smoke={drawDebris.Count} vents={vents}");
         gd.SetRenderTarget(null);
         Save(gd, rt, $"hullhit_{name}.png");
+    }
+
+    /// <summary>
+    /// P609 — render one close-up frame into the REAL window backbuffer (the
+    /// default render target, no offscreen RT) and capture the PRESENTED frame via
+    /// <c>GetBackBufferData</c> (the exact path the client's F11/
+    /// <c>ALLEGIANCE_AUTOSHOT</c> screenshot uses, Game1.AutoProof.cs:436), so the
+    /// debris-bit proof is a genuine window frame at the full requested size.
+    /// Ages the bit pool <paramref name="ageSec"/> then draws the real
+    /// <see cref="HullHitSparkRenderer"/> bits + <see cref="DamageDebrisRenderer"/>
+    /// smoke into the backbuffer, captions it, reads it back, and presents it.
+    /// </summary>
+    private void RenderBackbuffer(GraphicsDevice gd, string name, float ageSec)
+    {
+        // Self-contained: rebuild the close-up (camera ON the first real impact
+        // point) from the real hit data, so this can run from a normal Draw pass.
+        var imp = _hits[0];
+        var impXna = ToXna(imp.Position);
+        var normalXna = Xna.Vector3.Normalize(ToXna(imp.Normal));
+        float bitSize = imp.Radius * 0.5f;                  // thinggeo.cpp:1328
+        // Frame the camera CLOSE so the debris fragments fill the frame (the
+        // utl10 chunk mesh is small in model units; native scales it by m_size).
+        var eyeClose = impXna - normalXna * (bitSize * 0.6f);
+        var view = Matrix.CreateLookAt(Xna.Vector3.Zero, impXna - eyeClose, OrthogonalUp(normalXna));
+        var proj = Matrix.CreatePerspectiveFieldOfView(FovRad, Aspect, 1f, 80000f);
+        Console.WriteLine($"[hullhit] RW diag: imp.Radius={imp.Radius} bitSize={bitSize} dist={(impXna - eyeClose).Length()} normal={normalXna}");
+
+        var pool = new HullHitSparkParticles();
+        pool.Emit(imp.Position, imp.Normal, imp.Radius, new RandomTrailSource());
+        var debrisPool = new DamageDebrisParticles();
+        float dt = 0.060f;
+        int vents = Allegiance.ClientCore.MonoGame.Flight.DamageDebrisTracker.DamageFrameCount(_target.Fraction);
+        int steps = Math.Max(1, (int)MathF.Round(ageSec / dt));
+        for (int i = 0; i < steps; i++)
+        {
+            debrisPool.Emit(_targetPos, _target.Velocity, _target.Orientation,
+                _targetRadius, _target.Id, vents, dt, new RandomTrailSource());
+            debrisPool.Update(dt);
+            pool.Update(dt);
+        }
+        var drawDebris = debrisPool.Enumerate().ToList();
+        var drawSparks = pool.Enumerate().ToList();
+
+        using var nativeFx = NativeEffectTextures.Load(gd, new DirectoryAssetSource(_o.ArtRoot));
+        using var sparkR = new HullHitSparkRenderer(gd, nativeFx, new DirectoryAssetSource(_o.ArtRoot));
+        using var debrisR = new DamageDebrisRenderer(gd, nativeFx);
+
+        gd.SetRenderTarget(null);                       // → the real window backbuffer
+        gd.Clear(new Color(0.008f, 0.012f, 0.025f));    // deep space
+        gd.DepthStencilState = DepthStencilState.Default;
+        if (drawDebris.Count > 0)
+            debrisR.Draw(drawDebris, eyeClose, view, proj);
+        if (drawSparks.Count > 0)
+            sparkR.Draw(drawSparks, pool.EnumerateFlashes().ToList(), eyeClose, view, proj);
+        Caption(gd, $"HULL-HIT DEBRIS BITS — {name}   bits={drawSparks.Count} smoke={drawDebris.Count}");
+
+        int w = gd.PresentationParameters.BackBufferWidth;
+        int h = gd.PresentationParameters.BackBufferHeight;
+        var px = new Color[w * h];
+        gd.GetBackBufferData(px);
+        string path = Path.Combine(_o.OutDir, name + ".png");
+        using (var tex = new Texture2D(gd, w, h))
+        {
+            tex.SetData(px);
+            using var fs = File.Create(path);
+            tex.SaveAsPng(fs, w, h);
+        }
+        Console.WriteLine($"[hullhit] REAL-WINDOW frame {path} ({w}x{h})");
     }
 
     private void RenderWide(GraphicsDevice gd, HullHitSparkRenderer sparkR, HullHitSparkParticles sparkPool,
