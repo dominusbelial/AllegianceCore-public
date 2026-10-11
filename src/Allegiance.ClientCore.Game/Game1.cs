@@ -44,6 +44,10 @@ public sealed partial class Game1 : Game
     private readonly Assets.IAssetSource _assets;
 
     private XnaModel _fallbackModel = null!;
+    // P607 — the guaranteed-non-null procedural stand-in used when a ship has
+    // neither native art nor a Meshy pack fallback, so the colour pass can
+    // never pass null to ShipRenderer.Draw (the P607 live crash).
+    private XnaModel _shipStandInModel = null!;
     private readonly Dictionary<string, XnaModel> _shipModels = new(StringComparer.Ordinal);
     // P581 — the set of loaded model asset keys (incl. any "repaired/<asset>"
     // variants), maintained alongside _shipModels for the repaired preview resolver.
@@ -674,6 +678,9 @@ public sealed partial class Game1 : Game
     // same Gate lock as _poses (a different faction/class mesh per ship, or null
     // → bios_scout fallback), so the Draw loop picks models lock-free.
     private readonly Dictionary<short, XnaModel?> _shipModelById = new();
+    // P607 — ship ids already logged as drawing the procedural stand-in (log
+    // each unresolvable hull/ship once, not every frame).
+    private readonly HashSet<short> _standInLoggedShips = new();
 
     // P337 — per-ship real texture bound in the Draw loop, collected under the
     // same Gate lock as _shipModelById (parallel array: same asset that resolved
@@ -1303,9 +1310,15 @@ public sealed partial class Game1 : Game
         // absent in Native). Bloom default OFF (--bloom on).
         _softEnabled = LaunchOptions.EffectiveSoftParticles(_enhancedVfx, opts.SoftParticles);
         _bloomEnabled = opts.Bloom && _enhancedVfx;
-        // P576 — sky tier + aleph glimpse (client-only; --sky black|native|hd, --aleph-glimpse on).
+        // P576 — sky tier + aleph glimpse (client-only; --sky black|native|hd, --aleph-glimpse on|off).
         _skyTier = LaunchOptions.EffectiveSkyTier(opts.SkyTier);
         _alephGlimpse = opts.AlephGlimpse;
+        // P607 — the glimpse/transit-flare defaults ON; log the ACTIVE value once
+        // at startup so a bare run's behaviour is obvious (and an explicit
+        // --aleph-glimpse off run is obviously not glitching).
+        Console.WriteLine(_alephGlimpse
+            ? "[client] aleph glimpse/transit-flare: ON (--aleph-glimpse off to disable the glimpse + flare; the native arrival swell stays on either way)"
+            : "[client] aleph glimpse/transit-flare: OFF (--aleph-glimpse off given; the native arrival swell for visible transits is still on, P607)");
         // P577 — HD sky global intensity + low-res asset set (client-only).
         _skyIntensity = Math.Clamp(opts.SkyIntensity, 0f, 2f);
         _skyLowRes = opts.SkyLowRes;

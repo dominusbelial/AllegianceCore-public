@@ -1,0 +1,23 @@
+# P607 real-window proof — default flags (no --aleph-glimpse passed) — local server, temp worktree /tmp/p607-proof, port 6543
+# map m2xspiderw.igc; observer side-0 auto-goto Omega + auto-target Aleph, chase camera
+# Enemy (side-1) bots spawned via MCP spawn_scenario {size:15, target_sector:Omega, staging:false}
+
+[client] aleph glimpse/transit-flare: ON (--aleph-glimpse off to disable the glimpse + flare; the native arrival swell stays on either way)
+[monogame] P607 ship-model audit: 447 hull(s), 0 unresolved native
+
+# --- transit-pulse lines around the flare frame (t=72-82) ---
+[transit-pulse] warp #2153 ENEMY transit signal (ship 8118) @t=77.52
+[transit-pulse] warp #2153 ENEMY transit signal (ship 8124) @t=77.52
+[transit-pulse] warp #2153 ENEMY transit signal (ship 8110) @t=78.58
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=79.97
+[transit-pulse] warp #2152 OWN transit signal (ship 8129) @t=79.97
+[transit-pulse] warp #2152 ENEMY transit signal (ship 8126) @t=79.97
+[transit-pulse] warp #2152 ENEMY transit signal (ship 8112) @t=80.92
+[transit-pulse] warp #2152 ENEMY transit signal (ship 8120) @t=81.07
+[transit-pulse] warp #2152 ENEMY transit signal (ship 8128) @t=81.15
+[transit-pulse] warp #2152 ENEMY transit signal (ship 8122) @t=81.53
+[transit-pulse] warp #2152 ENEMY transit signal (ship 8100) @t=81.53
+[transit-pulse] warp #2152 ENEMY transit signal (ship 8108) @t=81.53
+[transit-pulse] warp #2152 ENEMY transit signal (ship 8114) @t=81.55
+[transit-pulse] warp #2153 ARRIVAL pulse (sector change) @t=82.00
+[transit-pulse] warp #2153 OWN transit signal (ship 8129) @t=82.00

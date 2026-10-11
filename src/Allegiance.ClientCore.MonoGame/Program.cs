@@ -55,10 +55,11 @@ bool bloomEnabled = false;
 bool shipsNative = true;
 // P567 — asteroid renderer: --asteroids native (default) | imported. See LaunchOptions.AsteroidsNative.
 bool asteroidsNative = true;
-// P576 — sky tier: --sky black (default, P588) | native | hd + the optional
-// aleph destination-glimpse: --aleph-glimpse on (default off).
+// P576 — sky tier: --sky black (default, P588) | native | hd + the aleph
+// destination-glimpse / transit flare: --aleph-glimpse on (default, P607) |
+// --aleph-glimpse off.
 string skyTier = "black";
-bool alephGlimpse = false;
+bool alephGlimpse = AlephGlimpseFlag.DefaultOn;
 // P577 — HD sky global intensity (--sky-intensity F, default 1.0) and the
 // low-res asset set (--sky-lowres, for Android).
 float skyIntensity = 1.0f;
@@ -280,15 +281,16 @@ for (int i = 0; i < args.Length; i++)
     }
     else if (a == "--aleph-glimpse" || a.StartsWith("--aleph-glimpse=", StringComparison.Ordinal))
     {
-        // P576-B — optional aleph destination-glimpse: --aleph-glimpse on (default off).
+        // P576-B/P607 — the aleph destination-glimpse / transit flare:
+        // --aleph-glimpse on (default, P607) | --aleph-glimpse off. Off still
+        // keeps the native arrival-star swell for visible transits (scope 2),
+        // only the glimpse/funnel-boost/flare extras are disabled.
         string? v = a == "--aleph-glimpse" ? (i + 1 < args.Length ? args[++i] : null)
                                            : a.Substring("--aleph-glimpse=".Length);
-        if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase))
-            alephGlimpse = true;
-        else if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase))
-            alephGlimpse = false;
+        if (AlephGlimpseFlag.Parse(v) is { } ag)
+            alephGlimpse = ag;
         else
-            Console.Error.WriteLine("[monogame] --aleph-glimpse: expected 'on' or 'off', got '{0}' - using the default (off)", v);
+            Console.Error.WriteLine("[monogame] --aleph-glimpse: expected 'on' or 'off', got '{0}' - using the default (on)", v);
     }
     else if (a == "--sky-intensity" || a.StartsWith("--sky-intensity=", StringComparison.Ordinal))
     {
@@ -491,7 +493,7 @@ var opts = new Game1.LaunchOptions
     ShipsNative = shipsNative,
     // P567 — asteroid renderer (default native; --asteroids native|imported).
     AsteroidsNative = asteroidsNative,
-    // P576/P588 — sky tier (default black; --sky black|native|hd) + aleph glimpse (default off).
+    // P576/P588 — sky tier (default black; --sky black|native|hd) + aleph glimpse (default ON, P607).
     SkyTier = skyTier,
     AlephGlimpse = alephGlimpse,
     // P577 — global HD-sky intensity (default 1.0) + low-res asset set.

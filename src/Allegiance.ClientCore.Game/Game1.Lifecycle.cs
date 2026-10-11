@@ -335,6 +335,16 @@ public sealed partial class Game1
         _hullById = _shopCatalog is null
             ? new Dictionary<short, DataHullTypeIGC>()
             : _shopCatalog.Hulls.ToDictionary(h => h.HullId);
+        // P607 — build the guaranteed-non-null procedural stand-in model once,
+        // independent of the artwork corpus and the Meshy pack, so the ship
+        // colour pass can never pass null to ShipRenderer.Draw (the P607 live
+        // crash). Logged once here so a build failure is loud, not silent.
+        _shipStandInModel = Rendering.ShipStandInModel.Build(GraphicsDevice);
+        // P607 — startup audit of NATIVE ship resolution across the whole core:
+        // every hull's ModelName .mdl must resolve (exists + decodes to a mesh),
+        // mirroring the P593b audit. Reports N hulls and the unresolved list
+        // (0 = every hull renders native; anything else is logged by name).
+        AuditNativeShipResolution();
         _dockedScreenRenderer = new Rendering.DockedScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P262 — game-over result screen: the large centred panel announced at

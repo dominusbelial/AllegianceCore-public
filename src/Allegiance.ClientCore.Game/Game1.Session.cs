@@ -196,12 +196,16 @@ public sealed partial class Game1
         public static bool SkyTierDrawsDome(string tier)
             => !string.Equals(tier, "black", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>P576 — the optional, non-native aleph destination-glimpse
-        /// (<c>--aleph-glimpse on</c>): faintly show the destination sector's sky
-        /// inside each visible aleph's funnel centre. Default <b>OFF</b> (a
-        /// non-native flourish). Client-only launch setting; never sent on the
-        /// wire.</summary>
-        public bool AlephGlimpse = false;
+        /// <summary>P576/P607 — the aleph destination-glimpse + transit flare
+        /// (<c>--aleph-glimpse</c>): faintly show the destination sector's sky
+        /// inside each visible aleph's funnel centre and fire a flare +
+        /// funnel-boost when any visible ship transits it. Default <b>ON</b>
+        /// since P607 (Domingo wants the enemy-crossing flare visible out of
+        /// the box); <c>--aleph-glimpse off</c> disables only the
+        /// glimpse/flare extras — the native arrival-star swell for visible
+        /// transits stays on either way. Client-only launch setting; never
+        /// sent on the wire.</summary>
+        public bool AlephGlimpse = true;
 
         /// <summary>P577 — global HD-sky intensity (<c>--sky-intensity F</c>,
         /// default 1.0, clamped to [0,2]): multiplies the whole HD sky

@@ -608,7 +608,20 @@ public sealed partial class Game1
                         // fell back to the fallback model (resolved asset null).
                         var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
                             ? t : _fallbackTexture;
-                        _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
+                        // P607 — never pass null to ShipRenderer.Draw: when a
+                        // ship has no native art (failed resolution) and no
+                        // Meshy pack fallback (both shipModel and _fallbackModel
+                        // null — the P607 live crash), draw the guaranteed
+                        // procedural stand-in so the ship stays visible and
+                        // targetable, and log it once by ship id.
+                        var drawModel = shipModel ?? _fallbackModel;
+                        if (drawModel is null)
+                        {
+                            drawModel = _shipStandInModel;
+                            if (_standInLoggedShips.Add(id))
+                                Console.WriteLine($"[client] P607 unresolvable ship #{id} (no native art, no Meshy pack) — rendering procedural stand-in");
+                        }
+                        _shipRenderer.Draw(drawModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
                     }
                 }
 
@@ -2091,33 +2104,66 @@ public sealed partial class Game1
 
     /// <summary>
     /// P585 — drain ClientWorld's aleph-transit signals (a ship crossing an
-    /// aleph in the viewer's sector) into the opt-in transit-pulse controller and
-    /// the native star swell, then prune expired pulses. Runs once per frame
-    /// under the world gate (the caller already holds it).
+    /// aleph in the viewer's sector) into the native star swell and, when the
+    /// glimpse is enabled, the transit-pulse controller, then prune expired
+    /// pulses. Runs once per frame under the world gate (the caller already
+    /// holds it).
     /// </summary>
     private void DrainAlephTransitSignals(ClientWorld world)
     {
-        // P585 — the transit PULSE (funnel boost + glimpse open-wide + flare) is
-        // opt-in under --aleph-glimpse on; when off, departures keep the
-        // pre-P585 native behaviour (no star swell, no boost). The native
-        // arrival swell for sector changes still fires in DetectTransitSwells.
-        if (_alephGlimpse)
+        DispatchAlephTransitSignals(
+            _alephGlimpse,
+            world.DrainAlephTransits(),
+            _warpPulses,
+            _warpRenderer.TriggerTransit,
+            // P599 — log WHOSE transit pulsed (OWN / TEAM / ENEMY vs the
+            // viewer's side): the objective evidence that the flare fires
+            // for visible ENEMY ships, not only teammates. Only logged when
+            // the glimpse pulse actually fires (flag on).
+            sig => Console.WriteLine($"[transit-pulse] warp #{sig.WarpId} {TransitActorLabel(world, sig.ShipId)} transit signal (ship {sig.ShipId}) @t={_nowSeconds:0.00}"),
+            _nowSeconds);
+    }
+
+    /// <summary>
+    /// P607 — the dispatch rule for drained aleph-transit signals, extracted
+    /// pure so it is unit-testable headless:
+    /// <list type="bullet">
+    /// <item>The <b>native star swell</b> (<paramref name="swell"/>, i.e.
+    /// <c>WarpRenderer.TriggerTransit</c>) fires for EVERY legitimate visible
+    /// transit (own, team, enemy, neutral; arrival and departure, per P599's
+    /// rules — kills/docks never produce signals) <b>regardless of the glimpse
+    /// flag</b>. This is what makes an enemy crossing the aleph visibly swell
+    /// even with <c>--aleph-glimpse off</c>.</item>
+    /// <item>The <b>glimpse pulse</b> (<paramref name="pulses"/> — funnel
+    /// boost, destination glimpse open-wide, lens flare) fires only when
+    /// <paramref name="alephGlimpse"/> is on, and only the pulse log
+    /// (<paramref name="pulseLog"/>) is emitted then.</item>
+    /// </list>
+    /// Because <paramref name="swell"/> is idempotent (a same-warp, same-frame
+    /// re-trigger just restarts one timeline) a single crossing observed by
+    /// both <c>DetectTransitSwells</c> (sector change) and a drained signal
+    /// still yields exactly ONE swell — P599's coalescing is preserved, never
+    /// a double swell. Same for the pulse: <see cref="WarpPulseController"/>
+    /// coalesces same-warp bursts within <see cref="WarpPulseController.MinRepeatGapSeconds"/>.
+    /// </summary>
+    internal static void DispatchAlephTransitSignals(
+        bool alephGlimpse,
+        IReadOnlyList<AlephTransitSignal> signals,
+        WarpPulseController pulses,
+        Action<short> swell,
+        Action<AlephTransitSignal>? pulseLog,
+        double now)
+    {
+        foreach (var sig in signals)
         {
-            foreach (var sig in world.DrainAlephTransits())
+            swell(sig.WarpId);                       // native star swell — always (P607 scope 2)
+            if (alephGlimpse)
             {
-                _warpPulses.Trigger(sig.WarpId, _nowSeconds);
-                _warpRenderer.TriggerTransit(sig.WarpId);
-                // P599 — log WHOSE transit pulsed (OWN / TEAM / ENEMY vs the
-                // viewer's side): the objective evidence that the flare fires
-                // for visible ENEMY ships, not only teammates.
-                Console.WriteLine($"[transit-pulse] warp #{sig.WarpId} {TransitActorLabel(world, sig.ShipId)} transit signal (ship {sig.ShipId}) @t={_nowSeconds:0.00}");
+                pulses.Trigger(sig.WarpId, now);     // glimpse funnel-boost/flare — flag-gated
+                pulseLog?.Invoke(sig);
             }
         }
-        else
-        {
-            world.DrainAlephTransits();
-        }
-        _warpPulses.Update(_nowSeconds);
+        pulses.Update(now);
     }
 
     /// <summary>
@@ -3096,6 +3142,30 @@ public sealed partial class Game1
         return result;
     }
 
+    /// <summary>
+    /// P607 — startup audit of NATIVE ship art resolution across the whole
+    /// loaded core (mirroring P593b's projectile/missile audits): every hull's
+    /// <c>ModelName</c> <c>.mdl</c> must resolve through the native ship
+    /// renderer (exists + decodes to geometry). Reports N hulls and the
+    /// unresolved list — 0 means every hull renders native; any hull that
+    /// fails is logged once by name and falls back to the procedural stand-in
+    /// at draw time (never a crash, never invisible).
+    /// </summary>
+    private void AuditNativeShipResolution()
+    {
+        if (_hullById is null || _nativeShipRenderer is null) return;
+        var unresolved = Rendering.ShipNativeAudit.CollectUnresolved(
+            _hullById.Select(kv => (kv.Key, kv.Value.Name, (string?)kv.Value.ModelName)),
+            stem => _nativeShipRenderer.MeshFor(stem!) is not null);
+        int n = _hullById.Count;
+        foreach (var u in unresolved)
+            Console.WriteLine($"[client] P607 native ship resolution FAILED: hull {u.HullId} '{u.Name}' (ModelName '{u.Stem}') — will render the procedural stand-in");
+        Console.WriteLine(unresolved.Count == 0
+            ? $"[monogame] P607 ship-model audit: {n} hull(s), 0 unresolved native"
+            : $"[monogame] P607 ship-model audit: {n} hull(s), {unresolved.Count} unresolved native -> procedural stand-in");
+    }
+
+    /// <summary>
     /// P566 — resolve a ship's NATIVE art (original <c>.mdl</c> mesh + native
     /// texture) from its real hull record: <c>ModelName</c> → the native mesh stem,
     /// <c>TextureName</c>/model-import → the native texture stem
@@ -3264,7 +3334,7 @@ public sealed partial class Game1
             }
         }
 
-        var model = ResolveShipModel(side, hullId) ?? _fallbackModel;
+        var model = ResolveShipModel(side, hullId) ?? _fallbackModel ?? _shipStandInModel;
         var tex = ResolveShipTexture(side, hullId) ?? _fallbackTexture;
 
         // P525 — frame the hull the way native's loadout geo pane does
