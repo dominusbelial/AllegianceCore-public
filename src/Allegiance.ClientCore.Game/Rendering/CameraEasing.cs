@@ -141,6 +141,18 @@ public readonly record struct CameraPose(Vector3 Eye, Quaternion Orient, float F
     }
 
     /// <summary>
+    /// Rebuild a CAMERA-RELATIVE view from this pose: rotation only, no
+    /// translation. Every flight camera builds its view as
+    /// <c>CreateLookAt(Vector3.Zero, …)</c> (CockpitCamera.cs:78,
+    /// ExternalCameras.cs:20, MissileCamera.cs:116) and every draw subtracts
+    /// <c>cameraEye</c> from object positions itself, so a view that also
+    /// translates by <see cref="Eye"/> (<see cref="View"/>) subtracts the eye
+    /// twice and drifts the whole scene by the camera's distance from the sector
+    /// origin.
+    /// </summary>
+    public Matrix RelativeView() => Matrix.Transpose(Matrix.CreateFromQuaternion(Orient));
+
+    /// <summary>
     /// Rebuild a perspective projection from <see cref="FovDeg"/> using the given
     /// <paramref name="aspect"/> and the reference <paramref name="near"/> /
     /// <paramref name="far"/> planes (passed through unchanged).

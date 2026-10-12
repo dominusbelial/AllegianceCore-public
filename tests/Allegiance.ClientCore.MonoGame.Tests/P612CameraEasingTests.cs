@@ -84,6 +84,28 @@ public class P612CameraEasingTests
     }
 
     [Fact]
+    public void CameraPose_relative_view_round_trips_a_camera_relative_flight_view()
+    {
+        // The production flight cameras are camera-relative: the view looks from
+        // the ORIGIN and draws subtract the eye from object positions. Rebuilding
+        // must reproduce that view exactly (no eye translation), or the whole
+        // scene drifts by the camera's distance from the sector origin.
+        var eye = new Vector3(1200f, -350f, 2400f);
+        var dir = new Vector3(0.3f, 0.1f, -1f);
+        var up = Vector3.Normalize(new Vector3(0.1f, 1f, 0.05f));
+        var view = Matrix.CreateLookAt(Vector3.Zero, dir, up);
+        var proj = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(60f), 16f / 9f, 1f, 5000f);
+
+        var rebuilt = CameraPose.FromViewProjection(view, proj, eye).RelativeView();
+
+        var worldPoint = new Vector3(1500f, -200f, 1800f);
+        var a = Vector3.Transform(worldPoint - eye, view);
+        var b = Vector3.Transform(worldPoint - eye, rebuilt);
+        Assert.True((a - b).Length() < 1e-2f, $"camera-relative point moved by {(a - b).Length()}");
+        Assert.True(rebuilt.Translation.Length() < 1e-4f, "camera-relative view must not translate");
+    }
+
+    [Fact]
     public void CameraPose_forward_points_where_the_camera_looks()
     {
         var eye = new Vector3(0f, 0f, 50f);

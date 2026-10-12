@@ -455,10 +455,15 @@ public sealed partial class Game1
         }
         else
         {
+            // No transition running: pass the raw camera through untouched.
             _camDisplay = raw;
+            return;
         }
 
-        view = _camDisplay.View();
+        // The flight views are camera-relative (CreateLookAt(Zero, …), draws
+        // subtract the returned eye), so rebuild rotation-only — View() would
+        // subtract the eye a second time and drift the scene.
+        view = _camDisplay.RelativeView();
         proj = _camDisplay.Projection(aspect, CameraPose.NearFromProjection(proj), CameraPose.FarFromProjection(proj));
         eye = _camDisplay.Eye;
     }

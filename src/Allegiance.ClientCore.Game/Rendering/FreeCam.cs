@@ -98,11 +98,15 @@ public sealed class FreeCam
         _velocity = Vector3.Zero;
     }
 
-    /// <summary>View matrix for the rig (eye looking along the yaw/pitch forward).</summary>
+    /// <summary>CAMERA-RELATIVE view matrix for the rig (looking along the
+    /// yaw/pitch forward from the origin). Like every flight camera
+    /// (CockpitCamera.cs:78) the draws subtract the returned eye
+    /// (<see cref="Position"/>) from object positions themselves, so the view
+    /// must not translate by it again.</summary>
     public Matrix View()
     {
         var b = Basis();
-        return Matrix.CreateLookAt(Position, Position + b.Forward, b.Up);
+        return Matrix.CreateLookAt(Vector3.Zero, b.Forward, b.Up);
     }
 
     /// <summary>Reset motion state (called when the camera is released).</summary>
