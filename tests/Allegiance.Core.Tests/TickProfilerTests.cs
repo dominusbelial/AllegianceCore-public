@@ -144,4 +144,86 @@ public class TickProfilerTests
         }
         finally { Disable(); }
     }
+
+    // ── P619 — slow-tick capture ────────────────────────────────────────────
+
+    [Fact]
+    public void Slow_tick_capture_is_off_when_not_armed()
+    {
+        try
+        {
+            TickProfiler.Configure(true, 3600, null);   // 3-arg = no slow-tick capture
+            Assert.False(TickProfiler.SlowTickCaptureActive);
+        }
+        finally { Disable(); }
+    }
+
+    [Fact]
+    public void Slow_tick_capture_arms_via_configure_params()
+    {
+        try
+        {
+            TickProfiler.Configure(true, 3600, null, slowTickMs: 50, slowTickCapture: true);
+            Assert.True(TickProfiler.SlowTickCaptureActive);
+            // Disabling clears the armed flag too.
+            TickProfiler.Configure(false, 5, null);
+            Assert.False(TickProfiler.SlowTickCaptureActive);
+        }
+        finally { Disable(); }
+    }
+
+    [Fact]
+    public void Slow_tick_line_is_NOT_emitted_below_the_threshold()
+    {
+        string captured;
+        try
+        {
+            TickProfiler.Configure(true, 3600, null, slowTickMs: 60, slowTickCapture: true);
+            var sw = new StringWriter();
+            var orig = Console.Out;
+            Console.SetOut(sw);
+            try
+            {
+                TickProfiler.EnterTick();
+                using (TickProfiler.Enter("quick")) Thread.Sleep(5);   // well under 60ms
+                TickProfiler.EndTick();
+            }
+            finally { Console.SetOut(orig); }
+            captured = sw.ToString();
+        }
+        finally { Disable(); }
+
+        Assert.DoesNotContain("[slowtick]", captured);
+    }
+
+    [Fact]
+    public void Slow_tick_line_emits_top_buckets_gc_delta_and_worker_max_when_over_threshold()
+    {
+        string captured;
+        try
+        {
+            TickProfiler.Configure(true, 3600, null, slowTickMs: 60, slowTickCapture: true);
+            var sw = new StringWriter();
+            var orig = Console.Out;
+            Console.SetOut(sw);
+            try
+            {
+                TickProfiler.EnterTick();
+                using (TickProfiler.Enter("stall.sub")) Thread.Sleep(120); // over 60ms
+                // Simulate two parallel-broadcast workers; the max is what counts.
+                TickProfiler.RegisterWorker(41.0);
+                TickProfiler.RegisterWorker(17.0);
+                TickProfiler.EndTick();
+            }
+            finally { Console.SetOut(orig); }
+            captured = sw.ToString();
+        }
+        finally { Disable(); }
+
+        Assert.Contains("[slowtick]", captured);
+        Assert.Contains("wall=", captured);
+        Assert.Contains("stall.sub=", captured);        // the slow sub-step is visible
+        Assert.Contains("gen2+", captured);             // GC-collection deltas present
+        Assert.Contains("parallel-worker max=41", captured);   // per-worker max recorded
+    }
 }

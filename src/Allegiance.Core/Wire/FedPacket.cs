@@ -42,6 +42,49 @@ public static class FedPacket
     }
 
     /// <summary>
+    /// P619 — allocation-light pack of a SINGLE message, byte-identical to
+    /// <c>Pack(new[] { m })</c> (same packing, same trailing CRC) but without
+    /// the caller's one-element array and without the intermediate
+    /// <see cref="List{T}"/> the <see cref="IEnumerable{T}"/> overload's
+    /// <see cref="Flatten"/> allocates. The per-tick broadcast path calls this
+    /// for every own-ship / status / export single-frame send (hundreds per
+    /// tick at 300+ players), so removing those two allocations per send is the
+    /// cheapest, wire-identical portion of the P619 allocation cut.
+    /// </summary>
+    public static byte[] Pack(byte[] single)
+    {
+        var packet = new byte[single.Length + CrcWidth];
+        single.CopyTo(packet, 0);
+        uint crc = FedMsgCrc.Compute(packet.AsSpan(0, single.Length));
+        BinaryPrimitives.WriteUInt32LittleEndian(packet.AsSpan(single.Length, CrcWidth), crc);
+        return packet;
+    }
+
+    /// <summary>
+    /// P619 — allocation-light pack of a message list, byte-identical to
+    /// <c>Pack((IEnumerable&lt;byte[]&gt;)messages)</c> (same concatenation, same
+    /// trailing CRC) but flattening directly into the destination packet with no
+    /// intermediate <see cref="List{T}"/> from <see cref="Flatten"/>. Used by the
+    /// per-recipient teammate <c>posBatch</c> pack (a per-recipient List would
+    /// otherwise be grown + copied once per tick per recipient at 300+ players).
+    /// </summary>
+    public static byte[] Pack(ReadOnlySpan<byte[]> messages)
+    {
+        int total = 0;
+        foreach (var m in messages) total += m.Length;
+        var packet = new byte[total + CrcWidth];
+        int pos = 0;
+        foreach (var m in messages)
+        {
+            m.CopyTo(packet, pos);
+            pos += m.Length;
+        }
+        uint crc = FedMsgCrc.Compute(packet.AsSpan(0, total));
+        BinaryPrimitives.WriteUInt32LittleEndian(packet.AsSpan(total, CrcWidth), crc);
+        return packet;
+    }
+
+    /// <summary>
     /// Unpack and verify a received packet: recompute the CRC over the message
     /// bytes and compare to the trailing CRC. Returns the parsed messages, or
     /// throws <see cref="FedCrcException"/> on mismatch / malformed length.

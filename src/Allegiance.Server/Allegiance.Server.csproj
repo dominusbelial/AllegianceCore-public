@@ -10,6 +10,18 @@
          build/test (JIT) runs; the actual native compilation only happens on
          publish with a RID (see Dockerfile). -->
     <PublishAot>true</PublishAot>
+    <!-- P619: Server GC + concurrent GC by default. The server ships with no GC
+         settings, so it ran .NET's default workstation GC; at 300+ players the
+         per-tick allocation volume (esp. port-mode broadcast) turned every window
+         into a gen2 storm and the shared 221 box into a slide show. Measured on
+         2026-10-12: DOTNET_gcServer=1 cut [tickprof] tick p95 from 1.2-1.8s to
+         65-80ms at 392 players (clash13 vs clash14). These MSBuild properties emit
+         runtimeconfig serverGarbageCollection / concurrentGarbageCollection, the
+         build-time equivalent of the DOTNET_gcServer / DOTNET_gcConcurrent env
+         vars. Kept true for every config (Debug included) so a debug-mode load
+         test reflects production. -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>

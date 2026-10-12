@@ -379,6 +379,23 @@ public sealed class ProfilerConfig
     /// file (columns: window_start_unix, window_seconds, bucket, count, mean_ms,
     /// p95_ms, max_ms, total_ms). Null = log-only.</summary>
     public string? CsvPath { get; set; }
+
+    /// <summary>
+    /// P619 — master switch for slow-tick capture. When true (and the profiler
+    /// is enabled), any single tick whose wall time meets
+    /// <see cref="SlowTickMs"/> emits one <c>[slowtick]</c> line giving the top
+    /// sub-step timings inside it (including the parallel broadcast build's per-
+    /// worker max), plus whether a GC occurred during the tick (collection-count
+    /// deltas and <c>GetTotalPauseDuration</c> delta). This is the attribution
+    /// tool for the once-per-window multi-second tick that survives both ship-
+    /// update modes and server GC (P619). Off by default; the <c>[slowtick]</c>
+    /// machinery costs nothing when off.
+    /// </summary>
+    public bool SlowTickCapture { get; set; }
+
+    /// <summary>P619 — the wall-time threshold (ms) that trips slow-tick capture.
+    /// Default 250 ms. Ignored unless <see cref="SlowTickCapture"/> is true.</summary>
+    public double SlowTickMs { get; set; } = 250;
 }
 
 /// <summary>

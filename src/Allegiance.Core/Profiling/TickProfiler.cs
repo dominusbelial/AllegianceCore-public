@@ -43,8 +43,30 @@ public sealed class TickProfiler
     /// zero-cost path: every entry point checks this before doing any work.</summary>
     public static TickProfiler? Instance { get; private set; }
 
+    /// <summary>
+    /// P619 — true only while slow-tick capture is armed (profiler on AND
+    /// <c>slowTickCapture</c> AND a positive threshold). Hot paths read this
+    /// static (not <see cref="Instance"/> + field) once per call site and skip
+    /// all capture machinery when false, so an uninstrumented run pays a single
+    /// boolean check with no other cost.
+    /// </summary>
+    public static bool SlowTickCaptureActive { get; private set; }
+
     private readonly int _reportIntervalSeconds;
     private readonly string? _csvPath;
+
+    // P619 — slow-tick capture. A per-tick wall time at or above _slowTickMs
+    // (while _slowTickCapture) emits one [slowtick] line: the top sub-step
+    // (bucket) timings inside that tick, the GC-collection deltas (before/after
+    // EnterTick/EndTick), the GC pause-duration delta, and the max/concurent
+    // worker duration from the parallel broadcast build. All zero-cost when off.
+    private readonly double _slowTickMs;
+    private readonly bool _slowTickCapture;
+    private long _tickSeq;
+    private long _gcStart0, _gcStart1, _gcStart2;
+    private double _pauseStartMs;
+    private double _workerMaxMs;
+    private int _workerCount;
 
     // P600 — the profiler's mutable state is guarded by a single lock. In
     // production everything runs on the server's one simulation thread and the
@@ -87,10 +109,12 @@ public sealed class TickProfiler
     private readonly Stopwatch _tickSw = new();
     private StreamWriter? _csv;
 
-    private TickProfiler(int reportIntervalSeconds, string? csvPath)
+    private TickProfiler(int reportIntervalSeconds, string? csvPath, double slowTickMs = 0, bool slowTickCapture = false)
     {
         _reportIntervalSeconds = Math.Max(1, reportIntervalSeconds);
         _csvPath = csvPath;
+        _slowTickMs = slowTickMs;
+        _slowTickCapture = slowTickCapture;
         _windowStartUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (csvPath is { Length: > 0 })
         {
@@ -102,14 +126,18 @@ public sealed class TickProfiler
     }
 
     /// <summary>Enable (enabled = true) or disable (false) the profiler globally.
-    /// A disabled profiler costs nothing thereafter (the Instance is null).</summary>
-    public static void Configure(bool enabled, int reportIntervalSeconds, string? csvPath)
+    /// A disabled profiler costs nothing thereafter (the Instance is null).
+    /// <paramref name="slowTickMs"/> (&gt;0) + <paramref name="slowTickCapture"/>
+    /// arm the P619 slow-tick capture on the enabled instance.</summary>
+    public static void Configure(bool enabled, int reportIntervalSeconds, string? csvPath,
+        double slowTickMs = 0, bool slowTickCapture = false)
     {
         TickProfiler? prev;
         lock (StaticGate)
         {
             prev = Instance;
-            Instance = enabled ? new TickProfiler(reportIntervalSeconds, csvPath) : null;
+            Instance = enabled ? new TickProfiler(reportIntervalSeconds, csvPath, slowTickMs, slowTickCapture) : null;
+            SlowTickCaptureActive = enabled && slowTickCapture && slowTickMs > 0;
         }
         prev?.Close();
     }
@@ -144,7 +172,40 @@ public sealed class TickProfiler
     {
         var p = Instance;
         if (p is null) return;
-        lock (p._lock) p._tickSw.Restart();
+        lock (p._lock)
+        {
+            p._tickSw.Restart();
+            p._tickSeq++;
+            // P619 — reset per-tick slow-tick capture state and, when armed,
+            // baseline the GC counters so a slow tick's GC activity is attributable.
+            p._workerMaxMs = 0;
+            p._workerCount = 0;
+            if (p._slowTickCapture && p._slowTickMs > 0)
+            {
+                p._gcStart0 = GC.CollectionCount(0);
+                p._gcStart1 = GC.CollectionCount(1);
+                p._gcStart2 = GC.CollectionCount(2);
+                p._pauseStartMs = GC.GetTotalPauseDuration().TotalMilliseconds;
+            }
+        }
+    }
+
+    /// <summary>
+    /// P619 — record one parallel-broadcast worker's build duration (ms) for
+    /// this tick's slow-tick capture (the max + count appear on a [slowtick]
+    /// line). Called by each <c>Parallel.For</c> worker in
+    /// <c>BroadcastShipStatesParallel</c>. No-op (single null check + flag check)
+    /// when the profiler or capture is off.
+    /// </summary>
+    public static void RegisterWorker(double ms)
+    {
+        var p = Instance;
+        if (p is null || !p._slowTickCapture || p._slowTickMs <= 0) return;
+        lock (p._lock)
+        {
+            if (ms > p._workerMaxMs) p._workerMaxMs = ms;
+            p._workerCount++;
+        }
     }
 
     /// <summary>Close the current tick: fold per-bucket samples into the window,
@@ -165,6 +226,13 @@ public sealed class TickProfiler
             _tickWallList.Add(wall);
             if (wall > _tickWallMax) _tickWallMax = wall;
             _ticksInWindow++;
+
+            // P619 — emit the slow-tick capture line the moment a tick exceeds
+            // the threshold, from this tick's still-intact bucket accumulator
+            // (_cur is folded + cleared just below) and the GC baselines taken at
+            // EnterTick. Captures inside-parallel-build time (worker max) too.
+            if (_slowTickCapture && _slowTickMs > 0 && wall >= _slowTickMs)
+                EmitSlowTick(wall);
 
             foreach (var (bucket, ms) in _cur)
             {
@@ -218,6 +286,39 @@ public sealed class TickProfiler
         var p = Instance;
         if (p is null) return;
         lock (p._lock) p._sectorCounts[sectorId] = (objects, ships);
+    }
+
+    /// <summary>
+    /// P619 — one slow-tick line. Called from <see cref="FinishTick"/> under the
+    /// lock when this tick's wall time met the armed threshold. Reads this tick's
+    /// bucket accumulator (<c>_cur</c>, folded+cleared right after), the GC
+    /// baselines taken at <see cref="EnterTick"/>, and the parallel-build worker
+    /// stats registered via <see cref="RegisterWorker"/>. The line carries the top
+    /// sub-step timings INCLUDING inside the parallel build (the worker max), plus
+    /// whether a GC happened during the tick, so an unattributable multi-second
+    /// tick (all buckets summing to far less than the wall) is distinguished from
+    /// one consumed by a single sub-step or a GC pause.
+    /// </summary>
+    private void EmitSlowTick(double wall)
+    {
+        var top = _cur
+            .Where(kv => kv.Value > 0)
+            .OrderByDescending(kv => kv.Value)
+            .Take(8)
+            .ToList();
+        long g0 = GC.CollectionCount(0), g1 = GC.CollectionCount(1), g2 = GC.CollectionCount(2);
+        double pause = GC.GetTotalPauseDuration().TotalMilliseconds;
+        long dg0 = g0 - _gcStart0, dg1 = g1 - _gcStart1, dg2 = g2 - _gcStart2;
+        double dpause = pause - _pauseStartMs;
+        string buckets = top.Count == 0
+            ? "(no timed sub-steps)"
+            : string.Join(", ", top.Select(kv => $"{kv.Key}={kv.Value:0}ms"));
+        double bucketSum = top.Sum(kv => kv.Value);
+        Console.WriteLine(
+            $"[slowtick] #{_tickSeq} wall={wall:0}ms (≥{_slowTickMs:0}ms) top8[ {buckets} ] " +
+            $"bucketSum={bucketSum:0}ms unaccounted={(wall - bucketSum):0}ms " +
+            $"gc(gen0+{dg0},gen1+{dg1},gen2+{dg2},pause+{dpause:0}ms) " +
+            $"parallel-worker max={_workerMaxMs:0}ms (workers={_workerCount})");
     }
 
     private void Report()

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime;
 using System.Runtime.InteropServices;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
@@ -128,6 +129,7 @@ public sealed partial class Server
             Console.WriteLine("[boot] *** TICK PROFILER ACTIVE (profiler.enabled=true) — per-subsystem + per-sector per-tick timing, "
                               + $"report every {profiler.ReportIntervalSeconds}s"
                               + (profiler.CsvPath is { Length: > 0 } ? $" → CSV {profiler.CsvPath}" : "")
+                              + (TickProfiler.SlowTickCaptureActive ? "; slow-tick capture ON" : "")
                               + "; overhead negligible when off ***");
 
         // P603 — resolve the parallel per-peer broadcast build from config +
@@ -148,6 +150,12 @@ public sealed partial class Server
         // ALLEGIANCE_SHIP_UPDATE_MODEL env var, print it at boot, and stamp it
         // into the profiler report header.
         ResolveShipUpdateModel();
+
+        // P619 — log the ACTIVE garbage collector (server vs workstation, and
+        // concurrent vs batch) so a measurement run is attributable: a server that
+        // somehow falls back to workstation GC (e.g. a runtime config or a host
+        // env override) is visible in the boot banner, not silently assumed.
+        LogGcMode();
 
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
@@ -1108,11 +1116,31 @@ public sealed partial class Server
     /// file: "1"/"true" enables log-only, "0"/"false" forces off, any other
     /// value is treated as the CSV output path. Interval comes from config, or
     /// the <c>ALLEGIANCE_TICK_PROFILER_INTERVAL</c> env var when present.</summary>
+    /// <summary>
+    /// P619 — print the ACTIVE garbage-collector mode at boot so a measurement
+    /// run is attributable: <c>server</c> vs <c>workstation</c> (from
+    /// <see cref="GCSettings.IsServerGC"/>, reflecting the runtime's actual GC,
+    /// which the server csproj pins to server via <c>&lt;ServerGarbageCollection&gt;</c>)
+    /// and <c>concurrent</c> vs <c>batch</c> (concurrent is the modern default and
+    /// what <c>&lt;ConcurrentGarbageCollection&gt;</c> requests; it is OFF in
+    /// <see cref="GCLatencyMode.Batch"/>). Matches the task's <c>[boot] gc =
+    /// server/concurrent</c> contract.
+    /// </summary>
+    private static void LogGcMode()
+    {
+        string mode = GCSettings.IsServerGC ? "server" : "workstation";
+        string concurrent = GCSettings.LatencyMode == GCLatencyMode.Batch ? "non-concurrent" : "concurrent";
+        Console.WriteLine($"[boot] gc = {mode}/{concurrent}" +
+            (GCSettings.IsServerGC ? " (server GC: multi-heap, scales with cores; recommended for 300+ players)" : ""));
+    }
+
     private static void ApplyProfilerConfig(ProfilerConfig? cfg)
     {
         bool enabled = cfg?.Enabled ?? false;
         int interval = cfg?.ReportIntervalSeconds ?? 5;
         string? csv = cfg?.CsvPath;
+        bool slowCapture = cfg?.SlowTickCapture ?? false;
+        double slowMs = cfg?.SlowTickMs ?? 250;
 
         string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_TICK_PROFILER");
         if (!string.IsNullOrEmpty(env))
@@ -1124,8 +1152,17 @@ public sealed partial class Server
         string? envInt = Environment.GetEnvironmentVariable("ALLEGIANCE_TICK_PROFILER_INTERVAL");
         if (!string.IsNullOrEmpty(envInt) && int.TryParse(envInt, out var iv) && iv > 0)
             interval = iv;
+        // P619 — slow-tick capture: the env var arms it (even without the config
+        // flag) and overrides the threshold, so a live attribution run on a busy
+        // box needs only ONE env var, no config edit.
+        string? envSlow = Environment.GetEnvironmentVariable("ALLEGIANCE_SLOW_TICK_MS");
+        if (!string.IsNullOrEmpty(envSlow) && double.TryParse(envSlow, System.Globalization.CultureInfo.InvariantCulture, out var sm) && sm > 0)
+        {
+            slowCapture = true;
+            slowMs = sm;
+        }
 
-        TickProfiler.Configure(enabled, interval, csv);
+        TickProfiler.Configure(enabled, interval, csv, slowMs, slowCapture);
     }
 
     /// <summary>
