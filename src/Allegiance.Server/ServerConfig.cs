@@ -39,6 +39,27 @@ public sealed class GameConfig
     /// convention. See <see cref="MapGenConfig"/> for the tunables.
     /// </summary>
     public MapGenConfig? MapGen { get; init; }
+
+    /// <summary>
+    /// P598 — the port of native's <c>bAutoRestart</c> (igc.h:1154, default
+    /// <c>false</c> at igc.h:1268): whether the mission restarts automatically
+    /// after a game-over. When <c>true</c>, a game-over rotation arms a start
+    /// timer of <see cref="RestartCountdownSeconds"/> on the freshly-assembled
+    /// NotStarted mission; when it elapses the mission enters the normal start
+    /// countdown and plays again — native's unattended restart for showcase /
+    /// empty servers (fsmission.cpp:3539-3546). Off by default; when off (the
+    /// default) the restart relies on the ready-up auto-start, exactly as
+    /// before P598.
+    /// </summary>
+    public bool AutoRestart { get; init; }
+
+    /// <summary>
+    /// P598 — the port of native's <c>fRestartCountdown</c> (igc.h:1171,
+    /// default <c>60.0f</c> at igc.h:1274): the seconds, when
+    /// <see cref="AutoRestart"/> is on, between a game-over rotation and the
+    /// rebuilt mission's auto-restart start countdown. Absent → 60.0.
+    /// </summary>
+    public double? RestartCountdownSeconds { get; init; }
 }
 
 /// <summary>

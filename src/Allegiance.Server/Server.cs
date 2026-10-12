@@ -312,6 +312,16 @@ public sealed partial class Server : IDisposable
     // + removed in SimPass's AdvanceStartCountdowns.
     private readonly Dictionary<Mission, double> _startCountdownDeadline = new();
 
+    // P598 — the port of native's bAutoRestart timer (fsmission.cpp:3539-3546):
+    // for a game configured with AutoRestart, the freshly-assembled NotStarted
+    // mission after a game-over rotation arms a deadline here; when SimPass's
+    // AdvanceAutoRestarts sees it elapse it starts the mission's countdown
+    // without requiring anyone to ready up (native's unattended restart). Absent
+    // for missions not armed. Written in RotateMissionAfterGameOver (sim thread),
+    // read + removed in SimPass's AdvanceAutoRestarts. Distinct from
+    // _startCountdownDeadline (which tracks an ALREADY-counting-down mission).
+    private readonly Dictionary<Mission, double> _autoRestartDeadline = new();
+
     // P188 — the visible pre-launch countdown length, the port of native's
     // c_fMissionBriefingCountdown constant (src/Igc/igc.h:1005). Verified in
     // the live native source this session: `const float c_fMissionBriefingCountdown

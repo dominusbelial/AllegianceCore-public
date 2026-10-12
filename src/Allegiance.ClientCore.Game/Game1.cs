@@ -757,6 +757,12 @@ public sealed partial class Game1 : Game
     private Rendering.ReadyCheckOverlayRenderer _readyCheckRenderer = null!;
     private bool _ownReady;
     private bool _rcYWasDown, _rcOWasDown;
+    // P598 — the ship id this client last sent PLAYER_READY(true) for. The
+    // server re-seats a migrated peer after a game-over rotation with a FRESH
+    // ship id (new SET_CLUSTER), so a non-null mismatch here means the mission
+    // rotated and we must re-propagate the ready intent to the new ship (native
+    // lobby flow: re-ready on the fresh NotStarted mission).
+    private short? _readyConfirmedShip;
 
     // P268 — docked/hangar loadout shop state. When the local ship is docked
     // (ShipEntity.StationId != -1) the client shows this screen instead of

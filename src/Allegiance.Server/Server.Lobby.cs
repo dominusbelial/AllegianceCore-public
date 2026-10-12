@@ -526,6 +526,20 @@ public sealed partial class Server
         // AssembleGameMission; re-ORing is a no-op) — this call's only effect is
         // the side-group broadcast to the peers migration just re-seated.
         ApplyTestUnlock(fresh);
+
+        // P598 — native's unattended auto-restart (bAutoRestart): after a
+        // game-over rotation, arm the rebuilt NotStarted mission to auto-start
+        // on a timer (fsmission.cpp:3539-3546, `timeStart = Now +
+        // fRestartCountdown`) instead of waiting for a ready-up. Off by default
+        // (GameConfig.AutoRestart=false); when off the Phase 4 ready recompute +
+        // the ready-up path (above) is what restarts the mission.
+        var gc = idx >= 0 && idx < _config.Games.Count ? _config.Games[idx] : null;
+        if (gc is { AutoRestart: true })
+        {
+            double restartSecs = gc.RestartCountdownSeconds ?? 60.0;
+            _autoRestartDeadline[fresh] = _simNow + restartSecs;
+            Console.WriteLine($"[autorestart] P598: mission #{idx} armed for auto-restart in {restartSecs}s (GameConfig.AutoRestart) — {(_peerShips.Values.Count(v => ReferenceEquals(v.Ship.Mission, fresh)) > 0 ? "peers connected" : "no peers yet")}");
+        }
     }
 
     /// <summary>
@@ -617,11 +631,18 @@ public sealed partial class Server
             // spawner must not hijack (or crash on) its re-placement.
             var newLive = AssignMigratedShip(newShipId, oldSide != -1 ? oldSide : null);
 
-            // Ready cleared + wallet reset (native fsmission.cpp:3493-3521): a
-            // fresh PlayerWallet already starts at 0; remove the ready flag so
-            // the peer must ready again before the next game can start.
+            // Wallet reset (native fsmission.cpp:3493-3521: a fresh PlayerWallet
+            // already starts at 0). Ready is PRESERVED, not cleared — native
+            // ProcessGameOver resets only the SIDE aggregate readiness
+            // (m_misdef.rgfReady[sideID] = false, fsmission.cpp:3501); the
+            // individual player ready flags ("not away-from-keyboard") survive
+            // unchanged (the "set everyone unready" block at fsmission.cpp:3468-
+            // 3481 is commented out by Imago precisely so a player's ready/AFK
+            // state is not reset at game-over). So a migrated peer that was
+            // ready before the game-over comes back ready in the fresh mission —
+            // the native-correct re-ready state (P598) — and the side aggregates
+            // are re-derived from those preserved flags by the Phase 4 recompute.
             ClearPeerJoinLatches(conn, live.Ship.Id);
-            _playerReady.Remove(conn);
             foreach (var pk in _pendingJoinRequests
                          .Where(k => k.Value.ShipId == live.Ship.Id).Select(k => k.Key).ToList())
                 _pendingJoinRequests.Remove(pk);
@@ -661,6 +682,26 @@ public sealed partial class Server
         {
             CompleteJoinAndLaunch(p.Conn, p.Req, p.NewShipId, (byte)(p.Req.DwCookie & 0xFF), p.NewLive);
             Console.WriteLine($"[reseat] peer {p.Conn} -> re-sent fresh-joiner join burst (ship {p.NewShipId}, stage {fresh.Stage})");
+        }
+
+        // Phase 4 — P598: re-derive each occupied side's aggregate readiness
+        // from the migrated peers' PRESERVED ready flags (native's
+        // CheckForSideAllReady re-run, fsmission.cpp:5498-5529 — the equivalent
+        // of native re-reading rgfReady[] after the side aggregate was reset at
+        // ProcessGameOver, fsmission.cpp:3501). A side whose every connected
+        // peer was still ready before the game-over comes back aggregate-ready,
+        // and RecomputeSideReady's flip fires TryAutoStart, so the rotated
+        // mission auto-starts without anyone having to re-click ready — the
+        // P598 bug (a rebuilt NotStarted mission that never auto-started until a
+        // server restart). Runs AFTER Phase 3 so every migrated peer's fresh-
+        // joiner join burst (MISSION_STAGE NotStarted etc.) is already on the
+        // wire before the start countdown's STAGE_STARTING / SET_START_TIME.
+        var recomputed = new HashSet<short>();
+        foreach (var p in prepared)
+        {
+            if (p.NewLive.Ship.SideId is not { } rsid) continue;   // unseated peer
+            if (!recomputed.Add(rsid)) continue;                    // once per side
+            RecomputeSideReady(p.NewLive.Ship);
         }
     }
 
@@ -1174,6 +1215,31 @@ public sealed partial class Server
             if (!_startCountdownDeadline.TryGetValue(m, out var target)) continue;
             if (now < target) continue;
             CompleteStartCountdown(m, now);
+        }
+    }
+
+    /// <summary>
+    /// P598 — the per-tick driver for native's bAutoRestart timer: any
+    /// NotStarted mission armed by <see cref="RotateMissionAfterGameOver"/>
+    /// (GameConfig.AutoRestart) whose restart deadline has passed enters the
+    /// normal start countdown (StartCountdown), so a game-over rotation
+    /// auto-restarts without a ready-up — native's unattended restart
+    /// (fsmission.cpp:3539-3546 sets timeStart, and the per-tick loop starts
+    /// the game when it elapses). Guards on NotStarted so a mission that
+    /// already left (via the ready-up path) is a no-op; a not-armed mission is
+    /// skipped outright. Runs on the sim thread right after the start-
+    /// countdown advance in <see cref="SimPass"/>.
+    /// </summary>
+    private void AdvanceAutoRestarts(double now)
+    {
+        foreach (var m in _missions)
+        {
+            if (m.Stage != MissionStage.NotStarted) { _autoRestartDeadline.Remove(m); continue; }
+            if (!_autoRestartDeadline.TryGetValue(m, out var deadline)) continue;
+            if (now < deadline) continue;
+            _autoRestartDeadline.Remove(m);
+            Console.WriteLine($"[autorestart] mission #{_missions.IndexOf(m)} auto-restart deadline reached -> start countdown (no ready-up required)");
+            StartCountdown(m, BriefingCountdownSeconds);
         }
     }
 

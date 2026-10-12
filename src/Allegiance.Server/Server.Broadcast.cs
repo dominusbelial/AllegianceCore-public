@@ -121,6 +121,11 @@ public sealed partial class Server
         // START_GAME's manual trigger). Runs right after the mission tick so the
         // transition lands the same tick its deadline elapses.
         Step("startCountdowns", () => AdvanceStartCountdowns(now));
+        // P598 — advance any auto-restart (bAutoRestart) deadlines: a
+        // NotStarted mission armed after a game-over rotation whose restart
+        // deadline has passed enters the start countdown without a ready-up
+        // (native's unattended restart, fsmission.cpp:3539-3546).
+        Step("autoRestarts", () => AdvanceAutoRestarts(now));
         // P281 — the side-select drain: seat ready/timed-out pending peers in
         // logon order (deterministic), incl. the auto-assign timeout.
         Step("sideSelection", () => AdvanceSideSelection(now));

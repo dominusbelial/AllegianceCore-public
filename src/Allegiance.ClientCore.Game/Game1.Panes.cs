@@ -1089,6 +1089,23 @@ public sealed partial class Game1
         // P572 — --auto-ready: send PLAYER_READY(true) once seated (one-shot).
         ApplyAutoProofReadyCheck();
 
+        // P598 — re-ready after a mission rotation. After a game-over the
+        // server re-seats this peer on the rebuilt NotStarted mission with a
+        // fresh ship id; if the player's ready intent is already on (_ownReady,
+        // or --auto-ready), re-propagate it to the new ship so the rotated
+        // mission can auto-start (native lobby flow: re-ready on the fresh
+        // NotStarted mission). Re-sends once per new ship id.
+        if (_readyConfirmedShip != pid)
+        {
+            bool wantReady = _ownReady || _autoPlan.AutoReady;
+            _readyConfirmedShip = pid;
+            if (wantReady)
+            {
+                _session.SendPlayerReady(true, pid);
+                Console.WriteLine($"[monogame] ready-check: re-readied for ship {pid} after rotation (PLAYER_READY true)");
+            }
+        }
+
         // P501 — gamepad: A toggles ready (confirm), X is the owner's force-ready
         // (all-false on desktop without a connected pad).
         var nav = GamePadNavNow();

@@ -226,6 +226,7 @@ internal sealed partial class BotManager : IDisposable
         // clicks Ready, so the mission auto-starts on normal maps too.
         short probeShip = Probe.World.MyShipId!.Value;
         Probe.SendPlayerReady(true, probeShip);
+        _probeReadyShipId = probeShip;   // P598: ready state recorded so re-ready only fires on a real rotation
         Console.WriteLine($"[p485] probe ready-up for ship {probeShip} on side {ProbeSide} — enables the normal-map lobby auto-start (PLAYER_READY)");
     }
 
@@ -1376,13 +1377,37 @@ internal sealed partial class BotManager : IDisposable
                         // Every bot (any behavior) also contributes its real update
                         // cadence, so get_perf_stats can measure the live stream.
                         SampleCadence(bot, now);
+                        // P598 — re-ready after a mission rotation: the server
+                        // re-seats migrated peers on the rebuilt mission with a
+                        // fresh ship id; re-propagate the bot's (always-on) ready
+                        // intent to the new ship so a bot-driven showcase auto-
+                        // starts the next wave.
+                        ReReadyBot(bot);
                     }
                     catch { /* one bot's tick failure never kills the loop */ }
                 }
+
+                // P598 — re-ready the probe after a mission rotation too: the
+                // server re-seats it on the rebuilt mission with a fresh ship
+                // id; re-propagate its ready intent so the next wave starts.
+                try { ReReadyProbe(); } catch { }
             }
             catch { }
             Thread.Sleep(50);
         }
+    }
+
+    // P598 — the probe ship id the MCP last readied for (-1 = not readied yet).
+    private short _probeReadyShipId = -1;
+
+    private void ReReadyProbe()
+    {
+        short cur;
+        lock (Probe.Gate) cur = Probe.World.MyShipId ?? -1;
+        if (cur < 0 || cur == _probeReadyShipId) return;
+        _probeReadyShipId = cur;
+        Probe.SendPlayerReady(true, cur);
+        Console.WriteLine($"[p598] re-readied probe ship {cur} after rotation (PLAYER_READY true)");
     }
 
     // ── Order acceptance + translation (P431) ─────────────────────────────
@@ -3737,6 +3762,28 @@ internal sealed partial class BotManager : IDisposable
         bot.HasPos = true;
     }
 
+    /// <summary>
+    /// P598 — re-ready a live bot after a mission rotation. The server re-seats
+    /// migrated peers on the rebuilt NotStarted mission with a FRESH ship id
+    /// (new SET_CLUSTER); when this bot's current ship id differs from the last
+    /// one it readied for, re-send PLAYER_READY(true) for the new ship so a
+    /// bot-driven showcase's next wave auto-starts (native lobby flow: re-ready
+    /// on the fresh NotStarted mission). MCP bots always intend to be ready, so
+    /// re-readying on a ship-id change is always correct (on first seat it is a
+    /// redundant no-op alongside the seat-time ready).</summary>
+    private void ReReadyBot(ActiveBot bot)
+    {
+        short cur;
+        if (bot.Cs is { } cs) { lock (cs.Gate) cur = cs.World.MyShipId ?? -1; }
+        else if (bot.Bot is { } b) cur = b.ShipAssignment?.Ship.ShipId ?? -1;
+        else return;
+        if (cur < 0 || cur == bot.ReadyShipId) return;
+        bot.ReadyShipId = cur;
+        if (bot.Cs is { } cs2) cs2.SendPlayerReady(true, cur);
+        else if (bot.Bot is { } b2) b2.SendPlayerReady(true, cur);
+        Console.WriteLine($"[p598] re-readied bot '{bot.Name}' ship {cur} after rotation (PLAYER_READY true)");
+    }
+
     /// <summary>Aggregate every tracked bot's rolling cadence samples into a real
     /// summary (optionally restricted to one bot by name substring): the number
     /// of contributing bots, and for update INTERVAL and JUMP DISTANCE each the
@@ -4108,6 +4155,11 @@ internal sealed partial class BotManager : IDisposable
 
         // ── combat state (mirrors vizfight's AttachEnemyBot) ──
         public short ShipId = -1;
+        // P598 — the ship id this bot last sent PLAYER_READY(true) for. When it
+        // changes (the server re-seats a migrated peer on the rebuilt mission
+        // after a game-over rotation with a fresh ship id), the MCP re-readies
+        // the bot so bot-driven showcases keep auto-starting.
+        public short ReadyShipId = -1;
         public bool Launched;
         public bool Arrived;                       // reached the target sector
         public short? TargetId;                    // the enemy ship this bot is engaging
