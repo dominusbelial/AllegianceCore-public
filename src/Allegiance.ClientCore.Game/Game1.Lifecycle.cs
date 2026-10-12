@@ -811,6 +811,10 @@ public sealed partial class Game1
         // gracefully to silent rather than throwing.
         _sound = new Audio.SoundManager(Content);
         _sound.Load();
+        // P614 — the voice-budget telemetry console line (active voices by
+        // category + drops/s) is opt-in via env var for quiet normal-play logs.
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_AUDIO_TELEMETRY") == "1")
+            _sound.LogBudgetTelemetry = true;
 
         // P304 — background music beds. Loaded after the render content like the
         // SFX manager, and equally graceful: no audio device leaves it inert

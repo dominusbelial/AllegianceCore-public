@@ -79,7 +79,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _jump = null!;      // jumpin (native jumpSound)
     private SoundEffect _fireSound = null!;   // pulselaser — weapon single-shot (P232)
     // P465 — per-weapon shot/burst waves, loaded lazily on first use and cached
-    // by wave stem (the same pattern as _voices). _weaponShotFailures remembers
+    // by wave stem (the same pattern as _managedVoices). _weaponShotFailures remembers
     // stems that could not load so a doomed Content.Load is not retried every shot.
     private readonly Dictionary<string, SoundEffect> _weaponShots = new();
     private readonly HashSet<string> _weaponShotFailures = new(StringComparer.Ordinal);
@@ -257,6 +257,245 @@ public sealed class SoundManager : IDisposable
     private int _ambienceLastIndex = -1;
     private readonly Random _rng = new();
 
+    // ── P614 — native voice budget / priority / mutex-group enforcement ──────
+    // Every loud world sound (projectile/missile ambients, weapon fire &
+    // bursts, explosions, hits, collisions, probes, warps, stations) is tracked
+    // here as a Voice. Each frame the pure <see cref="VoiceBudget"/> ranks all
+    // audible voices by native dynamic priority
+    // (soundengine/ds3dvirtualbuffer.cpp:384-386) and admits only the top
+    // <see cref="_voiceBudgetCfg"/>.DesiredVoices subject to per-kind group
+    // caps — the port of native's DS3D voice management
+    // (soundengine/ds3dengine.cpp:360-466). Voices outside the budget are
+    // muted (loops) or dropped (one-shots). Essential own-ship bed cues are
+    // force-admitted so the cockpit bed is never starved.
+    private sealed class Voice
+    {
+        public long Id;
+        public SoundCategory Category;
+        public SoundEffectInstance? Instance;
+        public bool IsLoop;
+        public bool Essential;      // always-admitted (never culled), still counted
+        public float Loudness;      // target 0..1 pre-budget (from distance)
+        public bool Audible;        // false when out of range / silent
+        public bool Started;        // one-shot: was played at spawn
+        public float Born;          // age clock value at registration
+        public bool LastAdmitted;   // held an audible buffer last frame (drop detect)
+    }
+
+    private readonly List<Voice> _managedVoices = new();
+    private long _nextVoiceId = 1;
+    private readonly VoiceBudgetConfig _voiceBudgetCfg = new(DesiredVoices: 16, MaxVoices: 24);
+    private float _voiceAgeClock;
+    private float _masterVolume = 1f;
+    private readonly Dictionary<SoundCategory, float> _categoryVolumes = new();
+    // Soft-limiter ("battle ducking") state — port addition (native relied on
+    // the voice budget alone); ducks master gain gently as the audible combat
+    // voice count climbs toward the budget ceiling.
+    private const int DuckThresholdVoices = 12;
+    private const float DuckMinGain = 0.8f;
+    // Drop-rate meter (drops/second), a 1s sliding window.
+    private double _dropCount;
+    private float _dropsPerSecond;
+    // Live telemetry ring for the debug overlay / periodic log.
+    private DateTime _lastTelemetryLog = DateTime.MinValue;
+    private bool _logBudgetTelemetry = false;
+    private static readonly TimeSpan TelemetryPeriod = TimeSpan.FromSeconds(5);
+
+    /// <summary>Global master gain (0..1), applied to every budgeted voice and
+    /// the own-ship bed (a P614 port addition — native had no master slider,
+    /// only per-template GainSound).</summary>
+    public float MasterVolume { get => _masterVolume; set => _masterVolume = Math.Clamp(value, 0f, 1f); }
+
+    /// <summary>Set a per-category mix volume (0..1) — port addition (native
+    /// baked Gain into each template; the port exposes a knob for category
+    /// balance).</summary>
+    public void SetCategoryVolume(SoundCategory category, float volume) =>
+        _categoryVolumes[category] = Math.Clamp(volume, 0f, 1f);
+
+    public float CategoryVolume(SoundCategory category) =>
+        _categoryVolumes.TryGetValue(category, out var v) ? v : 1f;
+
+    /// <summary>Toggle the periodic voice-budget telemetry console line
+    /// (active voices by category + drops/sec). Off by default for quiet logs;
+    /// the P614 live proof enables it.</summary>
+    public bool LogBudgetTelemetry
+    {
+        get => _logBudgetTelemetry;
+        set { _logBudgetTelemetry = value; _lastTelemetryLog = DateTime.MinValue; }
+    }
+
+    private long Track(SoundEffectInstance inst, SoundCategory cat, bool isLoop,
+        bool essential, float loudness, bool audible, bool started)
+    {
+        var id = _nextVoiceId++;
+        _managedVoices.Add(new Voice
+        {
+            Id = id, Category = cat, Instance = inst, IsLoop = isLoop,
+            Essential = essential, Loudness = loudness, Audible = audible,
+            Started = started, Born = _voiceAgeClock,
+        });
+        return id;
+    }
+
+    private Voice? VoiceFor(SoundEffectInstance inst) =>
+        _managedVoices.FirstOrDefault(v => ReferenceEquals(v.Instance, inst));
+
+    /// <summary>Store a tracked loop's per-frame loudness/audibility (from its
+    /// distance) WITHOUT touching the instance — the budget settles the actual
+    /// volume each frame.</summary>
+    private void SetTrackedLoudness(SoundEffectInstance inst, float loudness)
+    {
+        if (VoiceFor(inst) is { } v)
+        {
+            v.Loudness = loudness;
+            v.Audible = loudness > 0f;
+        }
+    }
+
+    private void ForgetVoice(SoundEffectInstance inst)
+    {
+        if (VoiceFor(inst) is { } v) _managedVoices.Remove(v);
+    }
+
+    /// <summary>Play a budget-tracked one-shot: it starts immediately (so a
+    /// transient like an explosion is always heard) and is then subject to the
+    /// per-frame budget — if a higher-priority/louder storm takes the budget it
+    /// is stopped and released (native discards/steals, ds3dengine.cpp:460-466).</summary>
+    private void PlayOneShot(SoundEffect sfx, SoundCategory cat, float volume)
+    {
+        try
+        {
+            var inst = sfx.CreateInstance();
+            inst.Volume = Math.Clamp(volume * CategoryVolume(cat) * _masterVolume, 0f, 1f);
+            inst.Play();
+            Track(inst, cat, isLoop: false, essential: false,
+                loudness: volume, audible: volume > 0f, started: true);
+        }
+        catch { /* degraded device — stay silent (Safe-equivalent) */ }
+    }
+
+    /// <summary>Play an own-ship / voice-announcement one-shot through the
+    /// budget at the highest (Warning) priority so it is never drowned by the
+    /// combat bed (native serialises these with MutexSal, sounddef.mdl:71-79).</summary>
+    private void PlayWarnOneShot(SoundEffect sfx)
+    {
+        if (IsLoaded) PlayOneShot(sfx, SoundCategory.Warning, 1f);
+    }
+
+    private float SoftLimitGain(int audibleNonEssential)
+    {
+        // Gentle "battle ducking" soft limiter — PORT ADDITION (flag below):
+        // as the audible combat-voice count nears the budget ceiling, ease
+        // master gain down toward DuckMinGain so the mix never hard-clips.
+        if (audibleNonEssential <= DuckThresholdVoices) return 1f;
+        float over = audibleNonEssential - DuckThresholdVoices;
+        float span = _voiceBudgetCfg.DesiredVoices - DuckThresholdVoices;
+        float t = Math.Clamp(over / span, 0f, 1f);
+        return 1f - (1f - DuckMinGain) * t;
+    }
+
+    private void CountDrop() { _dropCount++; }
+
+    private void UpdateDropRate(float dt)
+    {
+        _dropsPerSecond = (float)(_dropCount / Math.Max(dt, 1e-4));
+        // slide window every 1s
+        _dropCount = 0;
+    }
+
+    /// <summary>Snapshot of live audio telemetry for the P614 debug overlay /
+    /// log: audible (budget-admitted) and active-by-category counts plus the
+    /// instantaneous drop rate.</summary>
+    public AudioTelemetry GetTelemetry()
+    {
+        var byCat = Enum.GetValues<SoundCategory>()
+            .Select(c => (Category: SoundCategories.Label(c),
+                          Active: _managedVoices.Count(v => v.LastAdmitted && v.Category == c)))
+            .ToList();
+        int audible = _managedVoices.Count(v => v.LastAdmitted);
+        int essential = _managedVoices.Count(v => v.Essential && v.LastAdmitted);
+        return new AudioTelemetry(
+            DateTime.UtcNow, audible, essential, _dropsPerSecond, byCat);
+    }
+
+    /// <summary>Run one voice-budget pass: prune finished one-shots, rank and
+    /// admit the top voices, mute/drop the rest, settle loop volumes, and emit
+    /// the periodic telemetry line. Called every frame from <see cref="Update"/>.</summary>
+    private void ApplyVoiceBudget(float dt)
+    {
+        // Prune finished one-shots (a finished loop is only stopped by its owner).
+        for (int i = _managedVoices.Count - 1; i >= 0; i--)
+        {
+            var v = _managedVoices[i];
+            if (v.IsLoop) continue;
+            var inst = v.Instance;
+            if (inst is null || inst.State == SoundState.Stopped)
+            {
+                inst?.Dispose();
+                _managedVoices.RemoveAt(i);
+            }
+        }
+
+        // Rank all audible voices; admit the top budget, subject to group caps.
+        var candidates = new List<BudgetSound>(_managedVoices.Count);
+        foreach (var v in _managedVoices)
+            candidates.Add(new BudgetSound(v.Id, v.Category, v.Loudness, v.Audible,
+                _voiceAgeClock - v.Born, v.LastAdmitted && v.Started));
+        var decision = VoiceBudget.Decide(candidates, _voiceBudgetCfg);
+        var admitted = new HashSet<long>(decision.AdmittedIds);
+
+        // Count drops (previously-audible voices now outside the budget) and
+        // derive the battle-duck gain from the admitted non-essential count.
+        int nonEssential = _managedVoices.Count(v => admitted.Contains(v.Id) && !v.Essential);
+        float duck = SoftLimitGain(nonEssential);
+        foreach (var v in _managedVoices)
+        {
+            bool now = v.Essential || admitted.Contains(v.Id);
+            if (v.LastAdmitted && !now && v.Started) CountDrop();
+            v.LastAdmitted = now;
+        }
+
+        // Settle each voice: admitted loops play at their budgeted volume,
+        // dropped loops are muted (kept for reactivation), dropped one-shots
+        // are stopped and released (native steals the buffer, ds3dengine.cpp:460-466).
+        foreach (var v in _managedVoices)
+        {
+            bool ad = v.Essential || admitted.Contains(v.Id);
+            if (!v.IsLoop)
+            {
+                if (!ad) { if (v.Instance is { } o) { if (o.State == SoundState.Playing) Safe(o.Stop); Safe(o.Dispose); } }
+                continue;
+            }
+            if (v.Instance is not { } inst) continue;
+            if (ad)
+            {
+                float g = v.Loudness * CategoryVolume(v.Category) * _masterVolume * duck;
+                Safe(() => inst.Volume = Math.Clamp(g, 0f, 1f));
+                if (inst.State != SoundState.Playing) Safe(inst.Play);
+            }
+            else
+            {
+                Safe(() => inst.Volume = 0f);   // muted, still registered for reactivation
+            }
+        }
+
+        _voiceAgeClock += dt;
+        UpdateDropRate(dt);
+
+        if (_logBudgetTelemetry &&
+            (DateTime.UtcNow - _lastTelemetryLog) >= TelemetryPeriod)
+        {
+            _lastTelemetryLog = DateTime.UtcNow;
+            var t = GetTelemetry();
+            var cats = string.Join(", ", t.ByCategory.Where(c => c.Active > 0)
+                .Select(c => $"{c.Category}={c.Active}"));
+            Console.WriteLine(
+                $"[monogame] audio budget: audible={t.AudibleVoices}/{_voiceBudgetCfg.DesiredVoices} " +
+                $"(essential {t.EssentialVoices}) drops/s={t.DropsPerSecond:F1} | {cats}");
+        }
+    }
+
+
     /// <summary>P230 — the missile-lock beep's mix volume (native applies
     /// <c>GainSound(SFXGain, …)</c> to <c>missileToneSound</c>, sounddef.mdl:365);
     /// moderate so it reads as a cockpit "jet-fighter beep" without drowning the
@@ -405,6 +644,11 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded) return;
 
+        // P614 — settle the voice budget for this frame (rank, admit, mute/
+        // drop) before the bed volumes below are finalised. Runs first so the
+        // budget's decisions reflect the loudest live world sounds.
+        ApplyVoiceBudget(deltaSeconds);
+
         UpdateAmbience(deltaSeconds);
 
         if (_engine is { } engine)
@@ -414,7 +658,7 @@ public sealed class SoundManager : IDisposable
             // tone from the cockpit (you hear the hull around you), a touch
             // duller in chase. Not required by scope, but nice.
             float cockPitBoost = cockpitMode ? 0.08f : 0f;
-            SetLoopVolume(engine, Math.Clamp(vol + cockPitBoost, 0f, 1f));
+            SetLoopVolume(engine, Math.Clamp(vol + cockPitBoost, 0f, 1f) * _masterVolume);
             Safe(() => engine.Pitch = pitch);
             EnsurePlaying(engine);
         }
@@ -437,7 +681,7 @@ public sealed class SoundManager : IDisposable
         {
             if (missileLocked)
             {
-                SetLoopVolume(tone, MissileToneVolume);
+                SetLoopVolume(tone, MissileToneVolume * _masterVolume);
                 EnsurePlaying(tone);
             }
             else if (tone.State == SoundState.Playing)
@@ -451,14 +695,14 @@ public sealed class SoundManager : IDisposable
     /// audio is not loaded.</summary>
     public void PlayAutopilotEngage()
     {
-        if (IsLoaded) Safe(() => _apEngage.Play());
+        PlayWarnOneShot(_apEngage);
     }
 
     /// <summary>Play the autopilot-disengage voice chime (one-shot). No-op
     /// when audio is not loaded.</summary>
     public void PlayAutopilotDisengage()
     {
-        if (IsLoaded) Safe(() => _apDisengage.Play());
+        PlayWarnOneShot(_apDisengage);
     }
 
     /// <summary>Play the countdown-start callout (one-shot) — P216 voices the
@@ -467,7 +711,7 @@ public sealed class SoundManager : IDisposable
     /// not loaded.</summary>
     public void PlayCountdownStart()
     {
-        if (IsLoaded) Safe(() => _countdownStart.Play());
+        PlayWarnOneShot(_countdownStart);
     }
 
     /// <summary>Play the per-second countdown tick for <paramref name="second"/>
@@ -479,14 +723,14 @@ public sealed class SoundManager : IDisposable
     public void PlayCountdownSecond(int second)
     {
         if (IsLoaded && _countdownTicks.TryGetValue(second, out var sfx))
-            Safe(() => sfx.Play());
+            PlayWarnOneShot(sfx);
     }
 
     /// <summary>Play the game-over callout (one-shot) — <c>vo_ma_gameover</c>.
     /// No-op when audio is not loaded.</summary>
     public void PlayGameOver()
     {
-        if (IsLoaded) Safe(() => _gameOver.Play());
+        PlayWarnOneShot(_gameOver);
     }
 
     /// <summary>P578 — play the critical-message cue (<c>criticalmessage</c>,
@@ -494,7 +738,7 @@ public sealed class SoundManager : IDisposable
     /// (trekigc.cpp:3009,3075). No-op when audio is not loaded.</summary>
     public void PlayCriticalMessage()
     {
-        if (IsLoaded) Safe(() => _criticalMsg.Play());
+        PlayWarnOneShot(_criticalMsg);
     }
 
     /// <summary>P578 — play the non-critical-message cue
@@ -503,7 +747,7 @@ public sealed class SoundManager : IDisposable
     /// not loaded.</summary>
     public void PlayNonCriticalMessage()
     {
-        if (IsLoaded) Safe(() => _nonCriticalMsg.Play());
+        PlayWarnOneShot(_nonCriticalMsg);
     }
 
     /// <summary>P578 — play the rescue cue (<c>hoover</c>, native
@@ -511,7 +755,7 @@ public sealed class SoundManager : IDisposable
     /// (appmsg.cpp:325). No-op when audio is not loaded.</summary>
     public void PlayRescue()
     {
-        if (IsLoaded) Safe(() => _rescuePlayer.Play());
+        PlayWarnOneShot(_rescuePlayer);
     }
 
     /// <summary>P578 — play the jump cue (<c>jumpin</c>, native
@@ -519,7 +763,7 @@ public sealed class SoundManager : IDisposable
     /// (appmsg.cpp:339). No-op when audio is not loaded.</summary>
     public void PlayJump()
     {
-        if (IsLoaded) Safe(() => _jump.Play());
+        PlayWarnOneShot(_jump);
     }
 
     /// <summary>P232/P465 — play the per-weapon single-shot cue (one-shot) for the
@@ -535,7 +779,7 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded) return;
         var sfx = WeaponWaveByStem(WeaponSoundMap.SingleShotStem(singleShotSoundId));
-        if (sfx is not null) Safe(() => sfx.Play());
+        if (sfx is not null) PlayOneShot(sfx, SoundCategory.WeaponFire, 1f);
     }
 
     /// <summary>P232 — play the fallback weapon-fire one-shot (<c>pulselaser</c>),
@@ -544,7 +788,7 @@ public sealed class SoundManager : IDisposable
     /// cue stays on the single default.</summary>
     public void PlayWeaponFire()
     {
-        if (IsLoaded) Safe(() => _fireSound.Play());
+        if (IsLoaded) PlayOneShot(_fireSound, SoundCategory.WeaponFire, 1f);
     }
 
     /// <summary>P465 — begin (or keep) a mount's sustained-fire burst loop: a
@@ -563,6 +807,8 @@ public sealed class SoundManager : IDisposable
         inst.IsLooped = true;
         Safe(inst.Play);
         _weaponBursts[mount] = inst;
+        Track(inst, SoundCategory.WeaponBurst, isLoop: true, essential: false,
+            loudness: 1f, audible: true, started: true);
     }
 
     /// <summary>P465 — stop (and release) a mount's burst loop. Safe to call on a
@@ -572,6 +818,7 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded) return;
         if (_weaponBursts.Remove(mount, out var inst))
         {
+            ForgetVoice(inst);
             if (inst.State == SoundState.Playing) Safe(inst.Stop);
             Safe(inst.Dispose);
         }
@@ -587,7 +834,7 @@ public sealed class SoundManager : IDisposable
     /// <summary>Resolve a weapon wave stem to a loaded <see cref="SoundEffect"/>:
     /// the fallback stem returns the always-loaded <c>_fireSound</c>; any other
     /// stem is loaded lazily and cached (failed loads are remembered so a missing
-    /// asset is attempted once, then stays silent — mirroring <see cref="_voices"/>).</summary>
+    /// asset is attempted once, then stays silent — mirroring <see cref="_managedVoices"/>).</summary>
     private SoundEffect? WeaponWaveByStem(string stem)
     {
         if (stem == WeaponSoundMap.FallbackStem) return _fireSound;
@@ -619,6 +866,8 @@ public sealed class SoundManager : IDisposable
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
         _projectileAmbients[key] = inst;
+        Track(inst, SoundCategory.ProjectileAmbient, isLoop: true, essential: false,
+            loudness: volume, audible: volume > 0f, started: true);
     }
 
     /// <summary>P232 — refresh a live projectile's ambient loop volume for the
@@ -628,7 +877,7 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded || key is null) return;
         if (_projectileAmbients.TryGetValue(key, out var inst))
-            SetLoopVolume(inst, volume);
+            SetTrackedLoudness(inst, volume);
     }
 
     /// <summary>P232 — stop (and release) a projectile's ambient loop. Called
@@ -639,6 +888,7 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded || key is null) return;
         if (_projectileAmbients.Remove(key, out var inst))
         {
+            ForgetVoice(inst);
             if (inst.State == SoundState.Playing) Safe(inst.Stop);
             Safe(inst.Dispose);
         }
@@ -656,6 +906,8 @@ public sealed class SoundManager : IDisposable
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
         _warpAmbients[warpId] = inst;
+        Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
+            loudness: volume, audible: volume > 0f, started: true);
     }
 
     /// <summary>P237 — refresh a live warp's ambient loop volume for the current
@@ -665,7 +917,7 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded) return;
         if (_warpAmbients.TryGetValue(warpId, out var inst))
-            SetLoopVolume(inst, volume);
+            SetTrackedLoudness(inst, volume);
     }
 
     /// <summary>P237 — stop (and release) a warp's ambient loop. Called when the
@@ -676,6 +928,7 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded) return;
         if (_warpAmbients.Remove(warpId, out var inst))
         {
+            ForgetVoice(inst);
             if (inst.State == SoundState.Playing) Safe(inst.Stop);
             Safe(inst.Dispose);
         }
@@ -689,7 +942,7 @@ public sealed class SoundManager : IDisposable
     /// is not loaded.</summary>
     public void PlayMissileLaunch()
     {
-        if (IsLoaded) Safe(() => _missileLaunch.Play());
+        if (IsLoaded) PlayOneShot(_missileLaunch, SoundCategory.WeaponFire, 1f);
     }
 
     /// <summary>P236 — begin a missile's in-flight ambient loop (a looped
@@ -704,6 +957,8 @@ public sealed class SoundManager : IDisposable
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
         _missileAmbients[missileId] = inst;
+        Track(inst, SoundCategory.MissileAmbient, isLoop: true, essential: false,
+            loudness: volume, audible: volume > 0f, started: true);
     }
 
     /// <summary>P236 — refresh a live missile's ambient loop volume for the current
@@ -713,7 +968,7 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded) return;
         if (_missileAmbients.TryGetValue(missileId, out var inst))
-            SetLoopVolume(inst, volume);
+            SetTrackedLoudness(inst, volume);
     }
 
     /// <summary>P236 — stop (and release) a missile's ambient loop. Called when the
@@ -724,6 +979,7 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded) return;
         if (_missileAmbients.Remove(missileId, out var inst))
         {
+            ForgetVoice(inst);
             if (inst.State == SoundState.Playing) Safe(inst.Stop);
             Safe(inst.Dispose);
         }
@@ -744,7 +1000,7 @@ public sealed class SoundManager : IDisposable
             case MissileWarningAction.Arm:
                 if (w.State != SoundState.Playing) Safe(w.Play);
                 Safe(() => w.Pitch = MissileWarningController.PitchFor(cmd.BestLock));
-                SetLoopVolume(w, MissileWarningVolume);
+                SetLoopVolume(w, MissileWarningVolume * _masterVolume);
                 break;
             case MissileWarningAction.Pitch:
                 Safe(() => w.Pitch = MissileWarningController.PitchFor(cmd.BestLock));
@@ -766,8 +1022,19 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded) return;
         if (_explosions.TryGetValue(tier, out var sfx))
-            Safe(() => sfx.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
+            PlayOneShot(sfx, ExplosionTierCategory(tier), volume);
     }
+
+    /// <summary>Map an explosion tier to its budget category — native tiers
+    /// large/medium/small (largeExplosionSound sounddef.mdl:268,
+    /// mediumExplosionSound :269, smallExplosionSound :270) map onto the
+    /// P614 cut-through ladder big→ship→detonation.</summary>
+    private static SoundCategory ExplosionTierCategory(ExplosionSoundTier tier) => tier switch
+    {
+        ExplosionSoundTier.Large => SoundCategory.ExplosionBig,
+        ExplosionSoundTier.Medium => SoundCategory.ExplosionShip,
+        _ => SoundCategory.ExplosionDetonation,
+    };
 
     /// <summary>P574 — play the correctly-tiered world-explosion one-shot
     /// (<c>explosionshockwave</c>/<c>ef24</c>/<c>ef120</c>.ogg) at
@@ -820,7 +1087,8 @@ public sealed class SoundManager : IDisposable
                 return;
         }
         if (sfx is null) return;
-        Safe(() => sfx.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
+        PlayOneShot(sfx, kind is HitSoundKind.MyShield or HitSoundKind.MyHull
+            ? SoundCategory.HitMine : SoundCategory.HitOther, volume);
     }
 
     /// <summary>P463c — play the ship-collision one-shot (<c>collisionSound</c> =
@@ -830,7 +1098,7 @@ public sealed class SoundManager : IDisposable
     public void PlayCollisionSound(float volume)
     {
         if (!IsLoaded || _collision is null) return;
-        Safe(() => _collision.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
+        PlayOneShot(_collision, SoundCategory.HitOther, volume);
     }
 
     /// <summary>P463c — play the rock-hit one-shot (<c>rockHitSound</c> =
@@ -843,7 +1111,7 @@ public sealed class SoundManager : IDisposable
     public void PlayRockHitSound(float volume)
     {
         if (!IsLoaded || _rockHit is null) return;
-        Safe(() => _rockHit.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
+        PlayOneShot(_rockHit, SoundCategory.HitOther, volume);
     }
 
     /// <summary>P260 — play the probe deploy one-shot (the generic expendable
@@ -853,7 +1121,7 @@ public sealed class SoundManager : IDisposable
     /// <see cref="PlayMissileLaunch"/>. No-op when audio is not loaded.</summary>
     public void PlayProbeDeploy()
     {
-        if (IsLoaded) Safe(() => _probeDeploy.Play());
+        if (IsLoaded) PlayOneShot(_probeDeploy, SoundCategory.WeaponFire, 1f);
     }
 
     /// <summary>P260 — begin a probe's continuous scanning ambient loop (a looped
@@ -868,6 +1136,8 @@ public sealed class SoundManager : IDisposable
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
         _probeAmbients[probeId] = inst;
+        Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
+            loudness: volume, audible: volume > 0f, started: true);
     }
 
     /// <summary>P260 — refresh a live probe's ambient loop volume for the current
@@ -877,7 +1147,7 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded) return;
         if (_probeAmbients.TryGetValue(probeId, out var inst))
-            SetLoopVolume(inst, volume);
+            SetTrackedLoudness(inst, volume);
     }
 
     /// <summary>P260 — stop (and release) a probe's scanning ambient loop. Called
@@ -889,6 +1159,7 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded) return;
         if (_probeAmbients.Remove(probeId, out var inst))
         {
+            ForgetVoice(inst);
             if (inst.State == SoundState.Playing) Safe(inst.Stop);
             Safe(inst.Dispose);
         }
@@ -905,7 +1176,7 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded || _turnThruster is not { } t) return;
         if (TurnThrusterSound.IsAudible(turnLevel))
         {
-            SetLoopVolume(t, 0.8f);
+            SetLoopVolume(t, 0.8f * _masterVolume);
             Safe(() => t.Pitch = TurnThrusterSound.PitchFor(turnLevel));
             if (t.State != SoundState.Playing) Safe(t.Play);
         }
@@ -926,7 +1197,7 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded || _shipExterior is not { } ext) return;
         if (exteriorView)
         {
-            SetLoopVolume(ext, 0.35f);
+            SetLoopVolume(ext, 0.35f * _masterVolume);
             if (ext.State != SoundState.Playing) Safe(ext.Play);
         }
         else if (ext.State == SoundState.Playing)
@@ -947,6 +1218,8 @@ public sealed class SoundManager : IDisposable
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
         _stationAmbients[stationId] = inst;
+        Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
+            loudness: volume, audible: volume > 0f, started: true);
     }
 
     /// <summary>P267 — refresh a live station's exterior ambient loop volume for
@@ -956,7 +1229,7 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded) return;
         if (_stationAmbients.TryGetValue(stationId, out var inst))
-            SetLoopVolume(inst, volume);
+            SetTrackedLoudness(inst, volume);
     }
 
     /// <summary>P267 — stop (and release) a station's exterior ambient loop.
@@ -968,6 +1241,7 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded) return;
         if (_stationAmbients.Remove(stationId, out var inst))
         {
+            ForgetVoice(inst);
             if (inst.State == SoundState.Playing) Safe(inst.Stop);
             Safe(inst.Dispose);
         }
@@ -990,7 +1264,7 @@ public sealed class SoundManager : IDisposable
             StationEventSoundKind.EnemyCaptured => _stationEnemyCaptured,
             _ => null,
         };
-        if (sfx is not null) Safe(() => sfx.Play());
+        if (sfx is not null) PlayWarnOneShot(sfx);
     }
 
     /// <summary>P267 — play the development/tech-completion chime (one-shot)
@@ -999,7 +1273,7 @@ public sealed class SoundManager : IDisposable
     /// loaded.</summary>
     public void PlayDevComplete()
     {
-        if (IsLoaded) Safe(() => _devComplete.Play());
+        PlayWarnOneShot(_devComplete);
     }
 
     /// <summary>P414 — play the one-shot "ripcord aborted" VO cue
@@ -1009,7 +1283,7 @@ public sealed class SoundManager : IDisposable
     /// No-op when audio is not loaded.</summary>
     public void PlayRipcordAborted()
     {
-        if (IsLoaded) Safe(() => _ripcordAborted.Play());
+        PlayWarnOneShot(_ripcordAborted);
     }
 
     /// <summary>P373 — play the one-shot "new contact" (first-sighting) cue
@@ -1022,7 +1296,7 @@ public sealed class SoundManager : IDisposable
     public void PlayNewContact(bool isEnemy)
     {
         if (!IsLoaded) return;
-        Safe(() => (isEnemy ? _newContactEnemy : _newContactFriendly).Play());
+        PlayWarnOneShot(isEnemy ? _newContactEnemy : _newContactFriendly);
     }
 
     /// <summary>P374 — play the one-shot sector-threat cue (native
@@ -1034,13 +1308,13 @@ public sealed class SoundManager : IDisposable
     public void PlaySectorAlert(ClientClusterWarningCue cue)
     {
         if (!IsLoaded) return;
-        if (cue.Secured) { Safe(() => _sectorSecured.Play()); return; }
-        if (cue.Lost) { Safe(() => _sectorLost.Play()); return; }
+        if (cue.Secured) { PlayWarnOneShot(_sectorSecured); return; }
+        if (cue.Lost) { PlayWarnOneShot(_sectorLost); return; }
         if (cue.Warning <= Allegiance.Core.ClusterWarnings.NoThreat) return;
         string stem = Allegiance.Core.ClusterWarnings.AlertSoundStem(cue.Warning);
         if (stem.Length == 0) return;
         if (_clusterAlertSounds.TryGetValue(stem, out var sfx))
-            Safe(() => sfx.Play());
+            PlayWarnOneShot(sfx);
     }
 
     /// <summary>
@@ -1060,14 +1334,14 @@ public sealed class SoundManager : IDisposable
             return;
         if (_voices.TryGetValue(assetStem, out var sfx))
         {
-            Safe(() => sfx.Play());
+            PlayWarnOneShot(sfx);
             return;
         }
         try
         {
             var loaded = _content.Load<SoundEffect>($"Sounds/{assetStem}");
             _voices[assetStem] = loaded;
-            Safe(() => loaded.Play());
+            PlayWarnOneShot(loaded);
         }
         catch (Exception ex)
         {
@@ -1197,6 +1471,12 @@ public sealed class SoundManager : IDisposable
             _newContactEnemy?.Dispose();       // P373
             _newContactFriendly?.Dispose();    // P373
             foreach (var sfx in _voices.Values) sfx.Dispose();
+            // P614 — dispose any still-tracked one-shot instances not owned by
+            // a dictionary above (loops are all covered by their dicts).
+            foreach (var v in _managedVoices)
+            {
+                if (!v.IsLoop && v.Instance is { } one) one.Dispose();
+            }
         }
         catch { /* disposal must not throw */ }
     }
