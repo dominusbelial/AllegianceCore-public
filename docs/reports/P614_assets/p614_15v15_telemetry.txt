@@ -1,0 +1,8 @@
+[monogame] audio budget: audible=4/16 (essential 0) drops/s=0.0 | warning/voice=4
+[monogame] audio budget: audible=9/16 (essential 0) drops/s=0.0 | world-ambient=1, hit-other=2, projectile-ambient=6
+[monogame] audio budget: audible=11/16 (essential 0) drops/s=0.0 | world-ambient=2, hit-other=3, projectile-ambient=6
+[monogame] audio budget: audible=8/16 (essential 0) drops/s=0.0 | world-ambient=2, projectile-ambient=6
+[monogame] audio budget: audible=12/16 (essential 0) drops/s=0.0 | world-ambient=2, hit-other=4, projectile-ambient=6
+[monogame] audio budget: audible=9/16 (essential 0) drops/s=0.0 | world-ambient=2, hit-other=1, projectile-ambient=6
+[monogame] audio budget: audible=11/16 (essential 0) drops/s=0.0 | world-ambient=2, hit-other=3, projectile-ambient=6
+[monogame] audio budget: audible=10/16 (essential 0) drops/s=0.0 | world-ambient=2, hit-other=2, projectile-ambient=6

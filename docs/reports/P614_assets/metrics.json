@@ -1,0 +1,24 @@
+{
+  "before": {
+    "peak_dbFS": 0.000265,
+    "rms_dbFS": -3.022078,
+    "crest_factor_db": 3.02,
+    "projectile_ambient_start": 6136,
+    "note": "unbounded voices (pre-P614)"
+  },
+  "after": {
+    "peak_dbFS": 0.000265,
+    "rms_dbFS": -10.66912,
+    "crest_factor_db": 10.67,
+    "projectile_ambient_start": 6333,
+    "world_explosions": 15,
+    "hit_sounds": 448,
+    "audible_max_budget": 16,
+    "projectile_ambient_audible_cap": 6,
+    "note": "voice budget + nearest-6 projectile cap"
+  },
+  "delta": {
+    "rms_dbFS_reduction": 7.65,
+    "note": "bed ~7.7 dB quieter at similar battle scale"
+  }
+}
