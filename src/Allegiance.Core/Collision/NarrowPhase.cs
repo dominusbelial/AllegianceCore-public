@@ -23,6 +23,24 @@ public static class NarrowPhase
     private const double Epsilon = 1.0 / 128.0;
     private const double CMaxDelta = 0.25;
 
+    // Johnson subset-id mappings (HitTest.cpp:1316-1330, 1700-1721). Hoisted to
+    // static readonly so the (hot) GJK closest-point routine allocates nothing.
+    private static readonly int[][] Subset2_3 =
+    [
+        [-1, 3, 4],
+        [3, -1, 5],
+        [4, 5, -1],
+    ];
+    private static readonly int[][] Subset2_4 =
+    [
+        [-1, 4, 5, 6],
+        [4, -1, 7, 8],
+        [5, 7, -1, 9],
+        [6, 8, 9, -1],
+    ];
+    private static readonly int[] Subset3_4 = [10, 11, 12, 13];
+    private static readonly int[,] IdsFace4 = { { 0, 1, 2, 3 }, { 0, 1, 3, 2 }, { 0, 2, 3, 1 }, { 1, 2, 3, 0 } };
+
     /// <summary>
     /// Test two colliders over a step <c>[0, dt]</c> relative to the step's start
     /// (a static body sits at its position). Returns the first-contact time and
@@ -155,8 +173,8 @@ public static class NarrowPhase
         Vector3 positionStop = dP - tStop * dV;
 
         const int cMaxAttempts = 4;
-        var extremesA = new Vector3[cMaxAttempts];
-        var extremesB = new Vector3[cMaxAttempts];
+        Span<Vector3> extremesA = stackalloc Vector3[cMaxAttempts];
+        Span<Vector3> extremesB = stackalloc Vector3[cMaxAttempts];
         int attempt = 0;
         while (true)
         {
@@ -179,7 +197,7 @@ public static class NarrowPhase
         }
 
         // Four attempts failed to separate: invoke Gilbert (GJK) with the simplex.
-        var simplex = new Vector3[4];
+        Span<Vector3> simplex = stackalloc Vector3[4];
         for (int i = 0; i < 4; i++)
             simplex[i] = extremesA[i] - extremesB[i];
 
@@ -202,20 +220,20 @@ public static class NarrowPhase
     /// <summary>The C++ <c>DoGilbert</c> GJK (<c>HitTest.cpp:1858-1948</c>).</summary>
     private static bool DoGilbert(Collider a, int htsA,
         Vector3 positionStart, Vector3 positionStop, Vector3 dV, Orientation orientationHullA,
-        Collider b, int htsB, Vector3[] simplex)
+        Collider b, int htsB, Span<Vector3> simplex)
     {
         int nVertices = 3;
         const int cMaxHistory = 100;
-        var vertexHistory = new Vector3[cMaxHistory];
+        Span<Vector3> vertexHistory = stackalloc Vector3[cMaxHistory];
         vertexHistory[0] = simplex[0];
         vertexHistory[1] = simplex[1];
         vertexHistory[2] = simplex[2];
         vertexHistory[3] = simplex[3];
         int vertexID = 3;
+        Span<int> indices = stackalloc int[3];
 
         while (true)
         {
-            int[] indices = new int[3];
             int nMin = Johnson(++nVertices, simplex, out var cp, indices);
 
             if (nMin == 4) return true;             // origin inside tetrahedron
@@ -245,7 +263,7 @@ public static class NarrowPhase
     }
 
     /// <summary>Dispatch — the C++ <c>Johnson</c> (<c>HitTest.cpp:1827-1856</c>).</summary>
-    private static int Johnson(int n, Vector3[] p, out Vector3 cp, int[] index)
+    private static int Johnson(int n, Span<Vector3> p, out Vector3 cp, Span<int> index)
     {
         switch (n)
         {
@@ -256,14 +274,14 @@ public static class NarrowPhase
         }
     }
 
-    private static int closest_vertex(int v0, Vector3[] p, int[] index, out Vector3 cp)
+    private static int closest_vertex(int v0, Span<Vector3> p, Span<int> index, out Vector3 cp)
     {
         index[0] = v0;
         cp = p[v0];
         return 1;
     }
 
-    private static int closest_edge(double e0, double e1, int ie0, int ie1, Vector3[] p, int[] index, out Vector3 cp)
+    private static int closest_edge(double e0, double e1, int ie0, int ie1, Span<Vector3> p, Span<int> index, out Vector3 cp)
     {
         double esum_inv = 1.0 / (e0 + e1);
         float l0 = (float)(e0 * esum_inv);
@@ -274,7 +292,7 @@ public static class NarrowPhase
     }
 
     private static int closest_face(double f0, double f1, double f2, int if0, int if1, int if2,
-        Vector3[] p, int[] index, out Vector3 cp)
+        Span<Vector3> p, Span<int> index, out Vector3 cp)
     {
         double fsum_inv = 1.0 / (f0 + f1 + f2);
         float l0 = (float)(f0 * fsum_inv), l1 = (float)(f1 * fsum_inv), l2 = (float)(f2 * fsum_inv);
@@ -283,7 +301,7 @@ public static class NarrowPhase
         return 3;
     }
 
-    private static int Johnson2(Vector3[] p, out Vector3 cp, int[] index)
+    private static int Johnson2(Span<Vector3> p, out Vector3 cp, Span<int> index)
     {
         Vector3 d = p[1] - p[0];
         double l0 = p[0] * d;
@@ -295,210 +313,196 @@ public static class NarrowPhase
         return 2;
     }
 
-    private static int Johnson3(Vector3[] p, out Vector3 cp, int[] index)
+    private static int Johnson3(Span<Vector3> p, out Vector3 cp, Span<int> index)
     {
         // Mappings of subsets to unique ids, as in the C++ (HitTest.cpp:1316-1330).
-        int[][] subset2 =
-        [
-            [-1, 3, 4],
-            [3, -1, 5],
-            [4, 5, -1],
-        ];
         const int subset3 = 6;
 
-        var dp = new double[3, 3];
+        Span<double> dp = stackalloc double[9];      // [3,3] flattened (i*3+j)
         for (int i = 0; i < 3; i++)
             for (int j = i; j < 3; j++)
-                dp[i, j] = dp[j, i] = (double)p[i].X * p[j].X + (double)p[i].Y * p[j].Y + (double)p[i].Z * p[j].Z;
+                dp[i * 3 + j] = dp[j * 3 + i] = (double)p[i].X * p[j].X + (double)p[i].Y * p[j].Y + (double)p[i].Z * p[j].Z;
 
-        var delta = new double[3, subset3 + 1];
+        Span<double> delta = stackalloc double[21];  // [3,7] flattened (i*7+col)
 
-        void SetDelta(int i, int j) => delta[i, subset2[j][i]] = dp[j, j] - dp[j, i];
-        SetDelta(1, 0); SetDelta(2, 0);
-        SetDelta(0, 1); SetDelta(2, 1);
-        SetDelta(0, 2); SetDelta(1, 2);
+        void SetDelta(Span<double> dp_, Span<double> dl_, int i, int j) => dl_[i * 7 + Subset2_3[j][i]] = dp_[j * 3 + j] - dp_[j * 3 + i];
+        SetDelta(dp, delta, 1, 0); SetDelta(dp, delta, 2, 0);
+        SetDelta(dp, delta, 0, 1); SetDelta(dp, delta, 2, 1);
+        SetDelta(dp, delta, 0, 2); SetDelta(dp, delta, 1, 2);
 
-        void SetDelta3(int i, int j, int k) =>
-            delta[i, subset3] = delta[j, subset2[j][k]] * (dp[j, j] - dp[j, i]) +
-                                delta[k, subset2[j][k]] * (dp[k, j] - dp[k, i]);
-        SetDelta3(2, 0, 1); SetDelta3(1, 0, 2); SetDelta3(0, 1, 2);
+        void SetDelta3(Span<double> dp_, Span<double> dl_, int i, int j, int k) =>
+            dl_[i * 7 + subset3] = dl_[j * 7 + Subset2_3[j][k]] * (dp_[j * 3 + j] - dp_[j * 3 + i]) +
+                                   dl_[k * 7 + Subset2_3[j][k]] * (dp_[k * 3 + j] - dp_[k * 3 + i]);
+        SetDelta3(dp, delta, 2, 0, 1); SetDelta3(dp, delta, 1, 0, 2); SetDelta3(dp, delta, 0, 1, 2);
 
         // Inside for the triangle. The last clause of the test is degenerate
         // since there is no Pj not in S.
-        if (delta[0, subset3] > 0.0 && delta[1, subset3] > 0.0 && delta[2, subset3] > 0.0)
-            return closest_face(delta[0, subset3], delta[1, subset3], delta[2, subset3], 0, 1, 2, p, index, out cp);
+        if (delta[0 * 7 + subset3] > 0.0 && delta[1 * 7 + subset3] > 0.0 && delta[2 * 7 + subset3] > 0.0)
+            return closest_face(delta[0 * 7 + subset3], delta[1 * 7 + subset3], delta[2 * 7 + subset3], 0, 1, 2, p, index, out cp);
 
         // Each vertex (the first clause is degenerate since delta[i][S[i]] = 1).
-        if (delta[0, subset2[1][0]] <= 0.0 && delta[0, subset2[2][0]] <= 0.0)
+        if (delta[0 * 7 + Subset2_3[1][0]] <= 0.0 && delta[0 * 7 + Subset2_3[2][0]] <= 0.0)
             return closest_vertex(0, p, index, out cp);
-        if (delta[1, subset2[0][1]] <= 0.0 && delta[1, subset2[2][1]] <= 0.0)
+        if (delta[1 * 7 + Subset2_3[0][1]] <= 0.0 && delta[1 * 7 + Subset2_3[2][1]] <= 0.0)
             return closest_vertex(1, p, index, out cp);
-        if (delta[2, subset2[0][2]] <= 0.0 && delta[2, subset2[1][2]] <= 0.0)
+        if (delta[2 * 7 + Subset2_3[0][2]] <= 0.0 && delta[2 * 7 + Subset2_3[1][2]] <= 0.0)
             return closest_vertex(2, p, index, out cp);
 
         // Each edge i,j: delta[i][{i,j}]>0, delta[j][{i,j}]>0, delta[k][subset3]<=0.
-        if (delta[0, subset2[0][1]] > 0.0 && delta[1, subset2[0][1]] > 0.0 && delta[2, subset3] <= 0.0)
-            return closest_edge(delta[0, subset2[0][1]], delta[1, subset2[0][1]], 0, 1, p, index, out cp);
-        if (delta[0, subset2[0][2]] > 0.0 && delta[2, subset2[0][2]] > 0.0 && delta[1, subset3] <= 0.0)
-            return closest_edge(delta[0, subset2[0][2]], delta[2, subset2[0][2]], 0, 2, p, index, out cp);
-        if (delta[1, subset2[1][2]] > 0.0 && delta[2, subset2[1][2]] > 0.0 && delta[0, subset3] <= 0.0)
-            return closest_edge(delta[1, subset2[1][2]], delta[2, subset2[1][2]], 1, 2, p, index, out cp);
+        if (delta[0 * 7 + Subset2_3[0][1]] > 0.0 && delta[1 * 7 + Subset2_3[0][1]] > 0.0 && delta[2 * 7 + subset3] <= 0.0)
+            return closest_edge(delta[0 * 7 + Subset2_3[0][1]], delta[1 * 7 + Subset2_3[0][1]], 0, 1, p, index, out cp);
+        if (delta[0 * 7 + Subset2_3[0][2]] > 0.0 && delta[2 * 7 + Subset2_3[0][2]] > 0.0 && delta[1 * 7 + subset3] <= 0.0)
+            return closest_edge(delta[0 * 7 + Subset2_3[0][2]], delta[2 * 7 + Subset2_3[0][2]], 0, 2, p, index, out cp);
+        if (delta[1 * 7 + Subset2_3[1][2]] > 0.0 && delta[2 * 7 + Subset2_3[1][2]] > 0.0 && delta[0 * 7 + subset3] <= 0.0)
+            return closest_edge(delta[1 * 7 + Subset2_3[1][2]], delta[2 * 7 + Subset2_3[1][2]], 1, 2, p, index, out cp);
 
         // Fall back to the nearest vertex, then edge, then face (HitTest.cpp:1474-1542).
         int nMin;
         double dMin2 = double.MaxValue;
         int v = 0;
         for (int i = 0; i < 3; i++)
-            if (dp[i, i] < dMin2) { dMin2 = dp[i, i]; v = i; }
+            if (dp[i * 3 + i] < dMin2) { dMin2 = dp[i * 3 + i]; v = i; }
         nMin = closest_vertex(v, p, index, out cp);
 
         for (int i = 0; i < 2; i++)
             for (int j = i + 1; j < 3; j++)
-                if (delta[i, subset2[i][j]] > 0.0 && delta[j, subset2[i][j]] > 0.0)
+                if (delta[i * 7 + Subset2_3[i][j]] > 0.0 && delta[j * 7 + Subset2_3[i][j]] > 0.0)
                 {
-                    double d = (delta[i, subset2[i][j]] * dp[i, i] + delta[j, subset2[i][j]] * dp[j, i]) /
-                               (delta[i, subset2[i][j]] + delta[j, subset2[i][j]]);
+                    double d = (delta[i * 7 + Subset2_3[i][j]] * dp[i * 3 + i] + delta[j * 7 + Subset2_3[i][j]] * dp[j * 3 + i]) /
+                               (delta[i * 7 + Subset2_3[i][j]] + delta[j * 7 + Subset2_3[i][j]]);
                     if (d < dMin2)
                     {
                         dMin2 = d;
-                        nMin = closest_edge(delta[i, subset2[i][j]], delta[j, subset2[i][j]], i, j, p, index, out cp);
+                        nMin = closest_edge(delta[i * 7 + Subset2_3[i][j]], delta[j * 7 + Subset2_3[i][j]], i, j, p, index, out cp);
                     }
                 }
 
         // Face fallback (HitTest.cpp:1518-1539): the whole triangle.
-        if (delta[0, subset3] > 0.0 && delta[1, subset3] > 0.0 && delta[2, subset3] > 0.0)
+        if (delta[0 * 7 + subset3] > 0.0 && delta[1 * 7 + subset3] > 0.0 && delta[2 * 7 + subset3] > 0.0)
         {
-            double d = (delta[0, subset3] * dp[0, 0] + delta[1, subset3] * dp[1, 0] + delta[2, subset3] * dp[2, 0]) /
-                       (delta[0, subset3] + delta[1, subset3] + delta[2, subset3]);
+            double d = (delta[0 * 7 + subset3] * dp[0 * 3 + 0] + delta[1 * 7 + subset3] * dp[1 * 3 + 0] + delta[2 * 7 + subset3] * dp[2 * 3 + 0]) /
+                       (delta[0 * 7 + subset3] + delta[1 * 7 + subset3] + delta[2 * 7 + subset3]);
             if (d < dMin2)
             {
                 dMin2 = d;
-                nMin = closest_face(delta[0, subset3], delta[1, subset3], delta[2, subset3], 0, 1, 2, p, index, out cp);
+                nMin = closest_face(delta[0 * 7 + subset3], delta[1 * 7 + subset3], delta[2 * 7 + subset3], 0, 1, 2, p, index, out cp);
             }
         }
         return nMin;
     }
 
-    private static int Johnson4(Vector3[] p, out Vector3 cp, int[] index)
+    private static int Johnson4(Span<Vector3> p, out Vector3 cp, Span<int> index)
     {
-        int[][] subset2 =
-        [
-            [-1, 4, 5, 6],
-            [4, -1, 7, 8],
-            [5, 7, -1, 9],
-            [6, 8, 9, -1],
-        ];
-        int[] subset3 = [10, 11, 12, 13];
         const int subset4 = 14;
 
-        var dp = new double[4, 4];
+        Span<double> dp = stackalloc double[16];     // [4,4] flattened (i*4+j)
         for (int i = 0; i < 4; i++)
             for (int j = i; j < 4; j++)
-                dp[i, j] = dp[j, i] = (double)p[i].X * p[j].X + (double)p[i].Y * p[j].Y + (double)p[i].Z * p[j].Z;
+                dp[i * 4 + j] = dp[j * 4 + i] = (double)p[i].X * p[j].X + (double)p[i].Y * p[j].Y + (double)p[i].Z * p[j].Z;
 
-        var delta = new double[4, subset4 + 1];
+        Span<double> delta = stackalloc double[60];  // [4,15] flattened (i*15+col)
 
-        void SetDelta(int i, int j) => delta[i, subset2[j][i]] = dp[j, j] - dp[j, i];
-        SetDelta(1, 0); SetDelta(2, 0); SetDelta(3, 0);
-        SetDelta(0, 1); SetDelta(2, 1); SetDelta(3, 1);
-        SetDelta(0, 2); SetDelta(1, 2); SetDelta(3, 2);
-        SetDelta(0, 3); SetDelta(1, 3); SetDelta(2, 3);
+        void SetDelta(Span<double> dp_, Span<double> dl_, int i, int j) => dl_[i * 15 + Subset2_4[j][i]] = dp_[j * 4 + j] - dp_[j * 4 + i];
+        SetDelta(dp, delta, 1, 0); SetDelta(dp, delta, 2, 0); SetDelta(dp, delta, 3, 0);
+        SetDelta(dp, delta, 0, 1); SetDelta(dp, delta, 2, 1); SetDelta(dp, delta, 3, 1);
+        SetDelta(dp, delta, 0, 2); SetDelta(dp, delta, 1, 2); SetDelta(dp, delta, 3, 2);
+        SetDelta(dp, delta, 0, 3); SetDelta(dp, delta, 1, 3); SetDelta(dp, delta, 2, 3);
 
-        void SetDelta3(int i, int j, int k, int x) =>
-            delta[i, subset3[x]] = delta[j, subset2[j][k]] * (dp[j, j] - dp[j, i]) +
-                                   delta[k, subset2[j][k]] * (dp[k, j] - dp[k, i]);
-        SetDelta3(2, 0, 1, 3); SetDelta3(3, 0, 1, 2);
-        SetDelta3(1, 0, 2, 3); SetDelta3(3, 0, 2, 1);
-        SetDelta3(1, 0, 3, 2); SetDelta3(2, 0, 3, 1);
-        SetDelta3(0, 1, 2, 3); SetDelta3(3, 1, 2, 0);
-        SetDelta3(0, 1, 3, 2); SetDelta3(2, 1, 3, 0);
-        SetDelta3(0, 2, 3, 1); SetDelta3(1, 2, 3, 0);
+        void SetDelta3(Span<double> dp_, Span<double> dl_, int i, int j, int k, int x) =>
+            dl_[i * 15 + Subset3_4[x]] = dl_[j * 15 + Subset2_4[j][k]] * (dp_[j * 4 + j] - dp_[j * 4 + i]) +
+                                         dl_[k * 15 + Subset2_4[j][k]] * (dp_[k * 4 + j] - dp_[k * 4 + i]);
+        SetDelta3(dp, delta, 2, 0, 1, 3); SetDelta3(dp, delta, 3, 0, 1, 2);
+        SetDelta3(dp, delta, 1, 0, 2, 3); SetDelta3(dp, delta, 3, 0, 2, 1);
+        SetDelta3(dp, delta, 1, 0, 3, 2); SetDelta3(dp, delta, 2, 0, 3, 1);
+        SetDelta3(dp, delta, 0, 1, 2, 3); SetDelta3(dp, delta, 3, 1, 2, 0);
+        SetDelta3(dp, delta, 0, 1, 3, 2); SetDelta3(dp, delta, 2, 1, 3, 0);
+        SetDelta3(dp, delta, 0, 2, 3, 1); SetDelta3(dp, delta, 1, 2, 3, 0);
 
-        void SetDelta4(int i, int j, int k, int l) =>
-            delta[i, subset4] = delta[j, subset3[i]] * (dp[j, j] - dp[j, i]) +
-                                delta[k, subset3[i]] * (dp[k, j] - dp[k, i]) +
-                                delta[l, subset3[i]] * (dp[l, j] - dp[l, i]);
-        SetDelta4(0, 1, 2, 3); SetDelta4(1, 0, 2, 3);
-        SetDelta4(2, 0, 1, 3); SetDelta4(3, 0, 1, 2);
+        void SetDelta4(Span<double> dp_, Span<double> dl_, int i, int j, int k, int l) =>
+            dl_[i * 15 + subset4] = dl_[j * 15 + Subset3_4[i]] * (dp_[j * 4 + j] - dp_[j * 4 + i]) +
+                                    dl_[k * 15 + Subset3_4[i]] * (dp_[k * 4 + j] - dp_[k * 4 + i]) +
+                                    dl_[l * 15 + Subset3_4[i]] * (dp_[l * 4 + j] - dp_[l * 4 + i]);
+        SetDelta4(dp, delta, 0, 1, 2, 3); SetDelta4(dp, delta, 1, 0, 2, 3);
+        SetDelta4(dp, delta, 2, 0, 1, 3); SetDelta4(dp, delta, 3, 0, 1, 2);
 
         // Inside for the tetrahedron (all deltas on subset4 positive).
-        if (delta[0, subset4] > 0.0 && delta[1, subset4] > 0.0 && delta[2, subset4] > 0.0 && delta[3, subset4] > 0.0)
+        if (delta[0 * 15 + subset4] > 0.0 && delta[1 * 15 + subset4] > 0.0 && delta[2 * 15 + subset4] > 0.0 && delta[3 * 15 + subset4] > 0.0)
         { cp = Vector3.Zero; return 4; }
 
         // Each vertex.
-        if (delta[0, subset2[1][0]] <= 0.0 && delta[0, subset2[2][0]] <= 0.0 && delta[0, subset2[3][0]] <= 0.0)
+        if (delta[0 * 15 + Subset2_4[1][0]] <= 0.0 && delta[0 * 15 + Subset2_4[2][0]] <= 0.0 && delta[0 * 15 + Subset2_4[3][0]] <= 0.0)
             return closest_vertex(0, p, index, out cp);
-        if (delta[1, subset2[0][1]] <= 0.0 && delta[1, subset2[2][1]] <= 0.0 && delta[1, subset2[3][1]] <= 0.0)
+        if (delta[1 * 15 + Subset2_4[0][1]] <= 0.0 && delta[1 * 15 + Subset2_4[2][1]] <= 0.0 && delta[1 * 15 + Subset2_4[3][1]] <= 0.0)
             return closest_vertex(1, p, index, out cp);
-        if (delta[2, subset2[0][2]] <= 0.0 && delta[2, subset2[1][2]] <= 0.0 && delta[2, subset2[3][2]] <= 0.0)
+        if (delta[2 * 15 + Subset2_4[0][2]] <= 0.0 && delta[2 * 15 + Subset2_4[1][2]] <= 0.0 && delta[2 * 15 + Subset2_4[3][2]] <= 0.0)
             return closest_vertex(2, p, index, out cp);
-        if (delta[3, subset2[0][3]] <= 0.0 && delta[3, subset2[1][3]] <= 0.0 && delta[3, subset2[2][3]] <= 0.0)
+        if (delta[3 * 15 + Subset2_4[0][3]] <= 0.0 && delta[3 * 15 + Subset2_4[1][3]] <= 0.0 && delta[3 * 15 + Subset2_4[2][3]] <= 0.0)
             return closest_vertex(3, p, index, out cp);
 
         // Each edge i,j.
-        if (delta[0, subset2[0][1]] > 0.0 && delta[1, subset2[0][1]] > 0.0 &&
-            delta[2, subset3[3]] <= 0.0 && delta[3, subset3[2]] <= 0.0)
-            return closest_edge(delta[0, subset2[0][1]], delta[1, subset2[0][1]], 0, 1, p, index, out cp);
-        if (delta[0, subset2[0][2]] > 0.0 && delta[2, subset2[0][2]] > 0.0 &&
-            delta[1, subset3[3]] <= 0.0 && delta[3, subset3[1]] <= 0.0)
-            return closest_edge(delta[0, subset2[0][2]], delta[2, subset2[0][2]], 0, 2, p, index, out cp);
-        if (delta[0, subset2[0][3]] > 0.0 && delta[3, subset2[0][3]] > 0.0 &&
-            delta[1, subset3[2]] <= 0.0 && delta[2, subset3[1]] <= 0.0)
-            return closest_edge(delta[0, subset2[0][3]], delta[3, subset2[0][3]], 0, 3, p, index, out cp);
-        if (delta[1, subset2[1][2]] > 0.0 && delta[2, subset2[1][2]] > 0.0 &&
-            delta[0, subset3[3]] <= 0.0 && delta[3, subset3[0]] <= 0.0)
-            return closest_edge(delta[1, subset2[1][2]], delta[2, subset2[1][2]], 1, 2, p, index, out cp);
-        if (delta[1, subset2[1][3]] > 0.0 && delta[3, subset2[1][3]] > 0.0 &&
-            delta[0, subset3[2]] <= 0.0 && delta[2, subset3[0]] <= 0.0)
-            return closest_edge(delta[1, subset2[1][3]], delta[3, subset2[1][3]], 1, 3, p, index, out cp);
-        if (delta[2, subset2[2][3]] > 0.0 && delta[3, subset2[2][3]] > 0.0 &&
-            delta[0, subset3[1]] <= 0.0 && delta[1, subset3[0]] <= 0.0)
-            return closest_edge(delta[2, subset2[2][3]], delta[3, subset2[2][3]], 2, 3, p, index, out cp);
+        if (delta[0 * 15 + Subset2_4[0][1]] > 0.0 && delta[1 * 15 + Subset2_4[0][1]] > 0.0 &&
+            delta[2 * 15 + Subset3_4[3]] <= 0.0 && delta[3 * 15 + Subset3_4[2]] <= 0.0)
+            return closest_edge(delta[0 * 15 + Subset2_4[0][1]], delta[1 * 15 + Subset2_4[0][1]], 0, 1, p, index, out cp);
+        if (delta[0 * 15 + Subset2_4[0][2]] > 0.0 && delta[2 * 15 + Subset2_4[0][2]] > 0.0 &&
+            delta[1 * 15 + Subset3_4[3]] <= 0.0 && delta[3 * 15 + Subset3_4[1]] <= 0.0)
+            return closest_edge(delta[0 * 15 + Subset2_4[0][2]], delta[2 * 15 + Subset2_4[0][2]], 0, 2, p, index, out cp);
+        if (delta[0 * 15 + Subset2_4[0][3]] > 0.0 && delta[3 * 15 + Subset2_4[0][3]] > 0.0 &&
+            delta[1 * 15 + Subset3_4[2]] <= 0.0 && delta[2 * 15 + Subset3_4[1]] <= 0.0)
+            return closest_edge(delta[0 * 15 + Subset2_4[0][3]], delta[3 * 15 + Subset2_4[0][3]], 0, 3, p, index, out cp);
+        if (delta[1 * 15 + Subset2_4[1][2]] > 0.0 && delta[2 * 15 + Subset2_4[1][2]] > 0.0 &&
+            delta[0 * 15 + Subset3_4[3]] <= 0.0 && delta[3 * 15 + Subset3_4[0]] <= 0.0)
+            return closest_edge(delta[1 * 15 + Subset2_4[1][2]], delta[2 * 15 + Subset2_4[1][2]], 1, 2, p, index, out cp);
+        if (delta[1 * 15 + Subset2_4[1][3]] > 0.0 && delta[3 * 15 + Subset2_4[1][3]] > 0.0 &&
+            delta[0 * 15 + Subset3_4[2]] <= 0.0 && delta[2 * 15 + Subset3_4[0]] <= 0.0)
+            return closest_edge(delta[1 * 15 + Subset2_4[1][3]], delta[3 * 15 + Subset2_4[1][3]], 1, 3, p, index, out cp);
+        if (delta[2 * 15 + Subset2_4[2][3]] > 0.0 && delta[3 * 15 + Subset2_4[2][3]] > 0.0 &&
+            delta[0 * 15 + Subset3_4[1]] <= 0.0 && delta[1 * 15 + Subset3_4[0]] <= 0.0)
+            return closest_edge(delta[2 * 15 + Subset2_4[2][3]], delta[3 * 15 + Subset2_4[2][3]], 2, 3, p, index, out cp);
 
         // Each face i,j,k.
-        if (delta[0, subset3[3]] > 0.0 && delta[1, subset3[3]] > 0.0 && delta[2, subset3[3]] > 0.0 && delta[3, subset4] <= 0.0)
-            return closest_face(delta[0, subset3[3]], delta[1, subset3[3]], delta[2, subset3[3]], 0, 1, 2, p, index, out cp);
-        if (delta[0, subset3[2]] > 0.0 && delta[1, subset3[2]] > 0.0 && delta[3, subset3[2]] > 0.0 && delta[2, subset4] <= 0.0)
-            return closest_face(delta[0, subset3[2]], delta[1, subset3[2]], delta[3, subset3[2]], 0, 1, 3, p, index, out cp);
-        if (delta[0, subset3[1]] > 0.0 && delta[2, subset3[1]] > 0.0 && delta[3, subset3[1]] > 0.0 && delta[1, subset4] <= 0.0)
-            return closest_face(delta[0, subset3[1]], delta[2, subset3[1]], delta[3, subset3[1]], 0, 2, 3, p, index, out cp);
-        if (delta[1, subset3[0]] > 0.0 && delta[2, subset3[0]] > 0.0 && delta[3, subset3[0]] > 0.0 && delta[0, subset4] <= 0.0)
-            return closest_face(delta[1, subset3[0]], delta[2, subset3[0]], delta[3, subset3[0]], 1, 2, 3, p, index, out cp);
+        if (delta[0 * 15 + Subset3_4[3]] > 0.0 && delta[1 * 15 + Subset3_4[3]] > 0.0 && delta[2 * 15 + Subset3_4[3]] > 0.0 && delta[3 * 15 + subset4] <= 0.0)
+            return closest_face(delta[0 * 15 + Subset3_4[3]], delta[1 * 15 + Subset3_4[3]], delta[2 * 15 + Subset3_4[3]], 0, 1, 2, p, index, out cp);
+        if (delta[0 * 15 + Subset3_4[2]] > 0.0 && delta[1 * 15 + Subset3_4[2]] > 0.0 && delta[3 * 15 + Subset3_4[2]] > 0.0 && delta[2 * 15 + subset4] <= 0.0)
+            return closest_face(delta[0 * 15 + Subset3_4[2]], delta[1 * 15 + Subset3_4[2]], delta[3 * 15 + Subset3_4[2]], 0, 1, 3, p, index, out cp);
+        if (delta[0 * 15 + Subset3_4[1]] > 0.0 && delta[2 * 15 + Subset3_4[1]] > 0.0 && delta[3 * 15 + Subset3_4[1]] > 0.0 && delta[1 * 15 + subset4] <= 0.0)
+            return closest_face(delta[0 * 15 + Subset3_4[1]], delta[2 * 15 + Subset3_4[1]], delta[3 * 15 + Subset3_4[1]], 0, 2, 3, p, index, out cp);
+        if (delta[1 * 15 + Subset3_4[0]] > 0.0 && delta[2 * 15 + Subset3_4[0]] > 0.0 && delta[3 * 15 + Subset3_4[0]] > 0.0 && delta[0 * 15 + subset4] <= 0.0)
+            return closest_face(delta[1 * 15 + Subset3_4[0]], delta[2 * 15 + Subset3_4[0]], delta[3 * 15 + Subset3_4[0]], 1, 2, 3, p, index, out cp);
 
         // Fall back to the nearest vertex, then edge, then face (HitTest.cpp:1744-1825).
         int nMin;
         double dMin2 = double.MaxValue;
         int v = 0;
         for (int i = 0; i < 4; i++)
-            if (dp[i, i] < dMin2) { dMin2 = dp[i, i]; v = i; }
+            if (dp[i * 4 + i] < dMin2) { dMin2 = dp[i * 4 + i]; v = i; }
         nMin = closest_vertex(v, p, index, out cp);
 
         for (int i = 0; i < 3; i++)
             for (int j = i + 1; j < 4; j++)
-                if (delta[i, subset2[i][j]] > 0.0 && delta[j, subset2[i][j]] > 0.0)
+                if (delta[i * 15 + Subset2_4[i][j]] > 0.0 && delta[j * 15 + Subset2_4[i][j]] > 0.0)
                 {
-                    double d = (delta[i, subset2[i][j]] * dp[i, i] + delta[j, subset2[i][j]] * dp[j, i]) /
-                               (delta[i, subset2[i][j]] + delta[j, subset2[i][j]]);
+                    double d = (delta[i * 15 + Subset2_4[i][j]] * dp[i * 4 + i] + delta[j * 15 + Subset2_4[i][j]] * dp[j * 4 + i]) /
+                               (delta[i * 15 + Subset2_4[i][j]] + delta[j * 15 + Subset2_4[i][j]]);
                     if (d < dMin2)
                     {
                         dMin2 = d;
-                        nMin = closest_edge(delta[i, subset2[i][j]], delta[j, subset2[i][j]], i, j, p, index, out cp);
+                        nMin = closest_edge(delta[i * 15 + Subset2_4[i][j]], delta[j * 15 + Subset2_4[i][j]], i, j, p, index, out cp);
                     }
                 }
 
-        var idsFace = new[,] { { 0, 1, 2, 3 }, { 0, 1, 3, 2 }, { 0, 2, 3, 1 }, { 1, 2, 3, 0 } };
+        var idsFace = IdsFace4;
         for (int f = 0; f < 4; f++)
         {
             int i = idsFace[f, 0], j = idsFace[f, 1], k = idsFace[f, 2], l = idsFace[f, 3];
-            if (delta[i, subset3[l]] > 0.0 && delta[j, subset3[l]] > 0.0 && delta[k, subset3[l]] > 0.0)
+            if (delta[i * 15 + Subset3_4[l]] > 0.0 && delta[j * 15 + Subset3_4[l]] > 0.0 && delta[k * 15 + Subset3_4[l]] > 0.0)
             {
-                double d = (delta[i, subset3[l]] * dp[i, i] + delta[j, subset3[l]] * dp[j, i] +
-                            delta[k, subset3[l]] * dp[k, i]) /
-                           (delta[i, subset3[l]] + delta[j, subset3[l]] + delta[k, subset3[l]]);
+                double d = (delta[i * 15 + Subset3_4[l]] * dp[i * 4 + i] + delta[j * 15 + Subset3_4[l]] * dp[j * 4 + i] +
+                            delta[k * 15 + Subset3_4[l]] * dp[k * 4 + i]) /
+                           (delta[i * 15 + Subset3_4[l]] + delta[j * 15 + Subset3_4[l]] + delta[k * 15 + Subset3_4[l]]);
                 if (d < dMin2)
                 {
                     dMin2 = d;
-                    nMin = closest_face(delta[i, subset3[l]], delta[j, subset3[l]], delta[k, subset3[l]],
+                    nMin = closest_face(delta[i * 15 + Subset3_4[l]], delta[j * 15 + Subset3_4[l]], delta[k * 15 + Subset3_4[l]],
                                         i, j, k, p, index, out cp);
                 }
             }

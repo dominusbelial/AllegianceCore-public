@@ -20,6 +20,7 @@
     <Project Path="tools/missiondump/missiondump.csproj" />
     <Project Path="tools/fedmsgdump/fedmsgdump.csproj" />
     <Project Path="tools/corpusvalidate/corpusvalidate.csproj" />
+    <Project Path="tools/collision-perf-proof/collision-perf-proof.csproj" />
     <Project Path="tools/livecombat/livecombat.csproj" />
     <Project Path="tools/chatdemo/chatdemo.csproj" />
     <Project Path="tools/roster-capture/roster-capture.csproj" />

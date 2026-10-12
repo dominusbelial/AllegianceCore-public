@@ -1638,6 +1638,24 @@ public sealed class Sector : IClusterIgc
     /// expiry branch makes). Blast-on-impact (P97) fires for a probe target
     /// exactly as for a ship (see the branch note in the loop body).</para>
     /// </remarks>
+    /// <summary>
+    /// P621b — populate the <see cref="Model.Hull"/> hook (P621 left it null, so
+    /// the combat pass's ordnance colliders fell back to the ship's bounding
+    /// sphere). Resolve the ship's real <c>.cvh</c> once from this sector's
+    /// <see cref="CollisionHulls"/> cache and cache it on the ship, so weapon
+    /// fire collides against the real hull exactly as native resolves projectile
+    /// hits against the target's <c>LoadCVH</c> body (<c>modelIGC.cpp:105-118</c>,
+    /// <c>projectileIGC.cpp:166-190</c>). A ship with no resolvable model or no
+    /// cache keeps <c>null</c> → the sphere fallback, matching native's
+    /// <c>HitTest::Create</c> default (<c>HitTest.cpp:844-860</c>).
+    /// </summary>
+    private CvhFile? EnsureShipHull(Ship s)
+    {
+        if (s.Hull is null && CollisionHulls is not null)
+            s.Hull = CollisionHulls.Resolve(s.HullType.ModelName);
+        return s.Hull;
+    }
+
     private void ResolveCombatCollisions(double now, float dt)
     {
         if (!_models.Any(m => m is Projectile || m is Missile)) return;   // nothing can deal damage
@@ -1650,7 +1668,7 @@ public sealed class Sector : IClusterIgc
                 IOrdnance o => new Collider(o, o.Position, o.Velocity, Orientation.Identity,
                     hull: null, o.Radius, isStatic: false, HitShape.Sphere),
                 Ship s => new Collider(s, s.Position, s.Velocity, s.Orientation,
-                    hull: s.Hull, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere),
+                    hull: EnsureShipHull(s), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere),
                 Probe p => new Collider(p, p.Position, Vector3.Zero, Orientation.Identity,
                     hull: null, p.ProbeType.Radius, isStatic: true, HitShape.Sphere),
                 _ => null,
@@ -1672,7 +1690,7 @@ public sealed class Sector : IClusterIgc
             if (ast.Data.Position is not { Length: 3 } ap) continue;   // no position: can't collide
             detector.Add(new Collider(
                 ast, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero, Orientation.Identity,
-                hull: null, ast.Radius, isStatic: true, HitShape.Sphere));
+                hull: CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
         // Stations (P125): a FOURTH static target type, exactly as P100 added the
@@ -1688,7 +1706,7 @@ public sealed class Sector : IClusterIgc
             if (st.Data.Position is not { Length: 3 } sp) continue;   // no position: can't collide
             detector.Add(new Collider(
                 st, new Vector3(sp[0], sp[1], sp[2]), Vector3.Zero, Orientation.Identity,
-                hull: null, st.Radius, isStatic: true, HitShape.Sphere));
+                hull: CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
         var events = detector.Detect(dt);
