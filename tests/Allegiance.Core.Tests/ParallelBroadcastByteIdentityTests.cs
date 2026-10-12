@@ -199,6 +199,58 @@ public class ParallelBroadcastByteIdentityTests
         Assert.True(server._broadcastMaxParallelism >= 1);
     }
 
+    /// <summary>
+    /// P619c scope 1 — the regression guard for P619b: with the verbosity gate at
+    /// its DEFAULT (off), a parallel broadcast at many peers emits ZERO of the
+    /// high-frequency per-pair diagnostic lines (<c>[shipstatus]</c>,
+    /// <c>[teamshipstatus]</c>, <c>[samestidenpcstatus]</c>), and the wire bytes
+    /// remain byte-identical serial-vs-parallel.
+    /// <para>
+    /// Fails on today's pre-P619b code: those lines were buffered into the
+    /// UNCONDITIONAL <c>r.Logs</c> list and written synchronously with
+    /// <c>Console.WriteLine</c> in the serial apply phase, so even with verbosity
+    /// off they appeared on stdout (~4,000 lines/s at 390 players). After P619b
+    /// they are routed through the verbose-gated <c>ConsoleLog.Write</c> sink and
+    /// vanish when the gate is off, and the drain never touches the wire.
+    /// </summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Parallel_broadcast_verbose_off_emits_zero_pair_diag_lines_and_bytes_unchanged()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());                     // ConsoleVerbose defaults to OFF
+        server._broadcastParallelBuild = true;     // force the parallel build path
+        var world = BuildWorld(server, RepresentativeCore().HullTypes.Values.First());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+
+        var oldOut = Console.Out;
+        var sw = new StringWriter();
+        try
+        {
+            server.TestResetBroadcastState();
+            server.TestSeedPeers(world.Peers);
+            // Collect the PARALLEL broadcast at a late tick (past the status
+            // refresh cadences) while capturing stdout into a StringWriter.
+            Console.SetOut(sw);
+            server.TestCollectBroadcast(99, parallel: true, "both");
+            ConsoleLog.Flush();                    // drain anything the sink enqueued
+            Console.SetOut(oldOut);
+            var text = sw.ToString();
+            foreach (var tag in new[] { "[shipstatus]", "[teamshipstatus]", "[samestidenpcstatus]" })
+                Assert.DoesNotContain(tag, text);
+        }
+        finally
+        {
+            Console.SetOut(oldOut);
+            ConsoleLog.ResetForTest();
+        }
+
+        // Wire bytes unchanged: the full serial-vs-parallel identity proof must
+        // still hold for the same world (run after restoring stdout).
+        AssertScenarioEqual(server, 99, "both");
+    }
+
     // ── parallel-mode stress: many peers joining/leaving mid-tick, no exceptions ──
 
     private static LogonRequest StressRequest(string name) => new()

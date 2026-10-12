@@ -1236,6 +1236,14 @@ public sealed partial class Server
             workers = ew;
         _transportPoolWorkers = workers;
 
+        // P619c — bind the human liveness grace (transport layer) from config +
+        // env (env wins). Default 60 s; the MCP bots keep the strict 30 s.
+        int humanGrace = tc?.HumanGraceSeconds is { } hg && hg > 0 ? hg : 60;
+        string? envHg = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_HUMAN_GRACE_SECONDS");
+        if (!string.IsNullOrEmpty(envHg) && int.TryParse(envHg, out var ehg) && ehg > 0)
+            humanGrace = ehg;
+        TcpTransport.HumanGraceTimeout = TimeSpan.FromSeconds(humanGrace);
+
         Console.WriteLine(_transportMode == TransportMode.Pool
             ? $"[boot] transport mode = pool ({_transportPoolWorkers} workers)"
             : "[boot] transport mode = thread-per-peer");

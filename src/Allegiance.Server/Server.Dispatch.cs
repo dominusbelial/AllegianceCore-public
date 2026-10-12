@@ -66,6 +66,16 @@ public sealed partial class Server
                 catch (Exception e) { Console.WriteLine($"[wire] bad LOGONREQ from {from}: {e.Message}"); continue; }
 
                 var validated = req.VersionMatches;
+                // P619c — grant a connected HUMAN client (a character name NOT
+                // under the MCP harness prefix) the longer transport liveness
+                // grace, so a real player whose machine hiccups (OBS, a heavy
+                // compile, 390 bots) is not mass-disconnected the way P611 cut
+                // the play client on 2026-10-12. Harness bots keep the strict
+                // limit. Best-effort: if the transport isn't the concrete
+                // TcpTransport (e.g. a test fake), nothing happens.
+                if (validated && req.CharacterName is { Length: > 0 } cn
+                    && !cn.StartsWith(HarnessPrefix, StringComparison.Ordinal))
+                    (_host.Transport as TcpTransport)?.SetPeerHuman(from, true);
                 // P316: allocate a ship id ONLY for a validated logon with a
                 // mission to join, AFTER the validation check — an
                 // unauthenticated/invalid LOGONREQ flood burns no ids at all

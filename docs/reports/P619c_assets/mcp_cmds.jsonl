@@ -1,0 +1,2 @@
+{"tool": "spawn_scenario", "args": {"preset": "showcase", "size_scale": 8, "target_sector": "Sedna", "staging": false}}
+{"tool": "quit"}

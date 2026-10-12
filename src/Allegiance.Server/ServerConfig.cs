@@ -510,6 +510,15 @@ public sealed class TransportConfig
     /// thread-per-peer mode.
     /// </summary>
     public int? PoolWorkers { get; set; }
+
+    /// <summary>
+    /// P619c — the liveness grace (seconds) granted to a connected HUMAN client
+    /// (non-harness character name) before it is disconnected for making no
+    /// write progress; the MCP bots keep the strict 30 s limit. Default 60
+    /// (twice native's 30 s link-dead tolerance). Overridable at boot by
+    /// <c>ALLEGIANCE_TRANSPORT_HUMAN_GRACE_SECONDS</c>.
+    /// </summary>
+    public int? HumanGraceSeconds { get; set; }
 }
 
 /// <summary>

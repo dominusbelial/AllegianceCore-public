@@ -243,6 +243,56 @@ public sealed class ConsoleVerbosityLiveTests
         }
     }
 
+    /// <summary>⭐ P619c scope 2 — the P318 stalled-stdout claim EXTENDED to the
+    /// plain <c>Console.WriteLine</c> path: with <see cref="ConsoleLog.Install"/>
+    /// active (the process-wide redirect a real server run enables), the sim
+    /// thread's bare <c>Console.WriteLine</c> calls (e.g. the <c>[egress]</c>
+    /// window line, every plain write on the broadcast/sim path) cost an enqueue
+    /// — so a stalled stdout consumer stalls only the drain thread, never the
+    /// tick. The mission clock keeps advancing, healthy peers keep receiving
+    /// per-tick updates, and the whole window completes in bounded wall time.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout()
+    {
+        Require.Artwork();
+        const int Bots = 8;
+        const int Ticks = 300;          // 15 sim-seconds @ 20 Hz
+        var oldOut = Console.Out;
+        try
+        {
+            using var server = Boot(verbose: false);
+            var bots = SeatBots(server, Bots);
+            foreach (var b in bots) b.ResetHeavyShipsUpdates();
+            for (int i = 0; i < 60; i++) server.TickSim();   // warmup join burst on real console
+
+            // Activate the process-wide non-blocking redirect (normally done by
+            // ServerMain.RunAsync) and point the drain at a consumer that sleeps
+            // 30 ms per write — far slower than it can be fed.
+            ConsoleLog.Install();
+            ConsoleLog.PointSinkForTest(new StallingWriter(perWriteMs: 30));
+
+            var sw = Stopwatch.StartNew();
+            double startSim = server.SimNow;
+            for (int i = 0; i < Ticks; i++) server.TickSim();
+            double simAdvanced = server.SimNow - startSim;
+            long wallMs = sw.ElapsedMilliseconds;
+
+            Assert.True(bots.All(b => b.HeavyShipsUpdates.Count > 0),
+                "peers must keep receiving per-tick updates while stdout is stalled");
+            Assert.True(simAdvanced >= Ticks / 20.0 * 0.95,
+                $"mission clock must keep advancing during stdout stall (advanced {simAdvanced}s of {Ticks / 20.0}s)");
+            Assert.True(wallMs < 8_000,
+                $"sim must not block on a stalled stdout (wall {wallMs}ms for {Ticks} ticks, plain WriteLine path)");
+        }
+        finally
+        {
+            ConsoleLog.Uninstall();
+            Console.SetOut(oldOut);
+            ConsoleLog.ResetForTest();
+        }
+    }
+
     /// <summary>⭐ Item 2: an NPC stuck in a stand-by condition (no mineable rock
     /// reachable) must log its "[npc] … standing by" line only ONCE on entering the
     /// stuck state — not once per tick the state holds (20 Hz in production). Drives

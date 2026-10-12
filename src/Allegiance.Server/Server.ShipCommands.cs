@@ -1136,7 +1136,7 @@ public sealed partial class Server
             if (req.CommandId == OrderChange.CidDoNothing)
             {
                 target.StayDocked = true;   // pship->SetStayDocked(true), FedSrv.CPP:7292
-                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded NPC {target.Id} (side {target.SideId}, docked@{target.StationId}) to stay docked (commandID=c_cidDoNothing) -> StayDocked=true (FedSrv.CPP:7290-7294)");
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: commanded NPC {target.Id} (side {target.SideId}, docked@{target.StationId}) to stay docked (commandID=c_cidDoNothing) -> StayDocked=true (FedSrv.CPP:7290-7294)");
             }
             else
             {
@@ -1179,9 +1179,9 @@ public sealed partial class Server
                     // still clear the dock rather than leave a contradictory
                     // StayDocked=false + StationId!=null state.
                     target.StationId = null;
-                    Console.WriteLine($"[orderchange] docked NPC {target.Id} had no Sector — StationId cleared without reposition (defensive)");
+                    if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] docked NPC {target.Id} had no Sector — StationId cleared without reposition (defensive)");
                 }
-                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded docked NPC {target.Id} (side {target.SideId}) to LAUNCH (commandID={req.CommandId} != c_cidDoNothing) -> StayDocked=false, StationId=null, repositioned clear of DockRadius (FedSrv.CPP:7296-7302; no PickDefaultOrder call — bDocked=true skips the port's only ported sub-block, shipIGC.h:2230)");
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: commanded docked NPC {target.Id} (side {target.SideId}) to LAUNCH (commandID={req.CommandId} != c_cidDoNothing) -> StayDocked=false, StationId=null, repositioned clear of DockRadius (FedSrv.CPP:7296-7302; no PickDefaultOrder call — bDocked=true skips the port's only ported sub-block, shipIGC.h:2230)");
             }
             return;
         }
@@ -1217,7 +1217,7 @@ public sealed partial class Server
                 ApplyCommandSlot(target, req.Command, st, req.CommandId);   // pship->SetCommand(pfmOC->command, pmodel, pfmOC->commandID), FedSrv.CPP:7330
             }
 
-            Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded flying NPC {target.Id} (side {target.SideId}, sector {target.Sector?.Id}) to return to base -> StayDocked=true, Queued cleared, " +
+            if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: commanded flying NPC {target.Id} (side {target.SideId}, sector {target.Sector?.Id}) to return to base -> StayDocked=true, Queued cleared, " +
                 $"{(station is null ? "no friendly repair station in sector -> command slot unset (native if(pmodel) gate, FedSrv.CPP:7323)" : $"station {station.Value.StationId} found -> slot-write dispatched for command={req.Command} cmdID={req.CommandId} (FedSrv.CPP:7330)")}");
             return;
         }
@@ -1280,11 +1280,11 @@ public sealed partial class Server
                 if (target.QueuedCommandId != OrderChange.CidNone)
                 {
                     ClearQueuedCommand(target);
-                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: REJECTED own queued order (commandID=c_cidNone, c_cmdQueued cleared) (native RejectQueuedCommand, WinTrek.cpp:10583-10623)");
+                    if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: REJECTED own queued order (commandID=c_cidNone, c_cmdQueued cleared) (native RejectQueuedCommand, WinTrek.cpp:10583-10623)");
                 }
                 else
                 {
-                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: REJECT with no pending queued order — no-op (safe)");
+                    if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: REJECT with no pending queued order — no-op (safe)");
                 }
             }
             else
@@ -1294,20 +1294,20 @@ public sealed partial class Server
                 // (cid != c_cidNone; LegalCommand gate, WinTrek.cpp:10626-10647).
                 if (target.QueuedCommandId == OrderChange.CidNone)
                 {
-                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ACCEPT with no pending queued order — no-op (native cid==c_cidNone, WinTrek.cpp:10628)");
+                    if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: ACCEPT with no pending queued order — no-op (native cid==c_cidNone, WinTrek.cpp:10628)");
                 }
                 else if (req.CommandId != target.QueuedCommandId)
                 {
                     // Client echoed a different action than the one pending —
                     // not an accept of THIS order. Log and no-op (do not guess).
-                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ACCEPT echoed commandID={req.CommandId} but pending queued order is {target.QueuedCommandId} — mismatch, no-op");
+                    if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: ACCEPT echoed commandID={req.CommandId} but pending queued order is {target.QueuedCommandId} — mismatch, no-op");
                 }
                 else
                 {
                     target.AcceptedShipCommandId = target.QueuedCommandId;
                     target.AcceptedShipTarget = target.QueuedShipTarget;   // SetTarget+SetAccepted move the target too (WinTrek.cpp:10668-10681)
                     ClearQueuedCommand(target);
-                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ACCEPTED own queued order {target.AcceptedShipCommandId} -> accepted slot (accepted target {(target.AcceptedShipTarget is null ? "null" : $"#{target.AcceptedShipTarget.Id}")}), queued cleared (native AcceptQueuedCommand, WinTrek.cpp:10626-10712)");
+                    if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: ACCEPTED own queued order {target.AcceptedShipCommandId} -> accepted slot (accepted target {(target.AcceptedShipTarget is null ? "null" : $"#{target.AcceptedShipTarget.Id}")}), queued cleared (native AcceptQueuedCommand, WinTrek.cpp:10626-10712)");
                 }
             }
             return;
@@ -1344,7 +1344,7 @@ public sealed partial class Server
                 {
                     target.CommandTarget = null;
                 }
-                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} cleared {(accepted ? "accepted ship target" : "command target")} ({(accepted ? "c_cmdAccepted" : "c_cmdCurrent")}, objectID=NA sentinel, WinTrek.cpp:8834-8836)");
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {target.Id} cleared {(accepted ? "accepted ship target" : "command target")} ({(accepted ? "c_cmdAccepted" : "c_cmdCurrent")}, objectID=NA sentinel, WinTrek.cpp:8834-8836)");
             }
             else if (req.ObjectType == IgcObjectType.Ship)
             {
@@ -1363,14 +1363,14 @@ public sealed partial class Server
                 string foundDesc = found is null
                     ? $"ship {req.ObjectID} not found — {(accepted ? "accepted ship target" : "command target")} cleared (FedSrv.CPP:7336-7338)"
                     : $"target ship {found.Id} (side {found.SideId}, {(found.IsNpc ? "NPC" : "peer")}{(accepted ? $") cmdID={req.CommandId}" : ")")} — {slot} set (FedSrv.CPP:7335-7339)";
-                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} -> {foundDesc}");
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} -> {foundDesc}");
             }
             else
             {
                 // Non-ship objectType (station/etc.): both slots are Model?-
                 // typed and cannot hold it — logged, slot unchanged (documented
                 // scope boundary).
-                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} objectType {req.ObjectType} is not a ship — non-ship target out of scope for {slot} (logged, no-op)");
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} objectType {req.ObjectType} is not a ship — non-ship target out of scope for {slot} (logged, no-op)");
             }
             return;
         }
@@ -1379,7 +1379,7 @@ public sealed partial class Server
         // a non-NPC target with a command other than c_cmdCurrent/c_cmdAccepted,
         // or any objectType/slot pairing not covered above. Log and no-op; don't
         // guess at behavior for the deferred branches.
-        Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
             $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} command={req.Command} — out-of-scope branch, no-op (P148/P150/P153/P154)");
     }
 
@@ -2331,13 +2331,13 @@ public sealed partial class Server
                 // path is DoNotExecute-guarded (FedSrv.CPP:7287) so no drone command
                 // round-trips into the generic fallback either. Logged, not stored,
                 // and not silently ignored.
-                Console.WriteLine("[orderchange] c_cmdCurrent write into the return-to-base branch is not representable in this port " +
+                if (ConsoleLog.Verbose) ConsoleLog.Write("[orderchange] c_cmdCurrent write into the return-to-base branch is not representable in this port " +
                                   "(Ship.CommandTarget is Model?, stations are DataStationIGC) — logged, no store");
                 break;
             default:
                 // c_cmdPlan (3) is explicitly out of scope (P150); any degenerate
                 // value likewise. Log and no-op — never guess at the slot's meaning.
-                Console.WriteLine($"[orderchange] command slot {commandSlot} has no representable home in this port — logged, no store (c_cmdPlan/unknown out of scope)");
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] command slot {commandSlot} has no representable home in this port — logged, no store (c_cmdPlan/unknown out of scope)");
                 break;
         }
     }
@@ -2612,7 +2612,7 @@ public sealed partial class Server
                     projectedSkipped++;
                     continue;
                 }
-                Console.WriteLine($"[loadout] {from} ship {ship.Id}: granting real launcher part {p.PartId} ('{partType.Name}', {partType.EquipmentType}@{p.MountId} subtype {partType.Type.GetType().Name}, ammo {p.Amount}) — P435");
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[loadout] {from} ship {ship.Id}: granting real launcher part {p.PartId} ('{partType.Name}', {partType.EquipmentType}@{p.MountId} subtype {partType.Type.GetType().Name}, ammo {p.Amount}) — P435");   // P619c: per-part spawn grant, gated (join-burst volume)
             }
             // P441 — part tech gate (native m_station->CanBuy(part),
             // shipIGC.h:1034): a DOCKED ship whose station can't sell the part

@@ -1,0 +1,177 @@
+using System.Diagnostics;
+using System.Text;
+using Allegiance.Core;
+
+namespace Allegiance.Core.Tests.Transport;
+
+/// <summary>
+/// P619c scope 2 — the bounded, queued NON-BLOCKING console sink. The P318
+/// tests proved the <b>gated</b> <c>ConsoleLog.Write</c> lines never block a
+/// stalled stdout consumer. These tests extend that to the <b>plain</b>
+/// <c>Console.WriteLine</c> path: after <see cref="ConsoleLog.Install"/> the
+/// process <c>Console.Out</c>/<c>Console.Error</c> are redirected to a queued
+/// writer sharing the one bounded queue + drain thread, so a bare
+/// <c>Console.WriteLine</c> on the sim/broadcast path costs an enqueue, never
+/// I/O — even when the underlying stdout consumer is completely stalled.
+/// <para>
+/// Pure unit tests (no server, no sockets) that mutate the GLOBAL console
+/// (<c>Console.Out</c>/<c>Console.Error</c>) and the shared drain, so they are
+/// parked in the serialized <c>LiveNetwork</c> collection alongside the other
+/// console-capturing suites (TickProfilerTests, GcBootLineTests, the P318
+/// tests) to avoid racing their captured output.
+/// </para>
+/// </summary>
+[Collection("LiveNetwork")]
+public sealed class ConsoleLogNonBlockingTests
+{
+    /// <summary>A TextWriter that sleeps on every write — simulates a slow/stalled
+    /// stdout consumer (a pipe/journal/docker-logs reader not keeping up).</summary>
+    private sealed class StallingWriter : TextWriter
+    {
+        private readonly int _perWriteMs;
+        public StallingWriter(int perWriteMs) => _perWriteMs = perWriteMs;
+        public override Encoding Encoding => Encoding.UTF8;
+        public override void Write(string? value) => Thread.Sleep(_perWriteMs);
+        public override void Write(char[] buffer, int index, int count) => Thread.Sleep(_perWriteMs);
+        public override void WriteLine(string? value) => Thread.Sleep(_perWriteMs);
+    }
+
+    /// <summary>
+    /// ⭐ With <see cref="ConsoleLog.Install"/> active, a stalled stdout consumer
+    /// cannot block a plain <c>Console.WriteLine</c>: the redirect makes every
+    /// call an enqueue, the drain thread blocks alone, and the bounded queue
+    /// DROPS rather than stalls the caller. Written thousands of lines through a
+    /// writer that sleeps 20 ms per write, the whole loop must complete in far
+    /// less than (lines × 20 ms) and drop lines instead of blocking.
+    /// </summary>
+    [Fact]
+    public void Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops()
+    {
+        // Gate off so only the redirected plain-WriteLine traffic is in play.
+        ConsoleLog.Verbose = false;
+        long droppedBefore;
+        long drops;
+        try
+        {
+            ConsoleLog.Install();
+            // Point the drain at a consumer that sleeps 20 ms per write — vastly
+            // slower than it can be fed — so the drain blocks permanently.
+            ConsoleLog.PointSinkForTest(new StallingWriter(perWriteMs: 20));
+
+            const int Lines = 200_000;
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < Lines; i++)
+                Console.WriteLine($"P619c plain nonblocking line {i}");
+            long wallMs = sw.ElapsedMilliseconds;
+            ConsoleLog.Flush(timeoutMs: 100);          // drain is blocked; short wait only
+
+            // Non-blocking: 200k enqueues complete in bounded time, nowhere near
+            // 200k × 20 ms = 4000 s a synchronous path would take.
+            Assert.True(wallMs < 5_000,
+                $"redirected Console.WriteLine must be an enqueue, not I/O (took {wallMs}ms for {Lines} lines against a 20ms/write stall)");
+
+            // Dropped: with the drain blocked, the bounded queue filled and the
+            // remainder were dropped and counted (never blocked).
+            droppedBefore = ConsoleLog.DroppedWrites;
+            drops = droppedBefore;
+            Assert.True(drops > 0,
+                $"a stalled 20ms/write consumer must fill the bounded queue and drop lines (dropped {drops} of {Lines})");
+        }
+        finally
+        {
+            ConsoleLog.Uninstall();
+            ConsoleLog.ResetForTest();
+        }
+    }
+
+    /// <summary>
+    /// Uninstalling restores the original synchronous <c>Console.Out</c>, so a
+    /// caller after shutdown is back to normal blocking stdout (the drain queue
+    /// is no longer in the write path).
+    /// </summary>
+    [Fact]
+    public void Uninstall_restores_the_original_Console_Out()
+    {
+        try
+        {
+            Assert.False(ConsoleLog.IsInstalled);
+            ConsoleLog.Install();
+            Assert.True(ConsoleLog.IsInstalled);
+            ConsoleLog.Uninstall();
+            Assert.False(ConsoleLog.IsInstalled);
+            // A write after uninstall must NOT route through the queue — a
+            // behaviour check that sidesteps SyncTextWriter reference identity:
+            // write synchronously to a capture writer and confirm it appears
+            // without any Shutdown/Flush.
+            var sink = new StringWriter();
+            Console.SetOut(sink);
+            Console.WriteLine("post-uninstall-direct");
+            Assert.Contains("post-uninstall-direct", sink.ToString());
+        }
+        finally
+        {
+            ConsoleLog.Uninstall();
+            ConsoleLog.ResetForTest();
+        }
+    }
+
+    /// <summary>
+    /// Shutdown drains every already-enqueued line to the sink and restores the
+    /// synchronous console — nothing buffered is lost on process exit. Enqueue
+    /// a batch against a FAST counting sink, then Shutdown, and every line must
+    /// have reached the sink.
+    /// </summary>
+    [Fact]
+    public void Shutdown_flushes_queued_lines_to_the_sink_and_restores_console()
+    {
+        var sink = new StringWriter();
+        try
+        {
+            ConsoleLog.Install();
+            ConsoleLog.PointSinkForTest(sink);
+            Console.WriteLine("flush-me-1");
+            Console.WriteLine("flush-me-2");
+            Console.WriteLine("flush-me-3");
+            ConsoleLog.Shutdown();          // drains the queue, then uninstalls
+
+            // Drain completed: all three lines reached the sink.
+            var text = sink.ToString();
+            Assert.Contains("flush-me-1", text);
+            Assert.Contains("flush-me-2", text);
+            Assert.Contains("flush-me-3", text);
+            Assert.False(ConsoleLog.IsInstalled);   // console restored to sync
+        }
+        finally
+        {
+            ConsoleLog.Uninstall();
+            ConsoleLog.ResetForTest();
+        }
+    }
+
+    /// <summary>
+    /// Multi-line payloads (embedded \n) are still delivered as distinct complete
+    /// lines, and a trailing unterminated line is flushed by <see cref="TextWriter.Flush"/>.
+    /// </summary>
+    [Fact]
+    public void Queued_writer_splits_multiline_and_flushes_trailing_partial_line()
+    {
+        var sink = new StringWriter();
+        try
+        {
+            ConsoleLog.Install();
+            ConsoleLog.PointSinkForTest(sink);
+            Console.Out.Write("a\nb\nc");          // two complete + one partial
+            Console.Out.Flush();                    // pushes the partial "c"
+            ConsoleLog.Shutdown();
+            var text = sink.ToString();
+            // Three complete lines delivered ("a\nb\nc\n").
+            Assert.Equal(3, text.Split('\n').Length - 1);
+            Assert.StartsWith("a\nb\nc", text);
+        }
+        finally
+        {
+            ConsoleLog.Uninstall();
+            ConsoleLog.ResetForTest();
+        }
+    }
+}

@@ -49,12 +49,12 @@ public sealed partial class Server
     {
         if (p.Launcher is not Ship shooter)
         {
-            Console.WriteLine("[projectile] ProjectileCreatedEvent with a non-Ship launcher — ignored");
+            if (ConsoleLog.Verbose) ConsoleLog.Write("[projectile] ProjectileCreatedEvent with a non-Ship launcher — ignored");
             return;
         }
         if (shooter.SideId is not { } shooterSide)
         {
-            Console.WriteLine($"[projectile] shooter {shooter.Id} has no side — no PROJECTILE_INSTANCE broadcast");
+            if (ConsoleLog.Verbose) ConsoleLog.Write($"[projectile] shooter {shooter.Id} has no side — no PROJECTILE_INSTANCE broadcast");
             return;
         }
 
@@ -97,8 +97,8 @@ public sealed partial class Server
             SendPeer(conn, packet);
             n++;
         }
-        Console.WriteLine($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
-                          $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} peer(s) (same-side + cross-side)");
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
+                                                  $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} peer(s) (same-side + cross-side)");
     }
 
     /// <summary>
@@ -130,7 +130,7 @@ public sealed partial class Server
             return;
         if (shooter.SideId is not { } shooterSide)
         {
-            Console.WriteLine($"[projectile-hit] shooter {shooter.Id} has no side — no PROJECTILE_HULL_HIT broadcast");
+            if (ConsoleLog.Verbose) ConsoleLog.Write($"[projectile-hit] shooter {shooter.Id} has no side — no PROJECTILE_HULL_HIT broadcast");
             return;
         }
 
@@ -167,8 +167,8 @@ public sealed partial class Server
             SendPeer(conn, packet);
             n++;
         }
-        Console.WriteLine($"[projectile-hit] ship {shooter.Id} hit target {targetId} sector {clusterId} " +
-                          $"absorbedByShield={absorbedByShield} pos {worldImpact} normal {worldNormal} radius {targetRadius} -> PROJ_HULL_HIT(213) -> {n} peer(s) (same-side + cross-side)");
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[projectile-hit] ship {shooter.Id} hit target {targetId} sector {clusterId} " +
+                                                  $"absorbedByShield={absorbedByShield} pos {worldImpact} normal {worldNormal} radius {targetRadius} -> PROJ_HULL_HIT(213) -> {n} peer(s) (same-side + cross-side)");
     }
 
     /// <summary>

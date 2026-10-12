@@ -117,6 +117,11 @@ public sealed partial class Server : IDisposable
     // also reports total managed bytes allocated this window (÷ ticks ≈ bytes
     // per tick) for the before/after allocation A/B. Sim-thread only.
     private long _lastAllocatedBytes;
+    // P619c — last window's ConsoleLog dropped-line total, so the [egress]
+    // summary reports how many log lines were dropped because the stdout
+    // consumer stalled (the bounded queue filled). A rising count pinpoints a
+    // slow docker-logs/journal reader without ever blocking the sim thread.
+    private long _lastLogDrops;
 
 
     /// <summary>

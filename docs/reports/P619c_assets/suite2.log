@@ -1,0 +1,91 @@
+==> building solution (parallel)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Allegiance.Core -> /home/domingo/Development/AllegianceCore/src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll
+  Allegiance.Lobby -> /home/domingo/Development/AllegianceCore/src/Allegiance.Lobby/bin/Debug/net10.0/Allegiance.Lobby.dll
+  missiondump -> /home/domingo/Development/AllegianceCore/tools/missiondump/bin/Debug/net10.0/missiondump.dll
+  Allegiance.Bot -> /home/domingo/Development/AllegianceCore/src/Allegiance.Bot/bin/Debug/net10.0/Allegiance.Bot.dll
+  corpusvalidate -> /home/domingo/Development/AllegianceCore/tools/corpusvalidate/bin/Debug/net10.0/corpusvalidate.dll
+  p605synth -> /home/domingo/Development/AllegianceCore/tools/p605synth/bin/Debug/net10.0/p605synth.dll
+  Allegiance.Server -> /home/domingo/Development/AllegianceCore/src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Server.dll
+  Allegiance.ClientCore -> /home/domingo/Development/AllegianceCore/src/Allegiance.ClientCore/bin/Debug/net10.0/Allegiance.ClientCore.dll
+  igcdump -> /home/domingo/Development/AllegianceCore/tools/igcdump/bin/Debug/net10.0/igcdump.dll
+  fedmsgdump -> /home/domingo/Development/AllegianceCore/tools/fedmsgdump/bin/Debug/net10.0/fedmsgdump.dll
+  chatdemo -> /home/domingo/Development/AllegianceCore/tools/chatdemo/bin/Debug/net10.0/chatdemo.dll
+  Allegiance.Core.Tests -> /home/domingo/Development/AllegianceCore/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll
+  Allegiance.Lobby.Tests -> /home/domingo/Development/AllegianceCore/tests/Allegiance.Lobby.Tests/bin/Debug/net10.0/Allegiance.Lobby.Tests.dll
+  livecombat -> /home/domingo/Development/AllegianceCore/tools/livecombat/bin/Debug/net10.0/livecombat.dll
+  Allegiance.ClientCore.Explorer -> /home/domingo/Development/AllegianceCore/src/Allegiance.ClientCore.Explorer/bin/Debug/net10.0/Allegiance.ClientCore.Explorer.dll
+  allegiance-mcp -> /home/domingo/Development/AllegianceCore/tools/allegiance-mcp/bin/Debug/net10.0/allegiance-mcp.dll
+  Allegiance.ClientCore.Game -> /home/domingo/Development/AllegianceCore/src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.ClientCore.Game.dll
+  Allegiance.ClientCore.Tests -> /home/domingo/Development/AllegianceCore/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll
+  Allegiance.ClientCore.MonoGame.Tests -> /home/domingo/Development/AllegianceCore/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll
+  Allegiance.ClientCore.MonoGame -> /home/domingo/Development/AllegianceCore/src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.dll
+  soft-frame-proof -> /home/domingo/Development/AllegianceCore/tools/soft-frame-proof/bin/Debug/net10.0/soft-frame-proof.dll
+  hullhit-proof -> /home/domingo/Development/AllegianceCore/tools/hullhit-proof/bin/Debug/net10.0/hullhit-proof.dll
+  shieldflare-proof -> /home/domingo/Development/AllegianceCore/tools/shieldflare-proof/bin/Debug/net10.0/shieldflare-proof.dll
+  warp-visual-proof -> /home/domingo/Development/AllegianceCore/tools/warp-visual-proof/bin/Debug/net10.0/warp-visual-proof.dll
+  roster-capture -> /home/domingo/Development/AllegianceCore/tools/roster-capture/bin/Debug/net10.0/roster-capture.dll
+  hullswap-proof -> /home/domingo/Development/AllegianceCore/tools/hullswap-proof/bin/Debug/net10.0/hullswap-proof.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.91
+
+==> tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj
+Test run for /home/domingo/Development/AllegianceCore/tests/Allegiance.Lobby.Tests/bin/Debug/net10.0/Allegiance.Lobby.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 189 ms - Allegiance.Lobby.Tests.dll (net10.0)
+
+==> tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj
+Test run for /home/domingo/Development/AllegianceCore/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.78]     Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists [SKIP]
+  Skipped Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists [1 ms]
+[xUnit.net 00:00:00.78]     Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before [SKIP]
+[xUnit.net 00:00:00.78]     Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set [SKIP]
+  Skipped Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before [< 1 ms]
+  Skipped Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set [< 1 ms]
+
+Passed!  - Failed:     0, Passed:  1775, Skipped:     3, Total:  1778, Duration: 4 m 21 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
+
+==> tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj
+Test run for /home/domingo/Development/AllegianceCore/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   603, Skipped:     0, Total:   603, Duration: 3 m 50 s - Allegiance.ClientCore.Tests.dll (net10.0)
+
+==> tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj
+Test run for /home/domingo/Development/AllegianceCore/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:03:12.69]     Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector [FAIL]
+  Failed Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector [13 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector() in /home/domingo/Development/AllegianceCore/tests/Allegiance.Core.Tests/LiveRipcordTests.cs:line 202
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:03:40.66]     Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown [FAIL]
+  Failed Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown [57 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown() in /home/domingo/Development/AllegianceCore/tests/Allegiance.Core.Tests/LiveCountdownStartPingTests.cs:line 212
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:03:58.53]     Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer [FAIL]
+  Failed Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer [24 ms]
+  Error Message:
+   P583 game-over roster must carry a computed non-zero score
+  Stack Trace:
+     at Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer() in /home/domingo/Development/AllegianceCore/tests/Allegiance.Core.Tests/GameOverPlayersWireTests.cs:line 225
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     3, Passed:  3990, Skipped:     0, Total:  3993, Duration: 4 m 19 s - Allegiance.Core.Tests.dll (net10.0)
+
+ONE OR MORE TEST PROJECTS FAILED

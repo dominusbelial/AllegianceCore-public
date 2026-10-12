@@ -176,6 +176,18 @@ public sealed class TcpTransport : ITransport
     /// deterministic liveness test.</summary>
     internal static TimeSpan NoWriteProgressTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
+    /// <summary>P619c — the longer liveness grace granted to a connected HUMAN
+    /// client (marked via <see cref="SetPeerHuman"/> from the server when a
+    /// non-harness character name logs on). A human workstation that hiccups
+    /// (OBS recording, heavy compile, 390 bots sharing its cores) must not be
+    /// mass-disconnected the way the 2026-10-12 P611 rule cut Domingo's client.
+    /// Dead sockets are still dropped after this grace; overflow-disconnect is
+    /// disabled for humans (shedding/coalescing already bounds the queue). MCP
+    /// bots keep the strict <see cref="NoWriteProgressTimeout"/>. Configurable
+    /// via <c>transport.humanGraceSeconds</c> (default 60). Public so the server
+    /// binds it from config at boot.</summary>
+    public static TimeSpan HumanGraceTimeout { get; set; } = TimeSpan.FromSeconds(60);
+
     /// <summary>P311 test seam: the per-peer queued-byte bound (8 MiB in
     /// production). Internal so tests can shrink it to force an overflow
     /// deterministically on loopback, where OS socket buffers otherwise swallow
@@ -369,6 +381,25 @@ public sealed class TcpTransport : ITransport
     /// stays bounded). See <see cref="ITransport.SendGuaranteedCoalescing"/>.</summary>
     public void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
         => Send(target, data, guaranteed: true, coalesceKey);
+
+    /// <summary>
+    /// P619c — mark a connection as a connected HUMAN client (the server calls
+    /// this when a non-harness character name — anything not under the MCP
+    /// prefix — logs on). Human clients get the longer
+    /// <see cref="HumanGraceTimeout"/> liveness grace and are not
+    /// overflow-disconnected, so a real player whose machine hiccups is not cut
+    /// the way P611 cut Domingo's client on 2026-10-12. Connections never marked
+    /// (MCP bots, and every raw/synthetic peer) keep the strict
+    /// <see cref="NoWriteProgressTimeout"/> + overflow limits. Idempotent;
+    /// unknown/already-gone ids are ignored.
+    /// </summary>
+    public void SetPeerHuman(ConnectionId id, bool human)
+    {
+        lock (_gate)
+        {
+            if (_peers.TryGetValue(id, out var ps)) ps.IsHuman = human;
+        }
+    }
 
     public void Shutdown()
     {
@@ -802,6 +833,10 @@ public sealed class TcpTransport : ITransport
         private long _lastWriteProgressUtcTicks;
         private volatile bool _disconnected;
         private volatile DisconnectReason _reason;
+        // P619c — true when this peer is a connected human client (set via
+        // TcpTransport.SetPeerHuman by the server at logon). Grants the longer
+        // HumanGraceTimeout and disables overflow-disconnect; see Enqueue.
+        internal volatile bool IsHuman;
         // P605 — pool mode: the owning worker's Wake callback, pulsed when a
         // frame is enqueued so the pool never busy-waits. Null in
         // thread-per-peer mode, where the dedicated writer is woken by Pulse.
@@ -897,8 +932,16 @@ public sealed class TcpTransport : ITransport
                 {
                     _overflowSinceUtc = _queuedBytes > CapacityBytes ? (_overflowSinceUtc ?? now) : null;
                     long lastProg = Interlocked.Read(ref _lastWriteProgressUtcTicks);
-                    bool noProgress = (now - new DateTime(lastProg)) >= NoWriteProgressTimeout;
-                    bool overCap = _overflowSinceUtc is { } os && now - os >= OverflowTimeout;
+                    // P619c — a connected HUMAN client gets a longer no-progress
+                    // grace, and its overflow-disconnect is DISABLED: coalescing
+                    // (P606 latest-wins) + non-guaranteed shedding already keep a
+                    // human renderer's queue bounded, so a laggy-but-alive player
+                    // is never cut merely for backpressure — only a genuinely dead
+                    // socket (no bytes accepted for the longer human grace) is.
+                    // MCP bots and every unmasked peer keep the strict P611 limits.
+                    var noProgressTimeout = IsHuman ? HumanGraceTimeout : NoWriteProgressTimeout;
+                    bool noProgress = (now - new DateTime(lastProg)) >= noProgressTimeout;
+                    bool overCap = !IsHuman && _overflowSinceUtc is { } os && now - os >= OverflowTimeout;
                     if (noProgress)
                     {
                         _disconnected = true;
@@ -985,14 +1028,22 @@ public sealed class TcpTransport : ITransport
             }
             catch (Exception ex)
             {
-                // Socket error / SendTimeout / disposal -> this peer is dead.
+                bool timeout = IsSocketTimeout(ex);
+                // P619c — a HUMAN write TIMEOUT (workstation hiccup wedging the
+                // socket mid-frame) must not cut a real player in pool mode:
+                // drop the stalled frame, stop pumping this pass, and let the
+                // (longer) Enqueue-path no-progress grace be the disconnect
+                // authority. A hard SendError (reset/disposal) still disconnects
+                // anyone — that is a dead socket, not a hiccup.
+                if (IsHuman && timeout)
+                    return DrainResult.Dead;   // resumed on the next enqueue's wake
                 if (!_disconnected)
                 {
                     _disconnected = true;
                     // P611 — split the reason: a write that stalled for the
                     // socket's SendTimeout is a distinct, diagnosable cause,
                     // separable from an outright connection error.
-                    _reason = IsSocketTimeout(ex) ? DisconnectReason.SendTimeout : DisconnectReason.SendError;
+                    _reason = timeout ? DisconnectReason.SendTimeout : DisconnectReason.SendError;
                     _cts.Cancel();
                     _onDead(_reason);
                 }
@@ -1036,45 +1087,56 @@ public sealed class TcpTransport : ITransport
 
         private void WriterLoop()
         {
-            try
+            while (true)
             {
-                while (true)
+                byte[] frame;
+                lock (_sync)
                 {
-                    byte[] frame;
-                    lock (_sync)
-                    {
-                        while (_queue.First is null && !_disconnected && !_cts.IsCancellationRequested)
-                            Monitor.Wait(_sync);
-                        if (_disconnected || _cts.IsCancellationRequested) break;
-                        var node = _queue.First!;
-                        _queue.RemoveFirst();
-                        if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
-                        frame = node.Value.Frame;
-                        _queuedBytes -= frame.Length;
-                        if (_queue.First is null) _overflowSinceUtc = null;
-                        else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
-                    }
-                    // The only blocking socket write, on this dedicated thread.
-                    // SendTimeout on the socket bounds it even against a
-                    // black-holed path.
+                    while (_queue.First is null && !_disconnected && !_cts.IsCancellationRequested)
+                        Monitor.Wait(_sync);
+                    if (_disconnected || _cts.IsCancellationRequested) return;
+                    var node = _queue.First!;
+                    _queue.RemoveFirst();
+                    if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
+                    frame = node.Value.Frame;
+                    _queuedBytes -= frame.Length;
+                    if (_queue.First is null) _overflowSinceUtc = null;
+                    else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+                }
+                // The only blocking socket write, on this dedicated thread.
+                // SendTimeout on the socket bounds it even against a
+                // black-holed path.
+                try
+                {
                     _stream.Write(frame, 0, frame.Length);
                     // P611 — real write progress: the socket accepted these
                     // bytes, so the no-progress liveness rule has fresh ground.
                     Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
                 }
-            }
-            catch (Exception ex)
-            {
-                // Socket error / SendTimeout / disposal -> this peer is dead.
-                if (!_disconnected)
+                catch (Exception ex)
                 {
-                    _disconnected = true;
-                    // P611 — split the reason: a write that stalled for the
-                    // socket's SendTimeout is a distinct, diagnosable cause,
-                    // separable from an outright connection error.
-                    _reason = IsSocketTimeout(ex) ? DisconnectReason.SendTimeout : DisconnectReason.SendError;
-                    _cts.Cancel();
-                    _onDead(_reason);
+                    bool timeout = IsSocketTimeout(ex);
+                    // P619c — a HUMAN write TIMEOUT (a workstation hiccup wedging
+                    // the socket mid-frame) must not cut a real player: drop the
+                    // stalled frame and let the (longer) Enqueue-path no-progress
+                    // grace be the disconnect authority for a truly-dead human.
+                    // A hard SendError (socket reset/disposal) still disconnects
+                    // anyone — that is a dead socket, not a hiccup.
+                    if (!(IsHuman && timeout))
+                    {
+                        // Socket error / SendTimeout / disposal -> this peer is dead.
+                        if (!_disconnected)
+                        {
+                            _disconnected = true;
+                            // P611 — split the reason: a write that stalled for
+                            // the socket's SendTimeout is a distinct, diagnosable
+                            // cause, separable from an outright connection error.
+                            _reason = timeout ? DisconnectReason.SendTimeout : DisconnectReason.SendError;
+                            _cts.Cancel();
+                            _onDead(_reason);
+                        }
+                        return;
+                    }
                 }
             }
         }

@@ -436,8 +436,9 @@ public sealed partial class Server
             // P619 — total managed bytes allocated this window (÷100 ticks ≈
             // bytes/tick), for the port-mode allocation A/B.
             long alloc = GC.GetTotalAllocatedBytes();
-            Console.WriteLine($"[egress] window: bytes={bytes} peers={peers} windowSecs={windowSecs:0.#} per-peer-bps={perPeerBps:0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}} allocMB={(alloc - _lastAllocatedBytes) / (1024.0 * 1024.0):0.##}");
-            _lastGc0 = g0; _lastGc1 = g1; _lastGc2 = g2; _lastAllocatedBytes = alloc;
+            long logDrops = ConsoleLog.DroppedWrites;
+            Console.WriteLine($"[egress] window: bytes={bytes} peers={peers} windowSecs={windowSecs:0.#} per-peer-bps={perPeerBps:0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}} allocMB={(alloc - _lastAllocatedBytes) / (1024.0 * 1024.0):0.##} logDrops={logDrops - _lastLogDrops}");
+            _lastGc0 = g0; _lastGc1 = g1; _lastGc2 = g2; _lastAllocatedBytes = alloc; _lastLogDrops = logDrops;
         });
         // P507 — every ~10s, a per-peer acceptance summary of the native
         // own-ship model (accepted / rejected / out-of-date / invalid counts +
@@ -846,7 +847,7 @@ public sealed partial class Server
                             Parts = initialParts,
                         };
                         SendPeer(kv.Key, FedPacket.Pack(teamExport.Encode()));
-                        Console.WriteLine($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");
+                        if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");   // P619c: per-pair one-shot, gated (join-burst volume)
                         _teammateExportSent.Add((kv.Key, teammateId));
                         _teammateLoadoutVersionSent[(kv.Key, teammateId)] = tv.Value.Ship.LoadoutVersion;
                     }
@@ -900,7 +901,7 @@ public sealed partial class Server
                             PilotType = PlayerInfo.PilotTypePlayer,
                         };
                         SendPeer(kv.Key, FedPacket.Pack(teamInfo.Encode()));
-                        Console.WriteLine($"[teamplayerinfo] peer {kv.Key} <- ship {teammateId} '{teammateName}' side {recipientSide}");
+                        if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamplayerinfo] peer {kv.Key} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: per-pair one-shot, gated (join-burst volume)
                         _teammatePlayerInfoSent.Add((kv.Key, teammateId));
                     }
 
@@ -1029,7 +1030,7 @@ public sealed partial class Server
                                 Parts = currentParts,
                             };
                             SendPeer(kv.Key, FedPacket.Pack(loadoutExport.Encode()));
-                            Console.WriteLine($"[teamloadout] peer {kv.Key} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");
+                            if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamloadout] peer {kv.Key} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");   // P619c: one aggregate line per change, gated
                             _teammateLoadoutVersionSent[(kv.Key, teammateId)] = currentVersion;
                         }
                     }
@@ -1071,7 +1072,7 @@ public sealed partial class Server
                                 Parts = EnsureLoadoutSnapshot(npc),
                             };
                             SendPeer(kv.Key, FedPacket.Pack(npcExport.Encode()));
-                            Console.WriteLine($"[samestidenpc] peer {kv.Key} <- NPC ship {npc.Id} side {npcSide}");
+                            if (ConsoleLog.Verbose) ConsoleLog.Write($"[samestidenpc] peer {kv.Key} <- NPC ship {npc.Id} side {npcSide}");   // P619c: per-pair one-shot, gated
                         }
 
                         long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((kv.Key, npc.Id), out var nt0) ? nt0 : -1;
@@ -1259,6 +1260,7 @@ public sealed partial class Server
                 else SendPeerCoalescing(conn, pkt, key, guaranteed);
             }
             foreach (var line in r.Logs) Console.WriteLine(line);
+            foreach (var line in r.VerboseLogs) ConsoleLog.Write(line);   // P619b — verbose-gated, non-blocking
             ApplyBroadcastPeerEffects(conn, r);
         }
     }
@@ -1280,6 +1282,12 @@ public sealed partial class Server
         // marked guaranteed so it is never shed under capacity.
         public List<(byte[] Packet, int Key, bool Guaranteed)> Packets = new();
         public List<string> Logs = new();             // unconditional log lines, ordered
+        // P619b — the high-frequency per-pair diagnostics ([shipstatus],
+        // [teamshipstatus], [samestidenpcstatus]) the serial builder routes through
+        // the verbose-gated, non-blocking ConsoleLog.Write (P318). Kept apart from
+        // Logs so the parallel apply phase never writes them synchronously to stdout
+        // (~4,000 lines/s at 390 players stalled bss.apply 3.5 s per window on 221).
+        public List<string> VerboseLogs = new();
         public LiveShip? NewLiveShip;                 // own-ship update, or null
         public bool SetStatus; public short StatusSector; public long StatusTick;
         public bool SetClusterInfo; public long ClusterInfoTick;
@@ -1380,7 +1388,7 @@ public sealed partial class Server
         if (sectorChanged || refreshDue)
         {
             r.Packets.Add((FedPacket.Pack(MakeOwnShipStatus(ship.Id, live).Encode()), 0, false));
-            r.Logs.Add($"[shipstatus] peer {conn} " +
+            if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[shipstatus] peer {conn} " +
                 (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
             r.SetStatus = true; r.StatusSector = live.Sector.Id; r.StatusTick = tickIndex;
         }
@@ -1429,7 +1437,7 @@ public sealed partial class Server
                         Parts = initialParts,
                     };
                     r.Packets.Add((FedPacket.Pack(teamExport.Encode()), 0, false));
-                    r.Logs.Add($"[teamexport] peer {conn} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");
+                    if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamexport] peer {conn} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");   // P619c: gated
                     localExportSent.Add(teammateId);
                     r.ExportSent.Add(teammateId);
                     r.LoadoutVersionSet[teammateId] = tv.Value.Ship.LoadoutVersion;
@@ -1450,7 +1458,7 @@ public sealed partial class Server
                         PilotType = PlayerInfo.PilotTypePlayer,
                     };
                     r.Packets.Add((FedPacket.Pack(teamInfo.Encode()), 0, false));
-                    r.Logs.Add($"[teamplayerinfo] peer {conn} <- ship {teammateId} '{teammateName}' side {recipientSide}");
+                    if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamplayerinfo] peer {conn} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: gated
                     localPlayerInfoSent.Add(teammateId);
                     r.PlayerInfoSent.Add(teammateId);
                 }
@@ -1461,7 +1469,7 @@ public sealed partial class Server
                     if (lastTeammateTick < 0 || recipientRefreshDue)
                     {
                         r.Packets.Add((FedPacket.Pack(MakeOwnShipStatus(teammateId, tv.Value).Encode()), 0, false));
-                        r.Logs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
+                        if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
                             (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
                         r.TeammateStatusTick[teammateId] = tickIndex;
                     }
@@ -1509,7 +1517,7 @@ public sealed partial class Server
                             Parts = currentParts,
                         };
                         r.Packets.Add((FedPacket.Pack(loadoutExport.Encode()), 0, false));
-                        r.Logs.Add($"[teamloadout] peer {conn} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");
+                        if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamloadout] peer {conn} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");   // P619c: gated, aggregate per change
                         r.LoadoutVersionSet[teammateId] = currentVersion;
                     }
                 }
@@ -1547,7 +1555,7 @@ public sealed partial class Server
                             Parts = ReadLoadoutSnapshotOrCompute(npc),
                         };
                         r.Packets.Add((FedPacket.Pack(npcExport.Encode()), 0, false));
-                        r.Logs.Add($"[samestidenpc] peer {conn} <- NPC ship {npc.Id} side {npcSide}");
+                        if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpc] peer {conn} <- NPC ship {npc.Id} side {npcSide}");   // P619c: gated
                         localNpcExportSent.Add(npc.Id);
                         r.NpcExportSent.Add(npc.Id);
                     }
@@ -1557,7 +1565,7 @@ public sealed partial class Server
                     if (lastNpcTick < 0 || recipientRefreshDue)
                     {
                         r.Packets.Add((FedPacket.Pack(MakeNpcShipStatus(npc).Encode()), 0, false));
-                        r.Logs.Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
+                        if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
                             (npc.StationId is not null ? $" DOCKED@{npc.StationId}" : " flying"));
                         r.NpcStatusTick[npc.Id] = tickIndex;
                     }
@@ -1812,7 +1820,7 @@ public sealed partial class Server
             Parts = EnsureLoadoutSnapshot(ship),
         };
         SendPeer(conn, FedPacket.Pack(new[] { exp.Encode() }));
-        Console.WriteLine($"[xexport] side {seeingSide} <- peer {conn} ship {ship.Id} '{name}' hull {exp.HullId}");
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} ship {ship.Id} '{name}' hull {exp.HullId}");   // P619c: gated (hot in combat)
     }
 
     /// <summary>
@@ -1898,7 +1906,7 @@ public sealed partial class Server
             launcherId: launcherId,
             sideId: mine.SideId ?? seeingSide);
         SendPeer(conn, FedPacket.Pack(new[] { exp.Encode() }));
-        Console.WriteLine($"[xexport] side {seeingSide} <- peer {conn} mine {mine.Id} (type {mine.MineType.ExpendableTypeId}) @ {mine.Position}");
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} mine {mine.Id} (type {mine.MineType.ExpendableTypeId}) @ {mine.Position}");   // P619c: gated
     }
 
     /// <summary>P493 — per-tick edge sweep that delivers an enemy ship's
@@ -3074,9 +3082,9 @@ public sealed partial class Server
             var msg = LeadIndicatorUpdate.From(ship.Id, targetShipId, inRange, green, leadWorld, targetPos);
             SendPeerCoalescing(kv.Key, FedPacket.Pack(msg.Encode()), CoalesceLeadIndicator);
 
-            if (targetShipId != -1)
-                Console.WriteLine($"[lead] peer {kv.Key} ship {ship.Id} target {targetShipId} " +
-                                  $"inRange {(inRange ? 1 : 0)} green {green:F2} -> LEAD_INDICATOR_UPDATE(210)");
+            if (targetShipId != -1 && ConsoleLog.Verbose)
+                ConsoleLog.Write($"[lead] peer {kv.Key} ship {ship.Id} target {targetShipId} " +
+                                 $"inRange {(inRange ? 1 : 0)} green {green:F2} -> LEAD_INDICATOR_UPDATE(210)");   // P619c: per-peer per-tick, gated
         }
     }
 

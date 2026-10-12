@@ -161,8 +161,11 @@ public sealed class NonBlockingSendLiveTests
 
             foreach (var b in bots) b.ResetHeavyShipsUpdates();
 
-            // Introduce the stalled (never-reading) seated peer.
-            stalled = ConnectStalledSeatedPeer(server, "STALLED");
+            // Introduce the stalled (never-reading) seated peer. Named with the
+            // harness prefix so it rides the STRICT P611 bot liveness limit (a
+            // connected human — non-harness name — would get the longer P619c
+            // grace and correctly survive this window).
+            stalled = ConnectStalledSeatedPeer(server, "mcp-STALLED");
             var seated = PumpUntil(server, () => server.Ships.Count == 4, 2000);
             Assert.True(server.Ships.Count == 4, $"stalled peer must get seated; Ships.Count={server.Ships.Count} after {seated} ticks");
 

@@ -212,6 +212,93 @@ public abstract class TcpTransportSendDropSafetyTestsBase
         }
     }
 
+    /// <summary>P619c — a connection the server marked as a HUMAN client
+    /// (via <see cref="TcpTransport.SetPeerHuman"/>, done at logon for a
+    /// non-harness character name) gets the longer
+    /// <see cref="TcpTransport.HumanGraceTimeout"/> and is NOT overflow-
+    /// disconnected: a real player whose machine hiccups must survive a stall
+    /// that would cut a bot. Here the bot's strict limits are shrunk to 300 ms
+    /// while the human grace stays generous (30 s); a stalled never-reading
+    /// human survives past 2 s even though an unmarked peer with these settings
+    /// is disconnected in well under a second.</summary>
+    [Fact]
+    public void Human_marked_peer_survives_the_bot_no_write_progress_window()
+    {
+        var origH = TcpTransport.HumanGraceTimeout;
+        var origN = TcpTransport.NoWriteProgressTimeout;
+        var origO = TcpTransport.OverflowTimeout;
+        var origC = TcpTransport.CapacityBytes;
+        try
+        {
+            TcpTransport.NoWriteProgressTimeout = TimeSpan.FromMilliseconds(300); // strict bot limit
+            TcpTransport.HumanGraceTimeout = TimeSpan.FromSeconds(30);            // generous human grace
+            TcpTransport.OverflowTimeout = TimeSpan.FromMilliseconds(300);
+            TcpTransport.CapacityBytes = 64 * 1024;
+
+            var site = new Site();
+            var host = NewHost(site);
+            try
+            {
+                host.Host(0);
+                var (id, client) = ConnectRawPeer(host, site, "Domingo", tinyReceiveWindow: true);
+                host.SetPeerHuman(id, true);     // the server marks a non-harness name as human
+
+                var big = new byte[1 << 16];     // 64 KiB guaranteed
+                for (int i = 0; i < 200; i++) host.Send(id, big, guaranteed: true);
+
+                // An UNMARKED peer here is disconnected within ~(300ms progress +
+                // 300ms overflow) < 1 s. The human must survive far past that.
+                bool left = false;
+                var start = DateTime.UtcNow;
+                while ((DateTime.UtcNow - start) < TimeSpan.FromMilliseconds(2000))
+                {
+                    host.Send(id, big, guaranteed: true);
+                    Thread.Sleep(50);
+                    if (site.HasLeft(id, 0)) { left = true; break; }
+                }
+                Assert.False(left,
+                    "a marked human peer must survive well past the bot's strict no-write-progress/overflow window");
+                client.Dispose();
+            }
+            finally { host.Shutdown(); }
+        }
+        finally
+        {
+            TcpTransport.NoWriteProgressTimeout = origN;
+            TcpTransport.HumanGraceTimeout = origH;
+            TcpTransport.OverflowTimeout = origO;
+            TcpTransport.CapacityBytes = origC;
+        }
+    }
+
+    /// <summary>P619c — the other half: a peer NEVER marked human (an MCP bot, or
+    /// any unmasked connection) keeps the strict P611 policy and IS disconnected
+    /// on a genuine stall — the human grace must not weaken the bot path.</summary>
+    [Fact]
+    public void Unmarked_bot_peer_is_still_disconnected_on_stall()
+    {
+        using var shrink = ShortenOverflowTimer();
+        var site = new Site();
+        var host = NewHost(site);
+        try
+        {
+            host.Host(0);
+            // Deliberately NOT marked human (no SetPeerHuman) — the strict path.
+            var (id, client) = ConnectRawPeer(host, site, "mcp-b1", tinyReceiveWindow: true);
+            var big = new byte[1 << 16];
+            var deadline = DateTime.UtcNow.AddSeconds(10);
+            while (!site.HasLeft(id, 0) && DateTime.UtcNow < deadline)
+            {
+                host.Send(id, big, guaranteed: true);
+                Thread.Sleep(10);
+            }
+            Assert.True(site.HasLeft(id, 0),
+                "an unmasked bot peer must still be disconnected on stall (strict P611 policy preserved)");
+            client.Dispose();
+        }
+        finally { host.Shutdown(); }
+    }
+
     /// <summary>(c) A healthy host send still emits its frame — the queue must not
     /// quietly drop legitimate sends, only the doomed ones.</summary>
     [Fact]
