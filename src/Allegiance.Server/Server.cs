@@ -100,6 +100,18 @@ public sealed partial class Server : IDisposable
     private int _nextShipId = 8096;
 
     /// <summary>
+    /// P604 — rolling count of bytes the sim thread enqueued for send this
+    /// window (incremented in <c>SendPeer</c>/<c>SendPeerCoalescing</c>, both
+    /// sim-thread only). Reported every <c>DisconnectSummaryTicks</c> by the
+    /// disconnectSummary step as a <c>[egress] window: bytes=… peers=…
+    /// per-peer-bps=…</c> line, so the A/B can measure real egress per player
+    /// (and compare against native's ~1.6 KB/s heavy/light budget,
+    /// <c>FedSrv.CPP:3836</c>). Diagnostic only; no behavioural effect.
+    /// </summary>
+    private long _egressBytesSent;
+
+
+    /// <summary>
     /// P603 — whether the per-peer broadcast builders run in parallel
     /// (<c>broadcast.parallelBuild</c> config, overridable by the
     /// <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c> env var; env wins). Resolved
@@ -108,6 +120,26 @@ public sealed partial class Server : IDisposable
     /// the broadcast code path is byte-for-byte today's serial behaviour.
     /// </summary>
     internal bool _broadcastParallelBuild;
+
+    /// <summary>
+    /// P604 — which per-peer ship-state update model is active
+    /// (<c>broadcast.shipUpdateModel</c> config, overridable by the
+    /// <c>ALLEGIANCE_SHIP_UPDATE_MODEL</c> env var; env wins). Resolved once at
+    /// boot; the value is printed at boot and stamped into the profiler report
+    /// header so every measurement is labelled. <c>true</c> = the "native"
+    /// model: the per-tick teammate <c>posBatch</c> SingleShipUpdate stream is
+    /// suppressed and remote-ship positions flow only through the native
+    /// deviation-ranked HEAVY/LIGHT budget. <c>false</c> (the default, "port")
+    /// = today's byte-for-byte behaviour, unchanged. See
+    /// docs/reports/P604_NATIVE_SHIP_UPDATE_BUDGET.md.
+    /// </summary>
+    internal bool _nativeShipUpdates;
+
+    /// <summary>
+    /// P604 — the active ship-update-model name ("port" or "native"), retained
+    /// for the boot banner / profiler label. Mirrors <see cref="_nativeShipUpdates"/>.
+    /// </summary>
+    internal string _shipUpdateModel = "port";
 
     /// <summary>
     /// P603 — the bounded degree of parallelism for the parallel broadcast build

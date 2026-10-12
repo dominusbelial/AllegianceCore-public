@@ -365,6 +365,22 @@ public sealed class BroadcastConfig
     /// it never changes which bytes are produced, only how fast.
     /// </summary>
     public int? MaxDegreeOfParallelism { get; set; }
+
+    /// <summary>
+    /// P604 — which per-peer ship-state update model the server uses:
+    /// <c>"port"</c> (the default; today's per-tick O(N²) teammate
+    /// <c>SINGLE_SHIP_UPDATE(78)</c> position <c>posBatch</c> stream is sent to
+    /// every same-side peer every tick, plus the P608 owner own-ship stream) or
+    /// <c>"native"</c> (the port's per-tick teammate <c>posBatch</c> stream is
+    /// suppressed and ALL remote-ship positions travel only through the native
+    /// deviation-ranked HEAVY/LIGHT_SHIPS_UPDATE(176/175) budget — see
+    /// docs/reports/P604_NATIVE_SHIP_UPDATE_BUDGET.md). Overridable at boot by
+    /// <c>ALLEGIANCE_SHIP_UPDATE_MODEL</c> (env wins). An unrecognized value
+    /// fails loudly at boot. The default is <c>"port"</c>; it flips to
+    /// <c>"native"</c> in a follow-up once the A/B (and a 221 run) shows it is
+    /// faster, smooth on the client, and the bots navigate.
+    /// </summary>
+    public string? ShipUpdateModel { get; set; }
 }
 
 /// <summary>

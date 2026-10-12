@@ -417,6 +417,14 @@ public sealed partial class Server
                     Console.WriteLine($"[disconnect-summary] window: {body}");
                 }
             }
+            // P604 — egress per player for the window just elapsed (bytes enqueued
+            // by the sim thread / window-seconds / seated peers). Diagnostic only.
+            long bytes = _egressBytesSent;
+            _egressBytesSent = 0;
+            double windowSecs = DisconnectSummaryTicks / (double)Math.Max(1, _config.UpdatesPerSecond);
+            int peers = _peerShips.Count;
+            double perPeerBps = peers > 0 ? bytes / windowSecs / peers : 0d;
+            Console.WriteLine($"[egress] window: bytes={bytes} peers={peers} windowSecs={windowSecs:0.#} per-peer-bps={perPeerBps:0.0}");
         });
         // P507 — every ~10s, a per-peer acceptance summary of the native
         // own-ship model (accepted / rejected / out-of-date / invalid counts +
@@ -889,35 +897,49 @@ public sealed partial class Server
                         // pair — not per ship — is exactly what lets a later-joining
                         // viewer still get the position; the per-tick motion terms
                         // below still govern every repeat send unchanged.
-                        bool firstPos = !_teammatePositionSent.Contains((kv.Key, teammateId));
-                        if (firstPos
-                            || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
-                            || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
-                            || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
+                        // P604 — native ship-update model: the per-tick teammate
+                        // posBatch SingleShipUpdate(78) stream is NOT sent. Remote
+                        // ship positions travel ONLY through the native
+                        // deviation-ranked HEAVY/LIGHT_SHIPS_UPDATE budget
+                        // (BroadcastShipsUpdate) plus the P608 own-ship stream —
+                        // the client/ bot ClientWorld already consumes 176 as a
+                        // first-class pose source (see ClientWorld.Apply(HeavyShipsUpdate)),
+                        // dead-reckoning smoothly between the sparser updates. In
+                        // "port" mode (the default) this block is unchanged: every
+                        // dirty same-side teammate's position is batched and sent
+                        // per tick.
+                        if (!_nativeShipUpdates)
                         {
-                            // P317 — encode this subject's position ONCE per tick
-                            // and share the byte[] across every same-side recipient
-                            // (the bytes are identical for each), then defer the
-                            // reference into this recipient's batched packet.
-                            if (positionEncode is null || !positionEncode.TryGetValue(teammateId, out var enc))
+                            bool firstPos = !_teammatePositionSent.Contains((kv.Key, teammateId));
+                            if (firstPos
+                                || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
+                                || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
+                                || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
                             {
-                                var teamMove = new SingleShipUpdate
+                                // P317 — encode this subject's position ONCE per tick
+                                // and share the byte[] across every same-side recipient
+                                // (the bytes are identical for each), then defer the
+                                // reference into this recipient's batched packet.
+                                if (positionEncode is null || !positionEncode.TryGetValue(teammateId, out var enc))
                                 {
-                                    OtTarget = 0,                          // OT_ship
-                                    OidTarget = teammateId,
-                                    Ship = ServerShipUpdate.FromModel(teammateId, tv.Value.Ship, tickIndex),
-                                    BIsRipcording = false,
-                                };
-                                enc = teamMove.Encode();
-                                (positionEncode ??= new())[teammateId] = enc;
+                                    var teamMove = new SingleShipUpdate
+                                    {
+                                        OtTarget = 0,                          // OT_ship
+                                        OidTarget = teammateId,
+                                        Ship = ServerShipUpdate.FromModel(teammateId, tv.Value.Ship, tickIndex),
+                                        BIsRipcording = false,
+                                    };
+                                    enc = teamMove.Encode();
+                                    (positionEncode ??= new())[teammateId] = enc;
+                                }
+                                (posBatch ??= new()).Add(enc);
+                                // P332 — record that this (recipient, subject) pair has
+                                // now had its position broadcast, so only the very first
+                                // send was forced; every later one is governed solely by
+                                // the motion terms above. Idempotent for moving ships
+                                // (a Set) — repeats keep flowing on the motion terms.
+                                _teammatePositionSent.Add((kv.Key, teammateId));
                             }
-                            (posBatch ??= new()).Add(enc);
-                            // P332 — record that this (recipient, subject) pair has
-                            // now had its position broadcast, so only the very first
-                            // send was forced; every later one is governed solely by
-                            // the motion terms above. Idempotent for moving ships
-                            // (a Set) — repeats keep flowing on the motion terms.
-                            _teammatePositionSent.Add((kv.Key, teammateId));
                         }
 
                         // Teammate LOADOUT re-export: the initial EXPORT above only
@@ -1099,17 +1121,24 @@ public sealed partial class Server
 
         // Prebuild the shared per-ship position encode (mirror of the lazy cache
         // in serial :812-823 — byte-identical for every same-side recipient).
+        // P604 — native ship-update model: the teammate posBatch SingleShipUpdate
+        // stream is suppressed, so this O(P) per-tick encode cache is pure waste
+        // and is skipped (an empty dict is passed; the parallel build never
+        // indexes it because its posBatch block is gated on !_nativeShipUpdates).
         var positionEncode = new Dictionary<short, byte[]>(peers.Length);
-        foreach (var kv in peers)
+        if (!_nativeShipUpdates)
         {
-            var ship = kv.Value.Ship;
-            positionEncode[ship.Id] = new SingleShipUpdate
+            foreach (var kv in peers)
             {
-                OtTarget = 0,                                // OT_ship
-                OidTarget = ship.Id,
-                Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
-                BIsRipcording = false,
-            }.Encode();
+                var ship = kv.Value.Ship;
+                positionEncode[ship.Id] = new SingleShipUpdate
+                {
+                    OtTarget = 0,                                // OT_ship
+                    OidTarget = ship.Id,
+                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
+                    BIsRipcording = false,
+                }.Encode();
+            }
         }
 
         // ── (b) PARALLEL BUILD PHASE ─────────────────────────────────────────
@@ -1326,16 +1355,23 @@ public sealed partial class Server
                         r.TeammateStatusTick[teammateId] = tickIndex;
                     }
 
-                    bool firstPos = !_teammatePositionSent.Contains((conn, teammateId)) && !localPositionSent.Contains(teammateId);
-                    if (firstPos
-                        || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
-                        || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
-                        || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
+                    // P604 — native ship-update model: no per-tick teammate
+                    // posBatch SingleShipUpdate(78) stream; remote positions flow
+                    // only through the native HEAVY/LIGHT budget. "port" mode
+                    // keeps this block unchanged.
+                    if (!_nativeShipUpdates)
                     {
-                        // Prebuilt shared position encode (byte-identical per subject).
-                        (posBatch ??= new()).Add(positionEncode[teammateId]);
-                        localPositionSent.Add(teammateId);
-                        r.PositionSent.Add(teammateId);
+                        bool firstPos = !_teammatePositionSent.Contains((conn, teammateId)) && !localPositionSent.Contains(teammateId);
+                        if (firstPos
+                            || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
+                            || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
+                            || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
+                        {
+                            // Prebuilt shared position encode (byte-identical per subject).
+                            (posBatch ??= new()).Add(positionEncode[teammateId]);
+                            localPositionSent.Add(teammateId);
+                            r.PositionSent.Add(teammateId);
+                        }
                     }
 
                     long currentVersion = tv.Value.Ship.LoadoutVersion;
@@ -2465,6 +2501,11 @@ public sealed partial class Server
             //    P139's target-lock promotion is untouched and simply consumes
             //    one heavy budget slot before the remaining candidates compete.
             var entries = new List<HeavyShipUpdateEntry>();
+            // P604 — native mode: the light-tier ships (those the deviation
+            // budget would serve at reduced cadence) go in their own LIGHT(175)
+            // list instead of being folded into heavy. Port mode never populates
+            // this (P219 folds the light tier into heavy).
+            List<LightShipUpdateEntry>? lightEntries = null;
             if (targetShip is not null && peerSees(targetShip))
                 entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, targetShip, tickIndex));
 
@@ -2505,14 +2546,24 @@ public sealed partial class Server
                 // Budget path: sort the non-self, non-target candidates by
                 // staleness DESCENDING (most-stale first — native CmpShipDeviation,
                 // FedSrv.CPP:3614-3621, 3923) and serve the fixed heavy quota PLUS
-                // the light quota. This port has no LIGHT_SHIPS_UPDATE wiring
-                // (P139 deferred it), so per the P219 scope call the "light" tier
-                // is folded into the heavy list — the total sent per peer per tick
-                // is still bounded to cHeavyPerInterval + cLightPerInterval = 4,
-                // which is what fixes the O(peers²) per-tick broadcast cost.
-                // (Native's proportional light count, (cShipUpdates*2)/cShips,
-                // FedSrv.CPP:3870, converges to 2 at realistic cluster sizes, so
-                // the fixed quota is a faithful, simpler stand-in.)
+                // the light quota.
+                //
+                // P604 — two flavours:
+                //  * port mode (default): the light tier is folded into the heavy
+                //    list (P219 scope call — no LIGHT wiring then) so every served
+                //    ship gets a full pose; total is bounded to heavy+light = 4,
+                //    which fixes the O(peers²) cost. Deterministic +1.00 skip bump.
+                //  * native mode: the real two-tier split — the top heavy-quota
+                //    ships are served as HEAVY(176) (reset deviation to 0), the
+                //    next light-quota ships as LIGHT(175) (presence only, no pose;
+                //    deviation +0.70 so they rotate back to heavy), the rest
+                //    skipped (+1.00). Matches native's deviation bands exactly
+                //    (FedSrv.CPP:3937-3950) at native-sized bytes/sec
+                //    (cbAvailable = 1600·c_dsecUpdateClient, FedSrv.CPP:3836).
+                //    Native's proportional light count, (cShipUpdates*2)/cShips,
+                //    FedSrv.CPP:3870, converges to cLightPerInterval=2 at
+                //    realistic cluster sizes, so the fixed quota is a faithful,
+                //    simpler stand-in (the P219 reasoning, kept here).
                 var others = all
                     .Where(c => !ReferenceEquals(c, self)
                              && peerSees(c)                                   // P270 — invisible enemy: no data
@@ -2529,16 +2580,33 @@ public sealed partial class Server
                 int i = 0;
                 foreach (var c in others)
                 {
-                    if (i < servedLimit)
+                    if (i < othersHeavy)
                     {
                         entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
-                        c.Deviation = 0f;      // served → reset (FedSrv.CPP:3939-3940)
+                        c.Deviation = 0f;      // heavy-served → reset (FedSrv.CPP:3939-3940)
+                    }
+                    else if (i < servedLimit)
+                    {
+                        if (_nativeShipUpdates)
+                        {
+                            // native light tier: presence-only LIGHT(175) record; bump
+                            // +0.70 so it rises back to heavy sooner than a skipped ship
+                            // (FedSrv.CPP:3943-3948; deterministic, no live RNG jitter).
+                            (lightEntries ??= new()).Add(LightShipUpdateEntry.From(c.Id, c.StateM, c.Controls));
+                            c.Deviation += 0.70f;
+                        }
+                        else
+                        {
+                            // port mode: the light tier is folded into heavy (P219),
+                            // so every served ship gets a full pose and a reset.
+                            entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
+                            c.Deviation = 0f;
+                        }
                     }
                     else
                     {
                         c.Deviation += 1.00f;  // skipped → bump to the front next tick
-                                               // (FedSrv.CPP:3944-3948; deterministic +1.00, no
-                                               // live RNG jitter and no light-tier +0.70 — see P219)
+                                               // (FedSrv.CPP:3944-3948)
                     }
                     i++;
                 }
@@ -2560,14 +2628,25 @@ public sealed partial class Server
                 FractionsOre = Percent(self.EffectiveMineCapacity() <= 0f ? 0f : self.Ore / self.EffectiveMineCapacity()),
             };
 
-            // 4. Per-player send of HEAVY only (LIGHT is never populated/sent).
+            // 4. Per-player send of HEAVY (always — it carries the owner's own
+            //    fractions, native FedSrv.CPP:4179-4180). P604 native mode
+            //    appends the LIGHT(175) message into the SAME coalesced frame
+            //    when the light tier was populated, exactly native's "copy the
+            //    light ship update to the end of the heavy ship update"
+            //    (FedSrv.CPP:4183-4188) — one packet, one latest-wins frame, so
+            //    CoalesceShipsUpdate keeps both halves in lockstep.
             // P606 — the per-peer HEAVY/LIGHT_SHIPS_UPDATE stream is the biggest
             // N² traffic; coalesce per peer (latest-wins), matching native's
             // FM_NOT_GUARANTEED send (FedSrv.CPP:4189-4196).
-            SendPeerCoalescing(kv.Key, FedPacket.Pack(new[] { heavy.Encode() }), CoalesceShipsUpdate);
+            byte[][] frames = lightEntries is { Count: > 0 }
+                ? new[] { heavy.Encode(), new LightShipsUpdate { LightShipEntries = lightEntries.ToArray() }.Encode() }
+                : new[] { heavy.Encode() };
+            SendPeerCoalescing(kv.Key, FedPacket.Pack(frames), CoalesceShipsUpdate);
             ConsoleLog.Write($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
                               $"target={(targetShip?.Id.ToString() ?? "none")} " +
-                              $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count} [PER PLAYER]");
+                              $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count}" +
+                              (lightEntries is { Count: > 0 } ? $" + LIGHT_SHIPS_UPDATE(175) x{lightEntries.Count}" : "") +
+                              " [PER PLAYER]");
     }
 
     /// <summary>

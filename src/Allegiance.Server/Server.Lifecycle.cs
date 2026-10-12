@@ -139,6 +139,12 @@ public sealed partial class Server
         // into the profiler report header.
         ResolveTransportMode();
 
+        // P604 — resolve the ship-state update model ("port" default, "native"
+        // optional) from broadcast.shipUpdateModel config + the
+        // ALLEGIANCE_SHIP_UPDATE_MODEL env var, print it at boot, and stamp it
+        // into the profiler report header.
+        ResolveShipUpdateModel();
+
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild
@@ -779,6 +785,8 @@ public sealed partial class Server
     {
         lock (_captureLock)
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
+        // P604 — egress accounting (sim-thread only; see the field doc).
+        _egressBytesSent += packet.Length;
         // P603 — internal test seam (InternalsVisibleTo): observe every outbound
         // packet per recipient, in order, so the byte-identity harness can collect
         // the exact per-peer payload stream both broadcast modes produce. Null in
@@ -804,6 +812,8 @@ public sealed partial class Server
     {
         lock (_captureLock)
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
+        // P604 — egress accounting (sim-thread only; see the field doc).
+        _egressBytesSent += packet.Length;
         _testSendCapture?.Invoke(target, packet);
         _testSendCoalescingCapture?.Invoke(target, packet, coalesceKey, guaranteed);
         if (guaranteed) _host.SendGuaranteedCoalescing(target, packet, coalesceKey);
@@ -1201,6 +1211,56 @@ public sealed partial class Server
             _ => throw new InvalidDataException(
                 $"unknown transport.mode '{modeStr}' (expected 'thread-per-peer' or 'pool'); "
                 + "set it in server.json transport.mode or $ALLEGIANCE_TRANSPORT_MODE"),
+        };
+
+    /// <summary>
+    /// P604 — resolve the per-peer ship-state update model from
+    /// <c>broadcast.shipUpdateModel</c> config + the
+    /// <c>ALLEGIANCE_SHIP_UPDATE_MODEL</c> env var (env wins), print it at
+    /// boot, and stamp it into the profiler report header together with the
+    /// P603 broadcast / P605 transport labels so every measurement is
+    /// unambiguous. Default <c>"port"</c> = today's per-tick teammate
+    /// <c>posBatch</c> stream, byte-for-byte unchanged. <c>"native"</c> =
+    /// suppress the per-tick teammate <c>posBatch</c> stream and carry remote-
+    /// ship positions only through the native deviation-ranked
+    /// HEAVY/LIGHT_SHIPS_UPDATE budget (P604). An unrecognized value fails
+    /// loudly rather than silently picking a path the operator didn't ask for.
+    /// </summary>
+    private void ResolveShipUpdateModel()
+    {
+        var bc = _config.Broadcast;
+
+        string model = bc?.ShipUpdateModel is { Length: > 0 } m ? m : "port";
+        string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_SHIP_UPDATE_MODEL");
+        if (!string.IsNullOrEmpty(env)) model = env;
+
+        _shipUpdateModel = ParseShipUpdateModel(model);
+        _nativeShipUpdates = _shipUpdateModel == "native";
+
+        Console.WriteLine($"[boot] broadcast.shipUpdateModel = {_shipUpdateModel} — "
+            + (_nativeShipUpdates
+                ? "native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604."
+                : "port per-tick teammate SingleShipUpdate posBatch stream (today's byte-for-byte behaviour)"));
+
+        // Compose a single report-header label covering every switchable mode
+        // (P603 broadcast + P605 transport + P604 ship-update model).
+        string bcast = _broadcastParallelBuild
+            ? $"broadcast.parallelBuild=true (maxPar={_broadcastMaxParallelism})"
+            : "broadcast.parallelBuild=false";
+        string trans = _transportMode == TransportMode.Pool
+            ? $"transport=pool ({_transportPoolWorkers} workers)"
+            : "transport=thread-per-peer";
+        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}");
+    }
+
+    private static string ParseShipUpdateModel(string modelStr)
+        => modelStr.Trim().ToLowerInvariant() switch
+        {
+            "port" or "ports" or "default" => "port",
+            "native" or "nat" => "native",
+            _ => throw new InvalidDataException(
+                $"unknown broadcast.shipUpdateModel '{modelStr}' (expected 'port' or 'native'); "
+                + "set it in server.json broadcast.shipUpdateModel or $ALLEGIANCE_SHIP_UPDATE_MODEL"),
         };
 
     /// <summary>P600 — close the profiler's CSV handle at shutdown so the file is

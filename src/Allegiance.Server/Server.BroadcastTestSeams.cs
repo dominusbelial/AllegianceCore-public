@@ -112,6 +112,15 @@ public sealed partial class Server
         return outp;
     }
 
+    /// <summary>P604 test seam — set the ship-update model (true = native:
+    /// suppress the per-tick teammate posBatch stream; false = port, the
+    /// default). Mirrors <c>Server._nativeShipUpdates</c>.</summary>
+    internal void TestSetShipUpdateModel(bool native)
+    {
+        _nativeShipUpdates = native;
+        _shipUpdateModel = native ? "native" : "port";
+    }
+
     /// <summary>
     /// P603 test seam — run the named broadcast step(s) in the given mode
     /// (serial / parallel) against the CURRENT seeded state, collecting each
