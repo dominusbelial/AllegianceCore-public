@@ -1,0 +1,437 @@
+area,native_item,native_cite,port_status,port_cite_or_reason,weight
+commands,TK_NoKeyMapping,Igc/igc.h:226,na,sentinel; not a command,1
+commands,TK_NextCommMsg,Igc/igc.h:227,missing,no chat-buffer scroll in port chat pane,2
+commands,TK_PrevCommMsg,Igc/igc.h:228,missing,no chat-buffer scroll,2
+commands,TK_PrevWeapon,Igc/igc.h:229,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:280,4
+commands,TK_NextWeapon,Igc/igc.h:230,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:272,4
+commands,TK_ToggleGroupFire,Igc/igc.h:231,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:57,4
+commands,TK_PrevPart,Igc/igc.h:232,partial,in-flight part cycle absent; docked loadout screen (P519),3
+commands,TK_NextPart,Igc/igc.h:233,partial,in-flight part cycle absent; docked loadout screen (P519),3
+commands,TK_MountPart,Igc/igc.h:234,partial,"mounting via docked loadout screen, not in-flight key",3
+commands,TK_ReplacePart,Igc/igc.h:235,partial,replacement via docked loadout screen,3
+commands,TK_UnmountPart,Igc/igc.h:236,partial,unmount via docked loadout screen,3
+commands,TK_DropPart,Igc/igc.h:237,partial,"drop part via loadout/dock, not in-flight key",2
+commands,TK_ZoomOut,Igc/igc.h:238,partial,starmap zoom via mouse wheel (no key),3
+commands,TK_ZoomIn,Igc/igc.h:239,partial,starmap zoom via mouse wheel (no key),3
+commands,TK_PitchUp,Igc/igc.h:240,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:102,5
+commands,TK_PitchDown,Igc/igc.h:241,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:102,5
+commands,TK_YawLeft,Igc/igc.h:242,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:101,5
+commands,TK_YawRight,Igc/igc.h:243,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:101,5
+commands,TK_RollLeft,Igc/igc.h:244,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:109,5
+commands,TK_RollRight,Igc/igc.h:245,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:109,5
+commands,TK_MainMenu,Igc/igc.h:248,partial,Esc menu limited; no full main menu screen,3
+commands,TK_ViewFrontLeft,Igc/igc.h:249,missing,no side look cams,2
+commands,TK_ViewFrontRight,Igc/igc.h:250,missing,no side look cams,2
+commands,TK_ViewLeft,Igc/igc.h:251,missing,no side look cams,2
+commands,TK_ViewRight,Igc/igc.h:252,missing,no side look cams,2
+commands,TK_ViewExternal,Igc/igc.h:253,partial,no dedicated external; F9 orbit / F8 free cam,4
+commands,TK_ViewFlyby,Igc/igc.h:254,missing,no flyby cam,2
+commands,TK_ViewMissile,Igc/igc.h:255,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle missile-cam,4
+commands,TK_ViewTarget,Igc/igc.h:256,partial,follow target via chase/free cam only,3
+commands,TK_ViewChase,Igc/igc.h:257,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle chase,4
+commands,TK_ViewTurret,Igc/igc.h:258,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle turret,4
+commands,TK_ViewBase,Igc/igc.h:259,partial,no docked-station view,2
+commands,TK_ViewSector,Igc/igc.h:260,done,src/Allegiance.ClientCore.Game/Game1.StarmapClick.cs Tab starmap,4
+commands,TK_ViewCommand,Igc/igc.h:261,missing,no tactical command-view camera,3
+commands,TK_CycleChatMsgs,Igc/igc.h:262,na,native does nothing (igc.h comment),1
+commands,TK_AcceptCommand,Igc/igc.h:263,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:110 Home accept,4
+commands,TK_ClearCommand,Igc/igc.h:264,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:112 Delete clear,4
+commands,TK_RejectCommand,Igc/igc.h:265,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:111 End reject,4
+commands,TK_ToggleAutoPilot,Igc/igc.h:266,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs G autopilot toggle,5
+commands,TK_ThrustLeft,Igc/igc.h:267,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:114,4
+commands,TK_ThrustRight,Igc/igc.h:268,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:115,4
+commands,TK_ThrustUp,Igc/igc.h:269,missing,vertical strafe: no binding/handler in port,3
+commands,TK_ThrustDown,Igc/igc.h:270,missing,vertical strafe: no binding/handler in port,3
+commands,TK_ThrustForward,Igc/igc.h:271,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:112,5
+commands,TK_ThrustBackward,Igc/igc.h:272,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:113,5
+commands,TK_FireBooster,Igc/igc.h:273,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:121,5
+commands,TK_ConModeGameState,Igc/igc.h:274,partial,panes exist but no modal console switching,2
+commands,TK_QuickChatMenu,Igc/igc.h:275,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:151 R opens quick-chat,5
+commands,TK_ToggleLODSlider,Igc/igc.h:276,missing,LOD auto-managed; no slider,2
+commands,TK_StartChat,Igc/igc.h:277,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:149 Enter opens chat,5
+commands,TK_FireWeapon,Igc/igc.h:278,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:135,5
+commands,TK_FireMissile,Igc/igc.h:279,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs missile control (L-Ctrl),5
+commands,TK_LockVector,Igc/igc.h:280,missing,no heading/speed lock,3
+commands,TK_ThrottleUp,Igc/igc.h:281,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:178,4
+commands,TK_ThrottleDown,Igc/igc.h:282,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:185,4
+commands,TK_ThrottleZero,Igc/igc.h:283,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:205,4
+commands,TK_Throttle33,Igc/igc.h:284,done,"src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:205 preset, unbound (native default unbound)",3
+commands,TK_Throttle66,Igc/igc.h:285,done,"src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:205 preset, unbound (native default unbound)",3
+commands,TK_ThrottleFull,Igc/igc.h:286,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:205,4
+commands,TK_ToggleBooster,Igc/igc.h:287,partial,native toggle unwired; port uses hold-Shift only,3
+commands,TK_LODUp,Igc/igc.h:288,missing,no LOD control,2
+commands,TK_LODDown,Igc/igc.h:289,missing,no LOD control,2
+commands,TK_ConModeCombat,Igc/igc.h:290,partial,HUD combat view exists,3
+commands,TK_ConModeCommand,Igc/igc.h:291,partial,starmap exists; no command console,2
+commands,TK_ConModeNav,Igc/igc.h:292,partial,starmap exists,2
+commands,TK_ConModeInventory,Igc/igc.h:293,partial,loadout screen exists; no in-flight inv console,2
+commands,TK_ConModeInvest,Igc/igc.h:294,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs investment screen (P487),3
+commands,TK_ConModeTeam,Igc/igc.h:295,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs team pane,3
+commands,TK_ViewRear,Igc/igc.h:296,missing,no rear cam,2
+commands,TK_Target,Igc/igc.h:297,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs T cycle,5
+commands,TK_TargetNearest,Igc/igc.h:298,partial,generic cycle only; no separate nearest,4
+commands,TK_TargetPrev,Igc/igc.h:299,partial,generic cycle wraps; no explicit prev,4
+commands,TK_TargetFriendly,Igc/igc.h:300,partial,friendly cycle via targeting,4
+commands,TK_TargetFriendlyNearest,Igc/igc.h:301,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs Shift+U friendly nearest,4
+commands,TK_TargetFriendlyPrev,Igc/igc.h:302,missing,no friendly prev step,3
+commands,TK_TargetEnemy,Igc/igc.h:303,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,5
+commands,TK_TargetEnemyNearest,Igc/igc.h:304,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs U enemy nearest,5
+commands,TK_TargetEnemyPrev,Igc/igc.h:305,missing,no enemy prev step,3
+commands,TK_TargetEnemyBase,Igc/igc.h:306,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,4
+commands,TK_TargetEnemyBaseNearest,Igc/igc.h:307,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs Z enemy base nearest,4
+commands,TK_TargetEnemyBasePrev,Igc/igc.h:308,missing,no base prev step,3
+commands,TK_TargetFriendlyBase,Igc/igc.h:309,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,4
+commands,TK_TargetFriendlyBaseNearest,Igc/igc.h:310,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs Shift+Z friendly base,4
+commands,TK_TargetFriendlyBasePrev,Igc/igc.h:311,missing,no friendly-base prev step,3
+commands,TK_TargetCommand,Igc/igc.h:312,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs targets command object,4
+commands,TK_TargetCenter,Igc/igc.h:313,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs mouse-R reticle center,5
+commands,TK_TargetHostile,Igc/igc.h:314,missing,no most-recent-damager target,4
+commands,TK_Suicide,Igc/igc.h:315,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:87 K suicide,4
+commands,TK_ToggleGrid,Igc/igc.h:316,missing,no combat-view grid,2
+commands,TK_ToggleCloak,Igc/igc.h:317,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:146,4
+commands,TK_DropMine,Igc/igc.h:318,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:86 N drop mine/probe,4
+commands,TK_Ripcord,Igc/igc.h:319,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:85 L ripcord,5
+commands,TK_ViewRearLeft,Igc/igc.h:320,missing,no rear-side cams,2
+commands,TK_ViewRearRight,Igc/igc.h:321,missing,no rear-side cams,2
+commands,TK_TargetSelf,Igc/igc.h:323,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,3
+commands,TK_ToggleCollisions,Igc/igc.h:324,na,era debug/cheat toggle; not applicable,1
+commands,TK_OccupyNextTurret,Igc/igc.h:325,partial,turret gunning supported but no occupy-next key,3
+commands,TK_TargetNothing,Igc/igc.h:326,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs ; clears target,4
+commands,TK_MatchSpeed,Igc/igc.h:327,missing,no match-speed,3
+commands,TK_ChatPageUp,Igc/igc.h:328,missing,no chat pane page scroll,2
+commands,TK_ChatPageDown,Igc/igc.h:329,missing,no chat pane page scroll,2
+commands,TK_ViewExternalOrbit,Igc/igc.h:330,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:127 F9 orbit cam,3
+commands,TK_ViewExternalStation,Igc/igc.h:331,partial,orbit can lock a station (F9),3
+commands,TK_DebugTest1,Igc/igc.h:342,na,native debug hook; not a player command,1
+commands,TK_DebugTest2,Igc/igc.h:343,na,native debug hook; not a player command,1
+commands,TK_DebugTest3,Igc/igc.h:344,na,native debug hook; not a player command,1
+commands,TK_DebugTest4,Igc/igc.h:345,na,native debug hook; not a player command,1
+commands,TK_DebugTest5,Igc/igc.h:346,na,native debug hook; not a player command,1
+commands,TK_DebugTest6,Igc/igc.h:347,na,native debug hook; not a player command,1
+commands,TK_DebugTest7,Igc/igc.h:348,na,native debug hook; not a player command,1
+commands,TK_DebugTest8,Igc/igc.h:349,na,native debug hook; not a player command,1
+commands,TK_DebugTest9,Igc/igc.h:350,na,native debug hook; not a player command,1
+commands,TK_DropChaff,Igc/igc.h:351,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:83 C drop chaff,4
+commands,TK_ToggleCommand,Igc/igc.h:352,missing,no command 3/4 toggle,3
+commands,TK_SwapWeapon1,Igc/igc.h:353,missing,no swap bindings; weapon swap via [ / ] only,2
+commands,TK_SwapWeapon2,Igc/igc.h:354,missing,no swap bindings,2
+commands,TK_SwapWeapon3,Igc/igc.h:355,missing,no swap bindings,2
+commands,TK_SwapWeapon4,Igc/igc.h:356,missing,no swap bindings,2
+commands,TK_SwapTurret1,Igc/igc.h:357,missing,no swap bindings,2
+commands,TK_SwapTurret2,Igc/igc.h:358,missing,no swap bindings,2
+commands,TK_SwapTurret3,Igc/igc.h:359,missing,no swap bindings,2
+commands,TK_SwapTurret4,Igc/igc.h:360,missing,no swap bindings,2
+commands,TK_SwapMissile,Igc/igc.h:361,missing,no swap bindings,2
+commands,TK_SwapChaff,Igc/igc.h:362,missing,no swap bindings,2
+commands,TK_SwapShield,Igc/igc.h:363,missing,no swap bindings,2
+commands,TK_SwapCloak,Igc/igc.h:364,missing,no swap bindings,2
+commands,TK_SwapAfterburner,Igc/igc.h:365,missing,no swap bindings,2
+commands,TK_SwapMine,Igc/igc.h:366,missing,no swap bindings,2
+commands,TK_NextCargo,Igc/igc.h:367,missing,no cargo-cycle binding/handler,2
+commands,TK_ToggleWeapon1,Igc/igc.h:368,missing,no per-weapon select keys; single-fire via [ / ] + group toggle,3
+commands,TK_ToggleWeapon2,Igc/igc.h:369,missing,no per-weapon select keys,3
+commands,TK_ToggleWeapon3,Igc/igc.h:370,missing,no per-weapon select keys,3
+commands,TK_ToggleWeapon4,Igc/igc.h:371,missing,no per-weapon select keys,3
+commands,TK_DropCargo,Igc/igc.h:372,missing,no drop-cargo binding/handler,2
+commands,TK_Reload,Igc/igc.h:373,partial,auto-reload on empty (P361); no manual reload key,3
+commands,TK_ExecuteCommand,Igc/igc.h:374,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs accept+autopilot,4
+commands,TK_PauseTM,Igc/igc.h:375,partial,training exists (NATIVE_TRAINING_SCRIPT) but no pause key,2
+commands,TK_TargetEnemyBomber,Igc/igc.h:377,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyFighter,Igc/igc.h:378,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyConstructor,Igc/igc.h:379,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyMiner,Igc/igc.h:380,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyMajorBase,Igc/igc.h:381,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyBomber,Igc/igc.h:382,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyFighter,Igc/igc.h:383,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyConstructor,Igc/igc.h:384,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyMiner,Igc/igc.h:385,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyLifepod,Igc/igc.h:386,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyMajorBase,Igc/igc.h:387,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFlag,Igc/igc.h:388,missing,no flag target,3
+commands,TK_TargetArtifact,Igc/igc.h:389,missing,no artifact target,3
+commands,TK_TargetEnemyBomberNearest,Igc/igc.h:391,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyFighterNearest,Igc/igc.h:392,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyConstructorNearest,Igc/igc.h:393,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyMinerNearest,Igc/igc.h:394,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyMajorBaseNearest,Igc/igc.h:395,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyBomberNearest,Igc/igc.h:396,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyFighterNearest,Igc/igc.h:397,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyConstructorNearest,Igc/igc.h:398,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyMinerNearest,Igc/igc.h:399,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyLifepodNearest,Igc/igc.h:400,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyMajorBaseNearest,Igc/igc.h:401,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFlagNearest,Igc/igc.h:402,missing,no flag target,3
+commands,TK_TargetArtifactNearest,Igc/igc.h:403,missing,no artifact target,3
+commands,TK_TargetEnemyBomberPrev,Igc/igc.h:405,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyFighterPrev,Igc/igc.h:406,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyConstructorPrev,Igc/igc.h:407,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyMinerPrev,Igc/igc.h:408,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyMajorBasePrev,Igc/igc.h:409,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyBomberPrev,Igc/igc.h:410,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyFighterPrev,Igc/igc.h:411,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyConstructorPrev,Igc/igc.h:412,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyMinerPrev,Igc/igc.h:413,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyLifepodPrev,Igc/igc.h:414,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFriendlyMajorBasePrev,Igc/igc.h:415,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetFlagPrev,Igc/igc.h:416,missing,no flag target,2
+commands,TK_TargetArtifactPrev,Igc/igc.h:417,missing,no artifact target,2
+commands,TK_TargetWarp,Igc/igc.h:419,missing,no warp target,3
+commands,TK_TargetWarpNearest,Igc/igc.h:420,missing,no warp target,3
+commands,TK_TargetWarpPrev,Igc/igc.h:421,missing,no warp target,2
+commands,TK_SkipTMGoal,Igc/igc.h:424,missing,no skip-goal key,2
+commands,TK_IncreaseTMClockSpeed,Igc/igc.h:425,missing,no TM clock keys,1
+commands,TK_DecreaseTMClockSpeed,Igc/igc.h:426,missing,no TM clock keys,1
+commands,TK_ResetTMClockSpeed,Igc/igc.h:427,missing,no TM clock keys,1
+commands,TK_Help,Igc/igc.h:428,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:134 H help overlay,4
+commands,TK_CycleRadar,Igc/igc.h:430,missing,no radar mode cycle,3
+commands,TK_ConModeMiniTeam,Igc/igc.h:431,missing,no mini-team pane,2
+commands,TK_CommandFinishTM,Igc/igc.h:433,missing,no finish-TM key,2
+commands,TK_RollModifier,Igc/igc.h:434,missing,no roll modifier key,2
+commands,TK_TrackCommandView,Igc/igc.h:435,missing,no command view tracking,2
+commands,TK_ConModeTeleport,Igc/igc.h:436,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs teleport pane (P273),3
+commands,TK_ToggleMouse,Igc/igc.h:437,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:129 M mouse-flight toggle,4
+commands,TK_PromoteTurret1,Igc/igc.h:438,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 1-4 promote turret,3
+commands,TK_PromoteTurret2,Igc/igc.h:439,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
+commands,TK_PromoteTurret3,Igc/igc.h:440,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
+commands,TK_PromoteTurret4,Igc/igc.h:441,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
+commands,TK_VoteYes,Igc/igc.h:442,partial,ballots implemented (P187) but no dedicated vote key,3
+commands,TK_VoteNo,Igc/igc.h:443,partial,ballots implemented (P187) but no dedicated vote key,3
+commands,TK_ScrnShot,Igc/igc.h:445,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:135 F11 screenshot,3
+commands,TK_TargetAlliedBase,Igc/igc.h:447,partial,ally base target via friendly-base cycle,3
+commands,TK_TargetAlliedBaseNearest,Igc/igc.h:448,partial,ally base via friendly-base cycle,3
+commands,TK_TargetAlliedBasePrev,Igc/igc.h:449,missing,no ally-base prev step,2
+commands,TK_Max,Igc/igc.h:451,na,enum sentinel; not a command,1
+fedmsg,1 LOGONREQ,Inc/Messages.h:36,done,Wire/LogonRequest.cs,5
+fedmsg,2 LOGONACK,Inc/Messages.h:53,done,Wire/LogonAck.cs,5
+fedmsg,3 LOGOFF,Inc/Messages.h:62,done,Wire/Logoff.cs,4
+fedmsg,4 BUY_LOADOUT,Inc/Messages.h:65,done,Wire/BuyLoadoutRequest.cs,5
+fedmsg,5 BUY_LOADOUT_ACK,Inc/Messages.h:70,done,Wire/BuyLoadoutAck.cs,5
+fedmsg,6 OBJECT_SPOTTED,Inc/Messages.h:76,partial,Wire/ObjectSpotted.cs (server emits; no client handler found),4
+fedmsg,7 SET_CLUSTER,Inc/Messages.h:83,done,Wire/SetCluster.cs,4
+fedmsg,8 DEV_COMPLETED,Inc/Messages.h:89,done,Wire/DevCompleted.cs,4
+fedmsg,9 SET_BRIEFING_TEXT,Inc/Messages.h:93,done,Wire/SetBriefingText.cs,4
+fedmsg,10 PLAYERINFO,Inc/Messages.h:98,done,Wire/PlayerInfo.cs,4
+fedmsg,11 STATIC_MAP_INFO,Inc/Messages.h:127,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),2
+fedmsg,12 PROJECTILE_INSTANCE,Inc/Messages.h:131,done,Wire/ProjectileInstance.cs,5
+fedmsg,13 RANK_INFO,Inc/Messages.h:148,partial,Wire/RankInfo.cs (server emits; no client handler found),4
+fedmsg,14 SET_START_TIME,Inc/Messages.h:153,done,Wire/SetStartTime.cs,4
+fedmsg,15 SET_TEAM_INFO,Inc/Messages.h:157,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,16 PLAYER_RESCUED,Inc/Messages.h:163,done,Wire/PlayerRescued.cs,4
+fedmsg,17 BALLOT,Inc/Messages.h:170,partial,Wire/Ballot.cs (server emits; no client handler found),4
+fedmsg,18 CANCEL_BALLOT,Inc/Messages.h:179,partial,Wire/CancelBallot.cs (server emits; no client handler found),4
+fedmsg,19 VOTE,Inc/Messages.h:183,done,Wire/Vote.cs,4
+fedmsg,20 SHIP_DELETE,Inc/Messages.h:196,done,Wire/ShipDelete.cs,5
+fedmsg,21 RANDOMIZE_TEAMS,Inc/Messages.h:201,done,Wire/RandomizeTeams.cs,4
+fedmsg,23 CHATMESSAGE,Inc/Messages.h:216,done,Wire/ChatMessage.cs,5
+fedmsg,24 SHIP_UPDATE,Inc/Messages.h:227,done,Wire/ShipUpdate.cs,5
+fedmsg,26 EXPORT,Inc/Messages.h:240,done,Wire/ExportAsteroid.cs,4
+fedmsg,27 POSTER,Inc/Messages.h:245,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,28 TREASURE,Inc/Messages.h:253,done,Wire/TreasureSpawn.cs,4
+fedmsg,30 DESTROY_TREASURE,Inc/Messages.h:257,done,Wire/DestroyTreasure.cs,4
+fedmsg,31 NEW_SHIP_INSTANCE,Inc/Messages.h:262,partial,Wire/NewShipInstance.cs (codec only; neither side wired),4
+fedmsg,33 DROP_PART,Inc/Messages.h:266,done,Wire/DropPart.cs,4
+fedmsg,34 SWAP_PART,Inc/Messages.h:273,partial,Wire/SwapPart.cs (server handled; client consumer not found),4
+fedmsg,35 PING,Inc/Messages.h:280,done,Wire/Ping.cs,4
+fedmsg,36 URLROOT,Inc/Messages.h:286,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,37 MISSION_STAGE,Inc/Messages.h:290,done,Wire/MissionStage.cs,5
+fedmsg,38 MISSIONDEF,Inc/Messages.h:294,done,Wire/MissionDef.cs,4
+fedmsg,39 POSITIONREQ,Inc/Messages.h:320,done,Wire/PositionReq.cs,4
+fedmsg,40 POSITIONREQ,Inc/Messages.h:325,partial,Wire/PositionReqBroadcast.cs (server emits; no client handler found),4
+fedmsg,41 POSITIONACK,Inc/Messages.h:331,done,Wire/PositionAck.cs,4
+fedmsg,42 DELPOSITIONREQ,Inc/Messages.h:366,partial,Wire/DelPositionReq.cs (server handled; client consumer not found),3
+fedmsg,43 LOCK_LOBBY,Inc/Messages.h:372,partial,Wire/LockLobby.cs (server handled; client consumer not found),4
+fedmsg,44 LOCK_SIDES,Inc/Messages.h:376,partial,Wire/LockSides.cs (server handled; client consumer not found),4
+fedmsg,45 PLAYER_READY,Inc/Messages.h:380,done,Wire/PlayerReady.cs,5
+fedmsg,46 TEAM_READY,Inc/Messages.h:386,done,Wire/TeamReady.cs,4
+fedmsg,47 FORCE_TEAM_READY,Inc/Messages.h:392,done,Wire/ForceTeamReady.cs,4
+fedmsg,48 DOCKED,Inc/Messages.h:399,done,Wire/Docked.cs,4
+fedmsg,51 CHANGE_TEAM_CIV,Inc/Messages.h:407,partial,Wire/ChangeTeamCiv.cs (server handled; client consumer not found),4
+fedmsg,52 AUTO_ACCEPT,Inc/Messages.h:413,partial,Wire/AutoAccept.cs (server handled; client consumer not found),4
+fedmsg,57 STATIONS_UPDATE,Inc/Messages.h:425,done,Wire/StationsUpdate.cs,4
+fedmsg,58 STATION_CAPTURE,Inc/Messages.h:429,done,Wire/StationCapture.cs,4
+fedmsg,59 STATION_DESTROYED,Inc/Messages.h:436,done,Wire/StationDestroyed.cs,4
+fedmsg,60 MONEY_CHANGE,Inc/Messages.h:441,done,Wire/MoneyChange.cs,5
+fedmsg,61 DOCKED,Inc/Messages.h:448,done,Wire/DockedNotify.cs,4
+fedmsg,62 GAME_OVER,Inc/Messages.h:467,done,Wire/GameOver.cs,5
+fedmsg,63 GAME_OVER_PLAYERS,Inc/Messages.h:483,done,Wire/GameOverPlayers.cs,4
+fedmsg,64 BUCKET_DONATE,Inc/Messages.h:488,done,Wire/BucketDonate.cs,4
+fedmsg,65 BUCKET_STATUS,Inc/Messages.h:493,done,Wire/BucketStatus.cs,4
+fedmsg,67 PLAYER_DONATE,Inc/Messages.h:527,done,Wire/PlayerDonate.cs,4
+fedmsg,68 SIDE_INACTIVE,Inc/Messages.h:532,done,Wire/SideInactive.cs,4
+fedmsg,70 FIRE_MISSILE,Inc/Messages.h:547,done,Wire/FireMissile.cs,5
+fedmsg,75 SIDE_TECH_CHANGE,Inc/Messages.h:560,done,Wire/SideTechChange.cs,4
+fedmsg,76 SIDE_ATTRIBUTE_CHANGE,Inc/Messages.h:566,done,Wire/SideAttributeChange.cs,4
+fedmsg,77 EJECT,Inc/Messages.h:572,done,Wire/Eject.cs,4
+fedmsg,78 SINGLE_SHIP_UPDATE,Inc/Messages.h:583,done,Wire/SingleShipUpdate.cs,4
+fedmsg,80 SUICIDE,Inc/Messages.h:590,done,Wire/Suicide.cs,4
+fedmsg,82 FIRE_EXPENDABLE,Inc/Messages.h:593,done,Wire/FireExpendableRequest.cs,4
+fedmsg,83 MISSILE_DESTROYED,Inc/Messages.h:597,done,Wire/MissileDestroyed.cs,4
+fedmsg,84 MINE_DESTROYED,Inc/Messages.h:603,done,Wire/MineDestroyed.cs,4
+fedmsg,85 PROBE_DESTROYED,Inc/Messages.h:608,done,Wire/ProbeDestroyed.cs,4
+fedmsg,86 ASTEROID_DESTROYED,Inc/Messages.h:613,partial,Wire/AsteroidDestroyed.cs (server emits; no client handler found),4
+fedmsg,87 FIRE_EXPENDABLE,Inc/Messages.h:619,partial,Wire/FireExpendable.cs (server emits; no client handler found),4
+fedmsg,89 TREASURE_SETS,Inc/Messages.h:624,partial,Wire/TreasureSets.cs (server emits; no client handler found),4
+fedmsg,90 SHIP_STATUS,Inc/Messages.h:630,partial,Wire/ShipStatus.cs (server emits; no client handler found),4
+fedmsg,92 PROBES_UPDATE,Inc/Messages.h:644,partial,Wire/ProbesUpdate.cs (server emits; no client handler found),4
+fedmsg,93 ORDER_CHANGE,Inc/Messages.h:648,done,Wire/OrderChange.cs,4
+fedmsg,94 LEAVE_SHIP,Inc/Messages.h:656,partial,Wire/LeaveShip.cs (server emits; no client handler found),4
+fedmsg,95 JOINED_MISSION,Inc/Messages.h:660,partial,Wire/JoinedMission.cs (server emits; no client handler found),5
+fedmsg,96 LOADOUT_CHANGE,Inc/Messages.h:667,partial,Wire/LoadoutChange.cs (server emits; no client handler found),4
+fedmsg,99 ACTIVE_TURRET_UPDATE,Inc/Messages.h:673,done,Wire/ActiveTurretUpdate.cs,4
+fedmsg,100 INACTIVE_TURRET_UPDATE,Inc/Messages.h:678,done,Wire/InactiveTurretUpdate.cs,4
+fedmsg,102 TELEPORT_ACK,Inc/Messages.h:681,partial,Wire/TeleportAck.cs (server emits; no client handler found),4
+fedmsg,103 BOARD_SHIP,Inc/Messages.h:686,done,Wire/BoardShip.cs,4
+fedmsg,104 VIEW_CLUSTER,Inc/Messages.h:690,done,Wire/ViewClusterRequest.cs,4
+fedmsg,105 KILL_SHIP,Inc/Messages.h:696,done,Wire/KillShip.cs,5
+fedmsg,106 SET_WINGID,Inc/Messages.h:705,partial,Wire/SetWingId.cs (server handled; client consumer not found),4
+fedmsg,107 ICQ_CHAT_ACK,Inc/Messages.h:711,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,108 CHATBUOY,Inc/Messages.h:716,done,Wire/ChatBuoy.cs,4
+fedmsg,109 CREATE_CHAFF,Inc/Messages.h:724,done,Wire/CreateChaff.cs,4
+fedmsg,110 MISSILE_SPOOFED,Inc/Messages.h:731,partial,Wire/MissileSpoofed.cs (server emits; no client handler found),4
+fedmsg,111 END_SPOOFING,Inc/Messages.h:735,partial,Wire/EndSpoofing.cs (server emits; no client handler found),4
+fedmsg,112 AUTODONATE,Inc/Messages.h:738,done,Wire/AutoDonate.cs,4
+fedmsg,113 MISSIONPARAMS,Inc/Messages.h:743,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,114 PAYDAY,Inc/Messages.h:747,done,Wire/Payday.cs,4
+fedmsg,115 SET_MONEY,Inc/Messages.h:751,done,Wire/SetMoney.cs,5
+fedmsg,116 AUTODONATE,Inc/Messages.h:756,done,Wire/AutoDonateUpdate.cs,4
+fedmsg,117 MUTE,Inc/Messages.h:762,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,121 SET_TEAM_LEADER,Inc/Messages.h:767,done,Wire/SetTeamLeader.cs,4
+fedmsg,122 SET_TEAM_INVESTOR,Inc/Messages.h:774,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,123 SET_MISSION_OWNER,Inc/Messages.h:781,done,Wire/SetMissionOwner.cs,4
+fedmsg,124 QUIT_MISSION,Inc/Messages.h:812,partial,Wire/QuitMission.cs (server handled; client consumer not found),4
+fedmsg,125 JOIN_SIDE,Inc/Messages.h:820,done,Wire/JoinSide.cs,4
+fedmsg,126 QUIT_SIDE,Inc/Messages.h:825,partial,Wire/QuitSide.cs (server handled; client consumer not found),4
+fedmsg,128 ENTER_GAME,Inc/Messages.h:831,partial,Wire/EnterGame.cs (server emits; no client handler found),4
+fedmsg,129 RELOAD,Inc/Messages.h:843,done,Wire/Reload.cs,4
+fedmsg,131 THREAT,Inc/Messages.h:848,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,155 GAME_STATE,Inc/Messages.h:854,partial,Wire/GameState.cs (server emits; no client handler found),4
+fedmsg,156 GAIN_FLAG,Inc/Messages.h:861,partial,Wire/GainFlag.cs (server emits; no client handler found),4
+fedmsg,157 START_GAME,Inc/Messages.h:868,done,Wire/StartGame.cs,4
+fedmsg,162 ACQUIRE_TREASURE,Inc/Messages.h:871,partial,Wire/AcquireTreasure.cs (server emits; no client handler found),4
+fedmsg,163 TREASURE_ACK,Inc/Messages.h:877,done,Wire/TreasureAck.cs,4
+fedmsg,164 ADD_PART,Inc/Messages.h:881,partial,Wire/AddPart.cs (server emits; no client handler found),4
+fedmsg,166 ENTER_LIFEPOD,Inc/Messages.h:886,partial,Wire/EnterLifepod.cs (server emits; no client handler found),4
+fedmsg,175 LIGHT_SHIPS_UPDATE,Inc/Messages.h:890,done,Wire/LightShipsUpdate.cs,4
+fedmsg,176 HEAVY_SHIPS_UPDATE,Inc/Messages.h:895,done,Wire/HeavyShipsUpdate.cs,4
+fedmsg,177 VIEW_CLUSTER,Inc/Messages.h:907,partial,Wire/ViewClusterReply.cs (server emits; no client handler found),4
+fedmsg,178 BOARD_NACK,Inc/Messages.h:913,partial,Wire/BoardNack.cs (server emits; no client handler found),4
+fedmsg,179 ASTEROIDS_UPDATE,Inc/Messages.h:926,done,Wire/AsteroidsUpdate.cs,4
+fedmsg,180 ASTEROID_DRAINED,Inc/Messages.h:930,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,181 BUILDINGEFFECT_DESTROYED,Inc/Messages.h:936,done,Wire/BuildingEffectDestroyed.cs,4
+fedmsg,182 REQUEST_MONEY,Inc/Messages.h:940,partial,Wire/RequestMoney.cs (server handled; client consumer not found),4
+fedmsg,183 SHIP_RESET,Inc/Messages.h:946,done,Wire/ShipReset.cs,4
+fedmsg,184 RIPCORD_REQUEST,Inc/Messages.h:951,done,Wire/RipcordRequest.cs,4
+fedmsg,185 RIPCORD_ACTIVATE,Inc/Messages.h:955,done,Wire/RipcordActivate.cs,4
+fedmsg,186 RIPCORD_DENIED,Inc/Messages.h:962,done,Wire/RipcordDenied.cs,4
+fedmsg,187 RIPCORD_ABORTED,Inc/Messages.h:965,done,Wire/RipcordAborted.cs,4
+fedmsg,188 WARP_BOMB,Inc/Messages.h:969,partial,Wire/WarpBomb.cs (server emits; no client handler found),4
+fedmsg,189 PROMOTE,Inc/Messages.h:975,done,Wire/Promote.cs,4
+fedmsg,190 PROMOTE,Inc/Messages.h:979,partial,Wire/Promote.cs (codec only; no server handler),4
+fedmsg,191 CREATE_BUCKETS,Inc/Messages.h:983,done,Wire/CreateBuckets.cs,4
+fedmsg,192 RELAUNCH_SHIP,Inc/Messages.h:988,partial,Wire/RelaunchShip.cs (server emits; no client handler found),4
+fedmsg,193 BANDWIDTH,Inc/Messages.h:1000,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
+fedmsg,194 PINGDATA,Inc/Messages.h:1006,partial,Wire/PingData.cs (server emits; no client handler found),4
+fedmsg,195 REQPINGDATA,Inc/Messages.h:1012,done,Wire/ReqPingData.cs,4
+fedmsg,196 CHANGE_ALLIANCE,Inc/Messages.h:1017,done,Wire/ChangeAlliance.cs,4
+fedmsg,197 CHANGE_ALLIANCES,Inc/Messages.h:1022,partial,Wire/ChangeAlliances.cs (server emits; no client handler found),4
+fedmsg,198 ASTEROID_MINED,Inc/Messages.h:1027,partial,Wire/AsteroidMined.cs (server emits; no client handler found),4
+fedmsg,199 HIGHLIGHT_CLUSTER,Inc/Messages.h:1033,partial,Wire/HighlightCluster.cs (server handled; client consumer not found),4
+fedmsg,200 CLUSTERINFO,Inc/Messages.h:1039,done,Wire/ClusterInfo.cs,4
+screens,Main game screen / HUD,WinTrek/gamescreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs,5
+screens,Chat pane,WinTrek/chatpane.cpp,done,src/Allegiance.ClientCore.Game/Rendering/ChatRenderer.cs,5
+screens,Hangar / loadout screen,WinTrek/hangarscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/DockedScreenRenderer.cs + Shop (P519),5
+screens,Game-over screen,WinTrek/gameoverscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs (P262),5
+screens,Scoreboard / leaderboard screen,WinTrek/leaderboardscreen.cpp,partial,src/Allegiance.ClientCore.Game/Rendering/ScoreboardOverlayRenderer.cs in-mission scoreboard (P265); career leaderboard absent,4
+screens,Game-starting (countdown) screen,WinTrek/gamestartingscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + ReadyCheckOverlayRenderer (P188/P180),4
+screens,Intro screen,WinTrek/introscreen.cpp,partial,boots to connect screen; no animated intro sequence,2
+screens,Splash / loading screen,WinTrek/splashscreen.cpp,partial,connect/loading states exist,2
+screens,Training screen,WinTrek/trainingscreen.cpp,partial,docs/NATIVE_TRAINING_SCRIPT.md; no full training-mission UI,3
+screens,Video screen (cinematic),WinTrek/videoscreen.cpp,missing,no cinematic playback,2
+screens,Character-info screen,WinTrek/CharInfoScreen.cpp,partial,src/Allegiance.ClientCore.Game/Rendering/PilotInfoOverlayRenderer.cs pilot info (P275); no full char sheet,4
+screens,Squads screen,WinTrek/SquadsScreen.cpp,na,no squad/clan system in this port,2
+screens,Zone Club screen (online account),WinTrek/ZoneClubScreen.cpp,na,Internet Zone/account system not applicable (TCP+local server),1
+screens,Zone events screen,WinTrek/zoneeventsscreen.cpp,na,Zone event feed not applicable,1
+screens,Selection pane,WinTrek/selpane.cpp,partial,targeting/selection via RadarBracketRenderer + Game1.Targeting,3
+screens,Team pane / screen,"WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",partial,team display + side select (SideSelectOverlayRenderer); no full team console,4
+screens,Teleport pane,WinTrek/teleportpane.cpp,done,src/Allegiance.ClientCore.Game/Rendering/TeleportPaneModel.cs (P273),3
+screens,Loadout panel (shop),WinTrek hangar loadout,done,src/Allegiance.ClientCore.Game/Shop + DockedScreenRenderer (P519),5
+screens,Investment screen,WinTrek investment,done,src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs + InvestmentBuildGates.cs (P487/P495),4
+screens,Commander / sector map,WinTrek command view,done,"src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs + StarmapClick (Tab map, P249/P460)",4
+screens,Sector info pane,WinTrek sector info,done,src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneRenderer.cs (P272),4
+screens,F-key help overlay(s),WinTrek F-key overlays,partial,src/Allegiance.ClientCore.Game/Rendering/HelpOverlayRenderer.cs (H) covers one help overlay; native had F1-F12 contextual overlays,4
+screens,Mission briefing screen,WinTrek briefing,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs (P271),3
+screens,Side-select screen,WinTrek team lobby side select,done,src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs (P281),4
+screens,Server list / lobby browser,native lobby,done,src/Allegiance.Lobby + ServerListing.cs (P174-P177),4
+screens,Ready-check (pre-flight),native ready,done,src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs (P282),4
+parts,Weapons (ET_Weapon=1),Igc/igc.h ET_Weapon,done,src/Allegiance.Core/Sim/Weapon.cs + WEAPON_FIRE_P221/P225,5
+parts,"Missiles (ET_Magazine=2, ET_Pack ammo)",Igc/igc.h ET_Magazine,done,src/Allegiance.Core/Sim/Missile.cs + P179/P181/P226/P230,5
+parts,Mines (ET_Dispenser=3),Igc/igc.h ET_Dispenser,done,src/Allegiance.Core/Sim/Mine.cs + P94/P95/P224,4
+parts,Probes (ET_Dispenser subtype),Igc/igc.h ET_Dispenser,done,src/Allegiance.Core/Sim/Probe.cs + P98/P99/P100,4
+parts,Chaff (ET_ChaffLauncher=0),Igc/igc.h ET_ChaffLauncher,done,src/Allegiance.Core/Sim/Chaff.cs + P182/P292,4
+parts,Shields (ET_Shield=4),Igc/igc.h ET_Shield,done,src/Allegiance.Core/Sim/Ship.cs shield + P87/P450,5
+parts,Cloaks (ET_Cloak=5),Igc/igc.h ET_Cloak,done,src/Allegiance.Core/Sim/Ship.cs UpdateCloak + P269/P270,4
+parts,"Afterburners/Boosters (ET_Afterburner=7, ET_Pack=6)",Igc/igc.h ET_Afterburner,done,src/Allegiance.Core/Sim/Ship.cs Afterburner + P220,4
+parts,Fuel/ammo packs (ET_Pack=6),Igc/igc.h ET_Pack,partial,ammo/fuel reload via cargo bay (P192); no fuel-consumption economy,3
+parts,c_habmBoard,Igc/igc.h:726,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmBoard + BOARD_SHIP P108,4
+parts,c_habmRescue,Igc/igc.h:727,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmRescue + rescue P115,4
+parts,c_habmLifepod,Igc/igc.h:728,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmLifepod + eject P308,4
+parts,c_habmCaptureThreat,Igc/igc.h:729,partial,decoded (HabmCaptureThreat); station-capture threat scoring partial,3
+parts,c_habmLandOnCarrier,Igc/igc.h:730,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmLandOnCarrier + P116 carrier landing,4
+parts,c_habmNoRipcord,Igc/igc.h:731,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmNoRipcord,4
+parts,c_habmIsRipcordTarget,Igc/igc.h:732,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmIsRipcordTarget + RIP 111-113,4
+parts,c_habmFighter,Igc/igc.h:733,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmFighter,4
+parts,c_habmRemoteLeadIndicator,Igc/igc.h:734,partial,decoded (HabmRemoteLeadIndicator); remote lead relay partial,3
+parts,c_habmThreatToStation,Igc/igc.h:735,partial,decoded (HabmThreatToStation); base-threat scoring partial,3
+parts,c_habmCarrier,Igc/igc.h:736,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmCarrier + carrier P368,4
+parts,c_habmLeadIndicator,Igc/igc.h:737,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmLeadIndicator + P266,4
+parts,c_habmIsLtRipcordTarget,Igc/igc.h:738,partial,decoded (HabmIsLtRipcordTarget); lt-ripcord target behavior partial,3
+parts,c_habmCanLtRipcord,Igc/igc.h:739,partial,decoded (HabmCanLtRipcord); lt-ripcord partial,3
+parts,c_habmMiner,Igc/igc.h:740,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmMiner + mining P55/P477,4
+parts,c_habmBuilder,Igc/igc.h:741,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmBuilder + construction P163,4
+parts,c_eabmShootShips,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs ShootShips,3
+parts,c_eabmShootStations,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs ShootStations,3
+parts,c_eabmShootMissiles,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs ShootMissiles,3
+parts,c_eabmShootOnlyTarget,Igc equip ability,partial,decoded; shoot-only-target restraint partial,3
+parts,c_eabmWarpBombSingle,Igc equip ability,done,src/Allegiance.Core/Data/DataMissileTypeIGC.cs + WARP_BOMB P101,4
+parts,c_eabmWarpBombDual,Igc equip ability,done,src/Allegiance.Core/Data/DataMissileTypeIGC.cs + WARP_BOMB P101,4
+parts,c_eabmRipcord,Igc equip ability,done,src/Allegiance.Core/Sim/Ship.cs ripcord + P111-113,4
+parts,c_eabmCapture,Igc equip ability,partial,decoded; capture-capable probe/equip partial,3
+parts,c_eabmQuickReady,Igc equip ability,partial,decoded; quick-ready mechanic partial,3
+parts,Ripcord travel,Igc ripcord,done,src/Allegiance.Core/Sim/Ship.cs + RIP 111-113/P172,5
+parts,Rescue (pick up lifepods),Igc rescue,done,src/Allegiance.Core/Sim/Ship.cs + P115,4
+parts,Mining (collect He3),Igc mining,done,src/Allegiance.Core/Sim/Ship.cs + MINING P55/P477,5
+parts,Construction (builders erect bases),Igc construction,done,src/Allegiance.Core/Sim/BuildingEffect.cs + P163/P458/P459,4
+parts,Boarding / turret gunnery,Igc board,done,src/Allegiance.Core/Sim/Ship.cs + BOARD_SHIP P108/TURRET P109,4
+parts,Probe functionality (sensors),Igc probe,done,src/Allegiance.Core/Sim/Probe.cs + PROBES P98-P100,4
+commander,Wing / command orders to drones,WinTrek cmdview + FedSrv,done,src/Allegiance.ClientCore.Game/CommandOrderResolver.cs + P457/P469/P486,5
+commander,Queued command reception (accept/reject/clear),queued orders,done,src/Allegiance.Core/Wire/QueuedCommandUpdate.cs + S/Server.ShipCommands.cs,5
+commander,Investments / buy-in,investment pane,done,src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs + P487/P495,4
+commander,Build / research queue,tech tree,done,src/Allegiance.Server/Server.Lobby.cs + TECH_TREE_STAGE1_P189/BUY_GATE P283/SHOP_TECH P284,5
+commander,Drones: miners,clientdrones.cpp,done,src/Allegiance.Server/Server.Lifecycle.cs + MINER P156/P477,5
+commander,Drones: constructors,builder drones,done,src/Allegiance.Server/Server.Economy.cs + CONSTRUCTION P163/BUCKET P119,4
+commander,Drones: mine layers,layer drones,done,src/Allegiance.Server/Server.ShipCommands.cs + LAYER P161,4
+commander,Ballots / votes,ballot system,done,src/Allegiance.Server/Server.Dispatch.cs Vote + BALLOT_SYSTEM_P187,4
+commander,Alliances,alliances,done,src/Allegiance.Server/Server.Dispatch.cs ChangeAlliance + ALLIANCES_P190,4
+commander,Team chat,team chat,done,src/Allegiance.Server/Server.Dispatch.cs ChatMessage (Team target) + P456,5
+commander,Quick-chat / orders menu,quick chat,done,src/Allegiance.ClientCore.Game/QuickChat/ + P217/P457,5
+commander,ChatBuoy (buoy-targeted orders),chat buoy,done,src/Allegiance.Server/Server.Dispatch.cs ChatBuoy + CHATBUOY_RELAY_P67,4
+commander,"Team leadership / owner (promote, owner-only cmds)",leadership,done,src/Allegiance.Server/Server.Lobby.cs + TEAM_LEADERSHIP_P183,4
+commander,Commander sector-map overlays,command map,done,src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs + P460/P249,4
+commander,"Stats / scoring (score roster, kill bonus)",stats,done,src/Allegiance.Core/Wire/ScoreRosterUpdate.cs + P193/P215/P278,4
+commander,"Economic commands (autodonate, donate, request money)",economy,done,src/Allegiance.Server/PlayerWallet.cs + P197/P199/P203,4
+commander,Wingman AI (attack/defend lead solving),wingman,done,src/Allegiance.Server/Server.Combat.cs + NPC_WINGMAN P162/P166/P169,4
+commander,Sector threat / alerts,alert system,done,src/Allegiance.Server/Server.Combat.cs + P374/P451,4
+commander,Voice chat,voice chat,na,"no voice transport in this port (TCP, text chat only)",4
+commander,Commander drone view / follow,drone follow,partial,command via targeting + orders; no dedicated commander drone-cam,3
+lobby,Server list / browse lobby,lobby,done,src/Allegiance.Lobby/ServerListing.cs + LOBBY_STAGE P174-P177,4
+lobby,Connect to server (host/IP + character),connect dialog,done,src/Allegiance.ClientCore.Game/Game1.ConnectScreen.cs + CONNECT,5
+lobby,Create game / new game wizard,WinTrek/newgamescreen.cpp,partial,mission is created from server config; no GUI create-game wizard,4
+lobby,Join game,join,done,src/Allegiance.ClientCore.Game/Game1.Session.cs (join flow),5
+lobby,Side select (choose team),side select,done,src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs + P281,5
+lobby,Ready / force-ready check,ready,done,src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs + P282/P180,5
+lobby,AFK / auto-seat handling,afk,done,src/Allegiance.Server/Server.Lobby.cs side-select timeout seating + P281,3
+lobby,Kick / ban / mute (moderation),moderation,partial,"src/Allegiance.Server/Server.AdminCheats.cs + Server.Dispatch ban; admin-cheat based, no native moderation UI",4
+lobby,Mission briefing screen,briefing,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + P271,4
+lobby,Lobby chat,lobby chat,done,src/Allegiance.ClientCore.Game/ChatRenderer.cs + CLIENTCORE_MONOGAME_LOBBY_CHAT P214,4
+lobby,Training missions (tutorial),WinTrek/trainingscreen.cpp,partial,docs/NATIVE_TRAINING_SCRIPT.md server-scripted scenarios; no full client tutorial UI,4
+lobby,Team lobby / team pane,team lobby,done,src/Allegiance.ClientCore.Game/Panes + TEAM_LOBBY_P180,4
