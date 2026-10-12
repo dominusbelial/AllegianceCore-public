@@ -63,6 +63,13 @@ public sealed class ShipDeadReckoner
     /// </summary>
     public const float ExtrapolationCap = 1.5f;
 
+    /// <summary>P612 — the server sim time scale (default 1.0). <see cref="PoseAt"/>
+    /// multiplies its wall-elapsed by this so a slow-motion server (sim.timeScale
+    /// &lt; 1) is extrapolated in SIM time, keeping remote ships on their
+    /// authoritative slowed positions instead of overshooting. Written by the
+    /// world on the render thread (under the gate) before each PoseAt.</summary>
+    public double TimeScale = 1.0;
+
     /// <summary>
     /// The static, already-effective hull statistics a dead-reckoned ship
     /// needs. Kept separate from the per-update state (<see cref="Seed"/> reads
@@ -204,7 +211,7 @@ public sealed class ShipDeadReckoner
             return;
         }
 
-        float deltaT = (float)(now - _arrivalTime);
+        float deltaT = (float)((now - _arrivalTime) * TimeScale);   // P612 — sim time = wall elapsed × server time scale
         if (deltaT > ExtrapolationCap) deltaT = ExtrapolationCap;       // stall guard (see class doc)
         else if (deltaT < -ExtrapolationCap) deltaT = -ExtrapolationCap;
 

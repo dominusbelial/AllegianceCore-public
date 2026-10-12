@@ -83,7 +83,7 @@ public sealed partial class Server
         // propagating to the top-level catch and killing the server. Stages are
         // independent; one failure never cascades into its siblings.
         Step("drain", () => _host.Drain(HandleTransportEvent));
-        lock (_statsLock) _simNow += _period;
+        lock (_statsLock) _simNow += EffectiveSimPeriod;   // P612 — period × sim.timeScale for slow motion
         double now;
         lock (_statsLock) now = _simNow;
         Step("update", () =>
@@ -2428,7 +2428,11 @@ public sealed partial class Server
     private void BroadcastShipsUpdatePeer(KeyValuePair<ConnectionId, LiveShip> kv, uint tickIndex)
     {
         var self = kv.Value.Ship;
-        var sector = kv.Value.Sector;
+        // P612 — an admin spectator's broadcast serves the sector its free camera
+        // is viewing (ANY sector, all ships, side visibility ignored); everyone
+        // else keeps their own-sector view.
+        bool adminSpectator = IsSpectatorAdmin(kv.Key) && _spectateSector.ContainsKey(kv.Key);
+        var sector = BroadcastSectorFor(kv.Key, kv.Value.Sector);
 
             // P270 — data-level cloak invisibility: when a ship is actually
             // CLOAKED, an enemy peer that cannot detect it (the P269 cross-side
@@ -2445,7 +2449,9 @@ public sealed partial class Server
             // of this peer's update. NON-cloaked ships are deliberately
             // UNCHANGED (always sent) — broadening cross-side fog-of-war to all
             // ships is a separate concern, out of P270's scope.
-            bool peerSees(Ship c) => !c.IsCloaked || self.SideId is not { } sd || c.SeenBySide(sd);
+            // P612 — an ADMIN spectator sees EVERY ship in the viewed sector,
+            // including cloaked/undetected enemies (side visibility ignored).
+            bool peerSees(Ship c) => adminSpectator || !c.IsCloaked || self.SideId is not { } sd || c.SeenBySide(sd);
 
             // 1. Resolve the peer's command target within its own cluster
             //    (native pmodelTarget->GetCommandTarget(c_cmdCurrent) then the

@@ -797,7 +797,7 @@ public sealed partial class Game1
         // FlightInput (WASD, arrows, Q/E, A/D, Escape and M are all taken), and
         // "View" is a mnemonic.
         bool vCam = ks.IsKeyDown(XnaKeys.V);
-        if (!composing && vCam && !_vKeyWasDown)
+        if (!composing && vCam && !_vKeyWasDown && !SpectatorCameraActive)
         {
             _cameraMode = Rendering.CameraCycler.Next(_cameraMode, IsTurretGunner());
             Console.WriteLine($"[monogame] camera: {_cameraMode}");
@@ -820,6 +820,12 @@ public sealed partial class Game1
         // rule that ANY flight input cancels the director immediately.
         HandleCinematicKeys(ks, composing);
         CancelDirectorOnInput(ks);
+
+        // P612 — the spectator cameras (F8 free cam, F9 orbit cam) and the HUD
+        // hide toggle (F1). While a spectator camera is active the ship holds
+        // (neutral controls, see the control-send block below) and no stray
+        // flight input leaks through.
+        HandleSpectatorKeys(ks, composing, gameTime.ElapsedGameTime.TotalSeconds);
 
         // P222 — suicide (TK_Suicide): edge-triggered like the M/V toggles above
         // (press once per key-down, never per-frame while held). Gated behind the
@@ -1171,7 +1177,7 @@ public sealed partial class Game1
         // for hit-testing, so a left-click can pick a sector. The collapsed mini-map
         // keeps mouse-flight steering (the default M-off free cursor also lets the
         // mini-map be clicked when the steering axis is not enabled).
-        if (_mouseFlightEnabled && !composing && !_minimapExpanded)
+        if (_mouseFlightEnabled && !composing && !_minimapExpanded && !SpectatorCameraActive)
         {
             var ms = Mouse.GetState();
             int centerX = GraphicsDevice.Viewport.Width / 2;
@@ -1267,7 +1273,7 @@ public sealed partial class Game1
         // commandee, right = command targets incl. stations → target+autopilot).
         // The returned fire bits OR into the command exactly like the joystick
         // buttons above. Disabled while composing so typing never trips a click.
-        if (!composing)
+        if (!composing && !SpectatorCameraActive)
         {
             int mouseFire = HandleFlightMouseButtons(Mouse.GetState());
             if (mouseFire != 0)
@@ -1566,7 +1572,7 @@ public sealed partial class Game1
         bool mouseManualInput = _mouseFlightEnabled
             && _mouseFlight.DeflectionMovedPast(_autoPilotMouseBaseline, MouseFlightController.AutopilotDisengageThreshold);
         bool manualFlightInput =
-            !composing && (
+            !composing && !SpectatorCameraActive && (
             input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight ||
             input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight ||
             input.RollLeft || input.RollRight ||
@@ -1620,6 +1626,19 @@ public sealed partial class Game1
                 sentStateM = cmd.StateM;
                 sentFireM = cmd.StateM;
             }
+        }
+
+        // P612 — while a spectator camera is active, the player's ship HOLDS:
+        // send neutral controls (zero steering, throttle at stop) so no stray
+        // WASD/mouse/joystick input leaks through to it (the brief's "no stray
+        // inputs"). The local sim steps with these same neutral controls, so
+        // the ship coasts to a stop / stays where it is, exactly native's
+        // released-stick behaviour.
+        if (SpectatorCameraActive)
+        {
+            sentControls = new ControlData(0f, 0f, 0f, -1f);
+            sentStateM = 0;
+            sentFireM = 0;
         }
 
         // P508 — fly the own ship LOCALLY with the EXACT controls the client sends

@@ -36,6 +36,16 @@ public sealed class ClientWorld
     public Func<double> NowSeconds { get; set; } = () => Environment.TickCount64 / 1000.0;
 
     /// <summary>
+    /// P612 — the server's sim time scale (<c>sim.timeScale</c>, 0.1–1.0, 1.0 =
+    /// normal). Defaults to 1.0 and is refreshed from the server's
+    /// <see cref="TimescaleUpdate"/> message. The per-ship dead-reckoners use it
+    /// to extrapolate with SIM time (wall elapsed × scale) so remote ships stay
+    /// on their authoritative (slowed) positions instead of overshooting and
+    /// rubber-banding. Lives on the world (written on the receive thread, read on
+    /// the render thread under the gate).</summary>
+    public double TimeScale { get; set; } = 1.0;
+
+    /// <summary>
     /// P540 — resolve the lifepod <c>HullId</c> for an ejected ship's side
     /// (native <c>pShip-&gt;GetSide()-&gt;GetCivilization()-&gt;GetLifepod()</c>,
     /// <c>appmsg.cpp:216</c>). The client world holds no static core, so this is
@@ -518,6 +528,7 @@ public sealed class ClientWorld
     {
         if (_remoteReckoners.TryGetValue((short)shipId, out var r) && r.Seeded)
         {
+            r.TimeScale = TimeScale;      // P612 — extrapolate in scaled sim time
             r.PoseAt(now, out position, out orientation);
             return true;
         }

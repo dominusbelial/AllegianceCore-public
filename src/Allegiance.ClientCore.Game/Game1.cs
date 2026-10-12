@@ -1378,6 +1378,9 @@ public sealed partial class Game1 : Game
             : "[client] asteroids: IMPORTED shared rock variants (--asteroids native to use each rock's original .mdl mesh)");
         // P449b — the camera-jiggle model, sharing the render thread's random source.
         _flightJiggle = new Rendering.FlightJiggle(_trailRandom);
+        // P612 — the spectator cameras (free cam / orbit cam), HUD toggle and the
+        // smooth-transition "instant" setting (ALLEGIANCE_INSTANT_CAMERA=1).
+        InitSpectatorCameras();
         // P448b — the remote-ship dead-reckoner kill switch (default ON in the
         // launch options; --noDeadReckon turns it off). Log so a bare --noDeadReckon
         // run is obvious in the console before any ship is drawn.

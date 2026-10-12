@@ -131,6 +131,15 @@ Args: `<host> <port> <player name> [flags...]`.
 | `--capture` | (Also a client capture path — see `Program.cs`.) |
 | `--auto-*`, `--camera`, `--hide-hud`, `--autoshots`, `--autoshot-dir`, `--auto-dock-after`, `--dock-sweep`, `--exit-after` | P572 unattended live-proof automation flags (see `docs/LIVE_PROOF.md`). |
 
+In flight, the camera keys include the P612 cinematic controls: **F8**
+free-flight spectator camera (detached; WASD/QE move, mouse look, Shift/Ctrl
+speed, starmap `,`/`.` to switch sector — admins get any sector), **F9**
+orbit spectator camera (locks a ship/station; drag-orbit, wheel-zoom, PageUp
+next subject), **F1** HUD toggle (clean frames), and **V** still cycles the
+native views (cockpit → chase → …). Smooth camera transitions ease
+eye/target/FOV over ~0.7 s on any framing change instead of cutting
+(`ALLEGIANCE_INSTANT_CAMERA=1` restores the native cut).
+
 ### Run the Android head
 
 The Android head is **not** in `AllegianceCore.slnx` (so the DesktopGL build
@@ -255,6 +264,14 @@ Top-level fields: `artPath`, `staticCore`, `port`, `updatesPerSecond`,
 - `testUnlock` — grant all required-tech + money (port extension). Off by
   default.
 - `profiler` — per-tick profiler (P600), off by default.
+- `timeScale` — **P612** admin-only sim time scale for cinematic slow motion.
+  A float in **[0.1, 1.0]** (default 1.0 = normal). The server advances its
+  sim clock by `period × scale`, so the whole world (physics, bots,
+  broadcasts) runs in clean slow motion at `scale`× speed; connected clients
+  stay in sync (their remote-ship dead-reckoning extrapolates in scaled sim
+  time, so there is no rubber-banding). Admin-only: changeable at runtime
+  only via the admin `timescale <value>` cheat, clamped to the same range.
+  Printed at boot and in the tick-profiler header. See §7's cinematic mode.
 - `adminCheats` — see below.
 
 ### Admin cheats — LAN-only, documented safety
@@ -277,6 +294,19 @@ Two ways to raise the bar:
   token (`"<secret> relocate …"`). Name-only remains the default when unset
   (what the LAN test setup and `allegiance-mcp` rely on).
 - Run the server bound to loopback only (not exposed to the network).
+
+**P612 — admin spectator visibility (LAN/demo-grade).** When `adminCheats` is
+enabled, an **allow-listed** player's free-flight spectator camera is
+**admin-unrestricted**: the server streams **all ships in the sector the
+camera is viewing** (ignoring side visibility and cloak), and the free camera
+may view **any** sector. The client names the viewed sector via the existing
+`FM_C_VIEW_CLUSTER(104)` request; the server records it only for an admin
+spectator and serves that sector's candidates to that peer with the cloak
+gate relaxed. For everyone else the request is a **no-op** (native's
+flying-ship gate), so a non-admin spectator sees only what its own side
+already sees — **no information leak**. This is name-based and spoofable, so
+it is LAN/demo-only; a public server must keep `adminCheats` disabled. See
+[`SECURITY.md`](../SECURITY.md).
 
 Committed example configs keep `adminCheats` **disabled** (the safe default).
 The `server.p5xx.json` files are gitignored, per-machine debug harness configs

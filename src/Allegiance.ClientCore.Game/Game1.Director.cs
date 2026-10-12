@@ -167,6 +167,23 @@ public sealed partial class Game1
                     return ViewFor(ExternalCameras.Override(myPos, PoseConverter.ToXna(ovTarget), ovRadius), aspect);
                 return ChaseFallback(myPos, myRot, aspect, dt);
             }
+            case CameraMode.FreeCam:
+            {
+                // P612 — detached free-flight spectator camera (mouse look + WASD
+                // movement, see Game1.Spectator.cs). NOT in the V cycle; its own key
+                // (F8). The player's ship holds underneath.
+                var fcProj = Matrix.CreatePerspectiveFieldOfView(
+                    MathHelper.ToRadians(_flightFovDeg), aspect, 10f, 80000f);
+                return (_freeCam.View(), fcProj, _freeCam.Position);
+            }
+            case CameraMode.OrbitCam:
+            {
+                // P612 — spectator orbit camera locking any ship/station/position
+                // (inspector rig). NOT in the V cycle; its own key (F9).
+                var obProj = Matrix.CreatePerspectiveFieldOfView(
+                    MathHelper.ToRadians(_flightFovDeg), aspect, 10f, 80000f);
+                return (_orbitCam.View(), obProj, _orbitCam.Eye);
+            }
             default: // Chase
                 return ChaseFallback(myPos, myRot, aspect, dt);
         }
@@ -393,6 +410,7 @@ public sealed partial class Game1
     /// Choosing a manual camera also cancels the director.</summary>
     private void ToggleCameraKey(KeyboardState ks, bool composing, XnaKeys key, CameraMode mode, ref bool wasDown)
     {
+        if (SpectatorCameraActive) { wasDown = ks.IsKeyDown(key); return; }   // P612 — don't kick a spectator camera
         bool down = ks.IsKeyDown(key);
         if (!composing && down && !wasDown)
         {
@@ -505,6 +523,10 @@ public sealed partial class Game1
         "base" => CameraMode.ExternalBase,
         "station" => CameraMode.ExternalStation,
         "override" => CameraMode.ExternalOverride,
+        // P612 — the spectator cameras (not in the V cycle; activated via the
+        // auto-proof / --camera token so real-window proofs can frame them).
+        "freecam" => CameraMode.FreeCam,
+        "orbitcam" => CameraMode.OrbitCam,
         _ => null,
     };
 

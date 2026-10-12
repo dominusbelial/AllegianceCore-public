@@ -118,6 +118,23 @@ ExternalOverride,
     ExternalTurret,
 
     /// <summary>
+    /// P612 — the free-flight spectator camera: a detached 6-DOF rig with mouse
+    /// look and WASD/strafe/up-down movement that roams the sector (and, for
+    /// admins, any sector) independent of the pilot's ship. NOT in the <c>V</c>
+    /// cycle — toggled by its own key (F8). The pilot's ship holds or autopilots
+    /// under it with no stray inputs.
+    /// </summary>
+    FreeCam,
+
+    /// <summary>
+    /// P612 — the spectator orbit camera: locks onto any ship, station or
+    /// position (reusing the inspector's <see cref="InspectorOrbitCamera"/> rig),
+    /// with auto-orbit, mouse orbit and wheel zoom. NOT in the <c>V</c> cycle —
+    /// toggled by its own key (F9).
+    /// </summary>
+    OrbitCam,
+
+    /// <summary>
     /// P295 — the external missile view: watches a just-fired missile in flight,
     /// the port of native's <c>cmExternalMissile</c>. Native activates it with a
     /// dedicated view key (<c>TK_ViewMissile</c>, igc.h:255 /

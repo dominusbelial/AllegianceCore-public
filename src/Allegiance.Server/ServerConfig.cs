@@ -126,6 +126,30 @@ public sealed class LiveSettingsConfig
     public bool DebugMode { get; set; }
 
     /// <summary>
+    /// P612 — the admin-only sim time scale (<c>sim.timeScale</c>) for cinematic
+    /// slow motion. <c>null</c> (the default, and the meaning of an absent field)
+    /// = 1.0 (normal speed). Valid range [<see cref="MinTimeScale"/>,
+    /// <see cref="MaxTimeScale"/>] = [0.1, 1.0]; a configured value outside it is
+    /// clamped at boot (and loud), and the admin <c>timescale</c> cheat clamps to
+    /// the same range. The server advances its sim clock by <c>period × scale</c>,
+    /// so a battle of any size runs in clean slow motion while every connected
+    /// client stays in sync (dead-reckoning extrapolates in scaled sim time via
+    /// the <see cref="Allegiance.Core.Wire.TimescaleUpdate"/> message). Admin-only
+    /// because it changes the pace of the whole world (LAN/demo-grade).
+    /// </summary>
+    public double? TimeScale { get; set; }
+
+    /// <summary>The lowest allowed sim time scale (10× slow motion).</summary>
+    public const double MinTimeScale = 0.1;
+    /// <summary>The highest allowed sim time scale (normal speed; &gt;1 would speed
+    /// the world up, out of scope — cinematic mode only slows).</summary>
+    public const double MaxTimeScale = 1.0;
+
+    /// <summary>Clamp a proposed scale into [<see cref="MinTimeScale"/>, <see cref="MaxTimeScale"/>].</summary>
+    public static double ClampTimeScale(double v) =>
+        Math.Clamp(v, MinTimeScale, MaxTimeScale);
+
+    /// <summary>
     /// P378 — override the lifepod oxygen endurance, in seconds, used when a
     /// ship's hull becomes a drifting Lifepod. <c>null</c> (the default, and
     /// the meaning of an absent field) preserves today's exact behaviour —

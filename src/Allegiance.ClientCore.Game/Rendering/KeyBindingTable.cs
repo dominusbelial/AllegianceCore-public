@@ -123,6 +123,9 @@ public sealed class KeyBindingTable
             new[]
             {
                 new Entry("V", "Cycle view: cockpit -> chase -> turret (while gunning) -> missile-cam"),
+                new Entry("F8", "Free-flight spectator camera (detached; WASD/QE move, mouse look, Shift/Ctrl speed) [P612]"),
+                new Entry("F9", "Orbit spectator camera (locks a ship/station; drag orbit, wheel zoom, PageUp next ship) [P612]"),
+                new Entry("F1", "Toggle HUD (hide/show overlays for clean frames) [P612]"),
                 new Entry("M", "Mouse flight toggle"),
                 new Entry("I", "Invert mouse pitch (session only)"),
                 new Entry("Tab", "Expand/collapse the always-on mini-map (full starmap)"),

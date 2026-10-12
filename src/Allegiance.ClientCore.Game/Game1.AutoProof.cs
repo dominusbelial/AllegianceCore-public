@@ -49,6 +49,10 @@ public sealed partial class Game1
 
         _auto.Tick(nowSec);
 
+        // P612 — drive the spectator cameras (--camera freecam/orbit) once the
+        // ship is airborne so the timed autoshots capture moving frames.
+        DriveAutoProofSpectator(0.033);
+
         foreach (var a in _auto.ConsumeDue())
         {
             switch (a.Kind)
@@ -387,7 +391,13 @@ public sealed partial class Game1
         if (IsBriefingVisible(out _)) DismissBriefing();
 
         double t = _auto?.SecondsSinceLaunch ?? 0.0;
-        string camera = _cameraMode == CameraMode.Cockpit ? "cockpit" : "chase";
+        string camera = _cameraMode switch
+        {
+            CameraMode.Cockpit => "cockpit",
+            CameraMode.FreeCam => "freecam",
+            CameraMode.OrbitCam => "orbitcam",
+            _ => "chase",
+        };
         string sector = CurrentSectorName();
         string tag = shotIndex == LiveProof.AutoProofMachine.PostKillShotIndex
             ? "postkill"

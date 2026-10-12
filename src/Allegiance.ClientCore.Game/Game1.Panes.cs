@@ -779,6 +779,13 @@ public sealed partial class Game1
                 mySector = own.SectorId;
             _selectedSectorId = SectorInfoPaneLayout.NextSelection(_selectedSectorId, ids, mySector, delta);
             Console.WriteLine($"[monogame] starmap select: {_selectedSectorId}");
+            // P612 — free-cam sector switch: while the free-flight spectator
+            // camera is active, selecting a sector on the starmap tells the
+            // server to stream that sector (admins only effective; non-admins
+            // are ignored, so there is no information leak). The rig stays put;
+            // the sector's ships arrive on the next update.
+            if (_freeCamActive && _selectedSectorId is { } sid)
+                SpectatorRequestSector(sid);
         }
     }
 

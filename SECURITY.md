@@ -34,6 +34,19 @@ an informed call — not silently "fixed" by pretending the server is hardened.
   loud boot warning when it is enabled on all interfaces), and optionally set
   `adminCheats.secret`, in which case an allow-listed connection is trusted
   only when its cheat line presents the secret as its first token.
+- **Admin spectator cameras can reveal anything (P612).** When
+  `adminCheats` is enabled, an allow-listed player's free-flight spectator
+  camera is admin-unrestricted: the server streams **all ships in whatever
+  sector the camera is viewing** (ignoring side visibility and cloak) and the
+  free camera may view **any** sector. This rides the same name-based
+  privilege as the admin cheats and is equally spoofable — it is LAN / demo
+  only. Non-admins never get it (their `FM_C_VIEW_CLUSTER` request is a
+  no-op), so there is no information leak to ordinary players. A public
+  server must keep `adminCheats` disabled.
+- **The sim time scale is admin-only (P612).** `liveSettings.timeScale`
+  (0.1–1.0) and the `timescale` cheat slow the whole world; only an
+  allow-listed admin can change it at runtime, and the range is clamped. It
+  cannot make the world *faster* than normal (max 1.0).
 - **Lobby register/delete is unauthenticated.** The lobby's `DELETE` uses a
   query-string token and registration is open. This is fine for a directory of
   LAN servers; do not treat it as an ACL.

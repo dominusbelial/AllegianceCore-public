@@ -1508,7 +1508,21 @@ public sealed partial class Server
                     }
                     else if (reqLive.Ship.StationId is null)
                     {
-                        ConsoleLog.Write($"[viewcluster] {from} ship {reqLive.Ship.Id}: not docked — ignored (gate: GetStation()!=NULL, FedSrv.CPP:6421)");
+                        // P612 — a FLYING peer sending VIEW_CLUSTER. Native ignores a
+                        // flying ship (gate GetStation()!=NULL, FedSrv.CPP:6421), and so
+                        // does this port — EXCEPT for an ADMIN spectator, whose free
+                        // camera uses this message to name the sector it is now viewing,
+                        // which the ship broadcast then streams (all ships, ignoring side
+                        // visibility). Non-admins keep native behaviour: ignored, no leak.
+                        if (IsSpectatorAdmin(from))
+                        {
+                            RecordSpectateSector(from, req.ClusterId);
+                            ConsoleLog.Write($"[viewcluster] {from} ship {reqLive.Ship.Id} ADMIN spectator -> viewing sector {req.ClusterId}");
+                        }
+                        else
+                        {
+                            ConsoleLog.Write($"[viewcluster] {from} ship {reqLive.Ship.Id}: not docked — ignored (gate: GetStation()!=NULL, FedSrv.CPP:6421)");
+                        }
                     }
                     else
                     {

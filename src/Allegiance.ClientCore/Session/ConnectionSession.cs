@@ -205,7 +205,19 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
-    /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
+    /// <summary>
+    /// P612 — spectator free-camera sector switch: send a real
+    /// <c>FM_C_VIEW_CLUSTER(104)</c> naming the sector the camera is now viewing.
+    /// The server streams that sector's ships to an ADMIN spectator (ignoring
+    /// side visibility) and ignores it for non-admins (no information leak).
+    /// </summary>
+    public void SendViewClusterRequest(short clusterId)
+    {
+        var msg = new ViewClusterRequest { ClusterId = clusterId, OtTarget = -1, OidTarget = -1 };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c> —
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
     /// of that message. <paramref name="stationId"/> of <c>-1</c> (NA) is the
     /// pure-undock announce the server honours (<c>Messages.h:402-404</c>;
@@ -653,6 +665,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                             _pingEchoes.Add((ping.TimeServer, Environment.TickCount64));
                         }
                         catch { /* ignore a malformed echo */ }
+                        break;
+                    case TimescaleUpdate.Fmid:
+                        // P612 — the server's sim time scale (sim.timeScale). Stored on
+                        // the world so the remote-ship dead-reckoners extrapolate in
+                        // scaled sim time (no rubber-banding under slow motion).
+                        try { _world.TimeScale = TimescaleUpdate.Decode(m).Scale; }
+                        catch { /* ignore a malformed update */ }
                         break;
                     case SetCluster.Fmid:
                         _world.Apply(SetCluster.Decode(m));

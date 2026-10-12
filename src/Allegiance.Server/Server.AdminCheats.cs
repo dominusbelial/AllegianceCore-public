@@ -156,6 +156,14 @@ public sealed partial class Server
             return true;                                    // consumed, never broadcast as chat
         }
 
+        // P612 — sim.timeScale (admin-only cinematic slow motion), clamped to
+        // [0.1, 1.0]. Consumed like every admin cheat.
+        if (token.Equals("timescale", StringComparison.OrdinalIgnoreCase))
+        {
+            HandleTimescaleCheat(from, ship, rest);
+            return true;
+        }
+
         // Privileged but an unrecognized/out-of-scope token → not a cheat
         // (native fIsCheat=false) → forwarded as ordinary chat.
         return false;

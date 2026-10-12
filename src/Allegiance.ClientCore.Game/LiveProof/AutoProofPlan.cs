@@ -336,7 +336,8 @@ public sealed class AutoProofPlan
     public static bool IsCameraToken(string s) => s.ToLowerInvariant() switch
     {
         "cockpit" or "chase" or "flyby" or "flybytarget" or "orbit"
-            or "target" or "base" or "station" or "override" => true,
+            or "target" or "base" or "station" or "override"
+            or "freecam" or "orbitcam" => true,   // P612 — the spectator cameras
         _ => false,
     };
 

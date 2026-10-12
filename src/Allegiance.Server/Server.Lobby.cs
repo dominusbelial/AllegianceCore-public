@@ -2873,6 +2873,10 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp() };
         _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
+        // P612 — a newly seated peer must learn the current sim time scale so its
+        // remote-ship dead-reckoning extrapolates in scaled sim time (no rubber-
+        // banding under a slow-motion server).
+        SendTimescaleTo(from);
         // P480 — retain the peer's LogonRequest so a later game-over rotation
         // can re-drive this peer through the same join-burst path
         // (CompleteJoinAndLaunch) when re-seating it into a fresh mission.

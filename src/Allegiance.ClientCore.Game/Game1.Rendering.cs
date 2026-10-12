@@ -396,6 +396,14 @@ public sealed partial class Game1
                 {
                     (view, proj, cameraEye) = ComputeFlightCamera(
                         myPos, myRot, myPose.Orientation, aspect, chaseDt);
+                    // P612 — smooth camera transitions: when the framing changes
+                    // (target switch, missile-cam start/end, mode change) ease the
+                    // eye/target/FOV from the previous framing over ~0.7 s instead
+                    // of cutting. Instant when ALLEGIANCE_INSTANT_CAMERA=1. Passes
+                    // the pose through unchanged when nothing changed (native
+                    // camera behaviour preserved). Applied AFTER the raw camera so
+                    // every mode benefits; jiggle below perturbs the smoothed view.
+                    ApplyCameraSmoothing(ref view, ref proj, ref cameraEye, aspect, chaseDt);
                 }
                 // P449b — native camera jiggle (WinTrek.cpp:374-399). Native sets
                 // bJiggle = InternalCamera(m_cm), and InternalCamera is true only for
@@ -2349,7 +2357,7 @@ public sealed partial class Game1
                         : null);
             }
         }
-        if (!_hideHud && !_directorActive)   // P572 --hide-hud; P580 the director always hides the HUD
+        if (!_hideHud && !_directorActive && !_hudHidden)   // P572 --hide-hud; P580 the director always hides the HUD; P612 F1 HUD toggle
             _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
                 _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
                 leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),

@@ -85,6 +85,10 @@ public sealed partial class Server
         else if (_lifepodEnduranceOverrideSeconds is { } ovr)
             Console.WriteLine($"[boot] liveSettings.lifepodEnduranceSeconds = {ovr:0.##}s — lifepod oxygen endurance overridden (debug mode off)");
 
+        // P612 — resolve the admin-only sim time scale (cinematic slow motion) and
+        // log it at boot (the profiler header reprints it each window).
+        InitTimeScale();
+
         // P473 — a test-harness economy grant is a port extension (native has no
         // money/tech cheat) that must never be silently on: banner it LOUDLY at
         // boot so it is visible in the very first lines of a live-test server.
@@ -1250,7 +1254,7 @@ public sealed partial class Server
         string trans = _transportMode == TransportMode.Pool
             ? $"transport=pool ({_transportPoolWorkers} workers)"
             : "transport=thread-per-peer";
-        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}");
+        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
     }
 
     private static string ParseShipUpdateModel(string modelStr)
