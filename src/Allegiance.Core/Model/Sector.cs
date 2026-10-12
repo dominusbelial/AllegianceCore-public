@@ -318,6 +318,22 @@ public sealed class Sector : IClusterIgc
     /// </summary>
     public StationLandingBayCache? StationLandingBays { get; set; }
 
+    /// <summary>
+    /// P621 — the production resolver/cache for a model's <c>.cvh</c> collision
+    /// hull, keyed by model <c>ModelName</c> (see
+    /// <see cref="Collision.CollisionHullCache"/>). When set, the ship↔ship,
+    /// ship↔asteroid and ship↔station collision passes collide against each
+    /// body's real convex hulls — the native <c>LoadCVH</c>/<c>HitTest::Create</c>
+    /// shape (<c>modelIGC.cpp:105-118</c>) — instead of a bounding sphere, so an
+    /// elongated rock only contacts on its actual surface, not on the empty
+    /// corners of its enclosing sphere. When <c>null</c> (unattached, e.g. a
+    /// test mission) every collider falls back to the sphere primitive, exactly
+    /// as before P621. Attached by the host at mission assembly (the same
+    /// art-path-backed loader as <see cref="LandingBays"/>) and set directly by
+    /// tests; the sim thread never mutates it after attach.
+    /// </summary>
+    public CollisionHullCache? CollisionHulls { get; set; }
+
 
     /// <summary>Place a model in this sector (<c>CclusterIGC::AddModel</c>).</summary>
     public void Add(Model model)
@@ -2185,14 +2201,16 @@ public sealed class Sector : IClusterIgc
         {
             if (model is not Ship s) continue;
             if (s.Dead) continue;
+            // P621 — collide against the ship's real .cvh hull (native LoadCVH),
+            // not a bounding sphere; falls back to a sphere when no .cvh exists.
             detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
-                hull: null, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
+                CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
         foreach (var ast in _mineable)
         {
             if (ast.Data.Position is not { Length: 3 } ap) continue;   // no position: can't collide
             detector.Add(new Collider(ast, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero,
-                Orientation.Identity, hull: null, ast.Radius, isStatic: true, HitShape.Sphere));
+                Orientation.Identity, CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
         var events = detector.Detect(dt);
@@ -2216,17 +2234,20 @@ public sealed class Sector : IClusterIgc
     {
         var apos = new Vector3(ast.Data.Position![0], ast.Data.Position[1], ast.Data.Position[2]);
 
-        // The ship's position at the moment of collision (the rock is static).
-        var position1 = ship.Position + ship.Velocity * ev.TCollision;
+        // P621 — the separating-plane normal and the collision-time positions come
+        // from native Separate (Separate.SeparateColliders, shipIGC.cpp:514-616):
+        // the convex-hull contact normal, not a radial centre-to-centre line (that
+        // was the bounding-sphere reduction). For a sphere fallback (no .cvh) it
+        // degenerates to the radial direction, so pre-P621 behaviour is unchanged.
+        bool shipIsA = ReferenceEquals(ev.A.Data, ship);
+        var shipC = shipIsA ? ev.A : ev.B;
+        var astC = shipIsA ? ev.B : ev.A;
+        var htsShip = shipIsA ? ev.HtsA : ev.HtsB;
+        var htsAst = shipIsA ? ev.HtsB : ev.HtsA;
 
-        // Outward normal: from the asteroid's centre toward the ship. The native
-        // collision separation (Separate, shipIGC.cpp:579+) yields a separating
-        // plane normal pointing at the ship; for the sphere approximation used
-        // here that is exactly the radial direction.
-        var normal = position1 - apos;
-        float nl2 = normal.LengthSquared();
-        if (nl2 < 1e-12f) return;                    // centres coincide: normal undefined, nothing to bounce
-        normal /= MathF.Sqrt(nl2);
+        var sep = Separate.SeparateColliders(shipC, astC, ev.TCollision, fEqualBounce: false, htsShip, htsAst);
+        var normal = sep.Normal;
+        var position1 = sep.Position1;
 
         // P254 mining exclusion (mandatory): an actively-mining ship is NOT
         // bounced off the specific rock it is drilling — the port of the native
@@ -2301,10 +2322,10 @@ public sealed class Sector : IClusterIgc
         }
 
         // Separate: push the ship out to just-touching + native's 0.5 clearance
-        // (s = distanceBest − 0.5, shipIGC.cpp:601) so it stops overlapping and
-        // the reflected velocity can carry it away cleanly.
-        float contact = 0.5f * ship.HullType.Length + ast.Radius;
-        ship.Position = apos + normal * (contact + 0.5f);
+        // (s = distanceBest − 0.5, shipIGC.cpp:601). Separate already displaced
+        // position1 along the convex-hull contact normal; apply it and the
+        // reflected velocity.
+        ship.Position = position1;
         ship.Velocity = newVelocity1;
     }
 
@@ -2407,7 +2428,7 @@ public sealed class Sector : IClusterIgc
             if (s.Dead) continue;
             if (s.Mission is null || s.StationId is not null) continue;   // flying placed ships only
             detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
-                hull: null, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
+                CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
 
         var events = detector.Detect(dt);
@@ -2424,26 +2445,24 @@ public sealed class Sector : IClusterIgc
 
     private void ResolveShipShipCollision(double now, CollisionEvent ev, Ship ship1, Ship ship2)
     {
-        // Positions at the moment of collision (both bodies move, unlike the
-        // static rock in P254 — each is swept to its TCollision location).
-        var position1 = ship1.Position + ship1.Velocity * ev.TCollision;
-        var position2 = ship2.Position + ship2.Velocity * ev.TCollision;
+        // Collision-time positions (unsmeared) — the rescue-gate proximity uses
+        // these (the same convention the old code did).
+        var rawPos1 = ship1.Position + ship1.Velocity * ev.TCollision;
+        var rawPos2 = ship2.Position + ship2.Velocity * ev.TCollision;
 
-        // Separating-plane normal: from ship2's centre toward ship1's centre —
-        // the two-body generalisation of the P254 outward-radial normal (the
-        // spherical-collider reduction of Separate, Sector.cs:1961-1964). The
-        // sign is chosen to match the velocity math: a rear ship bumping the one
-        // ahead has v1 − v2 along +normal, so the normal speed formulas below
-        // accelerate the forward ship, reproducing Domingo's remembered tactic.
-        var normal = position1 - position2;
-        float nl2 = normal.LengthSquared();
-        if (nl2 < 1e-12f) return;                 // centres coincide: normal undefined
-        normal /= MathF.Sqrt(nl2);
+        // P621 — the separating-plane normal and the separated positions come
+        // from native Separate (Separate.SeparateColliders, shipIGC.cpp:514-616),
+        // the convex-hull contact normal rather than the radial centre line. The
+        // sign convention is unchanged: from ship2 toward ship1, so a rear ship
+        // bumping the one ahead has v1 − v2 along +normal and the normal-speed
+        // formulas below accelerate the forward ship.
+        var sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB);
+        var normal = sep.Normal;
 
         // Mutual exclusivity with the rescue pass: a rescue-eligible pair is
         // skipped here (the rescue pass handles it) — native's rescue check
         // pre-empts physics via break (shipIGC.cpp:1027-1042).
-        if (IsRescueEligiblePair(ship1, ship2, position1, position2)) return;
+        if (IsRescueEligiblePair(ship1, ship2, rawPos1, rawPos2)) return;
 
         var velocity1 = ship1.Velocity;
         var velocity2 = ship2.Velocity;
@@ -2491,7 +2510,7 @@ public sealed class Sector : IClusterIgc
         // shipIGC.cpp:1189-1195) — the intensities are functions of the velocity
         // change, already known before the exemption. Routed through whichever
         // party has a mission site. See IIgcSite.CollisionEvent.
-        (ship1.Mission ?? ship2.Mission)?.Site.CollisionEvent(ship1, ship2, Id, position1,
+        (ship1.Mission ?? ship2.Mission)?.Site.CollisionEvent(ship1, ship2, Id, sep.Position1,
             (2.0f * damage1 + damage2) * ImpactJiggleCoefficient,
             (damage1 + 2.0f * damage2) * ImpactJiggleCoefficient);
 
@@ -2517,10 +2536,10 @@ public sealed class Sector : IClusterIgc
         {
             if (hp2 > 0f)
                 dr1 = ship1.ReceiveDamage(CollisionDamageType, hp2 * damage1 / (hp2 + damage1),
-                    now, position1, position2, launcher: ship2);   // shipIGC.cpp:1172-1176
+                    now, sep.Position1, sep.Position2, launcher: ship2);   // shipIGC.cpp:1172-1176
             if (hp1 > 0f)
                 dr2 = ship2.ReceiveDamage(CollisionDamageType, hp1 * damage2 / (hp1 + damage2),
-                    now, position2, position1, launcher: ship1);   // shipIGC.cpp:1181-1185
+                    now, sep.Position2, sep.Position1, launcher: ship1);   // shipIGC.cpp:1181-1185
         }
 
         // Death handling (P254 pattern, Sector.cs:2018-2027): if either ship was
@@ -2533,18 +2552,12 @@ public sealed class Sector : IClusterIgc
             return;
         }
 
-        // Position correction — push BOTH bodies apart symmetrically
-        // (fEqualBounce = true, half-and-half, shipIGC.cpp:526,610-615) along the
-        // normal so they end up just-touching + 0.5 clearance apart (the P254
-        // +0.5 constant, Sector.cs:2032-2033).
-        float contact = 0.5f * ship1.HullType.Length + 0.5f * ship2.HullType.Length;
-        float dist = MathF.Sqrt(nl2);
-        float push = (contact + 0.5f) - dist;
-        if (push > 0f)
-        {
-            ship1.Position = position1 + normal * (push * 0.5f);
-            ship2.Position = position2 - normal * (push * 0.5f);
-        }
+        // Position correction — Separate has already pushed BOTH bodies apart
+        // symmetrically (fEqualBounce = true, half-and-half, shipIGC.cpp:526,
+        // 610-615) along the convex-hull contact normal to just-touching + 0.5
+        // clearance (s = distanceBest − 0.5, shipIGC.cpp:608). Apply it.
+        ship1.Position = sep.Position1;
+        ship2.Position = sep.Position2;
 
         ship1.Velocity = newVelocity1;            // shipIGC.cpp:1161
         ship2.Velocity = newVelocity2;            // shipIGC.cpp:1164
@@ -2637,13 +2650,13 @@ public sealed class Sector : IClusterIgc
             if (s.Dead) continue;
             if (s.Mission is null || s.StationId is not null) continue;  // flying placed ships only — a docked ship is not a collision body
             detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
-                hull: null, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
+                CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
         foreach (var st in _stationRuntimes)
         {
             if (st.Data.Position is not { Length: 3 } sp) continue;   // no position: can't collide
             detector.Add(new Collider(st, new Vector3(sp[0], sp[1], sp[2]), Vector3.Zero,
-                Orientation.Identity, hull: null, st.Radius, isStatic: true, HitShape.Sphere));
+                Orientation.Identity, CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
         var events = detector.Detect(dt);
@@ -2682,16 +2695,20 @@ public sealed class Sector : IClusterIgc
         // shipIGC.cpp:742). A destroyed base is a corpse the ship flies through.
         if (station.ArmorFraction <= 0f) return;
 
-        // The ship's position at the moment of collision (the station is static).
-        var position1 = ship.Position + ship.Velocity * ev.TCollision;
+        // P621 — the separating-plane normal and the collision-time position come
+        // from native Separate (Separate.SeparateColliders, shipIGC.cpp:514-616):
+        // the convex-hull contact normal, not a radial centre-to-centre line (the
+        // spherical-station reduction). For a sphere fallback (no .cvh) it
+        // degenerates to the radial direction, so pre-P621 behaviour is unchanged.
+        bool shipIsA = ReferenceEquals(ev.A.Data, ship);
+        var shipC = shipIsA ? ev.A : ev.B;
+        var stC = shipIsA ? ev.B : ev.A;
+        var htsShip = shipIsA ? ev.HtsA : ev.HtsB;
+        var htsSt = shipIsA ? ev.HtsB : ev.HtsA;
 
-        // Outward normal: from the station's centre toward the ship — the radial
-        // direction of the spherical-station approximation, the same reduction
-        // P254 uses for the rock (Sector.cs:1961-1964).
-        var normal = position1 - apos;
-        float nl2 = normal.LengthSquared();
-        if (nl2 < 1e-12f) return;                    // centres coincide: normal undefined, nothing to bounce
-        normal /= MathF.Sqrt(nl2);
+        var sep = Separate.SeparateColliders(shipC, stC, ev.TCollision, fEqualBounce: false, htsShip, htsSt);
+        var normal = sep.Normal;
+        var position1 = sep.Position1;
 
         var velocity1 = ship.Velocity;
 
@@ -2768,11 +2785,11 @@ public sealed class Sector : IClusterIgc
             return;
         }
 
-        // Separate: push the ship out to just-touching + the P254 0.5 clearance
-        // (s = distanceBest − 0.5, shipIGC.cpp:601) so it stops overlapping and
-        // the reflected velocity can carry it away cleanly.
-        float contact = 0.5f * ship.HullType.Length + station.Radius;
-        ship.Position = apos + normal * (contact + 0.5f);
+        // Separate: push the ship out to just-touching + native's 0.5 clearance
+        // (s = distanceBest − 0.5, shipIGC.cpp:601). Separate already displaced
+        // position1 along the convex-hull contact normal; apply it and the
+        // reflected velocity.
+        ship.Position = position1;
         ship.Velocity = newVelocity1;
     }
 

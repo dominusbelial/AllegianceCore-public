@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Allegiance.Core.Sim;
 
 namespace Allegiance.Core.Collision;
@@ -55,11 +56,29 @@ public sealed class Collider
             EffectiveRadius = desiredRadius;
             EllipseEquation = Scale * hull.EllipseEquation;
             TrueShape = hull.Hulls.Count;
-            for (var i = 0; i < hull.Hulls.Count; i++)
-                _supports.Add(HullSupport.Build(hull.Hulls[i]));
+            // Share the per-hull support machinery across every collider built
+            // from the same (cached) CvhFile — the support set is a pure function
+            // of the parsed hull (vertex array + adjacency + octant extremes) and
+            // is immutable after build, so building it once per model (per name,
+            // via CollisionHullCache) instead of once per collider per tick keeps
+            // the per-step collision cost flat as the field population grows.
+            _supports.AddRange(SupportCache.GetValue(hull, h => BuildSupports(h)));
         }
 
         Shape = TrueShape;
+    }
+
+    /// <summary>Shared per-<see cref="CvhFile"/> support geometry, keyed by
+    /// reference (a class ⇒ reference equality). Entries are collected when the
+    /// <c>CvhFile</c> they key off is; values are immutable, so sharing is safe.</summary>
+    private static readonly ConditionalWeakTable<CvhFile, IReadOnlyList<HullSupport>> SupportCache = new();
+
+    private static IReadOnlyList<HullSupport> BuildSupports(CvhFile hull)
+    {
+        var supports = new List<HullSupport>(hull.Hulls.Count);
+        for (var i = 0; i < hull.Hulls.Count; i++)
+            supports.Add(HullSupport.Build(hull.Hulls[i]));
+        return supports;
     }
 
     /// <summary>The attached data object (a <c>Model</c>), used for identity in reports.</summary>

@@ -907,6 +907,23 @@ public sealed partial class Server
         });
         _stationLandingBays = stationLandingBays;
 
+        // P621 — the production resolver/cache for a model's .cvh collision
+        // hull, keyed by model name and shared by every mission this server
+        // hosts. Same loader convention as the other caches
+        // (<artPath>/<modelName>.cvh; native appends ".cvh" to the model name —
+        // Utility.cpp:105-133). Every ship/asteroid/station collider the
+        // collision passes build resolves its hull through here once per model
+        // name; the parsed file is then shared and its support geometry built
+        // once (Collider.SupportCache). A model with no .cvh resolves null and
+        // its collider falls back to a sphere, exactly as native
+        // HitTest::Create falls back to htsDefault.
+        var collisionHulls = new CollisionHullCache(name =>
+        {
+            var p = Path.Combine(_config.ArtPath, name + ".cvh");
+            return File.Exists(p) ? CvhReader.Parse(File.ReadAllText(p)) : null;
+        });
+        _collisionHulls = collisionHulls;
+
         // P465c — the per-hull weapon-muzzle (hardpoint) offset cache, sharing
         // the landing-bay loader (the same <artPath>/<modelName>.cvh root), so
         // Weapon.FireWeapon spawns each round at its gun. Retained like
@@ -931,7 +948,7 @@ public sealed partial class Server
             // topology, landing-bay attach, Stage = NotStarted) is factored into
             // AssembleGameMission so a finished mission can be rebuilt at
             // game-over from the SAME inputs, byte-for-byte identical to boot.
-            var mission = AssembleGameMission(g, core, landingBays, weaponMuzzles, stationLandingBays);
+            var mission = AssembleGameMission(g, core, landingBays, weaponMuzzles, stationLandingBays, collisionHulls);
             missions.Add(mission);
             Console.WriteLine($"[boot] game '{g.Name}' ready: map={g.Map}, {mission.Sectors.Count} sectors, " +
                               $"{mission.Sides.Count} sides [{string.Join(", ", mission.Sides.Select(s => s.Name ?? $"side{s.Id}"))}], " +
@@ -963,7 +980,7 @@ public sealed partial class Server
     /// This is a pure refactor of the former loop body with byte-identical boot
     /// behaviour; boot tests must stay green.
     /// </summary>
-    private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays, WeaponMuzzleCache weaponMuzzles, StationLandingBayCache stationLandingBays)
+    private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays, WeaponMuzzleCache weaponMuzzles, StationLandingBayCache stationLandingBays, CollisionHullCache collisionHulls)
     {
         // P397 — procedurally generate this game's map instead of loading a
         // file when g.MapGen is set. The generator path is a pure addition:
@@ -1036,6 +1053,10 @@ public sealed partial class Server
         // P550 — attach the station landing-bay resolver so the dock pass runs
         // the real capgarage geometric test (native CstationIGC::InGarage).
         foreach (var sec in mission.Sectors) sec.StationLandingBays = stationLandingBays;
+        // P621 — attach the collision-hull resolver so the ship↔ship/asteroid/
+        // station passes collide against real .cvh hulls (native LoadCVH), with
+        // a sphere fallback for a model with no .cvh.
+        foreach (var sec in mission.Sectors) sec.CollisionHulls = collisionHulls;
         // P465c — attach the weapon-muzzle cache so Weapon.FireWeapon spawns
         // each round at its hardpoint frame (the server's real muzzle geometry).
         mission.WeaponMuzzles = weaponMuzzles;
