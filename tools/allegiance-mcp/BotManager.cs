@@ -2410,7 +2410,109 @@ internal sealed partial class BotManager : IDisposable
             CombatFlyTo(bot, dodgeGoal, 15f, 200f, 0);   // dodge owns the tick (P489/P553)
             return;
         }
-        cs.CommandControls(AutopilotSteering.Pursue(pos, orient, warpPos), 0);
+
+        var aim = warpPos;
+
+        // P610 — travel spacing: softly sidestep nearby same-side teammates so big
+        // fleets stream instead of rubbing and the reactive dodge rarely has to
+        // fire during transit. Never stalls forward progress (lateral push only).
+        float hullR = HullRadius(bot.HullId);
+        var mates = SameSideShipsNearby(cs, bot, pos, TravelSpacingMultiple * hullR);
+        if (mates is not null && mates.Count > 0)
+            aim = ApplyTravelSeparation(pos, aim, mates, TravelSpacingMultiple * hullR, TravelSpacingStrength);
+
+        // P610 — entry stagger: spread the aim across the aleph mouth (deterministic
+        // per-bot point on the disc) with a light queue (yield when a teammate is
+        // already just ahead in the funnel) so the fleet streams through the aleph
+        // instead of converging on one point and grinding.
+        aim = StaggeredAlephAim(bot, cs, pos, aim, warpPos);
+
+        cs.CommandControls(AutopilotSteering.Pursue(pos, orient, aim), 0);
+    }
+
+    /// <summary>P610 — the entry-stagger + light-queue aim for a warp leg: spread
+    /// this bot's aim across the aleph's capture disc (a deterministic per-bot
+    /// point via <see cref="EntryAimPoint"/>), and if a same-side teammate is
+    /// already just ahead in the funnel near this bot's aim, deflect to a wider
+    /// ring point so the bot yields instead of piling on the same converging
+    /// point. Falls back to the plain warp position when the aleph radius is
+    /// unknown (defensive — never worse than the old behaviour).</summary>
+    private static Vector3 StaggeredAlephAim(ActiveBot bot, ConnectionSession cs, Vector3 pos, Vector3 fallback, Vector3 warpPos)
+    {
+        // Aleph radius from the bot's own world (authoritative DataWarpIGC.Radius).
+        float radius = 0f;
+        lock (cs.Gate)
+        {
+            foreach (var w in cs.World.Warps.Values)
+                if (w.Position is { Length: 3 } p &&
+                    MathF.Abs(p[0] - warpPos.X) < 1e-3f &&
+                    MathF.Abs(p[1] - warpPos.Y) < 1e-3f &&
+                    MathF.Abs(p[2] - warpPos.Z) < 1e-3f)
+                { radius = w.Radius; break; }
+        }
+        if (radius <= 0f) return fallback;
+
+        var aim = EntryAimPoint(warpPos, radius, bot.ShipId, EntrySpreadFraction);
+
+        // Light queue: a same-side mate already in the funnel just ahead and near
+        // this bot's aim → deflect to a wider, distinct ring point (re-seeded) so
+        // both don't converge on the same mouth region.
+        if (FunnelMates(cs, bot, pos, warpPos) is { Count: > 0 } funnel &&
+            EntryQueueYield(pos, aim, warpPos, radius, funnel, EntryQueueLookahead, EntryQueueFunnelWidth))
+            aim = EntryAimPoint(warpPos, radius, (short)(bot.ShipId ^ 0x5A5A), MathF.Min(EntrySpreadFraction + 0.2f, 0.9f));
+        return aim;
+    }
+
+    /// <summary>P610 — gather same-side teammates in the bot's sector within
+    /// <paramref name="range"/> (the travel-separation term's influence
+    /// neighbourhood).</summary>
+    private static List<(Vector3 Pos, short Id)>? SameSideShipsNearby(ConnectionSession cs, ActiveBot bot, Vector3 myPos, float range)
+    {
+        List<(Vector3, short)>? list = null;
+        short myCluster = CsSector(cs);
+        lock (cs.Gate)
+        {
+            foreach (var (id, ent) in cs.World.Ships)
+            {
+                if (id == bot.ShipId) continue;
+                if (ent.SideId != bot.Side) continue;
+                if (ent.SectorId != myCluster) continue;
+                if (ent.Latest is not { } lu) continue;
+                float dd = (lu.Position - myPos).LengthSquared();
+                if (dd > range * range) continue;
+                (list ??= new List<(Vector3, short)>()).Add((lu.Position, id));
+            }
+        }
+        return list;
+    }
+
+    /// <summary>P610 — gather same-side teammates already in the ENTRY FUNNEL
+    /// ahead of the bot (between it and <paramref name="warpPos"/>, within
+    /// <see cref="EntryQueueLookahead"/> of the aleph) for the entry-queue yield.</summary>
+    private static List<(Vector3 Pos, short Id)>? FunnelMates(ConnectionSession cs, ActiveBot bot, Vector3 myPos, Vector3 warpPos)
+    {
+        List<(Vector3, short)>? list = null;
+        short myCluster = CsSector(cs);
+        var toAleph = warpPos - myPos;
+        float dA = toAleph.Length();
+        if (dA <= 1e-3f) return null;
+        var line = toAleph / dA;
+        lock (cs.Gate)
+        {
+            foreach (var (id, ent) in cs.World.Ships)
+            {
+                if (id == bot.ShipId) continue;
+                if (ent.SideId != bot.Side) continue;
+                if (ent.SectorId != myCluster) continue;
+                if (ent.Latest is not { } lu) continue;
+                var toMate = lu.Position - myPos;
+                float along = toMate.X * line.X + toMate.Y * line.Y + toMate.Z * line.Z;
+                if (along <= 0f) continue;                       // behind me
+                if (dA - along > EntryQueueLookahead) continue;  // not yet in the funnel ahead
+                (list ??= new List<(Vector3, short)>()).Add((lu.Position, id));
+            }
+        }
+        return list;
     }
 
     /// <summary>
@@ -2791,6 +2893,36 @@ internal sealed partial class BotManager : IDisposable
     /// <summary>Extra lateral clearance added to both radii when steering around
     /// a ship in the path (units).</summary>
     public const float AvoidClearancePad = 12f;
+
+    // ── P610 — bot fleet traffic spacing at alephs (large showcase fleets) ──
+    /// <summary>Fraction of the aleph's capture radius a bot's entry aim point
+    /// may sit at. Kept &lt; 1 so every aim stays INSIDE the transit sphere the
+    /// bot must cross. Native places arrivals at a similar small offset
+    /// (fsship.cpp:113-121, rand 2–5 u) but has no proactive fleet spread.</summary>
+    public const float EntrySpreadFraction = 0.7f;
+    /// <summary>Distance (units) ahead of an aleph at which the entry queue looks
+    /// for a same-side teammate already in the funnel to yield to (P610).</summary>
+    public const float EntryQueueLookahead = 340f;
+    /// <summary>Lateral half-width (units) of the entry funnel band used by the
+    /// queue (P610): a teammate inside this band, closer to the aleph than the
+    /// bot and near the bot's own aim, triggers a yield.</summary>
+    public const float EntryQueueFunnelWidth = 90f;
+    /// <summary>Aleph exit clear-out: after crossing an aleph a bot keeps flying
+    /// along the exit direction until this many units PAST the arrival aleph's
+    /// radius before regrouping or engaging (P610). This is the bot-side analogue
+    /// of native's exit velocity <c>−(speed + exitWarpSpeed)</c> along the exit
+    /// <c>backward</c> (fsship.cpp:111-112) that carries emergent ships clear of
+    /// the crowded mouth — our bots previously turned straight back into the
+    /// arrival aleph to regroup, packing the cluster.</summary>
+    public const float ExitClearMargin = 140f;
+    /// <summary>Travel-separation influence range as a MULTIPLE of the bot's hull
+    /// radius (P610): a same-side teammate closer than this many hull-radii gets
+    /// a soft lateral push on the travel goal so the reactive dodge law rarely
+    /// has to fire during transit.</summary>
+    public const float TravelSpacingMultiple = 15f;
+    /// <summary>Maximum lateral deflection (units) the travel-separation term may
+    /// add to a travel goal (bounded so it can never swing the bot off course).</summary>
+    public const float TravelSpacingStrength = 60f;
     /// <summary>Arena offset (units) of each mirrored spawn from the target
     /// sector centre along the facing axis.</summary>
     public const float ArenaOffset = 650f;
@@ -2977,6 +3109,136 @@ internal sealed partial class BotManager : IDisposable
         return false;
     }
 
+    // ── P610 — bot fleet traffic spacing: pure, unit-testable decision helpers ──
+
+    /// <summary>
+    /// P610 — a deterministic per-bot aim point on the aleph's ENTRY DISC: a
+    /// UNIFORM-DISC sample (radius·√u, angle 2πv seeded by <paramref name="shipId"/>)
+    /// so a fleet streams through the mouth spread across its AREA instead of
+    /// converging on the centre point. <paramref name="spreadFraction"/> (kept
+    /// &lt; 1 by <see cref="EntrySpreadFraction"/>) scales the disc so every aim
+    /// stays INSIDE the capture radius the bot must transit. Deterministic:
+    /// the same ship always aims at the same point. The ring is laid out in the
+    /// world X/Y plane — deliberately NOT tied to the per-tick approach direction,
+    /// which would rotate the aim around the aleph as the bot closed on it. The
+    /// transit threshold is a SPHERE (<c>|ship−warp| ≤ radius + shipRadius</c>,
+    /// P496), so any point inside the sphere is reachable through the mouth.
+    /// </summary>
+    public static Vector3 EntryAimPoint(
+        Vector3 alephCenter, float alephRadius, short shipId, float spreadFraction)
+    {
+        float r = Math.Clamp(spreadFraction, 0f, 0.998f) * alephRadius;
+        uint x = (uint)shipId;
+        x ^= x << 13; x ^= x >> 17; x ^= x << 5;      // cheap xorshift avalanche
+        uint x2 = x ^ (x >> 13);
+        float u = (x % 994901u) / 1000000f;            // 0..0.995 → √ for uniform disc
+        float v = (x2 % 628318u) / 100000f;            // 0..2π
+        float rr = r * MathF.Sqrt(Math.Clamp(u, 0f, 1f));
+        float ang = v;
+        return alephCenter + new Vector3(MathF.Cos(ang) * rr, MathF.Sin(ang) * rr, 0f);
+    }
+
+    /// <summary>
+    /// P610 — whether a bot that just emerged is still too close to the arrival
+    /// aleph to regroup: <c>false</c> until it is at least
+    /// <paramref name="alephRadius"/> + <paramref name="margin"/> away (the
+    /// native emergent offset is only radius+5, fsship.cpp:113-121 — our margin
+    /// carries the bot clear of the crowded mouth before it turns around).
+    /// </summary>
+    public static bool IsClearOfAleph(Vector3 myPos, Vector3 alephPos, float alephRadius, float margin)
+        => (myPos - alephPos).Length() >= alephRadius + margin;
+
+    /// <summary>
+    /// P610 — the EXIT-CLEAR-OUT goal: a point PAST the arrival aleph along the
+    /// exit ray (through the aleph and the emergent bot), so pursuing it keeps
+    /// the bot flying along the exit direction until it clears radius+margin.
+    /// Mirrors native's exit velocity along <c>backward</c>
+    /// (fsship.cpp:111-112). Degenerate (bot at the centre) falls back to the
+    /// aleph itself, which the full-throttle Pursue then flies out of.
+    /// </summary>
+    public static Vector3 ExitClearGoal(Vector3 myPos, Vector3 alephPos, float alephRadius, float margin)
+    {
+        var exit = myPos - alephPos;
+        float el = exit.Length();
+        if (el < 1e-4f) return alephPos;
+        var dir = exit / el;
+        return alephPos + dir * (alephRadius + margin + 60f);
+    }
+
+    /// <summary>
+    /// P610 — the soft TRAVEL-SPACING term: among the same-side teammates given
+    /// (positions within <paramref name="range"/>), deflect <paramref name="goal"/>
+    /// LATERALLY (perpendicular to the travel direction, so forward progress is
+    /// never stalled) by a bounded amount that grows as a mate gets closer.
+    /// Exactly zero when no mate is within range, so transit is unaffected at
+    /// cruising separation. Combined with the reactive dodge law this keeps big
+    /// fleets from grinding: the soft push spreads them before the dodge must fire.
+    /// </summary>
+    public static Vector3 ApplyTravelSeparation(
+        Vector3 myPos, Vector3 goal,
+        IEnumerable<(Vector3 Pos, short Id)> mates, float range, float strength)
+    {
+        var toGoal = goal - myPos;
+        float d = toGoal.Length();
+        if (d <= 1e-3f) return goal;
+        var dir = toGoal / d;
+        Vector3 lateral = Vector3.Zero;
+        foreach (var (p, _) in mates)
+        {
+            var toMate = p - myPos;
+            float dm = toMate.Length();
+            if (dm <= 1e-4f || dm >= range) continue;
+            float w = 1f - dm / range;                 // strongest when closest
+            var away = -toMate / dm;                   // unit vector FROM the mate (push me away)
+            // Project the away-vector onto the plane perpendicular to travel: the
+            // forward component would stall progress — drop it entirely.
+            float fwd = away.X * dir.X + away.Y * dir.Y + away.Z * dir.Z;
+            var perp = away - dir * fwd;
+            float pl = perp.Length();
+            if (pl < 1e-6f) continue;                  // dead ahead/behind — no lateral push
+            lateral += (perp / pl) * (strength * w);
+        }
+        if (lateral.LengthSquared() < 1e-8f) return goal;
+        // Bound the total so it can never swing the bot off course.
+        if (lateral.LengthSquared() > strength * strength)
+            lateral *= strength / lateral.Length();
+        return goal + lateral;
+    }
+
+    /// <summary>
+    /// P610 — the light ENTRY QUEUE: whether a same-side teammate is already in
+    /// the funnel JUST AHEAD of this bot (closer to the aleph, within a lateral
+    /// band of the bot's line to the aleph, and within <paramref name="lookahead"/>
+    /// of the aleph) and near this bot's own aim point, so this bot should deflect
+    /// (yield) rather than pile onto the same converging point. Pure over the
+    /// gathered funnel-mates so it is unit-provable without a server.
+    /// </summary>
+    public static bool EntryQueueYield(
+        Vector3 myPos, Vector3 aim, Vector3 alephCenter, float alephRadius,
+        IEnumerable<(Vector3 Pos, short Id)> funnelMates,
+        float lookahead, float funnelWidth)
+    {
+        var toAleph = alephCenter - myPos;
+        float dA = toAleph.Length();
+        if (dA <= 1e-3f) return false;
+        var line = toAleph / dA;
+        foreach (var (p, _) in funnelMates)
+        {
+            var toMate = p - myPos;
+            float dm = toMate.Length();
+            if (dm <= 1e-3f || dm >= dA - 1e-3f) continue;   // must be strictly AHEAD of me
+            // Lateral distance of the mate from my line-to-aleph.
+            var along = toMate.X * line.X + toMate.Y * line.Y + toMate.Z * line.Z;
+            if (along <= 0f) continue;                        // behind me
+            var lat = toMate - line * along;
+            if (lat.Length() > funnelWidth) continue;         // outside the funnel band
+            // Near my own aim point (within the aim's distance to the aleph) → it IS
+            // converging on the same mouth region as me.
+            if ((p - aim).Length() <= alephRadius) return true;
+        }
+        return false;
+    }
+
     /// <summary>
     /// P539d — pure mirrored arena placements: <paramref name="count"/> ships per
     /// side placed <paramref name="offset"/> on either side of the sector centre
@@ -3056,7 +3318,48 @@ internal sealed partial class BotManager : IDisposable
         {
             if (bot.WarpHops.Count == 0 || bot.WarpHops[^1].To != cur)
                 bot.WarpHops.Add((now, bot.LastCluster, cur));   // cross-check vs server [warp] lines
+
+            // P610 — remember the arrival aleph for EXIT CLEAR-OUT: the warp IN the
+            // new sector whose partner's cluster is the sector we just left. After a
+            // transit the bot keeps flying along the exit direction until it clears
+            // this aleph's radius + margin (below), instead of turning straight back
+            // into the crowded arrival mouth to regroup.
+            bot.ExitClearFrom = null;
+            bot.ExitClearRadius = 0f;
+            lock (cs.Gate)
+            {
+                foreach (var w in cs.World.Warps.Values)
+                {
+                    if (w.ClusterId != cur) continue;
+                    if (cs.World.Warps.TryGetValue(w.DestinationId, out var partner) && partner.ClusterId == bot.LastCluster)
+                    {
+                        if (w.Position is { Length: 3 } p)
+                            bot.ExitClearFrom = new Vector3(p[0], p[1], p[2]);
+                        bot.ExitClearRadius = w.Radius;
+                        break;
+                    }
+                }
+            }
         }
+
+        // P610 — EXIT CLEAR-OUT: right after crossing an aleph keep flying along
+        // the exit direction (the full-throttle Pursue; dodge still pre-empts an
+        // imminent rock) until past the arrival aleph's radius + margin, THEN let
+        // staging/loiter/engagement resume. Clears the crowded arrival cluster
+        // (Juniper/Rigel/Alderan) the same way native's exit velocity
+        // `-(speed + exitWarpSpeed)` carries emergent ships clear (fsship.cpp:111-112).
+        if (bot.ExitClearFrom is { } ecf && TryCsPose(cs, bot.ShipId, out var clearPos, out var clearOrient)
+            && !IsClearOfAleph(clearPos, ecf, bot.ExitClearRadius, ExitClearMargin))
+        {
+            var eg = ExitClearGoal(clearPos, ecf, bot.ExitClearRadius, ExitClearMargin);
+            if (TryDodgeGoal(cs, bot, clearPos, out var dg))
+                CombatFlyTo(bot, dg, 15f, 200f, 0);
+            else
+                cs.CommandControls(AutopilotSteering.Pursue(clearPos, clearOrient, eg), 0);
+            bot.LastCluster = cur;
+            return;
+        }
+        bot.ExitClearFrom = null;   // cleared (or never set) — normal logic resumes
 
         if (bot.Arrived) { EngageCombat(bot, now); return; }
 
@@ -3929,6 +4232,10 @@ internal sealed partial class BotManager : IDisposable
         public short StagingSector = -1;                // the last sector before the rendezvous
         public double? FirstStagingAt;                  // when this bot first began holding
         public double? ReleasedAt;                      // when the side released it to advance
+
+        // ── P610 — aleph exit clear-out ──
+        public Vector3? ExitClearFrom;                  // the arrival aleph position to clear after a transit
+        public float ExitClearRadius;                   // its wire radius (DataWarpIGC.Radius)
 
         // ── P539d — arena mode ──
         public bool Arena;                              // starts engaged in the target sector (mirrored spots)
