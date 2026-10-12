@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 using Allegiance.Core.Model;
@@ -34,6 +36,15 @@ public static class ProbeModelSource
     /// This is the single native model shared by every deployed probe.</summary>
     public const string DemoModelStem = "utl02";
 
+    /// <summary>
+    /// P615 — the demo probe mesh's native texture unit stem. <c>utl02.mdl</c>'s
+    /// imported texture namespace is <c>utl02bmp</c> (a real on-disk unit);
+    /// all 53 PCore001 probe types carry an EMPTY <c>textureName</c>, so native
+    /// paints the probe from this model-own import (probeigc.cpp:112-113 +
+    /// thinggeo.cpp:1038-1043). Used by <see cref="ProbeRenderer.AppliesTexture"/>.
+    /// </summary>
+    public const string DemoTextureStem = "utl02bmp";
+
     /// <summary>The configured artwork root (ALLEGIANCE_ARTWORK_PATH, falling
     /// back to the standard dev location) — the same resolution the missile
     /// source uses; see <see cref="AssetSources.ResolveRoot"/>.</summary>
@@ -49,4 +60,39 @@ public static class ProbeModelSource
     /// model is required for rendering.</summary>
     public static MdlFile LoadDemoModel(IAssetSource assets) =>
         MdlFile.Parse(AssetSources.ReadAllBytes(assets, DemoModelStem + ".mdl"));
+
+    /// <summary>
+    /// P615 — the native probe texture-stem resolution, ported from native
+    /// <c>CprobeIGC::Initialize</c>'s <c>Load(0, modelName, textureName,
+    /// iconName, …)</c> (<c>src/Igc/probeigc.cpp:112-113</c>): an explicit
+    /// probe-type <c>textureName</c> override wins, else the model's OWN
+    /// imported texture namespace (<c>m_pgeoMesh-&gt;FindTexture()</c>,
+    /// <c>thinggeo.cpp:1038-1043</c> / <c>xfile.cpp:577</c>) — the P593 rule,
+    /// never a <c>&lt;modelName&gt;bmp</c> guess. Decoded from PCore001, ALL
+    /// 53 probe types carry an <em>empty</em> <c>textureName</c>, so native
+    /// paints every probe from its model's own namespace — for the demo
+    /// canonical <c>utl02</c> mesh that is <c>utl02bmp</c> (a real unit on
+    /// disk). <paramref name="fileExists"/> is the case-insensitive on-disk
+    /// stem probe.
+    /// </summary>
+    public static string? ResolveTextureStemFor(
+        MdlFile mdl, string? overrideTextureName, string modelName, Func<string, bool> fileExists)
+        => NativeShipResolver.ResolveTextureStem(mdl, overrideTextureName, modelName, fileExists);
+
+    /// <summary>
+    /// P615 — resolve the exact on-disk texture stem for the shared demo probe
+    /// model (<see cref="DemoModelStem"/>), case-insensitively, or null when
+    /// none resolves (the renderer keeps its lit-solid fallback, never an
+    /// invisible probe). <c>utl02.mdl</c>'s imported namespace is
+    /// <c>utl02bmp</c>, a real on-disk unit.
+    /// </summary>
+    public static string? ResolveDemoTextureStem(IAssetSource assets)
+    {
+        var mdl = LoadDemoModel(assets);
+        var disk = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var f in assets.Enumerate("."))
+            if (f.EndsWith(".mdl", StringComparison.OrdinalIgnoreCase))
+                disk.Add(Path.GetFileNameWithoutExtension(f));
+        return ResolveTextureStemFor(mdl, null, DemoModelStem, disk.Contains);
+    }
 }

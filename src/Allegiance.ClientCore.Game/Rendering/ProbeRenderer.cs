@@ -54,6 +54,7 @@ public sealed class ProbeRenderer : IDisposable
     private readonly int _triangleCount;
     private readonly BasicEffect _effect;
     private readonly RasterizerState _rasterizer;
+    private readonly Texture2D? _texture;
 
     /// <summary>
     /// Construct from a parsed <see cref="MdlFile"/>'s meshes.
@@ -61,7 +62,11 @@ public sealed class ProbeRenderer : IDisposable
     /// <param name="gd">The graphics device the buffers are created on.</param>
     /// <param name="meshes">The parsed mesh list (all of <c>MdlFile.Meshes</c>,
     /// concatenated into one buffer).</param>
-    public ProbeRenderer(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes)
+    /// <param name="texture">P615 — the probe's decoded native texture
+    /// (<c>utl02bmp</c> for the canonical <c>utl02</c> demo, resolved via
+    /// <see cref="ProbeModelSource.ResolveTextureStemFor"/>). Null keeps the
+    /// legacy lit-solid side-tinted fallback (never an invisible probe).</param>
+    public ProbeRenderer(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes, Texture2D? texture = null)
     {
         int vertexTotal = 0, indexTotal = 0;
         foreach (var m in meshes)
@@ -101,8 +106,12 @@ public sealed class ProbeRenderer : IDisposable
             // the key light) still reads against the starfield, like the
             // station renderer.
             AmbientLightColor = new Vector3(0.32f, 0.34f, 0.36f),
-            TextureEnabled = false,
+            // P615 — when a native probe texture resolves it is bound; the
+            // lit-solid fallback (null texture) keeps texturing off.
+            TextureEnabled = texture is not null,
         };
+
+        _texture = texture;
 
         // P290 winding finding: the probe mesh (utl02.mdl) is wound for
         // MonoGame's DEFAULT back-face culling (CullCounterClockwiseFace) —
@@ -121,7 +130,17 @@ public sealed class ProbeRenderer : IDisposable
     /// legacy stock rig is kept (back-compat / non-scene callers).</summary>
     public void Draw(Matrix world, Matrix view, Matrix projection, Color tint, SectorLighting? lighting = null)
     {
-        _effect.DiffuseColor = tint.ToVector3();
+        // P615 — native paints the probe from its own texture (probeigc.cpp:
+        // 112-113; there is NO per-side team tint on the probe mesh in native,
+        // team is shown via icons — the same no-tint rule the native station
+        // path follows). So when the real texture is bound, DiffuseColor is
+        // white so the texture shows its true colours; the friendly/enemy
+        // side tint is used only by the lit-solid fallback.
+        if (_texture is not null)
+            _effect.DiffuseColor = Color.White.ToVector3();
+        else
+            _effect.DiffuseColor = tint.ToVector3();
+        _effect.Texture = _texture;
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
@@ -150,5 +169,18 @@ public sealed class ProbeRenderer : IDisposable
         _indices.Dispose();
         _effect.Dispose();
         _rasterizer.Dispose();
+        _texture?.Dispose();
     }
+
+    /// <summary>
+    /// P615 — true when the shared probe mesh's native texture unit resolves
+    /// in the artwork (the demo model <c>utl02</c>'s own imported namespace
+    /// <c>utl02bmp</c>). The renderer binds it, so a live probe is textured.
+    /// Pre-P615 the probe drew LIT-SOLID by design (<c>TextureEnabled=false</c>)
+    /// even though the texture resolved — the audit blind spot this closes —
+    /// exactly the <see cref="HullHitSparkRenderer.BitsTextured"/> contract
+    /// P609 added for the hull-hit bit.
+    /// </summary>
+    public static bool AppliesTexture(Func<string, bool> fileExists) =>
+        fileExists(ProbeModelSource.DemoTextureStem);
 }

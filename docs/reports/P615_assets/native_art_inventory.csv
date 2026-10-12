@@ -1,0 +1,55 @@
+asset_stem,native_file,native_line,purpose,port_status,port_renderer,visibility_rank,notes
+fig05,Igc/shipIGC.cpp,1412-1414,"Fighter hull render Load(0,ModelName,TextureName)->LoadModel (trekigc.cpp:1816); texture ovr 1837-1845, FindTexture thinggeo.cpp:1038",native-faithful,NativeShipRenderer,1,Real .mdl + decoded texture (NativeShipResolver)
+fig15,Igc/shipIGC.cpp,1412-1414,Interceptor hull render,native-faithful,NativeShipRenderer,1,
+fig25,Igc/shipIGC.cpp,1412-1414,Bomber hull render,native-faithful,NativeShipRenderer,1,
+fig401,Igc/shipIGC.cpp,1412-1414,Scout hull render,native-faithful,NativeShipRenderer,1,
+utl18a (tex utl18bmp),Igc/shipIGC.cpp,1412-1414,Freighter hull; shared imported texture utl18bmp (NOT utl18abmp),native-faithful,NativeShipRenderer,1,Shared-texture import rule
+wc_gcfig (tex fig07bmp),Igc/shipIGC.cpp,1412-1414,Corvette hull; shared imported texture fig07bmp,native-faithful,NativeShipRenderer,1,
+ss24a,Igc/stationIGC.cpp,240-242,Garrison station render,native-faithful,NativeStationRenderer,3,ResolveTextureStem prefers <model>bmp exterior skin
+ss27,Igc/stationIGC.cpp,240-242,Garrison station render,native-faithful,NativeStationRenderer,3,
+ss300,Igc/stationIGC.cpp,240-242,Garrison station render,native-faithful,NativeStationRenderer,3,
+ss92,Igc/stationIGC.cpp,240-242,Outpost station render,native-faithful,NativeStationRenderer,3,
+ss90,Igc/stationIGC.cpp,240-242,Outpost station render,native-faithful,NativeStationRenderer,3,
+mis09,Igc/missileigc.cpp,49-60,"Missile Load(model,texture) or LoadDecal(texture)",native-faithful,NativeMissileRenderer,5,
+mis406,Igc/missileigc.cpp,49-60,Missile render,native-faithful,NativeMissileRenderer,5,
+utl02,Igc/probeigc.cpp,111-113,"Probe Load(model,texture)",untextured-or-substituted,ProbeRenderer,7,"Real .mdl mesh, lit-solid, texcoords unused (set 0) P233"
+cc_pitprobe,Igc/probeigc.cpp,111-113,Probe render,untextured-or-substituted,ProbeRenderer,7,
+fxmine (mine sprite),Igc/mineigc.cpp,103,LoadMine(textureName) MineFieldGeo decal cloud (efgeo.cpp:15-87),native-faithful,MineRenderer,9,"Mine is a decal cloud, not a mesh"
+fxminebmp / cc_cmtexbmp (chaff),Igc/chaffigc.cpp,42,LoadDecal(textureName) billboard,native-faithful,ChaffRenderer,12,
+wepXX (projectile strip),Igc/projectileIGC.cpp,51-59,"Load(model,texture) or LoadDecal texture sprite",native-faithful,ProjectileSpriteRenderer,8,Decoded .mdl texture strip
+acs14 / artifact / biosflag,Igc/treasureIGC.cpp,159,"LoadDecal(texture,icon) pickup",native-faithful,NativeTreasureRenderer,14,Procedural TreasureMeshFactory gold-gem fallback
+buoy / buoyicon,Igc/buoyigc.cpp,39,"LoadDecal('buoy','buoyicon')",unused,(none / map icon),20,No 3D buoy renderer in port
+bgrnd03,Igc/asteroidigc.cpp,33-38,"Rock mesh+texture Load(0,modelName,textureName)",native-faithful,NativeAsteroidRenderer,6,Raw winding renders solid (P570)
+bgrnd05,Igc/asteroidigc.cpp,33-38,"Rock mesh+texture Load(0,modelName,textureName)",native-faithful,NativeAsteroidRenderer,6,Raw winding renders solid (P570)
+bgrnd51,Igc/asteroidigc.cpp,33-38,"Rock mesh+texture Load(0,modelName,textureName)",native-faithful,NativeAsteroidRenderer,6,Raw winding renders solid (P570)
+bgrnd55,Igc/asteroidigc.cpp,33-38,"Rock mesh+texture Load(0,modelName,textureName)",native-faithful,NativeAsteroidRenderer,6,Raw winding renders solid (P570)
+drgrock,Igc/asteroidigc.cpp,33-38,"Rock mesh+texture Load(0,modelName,textureName)",native-faithful,NativeAsteroidRenderer,6,Raw winding renders solid (P570)
+tacrock,Igc/asteroidigc.cpp,33-38,"Rock mesh+texture Load(0,modelName,textureName)",native-faithful,NativeAsteroidRenderer,6,Raw winding renders solid (P570)
+exp20bmp,WinTrek/trekigc.cpp,2536 (artwork.h:198),Explosion fireball film 0 (AWF_EXPLOSION_00),native-faithful,ExplosionRenderer / ExplosionAssets,2,RGB565 strip sliced into frames
+exp22bmp,WinTrek/trekigc.cpp,2537,Explosion film 1,native-faithful,ExplosionRenderer,2,
+exp23bmp,WinTrek/trekigc.cpp,2538,Explosion film 2,native-faithful,ExplosionRenderer,2,
+exp24bmp,WinTrek/trekigc.cpp,2539,Explosion film 3,native-faithful,ExplosionRenderer,2,
+exp25bmp,WinTrek/trekigc.cpp,2540,Explosion film 4,native-faithful,ExplosionRenderer,2,
+fx18bmp,WinTrek/trekigc.cpp,2533 (artwork.h:203),Shockwave ring (AWF_SHOCKWAVE),native-faithful,ExplosionRenderer,4,Expanding ring; native oriented in emitter plane
+fx09bmp + lens30/60/90,WinTrek/trekigc.cpp,2517-2522,Shield flare lens texture + cap geometry (AWF_SHIELD_FLARE),native-faithful,ShieldFlareRenderer,13,lens30 cap wrapped on shield ellipsoid
+f02bmp,effect/alephgeo.cpp,53,Aleph star/aperture (AWF_EFFECT_ALEPH_STAR),native-faithful,NativeEffectTextures / WarpRenderer,11,
+f101bmp,effect/thinggeo.cpp,261 (+efapp.cpp:128),Afterburner glow + strobe (AWF_EFFECT_AFTERBURNER_GLOW/STROBE),native-faithful,EngineNozzleGlowRenderer,10,
+f103bmp,effect/efimage.cpp,424,Muzzle flare / hull-hit tangent (AWF_EFFECT_MUZZLE_FLARE/TANGENT),native-faithful,NativeEffectTextures,16,
+f104/f105/f106bmp,effect/efimage.cpp,631-656,Sun lens-flare rings/aura (AWF_EFFECT_LENS_FLARE_*),native-faithful,LensFlareRenderer,17,
+fx11bmp,effect (AWF_EFFECT_NORMAL),efart.h:17,Hull-hit normal decal,native-faithful,NativeEffectTextures,16,
+e_smokebmp,effect/particlegeo.cpp,33,Smoke puff (SmokeBehavior),native-faithful,NativeEffectTextures (PNG) / MissileTrail / DamageDebris,13,PNG-script art
+e_firebmp,effect/particlegeo.cpp,77,Fire puff (FireBehavior),native-faithful,NativeEffectTextures (PNG) / MissileTrail,13,
+e_boosterbmp,effect/particlegeo.cpp,163,Afterburner exhaust smoke (AddThrustParticles),different,ShipEngineTrailParticles,13,"Port reuses e_smoke family, not e_booster specifically"
+e_damagebmp,effect/particlegeo.cpp,141,Hull-damage smoke (DamageBehavior),different,DamageDebrisRenderer,15,Port vents e_smoke instead of e_damage
+e_telebmp,effect/particlegeo.cpp,218,Teleport/spark (SparkBehavior),native-faithful,NativeEffectTextures (PNG),15,
+trailbmp,effect/efgeo.cpp,524,Trail ribbon texture (AWF_EFFECT_TRAIL),different,ShipMotionTrailRenderer,18,Port uses procedural lateral-gradient strip texture
+debris1bmp,effect/debrisgeo.cpp,51,Debris surface (LoadSurface),different,DamageDebrisRenderer,19,Port uses vent smoke; debris1 surface unused
+build (geo),effect/efgeo.cpp,135,Build marker geo (LoadGeo 'build'),unused,(none),22,Effect-editor/build marker; no port path
+aleph_sphere (geo),effect/efgeo.cpp,405,Aleph sphere geo (LoadGeo 'aleph_sphere'),different,WarpRenderer,11,"Port uses procedural hourglass funnel, not native cone"
+utl10 (bit geo),effect/efgeo.cpp,795,AWF_EFFECT_BIT small-blast geo,unused,(none),23,
+pointer / joystickindicator,WinTrek/indicator.cpp,122-123,Radar pointer/cursor geos,unused,(own indicators),24,"UI, not ported"
+globeN + environmentNbmp,Igc/clusterIGC.cpp,41-42,"Environment sky dome (SetEnvironmentGeo), unlit ShadeModeCopy",native-faithful,NativeSkyRenderer,19,Colour-keyed near-black surround
+nebplntNNbmp,Igc/clusterIGC.cpp,44-57,Planet poster billboard (AddPoster->PosterImage),native-faithful,PlanetPoster,18,
+starfield seed,effect/starimage.cpp,32-53,Seeded star field (StarImage::SetCount),native-faithful,NativeSkyRenderer (seeded) / Starfield,20,Seed-compatible with native rand()
+moonbmp/moon7bmp/moonnebbmp,Artwork (native moon art),-,Moon surface texture on moon.mdl sphere,different,MoonRenderer,19,Native art but non-native placement; lit disc
+plnt19bmp,mdledit/mdledit.cpp,793,Effect-editor aleph preview,unused,(editor),25,Tooling only

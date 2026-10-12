@@ -1459,6 +1459,7 @@ public sealed partial class Game1 : Game
         {
             _inspectCivArg = opts.InspectCiv;
             _inspectHullArg = opts.InspectHull;
+            _inspectStationsArg = opts.InspectStations;
             _inspectAutoShotsRemaining = opts.InspectShots;
             _inspectAutoShotsRequested = opts.InspectShots;
             _inspectDemo = opts.InspectDemo;

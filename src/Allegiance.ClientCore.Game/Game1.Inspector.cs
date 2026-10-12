@@ -40,6 +40,7 @@ public sealed partial class Game1
     // ---- configuration (from LaunchOptions.Inspect) ----
     private string? _inspectCivArg;    // --inspect-civ id|name (optional)
     private string? _inspectHullArg;   // --inspect-hull id|name (optional)
+    private bool _inspectStationsArg;  // --inspect-stations (station mode)
 
     /// <summary>P565 — the committed per-hull art-override file path (repo-relative, so it
     /// is committed alongside the code and honored when the client runs from the repo root;
@@ -114,9 +115,21 @@ public sealed partial class Game1
     private Rendering.ShipCatalogue _inspectCatalogue = Rendering.ShipCatalogue.Parse("{}");
     private readonly HashSet<string> _inspectCatLogged = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Tags cycled by Tab for the mark-bad ledger.</summary>
+    /// <summary>Tags cycled by Tab for the mark-bad ledger (hull and station modes).</summary>
     private static readonly string[] MarkTags =
-        ["holes", "transparent", "flat", "scale", "texture", "vfx-overlap", ""];
+        ["holes", "transparent", "flat", "scale", "texture", "orientation", "z-fight", "subparts", "vfx-overlap", ""];
+
+    // P615 — STATION mode (--inspect-stations / in-inspector G toggle). Cycles
+    // every station type in the static core (143) under the same orbit / angle
+    // sweep / screenshot / mark-bad workflow as hulls, native .mdl + texture
+    // (NativeStationRenderer) vs the procedural placeholder (StationRenderer),
+    // at native default orientation (forward +Z, up +Y, yaw 0).
+    private bool _inspectStations;
+    private List<Rendering.InspectorStationCatalog.InspectorStation> _inspectStationsList = new();
+    private byte? _inspectStationGroup;      // null = all groups
+    private Capture.InspectorStationNotes? _inspectStationNotes;
+    private string _inspectStationNotesPath = "stations-marked.jsonl";
+    private bool _inspectGWasDown;
 
     private const short InspectSectorId = 1;   // the empty scene's single cluster
     private const short InspectShipId = 777;   // synthetic id keying the shared pools
@@ -186,6 +199,43 @@ public sealed partial class Game1
         {
             Console.WriteLine("[inspect] no hulls enumerated — aborting.");
             Exit();
+            return;
+        }
+
+        // P615 — STATION mode (--inspect-stations / in-inspector G toggle):
+        // build the station walk list instead of hulls. Same orbit / angle
+        // sweep / screenshot / mark-bad workflow; native .mdl + texture vs the
+        // procedural placeholder, at native default orientation.
+        _inspectStationNotes = new InspectorStationNotes(_inspectStationNotesPath);
+        if (_inspectStationsArg)
+            _inspectStations = true;
+        if (_inspectStations)
+        {
+            Func<DataStationTypeIGC, bool> stNative = s =>
+                !string.IsNullOrEmpty(s.ModelName) &&
+                _nativeStationRenderer.MeshFor(s.ModelName.Trim()) is not null;
+            _inspectStationsList = Rendering.InspectorStationCatalog.Enumerate(
+                _shopCatalog.StationTypes?.Values ?? Enumerable.Empty<DataStationTypeIGC>(), stNative);
+            if (_inspectStationsList.Count == 0)
+            {
+                Console.WriteLine("[inspect] no station types enumerated — aborting.");
+                Exit();
+                return;
+            }
+            Console.WriteLine($"[inspect] STATION mode: {_inspectStationsList.Count} station types");
+            SelectInspectStation(reannounce: true);
+            Window.Title = $"{_windowTitleBase} [INSPECT-STATIONS]";
+            if (_inspectSweepAngles > 0)
+            {
+                if (_inspectDist > 0f) _inspectOrbit.Distance = _inspectDist;
+                // Station sweep: native | procedural side by side from each angle.
+                _inspectSideBySide = true;
+                _inspectShowNative = true;
+                _inspectShowMeshy = true;
+                Console.WriteLine($"[inspect] STATION ANGLE SWEEP: {_inspectSweepAngles} orbit angles");
+            }
+            else
+                Console.WriteLine($"[inspect] READY: {_inspectStationsList.Count} stations; F11 screenshot, Enter=mark bad, ?=help");
             return;
         }
 
@@ -266,6 +316,134 @@ public sealed partial class Game1
     }
 
     // ---------------------------------------------------------------------
+    // P615 — STATION-mode walk (--inspect-stations / G toggle)
+    // ---------------------------------------------------------------------
+
+    /// <summary>Route object cycling to whichever mode is active (station vs hull).</summary>
+    private void SelectInspectObject(bool reannounce)
+    {
+        if (_inspectStations) { SelectInspectStation(reannounce); return; }
+        SelectInspectHull(reannounce);
+    }
+
+    private List<Rendering.InspectorStationCatalog.InspectorStation> VisibleInspectStations()
+    {
+        if (_inspectStationGroup is null) return _inspectStationsList;
+        return Rendering.InspectorStationCatalog.ForGroup(_inspectStationsList, _inspectStationGroup);
+    }
+
+    private Rendering.InspectorStationCatalog.InspectorStation? CurrentInspectStation()
+    {
+        var list = VisibleInspectStations();
+        if (list.Count == 0) return null;
+        return list[Math.Clamp(_inspectIndex, 0, list.Count - 1)];
+    }
+
+    private void SelectInspectStation(bool reannounce)
+    {
+        var list = VisibleInspectStations();
+        if (list.Count == 0) return;
+        _inspectIndex = Math.Clamp(_inspectIndex, 0, list.Count - 1);
+        var s = list[_inspectIndex];
+        float radius = s.Radius > 0f ? s.Radius : Rendering.StationRenderer.DefaultFallbackRadius;
+        if (_inspectCam == InspectCamMode.Orbit)
+            _inspectOrbit.FrameRadius(radius, DockedHullPreviewFraming.FovRadians);
+        if (reannounce)
+            Console.WriteLine($"[inspect] station {_inspectIndex + 1}/{list.Count}: id={s.StationTypeId} " +
+                $"name=\"{s.Name}\" model={s.ModelName} radius={s.Radius:0.#} native={s.NativeAvailable}");
+    }
+
+    private void CycleInspectStationGroup(int dir)
+    {
+        var groups = Rendering.InspectorStationCatalog.Groups(_inspectStationsList);
+        if (groups.Count == 0) return;
+        int cur = _inspectStationGroup is null ? -1 : groups.IndexOf(_inspectStationGroup.Value);
+        int next = cur < 0 ? (dir > 0 ? 0 : groups.Count - 1) : (cur + dir + groups.Count) % groups.Count;
+        _inspectStationGroup = groups[next];
+        _inspectIndex = 0;
+        SelectInspectStation(true);
+        Console.WriteLine($"[inspect] station group: {_inspectStationGroup} ({VisibleInspectStations().Count} stations)");
+    }
+
+    /// <summary>Toggle hull ⇄ station mode in the live inspector (G key).</summary>
+    private void ToggleInspectMode()
+    {
+        _inspectStations = !_inspectStations;
+        _inspectIndex = 0;
+        if (_inspectStations) SelectInspectStation(true);
+        else SelectInspectHull(true);
+        Console.WriteLine($"[inspect] mode: {(_inspectStations ? "STATIONS" : "HULLS")}");
+    }
+
+    /// <summary>Route civ/group bracket cycling to whichever mode is active.</summary>
+    private void CycleInspectGroup(int dir)
+    {
+        if (_inspectStations) { CycleInspectStationGroup(dir); return; }
+        CycleInspectCiv(dir);
+    }
+
+    /// <summary>The current station's draw slots: native (NativeStationRenderer)
+    /// and/or procedural placeholder (StationRenderer), side by side (native −X,
+    /// placeholder +X) or native alone. Returns (world, isNative). Orientation is
+    /// the native default (forward +Z, up +Y, yaw 0 — FedSrv.CPP:11390-11395), so
+    /// the station shows as the server would place it.</summary>
+    private IEnumerable<(Matrix World, bool IsNative)> InspectStationDrawSlots(Rendering.InspectorStationCatalog.InspectorStation s)
+    {
+        bool native = _inspectShowNative, ph = _inspectShowMeshy;
+        float sep = (s.Radius > 0f ? s.Radius : Rendering.StationRenderer.DefaultFallbackRadius) * 0.9f;
+        if (_inspectSideBySide)
+        {
+            if (native) yield return (Matrix.CreateTranslation(new Vector3(-sep, 0f, 0f)), true);
+            if (ph) yield return (Matrix.CreateTranslation(new Vector3(sep, 0f, 0f)), false);
+            yield break;
+        }
+        if (_inspectShowNative) yield return (Matrix.Identity, true);
+        else yield return (Matrix.Identity, false);
+    }
+
+    private void DrawInspectStations(Matrix view, Matrix proj, Vector3 cameraEye)
+    {
+        var s = CurrentInspectStation();
+        if (s is null) return;
+        foreach (var (slotWorld, isNative) in InspectStationDrawSlots(s))
+        {
+            var world = slotWorld * Matrix.CreateTranslation(-cameraEye);
+            if (isNative && _nativeStationRenderer.MeshFor(s.ModelName) is { } geo)
+            {
+                var texStem = _nativeStationRenderer.TextureStemFor(s.ModelName, s.TextureName);
+                var tex = texStem is null ? null : _nativeStationRenderer.TextureFor(texStem);
+                float nscale = Rendering.NativeStationResolver.ScaleForRadius(
+                    s.Radius > 0f ? s.Radius : Rendering.StationRenderer.DefaultFallbackRadius, geo.MeshRadius);
+                _nativeStationRenderer.Draw(geo, tex, world, view, proj, nscale, _sectorLighting);
+            }
+            else
+            {
+                float radius = s.Radius > 0f ? s.Radius : Rendering.StationRenderer.DefaultFallbackRadius;
+                var phWorld = Matrix.CreateScale(radius) * world;
+                _stationRenderer.Draw(phWorld, view, proj, Rendering.StationRenderer.FriendlyColor, _sectorLighting);
+            }
+        }
+    }
+
+    private void DrawInspectStationHud(Viewport viewport)
+    {
+        var s = CurrentInspectStation();
+        if (s is null) return;
+        int w = viewport.Width;
+        _spriteBatch.Begin();
+        int y = 12;
+        void Line(string str, Color c) { _spriteBatch.DrawString(_hudSmall, str, new Vector2(14, y), c); y += 22; }
+        var list = VisibleInspectStations();
+        Line($"STATION {_inspectIndex + 1}/{list.Count}  [{s.Name}]  (id {s.StationTypeId}, grp {s.GroupId})", Color.White);
+        Line($"model={s.ModelName}  texture={s.TextureName}  radius={s.Radius:0.#}  native={s.NativeAvailable}", Color.LightGray);
+        Line($"cam={(_inspectCam == InspectCamMode.FlyBy ? "flyby" : "orbit")}  yaw={_inspectOrbit.Yaw:0.##} pitch={_inspectOrbit.Pitch:0.##} dist={_inspectOrbit.Distance:0.#}  (native default orient: fwd +Z, up +Y, yaw 0)", Color.LightGray);
+        Line($"art={( _inspectShowNative && _inspectShowMeshy ? "both" : _inspectShowNative ? "native" : "placeholder" )} side={_inspectSideBySide} wire={_inspectWireframe} norm={_inspectNormals} light={_inspectLightingVariant} soft={_inspectSoft} bloom={_inspectBloom}", Color.LightGray);
+        string tag = MarkTags[Math.Clamp(_inspectTagIndex, 0, MarkTags.Length - 1)];
+        Line($"mark-bad: Tag=[{(tag.Length == 0 ? "(none)" : tag)}] note='{_inspectNote}'  (Tab=tag, Enter=mark, F11=shot, G=hulls)", tag.Length == 0 ? Color.DimGray : Color.Yellow);
+        _spriteBatch.End();
+    }
+
+    // ---------------------------------------------------------------------
     // Update (input)
     // ---------------------------------------------------------------------
 
@@ -277,7 +455,7 @@ public sealed partial class Game1
         {
             _inspectAutoAdvance = false;
             _inspectIndex++;
-            SelectInspectHull(reannounce: false);
+            SelectInspectObject(reannounce: false);
         }
 
         // P581 — the non-demo shot cooldown never ticked (only demo decremented it), so
@@ -336,12 +514,14 @@ public sealed partial class Game1
         // ---- keys ----
         bool Edge(ref bool was, XnaKeys k) { bool d = ks.IsKeyDown(k); bool r = d && !was; was = d; return r; }
 
-        if (Edge(ref _inspectPgDnWasDown, XnaKeys.PageDown)) { _inspectIndex++; SelectInspectHull(true); }
-        if (Edge(ref _inspectPgUpWasDown, XnaKeys.PageUp)) { _inspectIndex--; SelectInspectHull(true); }
-        if (Edge(ref _inspectRBWasDown, XnaKeys.OemCloseBrackets)) CycleInspectCiv(+1);
-        if (Edge(ref _inspectLBWasDown, XnaKeys.OemOpenBrackets)) CycleInspectCiv(-1);
+        if (Edge(ref _inspectPgDnWasDown, XnaKeys.PageDown)) { _inspectIndex++; SelectInspectObject(true); }
+        if (Edge(ref _inspectPgUpWasDown, XnaKeys.PageUp)) { _inspectIndex--; SelectInspectObject(true); }
+        if (Edge(ref _inspectRBWasDown, XnaKeys.OemCloseBrackets)) CycleInspectGroup(+1);
+        if (Edge(ref _inspectLBWasDown, XnaKeys.OemOpenBrackets)) CycleInspectGroup(-1);
+        // P615 — toggle hull ⇄ station mode live.
+        if (Edge(ref _inspectGWasDown, XnaKeys.G)) ToggleInspectMode();
 
-        if (Edge(ref _inspectDWasDown, XnaKeys.D)) { _inspectIncludeDrones = !_inspectIncludeDrones; _inspectIndex = 0; SelectInspectHull(true); }
+        if (Edge(ref _inspectDWasDown, XnaKeys.D)) { _inspectIncludeDrones = !_inspectIncludeDrones; _inspectIndex = 0; SelectInspectObject(true); }
         if (Edge(ref _inspectRWasDown, XnaKeys.R)) { _inspectCam = InspectCamMode.Orbit; _inspectOrbit.Reset(0f); }
         if (Edge(ref _inspectAWasDown, XnaKeys.A)) { _inspectAutoOrbit = !_inspectAutoOrbit; _inspectOrbit.AutoOrbit = _inspectAutoOrbit; }
 
@@ -490,7 +670,7 @@ public sealed partial class Game1
         int next = cur < 0 ? (dir > 0 ? 0 : civs.Count - 1) : (cur + dir + civs.Count) % civs.Count;
         _inspectCiv = civs[next];
         _inspectIndex = 0;
-        SelectInspectHull(true);
+        SelectInspectObject(true);
         Console.WriteLine($"[inspect] civ: {_inspectCiv} ({VisibleInspectHulls().Count} hulls)");
     }
 
@@ -544,6 +724,22 @@ public sealed partial class Game1
 
     private void MarkInspectBad()
     {
+        // P615 — station mode marks into the station ledger (stations-marked.jsonl).
+        if (_inspectStations)
+        {
+            var s = CurrentInspectStation();
+            if (s is null || _inspectStationNotes is null) return;
+            string stag = MarkTags[Math.Clamp(_inspectTagIndex, 0, MarkTags.Length - 1)];
+            string? stagNull = string.IsNullOrEmpty(stag) ? null : stag;
+            _inspectStationNotes.Append(new StationInspectorNote(
+                DateTimeOffset.Now, _inspectScreenshotLast, s.StationTypeId, s.Name, s.ModelName,
+                s.Radius, s.NativeAvailable,
+                _inspectOrbit.Yaw, _inspectOrbit.Pitch, _inspectOrbit.Distance,
+                stagNull, string.IsNullOrWhiteSpace(_inspectNote) ? null : _inspectNote.Trim()));
+            Console.WriteLine($"[inspect] MARKED BAD station {s.Name} (id {s.StationTypeId}) tag='{stagNull ?? "-"}'");
+            _inspectNote = "";
+            return;
+        }
         var h = CurrentInspectHull();
         if (h is null || _inspectNotes is null) return;
         string tag = MarkTags[Math.Clamp(_inspectTagIndex, 0, MarkTags.Length - 1)];
@@ -747,11 +943,13 @@ public sealed partial class Game1
         _starMid.Draw(view, proj, cameraEye);
         _starNear.Draw(view, proj, cameraEye);
 
-        DrawInspectHulls(view, proj, cameraEye);
+        if (_inspectStations) DrawInspectStations(view, proj, cameraEye);
+        else DrawInspectHulls(view, proj, cameraEye);
 
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         float effDt = _inspectPaused ? 0f : dt * _inspectTimeScale;
-        DrawInspectVfx(view, proj, cameraEye, dt, effDt);
+        if (!_inspectStations)
+            DrawInspectVfx(view, proj, cameraEye, dt, effDt);
 
         if (bloom)
         {
@@ -783,6 +981,8 @@ public sealed partial class Game1
         {
             // P581 — orbit-angle sweep: rotate the orbit camera to the next evenly spaced
             // azimuth, shot a real-backbuffer frame, and exit once all angles are captured.
+            // P615 — in STATION mode the sweep advances ACROSS every station (each at the
+            // N angles), so one unattended run captures all 143 types for the contact sheet.
             float az = _inspectSweepStep * (360f / _inspectSweepAngles);
             _inspectOrbit.Yaw = MathHelper.ToRadians(az);
             _inspectOrbit.Pitch = MathHelper.ToRadians(22f);   // tilt to expose the wings
@@ -792,9 +992,30 @@ public sealed partial class Game1
             _inspectShotCooldown = 30;
             if (_inspectSweepStep >= _inspectSweepAngles)
             {
-                _inspectSweepDone = true;
-                Console.WriteLine($"[inspect] angle sweep complete ({_inspectSweepAngles} angles) — exiting");
-                Exit();
+                if (_inspectStations)
+                {
+                    var sv = VisibleInspectStations();
+                    if (_inspectIndex + 1 < sv.Count)
+                    {
+                        _inspectIndex++;
+                        SelectInspectObject(reannounce: false);
+                        _inspectSweepStep = 0;
+                        _inspectSweepDone = false;
+                        Console.WriteLine($"[inspect] station sweep -> {_inspectIndex + 1}/{sv.Count}");
+                    }
+                    else
+                    {
+                        _inspectSweepDone = true;
+                        Console.WriteLine($"[inspect] station sweep complete ({sv.Count} stations x {_inspectSweepAngles} angles) — exiting");
+                        Exit();
+                    }
+                }
+                else
+                {
+                    _inspectSweepDone = true;
+                    Console.WriteLine($"[inspect] angle sweep complete ({_inspectSweepAngles} angles) — exiting");
+                    Exit();
+                }
             }
         }
         else if (!_inspectDemo && _inspectAutoShotsRemaining > 0 && _inspectShotCooldown <= 0 && _nowSeconds > 1.0)
@@ -814,6 +1035,28 @@ public sealed partial class Game1
 
     private void DrawInspectDepth(Matrix view, Matrix proj, Vector3 cameraEye)
     {
+        // P615 — station-mode depth pass (soft smoke reads the station silhouette).
+        if (_inspectStations)
+        {
+            var s = CurrentInspectStation();
+            if (s is null || _post?.LinearDepthEffect is not { } sDepth) return;
+            foreach (var (slotWorld, isNative) in InspectStationDrawSlots(s))
+            {
+                var world = slotWorld * Matrix.CreateTranslation(-cameraEye);
+                if (isNative && _nativeStationRenderer.MeshFor(s.ModelName) is { } geo)
+                {
+                    float nscale = Rendering.NativeStationResolver.ScaleForRadius(
+                        s.Radius > 0f ? s.Radius : Rendering.StationRenderer.DefaultFallbackRadius, geo.MeshRadius);
+                    _nativeStationRenderer.DrawDepth(geo, world, view, proj, nscale, sDepth, LinearDepth.DefaultNear, LinearDepth.DefaultFar);
+                }
+                else
+                {
+                    float radius = s.Radius > 0f ? s.Radius : Rendering.StationRenderer.DefaultFallbackRadius;
+                    _stationRenderer.DrawDepth(Matrix.CreateScale(radius) * world, view, proj, sDepth, LinearDepth.DefaultNear, LinearDepth.DefaultFar);
+                }
+            }
+            return;
+        }
         var h = CurrentInspectHull();
         if (h is null || _post?.LinearDepthEffect is not { } depthEffect) return;
         foreach (var (world, scale, native) in InspectHullDrawSlots(h))
@@ -1155,6 +1398,8 @@ public sealed partial class Game1
 
     private void DrawInspectHud(Viewport viewport)
     {
+        // P615 — station mode draws its own HUD line set.
+        if (_inspectStations) { DrawInspectStationHud(viewport); return; }
         var h = CurrentInspectHull();
         if (h is null) return;
         int w = viewport.Width;
@@ -1295,8 +1540,10 @@ public sealed partial class Game1
 
     private string TakeInspectScreenshot()
     {
-        var h = CurrentInspectHull();
-        string slug = h?.Slug ?? "unknown";
+        // P615 — station mode slugs the shot by station, else hull.
+        string slug = _inspectStations
+            ? (CurrentInspectStation()?.Slug ?? "unknown")
+            : (CurrentInspectHull()?.Slug ?? "unknown");
         int w = GraphicsDevice.PresentationParameters.BackBufferWidth;
         int ht = GraphicsDevice.PresentationParameters.BackBufferHeight;
         var px = new Color[w * ht];

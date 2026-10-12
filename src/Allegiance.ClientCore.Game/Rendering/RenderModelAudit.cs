@@ -68,7 +68,63 @@ public static class RenderModelAudit
         fallback += AuditSprites("mine", new[] { MineModelSource.SpriteStem }, disk, log);
         fallback += AuditSprites("chaff", ChaffModelSource.RealStems, disk, log);
         fallback += AuditBits(disk, log);
+        fallback += AuditTextureApplication(disk, log);
         return fallback;
+    }
+
+    /// <summary>
+    /// P615 — the explicit, DOCUMENTED allowlist of renderers that draw 3D
+    /// geometry with texturing OFF by design and are therefore exempt from the
+    /// texture-application audit. Each is the port's OWN procedural geometry or
+    /// a native effect coloured (not textured), so there is no native texture to
+    /// bind — they are NOT native-textured <c>.mdl</c> models:
+    /// <list type="bullet">
+    /// <item><see cref="BuildingEffectRenderer"/> — the "station under
+    /// construction" ghost. Native draws it via <c>LoadEffect(Color(50/255,
+    /// 28/255, 146/255), …)</c> (<c>src/Igc/buildingeffectigc.h:93</c>, hardcoded
+    /// violet, the side colour commented out) — an effect-coloured geometry, no
+    /// .mdl texture; the port's procedural violet ghost is faithful.</item>
+    /// <item><see cref="StationRenderer"/> — the procedural hub+ring placeholder
+    /// used ONLY when a station's native model can't be loaded; the real station
+    /// path is the TEXTURED <see cref="NativeStationRenderer"/>.</item>
+    /// <item>Procedural generators (warp, asteroid, giant-object, sky …) — not
+    /// native-textured models; each has its own designed look.</item>
+    /// </list>
+    /// </summary>
+    public static readonly IReadOnlyList<string> AllowedUntextured = new[]
+    {
+        "BuildingEffectRenderer (station-under-construction ghost; native LoadEffect hardcoded violet, buildingeffectigc.h:93, no .mdl texture)",
+        "StationRenderer (procedural placeholder; native station path is the textured NativeStationRenderer)",
+        "Procedural generators (warp/asteroid/giant-object/sky) — own designed look, no native texture",
+    };
+
+    /// <summary>
+    /// P615 — the texture-APPLICATION contract audit: catches any covered 3D
+    /// renderer that RESOLVES a native texture stem yet draws LIT-SOLID anyway
+    /// (by design or by a wiring slip) — the P609/P615 blind spot where a mere
+    /// stem-resolution audit reports 0 while the object renders untextured.
+    /// Pre-P615 the probe was exactly this: its <c>utl02bmp</c> stem resolved
+    /// (so the old audit said 0) but <see cref="ProbeRenderer"/> drew it
+    /// lit-solid by design. The renderers here must expose a texture-application
+    /// contract (<see cref="ProbeRenderer.AppliesTexture"/> /
+    /// <see cref="HullHitSparkRenderer.BitsTextured"/>); anything else that
+    /// draws a native model untextured must be added to
+    /// <see cref="AllowedUntextured"/> with a reason.
+    /// </summary>
+    private static int AuditTextureApplication(Dictionary<string, string> disk, Action<string> log)
+    {
+        int bad = 0;
+        if (!ProbeRenderer.AppliesTexture(disk.ContainsKey))
+        {
+            log($"[monogame] P615 probe: LIT-SOLID (native texture {ProbeModelSource.DemoTextureStem} not applied)");
+            bad++;
+        }
+        if (!HullHitSparkRenderer.BitsTextured(disk.ContainsKey))
+        {
+            log("[monogame] P609 hull-hit bit 'utl10': LIT-SOLID (native texture utl10bmp not applied)");
+            bad++;
+        }
+        return bad;
     }
 
     /// <summary>Distinct, non-blank, alpha-leading model names (the model-loader

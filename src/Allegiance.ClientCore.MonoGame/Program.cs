@@ -80,6 +80,7 @@ bool inspectDemo = false;
 bool inspectRepaired = false;
 int inspectAngles = 0;
 float inspectDist = 0;
+bool inspectStations = false;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -392,6 +393,14 @@ for (int i = 0; i < args.Length; i++)
         // P565 — the offline hull inspector (no server connect).
         inspectRequested = true;
     }
+    else if (a == "--inspect-stations")
+    {
+        // P615 — the offline STATION inspector: walk the core's 143 station
+        // types under the same orbit/angle-sweep/mark-bad workflow as hulls,
+        // native .mdl + texture vs the procedural placeholder.
+        inspectRequested = true;
+        inspectStations = true;
+    }
     else if (a == "--inspect-civ" || a.StartsWith("--inspect-civ=", StringComparison.Ordinal))
     {
         string? v = a == "--inspect-civ" ? (i + 1 < args.Length ? args[++i] : null)
@@ -515,6 +524,7 @@ var opts = new Game1.LaunchOptions
     InspectRepaired = inspectRepaired,
     InspectAngles = inspectAngles,
     InspectDist = inspectDist,
+    InspectStations = inspectStations,
     InspectCatalogue = inspectCatalogue,
     // P572 — live-proof automation plan (null when no --auto-* flag was given).
     AutoProof = autoPlan.AnyActive ? autoPlan : null,

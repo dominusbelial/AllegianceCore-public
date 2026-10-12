@@ -12,6 +12,7 @@ using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core.Content;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -555,8 +556,29 @@ public sealed partial class Game1
         // single-fallback convention). Unlike the missile mesh, the probe mesh
         // winds for MonoGame's DEFAULT back-face culling (the P290 empirical
         // finding), so the renderer applies no winding flip.
+        // P615 — the probe is TEXTURED with its real native texture (native
+        // paints it from probeigc.cpp:112-113's model load; all 53 PCore001
+        // probe types carry an empty textureName so the demo utl02 resolves its
+        // own imported utl02bmp), decoded + bound like missiles (P593b/P609).
+        var probeMdl = ProbeModelSource.LoadDemoModel(_assets);
+        Texture2D? probeTex = null;
+        try
+        {
+            var probeStem = Rendering.ProbeModelSource.ResolveDemoTextureStem(_assets);
+            if (probeStem is not null)
+            {
+                var pt = Rendering.MdlTextureDecoder.Decode(
+                    AssetSources.ReadAllBytes(_assets, probeStem + ".mdl"));
+                probeTex = new Texture2D(GraphicsDevice, pt.Width, pt.Height);
+                probeTex.SetData(Rendering.MdlTextureDecoder.ToPremultipliedRgba(pt));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[monogame] probe texture unavailable ({ex.Message}) — lit-solid fallback");
+        }
         _probeRenderer = new ProbeRenderer(
-            GraphicsDevice, ProbeModelSource.LoadDemoModel(_assets).Meshes);
+            GraphicsDevice, probeMdl.Meshes, probeTex);
 
         // P291 — the shared REAL mine sprite + decal-field renderer (the P290
         // runtime-native-asset pattern, applied to the mine's real TEXTURE
