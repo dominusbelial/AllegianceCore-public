@@ -212,7 +212,7 @@ internal static class McpTools
                 "list_parts" => Ok(JsonSerializer.Serialize(Catalog.AllParts()
                     .Select(p => new { id = p.Id, name = p.Name, category = p.Category }))),
                 "list_active_bots" => Ok(JsonSerializer.Serialize(mgr.ActiveBots()
-                    .Select(b => new { name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull, sector = b.Sector, behavior = b.Behavior, target = b.Target, orderedTarget = b.OrderedTarget, pos = b.Position }))),
+                    .Select(b => new { name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull, sector = b.Sector, behavior = b.Behavior, target = b.Target, orderedTarget = b.OrderedTarget, engagers = b.Engagers, pos = b.Position }))),
                 _ => Err($"unknown tool '{name}'"),
             };
         }

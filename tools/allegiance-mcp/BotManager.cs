@@ -26,6 +26,24 @@ internal sealed partial class BotManager : IDisposable
     private readonly ushort _port;
     private readonly object _gate = new();
     private readonly List<ActiveBot> _bots = new();
+
+    // ── P622 — per-pass target-engagement coordination ──────────────────
+    // Written ONLY by the single Loop thread. `_tickEngagers` accumulates the
+    // engager count per target as each combat bot picks its target in the
+    // current pass (reset at the top of each pass), giving every later bot a
+    // live "already engaged" view so the anti-swarm cap spreads the fleet.
+    // `_engagersSnapshot` is a copy taken at the END of each pass (under _gate)
+    // for read-only consumers like list_active_bots.
+    private readonly Dictionary<short, int> _tickEngagers = new();
+    private readonly Dictionary<short, int> _engagersSnapshot = new();
+    // P622 — how long ago an enemy hitting this bot still counts as an active
+    // threat (a "shooting at me" ship is engaged first).
+    private const double ThreatWindowSeconds = 8.0;
+    // P622 measurement switch (default OFF): when ALLEGIANCE_P622_LEGACY_NEAREST
+    // is set, EngageCombat reverts to the pre-P622 nearest-enemy pick so the P622
+    // live harness can measure the swarm before/after with the same binary.
+    private static readonly bool LegacyNearestFlag =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_P622_LEGACY_NEAREST") == "1";
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly CancellationTokenSource _loopCts = new();
 
@@ -1348,6 +1366,10 @@ internal sealed partial class BotManager : IDisposable
                 double now = Now();
                 ActiveBot[] snap;
                 lock (_gate) snap = _bots.ToArray();
+                // P622 — start a fresh engagement pass: clear the accumulated
+                // engager counts so each pass recomputes the coordinated spread
+                // from scratch (single Loop thread; readers use _engagersSnapshot).
+                _tickEngagers.Clear();
                 foreach (var bot in snap)
                 {
                     try
@@ -1385,6 +1407,15 @@ internal sealed partial class BotManager : IDisposable
                         ReReadyBot(bot);
                     }
                     catch { /* one bot's tick failure never kills the loop */ }
+                }
+
+                // P622 — end of pass: publish the completed engager distribution
+                // (target → engager count) for read-only consumers like
+                // list_active_bots, under _gate.
+                lock (_gate)
+                {
+                    _engagersSnapshot.Clear();
+                    foreach (var kv in _tickEngagers) _engagersSnapshot[kv.Key] = kv.Value;
                 }
 
                 // P598 — re-ready the probe after a mission rotation too: the
@@ -1840,18 +1871,18 @@ internal sealed partial class BotManager : IDisposable
     /// ship-target order (an accepted teammate order) TAKES PRECEDENCE over
     /// nearest-enemy — the bot engages THAT specific ship, never the nearest
     /// one, while it is alive.</summary>
-    private static void EngageCombat(ActiveBot bot, double now)
+    private void EngageCombat(ActiveBot bot, double now)
     {
         var cs = bot.Cs!;
         if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
         short myCluster = CsSector(cs);
 
-        // P431 — the commanded ship-target wins over nearest-enemy. While it is
-        // alive and co-located, engage exactly it; if it is not currently engageable
-        // (cross-side visibility can be intermittent — P429) or not yet co-located,
-        // loiter (committed to this order, attacking no one else). The order is only
-        // released by a NEW superseding order (DecideAcceptTranslate), not by a
-        // transient visibility gap.
+        // P431 — the commanded ship-target wins over the coordinated choice. While
+        // it is alive and co-located, engage exactly it; if it is not currently
+        // engageable (cross-side visibility can be intermittent — P429) or not yet
+        // co-located, loiter (committed to this order, attacking no one else). The
+        // order is only released by a NEW superseding order (DecideAcceptTranslate),
+        // not by a transient visibility gap.
         if (bot.OrderedTargetId is { } ordered)
         {
             bool engageable; short osector;
@@ -1864,7 +1895,11 @@ internal sealed partial class BotManager : IDisposable
             bot.TargetId = ordered;
             if (engageable && osector == myCluster)
             {
-                EngageShipAt(bot, cs, ordered, now);
+                // Commanded focus-fire: no anti-swarm cap (the order IS the
+                // concentration), but report its engager count + a flat rank 0
+                // (no extra approach offset) so P431 behaviour is unchanged.
+                int orderedEngagers = _tickEngagers.TryGetValue(ordered, out var oe) ? oe : 0;
+                EngageShipAt(bot, cs, ordered, now, orderedEngagers, engagerRank: 0);
             }
             else
             {
@@ -1873,8 +1908,46 @@ internal sealed partial class BotManager : IDisposable
             return;
         }
 
-        short best = -1;
-        float bestD = float.MaxValue;
+        // P622 measurement switch (DEFAULT OFF): when ALLEGIANCE_P622_LEGACY_NEAREST
+        // is set, revert to the pre-P622 per-bot nearest-enemy pick so the P622
+        // live harness can measure the swarm before/after with the same binary.
+        if (LegacyNearestFlag)
+        {
+            short leg = NearestEnemyFallback(bot, cs, myPos, myCluster);
+            if (leg < 0) { bot.TargetId = null; LoiterCombat(bot, now); return; }
+            bot.TargetId = leg;
+            int lc = (_tickEngagers.TryGetValue(leg, out var le) ? le : 0) + 1;
+            _tickEngagers[leg] = lc;
+            EngageShipAt(bot, cs, leg, now, lc, engagerRank: lc);
+            return;
+        }
+
+        // P622 — coordinated spreading + priority: replace the per-bot
+        // nearest-enemy pick (the 195-on-one-miner swarm) with a shared choice
+        // that respects engager caps, threat priority, and the lone-miner
+        // detachment-vs-hold rule. The P558 native attack law still flies the
+        // bot once a target is chosen.
+        var choice = ChooseCombatTarget(bot, cs, myPos, myCluster);
+        if (choice.Hold || choice.TargetId is not { } best)
+        {
+            bot.TargetId = null;
+            LoiterCombat(bot, now);      // hold/loiter at the staging point
+            return;
+        }
+        bot.TargetId = best;
+        // Register this engager in the current pass (single Loop thread).
+        int newCount = (_tickEngagers.TryGetValue(best, out var prev) ? prev : 0) + 1;
+        _tickEngagers[best] = newCount;
+        EngageShipAt(bot, cs, best, now, newCount, engagerRank: newCount);
+    }
+
+    /// <summary>P622 — the pre-P622 per-bot NEAREST different-side co-located
+    /// visible enemy pick (what caused the 195-on-one-miner swarm). Retained only
+    /// behind the ALLEGIANCE_P622_LEGACY_NEAREST measurement switch so the live
+    /// harness can quantify before/after with the same binary. -1 = no enemy.</summary>
+    private static short NearestEnemyFallback(ActiveBot bot, ConnectionSession cs, Vector3 myPos, short myCluster)
+    {
+        short best = -1; float bestD = float.MaxValue;
         lock (cs.Gate)
         {
             foreach (var ship in cs.World.Ships.Values)
@@ -1887,9 +1960,58 @@ internal sealed partial class BotManager : IDisposable
                 if (d < bestD) { bestD = d; best = ship.ShipId; }
             }
         }
-        if (best < 0) { bot.TargetId = null; LoiterCombat(bot, now); return; }
-        bot.TargetId = best;
-        EngageShipAt(bot, cs, best, now);
+        return best;
+    }
+
+    /// <summary>P622 — build this bot's co-located different-side VISIBLE enemy
+    /// candidates from its own ClientWorld and run the pure coordinated selector
+    /// over them (engager caps, threat priority, lone-miner detachment/hold).
+    /// Reading the current-pass engager counts (_tickEngagers) gives the
+    /// anti-swarm view; threats are enemies that recently damaged THIS bot
+    /// (see <see cref="ActiveBot.RecentAttackers"/>) or a station-threatening
+    /// bomber/capital while a friendly station is co-located. Runs on the single
+    /// Loop thread.</summary>
+    private BotTargetChoice ChooseCombatTarget(ActiveBot bot, ConnectionSession cs, Vector3 myPos, short myCluster)
+    {
+        double now = Now();
+        var candidates = new List<BotTargetCandidate>();
+        var recentAttackers = bot.RecentAttackers;
+        bool friendlyStation = false;
+        lock (cs.Gate)
+        {
+            foreach (var st in cs.World.Stations.Values)
+                if (st.SideId == bot.Side && st.ClusterId == myCluster) { friendlyStation = true; break; }
+
+            foreach (var ship in cs.World.Ships.Values)
+            {
+                if (ship.ShipId == bot.ShipId || ship.IsNotVisible) continue;
+                if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
+                if (ship.SectorId != myCluster) continue;   // co-located
+                if (ship.Latest is not { } lu) continue;
+                float d = (lu.Position - myPos).Length();
+                var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
+                bool isThreat =
+                    (recentAttackers.TryGetValue(ship.ShipId, out var at) && now - at < ThreatWindowSeconds)
+                    || (friendlyStation && CombatTargetSelector.IsStationThreatening(cls));
+                candidates.Add(new BotTargetCandidate(ship.ShipId, lu.Position, cls, isThreat) { Distance = d });
+            }
+        }
+        var ctx = new BotSelectionContext(bot.ShipId, myCluster, TeammatesInCluster(cs, bot, myCluster), _tickEngagers);
+        return CombatTargetSelector.Select(candidates, ctx);
+    }
+
+    /// <summary>P622 — count this side's LIVING combat bots currently co-located
+    /// in <paramref name="myCluster"/> (the bot's own side, for the selector's
+    /// context). Cheap; runs on the single Loop thread under _gate.</summary>
+    private int TeammatesInCluster(ConnectionSession cs, ActiveBot bot, short myCluster)
+    {
+        int n = 0;
+        lock (_gate)
+            foreach (var o in _bots)
+                if (o != bot && o.Cs is not null && o.Behavior == "combat" && !o.IsPod && !o.PodDocked
+                    && o.Side == bot.Side && o.Cs.World.Ships.TryGetValue(o.ShipId, out var me) && me.SectorId == myCluster)
+                    n++;
+        return n;
     }
 
     /// <summary>[vz EngageEnemy's engagement body, P558-rewritten] Point the bot
@@ -1910,7 +2032,8 @@ internal sealed partial class BotManager : IDisposable
     /// hull / shield decide fights instead of a ring scaled to each side's own
     /// weapon range (the P556 root cause). Shared by the nearest-enemy and P431
     /// commanded-target paths.</summary>
-    private static void EngageShipAt(ActiveBot bot, ConnectionSession cs, short targetId, double now)
+    private static void EngageShipAt(ActiveBot bot, ConnectionSession cs, short targetId, double now,
+        int engagerCount, int engagerRank)
     {
         if (now - bot.LastTargetAt > 3)
         {
@@ -1940,6 +2063,20 @@ internal sealed partial class BotManager : IDisposable
         float projSpeed = 0f, weaponRange = 0f, lifespan = 0f; bool abs = false;
         if (bot.WeaponPartId is { } wp) TryWeaponBallistics(wp, out projSpeed, out weaponRange, out lifespan, out abs);
         if (projSpeed <= 0f || lifespan <= 0f) { LoiterCombat(bot, now); return; }
+
+        // P622 §4 — approach spacing: when several teammates engage the SAME
+        // target, fan the approach OUT laterally (deterministic per-engager
+        // orbit offset) so the fleet doesn't converge into one column and grind
+        // against the rock/asteroid the target sits on (rock avoidance itself is
+        // the shared TryDodgeGoal below). Applied ONLY while still closing from
+        // outside the weapon band — within range we converge on the exact
+        // position for accurate fire (P558's bands + lead are untouched).
+        if (engagerCount > 1 && engagerRank > 0)
+        {
+            float distTo = (targetPos - myPos).Length();
+            if (distTo > weaponRange * 0.9f)
+                targetPos += CombatTargetSelector.EngagementOrbitOffset(engagerRank, targetPos - myPos, 45f);
+        }
 
         // Lead aim: where the round actually intercepts the moving target
         // (native solveForLead → the intercept time `t` powers the bands).
@@ -2138,6 +2275,15 @@ internal sealed partial class BotManager : IDisposable
                 if (h.TargetId != -1 && cs.World.Ships.TryGetValue(h.TargetId, out var tgt))
                     tgtSide = tgt.SideId;
                 hits.Add((h.SourceId, h.TargetId, h.AbsorbedByShield, tgtSide));
+
+                // P622 — threat tracking: an ENEMY (different-side) ship that just
+                // damaged ME is recorded as an active attacker, so the selector can
+                // engage it first. Pruned lazily (bounded, windowed).
+                if (h.TargetId == myShipId && h.SourceId != -1
+                    && cs.World.Ships.TryGetValue(h.SourceId, out var atk)
+                    && atk.SideId != -1 && atk.SideId != bot.Side)
+                    bot.RecentAttackers[h.SourceId] = now;
+
                 // P556 — TTK: record the FIRST damaging enemy hit on this victim
                 // (our own hit on a different-side ship; shield- or hull-absorbed —
                 // a shielded victim soaks hits from first contact, so a stronger
@@ -2170,6 +2316,20 @@ internal sealed partial class BotManager : IDisposable
                 }
             }
             bot.KillCursor = kills.Count;
+
+            // P622 — lazily prune the attacker-window map (a handful of entries
+            // per tick; bounded by the enemies that actually shoot this bot).
+            if (now - bot.LastAttackersPruneAt > 5.0)
+            {
+                bot.LastAttackersPruneAt = now;
+                if (bot.RecentAttackers.Count > 0)
+                {
+                    var stale = bot.RecentAttackers
+                        .Where(kv => now - kv.Value > ThreatWindowSeconds)
+                        .Select(kv => kv.Key).ToList();
+                    foreach (var s in stale) bot.RecentAttackers.Remove(s);
+                }
+            }
         }
     }
 
@@ -3538,6 +3698,12 @@ internal sealed partial class BotManager : IDisposable
         /// behavior). Distinct from <see cref="Target"/> (the current live
         /// engagement) and from the spawn-time <see cref="Behavior"/>.</summary>
         public required short? OrderedTarget { get; init; }
+        /// <summary>P622 — how many bots are CURRENTLY engaging this bot's
+        /// <see cref="Target"/> (the last-completed engagement pass's engager
+        /// count; 0 when the bot has no target or the target is uncontested).
+        /// Lets a caller verify the anti-swarm cap live — a lone miner must show
+        /// a small engager count, not the whole fleet.</summary>
+        public required int Engagers { get; init; }
     }
 
     private static short ShipIdOf(ActiveBot bot)
@@ -3566,6 +3732,7 @@ internal sealed partial class BotManager : IDisposable
                             Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
                             Sector = sector, Behavior = bot.Behavior,
                             Position = [pos.X, pos.Y, pos.Z], Target = bot.TargetId, OrderedTarget = bot.OrderedTargetId,
+                            Engagers = EngagersOf(bot),
                         });
                         continue;
                     }
@@ -3584,6 +3751,7 @@ internal sealed partial class BotManager : IDisposable
                             Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
                             Sector = sec, Behavior = bot.Behavior,
                             Position = [p.X, p.Y, p.Z], Target = bot.TargetId, OrderedTarget = bot.OrderedTargetId,
+                            Engagers = EngagersOf(bot),
                         });
                         continue;
                     }
@@ -3594,6 +3762,7 @@ internal sealed partial class BotManager : IDisposable
                     {
                         Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
                         Sector = s, Behavior = bot.Behavior, Position = [0, 0, 0], Target = null, OrderedTarget = bot.OrderedTargetId,
+                        Engagers = 0,
                     });
                 }
                 catch { /* one bot's bad state never breaks list_active_bots */ }
@@ -3601,6 +3770,12 @@ internal sealed partial class BotManager : IDisposable
         }
         return views;
     }
+
+    /// <summary>P622 — the current engager count for this bot's target (0 when
+    /// it has none or the target is uncontested), from the last-completed
+    /// engagement pass. Called under <c>_gate</c> (list_active_bots).</summary>
+    private int EngagersOf(ActiveBot bot) =>
+        bot.TargetId is { } tid ? (_engagersSnapshot.TryGetValue(tid, out var e) ? e : 0) : 0;
 
     // ── P539c — per-bot world-view diagnosis (read-only; the per-side repro) ──
 
@@ -4163,6 +4338,13 @@ internal sealed partial class BotManager : IDisposable
         public bool Launched;
         public bool Arrived;                       // reached the target sector
         public short? TargetId;                    // the enemy ship this bot is engaging
+        // P622 — enemies that have recently DAMAGED this bot (source ship id →
+        // wall-clock of the last hull hit THEY caused on US), refreshed each tick
+        // from this bot's real hull-hit stream in SampleCombatStats. Drives the
+        // "threats first" priority: a ship shooting at me is engaged before idle
+        // combat ships or miners.
+        public readonly Dictionary<short, double> RecentAttackers = new();
+        public double LastAttackersPruneAt = double.NegativeInfinity;
         public double LastTargetAt = double.NegativeInfinity;
         public double LastBoostAt = double.NegativeInfinity;
         public double LastCloakAt = double.NegativeInfinity;
