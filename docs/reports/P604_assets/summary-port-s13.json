@@ -1,0 +1,1 @@
+{"model":"port","size_scale":13,"players":"391","threads_avg":451,"vmRssKb_avg":151815,"bcastShipStatesMeanMs":17.3545,"bcastShipsUpdateMeanMs":4.4127,"simUpdateMeanMs":0.9949,"tickMeanMs":25.11,"tickP95Ms":35.80,"ticksPer5s":101,"egressPerPlayerBps":239304.2,"disconnects":"[disconnect-summary] window: ReadErrorOrEof=1;"}
