@@ -65,7 +65,8 @@ public class ConnectionCacheCleanupTests
             && c.TeammateExportSent == 0 && c.TeammatePlayerInfoSent == 0
             && c.TeammateLoadoutVersionSent == 0 && c.TeammateLoadoutCache == 0
             && c.CrossSideExportSent == 0
-            && c.LastTeammateStatusTick == 0;
+            && c.LastTeammateStatusTick == 0
+            && c.NextTeammateRefreshTick == 0;
     }
 
     [Trait("Requires", "Artwork")]
@@ -101,6 +102,8 @@ public class ConnectionCacheCleanupTests
                 // collections.
                 Assert.True(before.LastStatusSector >= 1 && before.LastStatusTick >= 1,
                     $"cycle {cycle}: status caches never populated ({before})");
+                Assert.True(before.NextTeammateRefreshTick >= 1,
+                    $"cycle {cycle}: per-recipient teammate-refresh phase never populated ({before})");
                 Assert.True(before.TeammateExportSent >= 1 && before.TeammatePlayerInfoSent >= 1,
                     $"cycle {cycle}: teammate caches never populated ({before})");
                 Assert.True(before.TeammateLoadoutVersionSent >= 1 || before.TeammateLoadoutCache >= 1,

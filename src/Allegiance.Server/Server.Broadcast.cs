@@ -429,7 +429,12 @@ public sealed partial class Server
             double windowSecs = DisconnectSummaryTicks / (double)Math.Max(1, _config.UpdatesPerSecond);
             int peers = _peerShips.Count;
             double perPeerBps = peers > 0 ? bytes / windowSecs / peers : 0d;
-            Console.WriteLine($"[egress] window: bytes={bytes} peers={peers} windowSecs={windowSecs:0.#} per-peer-bps={perPeerBps:0.0}");
+            // P604b — GC collections this window, so an allocation-burst-induced
+            // tick hitch can be tied to a GC pause (Gen0/1/2 counts are monotonic
+            // per-process; the delta over the window is what matters).
+            int g0 = GC.CollectionCount(0), g1 = GC.CollectionCount(1), g2 = GC.CollectionCount(2);
+            Console.WriteLine($"[egress] window: bytes={bytes} peers={peers} windowSecs={windowSecs:0.#} per-peer-bps={perPeerBps:0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}}");
+            _lastGc0 = g0; _lastGc1 = g1; _lastGc2 = g2;
         });
         // P507 — every ~10s, a per-peer acceptance summary of the native
         // own-ship model (accepted / rejected / out-of-date / invalid counts +
@@ -583,6 +588,21 @@ public sealed partial class Server
     /// path). It is invoked unchanged whenever <c>broadcast.parallelBuild</c>
     /// is off; the parallel twin is <see cref="BroadcastShipStatesParallel"/>.</para></summary>
     private void BroadcastShipStatesSerial(uint tickIndex)
+    {
+        using (TickProfiler.Enter("bss.setup"))
+        {
+            BroadcastShipStatesSerialInner(tickIndex);
+        }
+    }
+
+    /// <summary>
+    /// P604b — the body of <see cref="BroadcastShipStatesSerial"/> split out so
+    /// the per-tick sub-bucket profiler can time the setup (snapshot + side/NPC
+    /// grouping) separately from the per-peer mate walk, to isolate the
+    /// ~5 s periodic hitch. Kept byte-identical; the split is purely so the
+    /// <c>bss.setup</c> / <c>bss.mates</c> buckets are measurable.
+    /// </summary>
+    private void BroadcastShipStatesSerialInner(uint tickIndex)
     {
         // One snapshot reused for both the own-ship walk and the (P58)
         // same-side teammate walk below, so neither mutates mid-iteration.
@@ -748,12 +768,37 @@ public sealed partial class Server
             // receiver's own.
             if (live.Ship.SideId is { } recipientSide && sameSide.TryGetValue(recipientSide, out var mates))
             {
+                // P604b — per-recipient phase gate for the periodic same-side
+                // TEAMMATE SHIP_STATUS(90) refresh. Before this, the per-pair
+                // check (`tickIndex - last >= TeammateStatusRefreshTicks`) fired
+                // for EVERY (recipient, subject) pair on the same aligned tick —
+                // every peer's `last` is seeded to ~the same join-burst tick, so
+                // every 100th tick sent O(P²) SHIP_STATUS packets at once. That
+                // synchronized O(P²) burst was the ~5 s hitch (P604b; measured
+                // as a ~36 ms bss.mates max on this workstation, ~1.2 s on the
+                // weaker/shared 221 box). Staggering the refresh PER RECIPIENT —
+                // each recipient refreshes ALL of its mates on its own
+                // phase-offset tick — keeps every pair's ~5 s cadence while
+                // bounding the per-tick burst to ~P²/interval sends. Phase =
+                // the recipient's ConnectionId modulo the interval, so the
+                // ~P/interval recipients due per tick are spread (never the
+                // whole fleet at once).
+                if (!_nextTeammateRefreshTick.TryGetValue(kv.Key, out var rt))
+                {
+                    rt = (long)tickIndex + (int)(kv.Key.Value % TeammateStatusRefreshTicks);
+                    _nextTeammateRefreshTick[kv.Key] = rt;
+                }
+                bool recipientRefreshDue = (long)tickIndex >= rt;
+                if (recipientRefreshDue)
+                    _nextTeammateRefreshTick[kv.Key] = (long)tickIndex + TeammateStatusRefreshTicks;
+
                 // P317 — batch every dirty teammate SingleShipUpdate for this
                 // recipient into ONE FedPacket at the end of the walk (instead
                 // of one packet per (recipient, subject) pair per tick, which
                 // at 150 same-side ships is ~22k packets/tick). Lazily created
                 // so a recipient with no dirty mates allocates nothing.
                 List<byte[]>? posBatch = null;
+                using (TickProfiler.Enter("bss.mates"))
                 foreach (var tv in mates)
                 {
                     if (ReferenceEquals(tv.Value.Ship, ship)) continue;   // own ship, handled above
@@ -865,8 +910,12 @@ public sealed partial class Server
                     // sent), the status is skipped too, keeping the two in step.
                     if (_teammateExportSent.Contains((kv.Key, teammateId)))
                     {
+                        // P604b — per-recipient gate: this pair refreshes when
+                        // the RECIPIENT's phase is due (recipientRefreshDue),
+                        // or on the pair's very first send (lastTeammateTick<0,
+                        // a just-exported new mate, caught up immediately).
                         long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((kv.Key, teammateId), out var tt0) ? tt0 : -1;
-                        if (lastTeammateTick < 0 || (long)tickIndex - lastTeammateTick >= TeammateStatusRefreshTicks)
+                        if (lastTeammateTick < 0 || recipientRefreshDue)
                         {
                             SendPeer(kv.Key, FedPacket.Pack(new[] { MakeOwnShipStatus(teammateId, tv.Value).Encode() }));
                             ConsoleLog.Write($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
@@ -1023,7 +1072,12 @@ public sealed partial class Server
                         }
 
                         long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((kv.Key, npc.Id), out var nt0) ? nt0 : -1;
-                        if (lastNpcTick < 0 || (long)tickIndex - lastNpcTick >= TeammateStatusRefreshTicks)
+                        // P604b — gate on the recipient's phase too: the NPC
+                        // status refresh is the same aligned-100 anti-pattern as
+                        // the teammate refresh, so it rides the same per-recipient
+                        // phase to never burst fleet-wide (first send still
+                        // immediate via lastNpcTick<0).
+                        if (lastNpcTick < 0 || recipientRefreshDue)
                         {
                             SendPeer(kv.Key, FedPacket.Pack(new[] { MakeNpcShipStatus(npc).Encode() }));
                             ConsoleLog.Write($"[samestidenpcstatus] peer {kv.Key} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
@@ -1099,6 +1153,16 @@ public sealed partial class Server
                 list.Add(gkv);
             }
         }
+
+        // P604b — pre-initialise each peer's periodic teammate-status refresh
+        // phase in the serial snapshot so the parallel workers only READ
+        // `_nextTeammateRefreshTick` (no shared write in the build phase). Phase
+        // = the recipient's ConnectionId modulo the interval, so the ~P/interval
+        // recipients due per tick are spread — the synchronized O(P²) refresh
+        // burst this staggers (see the serial builder's comment) never forms.
+        foreach (var gkv in peers)
+            if (!_nextTeammateRefreshTick.ContainsKey(gkv.Key))
+                _nextTeammateRefreshTick[gkv.Key] = (long)tickIndex + (int)(gkv.Key.Value % TeammateStatusRefreshTicks);
 
         // Per-(mission, side) same-side NPC grouping, built once (mirror of serial
         // :527-538). Shared read-only across workers.
@@ -1198,6 +1262,10 @@ public sealed partial class Server
         public readonly Dictionary<short, long> TeammateStatusTick = new(); // -> _lastTeammateStatusTick
         public readonly Dictionary<short, long> LoadoutVersionSet = new(); // -> _teammateLoadoutVersionSent
         public readonly Dictionary<short, long> NpcStatusTick = new();     // -> _lastSameSideNpcStatusTick
+        // P604b — per-recipient advance of `_nextTeammateRefreshTick` when this
+        // peer's periodic teammate-status refresh fired this tick (null = no
+        // change). Applied serially with the other per-peer effects.
+        public long? NextTeammateRefreshTick;
     }
 
     /// <summary>
@@ -1218,6 +1286,7 @@ public sealed partial class Server
         foreach (var (mate, t) in r.TeammateStatusTick) _lastTeammateStatusTick[(conn, mate)] = t;
         foreach (var (mate, v) in r.LoadoutVersionSet) _teammateLoadoutVersionSent[(conn, mate)] = v;
         foreach (var (npc, t) in r.NpcStatusTick) _lastSameSideNpcStatusTick[(conn, npc)] = t;
+        if (r.NextTeammateRefreshTick is { } nrt) _nextTeammateRefreshTick[conn] = nrt;
     }
 
     /// <summary>
@@ -1300,6 +1369,15 @@ public sealed partial class Server
 
         if (live.Ship.SideId is { } recipientSide && sameSide.TryGetValue(recipientSide, out var mates))
         {
+            // P604b — per-recipient phase gate (mirrors the serial builder's).
+            // The snapshot phase pre-initialises `_nextTeammateRefreshTick` for
+            // every peer, so this worker only READS it; the advance is recorded
+            // as a per-peer effect (NextTeammateRefreshTick) applied serially.
+            long rt = _nextTeammateRefreshTick.TryGetValue(conn, out var rv)
+                ? rv : (long)tickIndex + (int)(conn.Value % TeammateStatusRefreshTicks);
+            bool recipientRefreshDue = (long)tickIndex >= rt;
+            if (recipientRefreshDue) r.NextTeammateRefreshTick = (long)tickIndex + TeammateStatusRefreshTicks;
+
             List<byte[]>? posBatch = null;
             foreach (var tv in mates)
             {
@@ -1352,7 +1430,7 @@ public sealed partial class Server
                 if (_teammateExportSent.Contains((conn, teammateId)) || localExportSent.Contains(teammateId))
                 {
                     long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((conn, teammateId), out var tt0) ? tt0 : -1;
-                    if (lastTeammateTick < 0 || (long)tickIndex - lastTeammateTick >= TeammateStatusRefreshTicks)
+                    if (lastTeammateTick < 0 || recipientRefreshDue)
                     {
                         r.Packets.Add((FedPacket.Pack(new[] { MakeOwnShipStatus(teammateId, tv.Value).Encode() }), 0, false));
                         r.Logs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
@@ -1447,7 +1525,8 @@ public sealed partial class Server
                     }
 
                     long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((conn, npc.Id), out var nt0) ? nt0 : -1;
-                    if (lastNpcTick < 0 || (long)tickIndex - lastNpcTick >= TeammateStatusRefreshTicks)
+                    // P604b — gate on the recipient's phase (mirror of serial).
+                    if (lastNpcTick < 0 || recipientRefreshDue)
                     {
                         r.Packets.Add((FedPacket.Pack(new[] { MakeNpcShipStatus(npc).Encode() }), 0, false));
                         r.Logs.Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
@@ -1620,10 +1699,13 @@ public sealed partial class Server
         }
         if (bySide.Count == 0) return;   // nobody seated on a real side
 
-        // P369 — once per CrossSideIdentityRefreshTicks, the already-latched
+        // P369 — on the slow identity-refresh cadence, the already-latched
         // (peer, ship) identity is re-sent too (below) so a single missed EXPORT
-        // self-heals. Hoisted here so it's not recomputed per ship.
-        bool identityRefreshDue = ((long)TickIndex % CrossSideIdentityRefreshTicks) == 0;
+        // self-heals. P604b — the re-send is phase-staggered per (conn, ship)
+        // (below) instead of a global `TickIndex % interval == 0` (which fired
+        // for EVERY latched pair at once — an O(peers × ships) EXPORT re-send
+        // burst every 30 s, measured as a ~42 ms crossSideExportSweep spike on
+        // this workstation and amplified on 221).
 
         foreach (var m in _missions)
         {
@@ -1671,7 +1753,12 @@ public sealed partial class Server
                             // peers still seated — never per-tick spam), so a peer
                             // that never landed that one EXPORT re-learns the
                             // ship's real SideId instead of staying at 0.
-                            else if (identityRefreshDue)
+                            // P604b — phase-staggered per (conn, ship): each
+                            // latched pair re-exports once per interval on its own
+                            // phase slot, so the self-heal cadence is unchanged but
+                            // the fleet-wide O(P²) re-export burst is gone.
+                            else if (((long)TickIndex + ((uint)conn.Value + (uint)ship.Id) % CrossSideIdentityRefreshTicks)
+                                        % CrossSideIdentityRefreshTicks == 0)
                                 SendCrossSideExport(conn, ship, sideId);
                         }
                     }
@@ -1881,7 +1968,20 @@ public sealed partial class Server
                             foreach (var conn in conns)
                             {
                                 long last = _crossSideShipStatusTick.TryGetValue((conn, ship.Id), out var l) ? l : -1;
-                                if (last < 0 || (long)TickIndex - last >= CrossSideStatusRefreshTicks)
+                                // P604b — phase-stagger the slow catch-up refresh
+                                // per (conn, ship): it was `TickIndex - last >= 100`
+                                // for EVERY (conn, seen-enemy) pair on the same
+                                // aligned 100th tick — an O(peers × enemies)
+                                // SHIP_STATUS re-send burst that compounded the
+                                // ~5 s hitch on 221. Each pair now re-sends once
+                                // per interval on its own phase slot (phase from
+                                // the stable (conn, ship) ids), so the fleet-wide
+                                // simultaneity is gone while the self-heal cadence
+                                // (re-learn within one interval) is preserved.
+                                long phase = ((uint)conn.Value + (uint)ship.Id) % CrossSideStatusRefreshTicks;
+                                bool phasedDue = last < 0 ||
+                                    (((long)TickIndex + phase) % CrossSideStatusRefreshTicks == 0);
+                                if (phasedDue)
                                 {
                                     SendPeer(conn, packet);
                                     _crossSideShipStatusTick[(conn, ship.Id)] = TickIndex;
@@ -2585,8 +2685,33 @@ public sealed partial class Server
                 // The promoted target consumes one heavy slot (FedSrv.CPP:4141-4146),
                 // so the remaining candidates compete for the rest of the heavy
                 // budget plus the light budget.
-                int othersHeavy = cHeavyPerInterval - (targetShip is not null ? 1 : 0);
-                int servedLimit = othersHeavy + cLightPerInterval;   // ≤ 4 other ships per tick
+                //
+                // P604b — density-aware native heavy quota. Native's fixed
+                // cHeavyPerInterval=2 assumes the client's LOCAL IGC SIM
+                // interpolates every ship every frame between the sparse heavy
+                // updates. This port's client is a PURE RENDERER: it has no local
+                // sim, so a remote ship's pose is bridged solely by the dead-
+                // reckoner's kinematic replay — which is CAPTURED at
+                // ExtrapolationCap = 1.5 s (ShipDeadReckoner.cs:64, native's
+                // ±1.5 s ProcessShipUpdate window, shipIGC.cpp:3113-3115): beyond
+                // it the client HOLDS the pose (a visible freeze). With the fixed
+                // budget of 2 heavy/tick, a ship among `others` is re-fed every
+                // ~others/2 ticks — at ~195 in-sector ships that is ~4.9 s ≫ 1.5 s,
+                // which is the "ships disconnecting / not looking good" freeze on
+                // the 221 195v195 staging run. So at density the port's sim
+                // genuinely "needs more": the heavy quota is raised (native mode
+                // only) so every other ship is re-fed within the dead-reckoner's
+                // smooth horizon (≥ 1 heavy per DeadReckonExtrapolationTicks).
+                // At typical density (others ≤ 60) this equals native's 2 — the
+                // port stays byte-identical and native-faithful there; only high
+                // density scales. Port mode is untouched (it sends a per-tick
+                // posBatch anyway).
+                int targetSlot = targetShip is not null ? 1 : 0;
+                int scaledHeavy = _nativeShipUpdates
+                    ? Math.Max(cHeavyPerInterval, (int)Math.Ceiling(Math.Max(1, others.Count) / (double)DeadReckonExtrapolationTicks) + targetSlot)
+                    : cHeavyPerInterval;
+                int othersHeavy = Math.Max(0, scaledHeavy - targetSlot);
+                int servedLimit = othersHeavy + cLightPerInterval;
 
                 int i = 0;
                 foreach (var c in others)

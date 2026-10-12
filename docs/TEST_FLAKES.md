@@ -436,6 +436,14 @@ isolation, none involve the P597 changes.
 live-wire dock/order-stream timing, passes in isolation (verified 2026-10-10),
 status: load-flake.
 
+**Newly-observed flake (P604b, documented for future runs):**
+`Core…P591dMinefieldExportAudienceTests.Npc_layer_drone_minefield_reaches_same_side_seated_peer` —
+live-wire NPC drone mines a field and the mine EXPORT must reach a same-side
+seated peer within a fixed receipt window; fails only under full-suite load
+(observed in the P604b run B), unrelated to P604b's broadcast scheduling
+(changes touch ship-status/identity/cross-side sweep timing, not mine exports).
+Status: load-flake.
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

@@ -737,6 +737,10 @@ public sealed partial class Server
                      .Where(kv => kv.Key.Item1 == conn || kv.Key.Item2 == oldShipId)
                      .Select(kv => kv.Key).ToList())
             _lastTeammateStatusTick.Remove(k);
+        // P604b — reset the recipient's teammate-refresh phase on a re-seat so
+        // the fresh seat starts a fresh, independently-phased refresh window
+        // (mirrors the sibling latches above).
+        _nextTeammateRefreshTick.Remove(conn);
         // P493 — same reset for the cross-side SHIP_STATUS latches on a re-login
         // (the old ship id is being retired/reseated).
         foreach (var k in _crossSideShipStatusTick

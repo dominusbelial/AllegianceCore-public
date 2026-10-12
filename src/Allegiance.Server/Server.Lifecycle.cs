@@ -1456,6 +1456,10 @@ public sealed partial class Server
                      .Where(kv => kv.Key.Item1 == id || kv.Key.Item2 == departedShipId)
                      .Select(kv => kv.Key).ToList())
             _lastTeammateStatusTick.Remove(k);
+        // P604b — per-recipient teammate-refresh phase is recipient-scoped only
+        // (the subject dimension is covered by _lastTeammateStatusTick above):
+        // free the departing recipient's entry so it can't leak across churn.
+        _nextTeammateRefreshTick.Remove(id);
 
         // P493 — the cross-side SHIP_STATUS latches get the same treatment: free
         // every entry where the departing peer is the recipient OR the departing

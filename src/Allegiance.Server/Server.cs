@@ -109,6 +109,10 @@ public sealed partial class Server : IDisposable
     /// <c>FedSrv.CPP:3836</c>). Diagnostic only; no behavioural effect.
     /// </summary>
     private long _egressBytesSent;
+    // P604b — last window's GC collection counts, so the [egress] summary can
+    // report the per-window GC delta (ties any allocation-burst tick hitch to a
+    // GC pause). Sim-thread only.
+    private int _lastGc0, _lastGc1, _lastGc2;
 
 
     /// <summary>
@@ -435,6 +439,14 @@ public sealed partial class Server : IDisposable
     // Sim-thread only, like the siblings above.
     private readonly Dictionary<(ConnectionId, short), long> _lastTeammateStatusTick = new();
 
+    // P604b — the NEXT tick at which each RECIPIENT's periodic same-side
+    // teammate SHIP_STATUS(90) refresh fires, spread per-recipient so the
+    // per-pair refreshes never synchronize into an O(P²) one-tick burst (the
+    // ~5 s hitch). See the BroadcastShipStates comment for the full rationale;
+    // each recipient refreshes all of its mates once per TeammateStatusRefreshTicks
+    // on its own phase-offset tick. Sim-thread only, like the sibling above.
+    private readonly Dictionary<ConnectionId, long> _nextTeammateRefreshTick = new();
+
     // P493 — the previous sweep visibility of each (seeing-side, ship) pair,
     // so SweepCrossSideShipStatuses can detect the seen/unseen EDGE and fire the
     // native ShowObject/HideObject ship-status transition exactly once per real
@@ -612,13 +624,15 @@ public sealed partial class Server : IDisposable
               int LastStatusSector, int LastStatusTick, int LastClusterInfoTick,
               int LastPingQuery, int TeammateExportSent, int TeammatePlayerInfoSent,
               int TeammateLoadoutVersionSent, int TeammateLoadoutCache,
-              int CrossSideExportSent, int CrossSideMineExportSent, int LastTeammateStatusTick) ConnectionScopedCacheCounts()
+              int CrossSideExportSent, int CrossSideMineExportSent, int LastTeammateStatusTick,
+              int NextTeammateRefreshTick) ConnectionScopedCacheCounts()
         => (
             _pendingSideSelect.Count, _peerNames.Count, _playerReady.Count,
             _lastStatusSector.Count, _lastStatusTick.Count, _lastClusterInfoTick.Count,
             _lastPingQuery.Count, _teammateExportSent.Count, _teammatePlayerInfoSent.Count,
             _teammateLoadoutVersionSent.Count, _teammateLoadoutCache.Count,
-            _crossSideExportSent.Count, _crossSideMineExportSent.Count, _lastTeammateStatusTick.Count);
+            _crossSideExportSent.Count, _crossSideMineExportSent.Count, _lastTeammateStatusTick.Count,
+            _nextTeammateRefreshTick.Count);
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
     private long TickIndex { get { lock (_statsLock) return _loopIterations; } }
@@ -677,6 +691,17 @@ public sealed partial class Server : IDisposable
     /// repeat EXPORT idempotently (Upsert + field-set), so this is safe.
     /// 600 ticks @ 20 upd/s = 30 s.</summary>
     private const int CrossSideIdentityRefreshTicks = 600;
+
+    /// <summary>P604b — the client dead-reckoner's smooth extrapolation horizon,
+    /// in ticks (1.5 s at 20 upd/s). Matches
+    /// <c>ShipDeadReckoner.ExtrapolationCap = 1.5 s</c>
+    /// (<c>src/Allegiance.ClientCore/Flight/ShipDeadReckoner.cs:64</c>; native's
+    /// ±1.5 s <c>ProcessShipUpdate</c> window, <c>shipIGC.cpp:3113-3115</c>).
+    /// The native-mode heavy ship-update budget (BroadcastShipsUpdatePeer) is
+    /// scaled so every in-sector ship is re-fed at least once per this horizon;
+    /// beyond it the renderer-only client HOLDS the dead-reckoned pose (a
+    /// visible freeze).</summary>
+    internal const int DeadReckonExtrapolationTicks = 30;
     /// <summary>P281 — a peer that has logged on but not yet chosen a side (the
     /// post-connect side-select hold). Held here (NOT in <c>_peerShips</c>) with
     /// no Ship until it picks a side or the timeout seats it; its ship id is

@@ -217,4 +217,46 @@ public sealed class NativeShipUpdateModelTests
         Console.WriteLine($"P604-NATIVE-BOUND: peer sees {heavy} heavy + {light} light = {heavy + light} records/tick " +
                           $"with {npcs.Count + 1} ships in the cluster (never the {npcs.Count} others)");
     }
+
+    /// <summary>⭐ P604b — the native heavy budget is DENSITY-AWARE: at high
+    /// in-sector density it raises the heavy quota so every rendered ship is
+    /// re-fed within the client dead-reckoner's 1.5 s smooth horizon
+    /// (DeadReckonExtrapolationTicks=30), instead of native's fixed 2 heavy/tick
+    /// (which at ~195 ships re-feeds each ship only every ~4.9 s → the renderer-
+    /// only client HOLDS the pose = the visible freeze on the 221 195v195 run).
+    /// The quota is ⌈others/30⌉ (≥ native's 2). At 120 in-sector others the
+    /// peer must receive ≥ 4 heavy poses/tick (pre-fix: 2).</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Native_mode_heavy_budget_scales_with_density_for_dead_reckoner_horizon()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        const int npcCount = 120;   // 120 in-sector others → ⌈120/30⌉ = 4 heavy/tick
+        var (peers, npcs) = BuildWorld(server, Core().HullTypes.Values.First(), peerCount: 1, npcCount);
+        Assert.Equal(npcCount, npcs.Count);
+
+        server.TestResetBroadcastState();
+        server.TestSeedPeers(peers);
+        server.TestSetShipUpdateModel(true);
+        var keys = server.TestCollectBroadcastKeys(0, parallel: false, step: "shipsUpdate");
+
+        var peerConn = peers[0].Conn;
+        Assert.True(keys.ContainsKey(peerConn), "the peer must receive its ships-update frame");
+        var (heavy, light) = (0, 0);
+        foreach (var (pkt, key, _) in keys[peerConn])
+        {
+            Assert.Equal(2, key);   // CoalesceShipsUpdate
+            var (h, l) = CountShipsUpdate(pkt);
+            heavy += h; light += l;
+        }
+        int expectedHeavy = Math.Max(2, (int)Math.Ceiling(npcCount / 30d));   // 30 = DeadReckonExtrapolationTicks (1.5 s @ 20 tps)
+        Assert.True(heavy >= expectedHeavy,
+            $"at {npcCount} in-sector others, native must serve ≥ {expectedHeavy} heavy/tick to stay within the " +
+            $"1.5 s dead-reckoner horizon (got {heavy}) — the fixed budget-2 would freeze ships");
+        Console.WriteLine($"P604b-DENSITY: at {npcCount} in-sector others, peer gets {heavy} heavy + {light} light " +
+                          $"/tick (⌈N/30⌉={expectedHeavy}), keeping every ship's pose interval ≤ 1.5 s");
+    }
 }

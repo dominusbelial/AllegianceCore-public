@@ -42,6 +42,7 @@ public sealed partial class Server
         _teammatePositionSent.Clear();
         _teammateLoadoutVersionSent.Clear();
         _lastTeammateStatusTick.Clear();
+        _nextTeammateRefreshTick.Clear();
         _sameSideNpcExportSent.Clear();
         _lastSameSideNpcStatusTick.Clear();
         _teammateLoadoutCache.Clear();
