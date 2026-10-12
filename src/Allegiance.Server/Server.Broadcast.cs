@@ -433,8 +433,11 @@ public sealed partial class Server
             // tick hitch can be tied to a GC pause (Gen0/1/2 counts are monotonic
             // per-process; the delta over the window is what matters).
             int g0 = GC.CollectionCount(0), g1 = GC.CollectionCount(1), g2 = GC.CollectionCount(2);
-            Console.WriteLine($"[egress] window: bytes={bytes} peers={peers} windowSecs={windowSecs:0.#} per-peer-bps={perPeerBps:0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}}");
-            _lastGc0 = g0; _lastGc1 = g1; _lastGc2 = g2;
+            // P619 — total managed bytes allocated this window (÷100 ticks ≈
+            // bytes/tick), for the port-mode allocation A/B.
+            long alloc = GC.GetTotalAllocatedBytes();
+            Console.WriteLine($"[egress] window: bytes={bytes} peers={peers} windowSecs={windowSecs:0.#} per-peer-bps={perPeerBps:0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}} allocMB={(alloc - _lastAllocatedBytes) / (1024.0 * 1024.0):0.##}");
+            _lastGc0 = g0; _lastGc1 = g1; _lastGc2 = g2; _lastAllocatedBytes = alloc;
         });
         // P507 — every ~10s, a per-peer acceptance summary of the native
         // own-ship model (accepted / rejected / out-of-date / invalid counts +

@@ -113,6 +113,10 @@ public sealed partial class Server : IDisposable
     // report the per-window GC delta (ties any allocation-burst tick hitch to a
     // GC pause). Sim-thread only.
     private int _lastGc0, _lastGc1, _lastGc2;
+    // P619 — last window's GC.GetTotalAllocatedBytes(), so the [egress] summary
+    // also reports total managed bytes allocated this window (÷ ticks ≈ bytes
+    // per tick) for the before/after allocation A/B. Sim-thread only.
+    private long _lastAllocatedBytes;
 
 
     /// <summary>
