@@ -260,6 +260,13 @@ public sealed partial class Game1
     protected override void Update(GameTime gameTime)
     {
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
+        // P618 — advance the sim-scaled game clock (wall × live server time
+        // scale), clamped to [0,∞) so a scale=0 edge (never produced server-side;
+        // MinTimeScale is 0.1) can't run effects backwards. Guarded so a not-yet-
+        // connected session (no world) simply advances at full speed.
+        double ts = 1.0;
+        if (_session.World is { } w) ts = w.TimeScale;
+        _gameSeconds += gameTime.ElapsedGameTime.TotalSeconds * Math.Clamp(ts, 0.0, 1.0);
         // P573 — frame-time over-budget fallback for the Volumetric tier (drop a
         // tier once, logged). Skipped during --auto proof runs so a recording
         // renders the requested tier consistently end to end.

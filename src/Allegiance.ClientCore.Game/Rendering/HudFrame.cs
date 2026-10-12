@@ -108,4 +108,9 @@ public readonly record struct HudFrame(
     int? Money = null,
     // P506 — the virtual-joystick indicator (mouse-flight response curve + stick
     // position), or null while mouse flight is off (the HUD draws nothing).
-    MouseStickView? MouseStick = null);
+    MouseStickView? MouseStick = null,
+    // P618 — the live sim time scale as a PERCENT of full speed (100 = normal),
+    // fed from ClientWorld.TimeScale (the server's TimescaleUpdate). The HUD
+    // draws "TIME DILATION nn%" only while < 100 (i.e. the server is slowing the
+    // game clock under load); 100 hides it entirely.
+    float TimeDilationPercent = 100f);

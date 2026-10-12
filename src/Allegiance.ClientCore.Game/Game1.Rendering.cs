@@ -551,12 +551,12 @@ public sealed partial class Game1
                     new SimVec(view.M11, view.M12, view.M13),      // camera right
                     new SimVec(view.M21, view.M22, view.M23),      // camera up
                     proj.M22,                                      // focus = cot(vFOV/2)
-                    (float)_nowSeconds);
+                    (float)_gameSeconds);
                 float debrisFocus = proj.M22;
                 _drawDustViews.Clear();
                 foreach (var pt in _debrisGeo.Points)
                 {
-                    float age = (float)_nowSeconds - pt.StartTime;
+                    float age = (float)_gameSeconds - pt.StartTime;
                     float bright = Rendering.DebrisGeo.Brightness(age);
                     if (bright <= 0f) continue;
                     float rx = pt.Position.X - cameraEye.X, ry = pt.Position.Y - cameraEye.Y, rz = pt.Position.Z - cameraEye.Z;
@@ -728,7 +728,7 @@ public sealed partial class Game1
                     // P585 — an active transit pulse on this warp brightens its
                     // funnel (1.0 idle, no change when the glimpse/opt-in is off).
                     float funnelBoost = 1f + (Rendering.WarpRenderer.PeakFunnelBoost - 1f)
-                                        * _warpPulses.Strength(wId, _nowSeconds);
+                                        * _warpPulses.Strength(wId, _gameSeconds);
                     _warpRenderer.Draw(wWorld, view, proj, dt,
                         wRadius * Rendering.WarpRenderer.VisualScaleMultiplier, wTex, wId, funnelBoost);
                 }
@@ -1450,11 +1450,11 @@ public sealed partial class Game1
                     if (_effectsQuality == EffectsQuality.Volumetric
                         && _volumetricTech == VolumetricTechnique.RaymarchA && _volumetricRenderer is { } vol)
                         vol.Draw(_drawExplosions, ownSectorId, cameraEye, view, proj,
-                            (float)_nowSeconds, _softContext ?? Rendering.SoftParticleContext.Off);
+                            (float)_gameSeconds, _softContext ?? Rendering.SoftParticleContext.Off);
                     else if (_effectsQuality == EffectsQuality.Volumetric
                         && _volumetricTech == VolumetricTechnique.DisplacedSphereB && _displacedRenderer is { } disp)
                         disp.Draw(_drawExplosions, ownSectorId, cameraEye, view, proj,
-                            (float)_nowSeconds, _softContext ?? Rendering.SoftParticleContext.Off);
+                            (float)_gameSeconds, _softContext ?? Rendering.SoftParticleContext.Off);
                     else if (_enhancedExplosionRenderer is { } enhExp)
                         enhExp.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj,
                             _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
@@ -2354,7 +2354,11 @@ public sealed partial class Game1
                         ? new MouseStickView(
                             _mouseFlight.Current.Yaw, _mouseFlight.Current.Pitch,
                             _mouseFlight.Deadzone, _mouseFlight.LinearControls)
-                        : null);
+                        : null,
+                    // P618 — the live sim time scale as a percent (100 = full
+                    // speed). Hidden by the renderer at full speed; shown as
+                    // "TIME DILATION nn%" when the server slows the game clock.
+                    TimeDilationPercent: 100f * (float)_session.World.TimeScale);
             }
         }
         if (!_hideHud && !_directorActive && !_hudHidden)   // P572 --hide-hud; P580 the director always hides the HUD; P612 F1 HUD toggle

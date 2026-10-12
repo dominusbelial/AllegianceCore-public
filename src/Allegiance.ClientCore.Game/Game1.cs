@@ -653,6 +653,16 @@ public sealed partial class Game1 : Game
     // Monotonic render clock (lobby refresh timing, chat timestamps, etc).
     private double _nowSeconds;
 
+    // P618 — the sim-scaled GAME clock: wall time × the server's live sim time
+    // scale (ClientWorld.TimeScale, fed by TimescaleUpdate). Everything that
+    // animates a GAME EVENT — soft particles, damage/engine debris, warp pulses,
+    // explosion animations — is timed from this clock, so during time dilation
+    // the battle's visual effects play in matching slow motion (particles keep
+    // travelling along their trajectories, just slower). UI feedback and network
+    // liveness stay on the wall clock _nowSeconds. See the P618 report for the
+    // full wall-vs-sim classification.
+    private double _gameSeconds;
+
     // P436 — transient on-screen "no <candidate> in sector" feedback for the
     // P415 U/Z filtered-target keys (that feedback was console-only; now also
     // visible while flying). Null = nothing to show; the line self-expires

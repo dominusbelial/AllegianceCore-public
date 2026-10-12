@@ -171,6 +171,46 @@ public sealed class LiveSettingsConfig
         Math.Clamp(v, MinTimeScale, MaxTimeScale);
 
     /// <summary>
+    /// P618 — the load-driven time-dilation mode (<c>sim.timeDilation</c>):
+    /// <c>"off"</c> (the default) = today's behaviour, only the P612 admin
+    /// <c>timescale</c> cheat / <see cref="TimeScale"/> config moves the clock;
+    /// <c>"auto"</c> = the <see cref="Allegiance.Core.Sim.TimeDilationController"/>
+    /// measures the smoothed tick cost and lowers the sim time scale toward
+    /// <c>nominal/cost</c> (clamped to [0.1, 1.0]) when the server can't hold real
+    /// time, easing back to full speed when load drops. An admin <c>timescale</c>
+    /// cheat always overrides auto (manual wins). Default <c>"off"</c> until a 221
+    /// run confirms the tuning (Domingo decides the default after that).
+    /// </summary>
+    public string TimeDilation { get; set; } = "off";
+
+    /// <summary>P618 — EMA smoothing of the measured tick cost
+    /// (<c>sim.timeDilation.alpha</c>). Lower = smoother, slower to react.</summary>
+    public double? TimeDilationAlpha { get; set; }
+
+    /// <summary>P618 — engage auto-slow when the smoothed cost exceeds
+    /// <c>engageRatio × simPeriod</c> (<c>sim.timeDilation.engageRatio</c>).</summary>
+    public double? TimeDilationEngageRatio { get; set; }
+
+    /// <summary>P618 — release back to full speed when the smoothed cost falls
+    /// below <c>releaseRatio × simPeriod</c> (<c>sim.timeDilation.releaseRatio</c>).
+    /// Kept below <see cref="TimeDilationEngageRatio"/> for hysteresis.</summary>
+    public double? TimeDilationReleaseRatio { get; set; }
+
+    /// <summary>P618 — the minimum |target−scale| that justifies a change
+    /// (<c>sim.timeDilation.deadband</c>); suppresses oscillation once converged.</summary>
+    public double? TimeDilationDeadband { get; set; }
+
+    /// <summary>P618 — max scale movement per wall second
+    /// (<c>sim.timeDilation.maxChangePerSecond</c>); the rate limit that eases
+    /// clients into slow motion without sudden speed jumps.</summary>
+    public double? TimeDilationMaxChangePerSecond { get; set; }
+
+    /// <summary>P618 — min wall seconds between scale adjustments
+    /// (<c>sim.timeDilation.controlIntervalSeconds</c>); bounds the <c>TimescaleUpdate</c>
+    /// broadcast rate alongside <see cref="TimeDilationMaxChangePerSecond"/>.</summary>
+    public double? TimeDilationControlIntervalSeconds { get; set; }
+
+    /// <summary>
     /// P378 — override the lifepod oxygen endurance, in seconds, used when a
     /// ship's hull becomes a drifting Lifepod. <c>null</c> (the default, and
     /// the meaning of an absent field) preserves today's exact behaviour —

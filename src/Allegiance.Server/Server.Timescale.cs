@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Globalization;
 using Allegiance.Core.Model;
+using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
@@ -7,31 +9,54 @@ using Allegiance.Core.Wire;
 namespace Allegiance.Server;
 
 /// <summary>
-/// P612 — the admin-only sim time scale (<c>sim.timeScale</c>) for cinematic
-/// slow motion. Slow motion is achieved by advancing the server's sim clock by
+/// P612/P618 — the sim time scale (<c>sim.timeScale</c>) for slow motion, now
+/// two ways: the admin-only manual <c>timescale</c> cheat (P612, cinematic
+/// slow motion) and, when <c>sim.timeDilation = auto</c>, a load-driven
+/// EVE-style Time-Dilation controller (P618) that slows the clock smoothly when
+/// the server can't hold real time.
+/// <para>
+/// Slow motion is achieved by advancing the server's sim clock by
 /// <c>period × scale</c> per tick (instead of <c>period</c>) while the wall-clock
 /// cadence stays fixed: the whole world — physics, bots, broadcasts — runs at
 /// <c>scale</c>× speed, so a battle of any size plays in clean slow motion. Every
-/// connected client learns the current scale via
-/// <see cref="TimescaleUpdate"/> (server→client) and extrapolates its remote-ship
-/// dead-reckoning in scaled sim time, so there is no rubber-banding.
+/// connected client learns the current scale via <see cref="TimescaleUpdate"/>
+/// (server→client) and extrapolates its remote-ship dead-reckoning in scaled sim
+/// time, so there is no rubber-banding.
+/// </para>
 /// <para>
-/// Partial class sharing the <see cref="Server"/> type. Admin-only: the value is
+/// Partial class sharing the <see cref="Server"/> type. The manual value is
 /// clamped to [0.1, 1.0] (see <see cref="LiveSettingsConfig.ClampTimeScale"/>)
-/// and is only settable by an admin <c>timescale</c> cheat line (LAN/demo-grade).
+/// and only settable by an admin <c>timescale</c> cheat line (LAN/demo-grade).
 /// </para>
 /// </summary>
 public sealed partial class Server
 {
     /// <summary>The active sim time scale (1.0 = normal). Read on the sim thread;
-    /// only mutated by <see cref="SetTimeScale"/> (also on the sim thread, from the
-    /// chat dispatch).</summary>
+    /// mutated on the sim thread only (P612 chat dispatch or the P618 auto
+    /// controller, which runs inside <see cref="Tick"/>).</summary>
     private double _timeScale = 1.0;
 
+    /// <summary>P618 — <c>"off"</c> or <c>"auto"</c> (from <c>sim.timeDilation</c>).</summary>
+    private string _timeDilationMode = "off";
+
+    /// <summary>P618 — the load-driven controller; null when mode is <c>off</c>.</summary>
+    private TimeDilationController? _tidiController;
+
+    /// <summary>P618 — wall clock for the controller's rate-limiting (the
+    /// wall-seconds-between-observations input). Started at boot.</summary>
+    private readonly Stopwatch _tidiWall = new();
+
+    /// <summary>P618 — the controller's last-observed wall position (ms).</summary>
+    private long _lastTidiWallMs;
+
     /// <summary>Initialize <see cref="_timeScale"/> from config, clamping and
-    /// loudly logging. Called once at boot.</summary>
+    /// loudly logging. Called once at boot. Also resolves the P618 time-dilation
+    /// mode and starts the controller when <c>auto</c>.</summary>
     private void InitTimeScale()
     {
+        InitTimeDilation();
+        if (_tidiController is not null) return;   // auto mode governs the clock
+
         var cfg = _config.LiveSettings?.TimeScale;
         if (cfg is not { } v)
         {
@@ -44,11 +69,141 @@ public sealed partial class Server
         Console.WriteLine($"[boot] sim.timeScale = {_timeScale:R} (cinematic slow motion: world runs at {_timeScale:P0} speed)");
     }
 
+    /// <summary>
+    /// P618 — resolve <c>sim.timeDilation</c> (<c>off</c> | <c>auto</c>; default
+    /// <c>off</c>), construct the controller in auto mode, and subscribe to the
+    /// per-window profiler report so the <c>[tidi]</c> line and the live-scale
+    /// <c>[tickprof]</c> label update each window. <c>auto</c> ignores a static
+    /// <c>sim.timeScale</c> config (the controller governs the clock from tick 1);
+    /// an admin <c>timescale</c> cheat still overrides it.
+    /// </summary>
+    private void InitTimeDilation()
+    {
+        var ls = _config.LiveSettings ?? new LiveSettingsConfig();
+        string mode = (ls.TimeDilation ?? "off").Trim().ToLowerInvariant();
+        if (mode is not ("off" or "auto"))
+        {
+            Console.WriteLine($"[boot] *** sim.timeDilation config '{ls.TimeDilation}' UNKNOWN — expected off|auto; defaulting to off ***");
+            mode = "off";
+        }
+
+        TickProfiler.WindowReported += EmitTidiWindow;
+
+        if (mode == "off")
+        {
+            _timeDilationMode = "off";
+            Console.WriteLine("[boot] sim.timeDilation = off (no load-driven slow motion; P612 manual timescale only)");
+            return;
+        }
+
+        _timeDilationMode = "auto";
+        var p = new TimeDilationParams(
+            nominalPeriod: _period,
+            minScale: LiveSettingsConfig.MinTimeScale,
+            maxScale: LiveSettingsConfig.MaxTimeScale,
+            alpha: ls.TimeDilationAlpha ?? 0.07,
+            engageRatio: ls.TimeDilationEngageRatio ?? 1.005,
+            releaseRatio: ls.TimeDilationReleaseRatio ?? 0.965,
+            deadband: ls.TimeDilationDeadband ?? 0.010,
+            maxChangePerSecond: ls.TimeDilationMaxChangePerSecond ?? 0.040,
+            controlIntervalSeconds: ls.TimeDilationControlIntervalSeconds ?? 0.5);
+        _tidiController = new TimeDilationController(p);
+        _tidiWall.Restart();
+        _lastTidiWallMs = _tidiWall.ElapsedMilliseconds;
+        Console.WriteLine("[boot] sim.timeDilation = auto — load-driven EVE-style time dilation active "
+                          + $"(engages when smoothed tick cost > {p.EngageRatio:R}× period, releases < {p.ReleaseRatio:R}×; "
+                          + $"scale slews toward nominal/cost in [{LiveSettingsConfig.MinTimeScale:R},{LiveSettingsConfig.MaxTimeScale:R}] "
+                          + $"rate-limited to {p.MaxChangePerSecond:R}/s every {p.ControlIntervalSeconds:0.##}s); "
+                          + "admin `timescale` cheat overrides auto");
+    }
+
+    /// <summary>P618 — the <c>[tickprof]</c> header-label prefix (broadcast +
+    /// transport + ship-update model), captured so each window can reprint the
+    /// label with the CURRENT live <c>sim.timeScale</c> (task: "the [tickprof]
+    /// label shows the current scale").</summary>
+    private string ComposeTidiLabelPrefix()
+    {
+        string bcast = _broadcastParallelBuild
+            ? $"broadcast.parallelBuild=true (maxPar={_broadcastMaxParallelism})"
+            : "broadcast.parallelBuild=false";
+        string trans = _transportMode == TransportMode.Pool
+            ? $"transport=pool ({_transportPoolWorkers} workers)"
+            : "transport=thread-per-peer";
+        return $"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}";
+    }
+
+    /// <summary>P618 — reprint the profiler header label with the live scale.
+    /// Recomputes the prefix lazily each time so it always reflects the
+    /// boot-resolved broadcast/transport/ship-update settings regardless of when
+    /// this is first called.</summary>
+    private void RefreshProfilerLabel()
+        => TickProfiler.SetLabel($"{ComposeTidiLabelPrefix()}; sim.timeScale={_timeScale:R}");
+
+    /// <summary>
+    /// P618 — per-profiler-window callback: reprint the label (so the current
+    /// scale is always visible in the <c>[tickprof]</c> header) and emit the
+    /// sampler-friendly <c>[tidi]</c> line <c>scale=… cost=…</c>. Fires from the
+    /// sim thread inside the profiler's window roll-over.
+    /// </summary>
+    private void EmitTidiWindow()
+    {
+        RefreshProfilerLabel();
+        double cost = _tidiController?.SmoothedCost ?? 0.0;
+        Console.WriteLine($"[tidi] scale={_timeScale:0.####} cost={cost * 1000:0.#}ms mode={_timeDilationMode}");
+    }
+
+    /// <summary>
+    /// P618 — feed one tick's measured processing cost to the controller and, if
+    /// it moved the scale, rebroadcast it to clients. Called at the end of
+    /// <see cref="Tick"/> (after the sim pass, before the cadence sleep) so the
+    /// new scale applies from the next tick. No-op when mode is <c>off</c>.
+    /// </summary>
+    private void ObserveTimeDilation(double cost, double wallDeltaSeconds)
+    {
+        var c = _tidiController;
+        if (c is null) return;
+        if (c.Observe(cost, wallDeltaSeconds))
+            ApplyTimeDilationScale();
+    }
+
+    /// <summary>P618 — adopt the controller's new scale (rate-limited by the
+    /// controller, so broadcasts are inherently throttled) and notify clients.</summary>
+    private void ApplyTimeDilationScale()
+    {
+        if (_tidiController is not { } c) return;
+        double s = c.Scale;
+        if (Math.Abs(s - _timeScale) < 1e-9) return;
+        _timeScale = s;
+        BroadcastTimescale();
+        Console.WriteLine($"[tidi] sim.timeScale -> {s:R} (auto time dilation)");
+    }
+
+    /// <summary>P618 — wall seconds since the previous controller observation
+    /// (used for rate-limiting). Resets the rolling baseline.</summary>
+    private double ConsumeTidiWallDelta()
+    {
+        long nowMs = _tidiWall.ElapsedMilliseconds;
+        double d = (nowMs - _lastTidiWallMs) / 1000.0;
+        _lastTidiWallMs = nowMs;
+        return d < 0 ? 0 : d;
+    }
+
     /// <summary>Set the sim time scale (clamped) and notify every connected client.
-    /// Used by the admin <c>timescale</c> cheat. Runs on the sim thread.</summary>
+    /// Used by the admin <c>timescale</c> cheat. Runs on the sim thread. When the
+    /// P618 auto controller is active, this sets a MANUAL OVERRIDE that suspends
+    /// auto control (task: "when the admin sets timescale manually, that overrides
+    /// auto").</summary>
     private void SetTimeScale(double value)
     {
         double clamped = LiveSettingsConfig.ClampTimeScale(value);
+        if (_tidiController is { } c)
+        {
+            c.SetManual(clamped);
+            _timeScale = clamped;
+            BroadcastTimescale();
+            Console.WriteLine($"[timescale] MANUAL OVERRIDE -> sim.timeScale = {clamped:R} (auto time dilation suspended)");
+            return;
+        }
         _timeScale = clamped;
         BroadcastTimescale();
         Console.WriteLine($"[timescale] sim.timeScale -> {clamped:R}");
@@ -90,6 +245,6 @@ public sealed partial class Server
         }
         double clamped = LiveSettingsConfig.ClampTimeScale(v);
         SetTimeScale(clamped);
-        SendAdminReply(from, ship.Id, $"sim.timeScale = {clamped:R} (world runs at {clamped:P0} speed)");
+        SendAdminReply(from, ship.Id, $"sim.timeScale = {clamped:R} (world runs at {clamped:P0} speed)" + (_tidiController is not null ? "; auto time dilation suspended (manual override)" : ""));
     }
 }

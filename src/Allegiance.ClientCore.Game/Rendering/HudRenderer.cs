@@ -213,6 +213,10 @@ public sealed class HudRenderer
             // hull is cloaked, which otherwise has no on-screen cue in cockpit
             // view). Cool violet — distinct from the amber MINING activity tag.
             if (f.Cloaked) DrawCloak(w);
+            // P618 — the TIME DILATION indicator: drawn at the very top-centre
+            // whenever the server's live sim time scale is below full speed
+            // (f.TimeDilationPercent < 100). Hidden entirely at full speed.
+            if (f.TimeDilationPercent < 99.5f) DrawTimeDilation(f.TimeDilationPercent, w);
             // P414 — own-ship ripcord countdown tag ("RIPCORDING → <sector>"),
             // driven by the local ship's ripcord state while active. Bright
             // cyan so it reads as an active countdown/activity like the mining
@@ -569,6 +573,25 @@ public sealed class HudRenderer
         var sz = _small.MeasureString(label);
         float cx = w / 2f;
         _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, 122f), color);
+    }
+
+    /// <summary>
+    /// P618 — the native-styled TIME DILATION indicator, drawn prominently at the
+    /// top-centre of the flight HUD whenever the server has slowed the game clock
+    /// below full speed (scale &lt; 100%). Warm amber — a system/performance
+    /// condition (like EVE Online's TiDi readout), distinct from the cyan
+    /// ripcord / violet cloak / amber-mining activity tags below it. Shows the
+    /// live scale as a whole percent so a battle's slow-motion is legible at a
+    /// glance. Pure ASCII (spritefont char-range pitfall).
+    /// </summary>
+    private void DrawTimeDilation(float percent, float w)
+    {
+        int pct = (int)Math.Round(percent);
+        string label = pct >= 100 ? "TIME DILATION 100%" : $"TIME DILATION {pct}%";
+        var color = new Color(0.98f, 0.66f, 0.20f);   // warm amber — performance/system condition
+        var sz = _small.MeasureString(label);
+        float cx = w / 2f;
+        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, 16f), color);
     }
 
     /// <summary>

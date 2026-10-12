@@ -1101,7 +1101,14 @@ public sealed partial class Server
         var sw = Stopwatch.StartNew();
         SimPass();
         sw.Stop();
-        SyncCadence(sw.Elapsed.TotalSeconds);
+        double cost = sw.Elapsed.TotalSeconds;
+        // P618 — feed the measured tick cost to the load-driven time-dilation
+        // controller (rate-limited; applies the new sim time scale from the next
+        // tick and rebroadcasts to clients on change). Wall delta is consumed
+        // here so the controller's rate limiting tracks real time even under an
+        // overrun (no cadence sleep).
+        ObserveTimeDilation(cost, ConsumeTidiWallDelta());
+        SyncCadence(cost);
     }
 
     /// <summary>The simulation half of a tick, with no cadence sleep and no

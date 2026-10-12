@@ -146,11 +146,20 @@ public sealed class TickProfiler
     public static void Shutdown() => Configure(false, 5, null);
 
     /// <summary>P603 — set the short label stamped into every report header
-    /// (e.g. the active broadcast build mode). Null clears it.</summary>
+    /// (e.g. the active broadcast build mode).</summary>
     public static void SetLabel(string? label)
     {
         lock (StaticGate) _label = label;
     }
+
+    /// <summary>
+    /// P618 — fired once per report window roll-over, immediately after the
+    /// <c>[tickprof]</c> header (and bucket lines) are written. The server
+    /// subscribes to emit its <c>[tidi] scale=… cost=…</c> line and to reprint
+    /// the live <c>sim.timeScale</c> in the <c>[tickprof]</c> label. Subscribers
+    /// must not block or re-enter the profiler.
+    /// </summary>
+    public static event Action? WindowReported;
 
     // Guards the Instance pointer swap in Configure/Shutdown (only those two
     // mutate Instance; readers read the static field, which is an atomic reference).
@@ -361,6 +370,11 @@ public sealed class TickProfiler
             _tickWallMax = 0;
             _ticksInWindow = 0;
         }
+
+        // P618 — notify subscribers (server emits [tidi], refreshes the label)
+        // AFTER the lock is released so a subscriber that prints/logs cannot
+        // deadlock against a concurrent reader.
+        WindowReported?.Invoke();
     }
 
     private static double MeanOf(IReadOnlyCollection<double> xs) => xs.Count == 0 ? 0.0 : xs.Sum() / xs.Count;
