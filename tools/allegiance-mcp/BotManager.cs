@@ -362,7 +362,8 @@ internal sealed partial class BotManager : IDisposable
     /// </summary>
     public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
         bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null,
-        short wingmanBehaviour = Showcase.DefaultScenarioWingman)
+        short wingmanBehaviour = Showcase.DefaultScenarioWingman,
+        IReadOnlyList<short>? routePath = null, int routeIndex = -1)
     {
         if (!ServerReady)
             throw new InvalidOperationException("spawn_bot: server probe not connected/validated — cannot spawn");
@@ -490,6 +491,13 @@ internal sealed partial class BotManager : IDisposable
         // the loadout carries one (detected from the parts actually requested).
         bot.WingmanBehaviour = wingmanBehaviour;
         bot.MineDispenserPartId = FindMineDispenser(finalParts);
+
+        // P635 — multi-route wing assignment (route path + wing index).
+        if (routePath is { Count: > 0 } rp)
+        {
+            bot.RoutePath = rp.ToList();
+            bot.RouteIndex = routeIndex;
+        }
 
         // P539d — fair-contact bookkeeping (combat bots only; idle/weave bots
         // never travel or fight, so staging/arena leave them be).
@@ -808,6 +816,111 @@ internal sealed partial class BotManager : IDisposable
     }
 
     private readonly Dictionary<short, ConnectionSession> _commanders = new();
+
+    // ── P635 — multi-route wing discovery + assignment ────────────────────
+
+    /// <summary>
+    /// P635 — enumerate up to <paramref name="maxRoutes"/> distinct entry-aleph
+    /// routes from <paramref name="from"/> to <paramref name="to"/> over the raw
+    /// warp table (the authoritative map topology the bots route on). Mirror of
+    /// <c>ClusterGraph.FindDistinctEntryRoutes</c> that works off the probe's
+    /// <c>DataWarpIGC</c> world (no ClientWorld CLUSTERINFO needed), so routes can
+    /// be discovered at spawn_scenario time. Each candidate route enters the
+    /// destination through a distinct neighbouring (penultimate) sector; ranked by
+    /// hops ascending; capped at <paramref name="maxRoutes"/>; identical full paths
+    /// deduped. Pure over the warp table, so unit-provable against the real map.
+    /// </summary>
+    internal static List<List<short>> RouteEnumeration(
+        IReadOnlyDictionary<short, DataWarpIGC> warps, short from, short to, int maxRoutes)
+    {
+        if (from == to || maxRoutes <= 0) return [];
+        var adj = new Dictionary<short, List<short>>();
+        foreach (var w in warps.Values)
+        {
+            if (!warps.TryGetValue(w.DestinationId, out var partner)) continue;
+            AddDir(adj, w.ClusterId, partner.ClusterId);
+            AddDir(adj, partner.ClusterId, w.ClusterId);
+        }
+        foreach (var k in adj.Keys) adj[k].Sort();
+        if (!adj.TryGetValue(to, out var toN)) return [];
+
+        var candidates = new List<List<short>>();
+        foreach (short entry in toN)
+        {
+            var sub = BfsAvoidingRoute(adj, from, entry, to);
+            if (sub.Count == 0) continue;                 // entry unreachable without `to`
+            candidates.Add(new List<short>(sub) { to });
+        }
+        candidates.Sort((a, b) => a.Count.CompareTo(b.Count));
+
+        var result = new List<List<short>>();
+        var seen = new HashSet<string>();
+        foreach (var route in candidates)
+        {
+            if (result.Count >= maxRoutes) break;
+            var key = string.Join(",", route);
+            if (!seen.Add(key)) continue;
+            result.Add(route);
+        }
+        return result;
+    }
+
+    private static List<short> BfsAvoidingRoute(Dictionary<short, List<short>> adj, short from, short to, short banned)
+    {
+        if (from == to) return [from];
+        var prev = new Dictionary<short, short>();
+        var visited = new HashSet<short> { from };
+        var queue = new Queue<short>();
+        queue.Enqueue(from);
+        while (queue.Count > 0)
+        {
+            short cur = queue.Dequeue();
+            if (!adj.TryGetValue(cur, out var nbrs)) continue;
+            foreach (short nb in nbrs)
+            {
+                if (nb == banned) continue;               // never detour through the rendezvous
+                if (!visited.Add(nb)) continue;
+                prev[nb] = cur;
+                if (nb == to)
+                {
+                    var path = new List<short>();
+                    for (short node = to; ; node = prev[node]) { path.Add(node); if (node == from) break; }
+                    path.Reverse();
+                    return path;
+                }
+                queue.Enqueue(nb);
+            }
+        }
+        return [];
+    }
+
+    /// <summary>
+    /// P635 — resolve the routes a side can take to <paramref name="rendezvous"/>
+    /// from the probe's real world: the side's home sector (P591d anchor), then up
+    /// to <paramref name="maxRoutes"/> distinct-entry routes. Empty when the home
+    /// sector or the routes can't be resolved (caller falls back to single-route
+    /// behaviour).</summary>
+    public List<List<short>> FindRoutes(short rendezvous, short? sideHome, int maxRoutes)
+    {
+        if (sideHome is not { } home) return [];
+        lock (Probe.Gate)
+            return RouteEnumeration(Probe.World.Warps, home, rendezvous, maxRoutes);
+    }
+
+    /// <summary>
+    /// P635 — the pure wing-assignment rule: pick the LEAST-LOADED route (argmin of
+    /// the per-route bot counts). Distributing every bot to the current argmin
+    /// splits the side evenly across routes; when all routes are at the
+    /// <c>maxPerRoute</c> cap the extra goes to the least-loaded (still the argmin,
+    /// ties resolved to the lowest index). Pure so the split/cap/least-loaded rule
+    /// is unit-provable.</summary>
+    public static int PickLeastLoadedRoute(int[] counts)
+    {
+        int best = 0;
+        for (int i = 1; i < counts.Length; i++)
+            if (counts[i] < counts[best]) best = i;
+        return best;
+    }
 
     /// <summary>
     /// P486 — get (or lazily seat) the cached commander peer for
@@ -1881,10 +1994,26 @@ internal sealed partial class BotManager : IDisposable
                 return;
             }
             if (bot.WorldReadyAt < 0) bot.WorldReadyAt = now;   // latch first readiness
-            bot.Path = g.FindShortestPath(cur, goal);
+            bot.Path = RoutePathSuffix(bot, cur, goal) ?? g.FindShortestPath(cur, goal);
         }
         bot.PathStart = cur;
         bot.PathGoal = goal;
+    }
+
+    /// <summary>
+    /// P635 — when this bot is on a multi-route wing (<see cref="ActiveBot.RoutePath"/>
+    /// set) and the current cluster lies on its assigned route to <paramref name="goal"/>,
+    /// return the route suffix from <paramref name="cur"/> onward so the wing keeps its
+    /// distinct entry aleph instead of reverting to the shared shortest path. Returns null
+    /// when the bot is un-routed or off-route (caller falls back to FindShortestPath).
+    /// </summary>
+    private static List<short>? RoutePathSuffix(ActiveBot bot, short cur, short goal)
+    {
+        if (bot.RoutePath is not { Count: > 0 } rp) return null;
+        if (rp[^1] != goal) return null;                  // this route targets another rendezvous
+        int idx = rp.IndexOf(cur);
+        if (idx < 0) return null;                         // off-route -> shortest-path fallback
+        return rp.Skip(idx).ToList();
     }
 
     /// <summary>[vz EnemyNextHop] The next cluster on the path after
@@ -3747,8 +3876,15 @@ internal sealed partial class BotManager : IDisposable
         {
             if (bot.StagingSector < 0)
             {
-                EnsureCombatPath(bot, cur, goal, now);
-                bot.StagingSector = bot.Path.Count >= 2 && bot.Path[^1] == goal ? bot.Path[^2] : cur;
+                // P635 — a multi-route wing holds at ITS route's penultimate sector
+                // (distinct entry aleph), not the shared shortest path's penult.
+                if (bot.RoutePath is { Count: >= 2 } rp && rp[^1] == goal)
+                    bot.StagingSector = rp[^2];
+                else
+                {
+                    EnsureCombatPath(bot, cur, goal, now);
+                    bot.StagingSector = bot.Path.Count >= 2 && bot.Path[^1] == goal ? bot.Path[^2] : cur;
+                }
             }
             if (bot.StagePhase < 2)
             {
@@ -3767,18 +3903,18 @@ internal sealed partial class BotManager : IDisposable
                     return;
                 }
                 // At the staging sector: mark staged, then HOLD (loiter in the
-                // sector — dodge keeps it off rocks) until the whole living side is
-                // assembled here or the timeout, then the whole side advances
-                // together through the final warp. Loitering in-sector is robust
-                // (no reliance on a precise warp-adjacent hold point) and preserves
-                // the fair-contact property: no bot trickles into the rendezvous
-                // ahead of its side's group.
+                // sector — dodge keeps it off rocks) until the whole living wing is
+                // assembled here (P635: per-ROUTE, not per-side) or the timeout,
+                // then the whole wing advances together through the final warp.
+                // Loitering in-sector is robust (no reliance on a precise
+                // warp-adjacent hold point) and preserves the fair-contact property:
+                // no bot trickles into the rendezvous ahead of its wing's group.
                 if (bot.StagePhase == 0) { bot.StagePhase = 1; bot.FirstStagingAt ??= now; }
-                if (StageReleaseRequired(bot.Side, now))
+                if (StageReleaseRequired(bot.Side, bot.RouteIndex, now))
                 {
                     bot.StagePhase = 2;
                     bot.ReleasedAt ??= now;
-                    Console.WriteLine($"[p539d] side {bot.Side} bot {bot.Name} released from staging (side assembled/timeout) — advancing together through final warp to {goal}");
+                    Console.WriteLine($"[p539d] side {bot.Side} wing r{bot.RouteIndex} bot {bot.Name} released from staging (wing assembled/timeout) — advancing together through final warp to {goal}");
                     // fall through to the normal transit below (this is the release tick)
                 }
                 else
@@ -3790,13 +3926,13 @@ internal sealed partial class BotManager : IDisposable
                         int alive, staged;
                         lock (_gate)
                         {
-                            alive = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && !o.IsPod && !o.PodDocked);
-                            staged = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && o.StagePhase >= 1 && !o.IsPod && !o.PodDocked);
+                            alive = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && !o.IsPod && !o.PodDocked);
+                            staged = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && o.StagePhase >= 1 && !o.IsPod && !o.PodDocked);
                         }
                         // P633 — the per-bot per-side staging narration is also
                         // verbosity-gated + non-blocking (per-bot every 4 s it
                         // is per-pass-volume noise, not a lifecycle line).
-                        ConsoleLog.Write($"[p539d] STAGE bot {bot.Name} side={bot.Side} sector={cur} phase={bot.StagePhase} alive={alive} staged={staged}");
+                        ConsoleLog.Write($"[p539d] STAGE bot {bot.Name} side={bot.Side} wing=r{bot.RouteIndex} sector={cur} phase={bot.StagePhase} alive={alive} staged={staged}");
                     }
                     bot.LastCluster = cur;
                     return;
@@ -3850,29 +3986,85 @@ internal sealed partial class BotManager : IDisposable
         }
     }
 
-    /// <summary>P539d — whether THIS bot's side has finished staging and may
-    /// advance: every living (non-pod, non-docked) staged combat bot of the side
-    /// is holding/released, or the first-staged bot has waited past
-    /// <see cref="StagingHoldSeconds"/>. A side with no living bots releases
-    /// trivially. Single-threaded (called from the Loop).</summary>
-    private bool StageReleaseRequired(short side, double now)
+    /// <summary>
+    /// P539d/P635 — whether THE wing (<paramref name="side"/>, <paramref name="routeIndex"/>)
+    /// has finished staging and may advance. A wing releases when:
+    ///   (a) its own living combat bots are all staged AND every OTHER wing of the side
+    ///       (that still has living bots) is also staged — the P635 synchronous-arrival
+    ///       barrier, so all wings cross into the rendezvous together as ONE fight; or
+    ///   (b) this wing's first-staged bot has waited past its timeout
+    ///       (StagingHoldSeconds + a per-route sync offset that lets a LONGER route wait
+    ///       longer, so its trailing bots have time to stage before it is forced out).
+    /// The timeout overrides the barrier so a straggler/stuck wing never freezes the
+    /// group forever. A wing with no living bots releases trivially. Single-threaded
+    /// (called from the Loop); iterates the bot list under <c>_gate</c>.</summary>
+    private bool StageReleaseRequired(short side, int routeIndex, double now)
     {
-        int alive = 0, staged = 0; double? first = null;
+        // Per-route aggregate under _gate: (alive, staged, firstStagingAt, routeHops).
+        var per = new Dictionary<(short Side, int Route), (int Alive, int Staged, double? First, int Hops)>();
         lock (_gate)
             foreach (var o in _bots)
             {
                 if (o.Cs is null || o.Behavior != "combat" || !o.UseStaging || o.TargetSector is null) continue;
                 if (o.Side != side) continue;
                 if (o.IsPod || o.PodDocked) continue;         // not living
-                alive++;
-                if (o.StagePhase >= 1)
-                {
-                    staged++;
-                    first ??= o.FirstStagingAt;
-                }
+                var key = (side, o.RouteIndex);
+                (int Alive, int Staged, double? First, int Hops) zero = (0, 0, null, RouteHopsOf(o));
+                var cur = per.TryGetValue(key, out var e) ? e : zero;
+                int st = cur.Staged + (o.StagePhase >= 1 ? 1 : 0);
+                double? f = cur.First ?? o.FirstStagingAt;
+                per[key] = (cur.Alive + 1, st, f, cur.Hops);
             }
-        return SideReadyToAdvance(alive, staged, now, first, StagingHoldSeconds);
+
+        if (!per.TryGetValue((side, routeIndex), out var mine))
+            return true;                                     // this wing has no living bots
+
+        // Sync barrier: every OTHER wing of the side with living bots is assembled.
+        bool allOthersAssembled = true;
+        int sideMaxHops = 0;
+        foreach (var ((rs, ri), r) in per)
+        {
+            if (rs != side) continue;
+            sideMaxHops = Math.Max(sideMaxHops, r.Hops);
+            if (ri == routeIndex) continue;
+            if (r.Alive > 0 && r.Staged < r.Alive) allOthersAssembled = false;
+        }
+
+        bool myAssembled = mine.Staged >= mine.Alive;
+        double timeout = StagingHoldSeconds + SyncOffsetSeconds(routeIndex, sideMaxHops, mine.Hops);
+        bool timedOut = mine.First is { } f0 && now - f0 >= timeout;
+
+        return (myAssembled && allOthersAssembled) || timedOut;
     }
+
+    /// <summary>
+    /// P635 — the hop count of a bot's assigned route (edges = nodes − 1); 0 when
+    /// un-routed (a single shortest-path route treats its penult as 1 hop from the
+    /// rendezvous, but it never participates in a multi-wing sync, so 0 is fine).
+    /// </summary>
+    private static int RouteHopsOf(ActiveBot b) =>
+        b.RoutePath is { Count: > 0 } rp ? rp.Count - 1 : 0;
+
+    /// <summary>
+    /// P635 — the per-route release-timeout offset that keeps a LONGER route from
+    /// timing out (and releasing into the rendezvous) before its trailing bots have
+    /// staged: <c>(sideWidestHops − routeHops) × SecondsPerHop</c>, clamped ≥ 0. A
+    /// shorter route has the smallest offset so it is not forced out early; a longer
+    /// route gets a bigger window. Pure so the timing is unit-provable.</summary>
+    public static double SyncOffsetSeconds(int routeIndex, int sideWidestHops, int routeHops)
+    {
+        _ = routeIndex;                                    // (kept for call-site clarity)
+        return Math.Max(0, (sideWidestHops - routeHops)) * RouteTransitSecondsPerHop;
+    }
+
+    /// <summary>
+    /// P635 — approximate per-hop transit time (sec) used to stagger each wing's
+    /// release timeout so longer routes wait longer. Sized from the measured
+    /// bot-transit rate at the 200v200 baseline (bots cross a sector in tens of
+    /// seconds at fighter cruise); conservative so the release offset never lets a
+    /// short route arrive meaningfully ahead of a long one.
+    /// </summary>
+    public const double RouteTransitSecondsPerHop = 20.0;
 
 
     // ── Read-only visibility ──────────────────────────────────────────────
@@ -3913,6 +4105,13 @@ internal sealed partial class BotManager : IDisposable
         /// <summary>How many backoffs the bot took waiting for the world sync
         /// (EnsureCombatPath found no cluster GRAPH yet).</summary>
         public required int WorldNotReadyAttempts { get; init; }
+        // P635 — multi-route wings.
+        /// <summary>This bot's wing/route index within its side (−1 = not on a
+        /// multi-route wing; P635 routes=auto splits the side across routes).</summary>
+        public required int RouteIndex { get; init; }
+        /// <summary>A human-readable label for the bot's assigned route (e.g.
+        /// "R1:Ganymede→Rigel→Alderan"); "single" when not on a multi-route wing.</summary>
+        public required string RouteName { get; init; }
     }
 
     private static bool BotWorldReady(ActiveBot bot)
@@ -3929,6 +4128,15 @@ internal sealed partial class BotManager : IDisposable
         if (bot.Bot is { } b && b.ShipAssignment is { } asn) return asn.Ship.ShipId;
         lock (bot.Cs!.Gate)
             return bot.Cs.World.MyShipId ?? -1;
+    }
+
+    /// <summary>P635 — a human-readable route label for a bot: "single" when not on
+    /// a multi-route wing, else "RN:<start>→…→<goal>".</summary>
+    private static string RouteNameOf(ActiveBot bot)
+    {
+        if (bot.RoutePath is not { Count: > 0 } rp || bot.RouteIndex < 0)
+            return "single";
+        return $"R{bot.RouteIndex}:" + string.Join("→", rp);
     }
 
     public IReadOnlyList<ActiveBotView> ActiveBots()
@@ -3953,6 +4161,7 @@ internal sealed partial class BotManager : IDisposable
                             Engagers = EngagersOf(bot),
                             WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
                             WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
+                            RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
                         });
                         continue;
                     }
@@ -3974,6 +4183,7 @@ internal sealed partial class BotManager : IDisposable
                             Engagers = EngagersOf(bot),
                             WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
                             WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
+                            RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
                         });
                         continue;
                     }
@@ -3987,6 +4197,7 @@ internal sealed partial class BotManager : IDisposable
                         Engagers = 0,
                         WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
                         WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
+                        RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
                     });
                 }
                 catch { /* one bot's bad state never breaks list_active_bots */ }
@@ -4103,6 +4314,28 @@ internal sealed partial class BotManager : IDisposable
                 if (b.Cs is not null)
                     rows.Add(new BotTransitRow(b.Name, b.Side, b.LaunchedAt, b.ArrivedAt, b.WarpHops.Count,
                         b.WarpHops.ToArray(), b.Deaths, b.GunfireDeaths, b.CollisionDeaths));
+        return rows;
+    }
+
+    // ── P635 — per-route arrival accounting ───────────────────────────────
+
+    /// <summary>P635 — one wing's (side, route) tally: bots assigned to the wing and
+    /// how many have ARRIVED in the rendezvous. Lets list_active_bots /
+    /// get_perf_stats report per-route arrival counts so the multi-route split can be
+    /// verified (each wing using its own entry aleph, each arrival counted per wing).</summary>
+    public readonly record struct RouteArrivalRow(short Side, int RouteIndex, string RouteName, int Assigned, int Arrived);
+
+    public IReadOnlyList<RouteArrivalRow> RouteArrivals()
+    {
+        var rows = new List<RouteArrivalRow>();
+        lock (_gate)
+            foreach (var g in _bots.Where(b => b.Behavior == "combat" && b.Cs is not null)
+                                   .GroupBy(b => (b.Side, b.RouteIndex)))
+            {
+                var bots = g.ToList();
+                rows.Add(new RouteArrivalRow(g.Key.Side, g.Key.RouteIndex, RouteNameOf(bots[0]),
+                    bots.Count, bots.Count(b => b.Arrived)));
+            }
         return rows;
     }
 
@@ -4728,6 +4961,17 @@ internal sealed partial class BotManager : IDisposable
         public short StagingSector = -1;                // the last sector before the rendezvous
         public double? FirstStagingAt;                  // when this bot first began holding
         public double? ReleasedAt;                      // when the side released it to advance
+
+        // ── P635 — multi-route wings ──
+        // The assigned wing route (home → rendezvous, inclusive) this bot follows
+        // instead of the shared BFS shortest path, so each side splits across ALL
+        // its distinct entry alephs into the rendezvous instead of funnelling every
+        // ship through one mouth. Null = single-route behaviour (FindShortestPath).
+        public List<short>? RoutePath;
+        /// <summary>P635 — this bot's wing index within its side (−1 when not on a
+        /// multi-route wing). Routes 0..N-1; each route has its OWN staging sector,
+        /// staging/entry-stagger/exit-clear-out instance and release gate.</summary>
+        public int RouteIndex = -1;
 
         // ── P610 — aleph exit clear-out ──
         public Vector3? ExitClearFrom;                  // the arrival aleph position to clear after a transit

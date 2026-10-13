@@ -440,14 +440,51 @@ internal static class McpTools
             arenaSpots = pa.Concat(pb).Select((p, i) => (p, i < size ? fa : fb)).ToList();
             arenaNote = $"arena: {size} bots/side mirrored about sector {tsA} centre (offset {BotManager.ArenaOffset}u) — P554 relocation via the 'relocate' admin cheat on the bot's own connection (needs liveSettings.adminCheats enabled + the bot's name allow-listed); a refused relocation is a hard per-bot error, never a silent staging fallback.";
         }
+
+        // P635 — multi-route wings (same rule as the mixed-fleet path): split each
+        // side across all its distinct entry alephs into the rendezvous. `routes`
+        // = "auto" (default) | "single"; `maxPerRoute` caps bots per route with the
+        // excess to the least-loaded route. Only for a travelling, staging scenario.
+        string routesArg = (OptStr(args, "routes") ?? "auto").ToLowerInvariant();
+        int maxPerRoute = OptInt(args, "maxPerRoute") ?? 100;
+        bool wantMultiRoute = routesArg == "auto" && staging && !arena;
+        bool multiRoute = wantMultiRoute && targetSector is not null;
+        short rz2 = wantMultiRoute && targetSector is { } rzv ? rzv : (short)0;
+        var routePlans = new Dictionary<short, List<List<short>>>();
+        var routeCounts = new Dictionary<short, int[]>();
+        string routesNote = "single (routes not split)";
+        if (multiRoute)
+        {
+            foreach (var side in new[] { sideA, sideB })
+            {
+                var routes = mgr.FindRoutes(rz2, mgr.FindSideHomeSector(side), 3);
+                if (routes.Count >= 2)
+                {
+                    routePlans[side] = routes;
+                    routeCounts[side] = new int[routes.Count];
+                }
+            }
+            if (routePlans.Count > 0)
+                routesNote = string.Join("; ", routePlans.Select(kv =>
+                    $"{kv.Key}: {string.Join(" | ", kv.Value.Select(r => string.Join("→", r)))}"));
+        }
+
         for (int i = 0; i < size; i++)
         {
             var spotA = arena ? arenaSpots[i] : default;
             var spotB = arena ? arenaSpots[size + i] : default;
+            // P635 — least-loaded wing per side.
+            IReadOnlyList<short>? raPath = null; int raIdx = -1;
+            IReadOnlyList<short>? rbPath = null; int rbIdx = -1;
+            if (routePlans.TryGetValue(sideA, out var rsA))
+            { raIdx = BotManager.PickLeastLoadedRoute(routeCounts[sideA]); routeCounts[sideA][raIdx]++; raPath = rsA[raIdx]; }
+            if (routePlans.TryGetValue(sideB, out var rsB))
+            { rbIdx = BotManager.PickLeastLoadedRoute(routeCounts[sideB]); routeCounts[sideB][rbIdx]++; rbPath = rsB[rbIdx]; }
             try
             {
                 var ra = mgr.SpawnBot(flyHullIdA, flyHullNameA, sideA, partsA, "combat", targetSector, launcherId, launcherRequest,
-                    useStaging: staging, arena: arena, arenaPosition: arena ? spotA.Pos : null, arenaFacing: arena ? spotA.Fwd : null);
+                    useStaging: staging, arena: arena, arenaPosition: arena ? spotA.Pos : null, arenaFacing: arena ? spotA.Fwd : null,
+                    routePath: raPath, routeIndex: raIdx);
                 spawnedA++;
                 grants.Add(new { side = sideA, name = ra.Name, grantedHull = ra.Granted.HullId, grantedParts = ra.Granted.Parts.Select(p => p.PartId).ToArray(), warning = ra.Warning });
                 if (ra.Warning is not null) warnings++;
@@ -456,7 +493,8 @@ internal static class McpTools
             try
             {
                 var rb = mgr.SpawnBot(flyHullIdB, flyHullNameB, sideB, partsB, "combat", targetSector, launcherId, launcherRequest,
-                    useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null);
+                    useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null,
+                    routePath: rbPath, routeIndex: rbIdx);
                 spawnedB++;
                 grants.Add(new { side = sideB, name = rb.Name, grantedHull = rb.Granted.HullId, grantedParts = rb.Granted.Parts.Select(p => p.PartId).ToArray(), warning = rb.Warning });
                 if (rb.Warning is not null) warnings++;
@@ -475,6 +513,8 @@ internal static class McpTools
             staging,
             arena,
             arenaNote,
+            routes = routesNote,
+            maxPerRoute,
             // P539b/P556 — the resolved per-side tech loadout by PART NAME plus
             // the effective hull/HP/shield/gun each side actually flies, so a
             // showcase operator knows exactly who should win before the fight.
@@ -588,16 +628,60 @@ internal static class McpTools
         var failures = new List<object>();
         var grants = new List<object>();
         int warnings = 0;
+
+        // P635 — multi-route wings: split each side across ALL its distinct
+        // entry alephs into the rendezvous (instead of funnelling the whole fleet
+        // through one shortest-path mouth), giving each route its own staging
+        // sector, staging/entry/exit instance and release gate. `routes` =
+        // "auto" (default; split when ≥2 distinct routes exist) | "single"
+        // (today's behaviour). `maxPerRoute` caps bots per route; the excess goes
+        // to the least-loaded route (PickLeastLoadedRoute). Only meaningful for a
+        // travelling, staging showcase to a rendezvous (never arena, which parks
+        // both sides in the target sector).
+        string routesArg = (OptStr(args, "routes") ?? "auto").ToLowerInvariant();
+        int maxPerRoute = OptInt(args, "maxPerRoute") ?? 100;
+        bool wantMultiRoute = routesArg == "auto" && staging && !arena;
+        bool multiRoute = wantMultiRoute && targetSector is not null;
+        short rz2 = wantMultiRoute && targetSector is { } rzv ? rzv : (short)0;
+        var routePlans = new Dictionary<short, List<List<short>>>();
+        var routeCounts = new Dictionary<short, int[]>();
+        string routesNote = "single (routes not split)";
+        if (multiRoute)
+        {
+            foreach (var side in new[] { sideA, sideB })
+            {
+                var routes = mgr.FindRoutes(rz2, mgr.FindSideHomeSector(side), 3);
+                if (routes.Count >= 2)
+                {
+                    routePlans[side] = routes;
+                    routeCounts[side] = new int[routes.Count];
+                }
+            }
+            if (routePlans.Count > 0)
+                routesNote = string.Join("; ", routePlans.Select(kv =>
+                    $"{kv.Key}: {string.Join(" | ", kv.Value.Select(r => string.Join("→", r)))}"));
+        }
+
         for (int si = 0; si < slots.Count; si++)
         {
             var slot = slots[si];
             var spot = arena && arenaSpots.Count > si ? arenaSpots[si] : default;
             try
             {
+                // P635 — assign this bot to the least-loaded wing of its side.
+                IReadOnlyList<short>? routePath = null;
+                int routeIndex = -1;
+                if (routePlans.TryGetValue(slot.Side, out var rs))
+                {
+                    var counts = routeCounts[slot.Side];
+                    routeIndex = BotManager.PickLeastLoadedRoute(counts);
+                    counts[routeIndex]++;
+                    routePath = rs[routeIndex];
+                }
                 var r = mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", targetSector,
                     slot.LauncherId, slot.LauncherName, useStaging: staging, arena: arena,
                     arenaPosition: arena ? spot.Pos : null, arenaFacing: arena ? spot.Fwd : null,
-                    wingmanBehaviour: slot.Wingman);
+                    wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex);
                 spawned++;
                 grants.Add(new { side = slot.Side, name = r.Name, grantedHull = r.Granted.HullId, grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning });
                 if (r.Warning is not null) warnings++;
@@ -615,6 +699,8 @@ internal static class McpTools
             staging,
             arenaNote,
             wingman,
+            routes = routesNote,
+            maxPerRoute,
             sideA = new { side = sideA, spawned = totalA, fleet = faRep },
             sideB = new { side = sideB, spawned = totalB, fleet = fbRep },
             minefields = minefieldReports,
@@ -958,6 +1044,11 @@ internal static class McpTools
                     isPod = b.IsPod, podDocked = b.PodDocked,
                 }),
             },
+            // P635 — per-route (wing) arrival counts, so the multi-route split is
+            // verifiable per entry aleph (each wing's assigned vs arrived).
+            routes = mgr.RouteArrivals()
+                .Select(r => new { side = r.Side, routeIndex = r.RouteIndex, route = r.RouteName, assigned = r.Assigned, arrived = r.Arrived })
+                .ToList(),
         }));
     }
 
