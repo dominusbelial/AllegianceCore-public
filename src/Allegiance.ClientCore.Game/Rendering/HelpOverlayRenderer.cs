@@ -122,8 +122,11 @@ public sealed class HelpOverlayRenderer
             OutlineRect(panelX, panelY, panelW, panelH, PanelBorder);
             FillRect(panelX, panelY, panelW, 2f, PanelBorder);   // top accent edge
 
-            // Header line.
-            string header = "KEYBINDINGS  (H TOGGLE  -  F6 CONTROLS / REBIND)";
+            // Header line — P624: generated from the LIVE Help + OpenKeyBindings
+            // bindings (KeyBindingStore) so a rebind updates it (the old hard-coded
+            // "H TOGGLE" went stale when P623 moved Help to F1).
+            var map = KeyBindingStore.Instance.Map;
+            string header = HelpHeader.Line(map.BindingOf("Help").Label, map.BindingOf("OpenKeyBindings").Label);
             var hs = _small.MeasureString(header) * scale;
             Draw(header, new Vector2((w - hs.X) / 2f, panelY + 8f), HeaderColor, scale);
 

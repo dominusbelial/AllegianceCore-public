@@ -1,0 +1,149 @@
+[monogame] direct connect: 127.0.0.1:6073 as 'proof' (lobby skipped)
+[autoproof] live-proof automation active: side=0 ready=True launch=- goto=- target=None camera=cockpit hidehud=False shots=[40,44] dockafter=- sweep=0 exit=55
+[client] aleph glimpse/transit-flare: ON (--aleph-glimpse off to disable the glimpse + flare; the native arrival swell stays on either way)
+[client] VFX: VOLUMETRIC requested (raymarch A) — resolving in LoadContent
+[client] soft particles: ON; bloom: OFF (default)
+[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models) (NO Meshy pack — native only; see ALLEGIANCE_MESHY_PACK_PATH)
+[client] asteroids: NATIVE per-rock .mdl meshes + native textures (--asteroids imported to use the shared imported variants)
+[client] ambient space dust: density=1 (native Debris pref)
+[client] ship-art override: 0 entries from /home/domingo/Development/AllegianceCore/assets/ships/ship-art.json
+[client] ship catalogue: 0 public entries (no Meshy pack)
+[monogame] lock sprite 'Partial': 64x64 'plockbmp.mdl'
+[monogame] lock sprite 'Full': 64x64 'lockedbmp.mdl'
+[monogame] feedback art 'conejectpoddisplaybmp': 172x44 'conejectpoddisplaybmp.mdl'
+[monogame] feedback art 'deathbannerbmp': 136x25 'deathbannerbmp.mdl'
+[monogame] feedback art 'ejectpodbmp': 16x16 'ejectpodbmp.mdl'
+[monogame] quick-chat: 310 voices, 13 menus, mainMenu ok
+[keymap] Controls popup ready (open: F6)
+[monogame] shop catalogue: 447 hulls, 117 parts, 123 launchers (56 missile, 8 mine, 6 chaff, 53 probe)
+[monogame] P607 ship-model audit: 447 hull(s), 0 unresolved native
+[monogame] rock surface 'Plain': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] rock surface 'Helium': 2048x2048 'bgrnd55bmp.mdl'
+[monogame] rock surface 'Uranium': 2048x2048 'bgrnd51bmp.mdl'
+[monogame] rock surface 'Silicon': 2048x2048 'bgrnd52bmp.mdl'
+[monogame] rock surface 'Carbon': 2048x2048 'bgrnd53bmp.mdl'
+[monogame] rock surface 'Buildable': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] P593 projectile-model audit: 4 model(s), 0 lit-solid fallback(s)
+[monogame] P593b missile-model audit: 20 model(s), 0 lit-solid fallback(s)
+[monogame] P593b render-model audit: 0-lit-solid guarantee -> 0 model fallback(s), 0 treasure fallback(s)
+[monogame] P547: soft particles ACTIVE (linear-depth shader + target ready)
+[monogame] vfx atlas Explosion01-light: 25 frames 128x128
+[monogame] vfx atlas Explosion01: 25 frames 128x128
+[monogame] vfx atlas Cloud01: 64 frames 96x96 (feathered)
+[monogame] vfx atlas WispySmoke01: 64 frames 96x96 (feathered)
+[monogame] vfx atlas DiscSmoke01: 64 frames 96x96 (feathered)
+[monogame] explosion film 'exp20' = 20 frames 1280x64
+[monogame] explosion film 'exp22' = 30 frames 15360x512
+[monogame] explosion film 'exp23' = 38 frames 2432x64
+[monogame] explosion film 'exp24' = 16 frames 1024x64
+[monogame] explosion film 'exp25' = 32 frames 2048x64
+[monogame] explosion shockwave fx18 = 2048x2048
+[monogame] P546: enhanced explosions + smoke active (CC0 atlases loaded)
+[monogame] P573: VOLUMETRIC tier ACTIVE (raymarch A)
+[volumetric] pre-warmed shader LODs + half-res target
+[monogame] ambient dust decal: 32x32 'debris1bmp.mdl'
+[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact/sector-threat cues
+[monogame] music: loaded flight + station beds (placeholder-generated tones — drop real .ogg at 'Sounds/flightmusic'/'Sounds/stationmusic' to replace)
+[monogame] connecting to 127.0.0.1:6073 as 'proof' ...
+[monogame] logged on: serverTime=1235
+[autoproof] auto-side -> side 0
+[autoproof] auto-ready PLAYER_READY ship 8109
+[monogame] ready-check: re-readied for ship 8109 after rotation (PLAYER_READY true)
+[monogame] ready-check: mission stage -> Started, entering flying
+[sim] seeded from server pose Vector3 { X = 1220, Y = 990, Z = 0 }
+[P448b] dead-reckon re-seed corrections: n=584 mean=0.015m max=0.244m
+[sim] RESUMED sending native SHIP_UPDATE
+[monogame] audio: warp ambient start (warp 2153, vol 0.002)
+[monogame] audio: station ambient start (station 24465, vol 0.504)
+[client] The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable — or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root — to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.
+[monogame] audio: collision sound (8103x8107, vol 0.895)
+[monogame] audio: collision sound (8105x8107, vol 0.895)
+[monogame] audio: collision sound (8099x8107, vol 0.895)
+[monogame] audio: collision sound (8101x8107, vol 0.895)
+[monogame] audio: collision sound (8103x8107, vol 0.894)
+[sim] SHIP_RESET #1 — snapped to server pose, cookie 0x02
+[monogame] audio: collision sound (8101x8107, vol 0.888)
+[monogame] audio: collision sound (8099x8105, vol 0.888)
+[monogame] audio: collision sound (8101x8105, vol 0.888)
+[monogame] audio: collision sound (8099x8103, vol 0.888)
+[monogame] audio: collision sound (8105x8107, vol 0.888)
+[monogame] audio: collision sound (8101x8105, vol 0.888)
+[monogame] audio: collision sound (8103x8107, vol 0.873)
+[monogame] audio: collision sound (8103x8107, vol 0.872)
+[sim] SHIP_RESET #2 — snapped to server pose, cookie 0x03
+[monogame] audio: warp ambient stop (warp 2153)
+[P448b] dead-reckon re-seed corrections: n=688 mean=0.121m max=3.214m
+[sim] SHIP_RESET #3 — snapped to server pose, cookie 0x04
+[sim] SHIP_RESET #4 — snapped to server pose, cookie 0x05
+[P448b] dead-reckon re-seed corrections: n=571 mean=0.108m max=0.390m
+[sim] SHIP_RESET #5 — snapped to server pose, cookie 0x06
+[sim] SHIP_RESET #6 — snapped to server pose, cookie 0x07
+[P448b] dead-reckon re-seed corrections: n=569 mean=0.161m max=0.553m
+[sim] SHIP_RESET #7 — snapped to server pose, cookie 0x08
+[sim] SHIP_RESET #8 — snapped to server pose, cookie 0x09
+[sim] SHIP_RESET #9 — snapped to server pose, cookie 0x0A
+[P448b] dead-reckon re-seed corrections: n=578 mean=0.210m max=0.652m
+[sim] SHIP_RESET #10 — snapped to server pose, cookie 0x0B
+[sim] SHIP_RESET #11 — snapped to server pose, cookie 0x0C
+[sim] SHIP_RESET #12 — snapped to server pose, cookie 0x0D
+[sim] SHIP_RESET #13 — snapped to server pose, cookie 0x0E
+[P448b] dead-reckon re-seed corrections: n=566 mean=0.262m max=0.884m
+[sim] SHIP_RESET #14 — snapped to server pose, cookie 0x0F
+[sim] SHIP_RESET #15 — snapped to server pose, cookie 0x10
+[sim] SHIP_RESET #16 — snapped to server pose, cookie 0x11
+[sim] SHIP_RESET #17 — snapped to server pose, cookie 0x12
+[P448b] dead-reckon re-seed corrections: n=571 mean=0.277m max=0.898m
+[sim] SHIP_RESET #18 — snapped to server pose, cookie 0x13
+[sim] SHIP_RESET #19 — snapped to server pose, cookie 0x14
+[sim] SHIP_RESET #20 — snapped to server pose, cookie 0x15
+[sim] SHIP_RESET #21 — snapped to server pose, cookie 0x16
+[sim] SHIP_RESET #22 — snapped to server pose, cookie 0x17
+[P448b] dead-reckon re-seed corrections: n=712 mean=0.298m max=1.054m
+[sim] SHIP_RESET #23 — snapped to server pose, cookie 0x18
+[sim] SHIP_RESET #24 — snapped to server pose, cookie 0x19
+[sim] SHIP_RESET #25 — snapped to server pose, cookie 0x1A
+[sim] SHIP_RESET #26 — snapped to server pose, cookie 0x1B
+[P448b] dead-reckon re-seed corrections: n=571 mean=0.357m max=1.103m
+[sim] SHIP_RESET #27 — snapped to server pose, cookie 0x1C
+[sim] SHIP_RESET #28 — snapped to server pose, cookie 0x1D
+[sim] SHIP_RESET #29 — snapped to server pose, cookie 0x1E
+[monogame] audio: station ambient stop (station 24465)
+[sim] SHIP_RESET #30 — snapped to server pose, cookie 0x1F
+[P448b] dead-reckon re-seed corrections: n=571 mean=0.347m max=1.131m
+[sim] SHIP_RESET #31 — snapped to server pose, cookie 0x20
+[sim] SHIP_RESET #32 — snapped to server pose, cookie 0x21
+[monogame] briefing dismissed
+[autoproof] autoshot queued: proof_t040.8_sOmega_ccockpit (t=40.8s after launch)
+[sim] SHIP_RESET #33 — snapped to server pose, cookie 0x22
+[autoproof] screenshot saved: /home/domingo/Development/AllegianceCore/docs/reports/P624_assets_baseline/proof_t040.8_sOmega_ccockpit.png
+[sim] SHIP_RESET #34 — snapped to server pose, cookie 0x23
+[P448b] dead-reckon re-seed corrections: n=620 mean=0.373m max=1.449m
+[sim] SHIP_RESET #35 — snapped to server pose, cookie 0x24
+[autoproof] autoshot queued: proof_t044.1_sOmega_ccockpit (t=44.1s after launch)
+[sim] SHIP_RESET #36 — snapped to server pose, cookie 0x25
+[autoproof] screenshot saved: /home/domingo/Development/AllegianceCore/docs/reports/P624_assets_baseline/proof_t044.1_sOmega_ccockpit.png
+[sim] SHIP_RESET #37 — snapped to server pose, cookie 0x26
+[sim] SHIP_RESET #38 — snapped to server pose, cookie 0x27
+[P448b] dead-reckon re-seed corrections: n=599 mean=0.422m max=1.275m
+[transit-pulse] warp #2153 TEAM transit signal (ship 8099) @t=25.17
+[transit-pulse] warp #2153 TEAM transit signal (ship 8103) @t=25.17
+[sim] SHIP_RESET #39 — snapped to server pose, cookie 0x28
+[transit-pulse] warp #2153 TEAM transit signal (ship 8105) @t=25.65
+[sim] SHIP_RESET #40 — snapped to server pose, cookie 0x29
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=26.13
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=26.13
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=26.13
+[sim] SHIP_RESET #41 — snapped to server pose, cookie 0x2A
+[transit-pulse] warp #2153 TEAM transit signal (ship 8107) @t=26.62
+[transit-pulse] warp #2153 TEAM transit signal (ship 8101) @t=26.62
+[sim] SHIP_RESET #42 — snapped to server pose, cookie 0x2B
+[P448b] dead-reckon re-seed corrections: n=566 mean=0.351m max=1.326m
+[sim] SHIP_RESET #43 — snapped to server pose, cookie 0x2C
+[sim] SHIP_RESET #44 — snapped to server pose, cookie 0x2D
+[sim] SHIP_RESET #45 — snapped to server pose, cookie 0x2E
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=28.55
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=28.55
+[sim] SHIP_RESET #46 — snapped to server pose, cookie 0x2F
+[P448b] dead-reckon re-seed corrections: n=567 mean=0.224m max=1.566m
+[autoproof] --exit-after reached; exiting
+[sim] SHIP_RESET #47 — snapped to server pose, cookie 0x30

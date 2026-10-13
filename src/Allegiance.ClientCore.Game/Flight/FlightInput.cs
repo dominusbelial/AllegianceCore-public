@@ -41,9 +41,17 @@ public readonly record struct FlightInputState(
     bool YawRight,          // →
     bool RollLeft,          // A
     bool RollRight,         // D
+    bool StrafeUp = false,  // P624 — vertical strafe up (Insert) — TK_ThrustUp
+    bool StrafeDown = false,// P624 — vertical strafe down (X) — TK_ThrustDown
     bool Afterburner = false, // Shift (either side) — TK_FireBooster
     bool Fire = false,        // Space — TK_FireWeapon (held)
     bool Cloak = false,       // F — TK_ToggleCloak (latched toggle, see remarks)
+    // P624 — vector lock (TK_LockVector). The LATCHED client toggle state set
+    // by the L key (edge-triggered), carried in each frame exactly like Cloak;
+    // Translate folds it into the outgoing stateM as CoastButton (8, the
+    // "vector lock" bit, ShipControlState.CoastButton — native toggles
+    // coastButtonIGC, WinTrek.cpp:9458-9464). Native defaults L (mdl line 39).
+    bool VectorLock = false,
     // P225 — weapon-selection state. Unlike the keystroke flags above these
     // are NOT per-keyboard-sample; they are the client-local selection carried
     // in from Game1 each frame (_groupFire / _selectedMount — the same pattern
@@ -113,6 +121,13 @@ public static class FlightInput
         if (input.ThrottleBack)    stateM |= ShipControlState.BackwardButton;
         if (input.StrafeLeft)      stateM |= ShipControlState.LeftButton;
         if (input.StrafeRight)     stateM |= ShipControlState.RightButton;
+        // P624 — vertical strafe (TK_ThrustUp/Down → UpButton/DownButton,
+        // igc.h:46/47): the same lateral-thrust model as Q/E (ShipKinematics
+        // already sums Left/Right/Up/Down into the manual engine vector at
+        // ShipKinematics.cs:157-162), so these just OR the matching movement
+        // bits — no new sim behaviour.
+        if (input.StrafeUp)        stateM |= ShipControlState.UpButton;
+        if (input.StrafeDown)      stateM |= ShipControlState.DownButton;
 
         // P220 — afterburner (TK_FireBooster → ShipControlState.AfterburnerButton,
         // the 128·coastButtonIGC bit, igc.h:817). Continuous while Shift is held
@@ -144,6 +159,15 @@ public static class FlightInput
         // energy, so a ship without a cloak (or with an empty energy pool) simply
         // never becomes IsCloaked; toggling the bit is harmless there.
         if (input.Cloak) stateM |= ShipControlState.CloakActive;
+
+        // P624 — vector lock (TK_LockVector → ShipControlState.CoastButton, the
+        // "vector lock"/coast bit, igc.h:807/igc.h:813 note). Latched client
+        // toggle like Cloak: while engaged the CoastButton is OR-ed every frame
+        // so the sim's coast branch (ShipKinematics.cs:167-171) kills lateral
+        // velocity and holds heading+speed, exactly native's coastButtonIGC.
+        // The server re-derives it from the transmitted stateM, so a locally
+        // stepped own-ship agrees with the server's replay.
+        if (input.VectorLock) stateM |= ShipControlState.CoastButton;
 
         // P445 — the persistent throttle axis is owned by the client (native's
         // trekClient.trekThrottle in [-1, 1]) and carried in on the state each
@@ -216,6 +240,21 @@ public static class FlightInput
     /// <c>-0.5*(1+throttle)/-maxSpeed = 0.5*(1+throttle)</c>. Idle (-1) is 0%,
     /// full (+1) is 100%. Shared so the HUD gauge and any caller agree.</summary>
     public static float CruiseFraction(float throttle) => 0.5f * (1f + throttle);
+
+    // ── P624 — match speed (native GetThrottle, WinTrek.cpp:122-134) ────────
+
+    /// <summary>
+    /// The cruise-throttle value [-1, 1] that makes the pilot's own ship match
+    /// a target's current speed — native's <c>GetThrottle</c>
+    /// (<c>WinTrek.cpp:122-134</c>): <c>speed ≥ myMaxSpeed ? 1.0 : 2·speed/
+    /// myMaxSpeed − 1</c>. A stationary target yields −1 (stop); a target at or
+    /// above the pilot's max speed yields +1 (full). The TK_MatchSpeed key is
+    /// HELD (native <c>IsTrekKeyDown</c>, WinTrek.cpp:10966-10974) and while
+    /// held the port re-derives <c>_throttle</c> from the current target each
+    /// frame, exactly as native overwrites <c>trekClient.trekThrottle</c>.
+    /// </summary>
+    public static float MatchSpeedThrottle(float targetSpeed, float myMaxSpeed)
+        => targetSpeed >= myMaxSpeed ? 1f : (2f * targetSpeed / myMaxSpeed) - 1f;
 
     // ── P504 — mouse-wheel direction ──────────────────────────────────────
 

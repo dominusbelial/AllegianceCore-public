@@ -57,6 +57,11 @@ public sealed class OwnShipSimulator
     /// is a no-op until <see cref="SetHull"/>).</summary>
     public bool HaveHull => _haveHull;
 
+    /// <summary>P624 - own hull max speed (u/s), for match-speed (native's
+    /// GetThrottle divides the target speed by the pilot's max speed,
+    /// WinTrek.cpp:125-132). Null until a hull resolves.</summary>
+    public float? MaxSpeed => _haveHull ? _inputs.MaxSpeed : null;
+
     /// <summary>Whether the simulation is frozen to a held server pose (a hard
     /// transition in progress). While frozen <see cref="Step"/> does nothing.</summary>
     public bool Frozen => _frozen;

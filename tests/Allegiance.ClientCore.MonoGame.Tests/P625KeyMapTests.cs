@@ -149,19 +149,19 @@ public class P625KeyMapTests
         var ctl = new KeyBindingController(map);
         while (ctl.CurrentAction != "ScreenShot") ctl.MoveDown();
         ctl.SelectCurrent();
-        // Give ScreenShot the key that LeaderCommand alone owns (X) -> conflict.
+        // Give ScreenShot the key that ThrustDown alone owns (X) -> conflict.
         // (X is used rather than the multi-context Space so the owning action is
         // deterministic — the P625b catalogue legitimately shares Space across
-        // contexts, but X is LeaderCommand-only. Note P623 moved Suicide off K so
-        // K now belongs to TargetFriendlyBomber; X stays single-owner.)
+        // contexts, but X is ThrustDown-only after P624 moved LeaderCommand to
+        // Ctrl+X and gave X to TK_ThrustDown.)
         ctl.CaptureKey(Keys.X, false, false, false);
         Assert.Equal(KeyBindPhase.Conflict, ctl.Phase);
-        Assert.Equal("LeaderCommand", ctl.ConflictOwner);
+        Assert.Equal("ThrustDown", ctl.ConflictOwner);
 
         ctl.Answer(true); // swap
         Assert.Equal(KeyBindPhase.Browse, ctl.Phase);
         Assert.Equal(new KeyBinding(Keys.X, InputModifiers.None), map.BindingOf("ScreenShot"));
-        Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("LeaderCommand"));
+        Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("ThrustDown"));
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public class P625KeyMapTests
         ctl.Answer(false); // reject the swap
         Assert.Equal(KeyBindPhase.Browse, ctl.Phase);
         Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("ScreenShot"));
-        Assert.Equal(new KeyBinding(Keys.X, InputModifiers.None), map.BindingOf("LeaderCommand"));
+        Assert.Equal(new KeyBinding(Keys.X, InputModifiers.None), map.BindingOf("ThrustDown"));
     }
 
     [Fact]

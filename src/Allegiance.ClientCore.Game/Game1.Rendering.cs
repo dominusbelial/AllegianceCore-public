@@ -2648,6 +2648,10 @@ public sealed partial class Game1
             if (world.MyShipId is not { } me) return;
             if (!world.Ships.TryGetValue(me, out var ownEnt)) return;
             short mySector = ownEnt.SectorId;
+            // P624 — radar mode filter (All/Default/Target/Minimal) + my side for
+            // the enemy/friendly test; snapshot under the gate with everything else.
+            var radarMode = _radarMode;
+            short mySide = world.MySideId ?? -1;
             // P527 — the radar EYE uses the own-ship RENDER pose (P508 local
             // sim), not the raw 20 Hz ServerShipUpdate pose, so every contact's
             // projection and distance-fade share the frame's own position (the
@@ -2695,6 +2699,8 @@ public sealed partial class Game1
                 // (RadarTargetSelection) so the flagging is unit-testable.
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Ship, id, selType, sel?.Id);
+                // P624 — hide friendly ships in Target/Minimal modes (native LOD).
+                if (!RadarLod.ShowShip(radarMode, isEnemy: ship.SideId != mySide, isSel)) continue;
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Ship,
                     new NumericsVec2(site.Point.X, site.Point.Y),
@@ -2722,6 +2728,7 @@ public sealed partial class Game1
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Station, sid, selType, sel?.Id);
+                if (!RadarLod.ShowTargetable(radarMode, isSel)) continue;
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Station,
                     new NumericsVec2(site.Point.X, site.Point.Y),
@@ -2740,6 +2747,7 @@ public sealed partial class Game1
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Warp, wid, selType, sel?.Id);
+                if (!RadarLod.ShowTargetable(radarMode, isSel)) continue;
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Warp,
                     new NumericsVec2(site.Point.X, site.Point.Y),

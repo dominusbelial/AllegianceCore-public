@@ -49,7 +49,8 @@ public class HelpOverlayTests
         // P425 — the commandee-select / issue-order keys' own group.
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("COMMANDED SHIP"));
         Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "PageDown" && e.Description.StartsWith("Cycle")));
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Insert" && e.Description.StartsWith("Issue")));
+        // P624 — IssueBuild moved from Insert (now TK_ThrustUp) to Alt+I.
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Alt + I" && e.Description.StartsWith("Issue")));
     }
 
     [Fact]

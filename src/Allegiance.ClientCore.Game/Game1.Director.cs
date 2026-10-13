@@ -30,6 +30,21 @@ public sealed partial class Game1
     private Orientation _externalCam = Orientation.Identity;
     private CameraMode? _externalCamAlignedFor;   // mode the orientation was last reset for
 
+    // P624 — the look-around head yaw (radians, positive = look right), set by
+    // the HELD TK_View* keys and applied to the cockpit/chase view only (see
+    // ComputeFlightCamera). Cleared to forward whenever a non-cockpit/chase
+    // camera is selected or a look key is released.
+    private float _headLookYaw;
+
+    // P624 — radar mode (All/Default/Target/Minimal), cycled by TK_CycleRadar;
+    // applied as a per-contact filter in DrawRadar (Rendering/RadarLod.cs).
+    private RadarMode _radarMode;
+
+    // P624 — the latched vector-lock (TK_LockVector) toggle and its edge latch.
+    private bool _coastToggled;
+    private bool _lockVectorKeyWasDown;
+    private bool _cycleRadarKeyWasDown;
+
     // P580 — director state.
     private readonly Director _director = new(unchecked((int)DateTime.Now.Ticks ^ 0x5EED));  // seeded at construction
     private bool _directorActive;
@@ -75,7 +90,19 @@ public sealed partial class Game1
     {
         // Director / spectator first: the cinematographer takes over entirely.
         if (_directorActive)
+        {
+            _headLookYaw = 0f;   // P624 — head-look is a pilot view; the director owns the camera
             return UpdateDirectorPose(myPos, myOrientation, aspect, dt);
+        }
+
+        // P624 — the look-around head yaw applies ONLY in the cockpit and chase
+        // views (native's cmCockpit/cmExternalChase gate, WinTrek.cpp:9735-9791);
+        // selecting any other camera resets the head to forward, exactly native's
+        // SetHeadOrientation(0) on SetViewToCombatMode (WinTrek.cpp:9365-9367).
+        float head = (_cameraMode == CameraMode.Cockpit || _cameraMode == CameraMode.Chase)
+            ? _headLookYaw : 0f;
+        if (_cameraMode != CameraMode.Cockpit && _cameraMode != CameraMode.Chase)
+            _headLookYaw = 0f;
 
         switch (_cameraMode)
         {
@@ -85,10 +112,10 @@ public sealed partial class Game1
                 if (IsTurretGunner())
                 {
                     var turretRot = PoseConverter.ToXnaRotation(_turretOrientation);
-                    (v, p) = _cockpitCamera.Matrices(myPos, turretRot, aspect, out e);
+                    (v, p) = _cockpitCamera.Matrices(myPos, turretRot, aspect, out e, head);
                 }
                 else
-                    (v, p) = _cockpitCamera.Matrices(myPos, myRot, aspect, out e);
+                    (v, p) = _cockpitCamera.Matrices(myPos, myRot, aspect, out e, head);
                 return (v, p, e);
             }
             case CameraMode.ExternalTurret:
@@ -199,7 +226,7 @@ public sealed partial class Game1
 
     private (Matrix View, Matrix Proj, Vector3 Eye) ChaseFallback(Vector3 myPos, Matrix myRot, float aspect, float dt)
     {
-        var (v, p) = _chaseCamera.Matrices(myPos, myRot, aspect, dt, out var e, _myRenderRadius);
+        var (v, p) = _chaseCamera.Matrices(myPos, myRot, aspect, dt, out var e, _myRenderRadius, _headLookYaw);
         return (v, p, e);
     }
 
@@ -431,9 +458,11 @@ public sealed partial class Game1
 
     /// <summary>P625 — is this action's current binding held down right now?
     /// Every discrete input handler reads actions through this (never a raw key
-    /// literal), so a rebind takes effect immediately.</summary>
+    /// literal), so a rebind takes effect immediately. P624 — routed through
+    /// <see cref="ActionMap.IsDown"/> so an action's ALTERNATE chords (the
+    /// hardware-layout alias on ThrottleFull) match too.</summary>
     private bool ActionDown(KeyboardState ks, string action)
-        => KeyOf(action).Matches(ks);
+        => Rendering.KeyBindingStore.Instance.Map.IsDown(ks, action);
 
     /// <summary>Edge-triggered director + spectator toggles (P580). Bound to
     /// F2 (director) and F3 (spectator follow). Also disables the director the

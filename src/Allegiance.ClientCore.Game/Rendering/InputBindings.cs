@@ -133,7 +133,8 @@ public sealed record InputActionDef(
     string Category,
     string Description,
     KeyBinding Default,
-    KeyBinding? NativeDefault = null);
+    KeyBinding? NativeDefault = null,
+    IReadOnlyList<KeyBinding>? Alternate = null);
 
 /// <summary>
 /// P625 - the live, data-driven action map. Owns the current binding of every
@@ -161,8 +162,23 @@ public sealed class ActionMap
     public KeyBinding BindingOf(string action)
         => _current.TryGetValue(action, out var kb) ? kb : _defs[action].Default;
 
-    /// <summary>An action is "held" right now when its chord is down.</summary>
-    public bool IsDown(KeyboardState ks, string action) => BindingOf(action).Matches(ks);
+    /// <summary>P624 — an action's alternate chords (hardware-layout aliases,
+    /// e.g. ThrottleFull's ISO/EU backslash scancode OemPipe alongside its
+    /// OemBackslash default). Empty when the action has none. Alternates match
+    /// in <see cref="IsDown"/> exactly like the primary binding.</summary>
+    public IReadOnlyList<KeyBinding> AlternatesOf(string action)
+        => _defs.TryGetValue(action, out var def) && def.Alternate is { } alts ? alts : Array.Empty<KeyBinding>();
+
+    /// <summary>An action is "held" right now when its chord (or any alternate
+    /// chord) is down.</summary>
+    public bool IsDown(KeyboardState ks, string action)
+    {
+        var kb = BindingOf(action);
+        if (kb.Matches(ks)) return true;
+        foreach (var alt in AlternatesOf(action))
+            if (alt.Matches(ks)) return true;
+        return false;
+    }
 
     /// <summary>Raw predicate for callers that need the chord itself.</summary>
     public bool ChordDown(KeyboardState ks, KeyBinding chord) => chord.Matches(ks);
@@ -178,14 +194,14 @@ public sealed class ActionMap
             throw new ArgumentException($"unknown action '{action}'", nameof(action));
 
         string? conflict = null;
+        bool clash(KeyBinding a, KeyBinding b) => a.Key == b.Key && a.Modifiers == b.Modifiers;
         foreach (var other in _current)
         {
             if (other.Key == action) continue;
-            if (other.Value.Key == kb.Key && other.Value.Modifiers == kb.Modifiers)
-            {
-                conflict = other.Key;
-                break;
-            }
+            if (clash(other.Value, kb)) { conflict = other.Key; break; }
+            foreach (var alt in AlternatesOf(other.Key))
+                if (clash(alt, kb)) { conflict = other.Key; break; }
+            if (conflict != null) break;
         }
 
         if (conflict != null && !force)

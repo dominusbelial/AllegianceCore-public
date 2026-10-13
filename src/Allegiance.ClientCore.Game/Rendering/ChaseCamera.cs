@@ -159,7 +159,7 @@ public sealed class ChaseCamera
     /// ship always frames comfortably regardless of class (see the constant's
     /// remarks). Pass 0 (or omit) to keep the old fixed framing for a
     /// reference-radius ship.</param>
-    public (Matrix View, Matrix Projection) Matrices(Vector3 shipPosition, Matrix shipRotation, float aspectRatio, float deltaSeconds, out Vector3 cameraEye, float shipRadius = ReferenceRadius)
+    public (Matrix View, Matrix Projection) Matrices(Vector3 shipPosition, Matrix shipRotation, float aspectRatio, float deltaSeconds, out Vector3 cameraEye, float shipRadius = ReferenceRadius, float headYawRadians = 0f)
     {
         // Convert the ship's full world rotation (a MonoGame Matrix) into the
         // pure quaternion space the smoother operates in. The smoother tracks
@@ -199,6 +199,17 @@ public sealed class ChaseCamera
         // rescales them to the ship's real size).
         cameraEye = shipPosition + up * above + (-forward) * behind;
         Vector3 target = shipPosition;
+
+        // P624 — look-around head yaw (TK_View*): rotate the LOOK direction
+        // about the camera's up by the native head yaw, keeping the camera
+        // position fixed behind the ship (native's cmExternalChase head-look).
+        // Sign matches the cockpit path (positive yaw → look right).
+        if (headYawRadians != 0f)
+        {
+            var look = target - cameraEye;
+            look = Vector3.Transform(look, Matrix.CreateFromAxisAngle(up, -headYawRadians));
+            target = cameraEye + look;
+        }
 
         // Camera-relative: look FROM the origin toward (target - cameraEye),
         // never from the true world-space cameraEye. See Bug 1 (P207) above.

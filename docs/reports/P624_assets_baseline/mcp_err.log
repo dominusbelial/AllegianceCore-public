@@ -1,0 +1,22 @@
+[p485] probe ready-up for ship 8098 on side 0 — enables the normal-map lobby auto-start (PLAYER_READY)
+allegiance-mcp: connected to live server 127.0.0.1:6073 (probe seated); serving stdio MCP tools...
+[p539d] side 0 wing r-1 bot mcp-b001-6355 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b001-6355' ship 8099 after rotation (PLAYER_READY true)
+[p539d] side 1 wing r-1 bot mcp-b002-8569 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b002-8569' ship 8100 after rotation (PLAYER_READY true)
+[p539d] side 0 wing r-1 bot mcp-b003-9619 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b003-9619' ship 8101 after rotation (PLAYER_READY true)
+[p539d] side 1 wing r-1 bot mcp-b004-5956 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b004-5956' ship 8102 after rotation (PLAYER_READY true)
+[p539d] side 0 wing r-1 bot mcp-b005-6321 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b005-6321' ship 8103 after rotation (PLAYER_READY true)
+[p539d] side 1 wing r-1 bot mcp-b006-1732 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b006-1732' ship 8104 after rotation (PLAYER_READY true)
+[p539d] side 0 wing r-1 bot mcp-b007-1308 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b007-1308' ship 8105 after rotation (PLAYER_READY true)
+[p539d] side 1 wing r-1 bot mcp-b008-7795 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b008-7795' ship 8106 after rotation (PLAYER_READY true)
+[p539d] side 0 wing r-1 bot mcp-b009-9222 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b009-9222' ship 8107 after rotation (PLAYER_READY true)
+[p539d] side 1 wing r-1 bot mcp-b010-8948 released from staging (wing assembled/timeout) — advancing together through final warp to 1052
+[p598] re-readied bot 'mcp-b010-8948' ship 8108 after rotation (PLAYER_READY true)

@@ -1,0 +1,2 @@
+{"tool": "spawn_scenario", "args": {"size":5,"target_sector":"Alderan"}}
+{"tool": "quit"}

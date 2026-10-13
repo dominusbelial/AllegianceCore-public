@@ -53,6 +53,22 @@ public static class InputActionCatalog
         new("ThrustBackward", "MOVEMENT", "Throttle backward (held thrust) [TK_ThrustBackward]", K(Keys.S)),
         new("ThrustLeft", "MOVEMENT", "Strafe left [TK_ThrustLeft]", K(Keys.Q)),
         new("ThrustRight", "MOVEMENT", "Strafe right [TK_ThrustRight]", K(Keys.E)),
+        // P624 — vertical strafe (TK_ThrustUp/Down, igc.h:46/47). Native's
+        // defaultinputmap.mdl binds these to W/X — but W is the port's
+        // deliberate thrust-forward key (P625 catalog) and X is LeaderCommand,
+        // so the vertical pair rides two free keys (see the P624 report's
+        // "Native behaviour classified" table: movement is a classified
+        // deliberate divergence). ThrustDown keeps the native X ergonomics by
+        // relocation (LeaderCommand -> Ctrl+X); ThrustUp takes the freed Insert.
+        // The sim already models UpButton/DownButton (ShipKinematics.cs:157-162),
+        // the exact lateral-thrust model, so these just OR the same movement bits.
+        new("ThrustUp", "MOVEMENT", "Vertical strafe up (held thrust) [TK_ThrustUp]", K(Keys.Insert), K(Keys.W)),
+        new("ThrustDown", "MOVEMENT", "Vertical strafe down (held thrust) [TK_ThrustDown]", K(Keys.X), K(Keys.X)),
+        // P624 — vector lock (TK_LockVector, igc.h:57; native toggles
+        // coastButtonIGC, WinTrek.cpp:9458-9464). L is native's own default
+        // (defaultinputmap.mdl line 39) so Ripcord moves to ITS native default
+        // Ctrl+R (line 68). Latched toggle like cloak.
+        new("LockVector", "MOVEMENT", "Vector lock (hold heading+speed) [TK_LockVector]", K(Keys.L), K(Keys.L)),
         new("PitchUp", "MOVEMENT", "Pitch up [TK_PitchUp]", K(Keys.Up)),
         new("PitchDown", "MOVEMENT", "Pitch down [TK_PitchDown]", K(Keys.Down)),
         new("YawLeft", "MOVEMENT", "Yaw left [TK_YawLeft]", K(Keys.Left)),
@@ -65,7 +81,18 @@ public static class InputActionCatalog
         new("ThrottleUp", "CRUISE THROTTLE", "Cruise throttle up (persistent, 20% steps) [TK_ThrottleUp]", K(Keys.OemPlus), K(Keys.OemPlus)),
         new("ThrottleDown", "CRUISE THROTTLE", "Cruise throttle down (persistent, 20% steps) [TK_ThrottleDown]", K(Keys.OemMinus), K(Keys.OemMinus)),
         new("ThrottleZero", "CRUISE THROTTLE", "Throttle ZERO (stop) [TK_ThrottleZero]", K(Keys.Back), K(Keys.Back)),
-        new("ThrottleFull", "CRUISE THROTTLE", "Throttle FULL (either \\ key) [TK_ThrottleFull]", K(Keys.OemBackslash), K(Keys.OemBackslash)),
+        // P624 — ThrottleFull folds BOTH MonoGame "\\" keys in as native
+        // alternates: OemBackslash (the catalogue default, VK 0xDC =
+        // defaultinputmap.mdl line 43) plus OemPipe (the US-layout main
+        // backslash — the same physical key by another scancode), so "full"
+        // is reachable on any layout via the action map's alternate mechanism
+        // (InputBindings.cs) instead of the old hard-coded OemPipe OR.
+        new("ThrottleFull", "CRUISE THROTTLE", "Throttle FULL (either \\ key) [TK_ThrottleFull]", K(Keys.OemBackslash), K(Keys.OemBackslash), new[] { new KeyBinding(Keys.OemPipe, InputModifiers.None) }),
+        // P624 — match speed (TK_MatchSpeed, igc.h:104; native while-held
+        // GetThrottle, WinTrek.cpp:10966-10974 + :122-134). Unbound in native's
+        // defaultinputmap.mdl; rides the free '/' key (OemQuestion). Sets the
+        // P445 persistent throttle to match the current target's speed.
+        new("MatchSpeed", "CRUISE THROTTLE", "Match speed with target (hold) [TK_MatchSpeed]", K(Keys.OemQuestion), null),
         new("MouseWheel", "CRUISE THROTTLE", "Mouse wheel cruise throttle (native wheel map)", new KeyBinding(Keys.None, InputModifiers.None)),
 
         // -- WEAPONS (native defaults where the port binds a key; FireWeapon is
@@ -77,13 +104,13 @@ public static class InputActionCatalog
         new("NextWeapon", "WEAPONS", "Next weapon [TK_NextWeapon]", K(Keys.OemCloseBrackets), K(Keys.OemCloseBrackets)),
         new("DropChaff", "WEAPONS", "Drop chaff [TK_DropChaff]", K(Keys.C), K(Keys.Z)),
         new("ToggleCloak", "WEAPONS", "Toggle cloak [TK_ToggleCloak]", K(Keys.F), K(Keys.G)),
-        new("Ripcord", "WEAPONS", "Ripcord to selected starmap sector / cancel [TK_Ripcord]", K(Keys.L), C(Keys.R)),
+        new("Ripcord", "WEAPONS", "Ripcord to selected starmap sector / cancel [TK_Ripcord]", C(Keys.R), C(Keys.R)),
         new("DropMine", "WEAPONS", "Drop mine / probe [TK_DropMine]", K(Keys.N), K(Keys.C)),
         new("Suicide", "WEAPONS", "Suicide [TK_Suicide] - ejects from a turret as gunner", A(Keys.K), new KeyBinding(Keys.D, InputModifiers.Shift | InputModifiers.Control)),
-        new("PromoteTurret1", "WEAPONS", "Promote turret gunner seat 1 to command [TK_PromoteTurret1]", K(Keys.D1), K(Keys.D1)),
-        new("PromoteTurret2", "WEAPONS", "Promote turret gunner seat 2 to command [TK_PromoteTurret2]", K(Keys.D2), K(Keys.D2)),
-        new("PromoteTurret3", "WEAPONS", "Promote turret gunner seat 3 to command [TK_PromoteTurret3]", K(Keys.D3), K(Keys.D3)),
-        new("PromoteTurret4", "WEAPONS", "Promote turret gunner seat 4 to command [TK_PromoteTurret4]", K(Keys.D4), K(Keys.D4)),
+        new("PromoteTurret1", "WEAPONS", "Promote turret gunner seat 1 to command [TK_PromoteTurret1]", C(Keys.D1), C(Keys.D1)),
+        new("PromoteTurret2", "WEAPONS", "Promote turret gunner seat 2 to command [TK_PromoteTurret2]", C(Keys.D2), C(Keys.D2)),
+        new("PromoteTurret3", "WEAPONS", "Promote turret gunner seat 3 to command [TK_PromoteTurret3]", C(Keys.D3), C(Keys.D3)),
+        new("PromoteTurret4", "WEAPONS", "Promote turret gunner seat 4 to command [TK_PromoteTurret4]", C(Keys.D4), C(Keys.D4)),
 
         // -- TARGETING / AUTOPILOT --
         new("Target", "TARGETING / AUTOPILOT", "Cycle target (nearest first) [TK_Target]", K(Keys.T), K(Keys.T)),
@@ -147,11 +174,31 @@ public static class InputActionCatalog
 
         // -- COMMANDED SHIP (DRONE) --
         new("CycleCommandee", "COMMANDED SHIP (DRONE)", "Cycle which same-side ship/drone you command", K(Keys.PageDown), null),
-        new("IssueBuild", "COMMANDED SHIP (DRONE)", "Issue order: commandee builds targeted asteroid", K(Keys.Insert), null),
-        new("LeaderCommand", "COMMANDED SHIP (DRONE)", "Leader-only: command the selected same-side bot to dock / launch", K(Keys.X), null),
+        // P624 — IssueBuild / LeaderCommand keys were Insert / X; X is native
+        // TK_ThrustDown (defaultinputmap.mdl line 31) and Insert frees the
+        // number row, so both commander-drone bindings move to free chords.
+        new("IssueBuild", "COMMANDED SHIP (DRONE)", "Issue order: commandee builds targeted asteroid", A(Keys.I), null),
+        new("LeaderCommand", "COMMANDED SHIP (DRONE)", "Leader-only: command the selected same-side bot to dock / launch", C(Keys.X), null),
 
         // -- CAMERA / VIEW (native wins the F-row) --
         new("CycleView", "CAMERA / VIEW", "Cycle view: cockpit -> chase -> turret -> missile-cam", K(Keys.V), K(Keys.V)),
+        // P624 — look-around cameras (TK_ViewRear & friends; native sets an
+        // absolute head yaw, WinTrek.cpp:9733-9791, only in cockpit/external-
+        // chase). Native leaves them UNBOUND in defaultinputmap.mdl (keyboard
+        // look reached them via the joystick-hat patch, WinTrek.cpp:8445-8462),
+        // so the port claims the number-row D1-D8 as a compass ring (see the
+        // P624 report; all are HELD — release snaps the head back to forward).
+        new("ViewFrontLeft", "CAMERA / VIEW", "Look front-left (hold) [TK_ViewFrontLeft]", K(Keys.D1), null),
+        new("ViewFrontRight", "CAMERA / VIEW", "Look front-right (hold) [TK_ViewFrontRight]", K(Keys.D2), null),
+        new("ViewLeft", "CAMERA / VIEW", "Look left (hold) [TK_ViewLeft]", K(Keys.D3), null),
+        new("ViewRight", "CAMERA / VIEW", "Look right (hold) [TK_ViewRight]", K(Keys.D4), null),
+        new("ViewRearLeft", "CAMERA / VIEW", "Look rear-left (hold) [TK_ViewRearLeft]", K(Keys.D6), null),
+        new("ViewRear", "CAMERA / VIEW", "Look rear (hold) [TK_ViewRear]", K(Keys.D7), null),
+        new("ViewRearRight", "CAMERA / VIEW", "Look rear-right (hold) [TK_ViewRearRight]", K(Keys.D8), null),
+        // P624 — radar mode cycle (TK_CycleRadar, igc.h:205; native cycles
+        // All→Default→Target→Minimal, WinTrek.cpp:9955-9975). Native binds the
+        // period key (defaultinputmap.mdl line 111) — honored here.
+        new("CycleRadar", "CAMERA / VIEW", "Cycle radar modes (All/Default/Target/Minimal) [TK_CycleRadar]", K(Keys.OemPeriod), K(Keys.OemPeriod)),
         new("ViewExternalOrbit", "CAMERA / VIEW", "External orbit camera [TK_ViewExternalOrbit]", K(Keys.F4), null),
         new("ViewFlyby", "CAMERA / VIEW", "External fly-by camera [TK_ViewFlyby]", K(Keys.F5), null),
         new("ViewTarget", "CAMERA / VIEW", "External target camera [TK_ViewTarget]", K(Keys.F7), null),
@@ -166,14 +213,19 @@ public static class InputActionCatalog
         new("InvertMouse", "CAMERA / VIEW", "Invert mouse pitch (session only)", C(Keys.M), null),
         new("ToggleStarmap", "CAMERA / VIEW", "Expand/collapse the always-on mini-map (full starmap)", K(Keys.Tab), null),
         new("SelectSectorPrev", "CAMERA / VIEW", "Starmap: previous sector (with map expanded)", K(Keys.OemComma), null),
-        new("SelectSectorNext", "CAMERA / VIEW", "Starmap: next sector (with map expanded)", K(Keys.OemPeriod), null),
+        // P624 — starmap NEXT moved off '.' (OemPeriod) because native binds
+        // that key to TK_CycleRadar (defaultinputmap.mdl line 111, (190,0,205));
+        // it now lives on the free D9 so the ',' / D9 pair cycles the map.
+        new("SelectSectorNext", "CAMERA / VIEW", "Starmap: next sector (with map expanded)", K(Keys.D9), null),
         // P506 — mouse-flight response-curve settings (native menu items,
         // WinTrek.cpp:4534 / AdjustMouseSens :5512; this keyboard port has no
-        // menu, so the free digit row D5-D8 carries them).
-        new("MouseDeadzone", "CAMERA / VIEW", "Mouse flight: cycle deadzone preset", K(Keys.D5), null),
-        new("MouseResponseCurve", "CAMERA / VIEW", "Mouse flight: toggle linear / quadratic response", K(Keys.D6), null),
-        new("MouseSensitivityDown", "CAMERA / VIEW", "Mouse flight: sensitivity down", K(Keys.D7), null),
-        new("MouseSensitivityUp", "CAMERA / VIEW", "Mouse flight: sensitivity up", K(Keys.D8), null),
+        // menu, so the digit row D5-D8 carries them). P624 — the plain digit
+        // row D1-D8 becomes the look-camera ring, so these debug settings move
+        // to their Ctrl-chords (still rebindable via F6).
+        new("MouseDeadzone", "CAMERA / VIEW", "Mouse flight: cycle deadzone preset", C(Keys.D5), null),
+        new("MouseResponseCurve", "CAMERA / VIEW", "Mouse flight: toggle linear / quadratic response", C(Keys.D6), null),
+        new("MouseSensitivityDown", "CAMERA / VIEW", "Mouse flight: sensitivity down", C(Keys.D7), null),
+        new("MouseSensitivityUp", "CAMERA / VIEW", "Mouse flight: sensitivity up", C(Keys.D8), null),
         new("Scoreboard", "CAMERA / VIEW", "In-mission scoreboard (kills / deaths)", K(Keys.B), null),
         new("PilotInfo", "CAMERA / VIEW", "Pilot info (your own live stats)", K(Keys.P), null),
         new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.F1), K(Keys.F1)),

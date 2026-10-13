@@ -1,0 +1,185 @@
+[monogame] direct connect: 127.0.0.1:6073 as 'proof' (lobby skipped)
+[autoproof] live-proof automation active: side=0 ready=True launch=- goto=- target=None camera=cockpit hidehud=False shots=[40,44] dockafter=- sweep=0 exit=75
+[client] aleph glimpse/transit-flare: ON (--aleph-glimpse off to disable the glimpse + flare; the native arrival swell stays on either way)
+[client] VFX: VOLUMETRIC requested (raymarch A) — resolving in LoadContent
+[client] soft particles: ON; bloom: OFF (default)
+[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models) (NO Meshy pack — native only; see ALLEGIANCE_MESHY_PACK_PATH)
+[client] asteroids: NATIVE per-rock .mdl meshes + native textures (--asteroids imported to use the shared imported variants)
+[client] ambient space dust: density=1 (native Debris pref)
+[client] ship-art override: 0 entries from /home/domingo/Development/AllegianceCore/assets/ships/ship-art.json
+[client] ship catalogue: 0 public entries (no Meshy pack)
+[monogame] lock sprite 'Partial': 64x64 'plockbmp.mdl'
+[monogame] lock sprite 'Full': 64x64 'lockedbmp.mdl'
+[monogame] feedback art 'conejectpoddisplaybmp': 172x44 'conejectpoddisplaybmp.mdl'
+[monogame] feedback art 'deathbannerbmp': 136x25 'deathbannerbmp.mdl'
+[monogame] feedback art 'ejectpodbmp': 16x16 'ejectpodbmp.mdl'
+[monogame] quick-chat: 310 voices, 13 menus, mainMenu ok
+[keymap] Controls popup ready (open: F6)
+[monogame] shop catalogue: 447 hulls, 117 parts, 123 launchers (56 missile, 8 mine, 6 chaff, 53 probe)
+[monogame] P607 ship-model audit: 447 hull(s), 0 unresolved native
+[monogame] rock surface 'Plain': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] rock surface 'Helium': 2048x2048 'bgrnd55bmp.mdl'
+[monogame] rock surface 'Uranium': 2048x2048 'bgrnd51bmp.mdl'
+[monogame] rock surface 'Silicon': 2048x2048 'bgrnd52bmp.mdl'
+[monogame] rock surface 'Carbon': 2048x2048 'bgrnd53bmp.mdl'
+[monogame] rock surface 'Buildable': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] P593 projectile-model audit: 4 model(s), 0 lit-solid fallback(s)
+[monogame] P593b missile-model audit: 20 model(s), 0 lit-solid fallback(s)
+[monogame] P593b render-model audit: 0-lit-solid guarantee -> 0 model fallback(s), 0 treasure fallback(s)
+[monogame] P547: soft particles ACTIVE (linear-depth shader + target ready)
+[monogame] vfx atlas Explosion01-light: 25 frames 128x128
+[monogame] vfx atlas Explosion01: 25 frames 128x128
+[monogame] vfx atlas Cloud01: 64 frames 96x96 (feathered)
+[monogame] vfx atlas WispySmoke01: 64 frames 96x96 (feathered)
+[monogame] vfx atlas DiscSmoke01: 64 frames 96x96 (feathered)
+[monogame] explosion film 'exp20' = 20 frames 1280x64
+[monogame] explosion film 'exp22' = 30 frames 15360x512
+[monogame] explosion film 'exp23' = 38 frames 2432x64
+[monogame] explosion film 'exp24' = 16 frames 1024x64
+[monogame] explosion film 'exp25' = 32 frames 2048x64
+[monogame] explosion shockwave fx18 = 2048x2048
+[monogame] P546: enhanced explosions + smoke active (CC0 atlases loaded)
+[monogame] P573: VOLUMETRIC tier ACTIVE (raymarch A)
+[volumetric] pre-warmed shader LODs + half-res target
+[monogame] ambient dust decal: 32x32 'debris1bmp.mdl'
+[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact/sector-threat cues
+[monogame] music: loaded flight + station beds (placeholder-generated tones — drop real .ogg at 'Sounds/flightmusic'/'Sounds/stationmusic' to replace)
+[monogame] connecting to 127.0.0.1:6073 as 'proof' ...
+[monogame] logged on: serverTime=1235
+[autoproof] auto-side -> side 0
+[autoproof] auto-ready PLAYER_READY ship 8109
+[monogame] ready-check: re-readied for ship 8109 after rotation (PLAYER_READY true)
+[monogame] ready-check: mission stage -> Started, entering flying
+[fk-proof] shot: cockpit forward (baseline)
+[sim] seeded from server pose Vector3 { X = 1220, Y = 990, Z = 0 }
+[P448b] dead-reckon re-seed corrections: n=576 mean=0.002m max=0.093m
+[sim] RESUMED sending native SHIP_UPDATE
+[monogame] audio: warp ambient start (warp 2153, vol 0.002)
+[monogame] audio: station ambient start (station 24465, vol 0.504)
+[client] The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable — or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root — to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-23_491.png
+[sim] SHIP_RESET #1 — snapped to server pose, cookie 0x02
+[monogame] audio: collision sound (8103x8105, vol 0.871)
+[monogame] audio: collision sound (8103x8107, vol 0.871)
+[fk-proof] shot: look right (D4)
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-25_560.png
+[sim] SHIP_RESET #2 — snapped to server pose, cookie 0x03
+[monogame] audio: warp ambient stop (warp 2153)
+[monogame] audio: collision sound (8105x8107, vol 0.858)
+[P448b] dead-reckon re-seed corrections: n=597 mean=0.067m max=3.175m
+[monogame] audio: collision sound (8105x8107, vol 0.838)
+[sim] SHIP_RESET #3 — snapped to server pose, cookie 0x04
+[fk-proof] shot: look rear (D7)
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-28_564.png
+[sim] SHIP_RESET #4 — snapped to server pose, cookie 0x05
+[P448b] dead-reckon re-seed corrections: n=489 mean=0.105m max=1.245m
+[fk-proof] shot: look left (D3)
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-31_558.png
+[sim] SHIP_RESET #5 — snapped to server pose, cookie 0x06
+[sim] SHIP_RESET #6 — snapped to server pose, cookie 0x07
+[P448b] dead-reckon re-seed corrections: n=487 mean=0.151m max=0.583m
+[sim] SHIP_RESET #7 — snapped to server pose, cookie 0x08
+[fk-proof] shot: look front-left (D1)
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-35_564.png
+[sim] SHIP_RESET #8 — snapped to server pose, cookie 0x09
+[sim] SHIP_RESET #9 — snapped to server pose, cookie 0x0A
+[fk-proof] shot: look front-right (D2)
+[P448b] dead-reckon re-seed corrections: n=489 mean=0.204m max=0.708m
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-38_568.png
+[sim] SHIP_RESET #10 — snapped to server pose, cookie 0x0B
+[sim] SHIP_RESET #11 — snapped to server pose, cookie 0x0C
+[sim] SHIP_RESET #12 — snapped to server pose, cookie 0x0D
+[fk-proof] shot: look rear-left (D6)
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-41_565.png
+[sim] SHIP_RESET #13 — snapped to server pose, cookie 0x0E
+[P448b] dead-reckon re-seed corrections: n=495 mean=0.250m max=0.696m
+[sim] SHIP_RESET #14 — snapped to server pose, cookie 0x0F
+[sim] SHIP_RESET #15 — snapped to server pose, cookie 0x10
+[sim] SHIP_RESET #16 — snapped to server pose, cookie 0x11
+[fk-proof] shot: look rear-right (D8)
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-45_572.png
+[sim] SHIP_RESET #17 — snapped to server pose, cookie 0x12
+[P448b] dead-reckon re-seed corrections: n=496 mean=0.280m max=0.788m
+[sim] SHIP_RESET #18 — snapped to server pose, cookie 0x13
+[sim] SHIP_RESET #19 — snapped to server pose, cookie 0x14
+[fk-proof] shot: radar All
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-48_570.png
+[sim] SHIP_RESET #20 — snapped to server pose, cookie 0x15
+[sim] SHIP_RESET #21 — snapped to server pose, cookie 0x16
+[sim] SHIP_RESET #22 — snapped to server pose, cookie 0x17
+[P448b] dead-reckon re-seed corrections: n=620 mean=0.341m max=1.800m
+[fk-proof] shot: radar Default
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-51_575.png
+[sim] SHIP_RESET #23 — snapped to server pose, cookie 0x18
+[sim] SHIP_RESET #24 — snapped to server pose, cookie 0x19
+[sim] SHIP_RESET #25 — snapped to server pose, cookie 0x1A
+[sim] SHIP_RESET #26 — snapped to server pose, cookie 0x1B
+[fk-proof] shot: radar Target
+[P448b] dead-reckon re-seed corrections: n=493 mean=0.370m max=0.886m
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-55_575.png
+[sim] SHIP_RESET #27 — snapped to server pose, cookie 0x1C
+[sim] SHIP_RESET #28 — snapped to server pose, cookie 0x1D
+[sim] SHIP_RESET #29 — snapped to server pose, cookie 0x1E
+[monogame] audio: station ambient stop (station 24465)
+[fk-proof] shot: radar Minimal
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-07-58_579.png
+[sim] SHIP_RESET #30 — snapped to server pose, cookie 0x1F
+[P448b] dead-reckon re-seed corrections: n=493 mean=0.346m max=1.144m
+[sim] SHIP_RESET #31 — snapped to server pose, cookie 0x20
+[sim] SHIP_RESET #32 — snapped to server pose, cookie 0x21
+[fk-proof] vector lock ON + strafe up engaged (watch server [ctrlak])
+[fk-proof] shot: vector-lock + strafe-up + match engaged
+[monogame] screenshot saved: /home/domingo/Development/AllegianceCore/screenshots/shot_2026-10-13_12-08-01_578.png
+[monogame] briefing dismissed
+[autoproof] autoshot queued: proof_t040.9_sOmega_ccockpit (t=40.9s after launch)
+[sim] SHIP_RESET #33 — snapped to server pose, cookie 0x22
+[autoproof] screenshot saved: /home/domingo/Development/AllegianceCore/docs/reports/P624_assets/proof_t040.9_sOmega_ccockpit.png
+[sim] SHIP_RESET #34 — snapped to server pose, cookie 0x23
+[P448b] dead-reckon re-seed corrections: n=528 mean=0.398m max=1.096m
+[autoproof] autoshot queued: proof_t044.2_sOmega_ccockpit (t=44.2s after launch)
+[sim] SHIP_RESET #35 — snapped to server pose, cookie 0x24
+[fk-proof] done (12 real frames requested)
+[autoproof] screenshot saved: /home/domingo/Development/AllegianceCore/docs/reports/P624_assets/proof_t044.2_sOmega_ccockpit.png
+[sim] SHIP_RESET #36 — snapped to server pose, cookie 0x25
+[P448b] dead-reckon re-seed corrections: n=523 mean=0.414m max=1.137m
+[transit-pulse] warp #2153 TEAM transit signal (ship 8099) @t=25.17
+[sim] SHIP_RESET #37 — snapped to server pose, cookie 0x26
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=26.13
+[transit-pulse] warp #2153 TEAM transit signal (ship 8103) @t=26.62
+[sim] SHIP_RESET #38 — snapped to server pose, cookie 0x27
+[P448b] dead-reckon re-seed corrections: n=547 mean=0.436m max=1.401m
+[transit-pulse] warp #2153 TEAM transit signal (ship 8105) @t=27.10
+[transit-pulse] warp #2153 TEAM transit signal (ship 8101) @t=27.58
+[sim] SHIP_RESET #39 — snapped to server pose, cookie 0x28
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=28.55
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=28.55
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=28.55
+[sim] SHIP_RESET #40 — snapped to server pose, cookie 0x29
+[P448b] dead-reckon re-seed corrections: n=571 mean=0.420m max=1.406m
+[transit-pulse] warp #2153 TEAM transit signal (ship 8107) @t=29.52
+[sim] SHIP_RESET #41 — snapped to server pose, cookie 0x2A
+[sim] SHIP_RESET #42 — snapped to server pose, cookie 0x2B
+[sim] SHIP_RESET #43 — snapped to server pose, cookie 0x2C
+[P448b] dead-reckon re-seed corrections: n=566 mean=0.322m max=1.602m
+[transit-pulse] warp #2152 ARRIVAL pulse (sector change) @t=30.97
+[sim] SHIP_RESET #44 — snapped to server pose, cookie 0x2D
+[sim] SHIP_RESET #45 — snapped to server pose, cookie 0x2E
+[sim] SHIP_RESET #46 — snapped to server pose, cookie 0x2F
+[sim] SHIP_RESET #47 — snapped to server pose, cookie 0x30
+[sim] SHIP_RESET #48 — snapped to server pose, cookie 0x31
+[P448b] dead-reckon re-seed corrections: n=707 mean=0.300m max=1.579m
+[sim] SHIP_RESET #49 — snapped to server pose, cookie 0x32
+[sim] SHIP_RESET #50 — snapped to server pose, cookie 0x33
+[sim] SHIP_RESET #51 — snapped to server pose, cookie 0x34
+[sim] SHIP_RESET #52 — snapped to server pose, cookie 0x35
+[P448b] dead-reckon re-seed corrections: n=567 mean=0.310m max=3.174m
+[sim] SHIP_RESET #53 — snapped to server pose, cookie 0x36
+[sim] SHIP_RESET #54 — snapped to server pose, cookie 0x37
+[sim] SHIP_RESET #55 — snapped to server pose, cookie 0x38
+[sim] SHIP_RESET #56 — snapped to server pose, cookie 0x39
+[P448b] dead-reckon re-seed corrections: n=552 mean=0.293m max=1.506m
+[sim] SHIP_RESET #57 — snapped to server pose, cookie 0x3A
+[sim] SHIP_RESET #58 — snapped to server pose, cookie 0x3B
+[sim] SHIP_RESET #59 — snapped to server pose, cookie 0x3C
+[autoproof] --exit-after reached; exiting
+[sim] SHIP_RESET #60 — snapped to server pose, cookie 0x3D

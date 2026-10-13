@@ -469,6 +469,14 @@ public sealed partial class Game1
                 if (_state == ClientState.Flying)
                 {
                     _throttle = FlightInput.DefaultThrottle;
+                    // P624 — per-launch reset of the new flight-pack state:
+                    // vector lock off (native coast resets with the ship), radar
+                    // back to Default (native loads the persisted RadarLOD, default
+                    // All; the port starts each sortie on Default), head snapped to
+                    // forward.
+                    _coastToggled = false;
+                    _radarMode = Rendering.RadarMode.Default;
+                    _headLookYaw = 0f;
                     PrimeInFlightKeyLatches(ks);
                 }
             }
@@ -557,15 +565,52 @@ public sealed partial class Game1
         _acceptKeyWasDown           = ActionDown(ks, "AcceptCommand");
         _rejectKeyWasDown           = ActionDown(ks, "RejectCommand");
         _clearKeyWasDown            = ActionDown(ks, "ClearCommand");
+        // P624 — prime the new flight-pack edge latches (vector lock, radar cycle)
+        // so a key held across the pre-flight→flight transition can't fire once.
+        _lockVectorKeyWasDown       = ActionDown(ks, "LockVector");
+        _cycleRadarKeyWasDown       = ActionDown(ks, "CycleRadar");
     }
 
-    /// <summary>P445 — is the ThrottleFull action held, including its alternate
-    /// ISO/EU backslash scancode (OemPipe — the same physical "\\" key the
-    /// catalogue binds OemBackslash to)? The OemPipe branch is a hardware-layout
-    /// ALIAS for the same logical key, so it is an allow-listed raw check (the
-    /// guard test permits it); rebinding ThrottleFull moves both.</summary>
+    /// <summary>P624 — is the ThrottleFull action held? The action's alternate
+    /// chord covers the ISO/EU backslash scancode (OemPipe — the same physical
+    /// "\\" key the catalogue binds OemBackslash to, folded into the action map
+    /// as a native alternate in InputActionCatalog), so no hard-coded key
+    /// remains. Rebinding ThrottleFull moves both.</summary>
     private bool ThrottleFullDown(KeyboardState ks)
-        => ActionDown(ks, "ThrottleFull") || ks.IsKeyDown(XnaKeys.OemPipe);
+        => ActionDown(ks, "ThrottleFull");
+
+    /// <summary>P624 — resolve the cruise throttle value that matches the current
+    /// autopilot/target's speed (native GetThrottle, WinTrek.cpp:122-134) for the
+    /// held TK_MatchSpeed key. A Ship target uses its live velocity; a station /
+    /// asteroid / warp is stationary (speed 0 → throttle −1, i.e. stop). False
+    /// when there is no target or the own hull max speed isn't known yet.</summary>
+    private bool TryMatchSpeedThrottle(out float throttle)
+    {
+        throttle = 0f;
+        if (_autoTarget is not { } t) return false;
+        if (!_ownSim.HaveHull || _ownSim.MaxSpeed is not { } myMax || myMax <= 0f) return false;
+        float targetSpeed;
+        lock (_session.Gate)
+        {
+            switch (t.Kind)
+            {
+                case TargetKind.Ship:
+                    if (!_session.World.Ships.TryGetValue(t.Id, out var s) || s.Latest is not { } up)
+                        return false;
+                    targetSpeed = up.Velocity.Length();
+                    break;
+                case TargetKind.Station:
+                case TargetKind.Asteroid:
+                case TargetKind.Warp:
+                    targetSpeed = 0f;
+                    break;
+                default:
+                    return false;
+            }
+        }
+        throttle = FlightInput.MatchSpeedThrottle(targetSpeed, myMax);
+        return true;
+    }
 
     /// <summary>
     /// P523 — the pre-flight→flight EDGE-GATE for the keys the side-select /
@@ -1151,6 +1196,60 @@ public sealed partial class Game1
             }
         }
 
+        // P624 — MATCH SPEED (TK_MatchSpeed, HELD, native IsTrekKeyDown
+        // WinTrek.cpp:10966-10974): while held (and a target exists) the
+        // persistent throttle is forced to match the current target's speed via
+        // native's GetThrottle (WinTrek.cpp:122-134) — a stationary target pulls
+        // it to −1 (stop), a target at/above our max speed to +1 (full). Sent
+        // verbatim as ControlData.Throttle each frame, so own-ship prediction
+        // and the server's cruise branch agree. Disabled while composing.
+        if (!composing && ActionDown(ks, "MatchSpeed") && TryMatchSpeedThrottle(out float matched))
+        {
+            _throttle = matched;
+            Console.WriteLine($"[monogame] match speed -> throttle {matched:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
+        }
+
+        // P624 — VECTOR LOCK (TK_LockVector, LATCHED toggle, native XOR
+        // coastButtonIGC WinTrek.cpp:9458-9464): press toggles the coast bit,
+        // folded into stateM via input.VectorLock below (ShipControlState.CoastButton).
+        bool lockVec = ActionDown(ks, "LockVector");
+        if (!composing && lockVec && !_lockVectorKeyWasDown)
+        {
+            _coastToggled = !_coastToggled;
+            Console.WriteLine(_coastToggled
+                ? "[monogame] vector lock ON (coast)"
+                : "[monogame] vector lock OFF");
+        }
+        _lockVectorKeyWasDown = lockVec;
+
+        // P624 — LOOK CAMERAS (TK_View*, HELD, native SetHeadOrientation
+        // WinTrek.cpp:9733-9791): only in cockpit/chase. Whichever look key is
+        // held sets the absolute head yaw; releasing all of them snaps back to
+        // forward (native's js.hat=0 default). Non-look/modes handled in
+        // ComputeFlightCamera (resets the head on mode change).
+        if (!composing && (_cameraMode == CameraMode.Cockpit || _cameraMode == CameraMode.Chase))
+        {
+            float head = 0f;
+            if (ActionDown(ks, "ViewRear")) head = Rendering.HeadLook.Rear;
+            else if (ActionDown(ks, "ViewFrontLeft")) head = Rendering.HeadLook.FrontLeft;
+            else if (ActionDown(ks, "ViewFrontRight")) head = Rendering.HeadLook.FrontRight;
+            else if (ActionDown(ks, "ViewLeft")) head = Rendering.HeadLook.Left;
+            else if (ActionDown(ks, "ViewRight")) head = Rendering.HeadLook.Right;
+            else if (ActionDown(ks, "ViewRearLeft")) head = Rendering.HeadLook.RearLeft;
+            else if (ActionDown(ks, "ViewRearRight")) head = Rendering.HeadLook.RearRight;
+            _headLookYaw = head;
+        }
+
+        // P624 — RADAR MODE (TK_CycleRadar, edge, native WinTrek.cpp:9955-9975):
+        // cycle All → Default → Target → Minimal.
+        bool cycRadar = ActionDown(ks, "CycleRadar");
+        if (!composing && cycRadar && !_cycleRadarKeyWasDown)
+        {
+            _radarMode = Rendering.RadarLod.Next(_radarMode);
+            Console.WriteLine($"[monogame] radar mode: {Rendering.RadarLod.Label(_radarMode)}");
+        }
+        _cycleRadarKeyWasDown = cycRadar;
+
         // P541 — left-click a sector on the star map (mini or expanded) to act on
         // it: ripcord target / teleport / docked view / own-sector no-op / goto.
         // Skipped while chat is composed so typing never trips a map click.
@@ -1166,6 +1265,11 @@ public sealed partial class Game1
             ThrottleBack:    ActionDown(ks, "ThrustBackward"),
             StrafeLeft:      ActionDown(ks, "ThrustLeft"),
             StrafeRight:     ActionDown(ks, "ThrustRight"),
+            // P624 — vertical strafe (TK_ThrustUp/Down → UpButton/DownButton).
+            // _fkExerciseStrafe is the proof-only override (ALLEGIANCE_FLIGHTKEYS_PROOF)
+            // that drives strafe-up through the real send path without a physical key.
+            StrafeUp:        _fkExerciseStrafe || ActionDown(ks, "ThrustUp"),
+            StrafeDown:      ActionDown(ks, "ThrustDown"),
             PitchUp:         ActionDown(ks, "PitchUp"),
             PitchDown:       ActionDown(ks, "PitchDown"),
             YawLeft:         ActionDown(ks, "YawLeft"),
@@ -1193,6 +1297,9 @@ public sealed partial class Game1
             // stateM as CloakActive (0x800). Kept on the state struct so the
             // key→stateM wiring is pure and unit-testable.
             Cloak:           _cloakToggled,
+            // P624 — vector lock: the LATCHED client toggle set by the L key
+            // above, folded into stateM as CoastButton (native coastButtonIGC).
+            VectorLock:      _coastToggled,
             // P225 — the client-local weapon-selection state carried in each
             // frame: group-fire vs the selected fixed mount (see the ` / [ / ]
             // handlers above). Translate folds these into the fire stateM
@@ -1462,6 +1569,13 @@ public sealed partial class Game1
             // live-proof.sh can photograph the real backbuffer).
             if (Environment.GetEnvironmentVariable("ALLEGIANCE_KEYMAP_PROOF") == "1")
                 RunKeymapProof(gameTime.ElapsedGameTime.TotalSeconds);
+
+            // P624 — real-window auto-proof of the flight-keys pack (look cameras,
+            // radar modes, and the vector-lock / match-speed / vertical-strafe
+            // commands) so live-proof.sh can photograph the real backbuffer and
+            // the server log's [ctrlak] reject count can be checked.
+            if (Environment.GetEnvironmentVariable("ALLEGIANCE_FLIGHTKEYS_PROOF") == "1")
+                RunFlightKeysProof(gameTime.ElapsedGameTime.TotalSeconds);
 
             // P425 — command a same-side ship/drone (e.g. a Builder) from the
             // MonoGame client. Commander needs TWO selections at once — WHO to

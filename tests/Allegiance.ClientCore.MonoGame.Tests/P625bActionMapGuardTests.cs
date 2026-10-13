@@ -23,11 +23,10 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// Raw key use is allowed ONLY for:
 ///   • TEXT ENTRY / composition — the chat-line Backspace delete and the lobby
 ///     filter Backspace delete (they edit a text buffer, not a game command);
-///   • a hardware-layout alias — ThrottleFull's alternate ISO/EU backslash
-///     scancode (OemPipe is the same physical "\\" key the catalogue binds
-///     OemBackslash to);
 ///   • the rebinding popup's OWN capture — the whole of Game1.KeyBind.cs
 ///     (it must observe raw keys to know what the player pressed).
+/// (The former ThrottleFull OemPipe hardware-layout alias is now folded into
+/// the action map as a native alternate — P624 — so it is no longer raw.)
 /// Every other raw check fails the test.
 /// </summary>
 public class P625bActionMapGuardTests
@@ -49,7 +48,6 @@ public class P625bActionMapGuardTests
     {
         ("Game1.FlightInput.cs", "PrimeInFlightKeyLatches", "XnaKeys.Back"), // chat-delete backspace prime (text entry)
         ("Game1.FlightInput.cs", "UpdateFlying", "XnaKeys.Back"),             // chat-delete backspace (text entry)
-        ("Game1.FlightInput.cs", "ThrottleFullDown", "XnaKeys.OemPipe"),      // ISO backslash alias for ThrottleFull
         ("Game1.Session.cs", "UpdateLobby", "XnaKeys.Back"),                  // lobby filter backspace (text entry)
         ("Game1.KeyBind.cs", "*", "*"),                                       // rebind popup's own capture
     };

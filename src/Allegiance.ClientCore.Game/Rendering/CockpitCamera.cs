@@ -59,12 +59,15 @@ public sealed class CockpitCamera
     /// orientation INCLUDING roll (see <see cref="PoseConverter.ToXnaRotation"/>).</param>
     /// <param name="aspectRatio">Viewport width / height.</param>
     public (Matrix View, Matrix Projection) Matrices(Vector3 shipPosition, Matrix shipRotation,
-        float aspectRatio, out Vector3 cameraEye)
+        float aspectRatio, out Vector3 cameraEye, float headYawRadians = 0f)
     {
-        // Looking direction = the ship's real forward; up = the ship's real up
-        // (with roll) — the two together carry the full attitude.
-        Vector3 forward = Vector3.Transform(Vector3.Forward, shipRotation);
-        forward.Normalize();
+        // P624 — the look-around head yaw (TK_View*): rotate the look direction
+        // about the ship's own up axis. Up stays the ship's real up (a yaw about
+        // it never tilts the horizon), exactly native's headOrientation *
+        // shipOrientation compound (WinTrek.cpp:6982). 0 (default) = straight
+        // forward, the existing behaviour. Head-look applies in cockpit +
+        // external-chase, matching native's cmCockpit/cmExternalChase gate.
+        Vector3 forward = HeadLook.LookForward(shipRotation, headYawRadians);
         Vector3 up = Vector3.Transform(Vector3.Up, shipRotation);
         up.Normalize();
 
