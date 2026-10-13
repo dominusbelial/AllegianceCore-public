@@ -42,6 +42,12 @@ internal sealed partial class BotManager : IDisposable
     // P622 measurement switch (default OFF): when ALLEGIANCE_P622_LEGACY_NEAREST
     // is set, EngageCombat reverts to the pre-P622 nearest-enemy pick so the P622
     // live harness can measure the swarm before/after with the same binary.
+    /// <summary>Showcase/battle bots never pick miners, builders, pods or other drones as
+    /// targets (Domingo, 2026-10-13: "all went for the miner, we need to exclude miners as
+    /// targets for the showcase"). Default ON; ALLEGIANCE_BOT_TARGET_MINERS=1 restores them.</summary>
+    private static readonly bool IgnoreMinerTargets =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_TARGET_MINERS") != "1";
+
     private static readonly bool LegacyNearestFlag =
         Environment.GetEnvironmentVariable("ALLEGIANCE_P622_LEGACY_NEAREST") == "1";
 
@@ -1640,7 +1646,8 @@ internal sealed partial class BotManager : IDisposable
                                 if (ship.Latest is not { } lu) continue;
                                 float d = (lu.Position - myPos).Length();
                                 var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
-                                bool isThreat =
+                                                                if (IgnoreMinerTargets && cls == BotTargetClass.MinerDrone) continue;   // showcase: never target miners/drones (Domingo 2026-10-13)
+bool isThreat =
                                     (b.RecentAttackers.TryGetValue(ship.ShipId, out var at) && cnow - at < ThreatWindowSeconds)
                                     || (friendly && CombatTargetSelector.IsStationThreatening(cls));
                                 cands.Add(new BotTargetCandidate(ship.ShipId, lu.Position, cls, isThreat) { Distance = d });
@@ -1659,7 +1666,8 @@ internal sealed partial class BotManager : IDisposable
                             if (!ship.HasLatest) continue;
                             float d = (ship.Position - myPos).Length();
                             var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
-                            bool isThreat =
+                                                        if (IgnoreMinerTargets && cls == BotTargetClass.MinerDrone) continue;   // showcase: never target miners/drones (Domingo 2026-10-13)
+bool isThreat =
                                 (b.RecentAttackers.TryGetValue(ship.ShipId, out var at) && cnow - at < ThreatWindowSeconds)
                                 || (friendly && CombatTargetSelector.IsStationThreatening(cls));
                             cands.Add(new BotTargetCandidate(ship.ShipId, ship.Position, cls, isThreat) { Distance = d });
@@ -2550,6 +2558,7 @@ internal sealed partial class BotManager : IDisposable
                 if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
                 if (ship.SectorId != myCluster) continue;   // co-located
                 if (ship.Latest is not { } lu) continue;
+                if (IgnoreMinerTargets && CombatTargetSelector.ClassifyTargetId(ship.HullId) == BotTargetClass.MinerDrone) continue;   // showcase: never target miners/drones
                 float d = (lu.Position - myPos).Length();
                 if (d < bestD) { bestD = d; best = ship.ShipId; }
             }
@@ -2598,7 +2607,8 @@ internal sealed partial class BotManager : IDisposable
                     if (ship.Latest is not { } lu) continue;
                     float d = (lu.Position - myPos).Length();
                     var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
-                    bool isThreat =
+                                        if (IgnoreMinerTargets && cls == BotTargetClass.MinerDrone) continue;   // showcase: never target miners/drones (Domingo 2026-10-13)
+bool isThreat =
                         (recentAttackers.TryGetValue(ship.ShipId, out var at) && now - at < ThreatWindowSeconds)
                         || (friendlyStation && CombatTargetSelector.IsStationThreatening(cls));
                     candidates.Add(new BotTargetCandidate(ship.ShipId, lu.Position, cls, isThreat) { Distance = d });
