@@ -237,7 +237,7 @@ internal sealed partial class BotManager
             return;
         }
         if (!bot.Arrived)
-            DriveCombat(bot, now);   // transit to the garrison sector first
+            DriveCombat(bot, now, null);   // transit to the garrison sector first
     }
 
     /// <summary>Drain NEW chat lines from an observer's real EventLog since

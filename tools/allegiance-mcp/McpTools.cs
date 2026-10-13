@@ -898,10 +898,32 @@ internal static class McpTools
         var cs = mgr.GetCombatSummary();
         return Ok(JsonSerializer.Serialize(new
         {
-            botCount = ps.BotCount,
-            interval = Stat(ps.Interval),
-            jump = Stat(ps.Jump),
+            botCount = ps.Cadence.BotCount,
+            interval = Stat(ps.Cadence.Interval),
+            jump = Stat(ps.Cadence.Jump),
             units = "interval = seconds between successive real position updates; jump = meters moved per update; each mean/p95/worst over the last 200 samples per contributing bot.",
+            // P633 — the bot decision loop's own health (item 1): decision-pass
+            // time distribution, the effective per-bot decision rate and the
+            // fleet rate, plus sampled process CPU/RSS/GC and decode throughput.
+            decisionPassMs = new
+            {
+                mean = ps.DecisionPass.MeanMs,
+                p50 = ps.DecisionPass.P50Ms,
+                p95 = ps.DecisionPass.P95Ms,
+                max = ps.DecisionPass.MaxMs,
+            },
+            decisionRateHz = ps.DecisionRateHz,
+            fleetDecisionRateHz = ps.FleetDecisionRateHz,
+            resources = new
+            {
+                cpuFraction = ps.Resources.CpuFraction,
+                rssMb = ps.Resources.RssMb,
+                gcGen0 = ps.Resources.Gen0,
+                gcGen1 = ps.Resources.Gen1,
+                gcGen2 = ps.Resources.Gen2,
+            },
+            maxGateHoldMs = ps.MaxGateHoldMs,
+            decodeMbPerSec = ps.DecodeMbPerSec,
             // P539b — per-bot combat stats (real wire/world events, all
             // attributed to the shooter: shots = real fired rounds, hits = the
             // ones THIS bot caused, split by target side + shield/hull).

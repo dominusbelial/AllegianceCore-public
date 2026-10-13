@@ -514,6 +514,20 @@ public sealed class ClientWorld
     public Func<short, short, (Flight.ShipDeadReckoner.HullStats Stats, float AfterburnerMaxThrust)?>?
         RemoteShipHullResolver { get; set; }
 
+    /// <summary>
+    /// P633 — whether to maintain a per-remote-ship <see cref="Flight.ShipDeadReckoner"/>
+    /// (seeded on every pose arrival) for smooth render interpolation. DEFAULT
+    /// TRUE for the graphical client. A HEADLESS consumer (the allegiance-mcp bot
+    /// harness) reads only the raw <c>Latest</c> pose and never calls
+    /// <see cref="TryGetRenderPose"/>, so it turns this OFF: with N bots × M remote
+    /// ships each seeding an allocation on every heavy update, that is real,
+    /// nobody-consumed per-bot work and GC pressure at 200v200 (item 4). When off,
+    /// the reckoner dictionary stays empty and no per-remote-ship object is
+    /// created; <see cref="TryGetRenderPose"/> simply reports "no reckoner" (the
+    /// caller falls back to the raw pose — correct for a headless consumer).
+    /// </summary>
+    public bool ReckonRemotes { get; set; } = true;
+
     /// <summary>P448b — the dead-reckoned render pose for a remote ship at local time
     /// <paramref name="now"/> (same monotonic clock as <see cref="ShipEntity.LatestArrivalTime"/>:
     /// seconds since boot, <c>Environment.TickCount64 / 1000.0</c>), replaying the real
@@ -545,6 +559,10 @@ public sealed class ClientWorld
     /// reckoner is dropped so a recycled id never reuses stale extrapolation.</summary>
     private void ReseedRemoteReckoner(ShipEntity e)
     {
+        // P633 — headless consumers (the bot harness) never render remote ships,
+        // so skip maintaining a dead-reckoner per remote ship per heavy update
+        // entirely (real per-bot work + GC pressure nobody consumes at 200v200).
+        if (!ReckonRemotes) return;
         if (e.IsMine)
         {
             _remoteReckoners.Remove(e.ShipId);

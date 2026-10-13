@@ -47,6 +47,25 @@ internal sealed partial class BotManager : IDisposable
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly CancellationTokenSource _loopCts = new();
 
+    // ── P633 — decision-loop measurement (get_perf_stats / item 1, 6) ────
+    // The single decision thread's pass cadence, process resources and the
+    // _gate contention are measured live so the MCP tool can report them
+    // without disturbing the behaviour loop. `TargetDecisionIntervalMs` is the
+    // FIXED pass cadence: the loop sleeps `target − elapsed`, so a slow pass no
+    // longer pushes the interval to "pass time + 50 ms" (item 2's fixed-cadence
+    // fix). Guards: `_metricsGate` protects the rolling sample lists (the loop
+    // thread writes, get_perf_stats reads).
+    public const double TargetDecisionIntervalMs = 50.0;
+    private readonly object _metricsGate = new();
+    private readonly List<double> _passTimesMs = new();
+    private const int MaxPassSamples = 512;
+    private double _maxGateHoldMs;
+    private DecisionMetrics.ResourceSnapshot _lastResources = new(0, 0, 0, 0, 0);
+    private long _lastDecodeBytes;
+    private double _lastDecodeWall;
+    private double _decodeMbPerSec;
+    private double _lastPassMs;
+
     // ── P556 — time-to-kill tracking (pure observability) ─────────────────
     //
     // For each VICTIM ship, record the time of its first DAMAGING enemy hit
@@ -135,6 +154,7 @@ internal sealed partial class BotManager : IDisposable
         _host = host;
         _port = port;
         Probe = new ConnectionSession();
+        Probe.World.ReckonRemotes = false;   // P633 — headless probe: no render consumption
         ConnectProbe();
         // P554 — a standalone MCP always talks to a NETWORKED server (host/port),
         // so install the wire-based arena relocator by default: it sends the
@@ -555,6 +575,7 @@ internal sealed partial class BotManager : IDisposable
     private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning)
     {
         var cs = new ConnectionSession();
+        cs.World.ReckonRemotes = false;   // P633 — headless bot harness: no render consumption of dead-reckoners
         cs.Connect(_port, name, _host);
         cs.SendLogonRequest(Request(name));
         if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
@@ -806,6 +827,7 @@ internal sealed partial class BotManager : IDisposable
             existing?.Dispose();
             string name = $"mcp-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
             var cs = new ConnectionSession();
+            cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
             cs.Connect(_port, name, _host);
             cs.SendLogonRequest(Request(name));
             if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
@@ -1363,15 +1385,63 @@ internal sealed partial class BotManager : IDisposable
         {
             try
             {
+                var passSw = Stopwatch.StartNew();
                 double now = Now();
                 ActiveBot[] snap;
                 lock (_gate) snap = _bots.ToArray();
                 // P622 — start a fresh engagement pass: clear the accumulated
                 // engager counts so each pass recomputes the coordinated spread
-                // from scratch (single Loop thread; readers use _engagersSnapshot).
+                // from scratch (single decision thread; readers use _engagersSnapshot).
                 _tickEngagers.Clear();
-                foreach (var bot in snap)
+
+                // P633 — PHASE A (parallel, read-only): precompute each combat
+                // bot's target-choice INPUTS (its co-located different-side
+                // visible candidates + the friendly-station flag) in PARALLEL
+                // across cores. The expensive O(clusterShips) per-bot scan only
+                // reads the bot's OWN ClientWorld under its own cs.Gate and is
+                // independent of _tickEngagers, so the result is deterministic
+                // regardless of scheduling — exactly the O(N²) the single-thread
+                // loop paid serially (bots reacted slower exactly when the fight
+                // was busiest). The anti-swarm SETTLE (which mutates
+                // _tickEngagers) stays SEQUENTIAL below in bot order, so P622's
+                // cap / threat-tier / detachment-and-hold / P431-order-wins
+                // guarantees are preserved bit-for-bit (see the two-phase
+                // equivalence unit test).
+                var prep = new PreparedEngagement?[snap.Length];
+                System.Threading.Tasks.Parallel.For(0, snap.Length, i =>
                 {
+                    var b = snap[i];
+                    if (b.InScenario || b.Behavior != "combat" || b.Cs is not { } pcs) return;
+                    if (pcs.World.MyShipId is null) return;                 // not seated yet
+                    if (!TryCsPose(pcs, b.ShipId, out var myPos, out _)) return;  // no pose yet
+                    short myCluster = CsSector(pcs);
+                    double cnow = Now();
+                    var cands = new List<BotTargetCandidate>();
+                    bool friendly = false;
+                    lock (pcs.Gate)
+                    {
+                        foreach (var st in pcs.World.Stations.Values)
+                            if (st.SideId == b.Side && st.ClusterId == myCluster) { friendly = true; break; }
+                        foreach (var ship in pcs.World.Ships.Values)
+                        {
+                            if (ship.ShipId == b.ShipId || ship.IsNotVisible) continue;
+                            if (ship.SideId == b.Side) continue;      // a DIFFERENT side only
+                            if (ship.SectorId != myCluster) continue;   // co-located
+                            if (ship.Latest is not { } lu) continue;
+                            float d = (lu.Position - myPos).Length();
+                            var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
+                            bool isThreat =
+                                (b.RecentAttackers.TryGetValue(ship.ShipId, out var at) && cnow - at < ThreatWindowSeconds)
+                                || (friendly && CombatTargetSelector.IsStationThreatening(cls));
+                            cands.Add(new BotTargetCandidate(ship.ShipId, lu.Position, cls, isThreat) { Distance = d });
+                        }
+                    }
+                    prep[i] = new PreparedEngagement(cands, friendly);
+                });
+
+                for (int i = 0; i < snap.Length; i++)
+                {
+                    var bot = snap[i];
                     try
                     {
                         // P474 — a bot owned by an active run_scenario preset is
@@ -1387,7 +1457,7 @@ internal sealed partial class BotManager : IDisposable
                         HandleOrders(bot, now);
                         if (bot.Behavior == "combat")
                         {
-                            DriveCombat(bot, now);
+                            DriveCombat(bot, now, prep[i]);
                         }
                         else if (bot.Bot?.ShipAssignment is not null && bot.Behavior == "weave")
                         {
@@ -1412,25 +1482,97 @@ internal sealed partial class BotManager : IDisposable
                 // P622 — end of pass: publish the completed engager distribution
                 // (target → engager count) for read-only consumers like
                 // list_active_bots, under _gate.
-                lock (_gate)
+                EnterGate(() =>
                 {
                     _engagersSnapshot.Clear();
                     foreach (var kv in _tickEngagers) _engagersSnapshot[kv.Key] = kv.Value;
-                }
+                    return true;
+                });
 
                 // P598 — re-ready the probe after a mission rotation too: the
                 // server re-seats it on the rebuilt mission with a fresh ship
                 // id; re-propagate its ready intent so the next wave starts.
                 try { ReReadyProbe(); } catch { }
+
+                // P633 — record this pass's decision time + periodically sample
+                // the bot process's resources and decode throughput (item 1/6).
+                passSw.Stop();
+                RecordPass(passSw.Elapsed.TotalMilliseconds);
             }
             catch { }
-            Thread.Sleep(50);
+
+            // P633 — FIXED decision cadence (item 2): sleep `target − elapsed`,
+            // never `50 ms + pass time`, so a busy fight keeps bots deciding on
+            // time (a slow pass no longer drags the decision interval out).
+            double sleepMs = TargetDecisionIntervalMs - _lastPassMs;
+            if (sleepMs > 0) Thread.Sleep((int)sleepMs);
         }
     }
 
     // P598 — the probe ship id the MCP last readied for (-1 = not readied yet).
     private short _probeReadyShipId = -1;
 
+    // ── P633 — decision-loop measurement helpers (item 1/6) ──────────────
+
+    /// <summary>P633 — run <paramref name="fn"/> under <c>_gate</c> and record
+    /// how long the lock was held (the loop thread's only <c>_gate</c> write
+    /// acquisitions; reads in tools are separate). Reports the max hold time so
+    /// we can see whether the MCP request path is stalling bot decisions or a
+    /// slow pass is stalling tool replies (item 6).</summary>
+    private T EnterGate<T>(Func<T> fn)
+    {
+        var sw = Stopwatch.StartNew();
+        T r;
+        lock (_gate) r = fn();
+        sw.Stop();
+        double held = sw.Elapsed.TotalMilliseconds;
+        lock (_metricsGate) if (held > _maxGateHoldMs) _maxGateHoldMs = held;
+        return r;
+    }
+
+    /// <summary>P633 — record one completed pass's decision time into the
+    /// bounded rolling window, refresh the latest pass time (fixed cadence
+    /// driver), and periodically sample process resources + decode throughput.</summary>
+    private void RecordPass(double passMs)
+    {
+        lock (_metricsGate)
+        {
+            _lastPassMs = passMs;
+            _passTimesMs.Add(passMs);
+            if (_passTimesMs.Count > MaxPassSamples) _passTimesMs.RemoveAt(0);
+        }
+        SampleRuntimeOnce();
+    }
+
+    private double _lastResourceSampleAt = -1;
+    private TimeSpan _prevTotalCpu = TimeSpan.Zero;
+    private double _prevCpuFrac;
+
+    /// <summary>P633 — sample the bot process's CPU/RSS/GC and the aggregate
+    /// inbound decode throughput (MB/s) roughly once per second (cheap reads;
+    /// never on a per-pass cadence).</summary>
+    private void SampleRuntimeOnce()
+    {
+        double wall = Environment.TickCount64;
+        if (_lastResourceSampleAt > 0 && wall - _lastResourceSampleAt < 1000) return;
+        var proc = Process.GetCurrentProcess();
+        _lastResources = DecisionMetrics.SampleResources(
+            proc, _lastResourceSampleAt, _prevTotalCpu, _prevCpuFrac,
+            out _lastResourceSampleAt, out _prevTotalCpu, out _prevCpuFrac);
+
+        long tot = 0;
+        lock (_gate)
+            foreach (var b in _bots)
+                if (b.Cs is { } cs) tot += cs.DecodedBytes;
+        double dw = Environment.TickCount64;
+        if (_lastDecodeWall > 0)
+            _decodeMbPerSec = (tot - _lastDecodeBytes) / (1024.0 * 1024.0)
+                / Math.Max(1e-3, (dw - _lastDecodeWall) / 1000.0);
+        _lastDecodeBytes = tot;
+        _lastDecodeWall = dw;
+    }
+
+    // P598 — re-ready the probe after a mission rotation too: the
     private void ReReadyProbe()
     {
         short cur;
@@ -1871,7 +2013,7 @@ internal sealed partial class BotManager : IDisposable
     /// ship-target order (an accepted teammate order) TAKES PRECEDENCE over
     /// nearest-enemy — the bot engages THAT specific ship, never the nearest
     /// one, while it is alive.</summary>
-    private void EngageCombat(ActiveBot bot, double now)
+    private void EngageCombat(ActiveBot bot, double now, PreparedEngagement? prep)
     {
         var cs = bot.Cs!;
         if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
@@ -1927,7 +2069,7 @@ internal sealed partial class BotManager : IDisposable
         // that respects engager caps, threat priority, and the lone-miner
         // detachment-vs-hold rule. The P558 native attack law still flies the
         // bot once a target is chosen.
-        var choice = ChooseCombatTarget(bot, cs, myPos, myCluster);
+        var choice = ChooseCombatTarget(bot, cs, myPos, myCluster, prep);
         if (choice.Hold || choice.TargetId is not { } best)
         {
             bot.TargetId = null;
@@ -1971,29 +2113,44 @@ internal sealed partial class BotManager : IDisposable
     /// (see <see cref="ActiveBot.RecentAttackers"/>) or a station-threatening
     /// bomber/capital while a friendly station is co-located. Runs on the single
     /// Loop thread.</summary>
-    private BotTargetChoice ChooseCombatTarget(ActiveBot bot, ConnectionSession cs, Vector3 myPos, short myCluster)
+    private BotTargetChoice ChooseCombatTarget(ActiveBot bot, ConnectionSession cs, Vector3 myPos, short myCluster, PreparedEngagement? prep)
     {
         double now = Now();
-        var candidates = new List<BotTargetCandidate>();
-        var recentAttackers = bot.RecentAttackers;
-        bool friendlyStation = false;
-        lock (cs.Gate)
+        // P633 — use the candidates the parallel pre-pass (Loop PHASE A) already
+        // gathered for this bot, falling back to an on-demand gather only when
+        // prep is null (e.g. a bot promoted to combat mid-pass). The gather logic
+        // is byte-for-byte the same either way → the coordinated choice is
+        // deterministic and P622-equivalent (see the two-phase equivalence test).
+        List<BotTargetCandidate> candidates;
+        bool friendlyStation;
+        if (prep is { } p)
         {
-            foreach (var st in cs.World.Stations.Values)
-                if (st.SideId == bot.Side && st.ClusterId == myCluster) { friendlyStation = true; break; }
-
-            foreach (var ship in cs.World.Ships.Values)
+            candidates = p.Candidates;
+            friendlyStation = p.FriendlyStation;
+        }
+        else
+        {
+            candidates = new List<BotTargetCandidate>();
+            var recentAttackers = bot.RecentAttackers;
+            friendlyStation = false;
+            lock (cs.Gate)
             {
-                if (ship.ShipId == bot.ShipId || ship.IsNotVisible) continue;
-                if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
-                if (ship.SectorId != myCluster) continue;   // co-located
-                if (ship.Latest is not { } lu) continue;
-                float d = (lu.Position - myPos).Length();
-                var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
-                bool isThreat =
-                    (recentAttackers.TryGetValue(ship.ShipId, out var at) && now - at < ThreatWindowSeconds)
-                    || (friendlyStation && CombatTargetSelector.IsStationThreatening(cls));
-                candidates.Add(new BotTargetCandidate(ship.ShipId, lu.Position, cls, isThreat) { Distance = d });
+                foreach (var st in cs.World.Stations.Values)
+                    if (st.SideId == bot.Side && st.ClusterId == myCluster) { friendlyStation = true; break; }
+
+                foreach (var ship in cs.World.Ships.Values)
+                {
+                    if (ship.ShipId == bot.ShipId || ship.IsNotVisible) continue;
+                    if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
+                    if (ship.SectorId != myCluster) continue;   // co-located
+                    if (ship.Latest is not { } lu) continue;
+                    float d = (lu.Position - myPos).Length();
+                    var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
+                    bool isThreat =
+                        (recentAttackers.TryGetValue(ship.ShipId, out var at) && now - at < ThreatWindowSeconds)
+                        || (friendlyStation && CombatTargetSelector.IsStationThreatening(cls));
+                    candidates.Add(new BotTargetCandidate(ship.ShipId, lu.Position, cls, isThreat) { Distance = d });
+                }
             }
         }
         var ctx = new BotSelectionContext(bot.ShipId, myCluster, TeammatesInCluster(cs, bot, myCluster), _tickEngagers);
@@ -3179,14 +3336,26 @@ internal sealed partial class BotManager : IDisposable
         short myCluster = CsSector(cs);
         lock (cs.Gate)
         {
+            // P633 — use the per-sector spatial index: build a grid over the
+            // bot's cluster ships once and query ONLY the cells overlapping the
+            // reach disc (O(cells∩disc + occupants)), instead of distance-testing
+            // every cluster ship on every firing tick. Same-side members only,
+            // never across sides (honest visibility). Correctness of the radius
+            // query is unit-proven vs brute force (BotSpatialIndexTests).
+            var points = new List<BotSpatialIndex.ShipPoint>();
             foreach (var (id, ent) in cs.World.Ships)
             {
                 if (id == bot.ShipId) continue;
                 if (ent.SideId != bot.Side) continue;
                 if (ent.SectorId != myCluster) continue;
                 if (ent.Latest is not { } lu) continue;
-                if ((lu.Position - myPos).LengthSquared() > reach * reach) continue;
-                list.Add((lu.Position, id, ent.SideId));
+                points.Add(new BotSpatialIndex.ShipPoint(id, lu.Position));
+            }
+            var grid = BotSpatialIndex.Build(myCluster, points, 400f);
+            foreach (var (sid, pos) in grid.QueryRadius(myPos, reach))
+            {
+                if (cs.World.Ships.TryGetValue(sid, out var ent))
+                    list.Add((pos, sid, ent.SideId));
             }
         }
         return list;
@@ -3462,7 +3631,7 @@ internal sealed partial class BotManager : IDisposable
     /// arrived) it engages any different-side ship already in its own cluster.
     /// P539: tallies real combat stats, and a bot whose own ship has become a
     /// LIFEPOD stops combat and flies home to dock instead of fighting.</summary>
-    private void DriveCombat(ActiveBot bot, double now)
+    private void DriveCombat(ActiveBot bot, double now, PreparedEngagement? prep)
     {
         var cs = bot.Cs!;
         if (cs.World.MyShipId is not { } my) return;     // not seated yet
@@ -3479,14 +3648,14 @@ internal sealed partial class BotManager : IDisposable
             return;
         }
 
-        if (bot.TargetSector is not { } goal) { EngageCombat(bot, now); return; }
+        if (bot.TargetSector is not { } goal) { EngageCombat(bot, now, prep); return; }
 
         // P539d — arena: both sides were relocated to mirrored spots in the target
         // sector at spawn; no travel, so engage in place (travel can't decide it).
         if (bot.Arena)
         {
             if (!bot.Arrived) { bot.Arrived = true; bot.ArrivedAt ??= now; }
-            EngageCombat(bot, now);
+            EngageCombat(bot, now, prep);
             return;
         }
 
@@ -3546,7 +3715,7 @@ internal sealed partial class BotManager : IDisposable
         }
         bot.ExitClearFrom = null;   // cleared (or never set) — normal logic resumes
 
-        if (bot.Arrived) { EngageCombat(bot, now); return; }
+        if (bot.Arrived) { EngageCombat(bot, now, prep); return; }
 
         // ── P539d — travel-with-staging: gather the whole side at a staging sector
         //    (the last sector before the rendezvous), hold just outside the final
@@ -3603,7 +3772,10 @@ internal sealed partial class BotManager : IDisposable
                             alive = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && !o.IsPod && !o.PodDocked);
                             staged = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && o.StagePhase >= 1 && !o.IsPod && !o.PodDocked);
                         }
-                        Console.WriteLine($"[p539d] STAGE bot {bot.Name} side={bot.Side} sector={cur} phase={bot.StagePhase} alive={alive} staged={staged}");
+                        // P633 — the per-bot per-side staging narration is also
+                        // verbosity-gated + non-blocking (per-bot every 4 s it
+                        // is per-pass-volume noise, not a lifecycle line).
+                        ConsoleLog.Write($"[p539d] STAGE bot {bot.Name} side={bot.Side} sector={cur} phase={bot.StagePhase} alive={alive} staged={staged}");
                     }
                     bot.LastCluster = cur;
                     return;
@@ -3616,7 +3788,7 @@ internal sealed partial class BotManager : IDisposable
         MaybeNarrateTransit(bot, cs, now, cur, goal, "transit");
         if (bot.Path.Count == 0) { LoiterCombat(bot, now); bot.LastCluster = cur; return; }   // unroutable / no CLUSTERINFO yet
         short gn = CombatNextHop(bot, cur);
-        if (gn == cur) { bot.Arrived = true; bot.ArrivedAt ??= now; bot.LastCluster = cur; EngageCombat(bot, now); return; }
+        if (gn == cur) { bot.Arrived = true; bot.ArrivedAt ??= now; bot.LastCluster = cur; EngageCombat(bot, now, prep); return; }
         bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
         if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, gn, wd, out var warpPos, out _))
         {
@@ -3648,7 +3820,12 @@ internal sealed partial class BotManager : IDisposable
             short nextHop = CombatNextHop(bot, cur);
             bool destMap = TryBuildWarpDestMap(cs, out var dm);
             bool warpFound = nextHop != cur && destMap && TryFindWarpTo(cs, cur, nextHop, dm, out _, out _);
-            Console.WriteLine($"[p433-diag] bot {bot.Name} ({leg}) cluster {cur} goal {goal} path[{bot.Path.Count}] next={nextHop} graph={graphOk} warps={nWarps} destMap={destMap} warpFound={warpFound}");
+            // P633 — per-bot per-pass route-health narration goes through the
+            // gated, non-blocking ConsoleLog sink (verbosity-gated OFF by
+            // default; the last Mac run's 93%-[p433-diag] stderr was this
+            // exact line, written synchronously through the MCP pipe). Lifecycle
+            // lines elsewhere are untouched.
+            ConsoleLog.Write($"[p433-diag] bot {bot.Name} ({leg}) cluster {cur} goal {goal} path[{bot.Path.Count}] next={nextHop} graph={graphOk} warps={nWarps} destMap={destMap} warpFound={warpFound}");
         }
     }
 
@@ -3965,7 +4142,7 @@ internal sealed partial class BotManager : IDisposable
     /// pooled mean, nearest-rank p95 and the single worst offender (bot name +
     /// its worst single-sample value). Pure math over the recorded samples — no
     /// modeling, no guessing.</summary>
-    public PerfStats GetPerfStats(string? botFilter)
+    public BotPerfReport GetPerfStats(string? botFilter)
     {
         var cadence = new List<BotCadence>();
         lock (_gate)
@@ -3979,7 +4156,33 @@ internal sealed partial class BotManager : IDisposable
                 cadence.Add(new BotCadence(bot.Name, arr));
             }
         }
-        return ComputePerf(cadence);
+        var core = ComputePerf(cadence);
+
+        // P633 — the decision-loop metrics (pass time distribution, per-bot
+        // decision rate, process resources, peak _gate hold, decode throughput)
+        // measured live by the Loop. Copy the protected scalars under the
+        // metrics gate so a concurrent pass never tears them.
+        DecisionMetrics.PassStat pass;
+        double lastPass, maxGate, decode;
+        DecisionMetrics.ResourceSnapshot res;
+        lock (_metricsGate)
+        {
+            pass = DecisionMetrics.SummarizePasses(_passTimesMs);
+            lastPass = _lastPassMs;
+            maxGate = _maxGateHoldMs;
+            res = _lastResources;
+            decode = _decodeMbPerSec;
+        }
+        int bots = cadence.Count;
+        double fleetRate = bots > 0 && lastPass > 0 ? bots / (lastPass / 1000.0) : 0.0;
+        return new BotPerfReport(
+            core,
+            pass,
+            DecisionMetrics.DecisionRateHz(lastPass),   // effective per-bot decision rate (≥15 Hz target in combat)
+            fleetRate,                                  // fleet decisions per second
+            res,
+            maxGate,
+            decode);
     }
 
     // ── P539: real per-bot combat stats (shots / ship hits / kills / pods) ──
@@ -4496,6 +4699,33 @@ public readonly record struct MetricStat(double Mean, double P95, string WorstBo
 /// bot: how many bots yielded samples, plus interval and jump-distance
 /// statistics. Produced by <see cref="BotManager.ComputePerf"/>.</summary>
 public readonly record struct PerfStats(int BotCount, MetricStat Interval, MetricStat Jump);
+
+/// <summary>
+/// P633 — the inputs to ONE combat bot's coordinated target choice, gathered in
+/// the parallel pre-pass (Loop PHASE A): its co-located different-side visible
+/// candidates and whether a friendly station is co-located. Read-only and
+/// independent of the engager-count settle, so it is safe to compute in parallel
+/// and deterministic regardless of scheduling. The sequential settle (Phase B)
+/// consumes it, preserving P622's order-sensitive cap assignment exactly.
+/// </summary>
+public readonly record struct PreparedEngagement(
+    List<BotTargetCandidate> Candidates, bool FriendlyStation);
+
+/// <summary>
+/// P633 — the full live decision-loop report <c>get_perf_stats</c> returns:
+/// the cadence core (<see cref="PerfStats"/>), the decision-pass time
+/// distribution, the effective per-bot decision rate (Hz), the fleet decision
+/// rate (bots decided per second), a sampled CPU/RSS/GC snapshot, the peak
+/// <c>_gate</c> hold time, and the aggregate inbound decode throughput.
+/// </summary>
+public readonly record struct BotPerfReport(
+    PerfStats Cadence,
+    DecisionMetrics.PassStat DecisionPass,
+    double DecisionRateHz,
+    double FleetDecisionRateHz,
+    DecisionMetrics.ResourceSnapshot Resources,
+    double MaxGateHoldMs,
+    double DecodeMbPerSec);
 
 /// <summary>P431 — one bot tick's accept-and-translate decision (see
 /// <see cref="BotManager.DecideAcceptTranslate"/>): whether the bot must send a

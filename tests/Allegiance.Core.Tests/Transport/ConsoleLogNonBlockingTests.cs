@@ -174,4 +174,46 @@ public sealed class ConsoleLogNonBlockingTests
             ConsoleLog.ResetForTest();
         }
     }
+
+    /// <summary>
+    /// P633 — the [p433-diag] / per-bot per-pass diag lines are routed through
+    /// <see cref="ConsoleLog.Write"/>, so the verbosity gate (OFF by default in
+    /// the bot harness) SILENCES them entirely (they are counted but never
+    /// enqueued), and flipping Verbose on re-enables them — without touching the
+    /// synchronous lifecycle lines (plain Console.WriteLine is unaffected by the
+    /// gate). This is the failing-first proof for item 5's log hygiene.
+    /// </summary>
+    [Fact]
+    public void Verbose_gate_silences_and_reenables_routed_diag_lines()
+    {
+        var sink = new StringWriter();
+        try
+        {
+            ConsoleLog.ResetForTest();
+            Assert.False(ConsoleLog.Verbose);      // default OFF (production bot default)
+            ConsoleLog.PointSinkForTest(sink);
+
+            // OFF: every Write is counted (observability) but NONE is emitted.
+            ConsoleLog.Verbose = false;
+            long totBefore = ConsoleLog.TotalWrites, emBefore = ConsoleLog.EmittedWrites;
+            for (int i = 0; i < 100; i++) ConsoleLog.Write($"[p433-diag] bot b{i} ...");
+            ConsoleLog.Flush();
+            Assert.Equal(100, ConsoleLog.TotalWrites - totBefore);   // still measured
+            Assert.Equal(0, ConsoleLog.EmittedWrites - emBefore);    // nothing emitted
+            Assert.Equal(0, sink.ToString().Length);                 // nothing on the wire
+
+            // ON: the same routed lines ARE emitted.
+            ConsoleLog.Verbose = true;
+            long emBefore2 = ConsoleLog.EmittedWrites;
+            ConsoleLog.Write("[p433-diag] bot verbose line");
+            ConsoleLog.Flush();
+            Assert.Equal(1, ConsoleLog.EmittedWrites - emBefore2);
+            Assert.Contains("[p433-diag]", sink.ToString());
+        }
+        finally
+        {
+            ConsoleLog.Uninstall();
+            ConsoleLog.ResetForTest();
+        }
+    }
 }

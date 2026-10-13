@@ -1,6 +1,7 @@
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using Allegiance.Core;   // P633 — ConsoleLog (non-blocking queued console sink)
 
 namespace Allegiance.Tools.McpSpawner;
 
@@ -85,6 +86,23 @@ internal static class Program
         // so redirecting Console.Out to stderr is safe and aligns code with the
         // documented "all diagnostics to stderr" invariant.
         Console.SetOut(Console.Error);
+
+        // P633 — install the single bounded, non-blocking console sink (the
+        // same Allegiance.Core.ConsoleLog the server uses, P619c) so NO bot
+        // diagnostic ever blocks on the MCP driver's pipe or on a slow stderr
+        // consumer: every Console.WriteLine now costs an enqueue on a
+        // background drain thread and is dropped (never blocked) when the
+        // consumer stalls. All diagnostics still land on stderr (Passthrough =
+        // the just-redirected original Error stream). This directly removes the
+        // measured per-bot log-spam freeze vector (P633 §Scope 5; the last Mac
+        // run's 1.2 MB / 93% [p433-diag] stderr).
+        //
+        // P633 — the per-bot PER-PASS diagnostic lines ([p433-diag] etc.) are
+        // gated behind ConsoleLog.Verbose, which is OFF unless the operator
+        // opts in with ALLEGIANCE_MCP_VERBOSE=1. Lifecycle lines (spawn / arena
+        // / re-ready) are unaffected (they are plain Console.WriteLine, rare).
+        ConsoleLog.Verbose = Environment.GetEnvironmentVariable("ALLEGIANCE_MCP_VERBOSE") == "1";
+        ConsoleLog.Install();
 
         // Connect the probe to the live server BEFORE serving any tool call.
         // Startup fails loudly (non-zero exit) if the server is unreachable /

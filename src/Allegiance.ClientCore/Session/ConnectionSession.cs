@@ -39,6 +39,14 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     // any outside ±1.5 s of SimNow), and these echoes feed the client's
     // OwnShipServerClock. Locked via _gate like _ack.
     private readonly List<(uint ServerMs, long LocalMs)> _pingEchoes = new();
+
+    // P633 — cumulative inbound wire bytes delivered to OnReceive (fed + crc +
+    // framing overhead). Used by get_perf_stats to report the bot's real decode
+    // throughput (MB/s). Atomic so a reader never tears the counter.
+    private long _decodedBytes;
+    /// <summary>P633 — cumulative inbound bytes this session has decoded since
+    /// connect (monotonic; diff over time = decode throughput).</summary>
+    public long DecodedBytes => Interlocked.Read(ref _decodedBytes);
     // P320 — set (volatile, on the transport receive thread) when the established
     // session to the server is lost; read safely from the render thread every frame.
     private volatile bool _lost;
@@ -638,6 +646,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
+        // P633 — count every inbound byte for the decode-throughput metric
+        // (atomic; the read side diffs over a wall window).
+        Interlocked.Add(ref _decodedBytes, data.Length);
+
         byte[][] messages;
         try { messages = FedPacket.Unpack(data.ToArray()); }
         catch (FedCrcException) { return; }   // a bad frame is not ours to adjudicate
