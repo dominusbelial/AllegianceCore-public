@@ -2722,8 +2722,8 @@ public sealed partial class Server
                 // so the remaining candidates compete for the rest of the heavy
                 // budget plus the light budget.
                 //
-                // P604b — density-aware native heavy quota. Native's fixed
-                // cHeavyPerInterval=2 assumes the client's LOCAL IGC SIM
+                // P604b/P632 — density-aware heavy quota (BOTH modes). Native's
+                // fixed cHeavyPerInterval=2 assumes the client's LOCAL IGC SIM
                 // interpolates every ship every frame between the sparse heavy
                 // updates. This port's client is a PURE RENDERER: it has no local
                 // sim, so a remote ship's pose is bridged solely by the dead-
@@ -2735,17 +2735,24 @@ public sealed partial class Server
                 // ~others/2 ticks — at ~195 in-sector ships that is ~4.9 s ≫ 1.5 s,
                 // which is the "ships disconnecting / not looking good" freeze on
                 // the 221 195v195 staging run. So at density the port's sim
-                // genuinely "needs more": the heavy quota is raised (native mode
-                // only) so every other ship is re-fed within the dead-reckoner's
-                // smooth horizon (≥ 1 heavy per DeadReckonExtrapolationTicks).
-                // At typical density (others ≤ 60) this equals native's 2 — the
-                // port stays byte-identical and native-faithful there; only high
-                // density scales. Port mode is untouched (it sends a per-tick
-                // posBatch anyway).
+                // genuinely "needs more": the heavy quota is raised so every other
+                // ship is re-fed within the dead-reckoner's smooth horizon
+                // (≥ 1 heavy per DeadReckonExtrapolationTicks). At typical density
+                // (others ≤ 60) this equals native's 2 — byte-identical there; only
+                // high density scales.
+                //
+                // P632 — the density raise must apply to PORT mode too, for
+                // CROSS-SIDE (enemy) ships. Port mode's per-tick teammate posBatch
+                // covers only SAME-SIDE ships; an enemy's live pose reaches a bot
+                // ONLY through this HEAVY budget (there is no enemy posBatch). The
+                // pre-P632 port branch hardcoded cHeavyPerInterval=2, so ~195
+                // co-located enemies were each re-fed only every ~49 ticks ≫ 30 →
+                // enemy poses froze and a 195v195 port fight produced 0 kills
+                // (measured at BOTH 9194ddec and e1175e1b — not a range regression;
+                // P604b's native-only gate left port-mode enemies starved).
                 int targetSlot = targetShip is not null ? 1 : 0;
-                int scaledHeavy = _nativeShipUpdates
-                    ? Math.Max(cHeavyPerInterval, (int)Math.Ceiling(Math.Max(1, others.Count) / (double)DeadReckonExtrapolationTicks) + targetSlot)
-                    : cHeavyPerInterval;
+                int scaledHeavy = Math.Max(cHeavyPerInterval,
+                    (int)Math.Ceiling(Math.Max(1, others.Count) / (double)DeadReckonExtrapolationTicks) + targetSlot);
                 int othersHeavy = Math.Max(0, scaledHeavy - targetSlot);
                 int servedLimit = othersHeavy + cLightPerInterval;
 

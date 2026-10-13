@@ -259,4 +259,49 @@ public sealed class NativeShipUpdateModelTests
         Console.WriteLine($"P604b-DENSITY: at {npcCount} in-sector others, peer gets {heavy} heavy + {light} light " +
                           $"/tick (⌈N/30⌉={expectedHeavy}), keeping every ship's pose interval ≤ 1.5 s");
     }
+
+    /// <summary>⭐ P632 — the SAME density-aware heavy budget must apply to PORT
+    /// mode for CROSS-SIDE (enemy) ships. Port mode's per-tick <c>posBatch</c>
+    /// covers only TEAMMATES; an enemy's live pose reaches a bot ONLY through the
+    /// HEAVY_SHIPS_UPDATE budget. With the fixed 2-heavy(+2 folded-light)=4
+    /// serves/tick, ~195 co-located enemies are each re-fed only every ~49 ticks
+    /// — far beyond the client dead-reckoner's 1.5 s horizon
+    /// (DeadReckonExtrapolationTicks=30) — so enemy poses freeze, bots cannot
+    /// acquire/lead/fire, and a 195v195 port run produces 0 kills (measured at
+    /// BOTH 9194ddec and e1175e1b). The fix extends the P604b density-aware quota
+    /// to port mode, so an enemy is re-fed within the horizon. Fails pre-fix
+    /// (port serves 4 heavy/tick → heavy &lt; ⌈195/30⌉=7).</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Port_mode_heavy_budget_scales_with_density_for_enemy_dead_reckoner_horizon()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        const int npcCount = 195;   // 195 in-sector CROSS-SIDE enemies → ⌈195/30⌉ = 7 heavy/tick (pre-fix port serves only 2+2 folded = 4)
+        var (peers, npcs) = BuildWorld(server, Core().HullTypes.Values.First(), peerCount: 1, npcCount);
+        Assert.Equal(npcCount, npcs.Count);
+
+        server.TestResetBroadcastState();
+        server.TestSeedPeers(peers);
+        server.TestSetShipUpdateModel(false);   // PORT mode — enemy poses ride HEAVY only
+        var keys = server.TestCollectBroadcastKeys(0, parallel: false, step: "shipsUpdate");
+
+        var peerConn = peers[0].Conn;
+        Assert.True(keys.ContainsKey(peerConn), "the peer must receive its ships-update frame");
+        var (heavy, light) = (0, 0);
+        foreach (var (pkt, key, _) in keys[peerConn])
+        {
+            Assert.Equal(2, key);   // CoalesceShipsUpdate
+            var (h, l) = CountShipsUpdate(pkt);
+            heavy += h; light += l;
+        }
+        int expectedHeavy = Math.Max(2, (int)Math.Ceiling(npcCount / 30d));   // 30 = DeadReckonExtrapolationTicks
+        Assert.True(heavy >= expectedHeavy,
+            $"P632: at {npcCount} in-sector CROSS-SIDE enemies, PORT mode must serve ≥ {expectedHeavy} heavy/tick to keep enemy poses within the " +
+            $"1.5 s dead-reckoner horizon (got {heavy}) — the fixed budget-2 freezes enemy poses → bots cannot fight (0 kills at 195v195)");
+        Console.WriteLine($"P632-DENSITY-PORT: at {npcCount} in-sector enemies, peer gets {heavy} heavy + {light} light " +
+                          $"/tick (⌈N/30⌉={expectedHeavy}) in port mode, enemy pose interval ≤ 1.5 s");
+    }
 }
