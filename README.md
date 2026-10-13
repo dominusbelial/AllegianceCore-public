@@ -70,6 +70,59 @@ The client and server need the art to render/run; `local.env` keys mirror the
 `ALLEGIANCE_ARTWORK_PATH` / `ALLEGIANCE_NATIVE_SRC_PATH` environment variables
 (`local.env` is gitignored — never commit machine paths).
 
+## Recommended settings (what we run for 200v200 tests)
+
+This is the configuration we use for our 195v195 "march" battles (two full fleets
+travelling the map and meeting at Alderan, with the economy running). It's tuned for
+big battles on a LAN; a small game runs fine on the defaults.
+
+**Server** — add these to your `server.json` (use the `m2xspiderw.igc` map for the
+showcase battles below):
+
+```json
+"broadcast":    { "parallelBuild": true, "shipUpdateModel": "native" },
+"transport":    { "mode": "pool" },
+"liveSettings": { "timeDilation": "off" }
+```
+
+…or set them per run with environment variables (same effect, no file edits):
+
+```bash
+ALLEGIANCE_BROADCAST_PARALLEL_BUILD=1 \
+ALLEGIANCE_SHIP_UPDATE_MODEL=native \
+ALLEGIANCE_TRANSPORT_MODE=pool \
+dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance.Server/server.json
+```
+
+- `parallelBuild` builds each player's updates in parallel (byte-identical output).
+- `shipUpdateModel: native` uses the original game's prioritised ship-update budget —
+  roughly a fifth of the bandwidth of `port` at 400 players, and what keeps bot hosts
+  responsive in big battles.
+- `transport: pool` serves all connections from a small worker pool.
+- Server GC is on by default. `timeDilation: auto` (EVE-style slow motion under load) is
+  available but off while we tune it.
+
+**Client** — always a Release build; join *before* bots spawn so you see the whole battle:
+
+```bash
+dotnet run -c Release --project src/Allegiance.ClientCore.MonoGame -- <server-ip> 6073 "My Pilot" --window 2560x1440
+```
+
+In game: **F1** shows the live key bindings, **F6** opens Controls to rebind keys.
+
+**Bots (optional)** — `tools/allegiance-mcp` is an MCP server that drives real bot
+clients. A 200v200 is one tool call:
+
+```json
+{ "tool": "spawn_scenario",
+  "args": { "preset": "showcase", "target_sector": "Alderan", "size_scale": 13, "mode": "march" } }
+```
+
+`size_scale` 13 ≈ 195 per side; `mode: "march"` launches each side at home and sends
+wings through different alephs, `"arena"` spawns both fleets directly in Alderan for an
+instant clash. ~390 bots are a heavy load: run the bot tool on its own wired machine,
+not on the server or the machine you play on.
+
 ## More
 
 - **[Full guide](docs/GUIDE.md)** — everything: art paths, Docker, the Android
