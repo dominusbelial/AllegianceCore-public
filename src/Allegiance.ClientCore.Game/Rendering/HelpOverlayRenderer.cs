@@ -123,7 +123,7 @@ public sealed class HelpOverlayRenderer
             FillRect(panelX, panelY, panelW, 2f, PanelBorder);   // top accent edge
 
             // Header line.
-            string header = "KEYBINDINGS  (H TOGGLE)";
+            string header = "KEYBINDINGS  (H TOGGLE  -  F6 CONTROLS / REBIND)";
             var hs = _small.MeasureString(header) * scale;
             Draw(header, new Vector2((w - hs.X) / 2f, panelY + 8f), HeaderColor, scale);
 

@@ -296,6 +296,9 @@ public sealed partial class Game1
 
         // P257 — H keybinding-reference overlay panel.
         _helpOverlayRenderer = new Rendering.HelpOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        // P625 — the in-game Controls (rebind) popup, wired to the same store
+        // the help overlay reads so a rebind is reflected immediately.
+        InitKeyBindingUi(_spriteBatch);
         // P577 — in-game Credits/Licences screen (F12 toggle; visible CC BY
         // attribution for the HD sky's telescope data).
         _creditsOverlayRenderer = new Rendering.CreditsOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall);

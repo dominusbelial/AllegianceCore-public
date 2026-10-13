@@ -400,6 +400,17 @@ public sealed partial class Game1
             if (ks.IsKeyDown(XnaKeys.PageUp)) _creditsOverlayRenderer.Scroll(-42f);
         }
 
+        // P625 — Controls (rebind) popup. F6 opens/closes it (action
+        // OpenKeyBindings, resolved from the live map so a rebind of it works).
+        // It is independent of the help overlay and gated behind composition so
+        // typing can't flip it.
+        bool openKeys = KeyOf("OpenKeyBindings").Matches(ks);
+        if (openKeys && !_keyBindOpenKeyWasDown && !_chatActive && !_qcMenuOpen)
+            ToggleKeyBindings();
+        _keyBindOpenKeyWasDown = openKeys;
+        if (_keyBindVisible)
+            UpdateKeyBindingPopup(ks);
+
         // P265 — B scoreboard toggle (mnemonic: BoaRd / scoreBoaRd). B is an
         // unclaimed single letter (grep-verified, P257 KeyBindingTable: the only
         // letters in use are A C D E G H K M N Q R S T V W + modifiers). Edge-
@@ -514,31 +525,32 @@ public sealed partial class Game1
         _selPrevKeyWasDown          = ks.IsKeyDown(XnaKeys.OemComma);
         _selNextKeyWasDown          = ks.IsKeyDown(XnaKeys.OemPeriod);
         _vKeyWasDown                = ks.IsKeyDown(XnaKeys.V);
-        _kKeyWasDown                = ks.IsKeyDown(XnaKeys.K);
-        _cKeyWasDown                = ks.IsKeyDown(XnaKeys.C);
-        _fCloakWasDown              = ks.IsKeyDown(XnaKeys.F);
-        _lKeyWasDown                = ks.IsKeyDown(XnaKeys.L);
-        _nKeyWasDown                = ks.IsKeyDown(XnaKeys.N);
-        _gfireKeyWasDown            = ks.IsKeyDown(XnaKeys.OemTilde);
-        _prevWKeyWasDown            = ks.IsKeyDown(XnaKeys.OemOpenBrackets);
-        _nextWKeyWasDown            = ks.IsKeyDown(XnaKeys.OemCloseBrackets);
-        _thUpWasDown                = ks.IsKeyDown(XnaKeys.OemPlus);
-        _thDownWasDown              = ks.IsKeyDown(XnaKeys.OemMinus);
-        _thZeroWasDown              = ks.IsKeyDown(XnaKeys.Back);
-        _thFullWasDown              = ks.IsKeyDown(XnaKeys.OemBackslash) || ks.IsKeyDown(XnaKeys.OemPipe);
-        _tKeyWasDown                = ks.IsKeyDown(XnaKeys.T);
-        _gKeyWasDown                = ks.IsKeyDown(XnaKeys.G);
-        _uTargetKeyWasDown          = ks.IsKeyDown(XnaKeys.U);
-        _zTargetKeyWasDown          = ks.IsKeyDown(XnaKeys.Z);
-        _semicolonNothingKeyWasDown = ks.IsKeyDown(XnaKeys.OemSemicolon);
-        _apostropheCenterKeyWasDown = ks.IsKeyDown(XnaKeys.OemQuotes);
+        _kKeyWasDown                = ActionDown(ks, "Suicide");
+        _cKeyWasDown                = ActionDown(ks, "DropChaff");
+        _fCloakWasDown              = ActionDown(ks, "ToggleCloak");
+        _lKeyWasDown                = ActionDown(ks, "Ripcord");
+        _nKeyWasDown                = ActionDown(ks, "DropMine");
+        _gfireKeyWasDown            = ActionDown(ks, "ToggleGroupFire");
+        _prevWKeyWasDown            = ActionDown(ks, "PrevWeapon");
+        _nextWKeyWasDown            = ActionDown(ks, "NextWeapon");
+        _thUpWasDown                = ActionDown(ks, "ThrottleUp");
+        _thDownWasDown              = ActionDown(ks, "ThrottleDown");
+        _thZeroWasDown              = ActionDown(ks, "ThrottleZero");
+        // ThrottleFull also honours the alternate ISO "\" scancode (OemPipe).
+        _thFullWasDown              = ActionDown(ks, "ThrottleFull") || ks.IsKeyDown(XnaKeys.OemPipe);
+        _tKeyWasDown                = ActionDown(ks, "Target");
+        _gKeyWasDown                = ActionDown(ks, "ToggleAutopilot");
+        _uTargetKeyWasDown          = ActionDown(ks, "TargetEnemyNearest");
+        _zTargetKeyWasDown          = ActionDown(ks, "TargetEnemyBaseNearest");
+        _semicolonNothingKeyWasDown = ActionDown(ks, "TargetNothing");
+        _apostropheCenterKeyWasDown = ActionDown(ks, "TargetCenter");
         _f11ScreenShotKeyWasDown    = ks.IsKeyDown(XnaKeys.F11);
         _pageDownKeyWasDown         = ks.IsKeyDown(XnaKeys.PageDown);
         _insertKeyWasDown           = ks.IsKeyDown(XnaKeys.Insert);
-        _p1TurretKeyWasDown         = ks.IsKeyDown(XnaKeys.D1);
-        _p2TurretKeyWasDown         = ks.IsKeyDown(XnaKeys.D2);
-        _p3TurretKeyWasDown         = ks.IsKeyDown(XnaKeys.D3);
-        _p4TurretKeyWasDown         = ks.IsKeyDown(XnaKeys.D4);
+        _p1TurretKeyWasDown         = ActionDown(ks, "PromoteTurret1");
+        _p2TurretKeyWasDown         = ActionDown(ks, "PromoteTurret2");
+        _p3TurretKeyWasDown         = ActionDown(ks, "PromoteTurret3");
+        _p4TurretKeyWasDown         = ActionDown(ks, "PromoteTurret4");
         _xKeyWasDown                = ks.IsKeyDown(XnaKeys.X);
         _acceptKeyWasDown           = ks.IsKeyDown(XnaKeys.Home);
         _rejectKeyWasDown           = ks.IsKeyDown(XnaKeys.End);
@@ -571,23 +583,26 @@ public sealed partial class Game1
     {
         if (_music is null) return;
 
-        bool musicKey = ks.IsKeyDown(XnaKeys.J);           // P304 — toggle music (J: Jam)
+        // P304 — toggle music (J: Jam); P625 — read through the live action map.
+        bool musicKey = KeyOf("ToggleMusic").Matches(ks);
         if (musicKey && !_musicToggleWasDown && !_chatActive && !_qcMenuOpen)
             _music.Toggle();
         _musicToggleWasDown = musicKey;
 
         // P445 — music volume moved off the main-row +/= and -/_ keys: those
         // are now the persistent-throttle Up/Down (native's own bindings), the
-        // higher-priority binding. Relocated to the free function-row F6 / F5
-        // (volume up / down) — F4 (Alt+F4 quit) and F11 (screenshot) are the
-        // only F-keys otherwise in use, so F5/F6 are unclaimed. Music volume
-        // is the less important of the two bindings that collided.
-        bool volUp = ks.IsKeyDown(XnaKeys.F6);            // F6 — music volume up
+        // higher-priority binding. P625 — per Domingo 2026-10-12 "native wins
+        // the F-keys": the F-row now belongs to the native external cameras, so
+        // music volume moved OFF the F-row entirely to a free Ctrl chord
+        // (Ctrl + = up / Ctrl + - down; defaultinputmap.mdl itself binds no
+        // music-volume keys). The action map owns these bindings so a rebind
+        // takes effect here.
+        bool volUp = KeyOf("MusicVolumeUp").Matches(ks);        // Ctrl + = — music volume up
         if (volUp && !_musicVolUpWasDown && !_chatActive && !_qcMenuOpen)
             _music.VolumeUp();
         _musicVolUpWasDown = volUp;
 
-        bool volDown = ks.IsKeyDown(XnaKeys.F5);          // F5 — music volume down
+        bool volDown = KeyOf("MusicVolumeDown").Matches(ks);    // Ctrl + - — music volume down
         if (volDown && !_musicVolDownWasDown && !_chatActive && !_qcMenuOpen)
             _music.VolumeDown();
         _musicVolDownWasDown = volDown;
@@ -817,11 +832,11 @@ public sealed partial class Game1
         // SetViewToCombatMode((GetCameraMode()!=X)?X:Cockpit)
         // (WinTrek.cpp:9802-9812, 9816-9820, 9827-9835, 9867-9868). Choosing a
         // manual camera also cancels the director.
-        ToggleCameraKey(ks, composing, XnaKeys.F4, CameraMode.ExternalOrbit, ref _f4KeyWasDown);
-        ToggleCameraKey(ks, composing, XnaKeys.F5, CameraMode.ExternalFlyBy, ref _f5KeyWasDown);
-        ToggleCameraKey(ks, composing, XnaKeys.F7, CameraMode.ExternalTarget, ref _f7KeyWasDown);
-        ToggleCameraKey(ks, composing, XnaKeys.F10, CameraMode.ExternalBase, ref _f10KeyWasDown);
-        ToggleCameraKey(ks, composing, XnaKeys.F11, CameraMode.ExternalStation, ref _f11KeyWasDown);
+        ToggleCameraKey(ks, composing, KeyOf("ViewExternalOrbit"), CameraMode.ExternalOrbit, ref _f4KeyWasDown);
+        ToggleCameraKey(ks, composing, KeyOf("ViewFlyby"), CameraMode.ExternalFlyBy, ref _f5KeyWasDown);
+        ToggleCameraKey(ks, composing, KeyOf("ViewTarget"), CameraMode.ExternalTarget, ref _f7KeyWasDown);
+        ToggleCameraKey(ks, composing, KeyOf("ViewBase"), CameraMode.ExternalBase, ref _f10KeyWasDown);
+        ToggleCameraKey(ks, composing, KeyOf("ViewExternalStation"), CameraMode.ExternalStation, ref _f11KeyWasDown);
 
         // P580 — the director (F2) and spectator-follow (F3) toggles, plus the
         // rule that ANY flight input cancels the director immediately.
@@ -844,7 +859,7 @@ public sealed partial class Game1
         // command). Bound to K — free in flight (W/S/Q/E/Arrows/A/D/Shift/R/M/V/
         // T/G/Enter/Back/Escape/Space all taken) and the natural mnemonic for
         // "kill".
-        bool kSuicide = ks.IsKeyDown(XnaKeys.K);
+        bool kSuicide = ActionDown(ks, "Suicide");
         if (!composing && kSuicide && !_kKeyWasDown)
         {
             _session.SendSuicide();
@@ -861,7 +876,7 @@ public sealed partial class Game1
         // sector — a plain instant command like native's TK_DropChaff. Bound to C —
         // free in flight (W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/Enter/Back/Escape/Space/
         // K all taken) and the natural mnemonic for "chaff".
-        bool cChaff = ks.IsKeyDown(XnaKeys.C);
+        bool cChaff = ActionDown(ks, "DropChaff");
         if (!composing && cChaff && !_cKeyWasDown)
         {
             _session.SendFireExpendable(EquipmentType.ChaffLauncher);
@@ -880,7 +895,7 @@ public sealed partial class Game1
         // the LOBBY server-filter key, a separate screen) and adjacent to C
         // (chaff) — both defensive countermeasures, the same "near related
         // functions" placement the C chaff binding uses.
-        bool fCloak = ks.IsKeyDown(XnaKeys.F);
+        bool fCloak = ActionDown(ks, "ToggleCloak");
         if (!composing && fCloak && !_fCloakWasDown)
         {
             _cloakToggled = !_cloakToggled;
@@ -902,7 +917,7 @@ public sealed partial class Game1
         // taken elsewhere; L is only the docked-shop "Launch" key, a separate
         // screen, the same dual-use pattern R/F already accept) and a loose
         // mnemonic for "ripcorLd".
-        bool lRipcord = ks.IsKeyDown(XnaKeys.L);
+        bool lRipcord = ActionDown(ks, "Ripcord");
         if (!composing && lRipcord && !_lKeyWasDown)
         {
             bool ripcordActive;
@@ -939,7 +954,7 @@ public sealed partial class Game1
         // dispatch, Server.cs:6698). Bound to N — free in flight (W/S/Q/E/Arrows/A/D/
         // Shift/R/M/V/T/G/Enter/Back/Escape/Space/K/C/OemTilde/[ /] all taken) and the
         // natural mnemonic for "miNe".
-        bool nMine = ks.IsKeyDown(XnaKeys.N);
+        bool nMine = ActionDown(ks, "DropMine");
         if (!composing && nMine && !_nKeyWasDown)
         {
             _session.SendFireExpendable(EquipmentType.Dispenser);
@@ -994,7 +1009,7 @@ public sealed partial class Game1
         //     for "cycle the selection". The selection is advanced even while
         //     group-fire is ON so it is already in place the moment group-fire
         //     is toggled off (it simply has no effect until then).
-        bool gFire = ks.IsKeyDown(XnaKeys.OemTilde);
+        bool gFire = ActionDown(ks, "ToggleGroupFire");
         if (!composing && gFire && !_gfireKeyWasDown)
         {
             _groupFire = !_groupFire;
@@ -1004,7 +1019,7 @@ public sealed partial class Game1
         }
         _gfireKeyWasDown = gFire;
 
-        bool prevW = ks.IsKeyDown(XnaKeys.OemOpenBrackets);
+        bool prevW = ActionDown(ks, "PrevWeapon");
         if (!composing && prevW && !_prevWKeyWasDown)
         {
             _selectedMount = FlightInput.PrevMount(_selectedMount, FixedMountCount());
@@ -1012,7 +1027,7 @@ public sealed partial class Game1
         }
         _prevWKeyWasDown = prevW;
 
-        bool nextW = ks.IsKeyDown(XnaKeys.OemCloseBrackets);
+        bool nextW = ActionDown(ks, "NextWeapon");
         if (!composing && nextW && !_nextWKeyWasDown)
         {
             _selectedMount = FlightInput.NextMount(_selectedMount, FixedMountCount());
@@ -1035,10 +1050,10 @@ public sealed partial class Game1
         // defaultinputmap.mdl binds neither. Latches are updated every frame
         // (outside the composing gate) exactly like the M/V toggles, so a key
         // released mid-composition can't misfire an edge.
-        bool thUp = ks.IsKeyDown(XnaKeys.OemPlus);
-        bool thDown = ks.IsKeyDown(XnaKeys.OemMinus);
-        bool thZero = ks.IsKeyDown(XnaKeys.Back);
-        bool thFull = ks.IsKeyDown(XnaKeys.OemBackslash) || ks.IsKeyDown(XnaKeys.OemPipe);
+        bool thUp = ActionDown(ks, "ThrottleUp");
+        bool thDown = ActionDown(ks, "ThrottleDown");
+        bool thZero = ActionDown(ks, "ThrottleZero");
+        bool thFull = ActionDown(ks, "ThrottleFull") || ks.IsKeyDown(XnaKeys.OemPipe);
         if (!composing)
         {
             if (thUp && !_thUpWasDown)
@@ -1299,12 +1314,12 @@ public sealed partial class Game1
         //   G  → toggle autopilot on/off toward the selected target.
         if (!composing)
         {
-            bool tPress = ks.IsKeyDown(XnaKeys.T);
+            bool tPress = ActionDown(ks, "Target");
             if (tPress && !_tKeyWasDown)
                 HandleTargetCycleKey();
             _tKeyWasDown = tPress;
 
-            bool gPress = ks.IsKeyDown(XnaKeys.G);
+            bool gPress = ActionDown(ks, "ToggleAutopilot");
             if (gPress && !_gKeyWasDown)
             {
                 // P403 — with the starmap EXPANDED (Tab) and a sector selected (,/.),
@@ -1334,7 +1349,7 @@ public sealed partial class Game1
             //   Shift+U  → nearest friendly ship (repeat = next friendly)
             //   Z        → nearest enemy base (station) (repeat = next enemy base)
             //   Shift+Z  → nearest friendly / allied base (repeat = next)
-            bool uTarget = ks.IsKeyDown(XnaKeys.U);
+            bool uTarget = ActionDown(ks, "TargetEnemyNearest");
             if (uTarget && !_uTargetKeyWasDown)
             {
                 bool shift = ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift);
@@ -1345,7 +1360,7 @@ public sealed partial class Game1
             }
             _uTargetKeyWasDown = uTarget;
 
-            bool zTarget = ks.IsKeyDown(XnaKeys.Z);
+            bool zTarget = ActionDown(ks, "TargetEnemyBaseNearest");
             if (zTarget && !_zTargetKeyWasDown)
             {
                 bool shift = ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift);
@@ -1370,24 +1385,27 @@ public sealed partial class Game1
             // Keys: ; and ' are punctuation unclaimed by every binding
             // (grep-verified; the sole OemSemicolon/OemQuotes-adjacent
             // keys in use are , / . starmap nav and the [+/-] music volume).
-            bool semiNothing = ks.IsKeyDown(XnaKeys.OemSemicolon);
+            bool semiNothing = ActionDown(ks, "TargetNothing");
             if (semiNothing && !_semicolonNothingKeyWasDown)
                 ClearTarget();
             _semicolonNothingKeyWasDown = semiNothing;
 
-            bool apostropheCenter = ks.IsKeyDown(XnaKeys.OemQuotes);
+            bool apostropheCenter = ActionDown(ks, "TargetCenter");
             if (apostropheCenter && !_apostropheCenterKeyWasDown)
                 SelectCentermostTarget();
             _apostropheCenterKeyWasDown = apostropheCenter;
 
             // P417 — screenshot (TK_ScrnShot): latch a request; the actual
             // backbuffer capture happens at the end of Draw (Game1.Rendering.cs)
-            // so the PNG holds the completed frame. F11 is unclaimed (only F4 is
-            // used, for the Alt+F4 quit) and a conventional screenshot key.
-            bool f11Shot = ks.IsKeyDown(XnaKeys.F11);
-            if (f11Shot && !_f11ScreenShotKeyWasDown)
+            // so the PNG holds the completed frame. P625 — per Domingo
+            // 2026-10-12 "native wins the F-keys": F11 is now the external
+            // station camera, so screenshot moved to PrintScreen (native's own
+            // TK_ScrnShot default binding, defaultinputmap.mdl line 108).
+            // Read through the live action map so a rebind takes effect.
+            bool shot = KeyOf("ScreenShot").Matches(ks);
+            if (shot && !_f11ScreenShotKeyWasDown)
                 _screenshotRequested = true;
-            _f11ScreenShotKeyWasDown = f11Shot;
+            _f11ScreenShotKeyWasDown = shot;
 
             // P559 — one-shot live-proof hook: ALLEGIANCE_AUTOSHOT=<delayMs>
             // (e.g. 12000) requests ONE real-backbuffer screenshot <delayMs>
@@ -1409,6 +1427,12 @@ public sealed partial class Game1
                     _autoShotDone = true;
                 }
             }
+
+            // P625 — real-window auto-proof of the Controls popup + live help
+            // (ALLEGIANCE_KEYMAP_PROOF=1 drives the scripted rebind sequence so
+            // live-proof.sh can photograph the real backbuffer).
+            if (Environment.GetEnvironmentVariable("ALLEGIANCE_KEYMAP_PROOF") == "1")
+                RunKeymapProof(gameTime.ElapsedGameTime.TotalSeconds);
 
             // P425 — command a same-side ship/drone (e.g. a Builder) from the
             // MonoGame client. Commander needs TWO selections at once — WHO to
@@ -1454,19 +1478,19 @@ public sealed partial class Game1
             // holding a digit never re-fires. Digits 1-4 are unclaimed in flight
             // (KeyBindingTable audit; the only digit use is the docked-shop "buy"
             // affordance, a separate screen).
-            bool p1T = ks.IsKeyDown(XnaKeys.D1);
+            bool p1T = ActionDown(ks, "PromoteTurret1");
             if (p1T && !_p1TurretKeyWasDown) TryPromoteTurretSeat(1);
             _p1TurretKeyWasDown = p1T;
 
-            bool p2T = ks.IsKeyDown(XnaKeys.D2);
+            bool p2T = ActionDown(ks, "PromoteTurret2");
             if (p2T && !_p2TurretKeyWasDown) TryPromoteTurretSeat(2);
             _p2TurretKeyWasDown = p2T;
 
-            bool p3T = ks.IsKeyDown(XnaKeys.D3);
+            bool p3T = ActionDown(ks, "PromoteTurret3");
             if (p3T && !_p3TurretKeyWasDown) TryPromoteTurretSeat(3);
             _p3TurretKeyWasDown = p3T;
 
-            bool p4T = ks.IsKeyDown(XnaKeys.D4);
+            bool p4T = ActionDown(ks, "PromoteTurret4");
             if (p4T && !_p4TurretKeyWasDown) TryPromoteTurretSeat(4);
             _p4TurretKeyWasDown = p4T;
 

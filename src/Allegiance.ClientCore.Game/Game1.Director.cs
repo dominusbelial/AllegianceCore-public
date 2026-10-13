@@ -407,11 +407,14 @@ public sealed partial class Game1
     /// <summary>Edge-triggered native F-key camera toggle (P580): pressing the key
     /// enters <paramref name="mode"/>, pressing it again returns to the cockpit —
     /// native's <c>SetViewToCombatMode((GetCameraMode()!=X)?X:Cockpit)</c> toggle.
-    /// Choosing a manual camera also cancels the director.</summary>
-    private void ToggleCameraKey(KeyboardState ks, bool composing, XnaKeys key, CameraMode mode, ref bool wasDown)
+    /// Choosing a manual camera also cancels the director. P625: the key comes
+    /// from the live action map so rebinding a camera works (native wins the
+    /// F-row as the default: F4 orbit, F5 flyby, F7 target, F10 base, F11
+    /// station).</summary>
+    private void ToggleCameraKey(KeyboardState ks, bool composing, Rendering.KeyBinding chord, CameraMode mode, ref bool wasDown)
     {
-        if (SpectatorCameraActive) { wasDown = ks.IsKeyDown(key); return; }   // P612 — don't kick a spectator camera
-        bool down = ks.IsKeyDown(key);
+        bool down = chord.Matches(ks);
+        if (SpectatorCameraActive) { wasDown = down; return; }   // P612 — don't kick a spectator camera
         if (!composing && down && !wasDown)
         {
             _directorActive = false;
@@ -420,6 +423,17 @@ public sealed partial class Game1
         }
         wasDown = down;
     }
+
+    /// <summary>P625 — resolve an action's CURRENT binding chord from the live
+    /// action map (native wins the F-row defaults; user overrides apply).</summary>
+    private Rendering.KeyBinding KeyOf(string action)
+        => Rendering.KeyBindingStore.Instance.Map.BindingOf(action);
+
+    /// <summary>P625 — is this action's current binding held down right now?
+    /// Every discrete input handler reads actions through this (never a raw key
+    /// literal), so a rebind takes effect immediately.</summary>
+    private bool ActionDown(KeyboardState ks, string action)
+        => KeyOf(action).Matches(ks);
 
     /// <summary>Edge-triggered director + spectator toggles (P580). Bound to
     /// F2 (director) and F3 (spectator follow). Also disables the director the

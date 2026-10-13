@@ -1,0 +1,92 @@
+using System;
+using System.IO;
+
+namespace Allegiance.ClientCore.MonoGame.Rendering;
+
+/// <summary>
+/// P625 - process-wide owner of the live <see cref="ActionMap"/> and its JSON
+/// persistence (a user keymap file beside the other client settings, i.e. the
+/// client working directory where screenshots also land; overridable via
+/// <c>ALLEGIANCE_KEYMAP</c> for tests / isolated runs). Game1 and the rebind +
+/// help renderers all read and mutate the SAME instance so a rebind is
+/// reflected in the help overlay instantly (the P625 requirement).
+/// </summary>
+public sealed class KeyBindingStore
+{
+    /// <summary>Per-user keymap file name (stored next to the other client
+    /// settings / outputs in the working directory).</summary>
+    public const string FileName = "keymap.json";
+
+    private static KeyBindingStore? _instance;
+    public static KeyBindingStore Instance => _instance ??= new KeyBindingStore();
+
+    public ActionMap Map { get; }
+
+    /// <summary>Absolute path of the keymap file for the given working dir
+    /// (honours ALLEGIANCE_KEYMAP for tests/isolation).</summary>
+    public static string ResolvePath(string? workingDir = null)
+    {
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_KEYMAP") is { Length: > 0 } over)
+            return over;
+        string dir = workingDir ?? Directory.GetCurrentDirectory();
+        return Path.Combine(dir, FileName);
+    }
+
+    public KeyBindingStore()
+    {
+        Map = new ActionMap(InputActionCatalog.Definitions);
+        string path = ResolvePath();
+        if (File.Exists(path))
+        {
+            try
+            {
+                Map.ApplyJson(File.ReadAllText(path));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[keymap] failed to read {path}: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>Persist the current (user-overridden) bindings to the keymap
+    /// file. Only differences from defaults are written.</summary>
+    public void Save()
+    {
+        string path = ResolvePath();
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
+            File.WriteAllText(path, Map.ToJson());
+            Console.WriteLine($"[keymap] saved bindings -> {path}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[keymap] failed to save {path}: {ex.Message}");
+        }
+    }
+
+    /// <summary>Restore every binding to the catalogue default and persist.</summary>
+    public void ResetToDefaults()
+    {
+        Map.ResetToDefaults();
+        Save();
+    }
+
+    /// <summary>Apply a binding, persisting it. Returns the conflicting action
+    /// name when the key is taken and <paramref name="force"/> was false.</summary>
+    public string? Bind(string action, KeyBinding chord, bool force = false)
+    {
+        string? conflict = Map.SetBinding(action, chord, force);
+        Save();
+        return conflict;
+    }
+
+    /// <summary>Rebind <paramref name="a"/> to <paramref name="b"/>'s chord and
+    /// vice versa (native's swap offer), then persist.</summary>
+    public void Swap(string a, string b)
+    {
+        Map.SwapBindings(a, b);
+        Save();
+    }
+}

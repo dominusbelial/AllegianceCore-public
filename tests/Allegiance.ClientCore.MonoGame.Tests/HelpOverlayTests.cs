@@ -5,16 +5,18 @@ using Xunit;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
-/// Pure-logic tests for the P257 H keybinding table + layout. No graphics
-/// device (same discipline as <see cref="StarmapLayoutTests"/>). They pin the
-/// contract that earns a test: the table is complete enough to be a useful
-/// reference, every cell is renderable by the ASCII-only spritefonts, and the
-/// balanced column layout never lets a group overflow the panel or leaves the
-/// columns wildly unbalanced.
+/// Pure-logic tests for the P257 H keybinding table + layout (updated for P625,
+/// where the table became LIVE/data-driven — generated from the action map so a
+/// rebind is reflected immediately). No graphics device (same discipline as
+/// <see cref="StarmapLayoutTests"/>). They pin the contract that earns a test:
+/// the table is complete enough to be a useful reference, every cell is
+/// renderable by the ASCII-only spritefonts, and the balanced column layout
+/// never lets a group overflow the panel or leaves the columns wildly
+/// unbalanced.
 /// </summary>
 public class HelpOverlayTests
 {
-    // ── KeyBindingTable ──────────────────────────────────────────────────
+    // ── KeyBindingTable (data-driven from the live action map) ────────────
 
     private static KeyBindingTable.Entry Find(string key) =>
         KeyBindingTable.All
@@ -28,9 +30,9 @@ public class HelpOverlayTests
         Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
         // P445 — the persistent-cruise-throttle keys' own group.
         Assert.Contains(KeyBindingTable.All, g => g.Title == "CRUISE THROTTLE");
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "= / -" && e.Description.StartsWith("Cruise")));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "=" && e.Description.StartsWith("Cruise")));
         Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Backspace" && e.Description.StartsWith("Throttle ZERO")));
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key.StartsWith("Backslash") && e.Description.StartsWith("Throttle FULL")));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "\\" && e.Description.StartsWith("Throttle FULL")));
         Assert.Contains(KeyBindingTable.All, g => g.Title == "WEAPONS");
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("TARGETING"));
         Assert.Contains(KeyBindingTable.All, g => g.Title == "CAMERA / VIEW");
@@ -56,13 +58,24 @@ public class HelpOverlayTests
         Assert.Equal("Toggle this help (you are here)", Find("H").Description);
     }
 
+    [Fact]
+    public void Table_SaysHowToOpenTheRebindScreen()
+    {
+        // P625 — the Controls (rebind) popup is announced in the table and its
+        // own entry exists (the help screen tells you how to rebind).
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(
+            e => e.Description.Contains("rebind keys", System.StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+            e => e.Key == "F6" && e.Description.Contains("Controls", System.StringComparison.OrdinalIgnoreCase));
+    }
+
     [Theory]
     // Representative one per group — proves the table actually captures the
     // real bindings implemented in Game1 (cross-checked against the code).
-    [InlineData("W / S", "Throttle")]
-    [InlineData("Shift (either)", "Afterburner")]
+    [InlineData("W", "Throttle")]
+    [InlineData("Shift", "Afterburner")]
     [InlineData("Space", "Fire weapons")]
-    [InlineData("Left Ctrl", "Fire missile")]
+    [InlineData("Ctrl", "Fire missile")]
     [InlineData("`", "Group-fire")]
     [InlineData("C", "Drop chaff")]
     [InlineData("N", "Drop mine")]
@@ -75,6 +88,31 @@ public class HelpOverlayTests
     public void Table_ContainsCoreBindings(string key, string expectedFragment)
     {
         Assert.Contains(expectedFragment, Find(key).Description, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Table_FKeyFix_CamerasShowOnF5AndF11()
+    {
+        // P625 — the F-key fix, visible in the table: F5 = fly-by camera and
+        // F11 = station camera; screenshot moved to PrintScreen; music volume on
+        // the Ctrl chord (not F5/F6/F11).
+        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+            e => e.Key == "F5" && e.Description.Contains("fly-by", System.StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+            e => e.Key == "F11" && e.Description.Contains("station", System.StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+            e => e.Key == "PrintScreen" && e.Description.Contains("screen shot", System.StringComparison.OrdinalIgnoreCase));
+        // Music volume is on Ctrl + = / Ctrl + -, nowhere on the F-row.
+        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+            e => e.Key == "Ctrl + =" && e.Description.Contains("volume up", System.StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+            e => e.Key == "Ctrl + -" && e.Description.Contains("volume down", System.StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(KeyBindingTable.All.SelectMany(g => g.Entries),
+            e => e.Key is "F5" or "F6" or "F11"
+                 && e.Description.Contains("volume", System.StringComparison.OrdinalIgnoreCase));
+        // And screenshot is NOT on F11.
+        Assert.DoesNotContain(KeyBindingTable.All.SelectMany(g => g.Entries),
+            e => e.Key == "F11" && e.Description.Contains("screen shot", System.StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -189,7 +227,7 @@ public class HelpOverlayTests
         const float panelH = 720f * 0.90f - 2f * HelpOverlayLayout.Padding;
         var slots = HelpOverlayLayout.Layout(heights, panelY, panelH);
 
-        Assert.InRange(slots.Max(s => s.Column) + 1, 2, 4);
+        Assert.InRange(slots.Max(s => s.Column) + 1, 2, 6);
         for (int i = 0; i < heights.Length; i++)
         {
             Assert.True(slots[i].Y + heights[i] <= panelY + panelH,

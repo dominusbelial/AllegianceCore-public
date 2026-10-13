@@ -1663,6 +1663,10 @@ public sealed partial class Game1
         if (_helpVisible)
             _helpOverlayRenderer.Draw(GraphicsDevice.Viewport);
 
+        // P625 — the Controls (rebind) popup, drawn top-most (above even the
+        // help overlay, which it hides on open).
+        DrawKeyBindingOverlay();
+
         // P577 — the in-game Credits/Licences screen, drawn top-most (F12).
         if (_creditsVisible)
             _creditsOverlayRenderer.Draw(GraphicsDevice.Viewport);

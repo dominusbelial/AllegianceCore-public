@@ -81,7 +81,7 @@ public sealed class HelpOverlayLayout
         float sumWithGaps = sumHeights + (groupHeights.Count - 1) * GroupGap;
         float rowsForHeight = panelH > 0f ? sumWithGaps / panelH : 1f;
         int k = (int)System.MathF.Ceiling(System.MathF.Max(totalRows / 10f, rowsForHeight));
-        k = System.Math.Clamp(k, 1, 4);
+        k = System.Math.Clamp(k, 1, 6);
 
         var columnHeights = new float[k];
         for (int i = 0; i < groupHeights.Count; i++)

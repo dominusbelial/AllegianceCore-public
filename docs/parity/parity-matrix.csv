@@ -25,18 +25,18 @@ commands,TK_ViewFrontRight,Igc/igc.h:250,missing,no side look cams,2
 commands,TK_ViewLeft,Igc/igc.h:251,missing,no side look cams,2
 commands,TK_ViewRight,Igc/igc.h:252,missing,no side look cams,2
 commands,TK_ViewExternal,Igc/igc.h:253,partial,no dedicated external; F9 orbit / F8 free cam,4
-commands,TK_ViewFlyby,Igc/igc.h:254,missing,no flyby cam,2
+commands,TK_ViewFlyby,Igc/igc.h:254,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F5 external fly-by (native wins F-row),2
 commands,TK_ViewMissile,Igc/igc.h:255,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle missile-cam,4
-commands,TK_ViewTarget,Igc/igc.h:256,partial,follow target via chase/free cam only,3
+commands,TK_ViewTarget,Igc/igc.h:256,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F7 external target (native wins F-row),3
 commands,TK_ViewChase,Igc/igc.h:257,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle chase,4
 commands,TK_ViewTurret,Igc/igc.h:258,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle turret,4
-commands,TK_ViewBase,Igc/igc.h:259,partial,no docked-station view,2
+commands,TK_ViewBase,Igc/igc.h:259,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F10 external base (native wins F-row),2
 commands,TK_ViewSector,Igc/igc.h:260,done,src/Allegiance.ClientCore.Game/Game1.StarmapClick.cs Tab starmap,4
 commands,TK_ViewCommand,Igc/igc.h:261,missing,no tactical command-view camera,3
 commands,TK_CycleChatMsgs,Igc/igc.h:262,na,native does nothing (igc.h comment),1
-commands,TK_AcceptCommand,Igc/igc.h:263,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:110 Home accept,4
-commands,TK_ClearCommand,Igc/igc.h:264,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:112 Delete clear,4
-commands,TK_RejectCommand,Igc/igc.h:265,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:111 End reject,4
+commands,TK_AcceptCommand,Igc/igc.h:263,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs Home accept (rebindable),4
+commands,TK_ClearCommand,Igc/igc.h:264,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs Delete clear (rebindable),4
+commands,TK_RejectCommand,Igc/igc.h:265,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs End reject (rebindable),4
 commands,TK_ToggleAutoPilot,Igc/igc.h:266,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs G autopilot toggle,5
 commands,TK_ThrustLeft,Igc/igc.h:267,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:114,4
 commands,TK_ThrustRight,Igc/igc.h:268,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:115,4
@@ -46,9 +46,9 @@ commands,TK_ThrustForward,Igc/igc.h:271,done,src/Allegiance.ClientCore.Game/Flig
 commands,TK_ThrustBackward,Igc/igc.h:272,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:113,5
 commands,TK_FireBooster,Igc/igc.h:273,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:121,5
 commands,TK_ConModeGameState,Igc/igc.h:274,partial,panes exist but no modal console switching,2
-commands,TK_QuickChatMenu,Igc/igc.h:275,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:151 R opens quick-chat,5
+commands,TK_QuickChatMenu,Igc/igc.h:275,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs R opens quick-chat (rebindable),5
 commands,TK_ToggleLODSlider,Igc/igc.h:276,missing,LOD auto-managed; no slider,2
-commands,TK_StartChat,Igc/igc.h:277,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:149 Enter opens chat,5
+commands,TK_StartChat,Igc/igc.h:277,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs Enter opens chat (rebindable),5
 commands,TK_FireWeapon,Igc/igc.h:278,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:135,5
 commands,TK_FireMissile,Igc/igc.h:279,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs missile control (L-Ctrl),5
 commands,TK_LockVector,Igc/igc.h:280,missing,no heading/speed lock,3
@@ -86,11 +86,11 @@ commands,TK_TargetFriendlyBasePrev,Igc/igc.h:311,missing,no friendly-base prev s
 commands,TK_TargetCommand,Igc/igc.h:312,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs targets command object,4
 commands,TK_TargetCenter,Igc/igc.h:313,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs mouse-R reticle center,5
 commands,TK_TargetHostile,Igc/igc.h:314,missing,no most-recent-damager target,4
-commands,TK_Suicide,Igc/igc.h:315,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:87 K suicide,4
+commands,TK_Suicide,Igc/igc.h:315,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs K suicide (rebindable),4
 commands,TK_ToggleGrid,Igc/igc.h:316,missing,no combat-view grid,2
 commands,TK_ToggleCloak,Igc/igc.h:317,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:146,4
-commands,TK_DropMine,Igc/igc.h:318,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:86 N drop mine/probe,4
-commands,TK_Ripcord,Igc/igc.h:319,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:85 L ripcord,5
+commands,TK_DropMine,Igc/igc.h:318,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs N drop mine/probe (rebindable),4
+commands,TK_Ripcord,Igc/igc.h:319,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs L ripcord (rebindable),5
 commands,TK_ViewRearLeft,Igc/igc.h:320,missing,no rear-side cams,2
 commands,TK_ViewRearRight,Igc/igc.h:321,missing,no rear-side cams,2
 commands,TK_TargetSelf,Igc/igc.h:323,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,3
@@ -100,8 +100,8 @@ commands,TK_TargetNothing,Igc/igc.h:326,done,src/Allegiance.ClientCore.Game/Game
 commands,TK_MatchSpeed,Igc/igc.h:327,missing,no match-speed,3
 commands,TK_ChatPageUp,Igc/igc.h:328,missing,no chat pane page scroll,2
 commands,TK_ChatPageDown,Igc/igc.h:329,missing,no chat pane page scroll,2
-commands,TK_ViewExternalOrbit,Igc/igc.h:330,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:127 F9 orbit cam,3
-commands,TK_ViewExternalStation,Igc/igc.h:331,partial,orbit can lock a station (F9),3
+commands,TK_ViewExternalOrbit,Igc/igc.h:330,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F4 external orbit (native wins F-row),3
+commands,TK_ViewExternalStation,Igc/igc.h:331,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F11 external station (native wins F-row),3
 commands,TK_DebugTest1,Igc/igc.h:342,na,native debug hook; not a player command,1
 commands,TK_DebugTest2,Igc/igc.h:343,na,native debug hook; not a player command,1
 commands,TK_DebugTest3,Igc/igc.h:344,na,native debug hook; not a player command,1
@@ -111,7 +111,7 @@ commands,TK_DebugTest6,Igc/igc.h:347,na,native debug hook; not a player command,
 commands,TK_DebugTest7,Igc/igc.h:348,na,native debug hook; not a player command,1
 commands,TK_DebugTest8,Igc/igc.h:349,na,native debug hook; not a player command,1
 commands,TK_DebugTest9,Igc/igc.h:350,na,native debug hook; not a player command,1
-commands,TK_DropChaff,Igc/igc.h:351,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:83 C drop chaff,4
+commands,TK_DropChaff,Igc/igc.h:351,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs C drop chaff (rebindable),4
 commands,TK_ToggleCommand,Igc/igc.h:352,missing,no command 3/4 toggle,3
 commands,TK_SwapWeapon1,Igc/igc.h:353,missing,no swap bindings; weapon swap via [ / ] only,2
 commands,TK_SwapWeapon2,Igc/igc.h:354,missing,no swap bindings,2
@@ -182,21 +182,21 @@ commands,TK_SkipTMGoal,Igc/igc.h:424,missing,no skip-goal key,2
 commands,TK_IncreaseTMClockSpeed,Igc/igc.h:425,missing,no TM clock keys,1
 commands,TK_DecreaseTMClockSpeed,Igc/igc.h:426,missing,no TM clock keys,1
 commands,TK_ResetTMClockSpeed,Igc/igc.h:427,missing,no TM clock keys,1
-commands,TK_Help,Igc/igc.h:428,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:134 H help overlay,4
+commands,TK_Help,Igc/igc.h:428,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs H help overlay now LIVE from ActionMap; says how to open rebind (F6 Controls),4
 commands,TK_CycleRadar,Igc/igc.h:430,missing,no radar mode cycle,3
 commands,TK_ConModeMiniTeam,Igc/igc.h:431,missing,no mini-team pane,2
 commands,TK_CommandFinishTM,Igc/igc.h:433,missing,no finish-TM key,2
 commands,TK_RollModifier,Igc/igc.h:434,missing,no roll modifier key,2
 commands,TK_TrackCommandView,Igc/igc.h:435,missing,no command view tracking,2
 commands,TK_ConModeTeleport,Igc/igc.h:436,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs teleport pane (P273),3
-commands,TK_ToggleMouse,Igc/igc.h:437,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:129 M mouse-flight toggle,4
+commands,TK_ToggleMouse,Igc/igc.h:437,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs M mouse-flight toggle (rebindable),4
 commands,TK_PromoteTurret1,Igc/igc.h:438,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 1-4 promote turret,3
 commands,TK_PromoteTurret2,Igc/igc.h:439,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
 commands,TK_PromoteTurret3,Igc/igc.h:440,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
 commands,TK_PromoteTurret4,Igc/igc.h:441,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
 commands,TK_VoteYes,Igc/igc.h:442,partial,ballots implemented (P187) but no dedicated vote key,3
 commands,TK_VoteNo,Igc/igc.h:443,partial,ballots implemented (P187) but no dedicated vote key,3
-commands,TK_ScrnShot,Igc/igc.h:445,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:135 F11 screenshot,3
+commands,TK_ScrnShot,Igc/igc.h:445,done,"src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs PrintScreen screenshot (native default, defaultinputmap.mdl:108); F11 freed for station camera; rebindable via Controls F6",3
 commands,TK_TargetAlliedBase,Igc/igc.h:447,partial,ally base target via friendly-base cycle,3
 commands,TK_TargetAlliedBaseNearest,Igc/igc.h:448,partial,ally base via friendly-base cycle,3
 commands,TK_TargetAlliedBasePrev,Igc/igc.h:449,missing,no ally-base prev step,2
@@ -358,7 +358,7 @@ screens,Loadout panel (shop),WinTrek hangar loadout,done,src/Allegiance.ClientCo
 screens,Investment screen,WinTrek investment,done,src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs + InvestmentBuildGates.cs (P487/P495),4
 screens,Commander / sector map,WinTrek command view,done,"src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs + StarmapClick (Tab map, P249/P460)",4
 screens,Sector info pane,WinTrek sector info,done,src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneRenderer.cs (P272),4
-screens,F-key help overlay(s),WinTrek F-key overlays,partial,src/Allegiance.ClientCore.Game/Rendering/HelpOverlayRenderer.cs (H) covers one help overlay; native had F1-F12 contextual overlays,4
+screens,F-key help overlay(s),WinTrek F-key overlays,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs LIVE help overlay (H) generated from the ActionMap; F6 opens the in-game Controls rebind popup (KeyBindingRenderer.cs + KeyBindingController.cs),4
 screens,Mission briefing screen,WinTrek briefing,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs (P271),3
 screens,Side-select screen,WinTrek team lobby side select,done,src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs (P281),4
 screens,Server list / lobby browser,native lobby,done,src/Allegiance.Lobby + ServerListing.cs (P174-P177),4
@@ -435,3 +435,4 @@ lobby,Mission briefing screen,briefing,done,src/Allegiance.ClientCore.Game/Rende
 lobby,Lobby chat,lobby chat,done,src/Allegiance.ClientCore.Game/ChatRenderer.cs + CLIENTCORE_MONOGAME_LOBBY_CHAT P214,4
 lobby,Training missions (tutorial),WinTrek/trainingscreen.cpp,partial,docs/NATIVE_TRAINING_SCRIPT.md server-scripted scenarios; no full client tutorial UI,4
 lobby,Team lobby / team pane,team lobby,done,src/Allegiance.ClientCore.Game/Panes + TEAM_LOBBY_P180,4
+screens,in-game key rebinding popup,WinTrek/trekinput.cpp:1631+ (InputMapPopup),done,Rendering/KeyBindingRenderer.cs + KeyBindingController.cs (F6); defaultinputmap.mdl parser + keymap.json persistence + conflict/swap/reset,4
