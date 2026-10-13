@@ -26,6 +26,22 @@ public sealed class ConsoleLogNonBlockingTests
 {
     /// <summary>A TextWriter that sleeps on every write — simulates a slow/stalled
     /// stdout consumer (a pipe/journal/docker-logs reader not keeping up).</summary>
+    /// <summary>A thread-safe capture sink. ConsoleLog is a static, process-wide logger with
+    /// one background drain thread; while a test points it at a sink, OTHER tests running in
+    /// parallel (anything that boots a Server) also write through it, so the drain thread can
+    /// append while the test reads. A plain StringWriter/StringBuilder is not thread-safe and
+    /// threw ArgumentOutOfRangeException from StringBuilder.ToString() on GitHub CI
+    /// (2026-10-13). Every write and the read take the same lock.</summary>
+    private sealed class LockedStringWriter : StringWriter
+    {
+        private readonly object _gate = new();
+        public override void Write(char value) { lock (_gate) base.Write(value); }
+        public override void Write(string? value) { lock (_gate) base.Write(value); }
+        public override void Write(char[] buffer, int index, int count) { lock (_gate) base.Write(buffer, index, count); }
+        public override void WriteLine(string? value) { lock (_gate) base.WriteLine(value); }
+        public override string ToString() { lock (_gate) return base.ToString(); }
+    }
+
     private sealed class StallingWriter : TextWriter
     {
         private readonly int _perWriteMs;
@@ -103,7 +119,7 @@ public sealed class ConsoleLogNonBlockingTests
             // behaviour check that sidesteps SyncTextWriter reference identity:
             // write synchronously to a capture writer and confirm it appears
             // without any Shutdown/Flush.
-            var sink = new StringWriter();
+            var sink = new LockedStringWriter();
             Console.SetOut(sink);
             Console.WriteLine("post-uninstall-direct");
             Assert.Contains("post-uninstall-direct", sink.ToString());
@@ -124,7 +140,7 @@ public sealed class ConsoleLogNonBlockingTests
     [Fact]
     public void Shutdown_flushes_queued_lines_to_the_sink_and_restores_console()
     {
-        var sink = new StringWriter();
+        var sink = new LockedStringWriter();
         try
         {
             ConsoleLog.Install();
@@ -155,7 +171,7 @@ public sealed class ConsoleLogNonBlockingTests
     [Fact]
     public void Queued_writer_splits_multiline_and_flushes_trailing_partial_line()
     {
-        var sink = new StringWriter();
+        var sink = new LockedStringWriter();
         try
         {
             ConsoleLog.Install();
@@ -186,7 +202,7 @@ public sealed class ConsoleLogNonBlockingTests
     [Fact]
     public void Verbose_gate_silences_and_reenables_routed_diag_lines()
     {
-        var sink = new StringWriter();
+        var sink = new LockedStringWriter();
         try
         {
             ConsoleLog.ResetForTest();
