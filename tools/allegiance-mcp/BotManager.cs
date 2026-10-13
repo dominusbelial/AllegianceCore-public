@@ -65,6 +65,12 @@ internal sealed partial class BotManager : IDisposable
     private double _lastDecodeWall;
     private double _decodeMbPerSec;
     private double _lastPassMs;
+    // P636b — the real decision cadence: wall-clock ms between consecutive pass
+    // STARTS (includes the fixed-cadence sleep). This is what DecisionRateHz must
+    // reflect — the P636 metric fed it the pass WORK time (1000/workMs), which
+    // reported ~670 Hz−9 kHz even though the loop was correctly sleeping to ~20 Hz.
+    private readonly DecisionMetrics.LoopCadence _cadence = new(TargetDecisionIntervalMs);
+    private double _lastWallPeriodMs = TargetDecisionIntervalMs;
 
     // ── P556 — time-to-kill tracking (pure observability) ─────────────────
     //
@@ -1494,8 +1500,20 @@ internal sealed partial class BotManager : IDisposable
 
     private void Loop()
     {
+        // P636b — a FIXED deadline cadence (target 20 Hz) drives the loop, and it
+        // NEVER busy-spins: the scheduler yields a minimum sleep even when a pass
+        // overshoots its tick, so the loop can't monopolise a core and starve the
+        // per-bot receive threads (the P636 runaway). The measured wall period
+        // between pass STARTS (not the pass WORK time) is what the decision-rate
+        // metric reports.
+        double passStartMs = Now() * 1000.0;
+        double lastPassStartMs = passStartMs;
+        _cadence.Begin(passStartMs);
         while (!_loopCts.IsCancellationRequested)
         {
+            passStartMs = Now() * 1000.0;
+            lock (_metricsGate) _lastWallPeriodMs = passStartMs - lastPassStartMs;
+            lastPassStartMs = passStartMs;
             try
             {
                 var passSw = Stopwatch.StartNew();
@@ -1542,9 +1560,9 @@ internal sealed partial class BotManager : IDisposable
                     bool friendly = false;
                     foreach (var st in snapshot.Stations)
                         if (st.SideId == b.Side && st.ClusterId == myCluster) { friendly = true; break; }
-                    foreach (var ship in snapshot.Ships)
+                    foreach (var ship in snapshot.VisibleShips)
                     {
-                        if (ship.ShipId == b.ShipId || !ship.IsVisible) continue;
+                        if (ship.ShipId == b.ShipId) continue;
                         if (ship.SideId == b.Side) continue;      // a DIFFERENT side only
                         if (ship.SectorId != myCluster) continue;   // co-located
                         if (!ship.HasLatest) continue;
@@ -1623,7 +1641,10 @@ internal sealed partial class BotManager : IDisposable
             // P633 — FIXED decision cadence (item 2): sleep `target − elapsed`,
             // never `50 ms + pass time`, so a busy fight keeps bots deciding on
             // time (a slow pass no longer drags the decision interval out).
-            double sleepMs = TargetDecisionIntervalMs - _lastPassMs;
+            // P636b — via the deadline scheduler, which NEVER busy-spins: even a
+            // pass that overshoots its tick yields a minimum sleep so the loop
+            // can't starve the receive threads (the P636 runaway at 200v200).
+            double sleepMs = _cadence.SleepForRemainder(Now() * 1000.0);
             if (sleepMs > 0) Thread.Sleep((int)sleepMs);
         }
     }
@@ -2487,12 +2508,14 @@ internal sealed partial class BotManager : IDisposable
     /// (shipIGC.cpp:2545-2559). -1 when none.</summary>
     private static short NearestOtherEnemy(ConnectionSession cs, ActiveBot bot, short myCluster, Vector3 myPos, short exclude)
     {
-        // P636 — decision snapshot, no gate.
+        // P636 — decision snapshot, no gate. P636b — iterate the VISIBLE ships
+        // only (walking the full array to skip non-visible entries was an O(N)
+        // cost per bot that scaled into the 200v200 collapse).
         short best = -1; float bestD = float.MaxValue;
         var snap = cs.World.Decision;
-        foreach (var ship in snap.Ships)
+        foreach (var ship in snap.VisibleShips)
         {
-            if (ship.ShipId == bot.ShipId || ship.ShipId == exclude || !ship.IsVisible) continue;
+            if (ship.ShipId == bot.ShipId || ship.ShipId == exclude) continue;
             if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
             if (ship.SectorId != myCluster) continue;   // co-located
             if (!ship.HasLatest) continue;
@@ -3490,9 +3513,11 @@ internal sealed partial class BotManager : IDisposable
         short myCluster = CsSector(cs);
         // P636 — decision snapshot (no gate): same-side members only, never across
         // sides (honest visibility). Spatial-index build+query as before.
+        // P636b — iterate the VISIBLE ships only (same-side members are visible by
+        // definition; the old full-array walk to find them was O(N) per bot).
         var snap = cs.World.Decision;
         var points = new List<BotSpatialIndex.ShipPoint>();
-        foreach (var ship in snap.Ships)
+        foreach (var ship in snap.VisibleShips)
         {
             if (ship.ShipId == bot.ShipId) continue;
             if (ship.SideId != bot.Side) continue;
@@ -4438,22 +4463,27 @@ internal sealed partial class BotManager : IDisposable
         // measured live by the Loop. Copy the protected scalars under the
         // metrics gate so a concurrent pass never tears them.
         DecisionMetrics.PassStat pass;
-        double lastPass, maxGate, decode;
+        double wallPeriod, maxGate, decode;
         DecisionMetrics.ResourceSnapshot res;
         lock (_metricsGate)
         {
             pass = DecisionMetrics.SummarizePasses(_passTimesMs);
-            lastPass = _lastPassMs;
+            wallPeriod = _lastWallPeriodMs;
             maxGate = _maxGateHoldMs;
             res = _lastResources;
             decode = _decodeMbPerSec;
         }
         int bots = cadence.Count;
-        double fleetRate = bots > 0 && lastPass > 0 ? bots / (lastPass / 1000.0) : 0.0;
+        double fleetRate = bots > 0 && wallPeriod > 0 ? bots / (wallPeriod / 1000.0) : 0.0;
         return new BotPerfReport(
             core,
             pass,
-            DecisionMetrics.DecisionRateHz(lastPass),   // effective per-bot decision rate (≥15 Hz target in combat)
+            // P636b — the effective per-bot decision rate is the real WALL cadence
+            // (1 / period between pass starts), NOT 1000 / pass-work-ms. Feeding
+            // the work time reported ~670 Hz−9 kHz even when the loop correctly
+            // slept to ~20 Hz; the wall period is what the "≥ 15 Hz effective in
+            // combat" target actually means.
+            DecisionMetrics.DecisionRateHz(wallPeriod),
             fleetRate,                                  // fleet decisions per second
             res,
             maxGate,

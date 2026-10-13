@@ -212,11 +212,12 @@ public sealed class P632PortModeZeroKillsLiveTests
             Console.WriteLine($"RESULT_P632 {tag} model={model} debug={dbg} size={size}/side window={seconds:F0}s "
                 + $"botsReached={o.BotsReached}/{o.BotsTotal} killsA={killsA} killsB={killsB} killsTotal={o.KillsTotal} "
                 + $"deathsA={deathsA} deathsB={deathsB} shots={shots} hits={hits} hitRate={hr:P1} friendly={cs.FriendlyHits} "
+                + $"shieldHits={cs.EnemyShieldHits} hullHits={cs.EnemyHullHits} "
                 + $"maxTargeted={maxTargeted} maxVisibleEnemies={maxVis}");
 
             var sb = new StringBuilder();
             sb.AppendLine($"--- P632 {tag} model={model} debug={dbg} ---");
-            sb.AppendLine($"RESULT botsReached={o.BotsReached}/{o.BotsTotal} killsA={killsA} killsB={killsB} killsTotal={o.KillsTotal} deathsA={deathsA} deathsB={deathsB} shots={shots} hits={hits} hitRate={hr:P1} friendly={cs.FriendlyHits} maxTargeted={maxTargeted} maxVisibleEnemies={maxVis}");
+            sb.AppendLine($"RESULT botsReached={o.BotsReached}/{o.BotsTotal} killsA={killsA} killsB={killsB} killsTotal={o.KillsTotal} deathsA={deathsA} deathsB={deathsB} shots={shots} hits={hits} hitRate={hr:P1} friendly={cs.FriendlyHits} shieldHits={cs.EnemyShieldHits} hullHits={cs.EnemyHullHits} maxTargeted={maxTargeted} maxVisibleEnemies={maxVis}");
             foreach (var v in mgr.ActiveBots())
                 sb.AppendLine($"ACTIVE side={v.Side} sector={v.Sector} target={v.Target} hull={v.Hull}");
             sb.AppendLine("--- P636 DECISION PERF (snapshot fix) ---");

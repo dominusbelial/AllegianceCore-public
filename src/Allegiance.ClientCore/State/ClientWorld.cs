@@ -145,6 +145,15 @@ public sealed class ClientWorld
             arr[n++] = s;
         }
         System.Array.Sort(arr, 0, n, ShipIdComparer.Instance);
+
+        // P636b — compact the VISIBLE ships into a dedicated array so the bot
+        // decision scans walk the visible population instead of every ship.
+        int visCount = 0;
+        foreach (var s in arr) if ((s.Flags & 1) != 0) visCount++;
+        var vis = target.VisibleShips;
+        if (vis.Length != visCount) vis = target.VisibleShips = new DecisionShip[visCount];
+        int k = 0;
+        foreach (var s in arr) if ((s.Flags & 1) != 0) vis[k++] = s;
     }
 
     private void FillStationSnapshot(DecisionSnapshot target)

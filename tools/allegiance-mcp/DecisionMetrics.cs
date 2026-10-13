@@ -67,7 +67,48 @@ public static class DecisionMetrics
         => passMs > 0 ? 1000.0 / passMs : 0.0;
 
     /// <summary>
-    /// P633 — read a live CPU/RSS/GC snapshot for <paramref name="proc"/>
+    /// P636b — a deadline-based FIXED decision cadence. Drives the bot decision
+    /// loop so each pass starts ~<c>periodMs</c> after the previous one, and
+    /// guarantees the loop NEVER busy-spins: when a pass overshoots its tick it
+    /// still yields a small minimum (<c>minYieldMs</c>), instead of looping with
+    /// zero sleep (the P636 behaviour that spun at ~670 Hz once the lock-free
+    /// snapshot made passes faster than the period, starving the receive threads
+    /// and collapsing combat at scale). Pure + wall-clock-free so it is unit-
+    /// provable with synthetic timestamps.
+    /// </summary>
+    public sealed class LoopCadence
+    {
+        private readonly double _periodMs;
+        private readonly double _minYieldMs;
+        private double _nextTickMs;
+
+        public LoopCadence(double periodMs, double minYieldMs = 1.0)
+        {
+            if (periodMs <= 0) throw new ArgumentOutOfRangeException(nameof(periodMs), "period must be > 0");
+            if (minYieldMs < 0) throw new ArgumentOutOfRangeException(nameof(minYieldMs), "min yield must be >= 0");
+            _periodMs = periodMs;
+            _minYieldMs = minYieldMs;
+        }
+
+        /// <summary>Anchor the first tick (call once, before the first pass).</summary>
+        public void Begin(double nowMs) => _nextTickMs = nowMs + _periodMs;
+
+        /// <summary>
+        /// Called after finishing a pass at wall time <paramref name="nowMs"/>:
+        /// returns the ms to sleep so the next pass starts ~one period after this
+        /// one. Advances the tick by exactly one period. If the pass overshot its
+        /// tick (work + prior drift &gt; period), returns <see cref="_minYieldMs"/>
+        /// rather than 0 so the loop yields and never busy-spins.
+        /// </summary>
+        public double SleepForRemainder(double nowMs)
+        {
+            double sleep = _nextTickMs - nowMs;
+            _nextTickMs += _periodMs;                 // advance exactly one period
+            return sleep > 0 ? sleep : _minYieldMs;
+        }
+    }
+
+    /// <summary>P633 — read a live CPU/RSS/GC snapshot for <paramref name="proc"/>
     /// (the current bot process). CPU is the interval-average fraction of one
     /// core between the previous call (carried in <paramref name="prevCpuFrac"/>
     /// with its timestamp in <paramref name="prevStampMs"/> / TotalProcessorTime)

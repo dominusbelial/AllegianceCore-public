@@ -40,6 +40,20 @@ public sealed class DecisionSnapshot
     /// for binary-search lookups. Value copies; safe to scan or search without a lock.</summary>
     public DecisionShip[] Ships = [];
 
+    /// <summary>
+    /// P636b — the visible ships only, in a single compact array (order not
+    /// significant). The bot decision hot paths (Phase A candidate scan,
+    /// <c>NearestOtherEnemy</c>, the same-side reach query) previously walked
+    /// the full <see cref="Ships"/> array just to skip non-visible entries — an
+    /// O(N) walk per bot, i.e. O(N²) per pass that scaled into the P636b
+    /// 200v200 lethality collapse. Routing those scans to this array cuts each
+    /// per-bot walk to the visible population (which the server bounds, and is
+    /// the only population a bot can ever target) while staying behaviour-
+    /// identical: a ship is here iff it was visible, which is exactly the
+    /// <c>IsVisible</c> test the scans applied.
+    /// </summary>
+    public DecisionShip[] VisibleShips = [];
+
     /// <summary>Stations (cluster, side) — for the friendly-station-in-my-cluster flag.</summary>
     public DecisionStation[] Stations = [];
 
