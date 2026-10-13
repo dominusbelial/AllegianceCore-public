@@ -47,6 +47,21 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// <summary>P633 — cumulative inbound bytes this session has decoded since
     /// connect (monotonic; diff over time = decode throughput).</summary>
     public long DecodedBytes => Interlocked.Read(ref _decodedBytes);
+    // P627 — the distinct set of inbound fmids the receive dispatch did NOT
+    // recognize (fell through to the `default` branch). Guarded by _gate like
+    // the rest of the receive path state. Kept as a bounded distinct set (max
+    // 65536 distinct fmids) so a client being fed S-messages the real client
+    // does not yet consume cannot grow memory unboundedly; used by the
+    // P627 dispatch-coverage test to assert a supported S-message is consumed
+    // and by the receive audit to list genuinely-unconsumed messages.
+    private readonly HashSet<ushort> _unknownFmids = new();
+    /// <summary>P627 — every distinct inbound fmid the receive dispatch fell
+    /// through on (no <c>case</c> matched), i.e. a message the real client did
+    /// not consume. Snapshot-on-read under <see cref="Gate"/>.</summary>
+    public IReadOnlyCollection<ushort> UnknownFmids { get { lock (_gate) return _unknownFmids.ToArray(); } }
+    /// <summary>P627 — clear the unknown-fmid record (tests feed one message at
+    /// a time on a fresh/labeled session and reset before each feed).</summary>
+    public void ClearUnknownFmids() { lock (_gate) _unknownFmids.Clear(); }
     // P320 — set (volatile, on the transport receive thread) when the established
     // session to the server is lost; read safely from the render thread every frame.
     private volatile bool _lost;
@@ -1119,6 +1134,33 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // Lifepod hull; the world swaps the hull, sets the pod
                         // pose + spin, and latches the own-ship rescue autopilot.
                         _world.Apply(Eject.Decode(m));
+                        break;
+                    case PlayerRescued.Fmid:
+                        // P627 — FM_S_PLAYER_RESCUED(16): the server tells both the
+                        // rescuer and the rescuee that a lifepod was picked up
+                        // (native appmsg.cpp:309-340; FedSrv.CPP:13056-13065 sends
+                        // it to both parties). The world already had a
+                        // ClientWorld.Apply(PlayerRescued) feedback producer (P578);
+                        // only the receive dispatch case was missing, so the real
+                        // client silently dropped the "you were rescued" line.
+                        _world.Apply(PlayerRescued.Decode(m));
+                        break;
+                    case OwnShipKillBonusUpdate.Fmid:
+                        // P627 — FM_S_OWN_SHIP_KILL_BONUS_UPDATE(212): the server's
+                        // per-tick, owner-only kill-bonus snapshot (Server.Broadcast.cs
+                        // P298). The world already stores _killBonusPercent/_killBonusStreak
+                        // and Game1.Rendering/HudFrame render the Kill Bonus gauge;
+                        // only the receive dispatch case was missing, so the real
+                        // client never saw its live kill bonus.
+                        _world.Apply(OwnShipKillBonusUpdate.Decode(m));
+                        break;
+                    default:
+                        // P627 — no case matched this fmid: the real client does not
+                        // consume it. Record it (bounded distinct set) so the
+                        // dispatch-coverage test can assert a supported S-message is
+                        // consumed ("not unknown fmid") and so the receive audit can
+                        // enumerate genuinely-unconsumed server→client messages.
+                        _unknownFmids.Add(fmid);
                         break;
                 }
             }

@@ -1,0 +1,137 @@
+message,id,direction,server site,client decode,client effect,native handler,status
+LOGONREQ,1,C,"(C) server handler: Server.Lifecycle, Server.Lobby",client→server (sender),Client sends LOGONREQ on connect (ConnectionSession.SendLogonRequest),—,done
+LOGONACK,2,S,"Server.Lobby, Server.Dispatch",ConnectionSession (real client),Server ACK; session stores LogonAck (connect proof),appmsg.cpp:34,done
+LOGOFF,3,CS,Server.Dispatch,neither (codec only),Client sends LOGOFF (SendLogoff); server echo NOT consumed by real client,appmsg.cpp:1984,done
+BUY_LOADOUT,4,C,"(C) server handler: Server.Docking, Server.Dispatch",client→server (sender),Client sends BUY_LOADOUT (SendBuyLoadout),—,done
+BUY_LOADOUT_ACK,5,S,"Server.Broadcast, Server.Combat",ConnectionSession (real client),Granted hull/parts applied; world updates own ship loadout (P473),appmsg.cpp:3176,done
+OBJECT_SPOTTED,6,S,—,neither (codec only),Real client does NOT consume (candidate: spotter/OBJECT_SPOTTED relay),appmsg.cpp:3223,partial
+SET_CLUSTER,7,S,"ServerHost, Server.Broadcast",ConnectionSession (real client),Sets MyShipId + own ship entity; the join/spawn assignment,appmsg.cpp:991,done
+DEV_COMPLETED,8,S,Server.Economy,ConnectionSession (real client),Dev-completed chime; world records event (P267),appmsg.cpp:3318,done
+SET_BRIEFING_TEXT,9,S,Server.Lobby,ConnectionSession (real client),Briefing text stored; dismissible briefing popup (P271),appmsg.cpp:3330,done
+PLAYERINFO,10,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),PlayerInfo roster applied to world,appmsg.cpp:2217,done
+STATIC_MAP_INFO,11,S,—,neither (codec only),na — STATIC_MAP_INFO deliberately not built (dead-in-native),appmsg.cpp:3353,na
+PROJECTILE_INSTANCE,12,CS,"Server.Lifecycle, Server.Combat",ConnectionSession (real client),Projectile entity appended to render bolts/streaks (P231),—,done
+RANK_INFO,13,S,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: rank display),appmsg.cpp:3372,partial
+SET_START_TIME,14,S,Server.Lobby,ConnectionSession (real client),Countdown start time stored (mission start),appmsg.cpp:2702,done
+SET_TEAM_INFO,15,CS,—,neither (codec only),na — SET_TEAM_INFO deliberately not built,appmsg.cpp:2541,na
+PLAYER_RESCUED,16,S,Server.Docking,ConnectionSession (real client),Rescue feedback line produced (P578); DISPATCHED by P627,appmsg.cpp:309,done
+BALLOT,17,S,"Server.Broadcast, Server.Lobby",ConnectionSession (real client),ActiveBallot latched for vote keys (P626); false-positive partial now done,appmsg.cpp:344,done
+CANCEL_BALLOT,18,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: ballot withdrawn UI),appmsg.cpp:377,partial
+VOTE,19,C,"(C) server handler: Server.Lobby, Server.Dispatch",client→server (sender),Client casts a vote (SendVote),—,done
+SHIP_DELETE,20,S,"Server.Lifecycle, Server.Combat",ConnectionSession (real client),Departed ship removed from view (P370),appmsg.cpp:455,done
+RANDOMIZE_TEAMS,21,C,(C) server handler: Server.Dispatch,client→server (sender),Client requests team randomization (SendRandomizeTeams),—,done
+CHATMESSAGE,23,CS,"Server.Combat, Server.Lobby",ConnectionSession (real client),Chat message applied to chat log,appmsg.cpp:2640,done
+SHIP_UPDATE,24,C,"(C) server handler: ServerHost, Server.Lifecycle",client→server (sender),Client sends ship controls/pose (CommandControls/SendShipPose),—,done
+EXPORT,26,S,Server.Lobby,ConnectionSession (real client),Export family (ship/cluster/station/warp/asteroid/probe/mine/building) decoded by objecttype; entities created,appmsg.cpp:80,done
+POSTER,27,S,—,neither (codec only),na — POSTER deliberately not built (dead-in-native),appmsg.cpp:107,na
+TREASURE,28,S,"Server.Combat, Server.ShipCommands",ConnectionSession (real client),Treasure entity created to render (P293),—,done
+DESTROY_TREASURE,30,S,Server.Docking,ConnectionSession (real client),Treasure entity removed (P293),appmsg.cpp:244,done
+NEW_SHIP_INSTANCE,31,CS,—,neither (codec only),"Real client does NOT consume (candidate: NEW_SHIP_INSTANCE — codec only, neither side wired)",—,partial
+DROP_PART,33,CS,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Client sends DROP_PART (SendDropPart/SendDropCargo); broadcast echo effect realized via TREASURE(28),appmsg.cpp:1411,done
+SWAP_PART,34,CS,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Client sends SWAP_PART; server echo NOT consumed by real client,appmsg.cpp:1430,partial
+PING,35,CS,"Server.Lifecycle, Server.Dispatch",ConnectionSession (real client),Client PING echo feeds own-ship server clock (P508),appmsg.cpp:394,done
+URLROOT,36,S,—,neither (codec only),na — URLROOT deliberately not built (dead-in-native),appmsg.cpp:73,na
+MISSION_STAGE,37,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),MissionStage stored (P187/P188 stages),appmsg.cpp:2314,done
+MISSIONDEF,38,S,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),MissionDef applied (mission setup),appmsg.cpp:2408,done
+POSITIONREQ,39,C,"(C) server handler: Server.Lifecycle, Server.Lobby",client→server (sender),Client requests a side position (SendPositionReq),appmsg.cpp:2470,done
+POSITIONREQ,40,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: seat-request forward to leader),appmsg.cpp:2470,partial
+POSITIONACK,41,C,(C) server handler: Server.Dispatch,client→server (sender),Real client does NOT send POSITIONACK (leader accept path absent),—,done
+DELPOSITIONREQ,42,CS,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: DELPOSITIONREQ),appmsg.cpp:2486,partial
+LOCK_LOBBY,43,CS,Server.Dispatch,Bot only (harness),Real client does NOT consume (candidate: LOCK_LOBBY lobby lock),appmsg.cpp:2611,partial
+LOCK_SIDES,44,CS,"Server.Lobby, Server.Dispatch",Bot only (harness),Real client does NOT consume (candidate: LOCK_SIDES side lock),appmsg.cpp:2620,partial
+PLAYER_READY,45,CS,"Server.Lobby, Server.Dispatch",ConnectionSession (real client),Client sends PLAYER_READY; relay echo applied (P282),appmsg.cpp:2297,done
+TEAM_READY,46,S,"Server.Lobby, Server.Dispatch",ConnectionSession (real client),TeamReady per-side aggregate applied,appmsg.cpp:2572,done
+FORCE_TEAM_READY,47,CS,Server.Dispatch,ConnectionSession (real client),ForceReady forward applied (P282),appmsg.cpp:2594,done
+DOCKED,48,C,"(C) server handler: ServerHost, Server.Lifecycle",client→server (sender),Client sends DOCKED announce (SendDocked),appmsg.cpp:1092,done
+CHANGE_TEAM_CIV,51,CS,Server.Dispatch,Bot only (harness),Real client does NOT consume (candidate: CHANGE_TEAM_CIV),appmsg.cpp:2530,partial
+AUTO_ACCEPT,52,CS,"Server.Lobby, Server.Dispatch",Bot only (harness),Real client does NOT consume (candidate: AUTO_ACCEPT),appmsg.cpp:2602,partial
+STATIONS_UPDATE,57,S,Server.Broadcast,ConnectionSession (real client),StationsUpdate live hull/shield fractions stored (P423),appmsg.cpp:558,done
+STATION_CAPTURE,58,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),StationCapture event + re-side station (P267),appmsg.cpp:637,done
+STATION_DESTROYED,59,S,"Server.Lifecycle, Server.Combat",ConnectionSession (real client),StationDestroyed event + remove station (P267),appmsg.cpp:514,done
+MONEY_CHANGE,60,S,"Server.Broadcast, PlayerWallet",ConnectionSession (real client),MoneyChange delta applied to wallet (P442),appmsg.cpp:1326,done
+DOCKED,61,S,Server.Combat,ConnectionSession (real client),DockedNotify applied (dock state),appmsg.cpp:1092,done
+GAME_OVER,62,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),GameOver snapshot retained for result panel (P262),appmsg.cpp:3048,done
+GAME_OVER_PLAYERS,63,S,Server.Lobby,ConnectionSession (real client),GameOverPlayers roster retained for scoreboard (P583),appmsg.cpp:3094,done
+BUCKET_DONATE,64,C,"(C) server handler: Server.Dispatch, Server.Economy",client→server (sender),Client donates to bucket (SendBucketDonate),—,done
+BUCKET_STATUS,65,S,"Server.Lobby, Server.Economy",ConnectionSession (real client),BucketStatus snapshot stored for investment pane (P487),appmsg.cpp:2455,done
+PLAYER_DONATE,67,C,"(C) server handler: Server.Dispatch, Server.Economy",client→server (sender),Real client does NOT send PLAYER_DONATE (bot-only),—,done
+SIDE_INACTIVE,68,CS,"Server.Lobby, Server.Dispatch",ConnectionSession (real client),SideInactive per-side state recorded (P455b),appmsg.cpp:2580,done
+FIRE_MISSILE,70,CS,"ServerHost, Server.Lifecycle",ConnectionSession (real client),Client sends FIRE_MISSILE launch (SendFireMissile),appmsg.cpp:1568,done
+SIDE_TECH_CHANGE,75,S,"Server.Lifecycle, Server.Economy",ConnectionSession (real client),SideTechChange dev-tech mask stored (P284),appmsg.cpp:2431,done
+SIDE_ATTRIBUTE_CHANGE,76,S,Server.Economy,ConnectionSession (real client),SideAttributeChange multipliers stored (P446),appmsg.cpp:2441,done
+EJECT,77,S,"Server.Broadcast, Server.Combat",ConnectionSession (real client),Eject hull swap + lifepod pose + rescue autopilot (P540),appmsg.cpp:170,done
+SINGLE_SHIP_UPDATE,78,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),SingleShipUpdate pose upsert (dead-reckon),appmsg.cpp:1118,done
+SUICIDE,80,C,"(C) server handler: Server.Lobby, Server.Dispatch",client→server (sender),Client sends SUICIDE (SendSuicide),—,done
+FIRE_EXPENDABLE,82,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Client sends FIRE_EXPENDABLE (SendFireExpendable),appmsg.cpp:1617,done
+MISSILE_DESTROYED,83,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),MissileDestroyed entity removed (P234),appmsg.cpp:1790,done
+MINE_DESTROYED,84,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),MineDestroyed entity removed (P291),appmsg.cpp:1808,done
+PROBE_DESTROYED,85,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),ProbeDestroyed entity removed (P260),appmsg.cpp:1761,done
+ASTEROID_DESTROYED,86,S,"Server.Lifecycle, Server.Combat",Bot only (harness),Real client does NOT consume (candidate: ASTEROID_DESTROYED),appmsg.cpp:1692,partial
+FIRE_EXPENDABLE,87,S,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Real client does NOT consume (candidate: FIRE_EXPENDABLE FE broadcast; chaff effect via CREATE_CHAFF),appmsg.cpp:1617,partial
+TREASURE_SETS,89,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: TREASURE_SETS),—,partial
+SHIP_STATUS,90,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),ShipStatus roster applied (P320); false-positive partial now done,appmsg.cpp:2713,done
+PROBES_UPDATE,92,S,Server.Broadcast,Bot only (harness),Real client does NOT consume (candidate: PROBES_UPDATE),appmsg.cpp:584,partial
+ORDER_CHANGE,93,CS,"ServerHost, Server.Docking",Bot only (harness),Client sends ORDER_CHANGE (SendOrderChange); relay echo NOT consumed by real client,appmsg.cpp:1822,done
+LEAVE_SHIP,94,S,"Server.Docking, Server.ShipCommands",neither (codec only),Real client does NOT consume (candidate: LEAVE_SHIP),appmsg.cpp:1914,partial
+JOINED_MISSION,95,S,Server.Lobby,neither (codec only),Real client does NOT consume (candidate: JOINED_MISSION),appmsg.cpp:2150,partial
+LOADOUT_CHANGE,96,S,"ServerHost, Server.Lifecycle",neither (codec only),Real client does NOT consume (candidate: LOADOUT_CHANGE),appmsg.cpp:1991,partial
+ACTIVE_TURRET_UPDATE,99,C,"(C) server handler: Server.Broadcast, Server.Dispatch",client→server (sender),Client sends ACTIVE_TURRET_UPDATE (SendActiveTurret),appmsg.cpp:2087,done
+INACTIVE_TURRET_UPDATE,100,C,(C) server handler: Server.Dispatch,client→server (sender),Client sends INACTIVE_TURRET_UPDATE (SendInactiveTurret),appmsg.cpp:2110,done
+TELEPORT_ACK,102,S,Server.Docking,Bot only (harness),Real client does NOT consume (candidate: TELEPORT_ACK notice),appmsg.cpp:1856,partial
+BOARD_SHIP,103,C,"(C) server handler: Server.Docking, Server.Dispatch",client→server (sender),Client sends BOARD_SHIP (SendBoardShip),—,done
+VIEW_CLUSTER,104,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Client sends VIEW_CLUSTER (SendViewClusterRequest),appmsg.cpp:443,done
+KILL_SHIP,105,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),KillShip death processed (P105/P370),appmsg.cpp:2747,done
+SET_WINGID,106,CS,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Real client does NOT consume (candidate: SET_WINGID),appmsg.cpp:2129,partial
+ICQ_CHAT_ACK,107,S,—,neither (codec only),na — ICQ_CHAT_ACK deliberately not built,—,na
+CHATBUOY,108,CS,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),ChatBuoy order applied (CHATBUOY_RELAY P67),appmsg.cpp:2660,done
+CREATE_CHAFF,109,S,Server.ShipCommands,ConnectionSession (real client),CreateChaff transient entity to render (P292),appmsg.cpp:1642,done
+MISSILE_SPOOFED,110,S,Server.ShipCommands,Bot only (harness),Real client does NOT consume (candidate: MISSILE_SPOOFED),appmsg.cpp:1667,partial
+END_SPOOFING,111,S,Server.ShipCommands,Bot only (harness),Real client does NOT consume (candidate: END_SPOOFING),appmsg.cpp:1686,partial
+AUTODONATE,112,C,"(C) server handler: PlayerWallet, Server.Lobby",client→server (sender),Real client does NOT send AUTODONATE (bot-only),appmsg.cpp:1192,done
+MISSIONPARAMS,113,CS,—,neither (codec only),na — MISSIONPARAMS deliberately not built,appmsg.cpp:2692,na
+PAYDAY,114,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),Payday applied (income),appmsg.cpp:1281,done
+SET_MONEY,115,S,"PlayerWallet, Server.Lobby",ConnectionSession (real client),SetMoney absolute wallet sync (P442),appmsg.cpp:1367,done
+AUTODONATE,116,S,Server.Economy,ConnectionSession (real client),AutoDonateUpdate relationship stored (P442),appmsg.cpp:1192,done
+MUTE,117,C,—,client→server (sender),na — MUTE deliberately not built,—,na
+SET_TEAM_LEADER,121,CS,"Server.Lobby, Server.Economy",ConnectionSession (real client),SetTeamLeader per-side leader tracked (P366),appmsg.cpp:2930,done
+SET_TEAM_INVESTOR,122,CS,—,neither (codec only),na — SET_TEAM_INVESTOR deliberately not built,—,na
+SET_MISSION_OWNER,123,CS,Server.Lobby,ConnectionSession (real client),SetMissionOwner broadcast stored (P281),appmsg.cpp:2971,done
+QUIT_MISSION,124,CS,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: QUIT_MISSION),appmsg.cpp:2501,partial
+JOIN_SIDE,125,S,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),JoinSide side refresh / enemy classification (P438),appmsg.cpp:2909,done
+QUIT_SIDE,126,CS,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: QUIT_SIDE),appmsg.cpp:2993,partial
+ENTER_GAME,128,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: ENTER_GAME),appmsg.cpp:3040,partial
+RELOAD,129,CS,"ServerHost, Server.Lifecycle",ConnectionSession (real client),Reload state counted (P362); client sends RELOAD (P626),appmsg.cpp:1458,done
+THREAT,131,S,—,neither (codec only),na — THREAT deliberately not built,—,na
+GAME_STATE,155,S,"Server.Combat, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: GAME_STATE),appmsg.cpp:2392,partial
+GAIN_FLAG,156,S,"Server.Combat, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: GAIN_FLAG conquest),appmsg.cpp:3113,partial
+START_GAME,157,C,"(C) server handler: Server.Lobby, Server.Dispatch",client→server (sender),Real client does NOT send START_GAME (owner via bot/harness),—,done
+ACQUIRE_TREASURE,162,S,Server.Docking,Bot only (harness),Real client does NOT consume (candidate: ACQUIRE_TREASURE),appmsg.cpp:262,partial
+TREASURE_ACK,163,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Real client does NOT send TREASURE_ACK (bot-only),—,done
+ADD_PART,164,S,Server.ShipCommands,Bot only (harness),Real client does NOT consume (candidate: ADD_PART),appmsg.cpp:1384,partial
+ENTER_LIFEPOD,166,S,Server.Combat,neither (codec only),Real client does NOT consume (candidate: ENTER_LIFEPOD; eject via EJECT P540),appmsg.cpp:1945,partial
+LIGHT_SHIPS_UPDATE,175,S,Server.Broadcast,ConnectionSession (real client),LightShipsUpdate pose refresh (visibility sync P347),appmsg.cpp:684,done
+HEAVY_SHIPS_UPDATE,176,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),HeavyShipsUpdate pose refresh (cross-side visibility P347/P375),appmsg.cpp:736,done
+VIEW_CLUSTER,177,S,Server.ShipCommands,neither (codec only),Real client does NOT consume (candidate: VIEW_CLUSTER sector-stream reply),appmsg.cpp:443,partial
+BOARD_NACK,178,S,"Server.Docking, Server.ShipCommands",neither (codec only),Real client does NOT consume (candidate: BOARD_NACK refusal),appmsg.cpp:1899,partial
+ASTEROIDS_UPDATE,179,S,Server.Broadcast,ConnectionSession (real client),AsteroidsUpdate live ore/health stored (P423),appmsg.cpp:607,done
+ASTEROID_DRAINED,180,S,—,neither (codec only),na — ASTEROID_DRAINED deliberately not built,appmsg.cpp:1718,na
+BUILDINGEFFECT_DESTROYED,181,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),BuildingEffectDestroyed construction removed (P294),appmsg.cpp:1775,done
+REQUEST_MONEY,182,CS,"Server.Dispatch, Server.Economy",Bot only (harness),Real client does NOT consume (candidate: REQUEST_MONEY),appmsg.cpp:2629,partial
+SHIP_RESET,183,S,Server.Dispatch,ConnectionSession (real client),ShipReset authoritative pose+cookie re-seed (P508),appmsg.cpp:1179,done
+RIPCORD_REQUEST,184,C,"(C) server handler: Server.Docking, Server.Dispatch",client→server (sender),Client sends RIPCORD_REQUEST (SendRipcordRequest),—,done
+RIPCORD_ACTIVATE,185,S,Server.Docking,ConnectionSession (real client),RipcordActivate HUD start/refresh (P414),appmsg.cpp:899,done
+RIPCORD_DENIED,186,S,Server.Docking,ConnectionSession (real client),RipcordDenied system-chat reason (P414),appmsg.cpp:965,done
+RIPCORD_ABORTED,187,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),RipcordAborted HUD clear + cue (P414),appmsg.cpp:973,done
+WARP_BOMB,188,S,"ServerHost, Server.Lifecycle",Bot only (harness),Real client does NOT consume (candidate: WARP_BOMB),appmsg.cpp:850,partial
+PROMOTE,189,S,"Server.Dispatch, Server.ShipCommands",neither (codec only),Real client does NOT consume the PROMOTE(189) broadcast (send path done P416) — demoted to partial,appmsg.cpp:824,partial
+PROMOTE,190,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),"Client sends PROMOTE (SendPromote, P416)",appmsg.cpp:824,partial
+CREATE_BUCKETS,191,S,Server.Lobby,ConnectionSession (real client),CreateBuckets dev-tech mask seed (P284),appmsg.cpp:2372,done
+RELAUNCH_SHIP,192,S,Server.Docking,Bot only (harness),Real client does NOT consume (candidate: RELAUNCH_SHIP),appmsg.cpp:132,partial
+BANDWIDTH,193,C,—,client→server (sender),na — BANDWIDTH deliberately not built,—,na
+PINGDATA,194,S,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Real client does NOT consume (candidate: PINGDATA),—,partial
+REQPINGDATA,195,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Real client does NOT send REQPINGDATA (bot-only),—,done
+CHANGE_ALLIANCE,196,C,"(C) server handler: Server.Lobby, Server.Dispatch",client→server (sender),Real client does NOT send CHANGE_ALLIANCE (owner via bot/harness),—,done
+CHANGE_ALLIANCES,197,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: CHANGE_ALLIANCES),appmsg.cpp:2554,partial
+ASTEROID_MINED,198,S,Server.Combat,Bot only (harness),Real client does NOT consume (candidate: ASTEROID_MINED),appmsg.cpp:1733,partial
+HIGHLIGHT_CLUSTER,199,CS,Server.Dispatch,Bot only (harness),Real client does NOT consume (candidate: HIGHLIGHT_CLUSTER),appmsg.cpp:1749,partial
+CLUSTERINFO,200,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),ClusterInfo map graph applied (P225),—,done
