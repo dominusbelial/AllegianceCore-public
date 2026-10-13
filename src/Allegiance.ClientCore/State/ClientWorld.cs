@@ -873,6 +873,18 @@ public sealed class ClientWorld
     /// null until that message is seen (set once, not re-built on repeats).</summary>
     public ClusterGraph? Graph { get; private set; }
 
+    /// <summary>
+    /// P634 — the client-side "world complete" signal: the routing
+    /// GRAPH (CLUSTERINFO) and at least one cluster have arrived, so a routing
+    /// consumer (the MCP bot harness's <c>EnsureCombatPath</c>) can resolve a
+    /// cluster path. False until then. This is the P634 measurement's endpoint
+    /// ("time from logon to world complete"), which lets a join-time world-sync
+    /// stall be distinguished from a live-streaming stall: a bot whose world
+    /// data is starved behind the position stream stays !WorldReady and loiters
+    /// at its home sector (P633's ~224/390 symptom).
+    /// </summary>
+    public bool WorldReady => Graph is not null && Clusters.Count > 0;
+
     /// <summary>The transient "what just happened" log — chat, kills, paydays,
     /// player-ready relays — in arrival order (event-table state, not
     /// entity-table state; no upsert semantics, bounded window, see

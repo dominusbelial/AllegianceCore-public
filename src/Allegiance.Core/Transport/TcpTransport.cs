@@ -647,6 +647,37 @@ public sealed class TcpTransport : ITransport
         return total;
     }
 
+    /// <summary>
+    /// P634 — aggregate per-peer send-backlog sample for the live 200v200
+    /// measurement (scope 1: "per-peer queue depth and the age of the oldest
+    /// guaranteed frame"). Over all live peers reports the max ordered-lane and
+    /// stream-lane pending frame counts, the max and total queued bytes, and the
+    /// max age (ms) of the oldest pending guaranteed frame — the join/world
+    /// head-of-line delay this task attacks. Cheap (one lock per peer), called
+    /// once per profiler window.
+    /// </summary>
+    public (int Peers, int MaxOrderedPending, int MaxStreamPending,
+            long MaxQueuedBytes, long TotalQueuedBytes, long MaxOldestGuaranteedMs)
+        SamplePeerQueues()
+    {
+        PeerSender[] senders;
+        lock (_gate) senders = _peers.Values.ToArray();
+        if (senders.Length == 0) return (0, 0, 0, 0, 0, 0);
+        int maxOrd = 0, maxStr = 0;
+        long maxBytes = 0, total = 0, maxAge = 0;
+        foreach (var s in senders)
+        {
+            var (o, p, b) = s.SnapshotQueue();
+            if (o > maxOrd) maxOrd = o;
+            if (p > maxStr) maxStr = p;
+            if (b > maxBytes) maxBytes = b;
+            total += b;
+            long age = s.OldestGuaranteedAgeMs();
+            if (age > maxAge) maxAge = age;
+        }
+        return (senders.Length, maxOrd, maxStr, maxBytes, total, maxAge);
+    }
+
     /// <summary>The client-half sender died (server closed / send timeout):
     /// close the client stream so the client read loop unwinds.</summary>
     private void DropClient()
@@ -810,12 +841,32 @@ public sealed class TcpTransport : ITransport
         private readonly TcpClient _tcpClient;
         private readonly Action<DisconnectReason> _onDead;
         private readonly CancellationTokenSource _cts = new();
-        private readonly LinkedList<QueuedFrame> _queue = new();
+        // P634 — TWO per-peer send lanes instead of one shared FIFO. Join and
+        // world-sync data (MISSIONDEF, EXPORTs, CLUSTERINFO/graph, SET_CLUSTER,
+        // chat, kills — all sent coalesceKey==0 via SendPeer) must never wait
+        // behind the per-tick latest-wins position stream: at ~390 connections
+        // a joiner's guaranteed world data starved behind the continuously-
+        // produced stream frames in the single FIFO (P633 measured ~224/390
+        // bots never receiving their cluster GRAPH/warp exports). So:
+        //   _orderedQueue — coalesceKey==0 ordered/guaranteed traffic. Never
+        //                   coalesced, never dropped, ALWAYS drained first.
+        //   _streamQueue  — coalesceKey!=0 latest-wins stream frames (ship
+        //                   states, own-ship, stations/asteroids/probes/...).
+        //                   Coalesced per key, shed oldest non-guaranteed under
+        //                   capacity, drained only when _orderedQueue is empty.
+        // This is the transport realisation of "separate lanes" (xorgy's port:
+        // reliable bursts must not be delayed behind state; P631's architecture
+        // study builds on it), and of native's ordered-vs-streaming send split
+        // (Messages.cpp:548-563 guaranteed: DPNSEND_GUARANTEED|COALESCE never
+        // times out; best-effort: DPNSEND_NONSEQUENTIAL drops at 500 ms).
+        private readonly LinkedList<QueuedFrame> _orderedQueue = new();
+        private readonly LinkedList<QueuedFrame> _streamQueue = new();
         private readonly object _sync = new();
-        // P606 — latest-wins coalescing: coalesceKey -> the queue node holding
-        // that key's newest pending frame. Lets Enqueue supersede an older
-        // pending stream frame in place (O(1)) instead of queueing every stale
-        // snapshot; removed when the writer pops the node.
+        // P606 — latest-wins coalescing over the STREAM lane only:
+        // coalesceKey -> the stream-queue node holding that key's newest
+        // pending frame. Lets Enqueue supersede an older pending stream frame
+        // in place (O(1)) instead of queueing every stale snapshot; removed
+        // when the writer pops the node. Ordered frames never enter it.
         private readonly Dictionary<int, LinkedListNode<QueuedFrame>> _coalesceNodes = new();
         private long _queuedBytes;
         private DateTime? _overflowSinceUtc;
@@ -873,32 +924,49 @@ public sealed class TcpTransport : ITransport
             lock (_sync)
             {
                 if (_disconnected) return;
-                // Was the queue fully drained before this enqueue? If so the
-                // peer is current (idle or caught up); its writer gets a fresh
-                // liveness window rather than being judged stale from an old
-                // baseline (an idle-then-active peer must never be dropped for
-                // sitting quiet before its next frame arrived).
-                bool wasEmpty = _queue.First is null;
+                // Was the peer's send path fully drained before this enqueue?
+                // If so the peer is current (idle or caught up); its writer
+                // gets a fresh liveness window rather than being judged stale
+                // from an old baseline (an idle-then-active peer must never be
+                // dropped for sitting quiet before its next frame arrived).
+                bool wasEmpty = _orderedQueue.First is null && _streamQueue.First is null;
 
-                if (coalesceKey != 0 && _coalesceNodes.TryGetValue(coalesceKey, out var existing))
+                if (coalesceKey != 0)
                 {
-                    // Latest-wins: an older pending frame for this same key is
-                    // superseded. Replace in place so the collapsed frame keeps
-                    // its queue position (relative order vs guaranteed messages
-                    // is preserved) and the byte accounting stays exact.
-                    _queuedBytes -= existing.Value.Frame.Length;
-                    existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey);
-                    _queuedBytes += frame.Length;
+                    // P634 — STREAM lane (coalesceKey!=0): latest-wins, shed-able.
+                    // A slower peer keeps at most the newest pending frame per key.
+                    if (_coalesceNodes.TryGetValue(coalesceKey, out var existing))
+                    {
+                        // Latest-wins: an older pending stream frame for this
+                        // same key is superseded in place, so the collapsed
+                        // frame keeps its stream-lane position and the byte
+                        // accounting stays exact.
+                        _queuedBytes -= existing.Value.Frame.Length;
+                        existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks);
+                        _queuedBytes += frame.Length;
+                    }
+                    else
+                    {
+                        // Shed oldest best-effort STREAM frames while over
+                        // capacity (guaranteed traffic is never dropped here).
+                        // Streaming ship-state frames are sent non-guaranteed,
+                        // so they are the natural shed candidates.
+                        while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                        var node = _streamQueue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks));
+                        _coalesceNodes[coalesceKey] = node;
+                        _queuedBytes += frame.Length;
+                    }
                 }
                 else
                 {
-                    // Shed oldest best-effort frames while over capacity
-                    // (guaranteed traffic is never dropped here). Streaming
-                    // ship-state frames are sent non-guaranteed, so they are the
-                    // natural shed candidates.
+                    // P634 — ORDERED lane (coalesceKey==0): join/world/exports/
+                    // graph/chat/kills. Never coalesced and never dropped (the
+                    // shedder only ever scans the stream lane), and drained
+                    // before any stream frame — so world data never starves
+                    // behind the position stream. Also shed stream traffic if
+                    // over capacity so an ordered burst can still land.
                     while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                    var node = _queue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey));
-                    if (coalesceKey != 0) _coalesceNodes[coalesceKey] = node;
+                    _orderedQueue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks));
                     _queuedBytes += frame.Length;
                 }
                 Monitor.Pulse(_sync);
@@ -928,7 +996,7 @@ public sealed class TcpTransport : ITransport
                     Interlocked.Exchange(ref _lastWriteProgressUtcTicks, now.Ticks);
                     _overflowSinceUtc = null;
                 }
-                else if (_queue.First is not null)
+                else if (_orderedQueue.First is not null || _streamQueue.First is not null)
                 {
                     _overflowSinceUtc = _queuedBytes > CapacityBytes ? (_overflowSinceUtc ?? now) : null;
                     long lastProg = Interlocked.Read(ref _lastWriteProgressUtcTicks);
@@ -999,18 +1067,9 @@ public sealed class TcpTransport : ITransport
             lock (_sync)
             {
                 if (_disconnected) return DrainResult.Dead;
-                if (_queue.First is null) return DrainResult.Idle;
+                if (_orderedQueue.First is null && _streamQueue.First is null) return DrainResult.Idle;
                 if (!SocketReady()) return DrainResult.Blocked;   // skip — not writable now
-                var node = _queue.First!;
-                _queue.RemoveFirst();
-                // P606 — a coalescable frame leaving the queue releases its key
-                // so the NEXT enqueue for that key appends fresh instead of
-                // pointing at this (now-consumed) node.
-                if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
-                frame = node.Value.Frame;
-                _queuedBytes -= frame.Length;
-                if (_queue.First is null) _overflowSinceUtc = null;
-                else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+                if (!PopHeadLocked(out frame!)) return DrainResult.Idle;
             }
             // Outside the lock, like WriterLoop: the only blocking socket write.
             // SendTimeout on the socket bounds it even against a black-holed
@@ -1068,21 +1127,82 @@ public sealed class TcpTransport : ITransport
             }
         }
 
-        /// <summary>Remove the oldest non-guaranteed frame to relieve pressure.
-        /// Returns false when there is no non-guaranteed frame to drop.</summary>
+        /// <summary>Remove the oldest non-guaranteed STREAM frame to relieve
+        /// pressure. Ordered-lane frames (coalesceKey 0) are never dropped
+        /// (they carry join/world/exports that must land), so the shedder only
+        /// ever scans the stream lane. Returns false when there is no
+        /// non-guaranteed frame to drop.</summary>
         private bool DropOldestNonGuaranteed()
         {
-            for (var node = _queue.First; node is not null; node = node.Next)
+            for (var node = _streamQueue.First; node is not null; node = node.Next)
             {
                 if (!node.Value.Guaranteed)
                 {
                     _queuedBytes -= node.Value.Frame.Length;
                     if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
-                    _queue.Remove(node);
+                    _streamQueue.Remove(node);
                     return true;
                 }
             }
             return false;
+        }
+
+        /// <summary>P634 — pop the next frame to drain, in priority order:
+        /// the ORDERED lane (join/world/guaranteed) head first, then the STREAM
+        /// lane head — so ordered/world data always precedes latest-wins
+        /// position frames on the wire and can never be starved behind them.
+        /// Caller must hold <c>_sync</c>. Releases the coalesce-map entry for a
+        /// popped stream frame and maintains the byte + overflow accounting.
+        /// Returns false when both lanes are empty.</summary>
+        private bool PopHeadLocked(out byte[] frame)
+        {
+            LinkedListNode<QueuedFrame> node;
+            if (_orderedQueue.First is not null) node = _orderedQueue.First!;
+            else if (_streamQueue.First is not null) node = _streamQueue.First!;
+            else { frame = null!; return false; }
+            node.List!.RemoveFirst();
+            // P606 — a coalescable stream frame leaving the queue releases its
+            // key so the NEXT enqueue for that key appends fresh instead of
+            // pointing at this (now-consumed) node.
+            if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
+            frame = node.Value.Frame;
+            _queuedBytes -= frame.Length;
+            if (_orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
+            else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+            return true;
+        }
+
+        // P634 — instrumentation + test seams (InternalsVisibleTo). Lets the
+        // server sample per-peer send-backlog (scope item 1: "per-peer queue
+        // depth and the age of the oldest guaranteed frame") and lets the
+        // transport suite assert the ordered-before-stream drain priority
+        // without racing the live writer.
+        internal (int OrderedPending, int StreamPending, long QueuedBytes) SnapshotQueue()
+        {
+            lock (_sync) return (_orderedQueue.Count, _streamQueue.Count, _queuedBytes);
+        }
+
+        /// <summary>True when the NEXT drained frame is ordered (higher-priority
+        /// world/join) traffic rather than a stream frame — i.e. the priority
+        /// lane is non-empty, so the drain will take it first.</summary>
+        internal bool NextDrainedIsOrdered()
+        {
+            lock (_sync) return _orderedQueue.First is not null;
+        }
+
+        /// <summary>Age of the oldest pending guaranteed frame (ordered lane,
+        /// plus guaranteed stream frames), in milliseconds — the join/world
+        /// data head-of-line delay this task measures. 0 when none pending.</summary>
+        internal long OldestGuaranteedAgeMs()
+        {
+            long now = DateTime.UtcNow.Ticks;
+            long oldest = long.MaxValue;
+            lock (_sync)
+            {
+                foreach (var n in _orderedQueue) if (n.EnqueuedUtcTicks < oldest) oldest = n.EnqueuedUtcTicks;
+                foreach (var n in _streamQueue) if (n.Guaranteed && n.EnqueuedUtcTicks < oldest) oldest = n.EnqueuedUtcTicks;
+            }
+            return oldest == long.MaxValue ? 0 : (now - oldest) / TimeSpan.TicksPerMillisecond;
         }
 
         private void WriterLoop()
@@ -1092,16 +1212,11 @@ public sealed class TcpTransport : ITransport
                 byte[] frame;
                 lock (_sync)
                 {
-                    while (_queue.First is null && !_disconnected && !_cts.IsCancellationRequested)
+                    while (_orderedQueue.First is null && _streamQueue.First is null
+                           && !_disconnected && !_cts.IsCancellationRequested)
                         Monitor.Wait(_sync);
                     if (_disconnected || _cts.IsCancellationRequested) return;
-                    var node = _queue.First!;
-                    _queue.RemoveFirst();
-                    if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
-                    frame = node.Value.Frame;
-                    _queuedBytes -= frame.Length;
-                    if (_queue.First is null) _overflowSinceUtc = null;
-                    else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+                    if (!PopHeadLocked(out frame!)) continue;
                 }
                 // The only blocking socket write, on this dedicated thread.
                 // SendTimeout on the socket bounds it even against a
@@ -1160,11 +1275,16 @@ public sealed class TcpTransport : ITransport
             public readonly byte[] Frame;
             public readonly bool Guaranteed;
             public readonly int CoalesceKey;
-            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey)
+            // P634 — enqueue timestamp (Utc ticks) so the transport can report
+            // the age of the oldest pending guaranteed frame (join/world
+            // head-of-line delay) for the live measurements.
+            public readonly long EnqueuedUtcTicks;
+            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey, long enqueuedUtcTicks)
             {
                 Frame = frame;
                 Guaranteed = guaranteed;
                 CoalesceKey = coalesceKey;
+                EnqueuedUtcTicks = enqueuedUtcTicks;
             }
         }
     }

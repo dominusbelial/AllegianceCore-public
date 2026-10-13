@@ -36,8 +36,10 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
         ?? throw new Exception("_peers field not found");
 
     // PeerSender private introspection (tests share the InternalsVisibleTo friend).
+    // P634 — the per-peer sender now has TWO lanes; all coalesce-keyed (stream)
+    // frames live in _streamQueue, so the coalescing assertions reflect that.
     private static readonly FieldInfo QField = typeof(TcpTransport).GetNestedType(
-            "PeerSender", BindingFlags.NonPublic)!.GetField("_queue",
+            "PeerSender", BindingFlags.NonPublic)!.GetField("_streamQueue",
             BindingFlags.Instance | BindingFlags.NonPublic)!;
     private static readonly FieldInfo CkField = typeof(TcpTransport).GetNestedType(
             "PeerSender", BindingFlags.NonPublic)!.GetField("_coalesceNodes",

@@ -1850,16 +1850,37 @@ internal sealed partial class BotManager : IDisposable
         return (arrival: 0f, brake: Math.Max(1f, threshold)); // stop only at the centre
     }
 
+    /// <summary>P634 — how long a bot waits (harness clock, sec) before
+    /// re-attempting routing once the cluster graph is found missing, so it
+    /// does not hammer EnsureCombatPath every tick during a slow world sync.</summary>
+    private const double WorldSyncBackoffSec = 2.0;
+
     /// <summary>[vz EnsureEnemyPath] Recompute the bot's cluster path only when
     /// needed: keep the existing one while it still covers the current cluster
-    /// and the goal is unchanged, else re-BFS from the current cluster.</summary>
-    private static void EnsureCombatPath(ActiveBot bot, short cur, short goal)
+    /// and the goal is unchanged, else re-BFS from the current cluster.
+    /// P634 — when the cluster GRAPH hasn't landed yet (ClientWorld not
+    /// WorldReady) the bot cannot route: instead of re-requesting every tick
+    /// (the P633 ~224/390 home-bound hammer), it backs off
+    /// <see cref="WorldSyncBackoffSec"/> and logs the wait ONCE, counting the
+    /// retries for the live measurement.</summary>
+    private static void EnsureCombatPath(ActiveBot bot, short cur, short goal, double now)
     {
         if (bot.PathGoal == goal && bot.Path.Count > 0 && bot.Path.Contains(cur)) return;
+        // P634 — backoff window: don't re-attempt while we're still waiting on
+        // the world sync.
+        if (now < bot.WorldNotReadyUntil) return;
         lock (bot.Cs!.Gate)
         {
             var g = bot.Cs.World.Graph;
-            if (g is null) return;
+            if (g is null)
+            {
+                bot.WorldNotReadyAttempts++;
+                if (bot.WorldNotReadyAttempts == 1)
+                    Console.WriteLine($"[p634] bot {bot.Name} (side {bot.Side}) awaiting world sync — no cluster graph yet (ClientWorld not WorldReady); backing off {WorldSyncBackoffSec}s");
+                bot.WorldNotReadyUntil = now + WorldSyncBackoffSec;
+                return;
+            }
+            if (bot.WorldReadyAt < 0) bot.WorldReadyAt = now;   // latch first readiness
             bot.Path = g.FindShortestPath(cur, goal);
         }
         bot.PathStart = cur;
@@ -2931,7 +2952,7 @@ internal sealed partial class BotManager : IDisposable
             CombatFlyTo(bot, bot.PodStationCenter, 120f, 400f, 0);
             return;
         }
-        EnsureCombatPath(bot, cur, bot.PodStationSector);
+        EnsureCombatPath(bot, cur, bot.PodStationSector, now);
         if (bot.Path.Count == 0) { LoiterCombat(bot, now); return; }
         short next = CombatNextHop(bot, cur);
         if (next == cur) return;
@@ -3726,12 +3747,12 @@ internal sealed partial class BotManager : IDisposable
         {
             if (bot.StagingSector < 0)
             {
-                EnsureCombatPath(bot, cur, goal);
+                EnsureCombatPath(bot, cur, goal, now);
                 bot.StagingSector = bot.Path.Count >= 2 && bot.Path[^1] == goal ? bot.Path[^2] : cur;
             }
             if (bot.StagePhase < 2)
             {
-                EnsureCombatPath(bot, cur, bot.StagingSector);
+                EnsureCombatPath(bot, cur, bot.StagingSector, now);
                 if (bot.Path.Count == 0) { LoiterCombat(bot, now); bot.LastCluster = cur; return; }
                 short next = CombatNextHop(bot, cur);
                 if (next != cur)
@@ -3784,7 +3805,7 @@ internal sealed partial class BotManager : IDisposable
             // released (StagePhase == 2) → fall through to the normal transit below.
         }
 
-        EnsureCombatPath(bot, cur, goal);
+        EnsureCombatPath(bot, cur, goal, now);
         MaybeNarrateTransit(bot, cs, now, cur, goal, "transit");
         if (bot.Path.Count == 0) { LoiterCombat(bot, now); bot.LastCluster = cur; return; }   // unroutable / no CLUSTERINFO yet
         short gn = CombatNextHop(bot, cur);
@@ -3881,7 +3902,27 @@ internal sealed partial class BotManager : IDisposable
         /// Lets a caller verify the anti-swarm cap live — a lone miner must show
         /// a small engager count, not the whole fleet.</summary>
         public required int Engagers { get; init; }
+        // P634 — join→world-complete measurement (see EnsureCombatPath).
+        /// <summary>Whether this bot's ClientWorld is world-complete (routing
+        /// GRAPH present) right now.</summary>
+        public required bool WorldReady { get; init; }
+        /// <summary>Harness-clock seconds from launch (LaunchedAt) to when the
+        /// world first became WorldReady; -1 if still not ready. The
+        /// join→world-complete delay this task measures.</summary>
+        public required double WorldReadyDelaySec { get; init; }
+        /// <summary>How many backoffs the bot took waiting for the world sync
+        /// (EnsureCombatPath found no cluster GRAPH yet).</summary>
+        public required int WorldNotReadyAttempts { get; init; }
     }
+
+    private static bool BotWorldReady(ActiveBot bot)
+    {
+        if (bot.Cs is { } cs) { lock (cs.Gate) return cs.World.WorldReady; }
+        return false;
+    }
+
+    private static double BotWorldReadyDelay(ActiveBot bot)
+        => bot.WorldReadyAt < 0 ? -1 : bot.WorldReadyAt - bot.LaunchedAt;
 
     private static short ShipIdOf(ActiveBot bot)
     {
@@ -3910,6 +3951,8 @@ internal sealed partial class BotManager : IDisposable
                             Sector = sector, Behavior = bot.Behavior,
                             Position = [pos.X, pos.Y, pos.Z], Target = bot.TargetId, OrderedTarget = bot.OrderedTargetId,
                             Engagers = EngagersOf(bot),
+                            WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
+                            WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                         });
                         continue;
                     }
@@ -3929,6 +3972,8 @@ internal sealed partial class BotManager : IDisposable
                             Sector = sec, Behavior = bot.Behavior,
                             Position = [p.X, p.Y, p.Z], Target = bot.TargetId, OrderedTarget = bot.OrderedTargetId,
                             Engagers = EngagersOf(bot),
+                            WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
+                            WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                         });
                         continue;
                     }
@@ -3940,6 +3985,8 @@ internal sealed partial class BotManager : IDisposable
                         Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
                         Sector = s, Behavior = bot.Behavior, Position = [0, 0, 0], Target = null, OrderedTarget = bot.OrderedTargetId,
                         Engagers = 0,
+                        WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
+                        WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                     });
                 }
                 catch { /* one bot's bad state never breaks list_active_bots */ }
@@ -4540,6 +4587,18 @@ internal sealed partial class BotManager : IDisposable
         public short ReadyShipId = -1;
         public bool Launched;
         public bool Arrived;                       // reached the target sector
+        // P634 — world-sync backoff + measurement. The cluster GRAPH is the
+        // routing prerequisite (ClientWorld.Graph ← CLUSTERINFO). Until it
+        // lands the bot cannot path; it must not hammer EnsureCombatPath every
+        // tick re-requesting a route (the P633 ~224/390 home-bound symptom).
+        //   WorldNotReadyUntil — harness-clock (sec, Now()) before which the
+        //     bot may NOT re-attempt routing (backoff window).
+        //   WorldNotReadyAttempts — how many backoffs it has taken (the
+        //     "EnsureCombatPath retry count" measurement, scope 1).
+        //   WorldReadyAt — harness-clock when the graph first arrived (-1 until).
+        public double WorldNotReadyUntil = double.NegativeInfinity;
+        public int WorldNotReadyAttempts;
+        public double WorldReadyAt = -1;
         public short? TargetId;                    // the enemy ship this bot is engaging
         // P622 — enemies that have recently DAMAGED this bot (source ship id →
         // wall-clock of the last hull hit THEY caused on US), refreshed each tick

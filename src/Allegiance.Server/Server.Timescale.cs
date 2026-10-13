@@ -88,6 +88,11 @@ public sealed partial class Server
         }
 
         TickProfiler.WindowReported += EmitTidiWindow;
+        // P634 — per-window per-peer send-backlog sample (scope 1 measurement):
+        // queue depths + the age of the oldest pending guaranteed frame, so the
+        // live 200v200 baseline shows whether a joiner's world data ever waits
+        // behind the position stream. Gated on peers>0 (silent for the suites).
+        TickProfiler.WindowReported += EmitPeerQueueWindow;
 
         if (mode == "off")
         {
@@ -150,6 +155,24 @@ public sealed partial class Server
         RefreshProfilerLabel();
         double cost = _tidiController?.SmoothedCost ?? 0.0;
         Console.WriteLine($"[tidi] scale={_timeScale:0.####} cost={cost * 1000:0.#}ms mode={_timeDilationMode}");
+    }
+
+    /// <summary>
+    /// P634 — per-profiler-window per-peer send-backlog sample: the server-side
+    /// half of scope 1's measurement. Prints, for the live baseline, how deep a
+    /// peer's ordered (join/world) and stream lanes are, how many bytes are
+    /// queued, and the oldest age of a pending guaranteed frame (ms) — the
+    /// direct signal for "a joiner's world data is starving behind the position
+    /// stream". Silent when no peers are connected (keeps the unit suites clean).
+    /// </summary>
+    private void EmitPeerQueueWindow()
+    {
+        var t = _host.Transport;
+        if (t is null) return;
+        var (peers, maxOrd, maxStr, maxBytes, totalBytes, maxAge) = t.SamplePeerQueues();
+        if (peers == 0) return;
+        Console.WriteLine($"[p634-queue] peers={peers} maxOrderedPending={maxOrd} maxStreamPending={maxStr} " +
+                          $"maxQueuedBytes={maxBytes} totalQueuedBytes={totalBytes} maxOldestGuaranteedMs={maxAge}");
     }
 
     /// <summary>

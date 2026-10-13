@@ -314,4 +314,37 @@ public class ClientWorldExportTests
         world.Apply(new ClusterInfo { Clusters = [], Warps = [] });
         Assert.Same(first, world.Graph);
     }
+
+    /// <summary>
+    /// P634 — the client-side "world complete" signal. A fresh world is not
+    /// WorldReady; clusters alone (ExportCluster) don't make it ready because
+    /// the routing GRAPH (CLUSTERINFO) is still missing; once the graph lands
+    /// it becomes WorldReady (the routing consumer's prerequisite); and Reset
+    /// tears it back down. Fails on pre-P634 code where WorldReady doesn't exist.
+    /// </summary>
+    [Fact]
+    public void WorldReady_requires_graph_and_clusters_and_resets()
+    {
+        var world = new ClientWorld();
+
+        // Fresh: neither the graph nor any cluster — not ready.
+        Assert.False(world.WorldReady, "a fresh world must not be WorldReady");
+
+        // Clusters alone: still not ready — no routing GRAPH yet (the exact
+        // P634 state: some world data arrived, but CLUSTERINFO hasn't landed).
+        world.Apply(new ExportCluster { Cluster = MakeCluster(742) });
+        Assert.False(world.WorldReady, "clusters without the graph must not be WorldReady");
+
+        // Graph arrives → world complete.
+        world.Apply(new ClusterInfo
+        {
+            Clusters = [new ClusterInfo.ClusterEntry(742, HomeSector: true)],
+            Warps = [],
+        });
+        Assert.True(world.WorldReady, "graph + clusters must make the world WorldReady");
+
+        // Reset tears it down (a later game-over / re-join begins unworlded again).
+        world.Reset();
+        Assert.False(world.WorldReady, "Reset must clear WorldReady");
+    }
 }
