@@ -53,7 +53,11 @@ public sealed class ClientWorld
     /// P636c — made overridable via ALLEGIANCE_BOT_SNAPSHOT_PUBLISH_MS (default
     /// 40) so the live harness can inflate it to a genuinely STALE snapshot and
     /// prove the staleness→lethality mechanism (and the dead-reckon recovery) in
-    /// a controlled A/B.</summary>
+    /// a controlled A/B.
+    /// P636d — no longer the primary throttle: since the publish is now LAZY
+    /// (requested by the decision loop, §<see cref="PublishDecisionSnapshot"/>),
+    /// this interval is a defensive floor against pathological rapid requests
+    /// and the sub-switch retains its controlled-staleness A/B meaning.</summary>
     internal static int DecisionSnapPublishIntervalMs = ReadPublishInterval();
     private static int ReadPublishInterval()
     {
@@ -61,6 +65,39 @@ public sealed class ClientWorld
             return v;
         return 40;
     }
+
+    /// <summary>
+    /// P636d — whether the lock-free decision snapshot is enabled at all. This is
+    /// the SINGLE source of truth for the A/B switch
+    /// (<c>ALLEGIANCE_BOT_DECISION_SNAPSHOT</c> ≠ <c>off</c>), moved here from the
+    /// tool layer so the CLIENT-CORE receive thread honours it directly. When OFF,
+    /// <see cref="PublishDecisionSnapshot"/> performs ZERO publishes — the receive
+    /// thread does no rebuild work at all, so the P636c switch now also stops the
+    /// WRITE, not just the read. (Previously the switch only reverted the decision
+    /// READ path to live tables; the publish still ran at ~25 Hz × every bot,
+    /// which is exactly the receive-thread starvation this task measures and fixes.)
+    /// Read once at startup (mutable so a unit test can exercise the off-mode
+    /// path deterministically; production never reassigns it).
+    /// </summary>
+    public static bool DecisionSnapshotEnabled { get; set; } =
+        System.Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_DECISION_SNAPSHOT") != "off";
+
+    // ── P636d — LAZY publish coordination + measurement ─────────────────────
+    // The snapshot is no longer published on a fixed ~25 Hz timer: the RECEIVE
+    // thread rebuilds only when the bot DECISION thread explicitly requests a
+    // fresh snapshot (RequestDecisionRefresh), a minimum interval has elapsed, and
+    // the decision-relevant world actually changed since the last publish
+    // (skip-unchanged). Publish therefore follows the decision cadence instead of
+    // the receive cadence, and idles to ZERO for idle bots and (always) when the
+    // snapshot is switched off. Because the decision thread sets the request just
+    // before it reads .Decision, the snapshot it consumes is freshly published —
+    // which collapses the P636c snapshot age at decision time.
+    private int _decisionRefreshPending;      // Volatile 0/1, decision → receive
+    private long _worldGen;                   // bumped on snapshot-relevant mutations (receive thread)
+    private long _lastPublishedWorldGen = -1;
+    private long _snapPublishCount;           // cumulative rebuilds (receive threads)
+    private long _snapPublishTicks;           // cumulative rebuild wall-time, Stopwatch ticks
+    private long _lastAppliedTick64;          // wall stamp of the newest applied update (decode lag)
 
     private static DecisionSnapshot[] CreateSnapPool()
     {
@@ -85,17 +122,39 @@ public sealed class ClientWorld
     /// reads them here without taking the gate (safe: no other thread mutates them),
     /// writes into the next ring-pool slot (arrays reused unless growth is needed),
     /// then atomically swaps the published reference so concurrent readers never
-    /// observe a torn half-built snapshot. Throttled to ~25 Hz; returns the
-    /// published snapshot (new when a rebuild+swap happened, else the current one).
+    /// observe a torn half-built snapshot.
+    /// P636d — now LAZY and request-driven (the P636d fix for the receive-thread
+    /// publish cost at ~390 bots). It returns early, doing NO rebuild work, unless
+    /// ALL of: (1) the snapshot is enabled (<see cref="DecisionSnapshotEnabled"/>
+    /// — when OFF this method is a strict no-op and performs ZERO publishes),
+    /// (2) the decision thread has a pending refresh request
+    /// (<see cref="RequestDecisionRefresh"/>), (3) a defensive minimum interval
+    /// elapsed, and (4) the decision-relevant world changed since the last publish
+    /// (skip-unchanged). The decision loop sets a request once per pass, so publish
+    /// follows the decision cadence and idles to zero when no bot is deciding.
+    /// Returns the published snapshot (new when a rebuild+swap happened, else the
+    /// current one).
     /// </summary>
     public DecisionSnapshot PublishDecisionSnapshot()
     {
-        long now = System.Environment.TickCount64;
-        if (_publishedDecision != DecisionSnapshot.Empty && now - _lastDecisionSnapPublishTick < DecisionSnapPublishIntervalMs)
+        if (!DecisionSnapshotEnabled) return _publishedDecision;   // OFF: zero publishes
+
+        // Lazy: no rebuild unless the bot decision loop wants fresh snapshots
+        // (a sticky active level — RequestDecisionRefresh is re-asserted each
+        // pass and revoked by CancelDecisionRefresh when the bot goes idle).
+        if (System.Threading.Volatile.Read(ref _decisionRefreshPending) == 0)
             return _publishedDecision;
 
-        _lastDecisionSnapPublishTick = now;
+        long now = System.Environment.TickCount64;
+        if (_lastPublishedWorldGen == _worldGen)
+            return _publishedDecision;                              // world unchanged since last publish
+        if (now - _lastDecisionSnapPublishTick < DecisionSnapPublishIntervalMs)
+            return _publishedDecision;                              // defensive floor → publish ≤ ~25 Hz while active
 
+        _lastDecisionSnapPublishTick = now;
+        _lastPublishedWorldGen = _worldGen;
+
+        long sw = System.Diagnostics.Stopwatch.GetTimestamp();
         var target = _snapPool[_snapCursor];
         _snapCursor = (_snapCursor + 1) % _snapPool.Length;
         target.Version = ++_decisionSnapVersion;
@@ -117,8 +176,56 @@ public sealed class ClientWorld
             target.MyCluster = -1;
         }
         System.Threading.Volatile.Write(ref _publishedDecision, target);
+
+        System.Threading.Interlocked.Increment(ref _snapPublishCount);
+        System.Threading.Interlocked.Add(ref _snapPublishTicks, System.Diagnostics.Stopwatch.GetTimestamp() - sw);
         return target;
     }
+
+    /// <summary>
+    /// P636d — the bot DECISION thread asserts that it wants fresh decision
+    /// snapshots (sticky active level). Called once per decision pass per active
+    /// bot. The receive thread republishes at the ≤~25 Hz cadence (§skip-unchanged
+    /// and the interval floor) while the level is held, and ZERO when it is not
+    /// (idle bots call <see cref="CancelDecisionRefresh"/>, and `off` mode never
+    /// publishes regardless). Writing the flag is one volatile store — it costs
+    /// nothing on this (decision) thread, preserving the P636 lock-free read.
+    /// </summary>
+    public void RequestDecisionRefresh() => System.Threading.Volatile.Write(ref _decisionRefreshPending, 1);
+
+    /// <summary>
+    /// P636d — revoke the active request: the bot is no longer deciding, so this
+    /// world's receive thread stops publishing until it is re-requested. Together
+    /// with <see cref="RequestDecisionRefresh"/> this bounds publish to active
+    /// bots only (idle/not-seated worlds publish zero).
+    /// </summary>
+    public void CancelDecisionRefresh() => System.Threading.Volatile.Write(ref _decisionRefreshPending, 0);
+
+    /// <summary>
+    /// P636d — mark the decision-relevant world state dirty (called from the
+    /// receive-thread Apply paths that mutate Ships/Stations/Warps). Lets the lazy
+    /// publisher skip a rebuild when nothing the decision reads has changed.
+    /// </summary>
+    private void MarkSnapshotDirty() => _worldGen++;
+
+    /// <summary>
+    /// P636d — the receive thread stamps the wall-clock time (ms, monotonic) just
+    /// after applying a batch of messages; a decision-time reader subtracts it from
+    /// "now" to measure DECODE LAG — how stale the newest applied update is.
+    /// </summary>
+    public void MarkApplied() => System.Threading.Volatile.Write(ref _lastAppliedTick64, System.Environment.TickCount64);
+
+    /// <summary>P636d — the wall-clock stamp (ms) of the newest applied update.</summary>
+    public long LastAppliedTick64 => System.Threading.Volatile.Read(ref _lastAppliedTick64);
+
+    /// <summary>P636d — cumulative snapshot-publish rebuilds performed on the
+    /// receive threads (this world). Thread-safe (Interlocked).</summary>
+    public long SnapshotPublishCount => System.Threading.Interlocked.Read(ref _snapPublishCount);
+
+    /// <summary>P636d — cumulative wall-time spent rebuilding+publishing snapshots
+    /// on the receive threads, in MILLISECONDS (this world). Thread-safe.</summary>
+    public double SnapshotPublishMs =>
+        System.Threading.Interlocked.Read(ref _snapPublishTicks) / (double)System.Diagnostics.Stopwatch.Frequency * 1000.0;
 
     private void FillShipSnapshot(DecisionSnapshot target)
     {
@@ -1347,6 +1454,7 @@ public sealed class ClientWorld
         _stationLive.Clear();
         _projectiles.Clear();
         _missiles.Clear();
+        MarkSnapshotDirty();
         Diag.Clear();
         _probes.Clear();
         _mines.Clear();
@@ -1665,6 +1773,7 @@ public sealed class ClientWorld
 
     private void Apply(SetCluster set)
     {
+        MarkSnapshotDirty();
         // On first arrival this is the "here is your ship" assignment.
         MyShipId ??= set.Ship.ShipId;
 
@@ -1735,6 +1844,7 @@ public sealed class ClientWorld
     /// </summary>
     private void Apply(ShipReset reset)
     {
+        MarkSnapshotDirty();
         var e = Upsert(reset.Ship.ShipId);
         e.Latest = reset.Ship;         // store verbatim, don't re-flatten
         e.LastUpdateTick = reset.Ship.Time;
@@ -1805,6 +1915,7 @@ public sealed class ClientWorld
     /// </summary>
     private void Apply(Eject e)
     {
+        MarkSnapshotDirty();
         var ent = Upsert(e.ShipId);
 
         // 1 — boarded? unboard; else "died": parts/ammo/fuel cleared.
@@ -1919,6 +2030,7 @@ public sealed class ClientWorld
 
     private void Apply(SingleShipUpdate update)
     {
+        MarkSnapshotDirty();
         var e = Upsert(update.OidTarget);
         e.Latest = update.Ship;
         e.LastUpdateTick = update.Ship.Time;
@@ -1940,6 +2052,7 @@ public sealed class ClientWorld
 
     private void Apply(ShipStatusMessage status)
     {
+        MarkSnapshotDirty();
         var e = Upsert(status.ShipId);
         e.HullId = status.HullId;
         e.SectorId = status.SectorId;
@@ -1966,6 +2079,7 @@ public sealed class ClientWorld
     /// references (<c>CompactTime</c>/<c>CompactPosition</c> deltas).</summary>
     private void Apply(HeavyShipsUpdate heavy)
     {
+        MarkSnapshotDirty();
         // P375 — HEAVY_SHIPS_UPDATE(176) is sent by the server for exactly the
         // ships in the RECIPIENT's OWN cluster (BroadcastShipsUpdate gathers
         // candidates from the peer's own sector), so every entry here — same-side
@@ -2063,6 +2177,7 @@ public sealed class ClientWorld
     /// render/target loops, which all guard on <c>Latest is not null</c>).</summary>
     private void Apply(LightShipsUpdate light)
     {
+        MarkSnapshotDirty();
         foreach (var entry in light.LightShipEntries)
             Upsert(entry.ShipId);
     }
@@ -2143,11 +2258,17 @@ public sealed class ClientWorld
     private void Apply(ExportCluster export) =>
         _clusters[export.Cluster.ClusterId] = export.Cluster;
 
-    private void Apply(ExportStation export) =>
+    private void Apply(ExportStation export)
+    {
         _stations[export.Station.StationId] = export.Station;
+        MarkSnapshotDirty();
+    }
 
-    private void Apply(ExportWarp export) =>
+    private void Apply(ExportWarp export)
+    {
         _warps[export.Warp.WarpId] = export.Warp;
+        MarkSnapshotDirty();
+    }
 
     private void Apply(ExportAsteroid export) =>
         _asteroids[export.Asteroid.AsteroidId] = export.Asteroid;
@@ -2489,6 +2610,7 @@ public sealed class ClientWorld
     /// planner's disappearance pass.</summary>
     private void Apply(StationDestroyed destroyed)
     {
+        MarkSnapshotDirty();
         bool enemy = true;
         if (_stations.TryGetValue(destroyed.StationId, out var st))
             enemy = !(MySideId.HasValue && st.SideId == MySideId.Value);
@@ -2504,6 +2626,7 @@ public sealed class ClientWorld
     /// world table, mirroring native's <c>station-&gt;SetSide(psideNew)</c>.</summary>
     private void Apply(StationCapture capture)
     {
+        MarkSnapshotDirty();
         ClientSoundEventKind kind;
         if (MySideId.HasValue && capture.SidOld == MySideId.Value)
             kind = ClientSoundEventKind.StationCaptured;
@@ -2979,6 +3102,7 @@ public sealed class ClientWorld
     private void Apply(ShipDelete m)
     {
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
+        MarkSnapshotDirty();
         e.IsGone = true;
         // P448b — a ship that left view (warped/docked/logged off) stops being
         // dead-reckoned; if it returns, the next pose update re-seeds fresh.
@@ -3102,6 +3226,7 @@ public sealed class ClientWorld
         _stationLive.Clear();
         _projectiles.Clear();
         _missiles.Clear();
+        MarkSnapshotDirty();
         Diag.Clear();
         _probes.Clear();
         _mines.Clear();
@@ -3460,6 +3585,7 @@ public sealed class ClientWorld
     private ShipEntity Upsert(short shipId)
     {
         if (_ships.TryGetValue(shipId, out var existing)) return existing;
+        MarkSnapshotDirty();
         var created = new ShipEntity { ShipId = shipId };
         _ships.Add(shipId, created);
         return created;

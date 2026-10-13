@@ -183,7 +183,7 @@ public sealed class P632PortModeZeroKillsLiveTests
                 if (poll % 5 == 4)
                 {
                     var ps = mgr.GetPerfStats(null);
-                    string pl = $"P636PERF {tag}: t={el:F0}s passMean={ps.DecisionPass.MeanMs:F1} passP50={ps.DecisionPass.P50Ms:F1} passP95={ps.DecisionPass.P95Ms:F1} passMax={ps.DecisionPass.MaxMs:F1} decisionHz={ps.DecisionRateHz:F3} cpu={ps.Resources.CpuFraction:F1} gen0={ps.Resources.Gen0} gen2={ps.Resources.Gen2} botCount={ps.Cadence.BotCount} snapAgeMean={ps.SnapAgeMs.MeanMs:F1} snapAgeP95={ps.SnapAgeMs.P95Ms:F1} snapAgeMax={ps.SnapAgeMs.MaxMs:F0}";
+                    string pl = $"P636PERF {tag}: t={el:F0}s passMean={ps.DecisionPass.MeanMs:F1} passP50={ps.DecisionPass.P50Ms:F1} passP95={ps.DecisionPass.P95Ms:F1} passMax={ps.DecisionPass.MaxMs:F1} decisionHz={ps.DecisionRateHz:F3} cpu={ps.Resources.CpuFraction:F1} gen0={ps.Resources.Gen0} gen2={ps.Resources.Gen2} botCount={ps.Cadence.BotCount} snapAgeMean={ps.SnapAgeMs.MeanMs:F1} snapAgeP95={ps.SnapAgeMs.P95Ms:F1} snapAgeMax={ps.SnapAgeMs.MaxMs:F0} pubPs={ps.SnapshotStats.PublishPerSec:F1} pubMsPs={ps.SnapshotStats.PublishMsPerSec:F1} decLagMean={ps.SnapshotStats.DecodeLagMean:F1} decLagP95={ps.SnapshotStats.DecodeLagP95:F1} decLagMax={ps.SnapshotStats.DecodeLagMax:F0}";
                     Console.WriteLine(pl);
                     perfLines.Add(pl);
                 }

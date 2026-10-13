@@ -90,6 +90,7 @@ public class DecisionSnapshotTests
         var world = WorldWithMyShip(me);
         AddRemote(world, 50, side: 7, hull: 800, pos: new Vector3(500f, 0f, 600f));
 
+        world.RequestDecisionRefresh();
         var snap = world.PublishDecisionSnapshot();
 
         Assert.Equal(me, snap.MyShipId);
@@ -117,13 +118,16 @@ public class DecisionSnapshotTests
         var world = WorldWithMyShip(me);
         AddRemote(world, 60, side: 9, hull: 801, pos: new Vector3(1f, 0f, 0f));
 
+        world.RequestDecisionRefresh();
         var first = world.PublishDecisionSnapshot();
         long firstVersion = first.Version;
         int firstCount = first.Ships.Length;
 
-        // later updates + publishes
+        // later updates + publishes (each requests a fresh snapshot first)
         AddRemote(world, 70, side: 9, hull: 802, pos: new Vector3(2f, 0f, 0f));
+        world.RequestDecisionRefresh();
         world.PublishDecisionSnapshot();
+        world.RequestDecisionRefresh();
         world.PublishDecisionSnapshot();
 
         // the earlier snapshot object is untouched
@@ -137,8 +141,12 @@ public class DecisionSnapshotTests
     public void PublishBumpsVersion_AndSwapsFreshShipsArray()
     {
         var world = WorldWithMyShip(30);
+        world.RequestDecisionRefresh();
         var a = world.PublishDecisionSnapshot();
         Thread.Sleep(DecisionSnapPublishIntervalMs + 10);   // clear the throttle window
+        // a world CHANGE between publishes is required under lazy publish
+        AddRemote(world, 55, side: 9, hull: 804, pos: new Vector3(4f, 0f, 0f));
+        world.RequestDecisionRefresh();
         var b = world.PublishDecisionSnapshot();
         Assert.True(b.Version > a.Version);
         Assert.NotSame(a.Ships, b.Ships);
@@ -155,8 +163,9 @@ public class DecisionSnapshotTests
     public void PublishThrottlesWithinInterval()
     {
         var world = WorldWithMyShip(40);
+        world.RequestDecisionRefresh();
         var a = world.PublishDecisionSnapshot();
-        var b = world.PublishDecisionSnapshot();   // same TickCount64 window → throttled
+        var b = world.PublishDecisionSnapshot();   // no new request → lazy publish does nothing
         Assert.Same(a, b);
     }
 
@@ -165,6 +174,7 @@ public class DecisionSnapshotTests
     public void ResetClearsPublishedSnapshot()
     {
         var world = WorldWithMyShip(41);
+        world.RequestDecisionRefresh();
         world.PublishDecisionSnapshot();
         Assert.NotSame(DecisionSnapshot.Empty, world.Decision);
         world.Reset();
@@ -188,6 +198,7 @@ public class DecisionSnapshotTests
             while (!stop.IsCancellationRequested)
             {
                 AddRemote(world, (short)(100 + (n % 5)), side: 3, hull: 810, pos: new Vector3(n, 0f, 0f));
+                world.RequestDecisionRefresh();
                 world.PublishDecisionSnapshot();
                 n++;
             }

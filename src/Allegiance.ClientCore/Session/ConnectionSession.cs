@@ -1077,6 +1077,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         // thread is the world's sole writer) publish the lock-free decision
         // snapshot so the bot decision loop reads latest state without contending
         // for the gate. Throttled internally to ~25 Hz.
+        // P636d — the publish is now LAZY (requested by the decision loop; no-op
+        // when nothing is pending or the snapshot is off). Stamp the newest-applied
+        // update here for the decode-lag metric before attempting the publish.
+        _world.MarkApplied();
         _world.PublishDecisionSnapshot();
     }
 

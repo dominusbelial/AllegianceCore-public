@@ -142,6 +142,7 @@ public class P636bCadenceSnapshotTests
         AddRemote(world, 50, side: 7, pos: new Vector3(500f, 0f, 600f));
         AddRemote(world, 60, side: 8, pos: new Vector3(-500f, 0f, -600f));
 
+        world.RequestDecisionRefresh();
         var snap = world.PublishDecisionSnapshot();
 
         Assert.NotEmpty(snap.Ships);
@@ -169,6 +170,7 @@ public class P636bCadenceSnapshotTests
         const short me = 10;
         var world = WorldWithMyShip(me);
         AddRemote(world, 50, side: 7, pos: new Vector3(500f, 0f, 0f));
+        world.RequestDecisionRefresh();
         var before = world.PublishDecisionSnapshot();
         Assert.All(before.VisibleShips, s => Assert.True(s.ShipId == me || s.ShipId == 50));
     }

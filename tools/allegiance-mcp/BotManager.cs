@@ -50,8 +50,12 @@ internal sealed partial class BotManager : IDisposable
     // cs.Gate (the P635 behaviour), so the P632 harness can measure snapshot-on
     // vs snapshot-off lethality in ONE binary. Everything that "off" touches is
     // a faithful re-enable of the P635 code that P636 replaced.
-    internal static readonly bool DecisionSnapshotEnabled =
-        Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_DECISION_SNAPSHOT") != "off";
+    // P636d — the single source of truth now lives on ClientWorld
+    // (ClientWorld.DecisionSnapshotEnabled) so the CLIENT-CORE receive thread can
+    // honour it directly and make `off` perform ZERO publishes (the fix this task
+    // measures); this tool-side flag delegates to it so the read path and the
+    // publish path can never disagree about the mode.
+    internal static readonly bool DecisionSnapshotEnabled = Allegiance.ClientCore.State.ClientWorld.DecisionSnapshotEnabled;
 
     // P636c — sub-switch to isolate the staleness FIX (default ON): when
     // ALLEGIANCE_BOT_SNAPSHOT_DEADRECKON=off, the aim-critical pose reads return
@@ -1553,6 +1557,29 @@ internal sealed partial class BotManager : IDisposable
                 // from scratch (single decision thread; readers use _engagersSnapshot).
                 _tickEngagers.Clear();
 
+                // P636d — LAZY publish: request a fresh decision snapshot from every
+                // seated bot's receive thread BEFORE this pass reads .Decision. The
+                // request is a single volatile write (no gate, no lock), so it costs
+                // ~nothing on this thread; the receive threads then rebuild their
+                // worlds' snapshots on the next batch — at the decision cadence
+                // instead of a fixed ~25 Hz — and the snapshots this pass reads are
+                // freshly published. Idle/not-seated bots never request, so their
+                // worlds never publish (zero cost), and in `off` mode
+                // (DecisionSnapshotEnabled == false) no request matters because the
+                // receive thread never publishes at all.
+                if (DecisionSnapshotEnabled)
+                {
+                    for (int i = 0; i < snap.Length; i++)
+                    {
+                        var b = snap[i];
+                        if (b.Cs?.World is { } w)
+                        {
+                            if (w.MyShipId is not null) w.RequestDecisionRefresh();
+                            else w.CancelDecisionRefresh();   // not seated → zero publish
+                        }
+                    }
+                }
+
                 // P633 — PHASE A (parallel, read-only): precompute each combat
                 // bot's target-choice INPUTS (its co-located different-side
                 // visible candidates + the friendly-station flag) in PARALLEL
@@ -1752,6 +1779,13 @@ internal sealed partial class BotManager : IDisposable
     private double _lastResourceSampleAt = -1;
     private TimeSpan _prevTotalCpu = TimeSpan.Zero;
     private double _prevCpuFrac;
+    // P636d — rolling snapshot-publish + decode-lag samplers (aggregate across
+    // every world; populated in SampleRuntimeOnce, read under _metricsGate).
+    private long _lastSnapPubCount;
+    private double _lastSnapPubMs;
+    private double _lastSnapPubWall;
+    private double _snapPublishPerSec, _snapPublishMsPerSec;
+    private double _decodeLagMean, _decodeLagP95, _decodeLagMax;
 
     /// <summary>P633 — sample the bot process's CPU/RSS/GC and the aggregate
     /// inbound decode throughput (MB/s) roughly once per second (cheap reads;
@@ -1775,6 +1809,48 @@ internal sealed partial class BotManager : IDisposable
                 / Math.Max(1e-3, (dw - _lastDecodeWall) / 1000.0);
         _lastDecodeBytes = tot;
         _lastDecodeWall = dw;
+
+        // P636d — sample the aggregate snapshot-PUBLISH cost (the receive-thread
+        // work this task removes) and the decode lag across every world. Publish
+        // count/ms are cumulative per world (Interlocked), summed and diffed over
+        // the same ~1 s wall window as decode throughput; decode lag is
+        // now − world.LastAppliedTick64 (the wall stamp of the newest applied
+        // update) aggregated across worlds at this instant.
+        long pubTot = 0; double pubMsTot = 0;
+        var lags = new List<double>();
+        lock (_gate)
+        {
+            foreach (var b in _bots)
+            {
+                if (b.Cs is not { } cs) continue;
+                var w = cs.World;
+                pubTot += w.SnapshotPublishCount;
+                pubMsTot += w.SnapshotPublishMs;
+                long applied = w.LastAppliedTick64;
+                if (applied > 0) lags.Add(Math.Max(0, dw - applied));
+            }
+        }
+        if (_lastSnapPubWall > 0)
+        {
+            double dtSec = Math.Max(1e-3, (dw - _lastSnapPubWall) / 1000.0);
+            _snapPublishPerSec = (pubTot - _lastSnapPubCount) / dtSec;
+            _snapPublishMsPerSec = (pubMsTot - _lastSnapPubMs) / dtSec;
+        }
+        else
+        {
+            _snapPublishPerSec = _snapPublishMsPerSec = 0;
+        }
+        _lastSnapPubCount = pubTot;
+        _lastSnapPubMs = pubMsTot;
+        _lastSnapPubWall = dw;
+        if (lags.Count > 0)
+        {
+            lags.Sort();
+            double sum = 0; foreach (var v in lags) sum += v;
+            _decodeLagMean = sum / lags.Count;
+            _decodeLagP95 = lags[Math.Min(lags.Count - 1, (int)Math.Ceiling(0.95 * lags.Count) - 1)];
+            _decodeLagMax = lags[^1];
+        }
     }
 
     // P598 — re-ready the probe after a mission rotation too: the
@@ -4735,6 +4811,7 @@ internal sealed partial class BotManager : IDisposable
         // metrics gate so a concurrent pass never tears them.
         DecisionMetrics.PassStat pass;
         double wallPeriod, maxGate, decode;
+        double snapPubPerSec, snapPubMsPerSec, dlMean, dlP95, dlMax;
         DecisionMetrics.ResourceSnapshot res;
         lock (_metricsGate)
         {
@@ -4743,6 +4820,9 @@ internal sealed partial class BotManager : IDisposable
             maxGate = _maxGateHoldMs;
             res = _lastResources;
             decode = _decodeMbPerSec;
+            snapPubPerSec = _snapPublishPerSec;
+            snapPubMsPerSec = _snapPublishMsPerSec;
+            dlMean = _decodeLagMean; dlP95 = _decodeLagP95; dlMax = _decodeLagMax;
         }
         int bots = cadence.Count;
         double fleetRate = bots > 0 && wallPeriod > 0 ? bots / (wallPeriod / 1000.0) : 0.0;
@@ -4760,7 +4840,8 @@ internal sealed partial class BotManager : IDisposable
             res,
             maxGate,
             decode,
-            snapAge);
+            snapAge,
+            (snapPubPerSec, snapPubMsPerSec, dlMean, dlP95, dlMax));
     }
 
     // ── P539: real per-bot combat stats (shots / ship hits / kills / pods) ──
@@ -5327,7 +5408,8 @@ public readonly record struct BotPerfReport(
     DecisionMetrics.ResourceSnapshot Resources,
     double MaxGateHoldMs,
     double DecodeMbPerSec,
-    (double MeanMs, double P95Ms, double MaxMs) SnapAgeMs);
+    (double MeanMs, double P95Ms, double MaxMs) SnapAgeMs,
+    (double PublishPerSec, double PublishMsPerSec, double DecodeLagMean, double DecodeLagP95, double DecodeLagMax) SnapshotStats);
 
 /// <summary>P431 — one bot tick's accept-and-translate decision (see
 /// <see cref="BotManager.DecideAcceptTranslate"/>): whether the bot must send a

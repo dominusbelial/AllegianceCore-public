@@ -1010,6 +1010,20 @@ internal static class McpTools
             },
             maxGateHoldMs = ps.MaxGateHoldMs,
             decodeMbPerSec = ps.DecodeMbPerSec,
+            // P636d — the snapshot-PUBLISH cost on the receive threads (publishes/s
+            // and receive-side rebuild ms/s aggregated across every world) and the
+            // decode lag (age of the newest applied update vs wall, mean/p95/max).
+            // When ALLEGIANCE_BOT_DECISION_SNAPSHOT=off both publish rates are 0 —
+            // the fix this task makes to the P636c switch (which only stopped the
+            // read, not the write).
+            snapshotPublishPerSec = ps.SnapshotStats.PublishPerSec,
+            snapshotPublishMsPerSec = ps.SnapshotStats.PublishMsPerSec,
+            decodeLagMs = new
+            {
+                mean = ps.SnapshotStats.DecodeLagMean,
+                p95 = ps.SnapshotStats.DecodeLagP95,
+                max = ps.SnapshotStats.DecodeLagMax,
+            },
             // P539b — per-bot combat stats (real wire/world events, all
             // attributed to the shooter: shots = real fired rounds, hits = the
             // ones THIS bot caused, split by target side + shield/hull).

@@ -75,8 +75,10 @@ public class DecisionSnapshotAllocationTests
 
         // Warm up (JIT + settle the double-buffer pool) before measuring.
         world.Apply(heavy);
+        world.RequestDecisionRefresh();
         world.PublishDecisionSnapshot();
         world.Apply(heavy);
+        world.RequestDecisionRefresh();
         world.PublishDecisionSnapshot();
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -87,6 +89,7 @@ public class DecisionSnapshotAllocationTests
         for (int r = 0; r < Rounds; r++)
         {
             world.Apply(heavy);
+            world.RequestDecisionRefresh();
             world.PublishDecisionSnapshot();
         }
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
