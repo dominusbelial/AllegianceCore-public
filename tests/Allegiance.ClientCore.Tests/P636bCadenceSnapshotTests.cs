@@ -1,3 +1,4 @@
+using System;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
@@ -21,8 +22,16 @@ namespace Allegiance.ClientCore.Tests;
 /// overshoot). The lethality fix routes the scans to the snapshot's compacted
 /// <see cref="DecisionSnapshot.VisibleShips"/> array (behaviour-identical).
 /// </summary>
-public class P636bCadenceSnapshotTests
+// 2026-10-13: the bot decision snapshot now defaults OFF (it cost combat at 200v200 on the
+// real rig, clash30/32 vs clash33). These tests exercise the snapshot itself, so they enable it
+// explicitly and restore the previous value; one collection keeps them from racing on the flag.
+[Collection("DecisionSnapshotFlag")]
+public class P636bCadenceSnapshotTests : IDisposable
 {
+    private readonly bool _savedSnapshotFlag = ClientWorld.DecisionSnapshotEnabled;
+    public P636bCadenceSnapshotTests() => ClientWorld.DecisionSnapshotEnabled = true;
+    public void Dispose() => ClientWorld.DecisionSnapshotEnabled = _savedSnapshotFlag;
+
     // ── LoopCadence: fixed cadence, never busy-spins ──────────────────────
 
     /// <summary>FAILING-FIRST (P636b): a pass that overshoots its period must

@@ -80,7 +80,7 @@ public sealed class ClientWorld
     /// path deterministically; production never reassigns it).
     /// </summary>
     public static bool DecisionSnapshotEnabled { get; set; } =
-        System.Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_DECISION_SNAPSHOT") != "off";
+        string.Equals(System.Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_DECISION_SNAPSHOT"), "on", System.StringComparison.OrdinalIgnoreCase);   // 2026-10-13: default OFF — snapshot on = no kills at 200v200 on the real rig (clash30/32); off fights (clash33)
 
     // ── P636d — LAZY publish coordination + measurement ─────────────────────
     // The snapshot is no longer published on a fixed ~25 Hz timer: the RECEIVE

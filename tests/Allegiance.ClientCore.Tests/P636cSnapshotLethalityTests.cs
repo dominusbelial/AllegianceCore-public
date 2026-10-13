@@ -1,3 +1,4 @@
+using System;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
@@ -31,8 +32,16 @@ namespace Allegiance.ClientCore.Tests;
 /// retention is pinned by P636b's <c>VisibleShips_IsExactlyTheVisibleSubsetOfShips</c>;
 /// here we add the freshness guarantee that restore shots/kills.
 /// </summary>
-public class P636cSnapshotLethalityTests
+// 2026-10-13: the bot decision snapshot now defaults OFF (it cost combat at 200v200 on the
+// real rig, clash30/32 vs clash33). These tests exercise the snapshot itself, so they enable it
+// explicitly and restore the previous value; one collection keeps them from racing on the flag.
+[Collection("DecisionSnapshotFlag")]
+public class P636cSnapshotLethalityTests : IDisposable
 {
+    private readonly bool _savedSnapshotFlag = ClientWorld.DecisionSnapshotEnabled;
+    public P636cSnapshotLethalityTests() => ClientWorld.DecisionSnapshotEnabled = true;
+    public void Dispose() => ClientWorld.DecisionSnapshotEnabled = _savedSnapshotFlag;
+
     /// <summary>
     /// FAILING-FIRST — "snapshot pose equals the live pose within tolerance at the
     /// decision time". A fast scout at 850 u/s crossing the view: at the decision

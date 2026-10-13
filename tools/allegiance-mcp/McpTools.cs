@@ -78,6 +78,7 @@ internal static class McpTools
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
                         tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Homogeneous mode: per-side tech level for side A (P539b/P556). Ignored when a mixed fleet is given (each entry carries its own `tech`)." },
                         tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Homogeneous mode: per-side tech level for side B. Ignored when a mixed fleet is given." },
+                        mode = new { type = "string", @enum = new[] { "march", "arena" }, @default = "march", description = "Battle start mode (Domingo, 2026-10-13). `march` (DEFAULT, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. `arena`: both fleets spawn directly in `target_sector` facing each other for an instant clash (server stress test). The legacy `arena: true` flag is an alias for `mode: \"arena\"`." },
                         arena = new { type = "boolean", @default = false, description = "P539d — arena mode: launch both sides DIRECTLY into `target_sector` at mirrored spots so travel can't decide the outcome. Requires `target_sector`." },
                         staging = new { type = "boolean", @default = true, description = "P539d — travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers until its whole living complement is assembled before advancing." },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind. Homogeneous-mode convenience; mixed-fleet/showcase equip their own mines/missiles natively." },
@@ -425,7 +426,7 @@ internal static class McpTools
         // each other) so travel can't decide the outcome. `staging` (default for a
         // travel scenario with a target sector) makes each side gather at a staging
         // point until its whole complement is assembled before advancing together.
-        bool arena = OptBool(args, "arena");
+        bool arena = IsArenaMode(args);   // `mode: "arena"|"march"` (2026-10-13); legacy `arena: true` still honoured
         bool staging = arena ? false : OptBool(args, "staging", def: targetSector is not null);
         var arenaSpots = new List<(Vector3 Pos, Vector3 Fwd)>();
         string arenaNote = "";
@@ -509,7 +510,7 @@ internal static class McpTools
             targetSector,
             launcher = launcherId is null ? null : Catalog.ResolveLauncherName(launcherId.Value),
             // P539d — the fair-contact mode this scenario ran in.
-            mode = arena ? "arena" : staging ? "travel-with-staging" : "travel",
+            mode = arena ? "arena" : staging ? "march" : "travel",   // "march" = launch home → wings through the alephs → stage → converge
             staging,
             arena,
             arenaNote,
@@ -596,7 +597,7 @@ internal static class McpTools
 
         var (launcherId, launcherRequest) = ResolveLauncherArg(args);
 
-        bool arena = OptBool(args, "arena");
+        bool arena = IsArenaMode(args);   // `mode: "arena"|"march"` (2026-10-13); legacy `arena: true` still honoured
         bool staging = arena ? false : OptBool(args, "staging", def: targetSector is not null);
         int totalA = fleetA.Sum(e => e.Count);
         int totalB = fleetB.Sum(e => e.Count);
@@ -692,6 +693,7 @@ internal static class McpTools
         var (faRep, fbRep) = BuildFleetReport(core, slots);
         var summary = new
         {
+            battleMode = arena ? "arena" : staging ? "march" : "travel",
             mode = showcase ? "showcase" : (fleetA.Count > 1 || fleetB.Count > 1 ? "mixed-fleet" : "mixed-fleet"),
             preset,
             targetSector,
@@ -1290,6 +1292,12 @@ internal static class McpTools
 
     private static int? OptInt(IDictionary<string, JsonElement> a, string key) =>
         a.TryGetValue(key, out var je) ? TryInt(je) : null;
+
+    /// <summary>2026-10-13 — battle start mode: `mode: "arena"` (or the legacy
+    /// `arena: true`) spawns both fleets in the target sector; anything else is
+    /// `march` (launch home → wings through the alephs → stage → converge).</summary>
+    private static bool IsArenaMode(IDictionary<string, JsonElement> args)
+        => string.Equals(OptStr(args, "mode"), "arena", StringComparison.OrdinalIgnoreCase) || OptBool(args, "arena");
 
     private static bool OptBool(IDictionary<string, JsonElement> a, string key, bool def = false) =>
         a.TryGetValue(key, out var je)

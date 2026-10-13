@@ -4401,8 +4401,16 @@ internal sealed partial class BotManager : IDisposable
         double timeout = StagingHoldSeconds + SyncOffsetSeconds(routeIndex, sideMaxHops, mine.Hops);
         bool timedOut = mine.First is { } f0 && now - f0 >= timeout;
 
+        // Domingo (2026-10-13): wings don't have to arrive together. By default each
+        // wing advances as soon as IT is assembled (or times out); set
+        // ALLEGIANCE_BOT_SYNC_WINGS=on to restore the P635 side-wide barrier.
+        if (!SyncWings) return myAssembled || timedOut;
         return (myAssembled && allOthersAssembled) || timedOut;
     }
+
+    /// <summary>P635 side-wide wing barrier switch; default OFF (independent wings).</summary>
+    private static readonly bool SyncWings =
+        string.Equals(Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_SYNC_WINGS"), "on", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// P635 — the hop count of a bot's assigned route (edges = nodes − 1); 0 when
