@@ -55,7 +55,10 @@ public class HelpOverlayTests
     [Fact]
     public void Table_HasTheHelpSelfEntry()
     {
-        Assert.Equal("Toggle this help (you are here)", Find("H").Description);
+        // P623 — native wins: native's Help key is F1 (defaultinputmap.mdl,
+        // (112,8,204) = TK_Help), so the port's Help moved from H to F1 and the
+        // help entry is found under F1.
+        Assert.Equal("Toggle this help (you are here)", Find("F1").Description);
     }
 
     [Fact]

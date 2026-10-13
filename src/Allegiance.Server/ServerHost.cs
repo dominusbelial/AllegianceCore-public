@@ -270,6 +270,27 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.VictimDamagedEvent"/> the world missions raise when a
+    /// sector resolver applies real damage to a ship from a ship launcher (P623
+    /// — the client's TK_TargetHostile attribution, the port of native's
+    /// in-process DamageBucket population). Null by default, matching the IIgcSite
+    /// no-op. Delegate runs on the simulation thread (inside the sector tick that
+    /// resolved the hit), so it reaches <see cref="Server"/>'s sim-thread-owned
+    /// peer map without a lock. Args are the attacking ship's id, the struck
+    /// ship's id, and the damage dealt — the data for the targeted unicast
+    /// <c>VICTIM_DAMAGED(217)</c>.
+    /// </summary>
+    public Action<short, short, float>? VictimDamaged;
+
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.VictimDamagedEvent"/>: raise the
+    /// <see cref="VictimDamaged"/> hook so the owning <see cref="Server"/> can
+    /// unicast a <c>VICTIM_DAMAGED(217)</c> to the struck ship's own peer.</summary>
+    public void VictimDamagedEvent(short attackerShipId, short victimShipId, float damage) =>
+        VictimDamaged?.Invoke(attackerShipId, victimShipId, damage);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.CollisionEvent"/> the world missions raise when a
     /// sector resolver resolves a ship↔ship, ship↔asteroid or ship↔station
     /// collision (P463c). Null by default, matching the IIgcSite no-op. Delegate

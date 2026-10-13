@@ -1810,6 +1810,17 @@ public sealed class Sector : IClusterIgc
                     position2,
                     ord.Launcher);
 
+                // P623 — attribute the hit to the VICTIM's own client so its
+                // TK_TargetHostile window knows who hurt it (the port of native's
+                // same-process DamageBucket population, which a pure-renderer
+                // client cannot do for itself). Raised when a SHIP launcher dealt
+                // real damage (hull or shield); covers both the projectile and
+                // missile single-target calls above (a missile uses this identical
+                // ReceiveDamage call). The server unicasts VictimDamaged to the
+                // victim's peer only — see Server.Combat.BroadcastVictimDamaged.
+                if (shipDr != DamageResult.NoDamage && ord.Launcher is Ship attacker)
+                    attacker.Mission?.Site.VictimDamagedEvent(attacker.Id, ship.Id, ord.Power * gaMul);
+
                 spent.Add(ord);
                 _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
 

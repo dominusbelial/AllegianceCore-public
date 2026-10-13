@@ -278,6 +278,11 @@ public sealed class RecordingIgcSite : IIgcSite
         Wrap(nameof(ProjectileHitEvent), () => _default.ProjectileHitEvent(p, worldImpact, worldNormal, targetRadius, targetId, clusterId, absorbedByShield),
              p, worldImpact, worldNormal, targetRadius, targetId, clusterId, absorbedByShield);
 
+    // ── victim damaged (P623) ──────────────────────────────────────────────
+    public void VictimDamagedEvent(short attackerShipId, short victimShipId, float damage) =>
+        Wrap(nameof(VictimDamagedEvent), () => _default.VictimDamagedEvent(attackerShipId, victimShipId, damage),
+             attackerShipId, victimShipId, damage);
+
     // ── collision event (P463c) ────────────────────────────────────────────
     public void CollisionEvent(Ship party1, Ship? party2, short clusterId, Vector3 impact,
         float jiggle1, float jiggle2) =>

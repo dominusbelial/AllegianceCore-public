@@ -81,6 +81,11 @@ public sealed partial class Game1
                 case LiveProof.AutoActionKind.SelectTarget:
                     _pendingTarget = (LiveProof.AutoTargetKind)a.IntArg;
                     break;
+                case LiveProof.AutoActionKind.TargetClass:
+                    // P623 — frame a CLASS-filtered target once airborne
+                    // (proves the class bracket in a real window).
+                    _pendingTargetClass = a.StrArg;
+                    break;
                 case LiveProof.AutoActionKind.Autoshot:
                     ScheduleAutoshot(a.ShotIndex);
                     break;
@@ -113,6 +118,7 @@ public sealed partial class Game1
 
     private string? _pendingGotoSector;
     private LiveProof.AutoTargetKind? _pendingTarget;
+    private string? _pendingTargetClass;   // P623 — "rel:cls[:dir]" class target spec
     private bool _pendingHeadToDock;
     private bool _pendingExit;
 
@@ -247,6 +253,11 @@ public sealed partial class Game1
             if (tk != LiveProof.AutoTargetKind.None)
                 AutoFrameTarget(tk);
         }
+        if (_pendingTargetClass is { Length: > 0 } clsSpec)
+        {
+            _pendingTargetClass = null;
+            AutoFrameClassTarget(clsSpec);
+        }
         if (_pendingHeadToDock)
         {
             _pendingHeadToDock = false;
@@ -326,6 +337,66 @@ public sealed partial class Game1
         {
             Console.WriteLine($"[autoproof] auto-target {kind}: none in sector — leaving default targeting");
         }
+    }
+
+    /// <summary>P623 — --auto-target-class: drive the real class-filter handler
+    /// (<see cref="SelectClassForKey"/>/<see cref="SelectMajorBaseForKey"/>) for a
+    /// <c>"rel:cls[:dir]"</c> spec so a real-window autoshot proves the class
+    /// bracket. Then autopilot toward it (like <see cref="AutoFrameTarget"/>) so it
+    /// stays framed as the ship drifts. cls may be a ship class
+    /// (bomber/fighter/miner/constructor/lifepod) or majorbase; dir is
+    /// nearest|next|previous (default nearest).</summary>
+    private void AutoFrameClassTarget(string spec)
+    {
+        var parts = spec.Split(':');
+        if (parts.Length < 2) { Console.WriteLine($"[autoproof] --auto-target-class: expected rel:cls[:dir], got '{spec}'"); return; }
+        string relTok = parts[0].Trim().ToLowerInvariant();
+        string clsTok = parts[1].Trim().ToLowerInvariant();
+        var dir = StepDirection.Nearest;
+        if (parts.Length > 2)
+        {
+            dir = parts[2].Trim().ToLowerInvariant() switch
+            {
+                "next" => StepDirection.Next,
+                "previous" or "prev" => StepDirection.Previous,
+                _ => StepDirection.Nearest,
+            };
+        }
+        var rel = relTok switch
+        {
+            "enemy" => TargetRelation.Enemy,
+            "friendly" or "ally" => TargetRelation.Friendly,
+            _ => TargetRelation.Enemy,
+        };
+        if (clsTok == "majorbase")
+        {
+            SelectMajorBaseForKey(rel, $"{relTok} major base", dir);
+        }
+        else
+        {
+            var cls = clsTok switch
+            {
+                "bomber" => TargetClass.Bomber,
+                "fighter" => TargetClass.Fighter,
+                "miner" => TargetClass.Miner,
+                "constructor" => TargetClass.Constructor,
+                "lifepod" => TargetClass.Lifepod,
+                _ => TargetClass.Bomber,
+            };
+            SelectClassForKey(rel, cls, $"{relTok} {clsTok}", dir);
+        }
+        // Tightly-coupled proof shot: capture the frame the INSTANT the class
+        // target is selected (the timed schedule can miss a fast-moving native
+        // miner that warps away between selection and the next scheduled shot).
+        ScheduleAutoshot(-1);   // ShotIndex -1 = outside the timed schedule
+        // Engage the autopilot toward the (just-selected) target so it stays framed.
+        if (_autoTarget is { } t && IsUsableAutopilotTarget(t, MyShipIdSafe()))
+            EngageAutopilotToward(t, "autoproof: frame class target");
+    }
+
+    private short MyShipIdSafe()
+    {
+        lock (_session.Gate) return _session.World.MyShipId ?? -1;
     }
 
     /// <summary>--auto-dock-after: autopilot to the nearest friendly station so

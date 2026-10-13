@@ -85,7 +85,7 @@ commands,TK_TargetFriendlyBaseNearest,Igc/igc.h:310,done,src/Allegiance.ClientCo
 commands,TK_TargetFriendlyBasePrev,Igc/igc.h:311,missing,no friendly-base prev step,3
 commands,TK_TargetCommand,Igc/igc.h:312,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs targets command object,4
 commands,TK_TargetCenter,Igc/igc.h:313,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs mouse-R reticle center,5
-commands,TK_TargetHostile,Igc/igc.h:314,missing,no most-recent-damager target,4
+commands,TK_TargetHostile,Igc/igc.h:314,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 HostileDamageTracker 40s window + src/Allegiance.Core/Wire/VictimDamaged.cs (server→victim attribution),4
 commands,TK_Suicide,Igc/igc.h:315,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs K suicide (rebindable),4
 commands,TK_ToggleGrid,Igc/igc.h:316,missing,no combat-view grid,2
 commands,TK_ToggleCloak,Igc/igc.h:317,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:146,4
@@ -136,43 +136,43 @@ commands,TK_DropCargo,Igc/igc.h:372,missing,no drop-cargo binding/handler,2
 commands,TK_Reload,Igc/igc.h:373,partial,auto-reload on empty (P361); no manual reload key,3
 commands,TK_ExecuteCommand,Igc/igc.h:374,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs accept+autopilot,4
 commands,TK_PauseTM,Igc/igc.h:375,partial,training exists (NATIVE_TRAINING_SCRIPT) but no pause key,2
-commands,TK_TargetEnemyBomber,Igc/igc.h:377,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyFighter,Igc/igc.h:378,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyConstructor,Igc/igc.h:379,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyMiner,Igc/igc.h:380,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyMajorBase,Igc/igc.h:381,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyBomber,Igc/igc.h:382,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyFighter,Igc/igc.h:383,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyConstructor,Igc/igc.h:384,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyMiner,Igc/igc.h:385,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyLifepod,Igc/igc.h:386,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyMajorBase,Igc/igc.h:387,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyBomber,Igc/igc.h:377,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyFighter,Igc/igc.h:378,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyConstructor,Igc/igc.h:379,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyMiner,Igc/igc.h:380,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyMajorBase,Igc/igc.h:381,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyBomber,Igc/igc.h:382,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyFighter,Igc/igc.h:383,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyConstructor,Igc/igc.h:384,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyMiner,Igc/igc.h:385,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyLifepod,Igc/igc.h:386,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyMajorBase,Igc/igc.h:387,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
 commands,TK_TargetFlag,Igc/igc.h:388,missing,no flag target,3
 commands,TK_TargetArtifact,Igc/igc.h:389,missing,no artifact target,3
-commands,TK_TargetEnemyBomberNearest,Igc/igc.h:391,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyFighterNearest,Igc/igc.h:392,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyConstructorNearest,Igc/igc.h:393,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyMinerNearest,Igc/igc.h:394,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyMajorBaseNearest,Igc/igc.h:395,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyBomberNearest,Igc/igc.h:396,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyFighterNearest,Igc/igc.h:397,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyConstructorNearest,Igc/igc.h:398,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyMinerNearest,Igc/igc.h:399,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyLifepodNearest,Igc/igc.h:400,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyMajorBaseNearest,Igc/igc.h:401,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyBomberNearest,Igc/igc.h:391,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyFighterNearest,Igc/igc.h:392,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyConstructorNearest,Igc/igc.h:393,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyMinerNearest,Igc/igc.h:394,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyMajorBaseNearest,Igc/igc.h:395,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyBomberNearest,Igc/igc.h:396,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyFighterNearest,Igc/igc.h:397,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyConstructorNearest,Igc/igc.h:398,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyMinerNearest,Igc/igc.h:399,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyLifepodNearest,Igc/igc.h:400,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyMajorBaseNearest,Igc/igc.h:401,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
 commands,TK_TargetFlagNearest,Igc/igc.h:402,missing,no flag target,3
 commands,TK_TargetArtifactNearest,Igc/igc.h:403,missing,no artifact target,3
-commands,TK_TargetEnemyBomberPrev,Igc/igc.h:405,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyFighterPrev,Igc/igc.h:406,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyConstructorPrev,Igc/igc.h:407,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyMinerPrev,Igc/igc.h:408,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetEnemyMajorBasePrev,Igc/igc.h:409,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyBomberPrev,Igc/igc.h:410,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyFighterPrev,Igc/igc.h:411,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyConstructorPrev,Igc/igc.h:412,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyMinerPrev,Igc/igc.h:413,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyLifepodPrev,Igc/igc.h:414,missing,per-class target step not implemented (generic cycle only),3
-commands,TK_TargetFriendlyMajorBasePrev,Igc/igc.h:415,missing,per-class target step not implemented (generic cycle only),3
+commands,TK_TargetEnemyBomberPrev,Igc/igc.h:405,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyFighterPrev,Igc/igc.h:406,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyConstructorPrev,Igc/igc.h:407,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyMinerPrev,Igc/igc.h:408,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetEnemyMajorBasePrev,Igc/igc.h:409,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyBomberPrev,Igc/igc.h:410,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyFighterPrev,Igc/igc.h:411,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyConstructorPrev,Igc/igc.h:412,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyMinerPrev,Igc/igc.h:413,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyLifepodPrev,Igc/igc.h:414,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
+commands,TK_TargetFriendlyMajorBasePrev,Igc/igc.h:415,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
 commands,TK_TargetFlagPrev,Igc/igc.h:416,missing,no flag target,2
 commands,TK_TargetArtifactPrev,Igc/igc.h:417,missing,no artifact target,2
 commands,TK_TargetWarp,Igc/igc.h:419,missing,no warp target,3

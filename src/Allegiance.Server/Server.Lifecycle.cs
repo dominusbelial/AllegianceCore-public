@@ -753,6 +753,7 @@ public sealed partial class Server
         _host.MissileCreated = BroadcastFireMissile;            // P90: wire the site's MissileCreatedEvent to the wire broadcast
         _host.MissileDestroyed = BroadcastMissileDestroyed;     // P90: wire the site's MissileDestroyedEvent to the wire broadcast
         _host.ProjectileHit = BroadcastProjectileHullHit;      // P364: wire the site's ProjectileHitEvent to the wire broadcast
+        _host.VictimDamaged = BroadcastVictimDamaged;          // P623: wire the site's VictimDamagedEvent to the targeted unicast
         _host.Collision = BroadcastCollision;                  // P463c: wire the site's CollisionEvent to the wire broadcast
         _host.LoadoutChange = BroadcastLoadoutChange;          // P173: wire the site's LoadoutChangeEvent to the wire broadcast
         _host.AutoReload = BroadcastAutoReload;                // P361: wire the site's AutoReloadTriggered to the wire broadcast

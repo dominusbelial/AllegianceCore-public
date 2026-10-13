@@ -172,6 +172,37 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// P623 — unicast a real <c>VICTIM_DAMAGED(217)</c> <see cref="VictimDamaged"/>
+    /// to the STRUCK ship's own peer alone: the port's wire analogue of native's
+    /// in-process DamageBucket population (which a pure-renderer client cannot do
+    /// for itself). Unlike every other damage message here, this is a single-peer
+    /// targeted send — only the victim needs to know who is hurting it, so it is
+    /// zero-cost to every other client and leaks nothing beyond the participant.
+    /// <paramref name="attackerShipId"/>/<paramref name="victimShipId"/> are the
+    /// ship ids and <paramref name="damage"/> the hull/shield amount the attacker's
+    /// round dealt (drives the client's severity-ranked hostile window). Runs on
+    /// the sim thread (same one that owns <c>_peerShips</c>), so no extra locking —
+    /// mirroring <see cref="BroadcastProjectileHullHit"/>.
+    /// </summary>
+    private void BroadcastVictimDamaged(short attackerShipId, short victimShipId, float damage)
+    {
+        var msg = new VictimDamaged { AttackerId = attackerShipId, Damage = damage };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            if (kv.Value.Ship.Id == victimShipId)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+                break;   // one controlling peer per ship — unicast, not broadcast
+            }
+        }
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[victim-damaged] ship {victimShipId} took {damage:0.##} from ship {attackerShipId} -> VICTIM_DAMAGED(217) -> {n} peer(s) (victim only)");
+    }
+
+    /// <summary>
     /// Handle a collision that a sector resolver just resolved
     /// (<see cref="ServerHost.CollisionEvent"/>, raised from
     /// <c>Sector.ResolveShipShipCollisions</c> /

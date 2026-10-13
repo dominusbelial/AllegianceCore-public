@@ -56,6 +56,13 @@ public sealed class AutoProofPlan
     /// <summary>Framing target after launch (<c>--auto-target</c>).</summary>
     public AutoTargetKind Target = AutoTargetKind.None;
 
+    /// <summary>P623 — CLASS-filtered target to frame once airborne
+    /// (<c>--auto-target-class rel:cls[:dir]</c>), e.g. <c>enemy:bomber</c>,
+    /// <c>enemy:miner</c>, <c>friendly:miner:nearest</c>. Empty = off. Drives the
+    /// real class-filter handler (<see cref="SelectClassForKey"/>/MajorBase) so a
+    /// real-window autoshot can prove the class bracket. Pure client-side.</summary>
+    public string AutoTargetClass = "";
+
     /// <summary>Initial camera mode (<c>--camera mode</c>): cockpit | chase |
     /// flyby | flybytarget | orbit | target | base | station | override.</summary>
     public string Camera = "cockpit";
@@ -183,6 +190,15 @@ public sealed class AutoProofPlan
             else if (a.StartsWith("--auto-target=", StringComparison.Ordinal))
             {
                 plan.Target = ParseTarget(a.Substring("--auto-target=".Length));
+            }
+            else if (a == "--auto-target-class")
+            {
+                if (i + 1 < args.Count && !args[i + 1].StartsWith('-'))
+                    plan.AutoTargetClass = args[++i];
+            }
+            else if (a.StartsWith("--auto-target-class=", StringComparison.Ordinal))
+            {
+                plan.AutoTargetClass = a.Substring("--auto-target-class=".Length);
             }
             else if (a == "--camera")
             {
@@ -324,7 +340,7 @@ public sealed class AutoProofPlan
     public bool AnyActive =>
         AutoSide.HasValue || AutoReady || AutoLaunchRequested ||
         AutoCredits ||
-        GotoSector.Length > 0 || Target != AutoTargetKind.None ||
+        GotoSector.Length > 0 || Target != AutoTargetKind.None || AutoTargetClass.Length > 0 ||
         HideHud || AutoshotSeconds.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
         AutoSuicideAt.Length > 0 ||

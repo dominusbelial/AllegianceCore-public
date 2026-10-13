@@ -39,6 +39,11 @@ public static class InputActionCatalog
     private static KeyBinding S(Keys k) => new(k, InputModifiers.Shift);
     private static KeyBinding C(Keys k) => new(k, InputModifiers.Control);
     private static KeyBinding A(Keys k) => new(k, InputModifiers.Alt);
+    /// <summary>Unbound — a rebindable command with no default key (native's
+    /// defaultinputmap.mdl gives no key to TK_TargetHostile, TK_Target{Enemy|Friendly}
+    /// {Fighter|Constructor|MajorBase}*, &amp;c.; they exist as commands, listed in
+    /// help, and the user may bind them via F6).</summary>
+    private static KeyBinding U() => new(Keys.None, InputModifiers.None);
 
     private static readonly InputActionDef[]
         D = new InputActionDef[]
@@ -74,7 +79,7 @@ public static class InputActionCatalog
         new("ToggleCloak", "WEAPONS", "Toggle cloak [TK_ToggleCloak]", K(Keys.F), K(Keys.G)),
         new("Ripcord", "WEAPONS", "Ripcord to selected starmap sector / cancel [TK_Ripcord]", K(Keys.L), C(Keys.R)),
         new("DropMine", "WEAPONS", "Drop mine / probe [TK_DropMine]", K(Keys.N), K(Keys.C)),
-        new("Suicide", "WEAPONS", "Suicide [TK_Suicide] - ejects from a turret as gunner", K(Keys.K), new KeyBinding(Keys.D, InputModifiers.Shift | InputModifiers.Control)),
+        new("Suicide", "WEAPONS", "Suicide [TK_Suicide] - ejects from a turret as gunner", A(Keys.K), new KeyBinding(Keys.D, InputModifiers.Shift | InputModifiers.Control)),
         new("PromoteTurret1", "WEAPONS", "Promote turret gunner seat 1 to command [TK_PromoteTurret1]", K(Keys.D1), K(Keys.D1)),
         new("PromoteTurret2", "WEAPONS", "Promote turret gunner seat 2 to command [TK_PromoteTurret2]", K(Keys.D2), K(Keys.D2)),
         new("PromoteTurret3", "WEAPONS", "Promote turret gunner seat 3 to command [TK_PromoteTurret3]", K(Keys.D3), K(Keys.D3)),
@@ -89,6 +94,51 @@ public static class InputActionCatalog
         new("TargetFriendlyBaseNearest", "TARGETING / AUTOPILOT", "Nearest friendly base, ANY sector (repeat: next) [TK_TargetFriendlyBaseNearest]", S(Keys.Z), S(Keys.U)),
         new("TargetNothing", "TARGETING / AUTOPILOT", "Target nothing (clear target / autopilot) [TK_TargetNothing]", K(Keys.OemSemicolon), K(Keys.OemSemicolon)),
         new("TargetCenter", "TARGETING / AUTOPILOT", "Target center (nearest to reticle) [TK_TargetCenter]", K(Keys.OemQuotes), K(Keys.OemQuotes)),
+        // P623 — CLASS-FILTERED targeting: the 33 TK_Target{Enemy|Friendly}
+        // {Bomber|Fighter|Miner|Constructor|Lifepod|MajorBase}[Nearest|Prev]
+        // commands (igc.h:377-415). Each class resolves to a Habm/Sabm ability-bit
+        // filter (WinTrek.cpp:10162-10331 → FindableModel common.cpp:291-321), and
+        // each command steps the selection per native's nearest/next/previous triad
+        // (TrekFindTarget WinTrek.cpp:8963-8969). Default keys follow native's
+        // defaultinputmap.mdl where it assigns one (O/I/K/H/J × plain/Shift/Ctrl =
+        // next/nearest/prev); the classes native leaves unbound (fighter,
+        // constructor, major base) are registered here as rebindable commands.
+        // Native wins the occupied keys (H/I/J/K) — see the moved bindings in the
+        // P623 report (Help→F1, InvertMouse→Ctrl+M, ToggleMusic→Alt+J, Suicide→Alt+K).
+        new("TargetEnemyBomber", "TARGETING / AUTOPILOT", "Target next enemy bomber [TK_TargetEnemyBomber]", K(Keys.O), K(Keys.O)),
+        new("TargetEnemyBomberNearest", "TARGETING / AUTOPILOT", "Target nearest enemy bomber [TK_TargetEnemyBomberNearest]", S(Keys.O), S(Keys.O)),
+        new("TargetEnemyBomberPrev", "TARGETING / AUTOPILOT", "Target previous enemy bomber [TK_TargetEnemyBomberPrev]", C(Keys.O), C(Keys.O)),
+        new("TargetEnemyFighter", "TARGETING / AUTOPILOT", "Target next enemy fighter [TK_TargetEnemyFighter]", U(), null),
+        new("TargetEnemyFighterNearest", "TARGETING / AUTOPILOT", "Target nearest enemy fighter [TK_TargetEnemyFighterNearest]", U(), null),
+        new("TargetEnemyFighterPrev", "TARGETING / AUTOPILOT", "Target previous enemy fighter [TK_TargetEnemyFighterPrev]", U(), null),
+        new("TargetEnemyConstructor", "TARGETING / AUTOPILOT", "Target next enemy constructor [TK_TargetEnemyConstructor]", U(), null),
+        new("TargetEnemyConstructorNearest", "TARGETING / AUTOPILOT", "Target nearest enemy constructor [TK_TargetEnemyConstructorNearest]", U(), null),
+        new("TargetEnemyConstructorPrev", "TARGETING / AUTOPILOT", "Target previous enemy constructor [TK_TargetEnemyConstructorPrev]", U(), null),
+        new("TargetEnemyMiner", "TARGETING / AUTOPILOT", "Target next enemy miner [TK_TargetEnemyMiner]", K(Keys.I), K(Keys.I)),
+        new("TargetEnemyMinerNearest", "TARGETING / AUTOPILOT", "Target nearest enemy miner [TK_TargetEnemyMinerNearest]", S(Keys.I), S(Keys.I)),
+        new("TargetEnemyMinerPrev", "TARGETING / AUTOPILOT", "Target previous enemy miner [TK_TargetEnemyMinerPrev]", C(Keys.I), C(Keys.I)),
+        new("TargetEnemyMajorBase", "TARGETING / AUTOPILOT", "Target next enemy major base, ANY sector [TK_TargetEnemyMajorBase]", U(), null),
+        new("TargetEnemyMajorBaseNearest", "TARGETING / AUTOPILOT", "Target nearest enemy major base [TK_TargetEnemyMajorBaseNearest]", U(), null),
+        new("TargetEnemyMajorBasePrev", "TARGETING / AUTOPILOT", "Target previous enemy major base [TK_TargetEnemyMajorBasePrev]", U(), null),
+        new("TargetFriendlyBomber", "TARGETING / AUTOPILOT", "Target next friendly bomber [TK_TargetFriendlyBomber]", K(Keys.K), K(Keys.K)),
+        new("TargetFriendlyBomberNearest", "TARGETING / AUTOPILOT", "Target nearest friendly bomber [TK_TargetFriendlyBomberNearest]", S(Keys.K), S(Keys.K)),
+        new("TargetFriendlyBomberPrev", "TARGETING / AUTOPILOT", "Target previous friendly bomber [TK_TargetFriendlyBomberPrev]", C(Keys.K), C(Keys.K)),
+        new("TargetFriendlyFighter", "TARGETING / AUTOPILOT", "Target next friendly fighter [TK_TargetFriendlyFighter]", U(), null),
+        new("TargetFriendlyFighterNearest", "TARGETING / AUTOPILOT", "Target nearest friendly fighter [TK_TargetFriendlyFighterNearest]", U(), null),
+        new("TargetFriendlyFighterPrev", "TARGETING / AUTOPILOT", "Target previous friendly fighter [TK_TargetFriendlyFighterPrev]", U(), null),
+        new("TargetFriendlyConstructor", "TARGETING / AUTOPILOT", "Target next friendly constructor [TK_TargetFriendlyConstructor]", U(), null),
+        new("TargetFriendlyConstructorNearest", "TARGETING / AUTOPILOT", "Target nearest friendly constructor [TK_TargetFriendlyConstructorNearest]", U(), null),
+        new("TargetFriendlyConstructorPrev", "TARGETING / AUTOPILOT", "Target previous friendly constructor [TK_TargetFriendlyConstructorPrev]", U(), null),
+        new("TargetFriendlyMiner", "TARGETING / AUTOPILOT", "Target next friendly miner [TK_TargetFriendlyMiner]", K(Keys.H), K(Keys.H)),
+        new("TargetFriendlyMinerNearest", "TARGETING / AUTOPILOT", "Target nearest friendly miner [TK_TargetFriendlyMinerNearest]", S(Keys.H), S(Keys.H)),
+        new("TargetFriendlyMinerPrev", "TARGETING / AUTOPILOT", "Target previous friendly miner [TK_TargetFriendlyMinerPrev]", C(Keys.H), C(Keys.H)),
+        new("TargetFriendlyLifepod", "TARGETING / AUTOPILOT", "Target next friendly lifepod [TK_TargetFriendlyLifepod]", K(Keys.J), K(Keys.J)),
+        new("TargetFriendlyLifepodNearest", "TARGETING / AUTOPILOT", "Target nearest friendly lifepod [TK_TargetFriendlyLifepodNearest]", S(Keys.J), S(Keys.J)),
+        new("TargetFriendlyLifepodPrev", "TARGETING / AUTOPILOT", "Target previous friendly lifepod [TK_TargetFriendlyLifepodPrev]", C(Keys.J), C(Keys.J)),
+        new("TargetFriendlyMajorBase", "TARGETING / AUTOPILOT", "Target next friendly major base, ANY sector [TK_TargetFriendlyMajorBase]", U(), null),
+        new("TargetFriendlyMajorBaseNearest", "TARGETING / AUTOPILOT", "Target nearest friendly major base [TK_TargetFriendlyMajorBaseNearest]", U(), null),
+        new("TargetFriendlyMajorBasePrev", "TARGETING / AUTOPILOT", "Target previous friendly major base [TK_TargetFriendlyMajorBasePrev]", U(), null),
+        new("TargetHostile", "TARGETING / AUTOPILOT", "Target hostile (who last damaged you) [TK_TargetHostile]", U(), null),
 
         // -- QUEUED ORDERS (RECEIVED COMMAND) --
         new("AcceptCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Accept the pending order [TK_AcceptCommand]", K(Keys.Home), K(Keys.OemOpenBrackets)),
@@ -111,9 +161,9 @@ public static class InputActionCatalog
         new("OrbitCam", "CAMERA / VIEW", "Orbit spectator camera (locks a ship/station) [P612]", K(Keys.F9), null),
         new("Director", "CAMERA / VIEW", "Director b-roll camera (opt-in, hides HUD) [P580]", K(Keys.F2), null),
         new("FollowCam", "CAMERA / VIEW", "Spectator-follow camera [P580]", K(Keys.F3), null),
-        new("ToggleHud", "CAMERA / VIEW", "Toggle HUD (hide/show overlays for clean frames) [P612]", K(Keys.F1), null),
+        new("ToggleHud", "CAMERA / VIEW", "Toggle HUD (hide/show overlays for clean frames) [P612]", C(Keys.F1), null),
         new("ToggleMouse", "CAMERA / VIEW", "Mouse flight toggle [TK_ToggleMouse]", K(Keys.M), K(Keys.V)),
-        new("InvertMouse", "CAMERA / VIEW", "Invert mouse pitch (session only)", K(Keys.I), null),
+        new("InvertMouse", "CAMERA / VIEW", "Invert mouse pitch (session only)", C(Keys.M), null),
         new("ToggleStarmap", "CAMERA / VIEW", "Expand/collapse the always-on mini-map (full starmap)", K(Keys.Tab), null),
         new("SelectSectorPrev", "CAMERA / VIEW", "Starmap: previous sector (with map expanded)", K(Keys.OemComma), null),
         new("SelectSectorNext", "CAMERA / VIEW", "Starmap: next sector (with map expanded)", K(Keys.OemPeriod), null),
@@ -126,13 +176,13 @@ public static class InputActionCatalog
         new("MouseSensitivityUp", "CAMERA / VIEW", "Mouse flight: sensitivity up", K(Keys.D8), null),
         new("Scoreboard", "CAMERA / VIEW", "In-mission scoreboard (kills / deaths)", K(Keys.B), null),
         new("PilotInfo", "CAMERA / VIEW", "Pilot info (your own live stats)", K(Keys.P), null),
-        new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.H), K(Keys.F1)),
+        new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.F1), K(Keys.F1)),
         new("OpenKeyBindings", "CAMERA / VIEW", "Open Controls (rebind keys) [P625]", K(Keys.F6), null),
         new("ScreenShot", "CAMERA / VIEW", "Take a screen shot [TK_ScrnShot]", K(Keys.PrintScreen), K(Keys.PrintScreen)),
         new("Quit", "CAMERA / VIEW", "Quit game", new KeyBinding(Keys.F4, InputModifiers.Alt), null),
 
         // -- MUSIC (moved off the F-row per Domingo; Ctrl + = / - is free) --
-        new("ToggleMusic", "MUSIC", "Toggle background music [idmToggleMusic]", K(Keys.J), null),
+        new("ToggleMusic", "MUSIC", "Toggle background music [idmToggleMusic]", A(Keys.J), null),
         new("MusicVolumeUp", "MUSIC", "Music volume up [idmMusicVolumeUp]", C(Keys.OemPlus), null),
         new("MusicVolumeDown", "MUSIC", "Music volume down [idmMusicVolumeDown]", C(Keys.OemMinus), null),
 

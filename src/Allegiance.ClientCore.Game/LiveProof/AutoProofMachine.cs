@@ -21,6 +21,7 @@ public enum AutoActionKind
     LaunchHull,     // in the hangar: select StrArg hull (or keep current) + launch
     GotoSector,     // P541 starmap goto to StrArg sector (name or id)
     SelectTarget,   // IntArg = (int)AutoTargetKind — frame nearest of that kind
+    TargetClass,    // P623 — StrArg = "rel:cls[:dir]" class-filtered target
     Autoshot,       // real-backbuffer screenshot; ShotIndex = in-flight schedule index
     HeadToDock,     // engage autopilot to the home friendly station (server docks us)
     SweepHull,      // docked hangar preview: IntArg = hull step (0 = shot current, >0 = cycle+hshot)
@@ -62,6 +63,7 @@ public sealed class AutoProofMachine
     private bool _launchEmitted;
     private bool _gotoEmitted;
     private bool _targetEmitted;
+    private bool _targetClassEmitted;   // P623
     private bool _dockHeadingEmitted;
     private bool _sweepStarted;
     private bool _sweepDone;
@@ -193,11 +195,23 @@ public sealed class AutoProofMachine
             _targetEmitted = true;
             _due.Enqueue(new AutoAction(AutoActionKind.SelectTarget, IntArg: (int)_plan.Target));
         }
+        // P623 — emit the class-filtered target selection once airborne.
+        if (_plan.AutoTargetClass.Length > 0 && !_targetClassEmitted)
+        {
+            _targetClassEmitted = true;
+            _due.Enqueue(new AutoAction(AutoActionKind.TargetClass, StrArg: _plan.AutoTargetClass));
+        }
 
-        // Timed after-launch autoshots.
+        // Timed after-launch autoshots. When a class-filtered target is set,
+        // re-fire the class selection just before each shot so the frame is
+        // captured right after a fresh class press (gives the bots time to
+        // settle/decloak and become targetable — the once-at-launch press can
+        // otherwise fire before anything is visible).
         while (_shotIndex < _plan.AutoshotSeconds.Length
                && t >= _plan.AutoshotSeconds[_shotIndex])
         {
+            if (_plan.AutoTargetClass.Length > 0)
+                _due.Enqueue(new AutoAction(AutoActionKind.TargetClass, StrArg: _plan.AutoTargetClass));
             _due.Enqueue(new AutoAction(AutoActionKind.Autoshot,
                 IntArg: (int)(t * 1000.0), ShotIndex: _shotIndex));
             _shotIndex++;

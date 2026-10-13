@@ -281,6 +281,9 @@ public sealed class ClientWorld
     private readonly List<ChaffEntity> _chaff = new();
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly List<HullHitEntity> _hullHits = new();   // P364 impact sparks
+    // P623 — VICTIM_DAMAGED(217) attributions (attacker id, damage, ms) for the
+    // local ship's TK_TargetHostile window; drained by Game1 once per frame.
+    private readonly List<(short AttackerId, float Damage, long Ms)> _victimDamages = new();
     // P463 — one-shot hit SOUND events (my/other × shield/hull) drained into the
     // audio manager each frame; kept separate from _hullHits because the renderer
     // drains those in Draw (after audio runs in Update) and must not lose them.
@@ -892,6 +895,17 @@ public sealed class ClientWorld
     {
         var taken = new List<HullHitEntity>(_hullHits);
         _hullHits.Clear();
+        return taken;
+    }
+
+    /// <summary>P623 — VICTIM_DAMAGED(217) attributions buffered since the last
+    /// drain: who last hurt the local ship and by how much, fed to Game1's
+    /// TK_TargetHostile tracker (the port of native's DamageBucket population).
+    /// Drained atomically under the gate lock exactly once per frame.</summary>
+    public List<(short AttackerId, float Damage, long Ms)> TakeNewVictimDamages()
+    {
+        var taken = new List<(short, float, long)>(_victimDamages);
+        _victimDamages.Clear();
         return taken;
     }
 
@@ -1548,6 +1562,11 @@ public sealed class ClientWorld
                 // P463c — two bodies collided in a sector; buffer the collision
                 // for the audio pass (positional sound + own-ship jiggle feed).
                 Apply(collision);
+                break;
+            case VictimDamaged victimDamaged:
+                // P623 — the local ship took damage from a ship; buffer the
+                // attribution (attacker id + damage) for TK_TargetHostile.
+                Apply(victimDamaged);
                 break;
             case StationDestroyed stationDestroyed:
                 Apply(stationDestroyed);
@@ -2426,6 +2445,16 @@ public sealed class ClientWorld
         // in Update without racing the renderer's Draw-time drain of _hullHits.
         _hitSoundEvents.Add(new HitSoundEntity(hit.TargetId, hit.ClusterId, hit.AbsorbedByShield, hit.SourceId, hit.Position));
         if (_hitSoundEvents.Count > MaxHitSoundEvents) _hitSoundEvents.RemoveAt(0);
+    }
+
+    /// <summary>P623 — buffer a VICTIM_DAMAGED(217) attribution (who hurt the
+    /// local ship and by how much) for Game1's TK_TargetHostile tracker. Targeted
+    /// unicast to the victim's own peer only (see VictimDamaged).</summary>
+    private void Apply(VictimDamaged v)
+    {
+        if (v.Damage <= 0f) return;
+        _victimDamages.Add((v.AttackerId, v.Damage, Environment.TickCount64));
+        if (_victimDamages.Count > 128) _victimDamages.RemoveAt(0);
     }
 
     /// <summary>P463c — buffer a resolved collision for the audio pass: the

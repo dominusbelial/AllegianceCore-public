@@ -467,25 +467,103 @@ public sealed partial class Game1
         return true;
     }
 
-    /// <summary>
-    /// P415 — the pure wrap-around cycle step over a nearest-first ordered list of
-    /// matching candidates: returns the candidate AFTER <paramref name="current"/>
-    /// (by kind+id) when it is present, else the nearest (<c>ordered[0]</c>); never
-    /// steps past the list end (wraps). Mirrors <see cref="CycleTarget"/>'s shape
-    /// but is restricted to whatever list the caller passes — for the filtered
-    /// family that is the matching-only list, so a cycle can never select a
-    /// non-matching candidate. Headless + static for unit testing.
-    /// </summary>
-    internal static AutopilotTarget StepCycle(IReadOnlyList<AutopilotTarget> ordered, AutopilotTarget? current)
+    /// <summary>P623 — the step DIRECTION of a filtered-target command: native
+    /// ships THREE forms of every Targeting family command — a plain "next"
+    /// (<c>TK_Target{Friendly|Enemy}Bomber</c> &amp;co, cycles forward through the
+    /// matching list), a Nearest form (<c>…Nearest</c>, jumps to the closest
+    /// match), and a Previous form (<c>…Prev</c>, steps backward). TrekFindTarget
+    /// encodes the distinction by OR-ing <c>c_ttPrevious</c> vs <c>c_ttNearest</c>
+    /// into the mask (WinTrek.cpp:8963-8969); FindTarget then walks the list
+    /// forward (<c>next()</c>) or backward (<c>txen()</c>) from the current target,
+    /// or forces nearest when there is no current target (common.cpp:505-510,
+    /// 611-614). This port mirrors that as an explicit direction on the step.</summary>
+    internal enum StepDirection
     {
-        if (current is { } c)
+        /// <summary>Jump to the single closest matching candidate (native
+        /// <c>c_ttNearest</c> — picks the globally nearest, ignores current).</summary>
+        Nearest,
+        /// <summary>Advance one matching candidate past the current (native plain
+        /// "next", <c>mLink->next()</c>; wraps; nearest when no valid current).</summary>
+        Next,
+        /// <summary>Retreat one matching candidate before the current (native
+        /// <c>c_ttPrevious</c>, <c>mLink->txen()</c>; wraps; nearest when none).</summary>
+        Previous,
+    }
+
+    /// <summary>
+    /// P415/P623 — the pure wrap-around cycle step over a nearest-first ordered
+    /// list of matching candidates. <see cref="StepDirection.Next"/> returns the
+    /// candidate AFTER <paramref name="current"/> (by kind+id) when it is present,
+    /// <see cref="StepDirection.Previous"/> the one BEFORE, <see cref="StepDirection.Nearest"/>
+    /// always the head (the closest); any direction falls back to the nearest
+    /// (<c>ordered[0]</c>) when the current selection is absent — native's
+    /// <c>FindTarget</c> forces <c>c_ttNearest</c> in exactly that case
+    /// (common.cpp:505-510). Never steps past the list end (wraps). Restricted to
+    /// whatever list the caller passes — for the filtered family that is the
+    /// matching-only list, so a step can never select a non-matching candidate.
+    /// Headless + static for unit testing.
+    /// </summary>
+    internal static AutopilotTarget StepCycle(IReadOnlyList<AutopilotTarget> ordered, AutopilotTarget? current,
+        StepDirection dir = StepDirection.Next)
+    {
+        if (current is { } c && dir != StepDirection.Nearest)
         {
             for (int i = 0; i < ordered.Count; i++)
                 if (ordered[i].Kind == c.Kind && ordered[i].Id == c.Id)
-                    return ordered[(i + 1) % ordered.Count];
+                    return dir == StepDirection.Previous
+                        ? ordered[(i - 1 + ordered.Count) % ordered.Count]
+                        : ordered[(i + 1) % ordered.Count];
         }
         return ordered[0];
     }
+
+    /// <summary>P623 — the hull/station CLASS a Targeting-family command filters
+    /// to. Native resolves each class to an ability-bitmask argument handed to
+    /// <c>TrekFindTarget</c> (WinTrek.cpp:10162-10331) and tested against the
+    /// candidate's <c>HabmCapabilities</c>/<c>SabmCapabilities</c> by
+    /// <see cref="FindableModel"/> (common.cpp:291-321) via
+    /// <c>pht->HasCapability(abm)</c> — "shares at least one ability bit".</summary>
+    internal enum TargetClass
+    {
+        /// <summary>Bomber — native <c>c_habmThreatToStation</c> (WinTrek.cpp:10166,10301).</summary>
+        Bomber,
+        /// <summary>Fighter — native <c>c_habmFighter</c> (WinTrek.cpp:10174,10307).</summary>
+        Fighter,
+        /// <summary>Miner — native <c>c_habmMiner</c> (WinTrek.cpp:10182,10315).</summary>
+        Miner,
+        /// <summary>Constructor — native <c>c_habmBuilder</c> (WinTrek.cpp:10190,10323).</summary>
+        Constructor,
+        /// <summary>Lifepod — native <c>c_habmLifepod</c> (WinTrek.cpp:10331, friendly only).</summary>
+        Lifepod,
+    }
+
+    /// <summary>P623 — the <see cref="HabmCapabilities"/> ability bit a
+    /// <see cref="TargetClass"/> filter tests against (native's abm argument,
+    /// WinTrek.cpp class cases). Pure + static.</summary>
+    internal static short ClassRoleBits(TargetClass cls) => cls switch
+    {
+        TargetClass.Bomber => DataHullTypeIGC.HabmThreatToStation,
+        TargetClass.Fighter => DataHullTypeIGC.HabmFighter,
+        TargetClass.Miner => DataHullTypeIGC.HabmMiner,
+        TargetClass.Constructor => DataHullTypeIGC.HabmBuilder,
+        TargetClass.Lifepod => DataHullTypeIGC.HabmLifepod,
+        _ => 0,
+    };
+
+    /// <summary>P623 — build the <see cref="TargetFilterSpec"/> for a
+    /// ship-CLASS command: <see cref="TargetRelation"/> (enemy/friendly) + the
+    /// class's <see cref="HabmCapabilities"/> role bit, ships only (native
+    /// <c>c_ttShip</c>), mirroring the native abm case per class
+    /// (WinTrek.cpp:10162-10331). Pure + static.</summary>
+    internal static TargetFilterSpec ClassFilterSpec(TargetRelation relation, TargetClass cls)
+        => new(relation, ClassRoleBits(cls));
+
+    /// <summary>P623 — build the <see cref="TargetFilterSpec"/> for a MAJOR-BASE
+    /// command: enemy/friendly stations ANY cluster flagged as a victory
+    /// objective (native <c>c_ttStation | c_ttAnyCluster | c_sabmFlag</c>,
+    /// WinTrek.cpp:10202-10206 / 10266-10270). Pure + static.</summary>
+    internal static TargetFilterSpec MajorBaseSpec(TargetRelation relation)
+        => new(relation, DataStationTypeIGC.SabmFlag, StationOnly: true);
 
     // ═══════════════════════════════════════════════════════════════════
     // P587 — native BASE targeting (TK_TargetFriendlyBase/EnemyBase and the
@@ -685,18 +763,20 @@ public sealed partial class Game1
     }
 
     /// <summary>
-    /// P415 — the live wrapper: gather the local player's same-sector candidates
+    /// P415/P623 — the live wrapper: gather the local player's same-sector candidates
     /// (with P415 side/role classification), run <see cref="FilterCandidates"/>
-    /// for the given spec, and either return the NEAREST matching candidate or,
-    /// when <paramref name="cycle"/> and the current <c>_autoTarget</c> is among
-    /// the matching set, step to the next matching candidate (wrap-around) via
-    /// <see cref="StepCycle"/> — mirroring <see cref="CycleTarget"/>'s cycle shape
-    /// but restricted to the filtered (matching-only) list. Reuses
+    /// for the given spec, and return the matching candidate per
+    /// <paramref name="dir"/> — <see cref="StepDirection.Nearest"/> = the NEAREST
+    /// match, otherwise step from the current <c>_autoTarget</c> through the
+    /// matching candidates (forward/backward, wrap) via <see cref="StepCycle"/> —
+    /// mirroring <see cref="CycleTarget"/>'s cycle shape but restricted to the
+    /// filtered (matching-only) list, faithful to native's nearest/next/previous
+    /// triad (WinTrek.cpp:8963-8969 → common.cpp:505-510). Reuses
     /// <see cref="CollectTargetCandidates"/>'s existing gather (the P371
     /// same-sector narrowing); unlike the generic T-key it is frustum-independent
     /// and 3D-nearest, faithful to native.
     /// </summary>
-    private AutopilotTarget? SelectFilteredTarget(SimVec simPos, Orientation simOrient, in TargetFilterSpec spec, bool cycle)
+    private AutopilotTarget? SelectFilteredTarget(SimVec simPos, Orientation simOrient, in TargetFilterSpec spec, StepDirection dir)
     {
         var world = _session.World;
         if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return null;
@@ -706,17 +786,19 @@ public sealed partial class Game1
                                           me, own.SectorId, ShipRoleBits, StationRoleBits);
         var filtered = FilterCandidates(objs, world.MySideId, me, simPos, spec);
         if (filtered.Count == 0) return null;
-        return cycle ? StepCycle(filtered, _autoTarget) : filtered[0];
+        return StepCycle(filtered, _autoTarget, dir);
     }
 
-    /// <summary>P415 — convenience used by the U/Z filtered-target keys: read the
-    /// local pose, run <see cref="SelectFilteredTarget"/> for <paramref name="spec"/>
-    /// in cycling mode (first press = nearest, repeats step through matches) and
-    /// surface the result as the selected target with a console line.</summary>
-    private void SelectFilteredTargetForKey(in TargetFilterSpec spec, string noun)
+    /// <summary>P415/P623 — convenience used by the filtered-target keys (friend/foe
+    /// U/Z, and the P623 class keys): read the local pose, run
+    /// <see cref="SelectFilteredTarget"/> for <paramref name="spec"/> in the given
+    /// <paramref name="dir"/> and surface the result as the selected target with a
+    /// console line. On no match stages the on-screen "no &lt;noun&gt; in sector" line
+    /// (the HUD class-filter feedback, drawn by DrawTargetNoMatchFeedback).</summary>
+    private void SelectFilteredTargetForKey(in TargetFilterSpec spec, string noun, StepDirection dir = StepDirection.Next)
     {
         if (!TryOwnPose(out var pos, out var orient, out _)) return;
-        var picked = SelectFilteredTarget(pos, orient, spec, cycle: true);
+        var picked = SelectFilteredTarget(pos, orient, spec, dir);
         if (picked is { } p)
         {
             _autoTarget = picked;
@@ -733,6 +815,119 @@ public sealed partial class Game1
             _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
             Console.WriteLine($"[monogame] no {noun} in sector");
         }
+    }
+
+    /// <summary>P623 — the live CLASS-FILTER target key (TK_Target{Friendly|Enemy}
+    /// {Bomber|Fighter|Miner|Constructor|Lifepod}[Nearest|Prev],
+    /// WinTrek.cpp:10162-10331). Builds the per-class spec from
+    /// <see cref="ClassFilterSpec"/> and runs <see cref="SelectFilteredTargetForKey"/>
+    /// in the command's step direction. <paramref name="noun"/> is the HUD no-match
+    /// label ("enemy bomber", "friendly miner", …).</summary>
+    private void SelectClassForKey(TargetRelation relation, TargetClass cls, string noun, StepDirection dir = StepDirection.Next)
+        => SelectFilteredTargetForKey(ClassFilterSpec(relation, cls), noun, dir);
+
+    /// <summary>P623 — the live MAJOR-BASE target key (TK_Target{Friendly|Enemy}
+    /// MajorBase[Nearest|Prev], WinTrek.cpp:10202-10206 / 10266-10270): stations
+    /// ANY cluster flagged c_sabmFlag, step-directed like the class keys.</summary>
+    private void SelectMajorBaseForKey(TargetRelation relation, string noun, StepDirection dir = StepDirection.Next)
+        => SelectFilteredTargetForKey(MajorBaseSpec(relation), noun, dir);
+
+    // ═══════════════════════════════════════════════════════════════════
+    // P623 — the flight-key dispatch for the class-filtered targeting family.
+    //
+    // Each native command is a triad (next / nearest / prev) sharing one key
+    // family: plain = next (c_ttPrevious unset, Walk forward), Shift = nearest
+    // (c_ttNearest), Ctrl = previous (c_ttPrevious) — TrekFindTarget
+    // WinTrek.cpp:8963-8969, FindTarget common.cpp:505-510. The Shift/Ctrl
+    // chord is read FIRST so a Shift+O press selects nearest (not also next —
+    // the plain chord tolerates the extra Shift modifier, so both would match).
+    // One shared edge latch per action prevents re-firing while held.
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// <summary>Per-action press edge latches for the P623 targeting keys (a
+    /// single was-down bit per command so a held key never re-fires).</summary>
+    private readonly Dictionary<string, bool> _p623TargetEdge = new();
+
+    /// <summary>Edge-press predicate for one P623 targeting action: true only on
+    /// the rising edge of the chord being down.</summary>
+    private bool TargetEdgeDown(KeyboardState ks, string action)
+    {
+        bool down = ActionDown(ks, action);
+        bool was = _p623TargetEdge.TryGetValue(action, out var w) && w;
+        _p623TargetEdge[action] = down;
+        return down && !was;
+    }
+
+    /// <summary>Dispatch one class-filtered command TRIAD (next/nearest/prev
+    /// actions) on its press edge, resolving the actual direction from which
+    /// chord was held (Ctrl = prev > Shift = nearest > plain = next).</summary>
+    private void HandleClassTriad(KeyboardState ks, TargetRelation rel, TargetClass cls, string noun,
+        string actNext, string actNearest, string actPrev)
+    {
+        bool any = ActionDown(ks, actNext) || ActionDown(ks, actNearest) || ActionDown(ks, actPrev);
+        if (!any) { _p623TargetEdge[actNext] = false; return; }
+        bool was = _p623TargetEdge.TryGetValue(actNext, out var w) && w;
+        _p623TargetEdge[actNext] = true;
+        if (was) return;
+        var dir = ActionDown(ks, actPrev) ? StepDirection.Previous
+                : ActionDown(ks, actNearest) ? StepDirection.Nearest
+                : StepDirection.Next;
+        SelectClassForKey(rel, cls, noun, dir);
+    }
+
+    /// <summary>Dispatch one major-base command TRIAD (native leaves these
+    /// unbound by default; wired so a user bind works).</summary>
+    private void HandleMajorBaseTriad(KeyboardState ks, TargetRelation rel, string noun,
+        string actNext, string actNearest, string actPrev)
+    {
+        bool any = ActionDown(ks, actNext) || ActionDown(ks, actNearest) || ActionDown(ks, actPrev);
+        if (!any) { _p623TargetEdge[actNext] = false; return; }
+        bool was = _p623TargetEdge.TryGetValue(actNext, out var w) && w;
+        _p623TargetEdge[actNext] = true;
+        if (was) return;
+        var dir = ActionDown(ks, actPrev) ? StepDirection.Previous
+                : ActionDown(ks, actNearest) ? StepDirection.Nearest
+                : StepDirection.Next;
+        SelectMajorBaseForKey(rel, noun, dir);
+    }
+
+    /// <summary>P623 — the full class-filtered targeting key block, called each
+    /// flight frame beside the U/Z/T/G handlers. Every triad is edge-dispatched;
+    /// unbound commands (fighter/constructor/majorbase, hostile) simply never
+    /// match until the user binds them via F6.</summary>
+    private void HandleP623TargetingKeys(KeyboardState ks)
+    {
+        // Enemy ship classes (native defaults: O bomber, I miner).
+        HandleClassTriad(ks, TargetRelation.Enemy, TargetClass.Bomber, "enemy bomber",
+            "TargetEnemyBomber", "TargetEnemyBomberNearest", "TargetEnemyBomberPrev");
+        HandleClassTriad(ks, TargetRelation.Enemy, TargetClass.Miner, "enemy miner",
+            "TargetEnemyMiner", "TargetEnemyMinerNearest", "TargetEnemyMinerPrev");
+        HandleClassTriad(ks, TargetRelation.Enemy, TargetClass.Fighter, "enemy fighter",
+            "TargetEnemyFighter", "TargetEnemyFighterNearest", "TargetEnemyFighterPrev");
+        HandleClassTriad(ks, TargetRelation.Enemy, TargetClass.Constructor, "enemy constructor",
+            "TargetEnemyConstructor", "TargetEnemyConstructorNearest", "TargetEnemyConstructorPrev");
+
+        // Friendly ship classes (native defaults: K bomber, H miner, J lifepod).
+        HandleClassTriad(ks, TargetRelation.Friendly, TargetClass.Bomber, "friendly bomber",
+            "TargetFriendlyBomber", "TargetFriendlyBomberNearest", "TargetFriendlyBomberPrev");
+        HandleClassTriad(ks, TargetRelation.Friendly, TargetClass.Miner, "friendly miner",
+            "TargetFriendlyMiner", "TargetFriendlyMinerNearest", "TargetFriendlyMinerPrev");
+        HandleClassTriad(ks, TargetRelation.Friendly, TargetClass.Lifepod, "friendly lifepod",
+            "TargetFriendlyLifepod", "TargetFriendlyLifepodNearest", "TargetFriendlyLifepodPrev");
+        HandleClassTriad(ks, TargetRelation.Friendly, TargetClass.Fighter, "friendly fighter",
+            "TargetFriendlyFighter", "TargetFriendlyFighterNearest", "TargetFriendlyFighterPrev");
+        HandleClassTriad(ks, TargetRelation.Friendly, TargetClass.Constructor, "friendly constructor",
+            "TargetFriendlyConstructor", "TargetFriendlyConstructorNearest", "TargetFriendlyConstructorPrev");
+
+        // Major bases (any sector, c_sabmFlag) — native leaves unbound by default.
+        HandleMajorBaseTriad(ks, TargetRelation.Enemy, "enemy major base",
+            "TargetEnemyMajorBase", "TargetEnemyMajorBaseNearest", "TargetEnemyMajorBasePrev");
+        HandleMajorBaseTriad(ks, TargetRelation.Friendly, "friendly major base",
+            "TargetFriendlyMajorBase", "TargetFriendlyMajorBaseNearest", "TargetFriendlyMajorBasePrev");
+
+        // TK_TargetHostile — native has NO default key; wired so a user bind works.
+        if (TargetEdgeDown(ks, "TargetHostile"))
+            SelectHostileTarget();
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1027,5 +1222,192 @@ public sealed partial class Game1
         }
         else
             Console.WriteLine("[monogame] target center: nothing in view");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // P623 — TK_TargetHostile: target the thing that has done the most
+    // damage to you recently.
+    //
+    // Native reads the ship's DamageTrack (WinTrek.cpp:10101-10124): a list of
+    // DamageBuckets, one per damaging model, each holding the damage THAT model
+    // inflicted, summed into rotating time slots so it decays over a rolling
+    // window. The window is c_iDamageSlotCount(8) × c_dwDamageSlotInterval(5s)
+    // = 40 s (igc.h:4926-4928); a bucket's total only reflects damage from the
+    // last ~40 s, fading as its oldest slot is dropped (DamageTrack::SwitchSlots,
+    // common.cpp:2572-2589; DamageBucket::ApplyDamage, igc.h:5024-5044).
+    // TK_TargetHostile targets the bucket with the HIGHEST total; if that model
+    // is already the current target and another bucket exists, it steps to the
+    // second-highest; with no buckets at all it falls back to the nearest enemy
+    // ship (WinTrek.cpp:10108-10123).
+    //
+    // This port's sim is server-authoritative, so the client does not simulate
+    // its own ship's damage track. The server therefore attributes every hit on
+    // a ship from a ship launcher to that victim's own peer via a targeted
+    // VICTIM_DAMAGED wire message (attacker id + damage amount); the client
+    // aggregates into the same 40 s decaying window below. That attribution is
+    // the port's analogue of the native in-process DamageBucket population.
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// <summary>P623 — the client's per-attacker rolling damage window, the port's
+    /// analogue of native's DamageTrack (igc.h:4943-4970 / common.cpp:2556-2614).
+    /// Pure + headless so it is unit-testable. Damage is bucketed into
+    /// <see cref="SlotCount"/> rotating 5 s slots; totals reflect only the last
+    /// ~40 s (native c_iDamageSlotCount×c_dwDamageSlotInterval, igc.h:4926-4928),
+    /// and a bucket fades as its oldest slot drops out — mirroring
+    /// DamageTrack::SwitchSlots dropping the oldest slot's contribution each
+    /// slot rotation.</summary>
+    internal sealed class HostileDamageTracker
+    {
+        /// <summary>Native <c>c_dwDamageSlotInterval = 5000</c> ms (igc.h:4927).</summary>
+        public const long SlotMillis = 5000;
+        /// <summary>Native <c>c_iDamageSlotCount = 8</c> (igc.h:4928) → a 40 s window.</summary>
+        public const int SlotCount = 8;
+
+        /// <summary>per-attacker: epoch → accumulated damage (only epochs within
+        /// the last SlotCount-1 rotations are retained).</summary>
+        private readonly Dictionary<short, Dictionary<long, float>> _byAttacker = new();
+
+        /// <summary>Record <paramref name="damage"/> dealt to the local ship by
+        /// <paramref name="attackerId"/> at server time <paramref name="nowMs"/>.
+        /// Buckets into the current 5 s epoch and drops entries older than the
+        /// 40 s window (native slot rotation).</summary>
+        public void Record(short attackerId, float damage, long nowMs)
+        {
+            if (damage <= 0f) return;
+            long epoch = nowMs / SlotMillis;
+            if (!_byAttacker.TryGetValue(attackerId, out var slots))
+            {
+                slots = new Dictionary<long, float>();
+                _byAttacker[attackerId] = slots;
+            }
+            slots[epoch] = slots.GetValueOrDefault(epoch) + damage;
+            Prune(attackerId, epoch);
+        }
+
+        /// <summary>Drop slots older than the rolling window for one attacker
+        /// (native SwitchSlots dropping the oldest slot as the track advances).
+        /// A slot at epoch e is retained while <c>e ≥ epoch−7</c> (8 slots span
+        /// [epoch−7, epoch]); older than that it has left the 40 s window.</summary>
+        private void Prune(short attackerId, long curEpoch)
+        {
+            if (!_byAttacker.TryGetValue(attackerId, out var slots)) return;
+            long cutoff = curEpoch - (SlotCount - 1);
+            var stale = slots.Keys.Where(e => e < cutoff).ToList();
+            foreach (var e in stale) slots.Remove(e);
+            if (slots.Count == 0) _byAttacker.Remove(attackerId);
+        }
+
+        /// <summary>Total damage in the current window from <paramref name="attackerId"/>
+        /// (the bucket's <c>totalDamage()</c>, igc.h:5004-5007).</summary>
+        public float Total(short attackerId)
+        {
+            if (!_byAttacker.TryGetValue(attackerId, out var slots)) return 0f;
+            float sum = 0f;
+            foreach (var d in slots.Values) sum += d;
+            return sum;
+        }
+
+        /// <summary>All damagers with positive in-window damage, as
+        /// (attackerId, total). Empty when nobody is tracked.</summary>
+        public IReadOnlyList<(short AttackerId, float Total)> Damagers(long nowMs)
+        {
+            // Prune every tracked attacker to its current window before reading.
+            long epoch = nowMs / SlotMillis;
+            foreach (var id in _byAttacker.Keys.ToList()) Prune(id, epoch);
+            var list = _byAttacker
+                .Where(kv => kv.Value.Values.Sum() > 0f)
+                .Select(kv => (kv.Key, kv.Value.Values.Sum()))
+                .OrderByDescending(x => x.Item2)
+                .ToList();
+            return list;
+        }
+    }
+
+    /// <summary>P623 — the client's per-attacker damage window (populated from the
+    /// server's VICTIM_DAMAGED attribution; see the region comment).</summary>
+    private readonly HostileDamageTracker _hostileTracker = new();
+
+    /// <summary>P623 — record that the local ship took <paramref name="damage"/> from
+    /// ship <paramref name="attackerId"/> at client time <paramref name="nowSeconds"/>
+    /// (fed from the VICTIM_DAMAGED wire message dispatch; the server stamps the
+    /// authoritative tick, converted to ms here).</summary>
+    internal void RecordHostileDamage(short attackerId, float damage, double nowSeconds)
+        => _hostileTracker.Record(attackerId, damage, (long)(nowSeconds * 1000.0));
+
+    /// <summary>P623 — drain this frame's VICTIM_DAMAGED(217) attributions from the
+    /// world into the local ship's hostile damage window (called once per Update
+    /// from the flight loop, beside the other wire drains).</summary>
+    private void UpdateHostileTracking()
+    {
+        var world = _session.World;
+        List<(short AttackerId, float Damage, long Ms)> items;
+        lock (_session.Gate)
+            items = world.TakeNewVictimDamages();
+        foreach (var (attackerId, damage, _) in items)
+            _hostileTracker.Record(attackerId, damage, (long)(_nowSeconds * 1000.0));
+    }
+
+    /// <summary>P623 — TK_TargetHostile: target the ship that has done the most
+    /// damage to the local ship within the last ~40 s, stepping to the
+    /// second-worst when the worst is already the current target, falling back to
+    /// the nearest enemy ship when nothing has hurt us lately — native
+    /// WinTrek.cpp:10101-10124 (bucket list sorted by <c>totalDamage</c>,
+    /// common.cpp:2624-2660; fallback abm c_habmRescue|Miner|Builder,
+    /// WinTrek.cpp:10122).</summary>
+    private void SelectHostileTarget()
+    {
+        var world = _session.World;
+        short me;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } m) return;
+            me = m;
+        }
+
+        var damagers = _hostileTracker.Damagers((long)(_nowSeconds * 1000.0));
+        if (damagers.Count > 0)
+        {
+            short top = damagers[0].AttackerId;
+            // Step to the second-highest when the top is already the current
+            // target and another bucket exists (native: n>1 && GetCommandTarget
+            // == pmodel → pmodel = next bucket, WinTrek.cpp:10111-10115).
+            if (damagers.Count > 1 && _autoTarget is { Kind: TargetKind.Ship } cur && cur.Id == top)
+                top = damagers[1].AttackerId;
+
+            lock (_session.Gate)
+            {
+                if (world.Ships.TryGetValue(top, out var ent) && !ent.IsNotVisible)
+                {
+                    string name = string.IsNullOrEmpty(ent.CharacterName) ? $"ship {top}" : ent.CharacterName;
+                    _autoTarget = new AutopilotTarget(TargetKind.Ship, top, name);
+                    _targetNoMatchNoun = null;
+                    Console.WriteLine($"[monogame] target hostile: {name} (#{top}) (in-window damage {damagers[0].Total:0.##})");
+                    RefreshWindowTitle();
+                    return;
+                }
+            }
+            // The top damager is no longer a known/visible ship — fall through to
+            // the native nearest-enemy fallback.
+        }
+
+        // Native fallback: no damage buckets → nearest enemy ship (WinTrek.cpp:10117-10123,
+        // abm c_habmRescue|c_habmMiner|c_habmBuilder). Mirror the port's plain-enemy
+        // U-key convention for the fallback target shape, then the "no hostile" line.
+        if (!TryOwnPose(out var pos, out var orient, out _)) return;
+        var filtered = SelectFilteredTarget(pos, orient,
+            new TargetFilterSpec(TargetRelation.Enemy), StepDirection.Nearest);
+        if (filtered is { } f)
+        {
+            _autoTarget = f;
+            _targetNoMatchNoun = null;
+            Console.WriteLine($"[monogame] target hostile: no recent damager — nearest enemy {f.Name} (#{f.Id})");
+            RefreshWindowTitle();
+        }
+        else
+        {
+            _targetNoMatchNoun = "enemy ship";
+            _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
+            Console.WriteLine("[monogame] target hostile: no recent damager and no enemy ship in sector");
+        }
     }
 }

@@ -923,6 +923,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // the renderer to spawn the impact spark.
                         _world.Apply(ProjectileHullHit.Decode(m));
                         break;
+                    case VictimDamaged.Fmid:
+                        // P623 — the local ship just took damage from a ship; the
+                        // world buffers the attribution (attacker id + damage) for
+                        // Game1's TK_TargetHostile tracker. Targeted unicast to
+                        // the victim's own peer only.
+                        _world.Apply(VictimDamaged.Decode(m));
+                        break;
                     case Allegiance.Core.Wire.CollisionEvent.Fmid:
                         // P463c — two bodies collided; the world buffers a
                         // CollisionEntity (party ids, sector, impact, jiggles)

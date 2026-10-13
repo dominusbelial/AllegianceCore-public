@@ -90,6 +90,7 @@ public readonly record struct KeyBinding(Keys Key, InputModifiers Modifiers)
         Keys.OemComma => ",",
         Keys.OemPeriod => ".",
         Keys.OemQuestion => "/",
+        Keys.None => "",        // P623 — an unbound (rebindable, no default key) command
         _ => key.ToString(),
     };
 
@@ -217,7 +218,14 @@ public sealed class ActionMap
     public IReadOnlyList<KeyBindingTable.Group> ToHelpGroups()
     {
         var groups = new List<KeyBindingTable.Group>();
-        foreach (var def in _defs.Values.OrderBy(d => _Order(d.Category)))
+        // P623 — commands with NO bound key (Keys.None: the unbound class
+        // commands, TK_TargetHostile, the wheel-map MouseWheel convenience) are
+        // registered + F6-rebindable but omitted from the help overlay — its
+        // EveryCell/NoDuplicateKeys invariants forbid empty/duplicate key cells,
+        // and a blank key row is noise.
+        foreach (var def in _defs.Values
+                     .OrderBy(d => _Order(d.Category))
+                     .Where(d => BindingOf(d.Name).Key != Keys.None))
         {
             var title = def.Category;
             var group = groups.FirstOrDefault(g => g.Title == title);

@@ -1394,6 +1394,13 @@ public sealed partial class Game1
             }
             _zTargetKeyWasDown = zFriend || zTarget;
 
+            // P623 — class-filtered targeting family (TK_Target{Enemy|Friendly}
+            // {Bomber|Fighter|Miner|Constructor|Lifepod|MajorBase}[Nearest|Prev]
+            // + TK_TargetHostile). Native defaults: O/I/K/H/J × plain/Shift/Ctrl =
+            // next/nearest/prev (defaultinputmap.mdl); unbound commands are wired
+            // here too so a F6 rebind works. See HandleP623TargetingKeys.
+            HandleP623TargetingKeys(ks);
+
             // P417 — Target Nothing / Center, the small leftover targeting keys
             // (native TK_TargetNothing/Center). Edge-triggered and composing-
             // gated like U/Z/T above.
@@ -1950,6 +1957,10 @@ public sealed partial class Game1
         // P267 — the station destroyed/captured one-shots and the tech-completion
         // chime, drained from the wire events the world observed this frame.
         UpdateSoundEvents();
+
+        // P623 — VICTIM_DAMAGED(217) attributions drained into the local ship's
+        // TK_TargetHostile damage window (who hurt me and by how much).
+        UpdateHostileTracking();
 
         // P578 — eject/death/rescue feedback lines (tips + critical/non-critical
         // message cues) and the eject "gloat camera" swing to the killer,

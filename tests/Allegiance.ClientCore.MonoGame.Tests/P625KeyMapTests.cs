@@ -149,18 +149,19 @@ public class P625KeyMapTests
         var ctl = new KeyBindingController(map);
         while (ctl.CurrentAction != "ScreenShot") ctl.MoveDown();
         ctl.SelectCurrent();
-        // Give ScreenShot the key that Suicide alone owns (K) -> conflict.
-        // (K is used rather than the multi-context Space so the owning action is
+        // Give ScreenShot the key that LeaderCommand alone owns (X) -> conflict.
+        // (X is used rather than the multi-context Space so the owning action is
         // deterministic — the P625b catalogue legitimately shares Space across
-        // contexts, but K is Suicide-only.)
-        ctl.CaptureKey(Keys.K, false, false, false);
+        // contexts, but X is LeaderCommand-only. Note P623 moved Suicide off K so
+        // K now belongs to TargetFriendlyBomber; X stays single-owner.)
+        ctl.CaptureKey(Keys.X, false, false, false);
         Assert.Equal(KeyBindPhase.Conflict, ctl.Phase);
-        Assert.Equal("Suicide", ctl.ConflictOwner);
+        Assert.Equal("LeaderCommand", ctl.ConflictOwner);
 
         ctl.Answer(true); // swap
         Assert.Equal(KeyBindPhase.Browse, ctl.Phase);
-        Assert.Equal(new KeyBinding(Keys.K, InputModifiers.None), map.BindingOf("ScreenShot"));
-        Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("Suicide"));
+        Assert.Equal(new KeyBinding(Keys.X, InputModifiers.None), map.BindingOf("ScreenShot"));
+        Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("LeaderCommand"));
     }
 
     [Fact]
@@ -170,12 +171,12 @@ public class P625KeyMapTests
         var ctl = new KeyBindingController(map);
         while (ctl.CurrentAction != "ScreenShot") ctl.MoveDown();
         ctl.SelectCurrent();
-        ctl.CaptureKey(Keys.K, false, false, false);
+        ctl.CaptureKey(Keys.X, false, false, false);
         Assert.Equal(KeyBindPhase.Conflict, ctl.Phase);
         ctl.Answer(false); // reject the swap
         Assert.Equal(KeyBindPhase.Browse, ctl.Phase);
         Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("ScreenShot"));
-        Assert.Equal(new KeyBinding(Keys.K, InputModifiers.None), map.BindingOf("Suicide"));
+        Assert.Equal(new KeyBinding(Keys.X, InputModifiers.None), map.BindingOf("LeaderCommand"));
     }
 
     [Fact]

@@ -242,6 +242,19 @@ public interface IIgcSite
         float targetRadius, short targetId, short clusterId, bool absorbedByShield) { }
 
     /// <summary>
+    /// C#-only (no igc.h member): a SHIP just took damage from a ship-launched
+    /// round — P623's seam for the client's TK_TargetHostile attribution (the
+    /// port of native's same-process <c>DamageBucket</c> population, which a
+    /// pure-renderer client cannot do for itself). Raised from
+    /// <c>Sector.ResolveCombatCollisions</c> on the sim thread immediately after
+    /// <c>Ship.ReceiveDamage</c> returns real damage, with the attacking ship's
+    /// id, the struck ship's id, and the damage amount dealt (the same
+    /// hull/shield amount that keys native's bucket, ranked by severity). The
+    /// server host unicasts this to the VICTIM's own peer only. No-op default.
+    /// </summary>
+    void VictimDamagedEvent(short attackerShipId, short victimShipId, float damage) { }
+
+    /// <summary>
     /// C#-only (no igc.h member): a real <see cref="Mine"/> model was just
     /// created in a sector by <see cref="Ship.DeployMine"/> (after
     /// <c>sector.Add(mine)</c>). This is the host seam P94 uses to broadcast the
