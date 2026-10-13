@@ -159,7 +159,8 @@ public sealed class P632PortModeZeroKillsLiveTests
             var reached = new HashSet<short>();
             var everPresent = new HashSet<short>(botIds);
             var lastPresent = new HashSet<short>(botIds);
-            int maxTargeted = 0, maxVis = 0;
+            int maxTargeted = 0, maxVis = 0, poll = 0;
+            var perfLines = new List<string>();
             while (DateTime.UtcNow < deadline)
             {
                 Thread.Sleep(2000);
@@ -177,6 +178,16 @@ public sealed class P632PortModeZeroKillsLiveTests
                 maxTargeted = Math.Max(maxTargeted, targeted);
                 maxVis = Math.Max(maxVis, visMax);
                 Console.WriteLine($"P632 {tag}: t={el:F0}s reached={reached.Count} present={present.Count} targeted={targeted} avgVisEnemies={visEnemies} maxVis={visMax}");
+                // P636 — surface the decision-loop perf (pass distribution + per-bot
+                // decision rate) so a run directly measures the transit-collapse fix.
+                if (poll % 5 == 4)
+                {
+                    var ps = mgr.GetPerfStats(null);
+                    string pl = $"P636PERF {tag}: t={el:F0}s passMean={ps.DecisionPass.MeanMs:F1} passP50={ps.DecisionPass.P50Ms:F1} passP95={ps.DecisionPass.P95Ms:F1} passMax={ps.DecisionPass.MaxMs:F1} decisionHz={ps.DecisionRateHz:F3} cpu={ps.Resources.CpuFraction:F1} gen0={ps.Resources.Gen0} gen2={ps.Resources.Gen2} botCount={ps.Cadence.BotCount}";
+                    Console.WriteLine(pl);
+                    perfLines.Add(pl);
+                }
+                poll++;
             }
 
             var cs = mgr.GetCombatSummary();
@@ -208,6 +219,8 @@ public sealed class P632PortModeZeroKillsLiveTests
             sb.AppendLine($"RESULT botsReached={o.BotsReached}/{o.BotsTotal} killsA={killsA} killsB={killsB} killsTotal={o.KillsTotal} deathsA={deathsA} deathsB={deathsB} shots={shots} hits={hits} hitRate={hr:P1} friendly={cs.FriendlyHits} maxTargeted={maxTargeted} maxVisibleEnemies={maxVis}");
             foreach (var v in mgr.ActiveBots())
                 sb.AppendLine($"ACTIVE side={v.Side} sector={v.Sector} target={v.Target} hull={v.Hull}");
+            sb.AppendLine("--- P636 DECISION PERF (snapshot fix) ---");
+            foreach (var pl in perfLines) sb.AppendLine("  " + pl);
             sb.AppendLine("--- SERVER LOG (kills/warp/collision tail) ---");
             foreach (var ln in log.Split('\n'))
                 if (KillRx.IsMatch(ln) || ln.Contains("[warp] ship ", StringComparison.Ordinal) || ln.Contains("[collision] ship ", StringComparison.Ordinal))

@@ -651,7 +651,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Interlocked.Add(ref _decodedBytes, data.Length);
 
         byte[][] messages;
-        try { messages = FedPacket.Unpack(data.ToArray()); }
+        // P636 — unpack straight from the transport's ReadOnlySpan (no whole-packet
+        // copy); the byte[] overload is retained for other callers.
+        try { messages = FedPacket.Unpack(data); }
         catch (FedCrcException) { return; }   // a bad frame is not ours to adjudicate
 
         lock (_gate)
@@ -1063,6 +1065,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                 }
             }
         }
+
+        // P636 — after applying the whole batch (outside the gate; the receive
+        // thread is the world's sole writer) publish the lock-free decision
+        // snapshot so the bot decision loop reads latest state without contending
+        // for the gate. Throttled internally to ~25 Hz.
+        _world.PublishDecisionSnapshot();
     }
 
     /// <summary>Close the client socket. The server sees EOF / a dropped peer.</summary>

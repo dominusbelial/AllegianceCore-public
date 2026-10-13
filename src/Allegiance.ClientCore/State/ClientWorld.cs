@@ -27,6 +27,171 @@ public sealed class ClientWorld
 {
     private readonly Dictionary<short, ShipEntity> _ships = new();
 
+    // ── P636 — lock-free decision snapshot ──────────────────────────────────
+    // Published by the RECEIVE thread (the sole world writer) via
+    // PublishDecisionSnapshot(); read LOCK-FREE by the bot decision loop through
+    // Decision. The snapshots live in a small RING POOL: the writer refills the
+    // next pool slot (reusing its arrays unless the object count grew) and then
+    // atomically swaps the published pointer. A snapshot object is never mutated
+    // while it is (or was recently) the published one, because the ring cycles
+    // through POOL_SIZE slots — a slot is not refilled until POOL_SIZE publishes
+    // (~8 × 40 ms ≈ 320 ms) have elapsed, far beyond any decision pass's hold on
+    // the published snapshot (measured p95 ≈ 75 ms, max ≈ 150 ms), so a reader
+    // never observes a torn half-refilled snapshot. This reuse keeps the publish
+    // path allocation-light at steady state (the P636 "double-buffer swap" family)
+    // so it does not add to the GC-gen2 pressure it is meant to relieve.
+    private const int DecisionSnapPoolSize = 8;
+    private readonly DecisionSnapshot[] _snapPool = CreateSnapPool();
+    private int _snapCursor;
+    private DecisionSnapshot _publishedDecision = DecisionSnapshot.Empty;
+    private long _decisionSnapVersion;
+    private long _lastDecisionSnapPublishTick;
+    /// <summary>P636 — minimum wall interval between snapshot publishes (ms).
+    /// The decision loop targets ~20 Hz, so ~25 Hz publish is comfortably fresh
+    /// while bounding the per-bot rebuild cost (it replaces the per-update
+    /// O(clusterShips) gate scans, not adds to them).</summary>
+    private const int DecisionSnapPublishIntervalMs = 40;
+
+    private static DecisionSnapshot[] CreateSnapPool()
+    {
+        var pool = new DecisionSnapshot[DecisionSnapPoolSize];
+        for (int i = 0; i < pool.Length; i++) pool[i] = new DecisionSnapshot();
+        return pool;
+    }
+
+    /// <summary>
+    /// P636 — the latest published <see cref="DecisionSnapshot"/> for LOCK-FREE
+    /// reads by the bot decision loop. Reading it takes one volatile reference read
+    /// and never acquires the world gate, so a decision pass no longer stalls behind
+    /// the receive thread's bulk ship-application under the gate (the P632/P633
+    /// transit collapse above ~250 bots). The MonoGame render path still reads the
+    /// live tables under the gate as before; this is additive.
+    /// </summary>
+    public DecisionSnapshot Decision => System.Threading.Volatile.Read(ref _publishedDecision);
+
+    /// <summary>
+    /// P636 — (re)build and publish the decision snapshot. CALLED ONLY ON THE
+    /// RECEIVE THREAD, which is the sole writer of the live tables — the rebuild
+    /// reads them here without taking the gate (safe: no other thread mutates them),
+    /// writes into the next ring-pool slot (arrays reused unless growth is needed),
+    /// then atomically swaps the published reference so concurrent readers never
+    /// observe a torn half-built snapshot. Throttled to ~25 Hz; returns the
+    /// published snapshot (new when a rebuild+swap happened, else the current one).
+    /// </summary>
+    public DecisionSnapshot PublishDecisionSnapshot()
+    {
+        long now = System.Environment.TickCount64;
+        if (_publishedDecision != DecisionSnapshot.Empty && now - _lastDecisionSnapPublishTick < DecisionSnapPublishIntervalMs)
+            return _publishedDecision;
+
+        _lastDecisionSnapPublishTick = now;
+
+        var target = _snapPool[_snapCursor];
+        _snapCursor = (_snapCursor + 1) % _snapPool.Length;
+        target.Version = ++_decisionSnapVersion;
+        target.MyShipId = MyShipId;
+        target.MySideId = MySideId;
+        FillShipSnapshot(target);
+        FillStationSnapshot(target);
+        FillWarpSnapshot(target);
+        if (MyShipId is { } me)
+        {
+            if (DecisionSnapshot.TryFind(target.Ships, me, out var mine))
+                target.MyCluster = mine.SectorId;
+            else
+                target.MyCluster = -1;
+        }
+        else
+        {
+            target.MyCluster = -1;
+        }
+        System.Threading.Volatile.Write(ref _publishedDecision, target);
+        return target;
+    }
+
+    private void FillShipSnapshot(DecisionSnapshot target)
+    {
+        // Exact-size array: consumers iterate `.Ships` directly, so there must be
+        // no phantom trailing entries. Reused (no allocation) when the ship count is
+        // unchanged from the last publish into this buffer — i.e. steady state; a
+        // fresh array is allocated only when the count grows/shrinks.
+        var arr = target.Ships;
+        if (arr.Length != _ships.Count) arr = target.Ships = new DecisionShip[_ships.Count];
+        int n = 0;
+        foreach (var kv in _ships)
+        {
+            var e = kv.Value;
+            var s = new DecisionShip
+            {
+                ShipId = e.ShipId,
+                SideId = e.SideId,
+                SectorId = e.SectorId,
+                HullId = e.HullId,
+                StationId = e.StationId,
+                Flags = e.IsNotVisible ? (byte)0 : (byte)1,
+            };
+            if (e.Latest is { } lu)
+            {
+                s.Flags |= 2;   // bit1 = HasLatest (a pose is available)
+                s.PosX = lu.Position.X; s.PosY = lu.Position.Y; s.PosZ = lu.Position.Z;
+                s.VelX = lu.Velocity.X; s.VelY = lu.Velocity.Y; s.VelZ = lu.Velocity.Z;
+                var r = lu.Orientation.GetRight();
+                var u = lu.Orientation.GetUp();
+                var f = lu.Orientation.GetForward();
+                s.R00 = r.X; s.R01 = r.Y; s.R02 = r.Z;
+                s.R10 = u.X; s.R11 = u.Y; s.R12 = u.Z;
+                s.R20 = -f.X; s.R21 = -f.Y; s.R22 = -f.Z;
+            }
+            arr[n++] = s;
+        }
+        System.Array.Sort(arr, 0, n, ShipIdComparer.Instance);
+    }
+
+    private void FillStationSnapshot(DecisionSnapshot target)
+    {
+        var arr = target.Stations;
+        if (arr.Length != _stations.Count) arr = target.Stations = new DecisionStation[_stations.Count];
+        int n = 0;
+        foreach (var kv in _stations)
+        {
+            var st = kv.Value;
+            arr[n++] = new DecisionStation { ClusterId = st.ClusterId, SideId = st.SideId };
+        }
+    }
+
+    private void FillWarpSnapshot(DecisionSnapshot target)
+    {
+        var arr = target.Warps;
+        if (arr.Length != _warps.Count) arr = target.Warps = new DecisionWarp[_warps.Count];
+        int n = 0;
+        foreach (var kv in _warps)
+        {
+            var w = kv.Value;
+            short destCluster = -1;
+            if (_warps.TryGetValue(w.DestinationId, out var partner)) destCluster = partner.ClusterId;
+            var p = w.Position;
+            arr[n++] = new DecisionWarp
+            {
+                WarpId = w.WarpId,
+                ClusterId = w.ClusterId,
+                DestWarpId = w.DestinationId,
+                DestClusterId = destCluster,
+                PosX = p.Length > 0 ? p[0] : 0f,
+                PosY = p.Length > 1 ? p[1] : 0f,
+                PosZ = p.Length > 2 ? p[2] : 0f,
+                Radius = w.Radius,
+            };
+        }
+    }
+
+    /// <summary>P636 — IComparer for the sorted-by-ShipId snapshot ships array
+    /// (a static singleton so Array.Sort allocates nothing).</summary>
+    private sealed class ShipIdComparer : System.Collections.Generic.IComparer<DecisionShip>
+    {
+        public static readonly ShipIdComparer Instance = new();
+        public int Compare(DecisionShip a, DecisionShip b) => a.ShipId.CompareTo(b.ShipId);
+    }
+
     // P448b — the clock used to stamp ShipEntity.LatestArrivalTime (the local
     // arrival time that anchors the per-ship dead-reckoner). Production uses the
     // real monotonic wall clock (Environment.TickCount64 / 1000.0); tests substitute
@@ -1117,6 +1282,9 @@ public sealed class ClientWorld
     {
         MyShipId = null;
         MySideId = null;
+        // P636 — a fresh connection starts with an empty published snapshot; a
+        // reader holding the pre-reconnect snapshot keeps a valid (stale) object.
+        _publishedDecision = DecisionSnapshot.Empty;
         SideRoster = null;
         MissionOwnerBroadcast = null;
         Graph = null;

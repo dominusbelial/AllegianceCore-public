@@ -103,6 +103,21 @@ public sealed class Orientation
     public void SetUp(Vector3 v) { r10 = v.X; r11 = v.Y; r12 = v.Z; }
     public void SetRight(Vector3 v) { r00 = v.X; r01 = v.Y; r02 = v.Z; }
 
+    /// <summary>
+    /// P636 — assign the full 3×3 basis directly from the nine row components
+    /// (right, up, backward rows). Used to rebuild an orientation bit-for-bit from a
+    /// <see cref="State.DecisionShip"/> snapshot copy so the aiming/steer laws see
+    /// exactly the basis that was on the wire — unlike <see cref="Set(Vector3,Vector3)"/>
+    /// (which re-derives and re-normalises the rows). Only the single snapshot
+    /// publish path calls this; it performs no normalisation on purpose.
+    /// </summary>
+    public void SetBasis(float r00, float r01, float r02, float r10, float r11, float r12, float r20, float r21, float r22)
+    {
+        this.r00 = r00; this.r01 = r01; this.r02 = r02;
+        this.r10 = r10; this.r11 = r11; this.r12 = r12;
+        this.r20 = r20; this.r21 = r21; this.r22 = r22;
+    }
+
     /// <summary><c>Orientation::Reset()</c> — identity matrix (<c>orientation.cpp:307</c>).</summary>
     public void Reset()
     {

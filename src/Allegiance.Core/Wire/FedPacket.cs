@@ -89,14 +89,23 @@ public static class FedPacket
     /// bytes and compare to the trailing CRC. Returns the parsed messages, or
     /// throws <see cref="FedCrcException"/> on mismatch / malformed length.
     /// </summary>
-    public static byte[][] Unpack(byte[] packet)
+    public static byte[][] Unpack(byte[] packet) => Unpack((ReadOnlySpan<byte>)packet);
+
+    /// <summary>
+    /// P636 — span-input form of <see cref="Unpack(byte[])"/>, byte-identical.
+    /// The client receive path calls this with the <c>ReadOnlySpan&lt;byte&gt;</c>
+    /// the transport hands it, so no whole-packet copy is needed before walking the
+    /// messages (each message is still copied into its own array, as <c>Unpack(byte[])</c>
+    /// always did, because the codecs retain the byte slice).
+    /// </summary>
+    public static byte[][] Unpack(ReadOnlySpan<byte> packet)
     {
         if (packet.Length < CrcWidth)
             throw new FedCrcException("packet shorter than the CRC slot");
 
         int msgBytes = packet.Length - CrcWidth;
-        uint expected = BinaryPrimitives.ReadUInt32LittleEndian(packet.AsSpan(msgBytes, CrcWidth));
-        uint actual = FedMsgCrc.Compute(packet.AsSpan(0, msgBytes));
+        uint expected = BinaryPrimitives.ReadUInt32LittleEndian(packet.Slice(msgBytes, CrcWidth));
+        uint actual = FedMsgCrc.Compute(packet.Slice(0, msgBytes));
         if (actual != expected)
             throw new FedCrcException($"CRC mismatch: got 0x{actual:X8}, packet 0x{expected:X8}");
 
@@ -117,11 +126,11 @@ public static class FedPacket
 
             if (msgBytes - pos < FedMessageHeader.HeaderSize)
                 throw new FedCrcException("partial message header in packet");
-            ushort cbmsg = BinaryPrimitives.ReadUInt16LittleEndian(packet.AsSpan(pos));
+            ushort cbmsg = BinaryPrimitives.ReadUInt16LittleEndian(packet.Slice(pos));
             if (cbmsg == 0 || pos + cbmsg > msgBytes)
                 throw new FedCrcException($"invalid cbmsg {cbmsg} at offset {pos}");
             var m = new byte[cbmsg];
-            Array.Copy(packet, pos, m, 0, cbmsg);
+            packet.Slice(pos, cbmsg).CopyTo(m);
             list.Add(m);
             pos += cbmsg;
         }

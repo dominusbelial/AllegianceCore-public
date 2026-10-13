@@ -1526,28 +1526,34 @@ internal sealed partial class BotManager : IDisposable
                     var b = snap[i];
                     if (b.InScenario || b.Behavior != "combat" || b.Cs is not { } pcs) return;
                     if (pcs.World.MyShipId is null) return;                 // not seated yet
-                    if (!TryCsPose(pcs, b.ShipId, out var myPos, out _)) return;  // no pose yet
-                    short myCluster = CsSector(pcs);
+                    // P636 — Phase A now reads the lock-free DECISION SNAPSHOT
+                    // (published by each bot's receive thread) instead of scanning
+                    // the live Ships/Stations under the bot's cs.Gate. This removes
+                    // the O(clusterShips) gate scans from the decision hot path, so
+                    // a pass no longer stalls behind the receive thread's bulk ship
+                    // application under the same gate at 200v200.
+                    var snapshot = pcs.World.Decision;
+                    if (snapshot.MyShipId is not { }) return;
+                    if (!(DecisionSnapshot.TryFind(snapshot.Ships, b.ShipId, out var meDs) && meDs.HasLatest)) return;
+                    Vector3 myPos = meDs.Position;
+                    short myCluster = meDs.SectorId;
                     double cnow = Now();
                     var cands = new List<BotTargetCandidate>();
                     bool friendly = false;
-                    lock (pcs.Gate)
+                    foreach (var st in snapshot.Stations)
+                        if (st.SideId == b.Side && st.ClusterId == myCluster) { friendly = true; break; }
+                    foreach (var ship in snapshot.Ships)
                     {
-                        foreach (var st in pcs.World.Stations.Values)
-                            if (st.SideId == b.Side && st.ClusterId == myCluster) { friendly = true; break; }
-                        foreach (var ship in pcs.World.Ships.Values)
-                        {
-                            if (ship.ShipId == b.ShipId || ship.IsNotVisible) continue;
-                            if (ship.SideId == b.Side) continue;      // a DIFFERENT side only
-                            if (ship.SectorId != myCluster) continue;   // co-located
-                            if (ship.Latest is not { } lu) continue;
-                            float d = (lu.Position - myPos).Length();
-                            var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
-                            bool isThreat =
-                                (b.RecentAttackers.TryGetValue(ship.ShipId, out var at) && cnow - at < ThreatWindowSeconds)
-                                || (friendly && CombatTargetSelector.IsStationThreatening(cls));
-                            cands.Add(new BotTargetCandidate(ship.ShipId, lu.Position, cls, isThreat) { Distance = d });
-                        }
+                        if (ship.ShipId == b.ShipId || !ship.IsVisible) continue;
+                        if (ship.SideId == b.Side) continue;      // a DIFFERENT side only
+                        if (ship.SectorId != myCluster) continue;   // co-located
+                        if (!ship.HasLatest) continue;
+                        float d = (ship.Position - myPos).Length();
+                        var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
+                        bool isThreat =
+                            (b.RecentAttackers.TryGetValue(ship.ShipId, out var at) && cnow - at < ThreatWindowSeconds)
+                            || (friendly && CombatTargetSelector.IsStationThreatening(cls));
+                        cands.Add(new BotTargetCandidate(ship.ShipId, ship.Position, cls, isThreat) { Distance = d });
                     }
                     prep[i] = new PreparedEngagement(cands, friendly);
                 });
@@ -1878,23 +1884,25 @@ internal sealed partial class BotManager : IDisposable
     /// ship's sector, re-stamped by the server's SET_CLUSTER per transit).</summary>
     private static short CsSector(ConnectionSession cs)
     {
-        lock (cs.Gate)
-            if (cs.World.MyShipId is { } me && cs.World.Ships.TryGetValue(me, out var e))
-                return e.SectorId;
+        // P636 — read the lock-free decision snapshot instead of taking the world
+        // gate: a decision pass no longer waits behind the receive thread's bulk
+        // ship application under cs.Gate (the P632/P633 transit collapse).
+        var snap = cs.World.Decision;
+        if (snap.MyShipId is { } me && DecisionSnapshot.TryFind(snap.Ships, me, out var e))
+            return e.SectorId;
         return -1;
     }
 
-    /// <summary>[vz TryGetEnemyPose] The bot's LIVE pose from ITS OWN ClientWorld.</summary>
+    /// <summary>[vz TryGetEnemyPose] The bot's LIVE pose from ITS OWN ClientWorld —
+    /// P636 now from the lock-free decision snapshot (no gate acquisition).</summary>
     private static bool TryCsPose(ConnectionSession cs, short shipId, out Vector3 pos, out Orientation orient)
     {
-        lock (cs.Gate)
+        var snap = cs.World.Decision;
+        if (DecisionSnapshot.TryFind(snap.Ships, shipId, out var e) && e.HasLatest)
         {
-            if (cs.World.Ships.TryGetValue(shipId, out var e) && e.Latest is { } lu)
-            {
-                pos = lu.Position;
-                orient = lu.Orientation;
-                return true;
-            }
+            pos = e.Position;
+            orient = e.MaterializeOrientation();
+            return true;
         }
         pos = Vector3.Zero;
         orient = Orientation.Identity;
@@ -1905,16 +1913,15 @@ internal sealed partial class BotManager : IDisposable
 
     /// <summary>[vz TryBuildWarpDestMap] warpId → destination-cluster map from the
     /// bot's real world (each warp's <c>DestinationId</c> names its partner warp;
-    /// the partner's cluster is the destination sector).</summary>
+    /// the partner's cluster is the destination sector). P636 — reads the decision
+    /// snapshot's warps (already resolved partner→cluster), no gate.</summary>
     private static bool TryBuildWarpDestMap(ConnectionSession cs, out Dictionary<short, short> map)
     {
         map = new Dictionary<short, short>();
-        lock (cs.Gate)
-        {
-            foreach (var w in cs.World.Warps.Values)
-                if (cs.World.Warps.TryGetValue(w.DestinationId, out var partner))
-                    map[w.WarpId] = partner.ClusterId;
-        }
+        var snap = cs.World.Decision;
+        foreach (var w in snap.Warps)
+            if (w.DestClusterId >= 0)
+                map[w.WarpId] = w.DestClusterId;
         return map.Count > 0;
     }
 
@@ -1923,20 +1930,19 @@ internal sealed partial class BotManager : IDisposable
     /// The radius is the authoritative <c>DataWarpIGC.Radius</c> the client sees —
     /// the P496 warp-approach law needs it (with the ship radius) to know where
     /// the aleph's transit sphere actually is, so it can fly THROUGH it instead
-    /// of halting 90+ units short (P490's board-hull "park at the aleph").</summary>
+    /// of halting 90+ units short (P490's board-hull "park at the aleph"). P636 —
+    /// reads the decision snapshot's warps, no gate.</summary>
     private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, IReadOnlyDictionary<short, short> warpDest, out Vector3 pos, out float radius)
     {
-        lock (cs.Gate)
+        var snap = cs.World.Decision;
+        foreach (var w in snap.Warps)
         {
-            foreach (var w in cs.World.Warps.Values)
+            if (w.ClusterId != cur) continue;
+            if (warpDest.TryGetValue(w.WarpId, out var d) && d == next)
             {
-                if (w.ClusterId != cur) continue;
-                if (warpDest.TryGetValue(w.WarpId, out var d) && d == next)
-                {
-                    pos = Vec3(w.Position);
-                    radius = w.Radius;
-                    return true;
-                }
+                pos = w.Position;
+                radius = w.Radius;
+                return true;
             }
         }
         pos = Vector3.Zero;
@@ -2351,18 +2357,17 @@ internal sealed partial class BotManager : IDisposable
 
         Vector3 targetPos, targetVel, myVel;
         short targetSector; short targetHullId;
-        lock (cs.Gate)
-        {
-            if (!cs.World.Ships.TryGetValue(targetId, out var te) || te.Latest is not { } tlu)
-            { LoiterCombat(bot, now); return; }
-            targetPos = tlu.Position;
-            targetVel = tlu.Velocity;
-            targetSector = te.SectorId;
-            targetHullId = te.HullId;
-            if (!cs.World.Ships.TryGetValue(bot.ShipId, out var me) || me.Latest is not { } mu)
-            { LoiterCombat(bot, now); return; }
-            myVel = mu.Velocity;
-        }
+        // P636 — decision snapshot, no gate.
+        var esnap = cs.World.Decision;
+        if (!(DecisionSnapshot.TryFind(esnap.Ships, targetId, out var te) && te.HasLatest))
+        { LoiterCombat(bot, now); return; }
+        targetPos = te.Position;
+        targetVel = te.Velocity;
+        targetSector = te.SectorId;
+        targetHullId = te.HullId;
+        if (!(DecisionSnapshot.TryFind(esnap.Ships, bot.ShipId, out var me) && me.HasLatest))
+        { LoiterCombat(bot, now); return; }
+        myVel = me.Velocity;
         if (targetSector != CsSector(cs)) { LoiterCombat(bot, now); return; }  // co-location guard (P429 one-sided)
 
         // The ballistics of the bot's LEAD weapon (first mounted gun) from the
@@ -2482,18 +2487,17 @@ internal sealed partial class BotManager : IDisposable
     /// (shipIGC.cpp:2545-2559). -1 when none.</summary>
     private static short NearestOtherEnemy(ConnectionSession cs, ActiveBot bot, short myCluster, Vector3 myPos, short exclude)
     {
+        // P636 — decision snapshot, no gate.
         short best = -1; float bestD = float.MaxValue;
-        lock (cs.Gate)
+        var snap = cs.World.Decision;
+        foreach (var ship in snap.Ships)
         {
-            foreach (var ship in cs.World.Ships.Values)
-            {
-                if (ship.ShipId == bot.ShipId || ship.ShipId == exclude || ship.IsNotVisible) continue;
-                if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
-                if (ship.SectorId != myCluster) continue;   // co-located
-                if (ship.Latest is not { } lu) continue;
-                float d = (lu.Position - myPos).Length();
-                if (d < bestD) { bestD = d; best = ship.ShipId; }
-            }
+            if (ship.ShipId == bot.ShipId || ship.ShipId == exclude || !ship.IsVisible) continue;
+            if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
+            if (ship.SectorId != myCluster) continue;   // co-located
+            if (!ship.HasLatest) continue;
+            float d = (ship.Position - myPos).Length();
+            if (d < bestD) { bestD = d; best = ship.ShipId; }
         }
         return best;
     }
@@ -3484,30 +3488,21 @@ internal sealed partial class BotManager : IDisposable
     {
         var list = new List<(Vector3, short, short)>();
         short myCluster = CsSector(cs);
-        lock (cs.Gate)
+        // P636 — decision snapshot (no gate): same-side members only, never across
+        // sides (honest visibility). Spatial-index build+query as before.
+        var snap = cs.World.Decision;
+        var points = new List<BotSpatialIndex.ShipPoint>();
+        foreach (var ship in snap.Ships)
         {
-            // P633 — use the per-sector spatial index: build a grid over the
-            // bot's cluster ships once and query ONLY the cells overlapping the
-            // reach disc (O(cells∩disc + occupants)), instead of distance-testing
-            // every cluster ship on every firing tick. Same-side members only,
-            // never across sides (honest visibility). Correctness of the radius
-            // query is unit-proven vs brute force (BotSpatialIndexTests).
-            var points = new List<BotSpatialIndex.ShipPoint>();
-            foreach (var (id, ent) in cs.World.Ships)
-            {
-                if (id == bot.ShipId) continue;
-                if (ent.SideId != bot.Side) continue;
-                if (ent.SectorId != myCluster) continue;
-                if (ent.Latest is not { } lu) continue;
-                points.Add(new BotSpatialIndex.ShipPoint(id, lu.Position));
-            }
-            var grid = BotSpatialIndex.Build(myCluster, points, 400f);
-            foreach (var (sid, pos) in grid.QueryRadius(myPos, reach))
-            {
-                if (cs.World.Ships.TryGetValue(sid, out var ent))
-                    list.Add((pos, sid, ent.SideId));
-            }
+            if (ship.ShipId == bot.ShipId) continue;
+            if (ship.SideId != bot.Side) continue;
+            if (ship.SectorId != myCluster) continue;
+            if (!ship.HasLatest) continue;
+            points.Add(new BotSpatialIndex.ShipPoint(ship.ShipId, ship.Position));
         }
+        var grid = BotSpatialIndex.Build(myCluster, points, 400f);
+        foreach (var (sid, pos) in grid.QueryRadius(myPos, reach))
+            list.Add((pos, sid, bot.Side));
         return list;
     }
 
