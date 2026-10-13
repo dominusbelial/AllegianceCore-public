@@ -1,3 +1,4 @@
+using System;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
@@ -17,8 +18,16 @@ namespace Allegiance.ClientCore.Tests;
 /// deliberately loose (it catches gross regressions, not noise); the measured value is
 /// reported in the P636 report.
 /// </summary>
-public class DecisionSnapshotAllocationTests
+// 2026-10-13: the bot decision snapshot now defaults OFF (87d3501b). These tests exercise the
+// snapshot itself, so they enable it explicitly and restore it; the shared collection keeps
+// them from racing other tests on the static flag (GitHub CI ran them in a different order).
+[Collection("DecisionSnapshotFlag")]
+public class DecisionSnapshotAllocationTests : IDisposable
 {
+    private readonly bool _savedSnapshotFlag = ClientWorld.DecisionSnapshotEnabled;
+    public DecisionSnapshotAllocationTests() => ClientWorld.DecisionSnapshotEnabled = true;
+    public void Dispose() => ClientWorld.DecisionSnapshotEnabled = _savedSnapshotFlag;
+
     private static DataHullTypeIGC MakeHull() => new(
         Price: 0, TimeToBuild: 0, ModelName: "mdl", IconName: "ico", Name: "test",
         Description: "", GroupId: 0, TtbmRequired: [], TtbmEffects: [],

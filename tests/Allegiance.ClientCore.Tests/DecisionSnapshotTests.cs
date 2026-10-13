@@ -1,3 +1,4 @@
+using System;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
@@ -20,8 +21,16 @@ namespace Allegiance.ClientCore.Tests;
 /// exist before P636, so these could not compile (the P633-style "new API" red), and
 /// the immutability/throttle/empty assertions were newly-added behavior guards.
 /// </summary>
-public class DecisionSnapshotTests
+// 2026-10-13: the bot decision snapshot now defaults OFF (87d3501b). These tests exercise the
+// snapshot itself, so they enable it explicitly and restore it; the shared collection keeps
+// them from racing other tests on the static flag (GitHub CI ran them in a different order).
+[Collection("DecisionSnapshotFlag")]
+public class DecisionSnapshotTests : IDisposable
 {
+    private readonly bool _savedSnapshotFlag = ClientWorld.DecisionSnapshotEnabled;
+    public DecisionSnapshotTests() => ClientWorld.DecisionSnapshotEnabled = true;
+    public void Dispose() => ClientWorld.DecisionSnapshotEnabled = _savedSnapshotFlag;
+
     private static DataHullTypeIGC MakeHull() => new(
         Price: 0, TimeToBuild: 0, ModelName: "mdl", IconName: "ico", Name: "test",
         Description: "", GroupId: 0, TtbmRequired: [], TtbmEffects: [],
