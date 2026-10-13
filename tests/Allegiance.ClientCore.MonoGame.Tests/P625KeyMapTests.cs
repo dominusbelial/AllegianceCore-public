@@ -79,13 +79,13 @@ public class P625KeyMapTests
     public void Overrides_PersistThroughJsonRoundTrip()
     {
         var map = new ActionMap(InputActionCatalog.Definitions);
-        map.SetBinding("FireWeapon", new KeyBinding(Keys.X, InputModifiers.None));
+        map.SetBinding("FireWeapon", new KeyBinding(Keys.F15, InputModifiers.None));
 
         var json = map.ToJson();
         var reloaded = new ActionMap(InputActionCatalog.Definitions);
         reloaded.ApplyJson(json);
 
-        Assert.Equal(new KeyBinding(Keys.X, InputModifiers.None), reloaded.BindingOf("FireWeapon"));
+        Assert.Equal(new KeyBinding(Keys.F15, InputModifiers.None), reloaded.BindingOf("FireWeapon"));
         // A default untouched by the override still holds its catalogue default.
         Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), reloaded.BindingOf("ScreenShot"));
     }
@@ -94,7 +94,7 @@ public class P625KeyMapTests
     public void Overrides_OnlyDifferencesAreSerialized()
     {
         var map = new ActionMap(InputActionCatalog.Definitions);
-        map.SetBinding("FireWeapon", new KeyBinding(Keys.X, InputModifiers.None));
+        map.SetBinding("FireWeapon", new KeyBinding(Keys.F15, InputModifiers.None));
         var json = map.ToJson();
         Assert.Contains("\"FireWeapon\"", json);
         Assert.DoesNotContain("\"ScreenShot\"", json); // default, not emitted
@@ -132,13 +132,14 @@ public class P625KeyMapTests
         var map = new ActionMap(InputActionCatalog.Definitions);
         var ctl = new KeyBindingController(map);
 
-        // Move to FireWeapon and rebind it to X (free).
+        // Move to FireWeapon and rebind it to F15 (free — no catalogue default
+        // owns F15, unlike the old X which is now LeaderCommand's key).
         while (ctl.CurrentAction != "FireWeapon") ctl.MoveDown();
         ctl.SelectCurrent();
         Assert.Equal(KeyBindPhase.Capture, ctl.Phase);
-        ctl.CaptureKey(Keys.X, false, false, false);
+        ctl.CaptureKey(Keys.F15, false, false, false);
         Assert.Equal(KeyBindPhase.Browse, ctl.Phase);
-        Assert.Equal(new KeyBinding(Keys.X, InputModifiers.None), map.BindingOf("FireWeapon"));
+        Assert.Equal(new KeyBinding(Keys.F15, InputModifiers.None), map.BindingOf("FireWeapon"));
     }
 
     [Fact]
@@ -148,15 +149,18 @@ public class P625KeyMapTests
         var ctl = new KeyBindingController(map);
         while (ctl.CurrentAction != "ScreenShot") ctl.MoveDown();
         ctl.SelectCurrent();
-        // Give ScreenShot the key that FireWeapon owns (Space) -> conflict.
-        ctl.CaptureKey(Keys.Space, false, false, false);
+        // Give ScreenShot the key that Suicide alone owns (K) -> conflict.
+        // (K is used rather than the multi-context Space so the owning action is
+        // deterministic — the P625b catalogue legitimately shares Space across
+        // contexts, but K is Suicide-only.)
+        ctl.CaptureKey(Keys.K, false, false, false);
         Assert.Equal(KeyBindPhase.Conflict, ctl.Phase);
-        Assert.Equal("FireWeapon", ctl.ConflictOwner);
+        Assert.Equal("Suicide", ctl.ConflictOwner);
 
         ctl.Answer(true); // swap
         Assert.Equal(KeyBindPhase.Browse, ctl.Phase);
-        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map.BindingOf("ScreenShot"));
-        Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("FireWeapon"));
+        Assert.Equal(new KeyBinding(Keys.K, InputModifiers.None), map.BindingOf("ScreenShot"));
+        Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("Suicide"));
     }
 
     [Fact]
@@ -166,12 +170,12 @@ public class P625KeyMapTests
         var ctl = new KeyBindingController(map);
         while (ctl.CurrentAction != "ScreenShot") ctl.MoveDown();
         ctl.SelectCurrent();
-        ctl.CaptureKey(Keys.Space, false, false, false);
+        ctl.CaptureKey(Keys.K, false, false, false);
         Assert.Equal(KeyBindPhase.Conflict, ctl.Phase);
         ctl.Answer(false); // reject the swap
         Assert.Equal(KeyBindPhase.Browse, ctl.Phase);
         Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("ScreenShot"));
-        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map.BindingOf("FireWeapon"));
+        Assert.Equal(new KeyBinding(Keys.K, InputModifiers.None), map.BindingOf("Suicide"));
     }
 
     [Fact]
@@ -202,7 +206,7 @@ public class P625KeyMapTests
     public void Reset_RestoresCatalogueDefaults()
     {
         var map = new ActionMap(InputActionCatalog.Definitions);
-        map.SetBinding("FireWeapon", new KeyBinding(Keys.X, InputModifiers.None), force: true);
+        map.SetBinding("FireWeapon", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
         map.SetBinding("ScreenShot", new KeyBinding(Keys.Space, InputModifiers.None), force: true);
         map.ResetToDefaults();
 
@@ -221,10 +225,10 @@ public class P625KeyMapTests
         Assert.Contains(groups.SelectMany(g => g.Entries),
             e => e.Key == "PrintScreen" && e.Description.Contains("screen shot", System.StringComparison.OrdinalIgnoreCase));
 
-        map.SetBinding("ScreenShot", new KeyBinding(Keys.X, InputModifiers.None));
+        map.SetBinding("ScreenShot", new KeyBinding(Keys.F15, InputModifiers.None));
         var groupsAfter = map.ToHelpGroups();
         Assert.Contains(groupsAfter.SelectMany(g => g.Entries),
-            e => e.Key == "X" && e.Description.Contains("screen shot", System.StringComparison.OrdinalIgnoreCase));
+            e => e.Key == "F15" && e.Description.Contains("screen shot", System.StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(groupsAfter.SelectMany(g => g.Entries), e => e.Key == "PrintScreen");
     }
 
@@ -233,12 +237,16 @@ public class P625KeyMapTests
     {
         var map = new ActionMap(InputActionCatalog.Definitions);
         var titles = map.ToHelpGroups().Select(g => g.Title).ToList();
-        // The 11 established help groups (also the native command-category set).
-        Assert.Equal(11, titles.Count);
+        // The established help groups (native command categories plus the
+        // P625b additions for panes/menus, free-cam/spectator and system).
+        Assert.Equal(14, titles.Count);
         Assert.Contains("MOVEMENT", titles);
         Assert.Contains("WEAPONS", titles);
         Assert.Contains("CAMERA / VIEW", titles);
         Assert.Contains("MUSIC", titles);
+        Assert.Contains("PANES / MENUS", titles);
+        Assert.Contains("FREE-CAM / SPECTATOR", titles);
+        Assert.Contains("SYSTEM", titles);
     }
 
     // ── F-key fix: cameras own F5/F11; screenshot/music moved ─────────────

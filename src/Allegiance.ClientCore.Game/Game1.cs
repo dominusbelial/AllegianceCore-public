@@ -888,6 +888,7 @@ public sealed partial class Game1 : Game
 
     // P481 — edge latch for the game-over Back key (Backspace).
     private bool _backKeyWasDown;
+    private bool _gameOverBackWasDown; // P625b — edge-detect the game-over Back action so holding it doesn't re-fire
 
     // Virtual-joystick mouse flight (P210). Enabled/disabled with M, mirroring
     // the original's TK_ToggleMouse: hiding the OS cursor while active, showing
@@ -1015,7 +1016,7 @@ public sealed partial class Game1 : Game
     private bool _zTargetKeyWasDown; // P415 — edge-detect Z (nearest enemy/friendly base) so holding it doesn't re-fire
     private bool _semicolonNothingKeyWasDown; // P417 — edge-detect ';' (target nothing) so holding it doesn't re-fire
     private bool _apostropheCenterKeyWasDown; // P417 — edge-detect '\'' (target center) so holding it doesn't re-fire
-    private bool _f11ScreenShotKeyWasDown;    // P417 — edge-detect F11 (screenshot) so holding it doesn't re-fire
+    private bool _shotKeyWasDown;              // P417 — edge-detect screenshot (PrintScreen, action ScreenShot) so holding it doesn't re-fire
     private bool _pageDownKeyWasDown;          // P425 — edge-detect PageDown (commandee cycle) so holding it doesn't re-fire
     private bool _insertKeyWasDown;            // P425 — edge-detect Insert (issue order to commandee) so holding it doesn't re-fire
     private bool _p1TurretKeyWasDown; // P416 — edge-detect 1 (promote turret seat 1) so holding it doesn't re-fire

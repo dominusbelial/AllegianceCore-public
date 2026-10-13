@@ -394,18 +394,18 @@ public sealed partial class Game1
         // Navigation: arrows (also free pre-flight — no flight keys collide).
         // _selectedIndex is an index INTO the filtered _visibleRows, so with no
         // filter active it behaves exactly as before (every row visible).
-        bool up = ks.IsKeyDown(XnaKeys.Up);
+        bool up = ActionDown(ks, "LobbyUp");
         if (up && !_upWasDown && _visibleRows.Count > 0)
             _selectedIndex = (_selectedIndex - 1 + _visibleRows.Count) % _visibleRows.Count;
         _upWasDown = up;
 
-        bool down = ks.IsKeyDown(XnaKeys.Down);
+        bool down = ActionDown(ks, "LobbyDown");
         if (down && !_downWasDown && _visibleRows.Count > 0)
             _selectedIndex = (_selectedIndex + 1) % _visibleRows.Count;
         _downWasDown = down;
 
         // Manual retry: R forces an immediate refetch (helps an unreachable lobby).
-        bool rRetry = ks.IsKeyDown(XnaKeys.R);
+        bool rRetry = ActionDown(ks, "LobbyRefresh");
         if (rRetry && !_rWasDown)
         {
             _lastLobbyFetch = double.NegativeInfinity;
@@ -419,7 +419,7 @@ public sealed partial class Game1
         // MonoGame pumps Window.TextInput events BEFORE this frame's Update
         // poll, so when the 'f' event fires _filterActive is still false and
         // OnTextInput's gate drops it.
-        bool fKey = ks.IsKeyDown(XnaKeys.F);
+        bool fKey = ActionDown(ks, "LobbyFilter");
         if (fKey && !_fWasDown)
         {
             _filterActive = !_filterActive;
@@ -432,6 +432,7 @@ public sealed partial class Game1
 
         // While filtering, Backspace deletes the previous character and live-
         // narrows the list (mirrors the in-flight chat backspace handling).
+        // TEXT ENTRY — an allow-listed raw key (it only edits the filter line).
         if (_filterActive)
         {
             bool back = ks.IsKeyDown(XnaKeys.Back);
@@ -446,7 +447,7 @@ public sealed partial class Game1
         // Enter joins the highlighted server (shared by the CONNECT button and
         // the gamepad A button via TryJoinSelected). On join failure we revert
         // to the lobby with a message rather than exiting.
-        bool enter = ks.IsKeyDown(XnaKeys.Enter);
+        bool enter = ActionDown(ks, "LobbyJoin");
         if (enter && !_enterWasDown)
             TryJoinSelected();
         _enterWasDown = enter;

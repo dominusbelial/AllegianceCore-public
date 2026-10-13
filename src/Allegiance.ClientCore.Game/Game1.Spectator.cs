@@ -248,19 +248,19 @@ public sealed partial class Game1
     private void HandleSpectatorKeys(KeyboardState ks, bool composing, double dt)
     {
         // F8 free cam
-        bool f8 = ks.IsKeyDown(XnaKeys.F8);
+        bool f8 = ActionDown(ks, "FreeCam");
         if (!composing && f8 && !_freeCamKeyWasDown)
             ToggleFreeCam();
         _freeCamKeyWasDown = f8;
 
         // F9 orbit cam
-        bool f9 = ks.IsKeyDown(XnaKeys.F9);
+        bool f9 = ActionDown(ks, "OrbitCam");
         if (!composing && f9 && !_orbitCamKeyWasDown)
             ToggleOrbitCam();
         _orbitCamKeyWasDown = f9;
 
         // F1 HUD hide
-        bool f1 = ks.IsKeyDown(XnaKeys.F1);
+        bool f1 = ActionDown(ks, "ToggleHud");
         if (!composing && f1 && !_hudKeyWasDown)
             ToggleHudHide();
         _hudKeyWasDown = f1;
@@ -291,15 +291,15 @@ public sealed partial class Game1
                 _freeCam.Look(dx, dy);
             RecenterMouse();
 
-            // speed modifier: Shift boost, Ctrl slow
+            // speed modifier: Shift boost, Ctrl slow (dedicated free-cam actions)
             _freeCam.SpeedModifier = 1f;
-            if (ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift)) _freeCam.SpeedModifier = 4f;
-            else if (ks.IsKeyDown(XnaKeys.LeftControl) || ks.IsKeyDown(XnaKeys.RightControl)) _freeCam.SpeedModifier = 0.25f;
+            if (ActionDown(ks, "FreeCamSpeedUp")) _freeCam.SpeedModifier = 4f;
+            else if (ActionDown(ks, "FreeCamSpeedSlow")) _freeCam.SpeedModifier = 0.25f;
 
-            // movement: WASD + Q/E
-            float fwd = (ks.IsKeyDown(XnaKeys.W) ? 1f : 0f) + (ks.IsKeyDown(XnaKeys.S) ? -1f : 0f);
-            float right = (ks.IsKeyDown(XnaKeys.D) ? 1f : 0f) + (ks.IsKeyDown(XnaKeys.A) ? -1f : 0f);
-            float up = (ks.IsKeyDown(XnaKeys.Q) ? 1f : 0f) + (ks.IsKeyDown(XnaKeys.E) ? -1f : 0f);
+            // movement: WASD + Q/E (dedicated free-cam movement actions)
+            float fwd = (ActionDown(ks, "FreeCamForward") ? 1f : 0f) + (ActionDown(ks, "FreeCamBack") ? -1f : 0f);
+            float right = (ActionDown(ks, "FreeCamRight") ? 1f : 0f) + (ActionDown(ks, "FreeCamLeft") ? -1f : 0f);
+            float up = (ActionDown(ks, "FreeCamUp") ? 1f : 0f) + (ActionDown(ks, "FreeCamDown") ? -1f : 0f);
             _freeCam.Move(fwd, right, up, (float)dt);
         }
         else if (_orbitCamActive)
@@ -313,7 +313,7 @@ public sealed partial class Game1
             if (_orbitAuto) _orbitCam.Step(dt);
 
             // PageUp cycles the locked subject
-            bool pgUp = ks.IsKeyDown(XnaKeys.PageUp);
+            bool pgUp = ActionDown(ks, "OrbitSubjectNext");
             if (!composing && pgUp && !_orbitPgUpWasDown)
                 CycleOrbitSubject();
             _orbitPgUpWasDown = pgUp;

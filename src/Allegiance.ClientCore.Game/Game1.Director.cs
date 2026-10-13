@@ -440,7 +440,7 @@ public sealed partial class Game1
     /// instant any flight control is used (restoring the chase view).</summary>
     private void HandleCinematicKeys(KeyboardState ks, bool composing)
     {
-        bool f2 = ks.IsKeyDown(XnaKeys.F2);
+        bool f2 = ActionDown(ks, "Director");
         if (!composing && f2 && !_directorKeyWasDown)
         {
             _directorActive = !_directorActive;
@@ -449,7 +449,7 @@ public sealed partial class Game1
         }
         _directorKeyWasDown = f2;
 
-        bool f3 = ks.IsKeyDown(XnaKeys.F3);
+        bool f3 = ActionDown(ks, "FollowCam");
         if (!composing && f3 && !_spectatorKeyWasDown)
         {
             if (_spectatorFollowId == -1)
@@ -477,26 +477,18 @@ public sealed partial class Game1
             : unchecked((int)DateTime.Now.Ticks ^ 0x5EED);
     }
 
-    /// <summary>Whether the given physical key is a flight-control key that must
-    /// immediately cancel the director (any flight input returns control).</summary>
-    private static bool IsFlightControlKey(Keys k) => k switch
-    {
-        Keys.W or Keys.S or Keys.A or Keys.D or Keys.Q or Keys.E
-            or Keys.Up or Keys.Down or Keys.Left or Keys.Right => true,
-        _ => false,
-    };
-
     /// <summary>Cancel the director (and spectator follow) the moment a flight
     /// control is pressed, restoring a normal cockpit view — the P580 rule that
-    /// any flight input returns control instantly.</summary>
+    /// any flight input returns control instantly. Reads the SHIP movement
+    /// actions (resolved bindings), never raw key literals.</summary>
     private void CancelDirectorOnInput(KeyboardState ks)
     {
         if (!_directorActive) return;
         if (Director.AnyFlightControl(
-                forward: ks.IsKeyDown(Keys.W), back: ks.IsKeyDown(Keys.S),
-                strafeLeft: ks.IsKeyDown(Keys.A), strafeRight: ks.IsKeyDown(Keys.D),
-                thrustUp: ks.IsKeyDown(Keys.Q), thrustDown: ks.IsKeyDown(Keys.E),
-                turnLeft: ks.IsKeyDown(Keys.Left), turnRight: ks.IsKeyDown(Keys.Right)))
+                forward: ActionDown(ks, "ThrustForward"), back: ActionDown(ks, "ThrustBackward"),
+                strafeLeft: ActionDown(ks, "RollLeft"), strafeRight: ActionDown(ks, "RollRight"),
+                thrustUp: ActionDown(ks, "ThrustLeft"), thrustDown: ActionDown(ks, "ThrustRight"),
+                turnLeft: ActionDown(ks, "YawLeft"), turnRight: ActionDown(ks, "YawRight")))
         {
             _directorActive = false;
             _spectatorFollowId = -1;

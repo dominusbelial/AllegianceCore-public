@@ -115,7 +115,7 @@ public sealed partial class Game1
 
             // P273 — T toggles the docked sub-view between the hangar loadout
             // shop and the teleport pane (edge-triggered like every toggle).
-            bool tKey = ks.IsKeyDown(XnaKeys.T);
+            bool tKey = ActionDown(ks, "ToggleTeleportPane");
             if (!composing && !_launchSent && tKey && !_telTWasDown)
             {
                 _teleportActive = !_teleportActive;
@@ -131,7 +131,7 @@ public sealed partial class Game1
             // ofInvestment overlay). Opening it banishes the teleport pane the way
             // native's OnButtonInvest turns off the other banishable panes
             // (hangarscreen.cpp:201-206).
-            bool iKey = ks.IsKeyDown(XnaKeys.I);
+            bool iKey = ActionDown(ks, "ToggleInvestmentPane");
             if (!composing && !_launchSent && iKey && !_invIWasDown)
             {
                 _investActive = !_investActive;
@@ -152,13 +152,13 @@ public sealed partial class Game1
                 var inv = BuildInvestmentModel();
                 _investModelLive = inv;   // P501 — keep the live model for touch taps
                 // P499 — DPAD Up/Down = cursor, A = invest, B = back to hangar.
-                bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
-                bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
-                bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
-                bool rKey = ks.IsKeyDown(XnaKeys.R);
-                bool sKey = ks.IsKeyDown(XnaKeys.S);
-                bool hKey = ks.IsKeyDown(XnaKeys.H);
-                bool bKey = ks.IsKeyDown(XnaKeys.B) || nav.Back;
+                bool up = ActionDown(ks, "MenuUp") || nav.Up;
+                bool down = ActionDown(ks, "MenuDown") || nav.Down;
+                bool space = ActionDown(ks, "MenuSelect") || nav.Accept;
+                bool rKey = ActionDown(ks, "InvestPartial");
+                bool sKey = ActionDown(ks, "InvestShowAll");
+                bool hKey = ActionDown(ks, "InvestHideCompleted");
+                bool bKey = ActionDown(ks, "MenuBack") || nav.Back;
 
                 if (up && !_invUpWasDown) { inv.MoveCursor(-1); Console.WriteLine($"[monogame] invest cursor -> {inv.Cursor}"); }
                 if (down && !_invDownWasDown) { inv.MoveCursor(+1); Console.WriteLine($"[monogame] invest cursor -> {inv.Cursor}"); }
@@ -207,10 +207,10 @@ public sealed partial class Game1
             {
                 // P273 — the teleport pane's own keys (sub-view of the docked screen).
                 // P499 — DPAD Up/Down = cursor, A = select, B = back to hangar.
-                bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
-                bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
-                bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
-                bool bKey = ks.IsKeyDown(XnaKeys.B) || nav.Back;
+                bool up = ActionDown(ks, "MenuUp") || nav.Up;
+                bool down = ActionDown(ks, "MenuDown") || nav.Down;
+                bool space = ActionDown(ks, "MenuSelect") || nav.Accept;
+                bool bKey = ActionDown(ks, "MenuBack") || nav.Back;
 
                 if (up && !_telUpWasDown) { tel.MoveCursor(-1); Console.WriteLine($"[monogame] teleport cursor -> {tel.Cursor}"); }
                 if (down && !_telDownWasDown) { tel.MoveCursor(+1); Console.WriteLine($"[monogame] teleport cursor -> {tel.Cursor}"); }
@@ -238,16 +238,16 @@ public sealed partial class Game1
                 // shop keys: DPAD Up/Down = cursor, A = select, Y = launch, B =
                 // back, shoulders = switch HULLS/PARTS tab. P519 added the Tab,
                 // Q/E (hull cycle), Enter (select) and B (back) keyboard verbs.
-                bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
-                bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
-                bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
-                bool enter = ks.IsKeyDown(XnaKeys.Enter) || nav.Accept;
-                bool tabKey = ks.IsKeyDown(XnaKeys.Tab);
-                bool lKey = ks.IsKeyDown(XnaKeys.L) || nav.Extra;
-                bool uKey = ks.IsKeyDown(XnaKeys.U);
-                bool bKey = ks.IsKeyDown(XnaKeys.B) || nav.Back;
-                bool qKey = ks.IsKeyDown(XnaKeys.Q) || nav.Left;
-                bool eKey = ks.IsKeyDown(XnaKeys.E) || nav.Right;
+                bool up = ActionDown(ks, "MenuUp") || nav.Up;
+                bool down = ActionDown(ks, "MenuDown") || nav.Down;
+                bool space = ActionDown(ks, "MenuSelect") || nav.Accept;
+                bool enter = ActionDown(ks, "MenuConfirm") || nav.Accept;
+                bool tabKey = ActionDown(ks, "ShopTabSwitch");
+                bool lKey = ActionDown(ks, "ShopLaunch") || nav.Extra;
+                bool uKey = ActionDown(ks, "ShopUndock");
+                bool bKey = ActionDown(ks, "MenuBack") || nav.Back;
+                bool qKey = ActionDown(ks, "ShopCycleHullPrev") || nav.Left;
+                bool eKey = ActionDown(ks, "ShopCycleHullNext") || nav.Right;
 
                 if (up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
                 if (down && !_dockDownWasDown) { shop.MoveCursor(+1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
@@ -949,18 +949,18 @@ public sealed partial class Game1
         // (all-false on desktop without a connected pad).
         var nav = GamePadNavNow();
 
-        bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
+        bool up = ActionDown(ks, "MenuUp") || nav.Up;
         if (up && !_ssUpWasDown && count > 0)
             _sideSelectIndex = (_sideSelectIndex - 1 + count) % count;
         _ssUpWasDown = up;
 
-        bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
+        bool down = ActionDown(ks, "MenuDown") || nav.Down;
         if (down && !_ssDownWasDown && count > 0)
             _sideSelectIndex = (_sideSelectIndex + 1) % count;
         _ssDownWasDown = down;
 
-        bool enter = ks.IsKeyDown(XnaKeys.Enter) || nav.Accept;
-        bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
+        bool enter = ActionDown(ks, "MenuConfirm") || nav.Accept;
+        bool space = ActionDown(ks, "MenuSelect") || nav.Accept;
         if (count > 0 && (enter && !_ssEnterWasDown || space && !_ssSpaceWasDown))
         {
             int sel = _sideSelectIndex % count;
@@ -971,7 +971,7 @@ public sealed partial class Game1
         _ssEnterWasDown = enter;
         _ssSpaceWasDown = space;
 
-        bool r = ks.IsKeyDown(XnaKeys.R);
+        bool r = ActionDown(ks, "RandomizeTeams");
         if (r && !_ssRWasDown && _session.World.AmMissionOwner)
         {
             Console.WriteLine("[monogame] side-select: mission owner -> RANDOMIZE_TEAMS");
@@ -1110,7 +1110,7 @@ public sealed partial class Game1
         // (all-false on desktop without a connected pad).
         var nav = GamePadNavNow();
 
-        bool y = ks.IsKeyDown(XnaKeys.Y) || nav.Accept;
+        bool y = ActionDown(ks, "ReadyToggle") || nav.Accept;
         if (y && !_rcYWasDown)
         {
             _ownReady = !_ownReady;
@@ -1119,7 +1119,7 @@ public sealed partial class Game1
         }
         _rcYWasDown = y;
 
-        bool o = ks.IsKeyDown(XnaKeys.O) || nav.X;
+        bool o = ActionDown(ks, "ForceReady") || nav.X;
         if (o && !_rcOWasDown && world.AmMissionOwner && world.MySideId is { } sideId)
         {
             // Mission-owner override, gated exactly like P281's randomize-teams

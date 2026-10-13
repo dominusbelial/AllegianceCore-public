@@ -16,6 +16,15 @@ TK identity, a category, a description, an effective default and its native
 default (parsed from `defaultinputmap.mdl`), and a current (user-overridden)
 binding persisted to a JSON settings file. All input handlers resolve through
 the action map — never raw key literals — so a rebind takes effect immediately,
+
+> ⚠️ **P625b correction (2026-10-13):** the sentence above was NOT true at
+> P625. A later review found dozens of raw `ks.IsKeyDown(XnaKeys.…)` game-key
+> checks still hard-coded in the input files (66 in `Game1.FlightInput.cs`
+> alone), so rebinding those commands did nothing. **P625b
+> (`docs/reports/P625b_ACTION_MAP_MIGRATION.md`) migrates every one of them**
+> through the action map (plus a source-scanning guard test so it cannot drift
+> back). Read P625b for the corrected, complete picture.
+
 the live help overlay (`H`) reflects it, and an in-game Controls popup (F6)
 provides native-style rebinding with conflict detection + swap and
 reset-to-defaults. Per Domingo (2026-10-12), **native wins the F-keys**: F4/F5/

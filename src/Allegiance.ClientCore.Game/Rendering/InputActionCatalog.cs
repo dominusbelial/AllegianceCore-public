@@ -31,6 +31,7 @@ public static class InputActionCatalog
         "QUEUED ORDERS (RECEIVED COMMAND)", "COMMANDED SHIP (DRONE)",
         "CAMERA / VIEW", "MUSIC", "CHAT", "LOBBY (SERVER BROWSER)",
         "READY CHECK (PRE-FLIGHT)",
+        "PANES / MENUS", "FREE-CAM / SPECTATOR", "SYSTEM",
     };
 
     // ---- convenient chord builders -----------------------------------------
@@ -97,6 +98,7 @@ public static class InputActionCatalog
         // -- COMMANDED SHIP (DRONE) --
         new("CycleCommandee", "COMMANDED SHIP (DRONE)", "Cycle which same-side ship/drone you command", K(Keys.PageDown), null),
         new("IssueBuild", "COMMANDED SHIP (DRONE)", "Issue order: commandee builds targeted asteroid", K(Keys.Insert), null),
+        new("LeaderCommand", "COMMANDED SHIP (DRONE)", "Leader-only: command the selected same-side bot to dock / launch", K(Keys.X), null),
 
         // -- CAMERA / VIEW (native wins the F-row) --
         new("CycleView", "CAMERA / VIEW", "Cycle view: cockpit -> chase -> turret -> missile-cam", K(Keys.V), K(Keys.V)),
@@ -113,6 +115,15 @@ public static class InputActionCatalog
         new("ToggleMouse", "CAMERA / VIEW", "Mouse flight toggle [TK_ToggleMouse]", K(Keys.M), K(Keys.V)),
         new("InvertMouse", "CAMERA / VIEW", "Invert mouse pitch (session only)", K(Keys.I), null),
         new("ToggleStarmap", "CAMERA / VIEW", "Expand/collapse the always-on mini-map (full starmap)", K(Keys.Tab), null),
+        new("SelectSectorPrev", "CAMERA / VIEW", "Starmap: previous sector (with map expanded)", K(Keys.OemComma), null),
+        new("SelectSectorNext", "CAMERA / VIEW", "Starmap: next sector (with map expanded)", K(Keys.OemPeriod), null),
+        // P506 — mouse-flight response-curve settings (native menu items,
+        // WinTrek.cpp:4534 / AdjustMouseSens :5512; this keyboard port has no
+        // menu, so the free digit row D5-D8 carries them).
+        new("MouseDeadzone", "CAMERA / VIEW", "Mouse flight: cycle deadzone preset", K(Keys.D5), null),
+        new("MouseResponseCurve", "CAMERA / VIEW", "Mouse flight: toggle linear / quadratic response", K(Keys.D6), null),
+        new("MouseSensitivityDown", "CAMERA / VIEW", "Mouse flight: sensitivity down", K(Keys.D7), null),
+        new("MouseSensitivityUp", "CAMERA / VIEW", "Mouse flight: sensitivity up", K(Keys.D8), null),
         new("Scoreboard", "CAMERA / VIEW", "In-mission scoreboard (kills / deaths)", K(Keys.B), null),
         new("PilotInfo", "CAMERA / VIEW", "Pilot info (your own live stats)", K(Keys.P), null),
         new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.H), K(Keys.F1)),
@@ -128,6 +139,7 @@ public static class InputActionCatalog
         // -- CHAT --
         new("StartChat", "CHAT", "Open chat / send line [TK_StartChat]", K(Keys.Enter), K(Keys.Enter)),
         new("ChatDelete", "CHAT", "Delete last char in chat", K(Keys.Back), null),
+        new("CycleChatTarget", "CHAT", "Cycle chat recipient (while composing)", K(Keys.Tab), null),
         new("QuickChat", "CHAT", "Open quick-chat menu [TK_QuickChatMenu]", K(Keys.R), null),
         new("CancelChat", "CHAT", "Cancel chat / close menu [TK_MainMenu]", K(Keys.Escape), K(Keys.Escape)),
 
@@ -142,6 +154,48 @@ public static class InputActionCatalog
         // -- READY CHECK (PRE-FLIGHT) --
         new("ReadyToggle", "READY CHECK (PRE-FLIGHT)", "Toggle your ready (PLAYER_READY)", K(Keys.Y), null),
         new("ForceReady", "READY CHECK (PRE-FLIGHT)", "Force your side ready (mission owner)", K(Keys.O), null),
+
+        // -- PANES / MENUS (docked shop / teleport / invest, side-select) --
+        // Generic navigation verbs shared across the docked sub-panes and the
+        // side-select / ready-check pickers (the same physical Up/Down/Space/
+        // Enter/B row in each context, as P625 noted). Pane-specific verbs get
+        // their own actions. Native has no single TK for these convenience
+        // bindings (they come from each pane's own key handling).
+        new("MenuUp", "PANES / MENUS", "Menu / pane: cursor up", K(Keys.Up), null),
+        new("MenuDown", "PANES / MENUS", "Menu / pane: cursor down", K(Keys.Down), null),
+        new("MenuSelect", "PANES / MENUS", "Menu / pane: select / activate", K(Keys.Space), null),
+        new("MenuConfirm", "PANES / MENUS", "Menu / pane: confirm (Enter)", K(Keys.Enter), null),
+        new("MenuBack", "PANES / MENUS", "Menu / pane: back to hangar / previous", K(Keys.B), null),
+        new("ShopTabSwitch", "PANES / MENUS", "Docked shop: switch HULLS / PARTS tab", K(Keys.Tab), null),
+        new("ShopCycleHullPrev", "PANES / MENUS", "Docked shop: previous hull", K(Keys.Q), null),
+        new("ShopCycleHullNext", "PANES / MENUS", "Docked shop: next hull", K(Keys.E), null),
+        new("ShopLaunch", "PANES / MENUS", "Docked shop: launch (BUY_LOADOUT)", K(Keys.L), null),
+        new("ShopUndock", "PANES / MENUS", "Docked shop: undock without buying", K(Keys.U), null),
+        new("ToggleTeleportPane", "PANES / MENUS", "Docked: toggle the teleport pane", K(Keys.T), null),
+        new("ToggleInvestmentPane", "PANES / MENUS", "Docked: toggle the investment pane", K(Keys.I), null),
+        new("InvestPartial", "PANES / MENUS", "Investment: partial invest (10%)", K(Keys.R), null),
+        new("InvestShowAll", "PANES / MENUS", "Investment: show all buckets", K(Keys.S), null),
+        new("InvestHideCompleted", "PANES / MENUS", "Investment: hide completed buckets", K(Keys.H), null),
+        new("RandomizeTeams", "READY CHECK (PRE-FLIGHT)", "Mission owner: randomize teams (side-select)", K(Keys.R), null),
+
+        // -- FREE-CAM / SPECTATOR (P612 spectator cameras, native has no TK) --
+        // Dedicated actions so the spectator free-cam's own WASD/Q-E movement
+        // and Shift/Ctrl speed are rebindable independently of ship flight.
+        new("FreeCamForward", "FREE-CAM / SPECTATOR", "Free-cam: move forward", K(Keys.W), null),
+        new("FreeCamBack", "FREE-CAM / SPECTATOR", "Free-cam: move back", K(Keys.S), null),
+        new("FreeCamLeft", "FREE-CAM / SPECTATOR", "Free-cam: move left", K(Keys.A), null),
+        new("FreeCamRight", "FREE-CAM / SPECTATOR", "Free-cam: move right", K(Keys.D), null),
+        new("FreeCamUp", "FREE-CAM / SPECTATOR", "Free-cam: move up", K(Keys.Q), null),
+        new("FreeCamDown", "FREE-CAM / SPECTATOR", "Free-cam: move down", K(Keys.E), null),
+        new("FreeCamSpeedUp", "FREE-CAM / SPECTATOR", "Free-cam: speed up (fast)", K(Keys.LeftShift), null),
+        new("FreeCamSpeedSlow", "FREE-CAM / SPECTATOR", "Free-cam: speed down (slow)", K(Keys.LeftControl), null),
+        new("OrbitSubjectNext", "FREE-CAM / SPECTATOR", "Orbit camera: cycle locked subject", K(Keys.PageUp), null),
+
+        // -- SYSTEM (game-flow / overlay keys that are not flight commands) --
+        new("GameOverBack", "SYSTEM", "Game-over: back / leave (Log Off)", K(Keys.Back), null),
+        new("Credits", "SYSTEM", "Toggle the Credits / Licences overlay", K(Keys.F12), null),
+        new("CreditsScrollUp", "SYSTEM", "Credits overlay: scroll up", K(Keys.PageUp), null),
+        new("CreditsScrollDown", "SYSTEM", "Credits overlay: scroll down", K(Keys.PageDown), null),
     };
 
     /// <summary>The full rebindable action set.</summary>

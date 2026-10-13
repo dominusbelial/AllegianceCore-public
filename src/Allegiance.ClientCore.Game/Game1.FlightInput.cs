@@ -310,8 +310,8 @@ public sealed partial class Game1
         // it leaves the mission (LOG OFF → server browser); otherwise it clears
         // the panel and enters the team lobby (ready-check for a rotated next
         // game, side-select for an eliminated side).
-        bool back = ks.IsKeyDown(XnaKeys.Back);
-        bool goBackEdge = back && !_backKeyWasDown;
+        bool back = ActionDown(ks, "GameOverBack");
+        bool goBackEdge = back && !_gameOverBackWasDown;
         if (goBackEdge
             && _state == ClientState.Flying
             && _session.World.GameOverResult is { }
@@ -319,7 +319,7 @@ public sealed partial class Game1
         {
             HandleGameOverBack();
         }
-        _backKeyWasDown = back;
+        _gameOverBackWasDown = back;
 
         // Escape: while composing chat it cancels the input line, closes the
         // briefing popup, backs out of quick-chat, or clears the lobby filter
@@ -328,7 +328,7 @@ public sealed partial class Game1
         // Alt+F4 combo below, matching the standard OS convention, so a
         // single stray Escape can no longer end the session. Edge-detected
         // so a single held Escape can never re-trigger across frames.
-        bool esc = ks.IsKeyDown(XnaKeys.Escape);
+        bool esc = ActionDown(ks, "CancelChat");
         bool backBtn = GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed;
         if ((esc && !_escWasDown) || backBtn)
         {
@@ -357,7 +357,7 @@ public sealed partial class Game1
         // Handled in-app rather than left to the window manager, so it
         // quits reliably regardless of the desktop environment. Edge-
         // detected on F4 so holding it can't re-fire.
-        bool altF4 = (ks.IsKeyDown(XnaKeys.LeftAlt) || ks.IsKeyDown(XnaKeys.RightAlt)) && ks.IsKeyDown(XnaKeys.F4);
+        bool altF4 = KeyOf("Quit").Matches(ks);
         if (altF4 && !_altF4WasDown)
         {
             Exit();
@@ -375,7 +375,7 @@ public sealed partial class Game1
         // game — confirmed live, Domingo's own hardware never saw the keydown
         // at all. H (mnemonic: Help) is unclaimed and a normal key every
         // keyboard delivers.
-        bool helpKey = ks.IsKeyDown(XnaKeys.H);
+        bool helpKey = ActionDown(ks, "Help");
         if (helpKey && !_helpKeyWasDown && !_chatActive && !_qcMenuOpen)
         {
             _helpVisible = !_helpVisible;
@@ -387,7 +387,7 @@ public sealed partial class Game1
         // CC BY / public-domain attribution for the HD sky's telescope data).
         // Edge-triggered and composing-gated like the H help toggle; scrolling
         // with PageUp/PageDown while it is open.
-        bool creditsKey = ks.IsKeyDown(XnaKeys.F12);
+        bool creditsKey = ActionDown(ks, "Credits");
         if (creditsKey && !_f12WasDown && !_chatActive && !_qcMenuOpen)
         {
             _creditsVisible = !_creditsVisible;
@@ -396,8 +396,8 @@ public sealed partial class Game1
         _f12WasDown = creditsKey;
         if (_creditsVisible)
         {
-            if (ks.IsKeyDown(XnaKeys.PageDown)) _creditsOverlayRenderer.Scroll(+42f);
-            if (ks.IsKeyDown(XnaKeys.PageUp)) _creditsOverlayRenderer.Scroll(-42f);
+            if (ActionDown(ks, "CreditsScrollDown")) _creditsOverlayRenderer.Scroll(+42f);
+            if (ActionDown(ks, "CreditsScrollUp")) _creditsOverlayRenderer.Scroll(-42f);
         }
 
         // P625 — Controls (rebind) popup. F6 opens/closes it (action
@@ -416,7 +416,7 @@ public sealed partial class Game1
         // letters in use are A C D E G H K M N Q R S T V W + modifiers). Edge-
         // triggered and composing-gated like the H help toggle, independent of
         // the starmap/help flags so the prior view resumes on close.
-        bool scoreKey = ks.IsKeyDown(XnaKeys.B);
+        bool scoreKey = ActionDown(ks, "Scoreboard");
         // M-2 — also gate on !_dockedActive: while the docked/teleport pane is
         // open, B is bound to "back to hangar" (HandleDockedScreen), so a single
         // press must close the pane only, not ALSO flip the scoreboard.
@@ -432,7 +432,7 @@ public sealed partial class Game1
         // Game1; in-use singles are A C D E F G H K L M N O Q R S T U V W + B).
         // Edge-triggered and composing-gated like the H/B toggles, independent of
         // the scoreboard/starmap/help flags so the prior view resumes on close.
-        bool pilotKey = ks.IsKeyDown(XnaKeys.P);
+        bool pilotKey = ActionDown(ks, "PilotInfo");
         if (pilotKey && !_pilotInfoKeyWasDown && !_chatActive && !_qcMenuOpen)
         {
             _pilotInfoVisible = !_pilotInfoVisible;
@@ -513,18 +513,21 @@ public sealed partial class Game1
     private void PrimeInFlightKeyLatches(KeyboardState ks)
     {
         (_enterWasDown, _qcRWasDown) = ComputeSharedEdgePrimes(ks);
-        _backWasDown                = ks.IsKeyDown(XnaKeys.Back);
-        _chatTabKeyWasDown          = ks.IsKeyDown(XnaKeys.Tab);
-        _mKeyWasDown                = ks.IsKeyDown(XnaKeys.M);
-        _iKeyWasDown                = ks.IsKeyDown(XnaKeys.I);
-        _mouseDzKeyWasDown          = ks.IsKeyDown(XnaKeys.D5);
-        _mouseLinKeyWasDown         = ks.IsKeyDown(XnaKeys.D6);
-        _mouseSensDownKeyWasDown    = ks.IsKeyDown(XnaKeys.D7);
-        _mouseSensUpKeyWasDown      = ks.IsKeyDown(XnaKeys.D8);
-        _tabKeyWasDown              = ks.IsKeyDown(XnaKeys.Tab);
-        _selPrevKeyWasDown          = ks.IsKeyDown(XnaKeys.OemComma);
-        _selNextKeyWasDown          = ks.IsKeyDown(XnaKeys.OemPeriod);
-        _vKeyWasDown                = ks.IsKeyDown(XnaKeys.V);
+        // The chat-delete Backspace is TEXT ENTRY (allow-listed raw key);
+        // every other latch below tracks the ACTION (resolved binding).
+        _backKeyWasDown                = ks.IsKeyDown(XnaKeys.Back);
+        _gameOverBackWasDown           = ActionDown(ks, "GameOverBack");
+        _chatTabKeyWasDown             = ActionDown(ks, "CycleChatTarget");
+        _mKeyWasDown                   = ActionDown(ks, "ToggleMouse");
+        _iKeyWasDown                   = ActionDown(ks, "InvertMouse");
+        _mouseDzKeyWasDown             = ActionDown(ks, "MouseDeadzone");
+        _mouseLinKeyWasDown            = ActionDown(ks, "MouseResponseCurve");
+        _mouseSensDownKeyWasDown       = ActionDown(ks, "MouseSensitivityDown");
+        _mouseSensUpKeyWasDown         = ActionDown(ks, "MouseSensitivityUp");
+        _tabKeyWasDown                 = ActionDown(ks, "ToggleStarmap");
+        _selPrevKeyWasDown             = ActionDown(ks, "SelectSectorPrev");
+        _selNextKeyWasDown             = ActionDown(ks, "SelectSectorNext");
+        _vKeyWasDown                   = ActionDown(ks, "CycleView");
         _kKeyWasDown                = ActionDown(ks, "Suicide");
         _cKeyWasDown                = ActionDown(ks, "DropChaff");
         _fCloakWasDown              = ActionDown(ks, "ToggleCloak");
@@ -536,26 +539,33 @@ public sealed partial class Game1
         _thUpWasDown                = ActionDown(ks, "ThrottleUp");
         _thDownWasDown              = ActionDown(ks, "ThrottleDown");
         _thZeroWasDown              = ActionDown(ks, "ThrottleZero");
-        // ThrottleFull also honours the alternate ISO "\" scancode (OemPipe).
-        _thFullWasDown              = ActionDown(ks, "ThrottleFull") || ks.IsKeyDown(XnaKeys.OemPipe);
+        _thFullWasDown              = ThrottleFullDown(ks);
         _tKeyWasDown                = ActionDown(ks, "Target");
         _gKeyWasDown                = ActionDown(ks, "ToggleAutopilot");
         _uTargetKeyWasDown          = ActionDown(ks, "TargetEnemyNearest");
         _zTargetKeyWasDown          = ActionDown(ks, "TargetEnemyBaseNearest");
         _semicolonNothingKeyWasDown = ActionDown(ks, "TargetNothing");
         _apostropheCenterKeyWasDown = ActionDown(ks, "TargetCenter");
-        _f11ScreenShotKeyWasDown    = ks.IsKeyDown(XnaKeys.F11);
-        _pageDownKeyWasDown         = ks.IsKeyDown(XnaKeys.PageDown);
-        _insertKeyWasDown           = ks.IsKeyDown(XnaKeys.Insert);
+        _shotKeyWasDown             = ActionDown(ks, "ScreenShot");
+        _pageDownKeyWasDown         = ActionDown(ks, "CycleCommandee");
+        _insertKeyWasDown           = ActionDown(ks, "IssueBuild");
         _p1TurretKeyWasDown         = ActionDown(ks, "PromoteTurret1");
         _p2TurretKeyWasDown         = ActionDown(ks, "PromoteTurret2");
         _p3TurretKeyWasDown         = ActionDown(ks, "PromoteTurret3");
         _p4TurretKeyWasDown         = ActionDown(ks, "PromoteTurret4");
-        _xKeyWasDown                = ks.IsKeyDown(XnaKeys.X);
-        _acceptKeyWasDown           = ks.IsKeyDown(XnaKeys.Home);
-        _rejectKeyWasDown           = ks.IsKeyDown(XnaKeys.End);
-        _clearKeyWasDown            = ks.IsKeyDown(XnaKeys.Delete);
+        _xKeyWasDown                = ActionDown(ks, "LeaderCommand");
+        _acceptKeyWasDown           = ActionDown(ks, "AcceptCommand");
+        _rejectKeyWasDown           = ActionDown(ks, "RejectCommand");
+        _clearKeyWasDown            = ActionDown(ks, "ClearCommand");
     }
+
+    /// <summary>P445 — is the ThrottleFull action held, including its alternate
+    /// ISO/EU backslash scancode (OemPipe — the same physical "\\" key the
+    /// catalogue binds OemBackslash to)? The OemPipe branch is a hardware-layout
+    /// ALIAS for the same logical key, so it is an allow-listed raw check (the
+    /// guard test permits it); rebinding ThrottleFull moves both.</summary>
+    private bool ThrottleFullDown(KeyboardState ks)
+        => ActionDown(ks, "ThrottleFull") || ks.IsKeyDown(XnaKeys.OemPipe);
 
     /// <summary>
     /// P523 — the pre-flight→flight EDGE-GATE for the keys the side-select /
@@ -564,10 +574,14 @@ public sealed partial class Game1
     /// opens quick-chat in flight). If either is held when the mission starts, its
     /// in-flight edge must be primed (marked already-pressed) so the first flight
     /// frame does not fire it. Internal + pure over the keyboard state so a test
-    /// can pin the guarantee headlessly (InternalsVisibleTo).
+    /// can pin the guarantee headlessly (InternalsVisibleTo). Resolved through
+    /// the LIVE action map (StartChat / QuickChat), so a rebind is honoured.
     /// </summary>
     internal static (bool Enter, bool R) ComputeSharedEdgePrimes(KeyboardState ks)
-        => (ks.IsKeyDown(XnaKeys.Enter), ks.IsKeyDown(XnaKeys.R));
+    {
+        var map = Rendering.KeyBindingStore.Instance.Map;
+        return (map.IsDown(ks, "StartChat"), map.IsDown(ks, "QuickChat"));
+    }
 
     /// <summary>
     /// P304 — the per-frame music drive (see the call site in <see cref="Update"/>).
@@ -636,7 +650,7 @@ public sealed partial class Game1
         // line via SendChat and Backspace deletes the previous character. Text
         // itself arrives through Window.TextInput (OnTextInput). Enter is
         // ignored while the quick-chat menu is open (its keys are navigation).
-        bool enter = ks.IsKeyDown(XnaKeys.Enter);
+        bool enter = ActionDown(ks, "StartChat");
         if (!_qcMenuOpen && enter && !_enterWasDown)
         {
             if (IsBriefingVisible(out _))
@@ -648,6 +662,8 @@ public sealed partial class Game1
 
         if (_chatActive)
         {
+            // Backspace deletes the previous character — TEXT ENTRY, so it is an
+            // allow-listed raw key (not a game command; it only edits the line).
             bool back = ks.IsKeyDown(XnaKeys.Back);
             if (back && !_backWasDown && _chatBuffer.Length > 0)
                 _chatBuffer.Length -= 1;
@@ -660,7 +676,7 @@ public sealed partial class Game1
             // (P456b), so Tab is a no-op then. Edge-detected with its own flag so
             // holding Tab never re-fires, and separate from the minimap-toggle
             // flag below (mutually exclusive via the composing gate).
-            bool chatTab = ks.IsKeyDown(XnaKeys.Tab);
+            bool chatTab = ActionDown(ks, "CycleChatTarget");
             if (chatTab && !_chatTabKeyWasDown && ChatTargetLogic.CanCycleWhileComposing(_chatBuffer.ToString()))
             {
                 _chatTarget = ChatTargetLogic.Next(_chatTarget);
@@ -671,7 +687,7 @@ public sealed partial class Game1
 
         // P217 — quick-chat voice macros. R (free in flight) opens the menu;
         // while it is open every shortcut key navigates instead of flying.
-        bool qcKey = ks.IsKeyDown(XnaKeys.R);
+        bool qcKey = ActionDown(ks, "QuickChat");
         if (!_chatActive && qcKey && !_qcRWasDown && !_qcMenuOpen)
             OpenQuickChat();
         _qcRWasDown = qcKey;
@@ -698,7 +714,7 @@ public sealed partial class Game1
 
         // Virtual-joystick mouse-flight toggle (M), edge-triggered to mirror the
         // original's TK_ToggleMouse key (not a held-until-repeat behaviour).
-        bool mMouse = ks.IsKeyDown(XnaKeys.M);
+        bool mMouse = ActionDown(ks, "ToggleMouse");
         if (!composing && mMouse && !_mKeyWasDown)
         {
             _mouseFlightEnabled = !_mouseFlightEnabled;
@@ -719,7 +735,7 @@ public sealed partial class Game1
         // resets to normal on every restart. I is unclaimed (the binding table
         // reserves W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/K/C/N/OemTilde/[ /]/LeftCtrl/
         // Tab/, /./Enter/Back/Escape/Space and more; I is the natural mnemonic).
-        bool iInvert = ks.IsKeyDown(XnaKeys.I);
+        bool iInvert = ActionDown(ks, "InvertMouse");
         if (!composing && iInvert && !_iKeyWasDown)
         {
             _mouseFlight.InvertPitch = !_mouseFlight.InvertPitch;
@@ -735,7 +751,7 @@ public sealed partial class Game1
         //   D6  → toggle linear vs quadratic response (native default quadratic)
         //   D7  → mouse sensitivity −0.01   D8 → mouse sensitivity +0.01
         //         (native range [0.1, 2.0], step c_fMouseSensDelta)
-        bool dzKey = ks.IsKeyDown(XnaKeys.D5);
+        bool dzKey = ActionDown(ks, "MouseDeadzone");
         if (!composing && dzKey && !_mouseDzKeyWasDown)
         {
             var p = MouseFlightController.DeadzonePresets;
@@ -746,7 +762,7 @@ public sealed partial class Game1
         }
         _mouseDzKeyWasDown = dzKey;
 
-        bool linKey = ks.IsKeyDown(XnaKeys.D6);
+        bool linKey = ActionDown(ks, "MouseResponseCurve");
         if (!composing && linKey && !_mouseLinKeyWasDown)
         {
             _mouseFlight.LinearControls = !_mouseFlight.LinearControls;
@@ -756,7 +772,7 @@ public sealed partial class Game1
         }
         _mouseLinKeyWasDown = linKey;
 
-        bool sensDown = ks.IsKeyDown(XnaKeys.D7);
+        bool sensDown = ActionDown(ks, "MouseSensitivityDown");
         if (!composing && sensDown && !_mouseSensDownKeyWasDown)
         {
             _mouseFlight.MouseSensitivity -= MouseFlightController.MouseSensitivityStep;
@@ -764,7 +780,7 @@ public sealed partial class Game1
         }
         _mouseSensDownKeyWasDown = sensDown;
 
-        bool sensUp = ks.IsKeyDown(XnaKeys.D8);
+        bool sensUp = ActionDown(ks, "MouseSensitivityUp");
         if (!composing && sensUp && !_mouseSensUpKeyWasDown)
         {
             _mouseFlight.MouseSensitivity += MouseFlightController.MouseSensitivityStep;
@@ -779,7 +795,7 @@ public sealed partial class Game1
         // Enter/Back/Escape/Space/K/C/N/OemTilde/[ /]/LeftCtrl all taken) and is
         // the natural native-adjacent overlay key (the audit blessed Tab or M for
         // an overview toggle; M is already TK_ToggleMouse, so Tab it is).
-        bool tab = ks.IsKeyDown(XnaKeys.Tab);
+        bool tab = ActionDown(ks, "ToggleStarmap");
         if (!composing && tab && !_tabKeyWasDown)
         {
             _minimapExpanded = !_minimapExpanded;
@@ -799,8 +815,8 @@ public sealed partial class Game1
         // free, natural prev/next pair — every other key is claimed (arrows are
         // yaw, brackets are weapon cycle, OemTilde is group fire, M/V/K/C/N/T/G
         // all taken). First press with no selection starts at the player's sector.
-        bool selPrev = ks.IsKeyDown(XnaKeys.OemComma);
-        bool selNext = ks.IsKeyDown(XnaKeys.OemPeriod);
+        bool selPrev = ActionDown(ks, "SelectSectorPrev");
+        bool selNext = ActionDown(ks, "SelectSectorNext");
         if (!composing && _minimapExpanded)
         {
             if (selPrev && !_selPrevKeyWasDown)
@@ -818,7 +834,7 @@ public sealed partial class Game1
         // actually gunning (CameraCycler skips it otherwise). 'V' is unused by
         // FlightInput (WASD, arrows, Q/E, A/D, Escape and M are all taken), and
         // "View" is a mnemonic.
-        bool vCam = ks.IsKeyDown(XnaKeys.V);
+        bool vCam = ActionDown(ks, "CycleView");
         if (!composing && vCam && !_vKeyWasDown && !SpectatorCameraActive)
         {
             _cameraMode = Rendering.CameraCycler.Next(_cameraMode, IsTurretGunner());
@@ -974,7 +990,7 @@ public sealed partial class Game1
         // unclaimed by every other binding (W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/
         // Enter/Back/Escape/Space/K/C/N/OemTilde/[ /] all taken) and the common
         // flight-sim missile-fire convention (the brief's own suggestion).
-        bool missileCtrl = ks.IsKeyDown(XnaKeys.LeftControl);
+        bool missileCtrl = ActionDown(ks, "FireMissile");
         if (!composing && missileCtrl)
         {
             long nowMs = Environment.TickCount64;
@@ -1053,7 +1069,7 @@ public sealed partial class Game1
         bool thUp = ActionDown(ks, "ThrottleUp");
         bool thDown = ActionDown(ks, "ThrottleDown");
         bool thZero = ActionDown(ks, "ThrottleZero");
-        bool thFull = ActionDown(ks, "ThrottleFull") || ks.IsKeyDown(XnaKeys.OemPipe);
+        bool thFull = ThrottleFullDown(ks);
         if (!composing)
         {
             if (thUp && !_thUpWasDown)
@@ -1146,22 +1162,22 @@ public sealed partial class Game1
         var input = composing
             ? new FlightInputState { Throttle = _throttle }
             : new FlightInputState(
-            ThrottleForward: ks.IsKeyDown(XnaKeys.W),
-            ThrottleBack:    ks.IsKeyDown(XnaKeys.S),
-            StrafeLeft:      ks.IsKeyDown(XnaKeys.Q),
-            StrafeRight:     ks.IsKeyDown(XnaKeys.E),
-            PitchUp:         ks.IsKeyDown(XnaKeys.Up),
-            PitchDown:       ks.IsKeyDown(XnaKeys.Down),
-            YawLeft:         ks.IsKeyDown(XnaKeys.Left),
-            YawRight:        ks.IsKeyDown(XnaKeys.Right),
-            RollLeft:        ks.IsKeyDown(XnaKeys.A),
-            RollRight:       ks.IsKeyDown(XnaKeys.D),
+            ThrottleForward: ActionDown(ks, "ThrustForward"),
+            ThrottleBack:    ActionDown(ks, "ThrustBackward"),
+            StrafeLeft:      ActionDown(ks, "ThrustLeft"),
+            StrafeRight:     ActionDown(ks, "ThrustRight"),
+            PitchUp:         ActionDown(ks, "PitchUp"),
+            PitchDown:       ActionDown(ks, "PitchDown"),
+            YawLeft:         ActionDown(ks, "YawLeft"),
+            YawRight:        ActionDown(ks, "YawRight"),
+            RollLeft:        ActionDown(ks, "RollLeft"),
+            RollRight:       ActionDown(ks, "RollRight"),
             // P220 — afterburner (TK_FireBooster): held, continuous (not
             // edge-triggered), reading either Shift key. Mirrors native's
             // IsTrekKeyDown(TK_FireBooster) sense (WinTrek.cpp:8270-8271);
             // Shift is the recollection default since the native binding
             // table isn't in this checkout (see KEYBINDING_AUDIT_P220.md).
-            Afterburner:     ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift),
+            Afterburner:     ActionDown(ks, "FireBooster"),
             // P221 — fire (TK_FireWeapon): held, continuous (not edge-triggered)
             // like afterburner, so a held Space keeps firing (native
             // IsTrekKeyDown sense). Bound to Space — unclaimed by every other
@@ -1170,7 +1186,7 @@ public sealed partial class Game1
             // table in this checkout (see KEYBINDING_AUDIT_P220.md), Space is
             // this port's own reasonable choice — the same justification P220
             // used for Shift→afterburner.
-            Fire:            ks.IsKeyDown(XnaKeys.Space),
+            Fire:            ActionDown(ks, "FireWeapon"),
             // P413 — cloak (TK_ToggleCloak): the LATCHED client toggle state set
             // by the F key above (edge-triggered), carried in each frame exactly
             // like GroupFire/SelectedMount; Translate folds it into the outgoing
@@ -1349,28 +1365,34 @@ public sealed partial class Game1
             //   Shift+U  → nearest friendly ship (repeat = next friendly)
             //   Z        → nearest enemy base (station) (repeat = next enemy base)
             //   Shift+Z  → nearest friendly / allied base (repeat = next)
+            // Friend/foe are SEPARATE actions (TargetEnemyNearest vs
+            // TargetFriendlyNearest, etc.); the friend action wins when its
+            // Shift chord is held (the plain action tolerates extra modifiers,
+            // so both match on Shift+key). Reading both actions (never a raw
+            // Shift literal) means rebinding either key just works.
+            bool uFriend = ActionDown(ks, "TargetFriendlyNearest");
             bool uTarget = ActionDown(ks, "TargetEnemyNearest");
-            if (uTarget && !_uTargetKeyWasDown)
+            if ((uFriend || uTarget) && !_uTargetKeyWasDown)
             {
-                bool shift = ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift);
                 SelectFilteredTargetForKey(
-                    shift ? new TargetFilterSpec(TargetRelation.Friendly)
-                          : new TargetFilterSpec(TargetRelation.Enemy),
-                    shift ? "friendly ship" : "enemy ship");
+                    uFriend ? new TargetFilterSpec(TargetRelation.Friendly)
+                            : new TargetFilterSpec(TargetRelation.Enemy),
+                    uFriend ? "friendly ship" : "enemy ship");
             }
-            _uTargetKeyWasDown = uTarget;
+            _uTargetKeyWasDown = uFriend || uTarget;
 
+            bool zFriend = ActionDown(ks, "TargetFriendlyBaseNearest");
             bool zTarget = ActionDown(ks, "TargetEnemyBaseNearest");
-            if (zTarget && !_zTargetKeyWasDown)
+            if ((zFriend || zTarget) && !_zTargetKeyWasDown)
             {
-                bool shift = ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift);
                 // P587 — base targeting is now ANY-sector (native c_ttAnyCluster)
-                // with the local hull's dockability filter; Shift+Z adds the
-                // lifepod rescue-probe search. No "in sector" limitation.
-                if (shift) SelectFriendlyBaseForKey();
+                // with the local hull's dockability filter; the friendly base
+                // action adds the lifepod rescue-probe search. No "in sector"
+                // limitation.
+                if (zFriend) SelectFriendlyBaseForKey();
                 else SelectEnemyBaseForKey();
             }
-            _zTargetKeyWasDown = zTarget;
+            _zTargetKeyWasDown = zFriend || zTarget;
 
             // P417 — Target Nothing / Center, the small leftover targeting keys
             // (native TK_TargetNothing/Center). Edge-triggered and composing-
@@ -1403,9 +1425,9 @@ public sealed partial class Game1
             // TK_ScrnShot default binding, defaultinputmap.mdl line 108).
             // Read through the live action map so a rebind takes effect.
             bool shot = KeyOf("ScreenShot").Matches(ks);
-            if (shot && !_f11ScreenShotKeyWasDown)
+            if (shot && !_shotKeyWasDown)
                 _screenshotRequested = true;
-            _f11ScreenShotKeyWasDown = shot;
+            _shotKeyWasDown = shot;
 
             // P559 — one-shot live-proof hook: ALLEGIANCE_AUTOSHOT=<delayMs>
             // (e.g. 12000) requests ONE real-backbuffer screenshot <delayMs>
@@ -1455,12 +1477,12 @@ public sealed partial class Game1
             // Keys: PageDown/Insert are unclaimed (grep-verified — no binding
             // uses either; PageUp/F5 are also free but PageDown reads naturally
             // as "reach down the roster" and Insert as "dispatch the order").
-            bool pgdn = ks.IsKeyDown(XnaKeys.PageDown);
+            bool pgdn = ActionDown(ks, "CycleCommandee");
             if (pgdn && !_pageDownKeyWasDown)
                 SelectCommandee(cycle: true);
             _pageDownKeyWasDown = pgdn;
 
-            bool ins = ks.IsKeyDown(XnaKeys.Insert);
+            bool ins = ActionDown(ks, "IssueBuild");
             if (ins && !_insertKeyWasDown)
                 TryIssueOrderToCommandee();
             _insertKeyWasDown = ins;
@@ -1505,7 +1527,7 @@ public sealed partial class Game1
             // server's dock/launch arms act on. A non-leader never has
             // _leaderBotCommand set, so this key does nothing for them — no UI,
             // no wire — matching native's gate.
-            bool xPress = ks.IsKeyDown(XnaKeys.X);
+            bool xPress = ActionDown(ks, "LeaderCommand");
             if (xPress && !_xKeyWasDown && _leaderBotCommand is { } lbCmd)
             {
                 _session.SendOrderChange(lbCmd.TargetShipId, Allegiance.Core.Wire.OrderChange.CidGoto, Allegiance.Core.Wire.OrderChange.CmdAccepted);
@@ -1535,7 +1557,7 @@ public sealed partial class Game1
             // already claims.
             if (world.MyShipId is { } me)
             {
-                bool acc = ks.IsKeyDown(XnaKeys.Home);
+                bool acc = ActionDown(ks, "AcceptCommand");
                 if (acc && !_acceptKeyWasDown)
                 {
                     var pend = world.MyQueuedCommand;
@@ -1572,7 +1594,7 @@ public sealed partial class Game1
                 }
                 _acceptKeyWasDown = acc;
 
-                bool rej = ks.IsKeyDown(XnaKeys.End);
+                bool rej = ActionDown(ks, "RejectCommand");
                 if (rej && !_rejectKeyWasDown)
                 {
                     _session.SendOrderChange(me, Allegiance.Core.Wire.OrderChange.CidNone, Allegiance.Core.Wire.OrderChange.CmdQueued, (IgcObjectType)(-1), -1);
@@ -1580,7 +1602,7 @@ public sealed partial class Game1
                 }
                 _rejectKeyWasDown = rej;
 
-                bool cls = ks.IsKeyDown(XnaKeys.Delete);
+                bool cls = ActionDown(ks, "ClearCommand");
                 if (cls && !_clearKeyWasDown)
                 {
                     _session.SendOrderChange(me, Allegiance.Core.Wire.OrderChange.CidNone, Allegiance.Core.Wire.OrderChange.CmdAccepted, (IgcObjectType)(-1), -1);

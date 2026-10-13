@@ -125,12 +125,15 @@ public partial class Game1
     private double _keymapProofElapsed;
     private int _keymapProofStep;
 
-    /// <summary>Scripted real-window proof of the Controls (rebind) popup and
-    /// the LIVE help overlay, driven by ALLEGIANCE_KEYMAP_PROOF=1 so the real
-    /// client window's backbuffer can be photographed (live-proof.sh). Sequence:
-    /// (1) open the Controls popup, (2) rebind ScreenShot to a free key X,
-    /// (3) close and open the live help overlay - each step requests a real
-    /// backbuffer screenshot (flushed at Draw end).</summary>
+    /// <summary>Scripted real-window proof of the P625b migration: the F6
+    /// Controls popup rebinds ORDER-ACCEPT and MOUSE-FLIGHT (two of the commands
+    /// that were hard-coded to Home/M at P625) to free keys, and the LIVE help
+    /// overlay shows the new keys. Driven by ALLEGIANCE_KEYMAP_PROOF=1 so the
+    /// real client window's backbuffer can be photographed (live-proof.sh).
+    /// Sequence: (1) open the Controls popup; (2) rebind AcceptCommand ->
+    /// Numpad1 and ToggleMouse -> Numpad2; (3) close and open the live help
+    /// overlay. Each step requests a real backbuffer screenshot (flushed at Draw
+    /// end).</summary>
     private void RunKeymapProof(double dtSec)
     {
         if (_keymapProofDone) return;
@@ -152,13 +155,26 @@ public partial class Game1
             case 1:
                 if (_keymapProofElapsed > 2.0)
                 {
-                    // Demonstrate a rebind: navigate to ScreenShot, capture X.
-                    while (_keyBindController.CurrentAction != "ScreenShot")
+                    // Rebind the two hard-coded commands: AcceptCommand (Home)
+                    // -> Numpad1, ToggleMouse (M) -> Numpad2. Neither is a
+                    // catalogue default, so no conflict.
+                    while (_keyBindController.CurrentAction != "AcceptCommand")
                         _keyBindController.MoveDown();
                     _keyBindController.SelectCurrent();
-                    _keyBindController.CaptureKey(XnaKeys.X, false, false, false);
-                    _screenshotRequested = true; // shot B: Controls after rebind
-                    Console.WriteLine("[keymap-proof] shot B: ScreenShot -> X (rebound)");
+                    _keyBindController.CaptureKey(XnaKeys.NumPad1, false, false, false);
+
+                    while (_keyBindController.CurrentAction != "ToggleMouse")
+                        _keyBindController.MoveDown();
+                    _keyBindController.SelectCurrent();
+                    _keyBindController.CaptureKey(XnaKeys.NumPad2, false, false, false);
+
+                    // Prove the map now resolves the NEW keys (the exact
+                    // predicate every handler uses), and log it for the report.
+                    var map = Rendering.KeyBindingStore.Instance.Map;
+                    Console.WriteLine($"[keymap-proof] AcceptCommand -> {map.BindingOf("AcceptCommand").Label}, "
+                        + $"ToggleMouse -> {map.BindingOf("ToggleMouse").Label}");
+                    _screenshotRequested = true; // shot B: Controls after rebinds
+                    Console.WriteLine("[keymap-proof] shot B: AcceptCommand+Numpad1, ToggleMouse+Numpad2 (rebound)");
                     _keymapProofElapsed = 0;
                     _keymapProofStep = 2;
                 }
@@ -166,11 +182,11 @@ public partial class Game1
             case 2:
                 if (_keymapProofElapsed > 2.0)
                 {
-                    // Close Controls, open the LIVE help overlay (reflects X).
+                    // Close Controls, open the LIVE help overlay (reflects both).
                     ToggleKeyBindings();
                     _helpVisible = true;
-                    _screenshotRequested = true; // shot C: help after rebind
-                    Console.WriteLine("[keymap-proof] shot C: live help reflects X");
+                    _screenshotRequested = true; // shot C: help after rebinds
+                    Console.WriteLine("[keymap-proof] shot C: live help reflects Numpad1/Numpad2");
                     _keymapProofElapsed = 0;
                     _keymapProofStep = 3;
                 }

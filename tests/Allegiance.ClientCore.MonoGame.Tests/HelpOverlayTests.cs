@@ -26,7 +26,7 @@ public class HelpOverlayTests
     [Fact]
     public void Table_HasAllLogicalGroups()
     {
-        Assert.Equal(11, KeyBindingTable.GroupCount);
+        Assert.Equal(14, KeyBindingTable.GroupCount);
         Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
         // P445 — the persistent-cruise-throttle keys' own group.
         Assert.Contains(KeyBindingTable.All, g => g.Title == "CRUISE THROTTLE");
@@ -220,11 +220,14 @@ public class HelpOverlayTests
     [Fact]
     public void Table_BalancesIntoTypicalPanelWithoutOverflow()
     {
-        // The REAL table, at a realistic 1280x720 overlay inner height: a
-        // handful of columns, every group within bounds.
+        // The REAL table — now the full 14-category reference (P625b routed every
+        // pane/menu, free-cam and system command into the map, so the help overlay
+        // lists them all). At the client's standard 2560x1440 backbuffer (the
+        // resolution every live proof captures) the balanced columns fit the
+        // panel without overflow: a handful of columns, every group within bounds.
         var heights = KeyBindingTable.All.Select(g => g.Height).ToArray();
         const float panelY = 22f;
-        const float panelH = 720f * 0.90f - 2f * HelpOverlayLayout.Padding;
+        const float panelH = 1440f * 0.90f - 2f * HelpOverlayLayout.Padding;
         var slots = HelpOverlayLayout.Layout(heights, panelY, panelH);
 
         Assert.InRange(slots.Max(s => s.Column) + 1, 2, 6);
