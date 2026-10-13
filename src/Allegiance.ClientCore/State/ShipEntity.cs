@@ -183,6 +183,15 @@ public sealed class ShipEntity
     /// is practically set on <see cref="IsMine"/> only.</summary>
     public IReadOnlyList<ExpandedPartData>? Loadout { get; internal set; }
 
+    /// <summary>P626 — the ship's cargo hold entries (unmounted spare parts,
+    /// each with a <em>negative</em> mount -1..-5 encoded as a high-bit byte),
+    /// from the most recent BUY_LOADOUT_ACK. Null until the first ack carries
+    /// cargo; empty when the hold is empty. Split out of the ack's part tail
+    /// (native mixes mounted + cargo into one tail, so this port separates them
+    /// by mount sign: non-negative → <see cref="Loadout"/>, high-bit → here).
+    /// Drives the in-flight NextCargo/PrevPart/NextPart/DropCargo/Reload keys.</summary>
+    public IReadOnlyList<ExpandedPartData>? Cargo { get; internal set; }
+
     // ── teammate-visibility fields, attached by EXPORT(26)/PLAYERINFO(10) ──
 
     /// <summary>The exporting ship's side id (ExportShip.SideId). A teammate

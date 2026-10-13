@@ -820,16 +820,19 @@ public sealed partial class Game1
 
     /// <summary>Build the display strings for the in-flight chat log from the
     /// real, already-populated <c>ClientWorld.Events.Chats</c> (arrival-ordered),
-    /// resolving each sender's character name from the world roster where known.</summary>
+    /// resolving each sender's character name from the world roster where known.
+    /// P626 — respects the current <see cref="_chatScrollOffset"/> so scrolled-
+    /// back history renders instead of always the newest page.</summary>
     private List<string> BuildChatLines()
     {
         var world = _session.World;
         lock (_session.Gate)
         {
             var chats = world.Events.Chats;
+            int start = ChatScroll.StartIndex(_chatScrollOffset, chats.Count, ChatRenderer.MaxVisible);
             var lines = new List<string>(Math.Min(chats.Count, ChatRenderer.MaxVisible));
-            int start = Math.Max(0, chats.Count - ChatRenderer.MaxVisible);
-            for (int i = start; i < chats.Count; i++)
+            int end = Math.Min(chats.Count, start + ChatRenderer.MaxVisible);
+            for (int i = start; i < end; i++)
             {
                 var m = chats[i];
                 string sender = "";
@@ -849,6 +852,7 @@ public sealed partial class Game1
     {
         _chatRenderer.Draw(
             BuildChatLines(),
+            _chatScrollOffset,
             _chatActive ? _chatBuffer.ToString() : string.Empty,
             _chatActive,
             _nowSeconds,

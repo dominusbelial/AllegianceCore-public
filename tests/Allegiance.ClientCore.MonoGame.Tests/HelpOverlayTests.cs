@@ -26,7 +26,7 @@ public class HelpOverlayTests
     [Fact]
     public void Table_HasAllLogicalGroups()
     {
-        Assert.Equal(14, KeyBindingTable.GroupCount);
+        Assert.Equal(16, KeyBindingTable.GroupCount);
         Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
         // P445 — the persistent-cruise-throttle keys' own group.
         Assert.Contains(KeyBindingTable.All, g => g.Title == "CRUISE THROTTLE");
@@ -48,7 +48,9 @@ public class HelpOverlayTests
         Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Delete" && e.Description.StartsWith("Clear")));
         // P425 — the commandee-select / issue-order keys' own group.
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("COMMANDED SHIP"));
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "PageDown" && e.Description.StartsWith("Cycle")));
+        // P626 — CycleCommandee moved from PageDown (native ChatPageDown owns
+        // PageDown) to Shift+PageDown.
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Shift + PageDown" && e.Description.StartsWith("Cycle")));
         // P624 — IssueBuild moved from Insert (now TK_ThrustUp) to Alt+I.
         Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Alt + I" && e.Description.StartsWith("Issue")));
     }

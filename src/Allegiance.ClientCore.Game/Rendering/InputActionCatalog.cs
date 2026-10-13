@@ -27,9 +27,10 @@ public static class InputActionCatalog
 {
     public static readonly string[] CategoryOrder =
     {
-        "MOVEMENT", "CRUISE THROTTLE", "WEAPONS", "TARGETING / AUTOPILOT",
+        "MOVEMENT", "CRUISE THROTTLE", "WEAPONS", "INVENTORY / CARGO",
+        "TARGETING / AUTOPILOT",
         "QUEUED ORDERS (RECEIVED COMMAND)", "COMMANDED SHIP (DRONE)",
-        "CAMERA / VIEW", "MUSIC", "CHAT", "LOBBY (SERVER BROWSER)",
+        "VOTE / COMMAND", "CAMERA / VIEW", "MUSIC", "CHAT", "LOBBY (SERVER BROWSER)",
         "READY CHECK (PRE-FLIGHT)",
         "PANES / MENUS", "FREE-CAM / SPECTATOR", "SYSTEM",
     };
@@ -112,6 +113,30 @@ public static class InputActionCatalog
         new("PromoteTurret3", "WEAPONS", "Promote turret gunner seat 3 to command [TK_PromoteTurret3]", C(Keys.D3), C(Keys.D3)),
         new("PromoteTurret4", "WEAPONS", "Promote turret gunner seat 4 to command [TK_PromoteTurret4]", C(Keys.D4), C(Keys.D4)),
 
+        // -- INVENTORY / CARGO (P626) — in-flight cargo selection + drop + reload.
+        // Native handlers: TK_NextCargo cycles the selected cargo item
+        // (WinTrek.cpp:9640-9648, NextCargoPart trekigc.cpp:2620-2642), TK_DropCargo
+        // drops the selected cargo part into space as a treasure (WinTrek.cpp:
+        // 9698-9730, DropPart), TK_Reload refills pools/launchers from cargo
+        // (WinTrek.cpp:9674-9695, BaseClient::Reload clintlib.cpp:3425+).
+        // Native defaultinputmap.mdl keys: NextCargo="," (VK 0xBC), DropCargo=
+        // Ctrl+"," (VK 0xBC, ctrl), Reload=R (VK 0x52). R is already the port's
+        // QuickChat key (P217, entrenched), so manual Reload rides Shift+R — the
+        // auto-reload-on-empty (P361/P192) already covers the empty pool, so the
+        // manual key is a convenience (classified divergence, see P626 report).
+        // "," doubles as the port's starmap sector-nav key but only while the
+        // starmap is expanded (P272) — a different context, so native wins in
+        // flight. NextPart/PrevPart (igc.h:232-233) declare "select previous/next
+        // part from inventory" but native binds them to nothing and has no case
+        // handler in WinTrek.cpp (only NextCargo is wired); the port registers
+        // them as unbound-but-rebindable commands (F6) over the SAME cargo
+        // selection, mirroring that they exist as commands without a default key.
+        new("NextCargo", "INVENTORY / CARGO", "Rotate the selected cargo item [TK_NextCargo]", K(Keys.OemComma), K(Keys.OemComma)),
+        new("DropCargo", "INVENTORY / CARGO", "Drop the selected cargo item into space [TK_DropCargo]", C(Keys.OemComma), C(Keys.OemComma)),
+        new("Reload", "INVENTORY / CARGO", "Reload weapons/afterburner/magazines from cargo [TK_Reload]", S(Keys.R), K(Keys.R)),
+        new("PrevPart", "INVENTORY / CARGO", "Select previous part from inventory [TK_PrevPart]", U(), null),
+        new("NextPart", "INVENTORY / CARGO", "Select next part from inventory [TK_NextPart]", U(), null),
+
         // -- TARGETING / AUTOPILOT --
         new("Target", "TARGETING / AUTOPILOT", "Cycle target (nearest first) [TK_Target]", K(Keys.T), K(Keys.T)),
         new("ToggleAutopilot", "TARGETING / AUTOPILOT", "Toggle autopilot to target [TK_ToggleAutoPilot]", K(Keys.G), K(Keys.P)),
@@ -173,12 +198,29 @@ public static class InputActionCatalog
         new("ClearCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Clear whatever order is already accepted [TK_ClearCommand]", K(Keys.Delete), K(Keys.Delete)),
 
         // -- COMMANDED SHIP (DRONE) --
-        new("CycleCommandee", "COMMANDED SHIP (DRONE)", "Cycle which same-side ship/drone you command", K(Keys.PageDown), null),
+        // P626 — CycleCommandee moved OFF PageDown (its P425 binding) because
+        // native TK_ChatPageDown owns PageDown (defaultinputmap.mdl); it now
+        // rides Shift+PageDown (same PageDown family, discoverable).
+        new("CycleCommandee", "COMMANDED SHIP (DRONE)", "Cycle which same-side ship/drone you command", S(Keys.PageDown), null),
         // P624 — IssueBuild / LeaderCommand keys were Insert / X; X is native
         // TK_ThrustDown (defaultinputmap.mdl line 31) and Insert frees the
         // number row, so both commander-drone bindings move to free chords.
         new("IssueBuild", "COMMANDED SHIP (DRONE)", "Issue order: commandee builds targeted asteroid", A(Keys.I), null),
         new("LeaderCommand", "COMMANDED SHIP (DRONE)", "Leader-only: command the selected same-side bot to dock / launch", C(Keys.X), null),
+
+        // -- VOTE / COMMAND (P626) — TK_VoteYes/VoteNo on the active ballot.
+        // Native: trekClient.Vote(bAgree) (WinTrek.cpp:10377-10387); the port
+        // sends a real FM_C_VOTE(19) naming the active ballot's id (P187 server
+        // tally). Native defaultinputmap.mdl: VoteYes=Y (VK 0x59), VoteNo=N
+        // (VK 0x4E). Y is only the ready-check toggle (a different, pre-flight
+        // screen), so VoteYes=Y is contextual and native wins. N is the port's
+        // DropMine key (P224) — and native's own mine key is C (VK 0x43) while
+        // the port also moved chaff onto C; native's chaff key Z is taken by the
+        // P415 enemy-base targeting, so full native re-alignment is impossible.
+        // VoteNo therefore rides Ctrl+N (N-family, discoverable) — a classified
+        // divergence (see P626 report).
+        new("VoteYes", "VOTE / COMMAND", "Vote YES on the active ballot [TK_VoteYes]", K(Keys.Y), K(Keys.Y)),
+        new("VoteNo", "VOTE / COMMAND", "Vote NO on the active ballot [TK_VoteNo]", C(Keys.N), K(Keys.N)),
 
         // -- CAMERA / VIEW (native wins the F-row) --
         new("CycleView", "CAMERA / VIEW", "Cycle view: cockpit -> chase -> turret -> missile-cam", K(Keys.V), K(Keys.V)),
@@ -244,6 +286,18 @@ public static class InputActionCatalog
         new("CycleChatTarget", "CHAT", "Cycle chat recipient (while composing)", K(Keys.Tab), null),
         new("QuickChat", "CHAT", "Open quick-chat menu [TK_QuickChatMenu]", K(Keys.R), null),
         new("CancelChat", "CHAT", "Cancel chat / close menu [TK_MainMenu]", K(Keys.Escape), K(Keys.Escape)),
+        // P626 — chat buffer scroll. TK_NextCommMsg/PrevCommMsg step the chat
+        // scroll focus one line (igc.h:227-228: "scroll focus to next/previous
+        // chat message"); TK_ChatPageUp/Down page the chat pane by a screenful
+        // (igc.h:327-329; native binds PageUp/PageDown, VK 0x21/0x22, in
+        // defaultinputmap.mdl). Native leaves the per-message step UNBOUND, so
+        // the port rides the free Ctrl+PageUp/PageDown chords (PageUp/PageDown
+        // themselves are the native page keys). "Up/Prev" = toward older,
+        // "Down/Next" = toward newer, matching a bottom-anchored log.
+        new("PrevCommMsg", "CHAT", "Previous chat message (scroll older) [TK_PrevCommMsg]", C(Keys.PageUp), null),
+        new("NextCommMsg", "CHAT", "Next chat message (scroll newer) [TK_NextCommMsg]", C(Keys.PageDown), null),
+        new("ChatPageUp", "CHAT", "Chat pane: page up (older) [TK_ChatPageUp]", K(Keys.PageUp), K(Keys.PageUp)),
+        new("ChatPageDown", "CHAT", "Chat pane: page down (newer) [TK_ChatPageDown]", K(Keys.PageDown), K(Keys.PageDown)),
 
         // -- LOBBY (SERVER BROWSER) --
         new("LobbyUp", "LOBBY (SERVER BROWSER)", "Select server up", K(Keys.Up), null),

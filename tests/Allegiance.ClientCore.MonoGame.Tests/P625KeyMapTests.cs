@@ -239,10 +239,13 @@ public class P625KeyMapTests
         var map = new ActionMap(InputActionCatalog.Definitions);
         var titles = map.ToHelpGroups().Select(g => g.Title).ToList();
         // The established help groups (native command categories plus the
-        // P625b additions for panes/menus, free-cam/spectator and system).
-        Assert.Equal(14, titles.Count);
+        // P625b additions for panes/menus, free-cam/spectator and system, and
+        // the P626 additions for inventory/cargo and vote/command).
+        Assert.Equal(16, titles.Count);
         Assert.Contains("MOVEMENT", titles);
         Assert.Contains("WEAPONS", titles);
+        Assert.Contains("INVENTORY / CARGO", titles);   // P626
+        Assert.Contains("VOTE / COMMAND", titles);      // P626
         Assert.Contains("CAMERA / VIEW", titles);
         Assert.Contains("MUSIC", titles);
         Assert.Contains("PANES / MENUS", titles);

@@ -939,6 +939,22 @@ public sealed class ClientWorld
     /// <see cref="Apply(QueuedCommandUpdate)"/>).</summary>
     public QueuedCommandState? MyQueuedCommand => _myQueuedCommand;
 
+    /// <summary>P626 — the most recently announced in-flight ballot, or
+    /// <c>null</c> when none. Populated from the server's BALLOT(17) broadcast
+    /// (P187); the VoteYes/VoteNo keys read it and send a VOTE(19) naming this
+    /// ballot id. A new ballot replaces the previous one; the server resolves
+    /// ballots on expiry/all-votes-in, at which point no further clear message
+    /// arrives, so this is a "latest announced" latch (mirroring how the native
+    /// client surfaces the current ballot, WinTrek.cpp:10377-10387).</summary>
+    public PendingBallotView? ActiveBallot => _activeBallot;
+    private PendingBallotView? _activeBallot;
+
+    /// <summary>P626 — a lightweight, client-safe view of an active ballot (the
+    /// ballot text + id the server announced), kept deliberately small so the
+    /// whole wire object isn't cached client-side. Consumed by the vote keys and
+    /// a small HUD hint.</summary>
+    public sealed record PendingBallotView(short BallotId, string BallotText);
+
     /// <summary>Transient projectile instances, in arrival order, pruned by
     /// expiry via <see cref="PruneExpiredProjectiles"/>. A projectile carries no
     /// persistent id (native fire-and-forget), so this is a growing list, not an
@@ -1547,6 +1563,11 @@ public sealed class ClientWorld
                 break;
             case ChatMessage chatMessage:
                 Apply(chatMessage);
+                break;
+            case Ballot ballot:
+                // P626 — a new in-flight ballot was announced (P187); latch it
+                // as ActiveBallot + surface a system chat line.
+                Apply(ballot);
                 break;
             case ChatBuoy chatBuoy:
                 Apply(chatBuoy);
@@ -2918,7 +2939,22 @@ public sealed class ClientWorld
         if (MyShipId is not { } id) return;   // not assigned a ship yet — nothing to load
         var e = Upsert(id);
         e.HullId = ack.HullId;          // the granted hull (echo of the requested one)
-        e.Loadout = ack.Parts;          // the mounted part tail, in mount order (possibly empty = hull-only)
+        // P626 — the ack tail mixes mounted (non-negative mounts) and cargo
+        // (negative mounts, encoded as high-bit bytes — native Mount is a
+        // signed char) exactly like native's ProcessShipLoadout; split them so
+        // the mounted tail feeds the existing Loadout consumers (docked loadout
+        // preview) unchanged and the cargo hold feeds the in-flight cargo keys.
+        var mounted = new List<Allegiance.Core.Wire.ExpandedPartData>();
+        var cargo = new List<Allegiance.Core.Wire.ExpandedPartData>();
+        foreach (var p in ack.Parts)
+        {
+            if (p.MountId >= 0x80)   // high bit => negative (cargo) mount
+                cargo.Add(p);
+            else
+                mounted.Add(p);
+        }
+        e.Loadout = mounted;
+        e.Cargo = cargo;
     }
 
     // ── P442 money: SET_MONEY / MONEY_CHANGE / AUTODONATE / PAYDAY ─────────
@@ -3008,6 +3044,22 @@ public sealed class ClientWorld
 
     // ── Event log (transient, append-only, bounded) ────────────────────────
     private void Apply(ChatMessage m) => _events.Record(m);
+
+    /// <summary>P626 — <c>FM_S_BALLOT(17)</c>: a new in-flight ballot was
+    /// announced (P187). The client latches it as the <see cref="ActiveBallot"/>
+    /// so the VoteYes/VoteNo keys can cast a VOTE(19) against it, and surfaces
+    /// the proposal as a system chat line so the pilot actually sees what they
+    /// are voting on (the port has no native-style ballot popup).</summary>
+    private void Apply(Ballot m)
+    {
+        _activeBallot = new PendingBallotView(m.BallotId, m.BallotText);
+        _events.Record(new ChatMessage
+        {
+            Message = "[VOTE] " + m.BallotText,
+            SidSender = Na,
+            ChatTarget = (int)ChatTarget.Everyone,
+        });
+    }
     private void Apply(ChatBuoy m) => _events.Record(m);
     private void Apply(KillShip m)
     {

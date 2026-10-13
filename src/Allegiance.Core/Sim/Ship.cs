@@ -3341,6 +3341,49 @@ public sealed class Ship : Model, IShipIgc
         return true;
     }
 
+    /// <summary>P626 — remove a CARGO part (a negative wire mount) from the
+    /// cargo hold, mirroring <see cref="TryRemovePart"/>'s equipped-path removal
+    /// for the cargo bay. Native's TK_DropCargo drops a cargo part into space
+    /// (WinTrek.cpp:9698-9730), and the DROP_PART handler routes a negative
+    /// mount here. Returns <c>false</c> (silent no-op) when the slot is empty or
+    /// the mount is not a valid cargo slot.</summary>
+    public bool TryRemoveCargoPart(int mount, out MountedPart dropped)
+    {
+        dropped = null!;
+        if (mount >= 0 || mount < -CargoCapacity) return false;   // FedSrv.CPP:6531-style range guard
+        int slot = CargoSlotForMount(mount);
+        var part = _cargo[slot];
+        if (part is null) return false;                          // empty slot -> silent no-op
+        _cargo[slot] = null;
+        dropped = part;
+        // Native: a dropped cargo part is not an equipped mount, so no _parts /
+        // _weapons mutation and no loadout bump (the cargo bay is not part of
+        // the equipped LoadoutChange surface).
+        return true;
+    }
+
+    /// <summary>P626 — the whole inventory the owning client must know, in the
+    /// order native's BUY_LOADOUT_ACK / ProcessShipLoadout delivers it: the
+    /// equipped parts (non-negative <see cref="ExpandedPartData.MountId"/>) then
+    /// the cargo hold (negative mounts, synthesized from each cargo slot index
+    /// and encoded as a high-bit byte — native Mount is a signed char). The
+    /// client splits these back into <c>Loadout</c> and <c>Cargo</c>.</summary>
+    public IReadOnlyList<ExpandedPartData> ExportInventoryForAck()
+    {
+        var list = new List<ExpandedPartData>(_parts.Count + CargoCapacity);
+        foreach (var p in _parts)
+            list.Add(p.ToExpandedPartData());
+        for (int i = 0; i < CargoCapacity; i++)
+        {
+            var cargo = _cargo[i];
+            if (cargo is null) continue;
+            int mount = -(i + 1);                             // -1..-5
+            list.Add(new ExpandedPartData(cargo.PartId, cargo.Amount,
+                unchecked((byte)mount), cargo.FractionMounted));
+        }
+        return list;
+    }
+
     /// <summary>
     /// P144 — create the part-type treasure a <c>DROP_PART</c> leaves in space,
     /// the port of the third <c>CreateTreasure(..., IpartIGC*, ...)</c> overload

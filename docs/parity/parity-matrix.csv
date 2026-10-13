@@ -1,12 +1,12 @@
 area,native_item,native_cite,port_status,port_cite_or_reason,weight
 commands,TK_NoKeyMapping,Igc/igc.h:226,na,sentinel; not a command,1
-commands,TK_NextCommMsg,Igc/igc.h:227,missing,no chat-buffer scroll in port chat pane,2
-commands,TK_PrevCommMsg,Igc/igc.h:228,missing,no chat-buffer scroll,2
+commands,TK_NextCommMsg,Igc/igc.h:227,done,Rendering/ChatScroll.cs; Game1.FlightInput.cs; Rendering/ChatRenderer.cs,2
+commands,TK_PrevCommMsg,Igc/igc.h:228,done,Rendering/ChatScroll.cs; Game1.FlightInput.cs; Rendering/ChatRenderer.cs,2
 commands,TK_PrevWeapon,Igc/igc.h:229,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:280,4
 commands,TK_NextWeapon,Igc/igc.h:230,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:272,4
 commands,TK_ToggleGroupFire,Igc/igc.h:231,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:57,4
-commands,TK_PrevPart,Igc/igc.h:232,partial,in-flight part cycle absent; docked loadout screen (P519),3
-commands,TK_NextPart,Igc/igc.h:233,partial,in-flight part cycle absent; docked loadout screen (P519),3
+commands,TK_PrevPart,Igc/igc.h:232,done,Rendering/CargoSelector.cs; Game1.InFlightUtility.cs; InputActionCatalog.cs,3
+commands,TK_NextPart,Igc/igc.h:233,done,Rendering/CargoSelector.cs; Game1.InFlightUtility.cs; InputActionCatalog.cs,3
 commands,TK_MountPart,Igc/igc.h:234,partial,"mounting via docked loadout screen, not in-flight key",3
 commands,TK_ReplacePart,Igc/igc.h:235,partial,replacement via docked loadout screen,3
 commands,TK_UnmountPart,Igc/igc.h:236,partial,unmount via docked loadout screen,3
@@ -98,8 +98,8 @@ commands,TK_ToggleCollisions,Igc/igc.h:324,na,era debug/cheat toggle; not applic
 commands,TK_OccupyNextTurret,Igc/igc.h:325,partial,turret gunning supported but no occupy-next key,3
 commands,TK_TargetNothing,Igc/igc.h:326,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs ; clears target,4
 commands,TK_MatchSpeed,Igc/igc.h:327,done,InputActionCatalog.cs 'MatchSpeed' (/); FlightInput.cs MatchSpeedThrottle (GetThrottle); Game1.TryMatchSpeedThrottle,3
-commands,TK_ChatPageUp,Igc/igc.h:328,missing,no chat pane page scroll,2
-commands,TK_ChatPageDown,Igc/igc.h:329,missing,no chat pane page scroll,2
+commands,TK_ChatPageUp,Igc/igc.h:328,done,Rendering/ChatScroll.cs; Game1.FlightInput.cs; InputActionCatalog.cs,2
+commands,TK_ChatPageDown,Igc/igc.h:329,done,Rendering/ChatScroll.cs; Game1.FlightInput.cs; InputActionCatalog.cs,2
 commands,TK_ViewExternalOrbit,Igc/igc.h:330,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F4 external orbit (native wins F-row),3
 commands,TK_ViewExternalStation,Igc/igc.h:331,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F11 external station (native wins F-row),3
 commands,TK_DebugTest1,Igc/igc.h:342,na,native debug hook; not a player command,1
@@ -127,13 +127,13 @@ commands,TK_SwapShield,Igc/igc.h:363,missing,no swap bindings,2
 commands,TK_SwapCloak,Igc/igc.h:364,missing,no swap bindings,2
 commands,TK_SwapAfterburner,Igc/igc.h:365,missing,no swap bindings,2
 commands,TK_SwapMine,Igc/igc.h:366,missing,no swap bindings,2
-commands,TK_NextCargo,Igc/igc.h:367,missing,no cargo-cycle binding/handler,2
+commands,TK_NextCargo,Igc/igc.h:367,done,Rendering/CargoSelector.cs; Game1.InFlightUtility.cs; InputActionCatalog.cs,2
 commands,TK_ToggleWeapon1,Igc/igc.h:368,missing,no per-weapon select keys; single-fire via [ / ] + group toggle,3
 commands,TK_ToggleWeapon2,Igc/igc.h:369,missing,no per-weapon select keys,3
 commands,TK_ToggleWeapon3,Igc/igc.h:370,missing,no per-weapon select keys,3
 commands,TK_ToggleWeapon4,Igc/igc.h:371,missing,no per-weapon select keys,3
-commands,TK_DropCargo,Igc/igc.h:372,missing,no drop-cargo binding/handler,2
-commands,TK_Reload,Igc/igc.h:373,partial,auto-reload on empty (P361); no manual reload key,3
+commands,TK_DropCargo,Igc/igc.h:372,done,Rendering/CargoSelector.cs; Game1.InFlightUtility.cs; Wire/DropPart.cs; Server.ShipCommands.cs HandleDropPart cargo path,2
+commands,TK_Reload,Igc/igc.h:373,done,Game1.InFlightUtility.cs; Session/ConnectionSession.cs; Wire/Reload.cs,3
 commands,TK_ExecuteCommand,Igc/igc.h:374,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs accept+autopilot,4
 commands,TK_PauseTM,Igc/igc.h:375,partial,training exists (NATIVE_TRAINING_SCRIPT) but no pause key,2
 commands,TK_TargetEnemyBomber,Igc/igc.h:377,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
@@ -194,8 +194,8 @@ commands,TK_PromoteTurret1,Igc/igc.h:438,done,src/Allegiance.ClientCore.Game/Ren
 commands,TK_PromoteTurret2,Igc/igc.h:439,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
 commands,TK_PromoteTurret3,Igc/igc.h:440,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
 commands,TK_PromoteTurret4,Igc/igc.h:441,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
-commands,TK_VoteYes,Igc/igc.h:442,partial,ballots implemented (P187) but no dedicated vote key,3
-commands,TK_VoteNo,Igc/igc.h:443,partial,ballots implemented (P187) but no dedicated vote key,3
+commands,TK_VoteYes,Igc/igc.h:442,done,Game1.InFlightUtility.cs; ClientWorld.cs Apply(Ballot); Session/ConnectionSession.cs; Wire/Vote.cs,3
+commands,TK_VoteNo,Igc/igc.h:443,done,Game1.InFlightUtility.cs; ClientWorld.cs Apply(Ballot); Session/ConnectionSession.cs; Wire/Vote.cs,3
 commands,TK_ScrnShot,Igc/igc.h:445,done,"src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs PrintScreen screenshot (native default, defaultinputmap.mdl:108); F11 freed for station camera; rebindable via Controls F6",3
 commands,TK_TargetAlliedBase,Igc/igc.h:447,partial,ally base target via friendly-base cycle,3
 commands,TK_TargetAlliedBaseNearest,Igc/igc.h:448,partial,ally base via friendly-base cycle,3

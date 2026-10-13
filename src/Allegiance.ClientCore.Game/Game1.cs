@@ -1168,6 +1168,20 @@ public sealed partial class Game1 : Game
     private ChatTarget _chatTarget = ChatTargetLogic.DefaultTarget;
     private const int MaxChatLen = 880;
     private ChatRenderer _chatRenderer = null!;
+    // P626 — chat-buffer scroll offset (lines pulled from the newest edge; 0 =
+    // the live, newest-visible edge). Driven by the four native chat-scroll
+    // commands (PrevCommMsg/NextCommMsg/ChatPageUp/Down); clamped against the
+    // log length by ChatScroll. Reset to 0 when a new chat line lands so the
+    // pane doesn't linger scrolled-back over fresh activity.
+    private int _chatScrollOffset;
+    private bool _chatPgUpWasDown, _chatPgDnWasDown, _chatMsgUpWasDown, _chatMsgDnWasDown;
+    private int _lastChatCount;
+    // P626 — vote keys (TK_VoteYes/VoteNo) edge latches.
+    private bool _voteYesWasDown, _voteNoWasDown;
+    // P626 — in-flight cargo keys (NextCargo/NextPart/PrevPart/DropCargo/Reload).
+    // The selected cargo mount is a negative native mount (-1..-5), -1 = none.
+    private int _selectedCargoMount = -1;
+    private bool _nextCargoWasDown, _nextPartWasDown, _prevPartWasDown, _dropCargoWasDown, _reloadWasDown;
 
     // P217 — real quick-chat (SonicChat) voice-macro system. The menu tree +
     // voice table are parsed at runtime from the shipped Content/*.mdl files

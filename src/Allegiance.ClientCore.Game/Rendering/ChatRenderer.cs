@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -17,6 +18,7 @@ public sealed class ChatRenderer
     private static readonly Color BorderDim = new(0.14f, 0.34f, 0.32f);
     private static readonly Color TextMain = new(0.88f, 0.96f, 0.95f);
     private static readonly Color InputPrompt = new(0.07f, 0.95f, 0.84f);
+    private static readonly Color OlderHint = new(0.5f, 0.6f, 0.58f);
 
     /// <summary>Maximum chat lines shown in the log panel at once.</summary>
     public const int MaxVisible = 8;
@@ -36,14 +38,16 @@ public sealed class ChatRenderer
     /// Draw the chat log + (optionally) the active input line. Self-contained —
     /// begins/ends its own <see cref="SpriteBatch"/> session like
     /// <see cref="HudRenderer.Draw"/>. <paramref name="lines"/> are the already-
-    /// formatted display strings, oldest first; only the last
-    /// <see cref="MaxVisible"/> are drawn. When <paramref name="composing"/> is
+    /// formatted display strings, oldest first; <paramref name="offset"/> is the
+    /// P626 chat-scroll offset (lines pulled from the newest edge — 0 = newest
+    /// visible); only the <see cref="MaxVisible"/> lines at that offset are drawn.
+    /// When scrolled back, a dim "OLDER" hint rides the top border so the player
+    /// knows they are not at the live edge. When <paramref name="composing"/> is
     /// true the <paramref name="inputLine"/> is drawn as the active line, prefixed
-    /// by <paramref name="targetLabel"/> (e.g. "[TEAM] ", P456) so the player sees
-    /// who will receive the message, with a blinking-cursor block (blink driven by
-    /// <paramref name="nowSeconds"/>).
+    /// by <paramref name="targetLabel"/> (e.g. "[TEAM] ", P456), with a blinking
+    /// cursor block (blink driven by <paramref name="nowSeconds"/>).
     /// </summary>
-    public void Draw(IReadOnlyList<string> lines, string inputLine, bool composing, double nowSeconds, Viewport viewport, string targetLabel)
+    public void Draw(IReadOnlyList<string> lines, int offset, string inputLine, bool composing, double nowSeconds, Viewport viewport, string targetLabel)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -55,8 +59,12 @@ public sealed class ChatRenderer
             const float rowHeight = 22f;
             float panelLeft = margin;
 
-            int take = Math.Min(MaxVisible, lines.Count);
-            var slice = lines.Skip(lines.Count - take).ToList();
+            int start = ChatScroll.StartIndex(offset, lines.Count, MaxVisible);
+            int take = Math.Min(MaxVisible, Math.Max(0, lines.Count - start));
+            bool scrolled = ChatScroll.Clamp(offset, lines.Count, MaxVisible) > 0;
+            var slice = new List<string>();
+            for (int i = 0; i < take; i++)
+                slice.Add(lines[start + i]);
             // Newest at the bottom, growing upward: panel sits at the bottom-left
             // with the newest line right above the input/composing area.
             float logTop = h - (composing ? 96f : 74f) - take * rowHeight;
@@ -66,6 +74,13 @@ public sealed class ChatRenderer
                 float panelH = take * rowHeight + 14f;
                 FillRect(panelLeft - 10f, logTop - 8f, w * 0.52f, panelH, PanelBg);
                 FillRect(panelLeft - 10f, logTop - 8f, 2f, panelH, BorderDim);
+
+                if (scrolled)
+                {
+                    // P626 — a dim "OLDER" tag at the top border marks a scrolled-
+                    // back view (PageDn / NextCommMsg returns to the live edge).
+                    _sb.DrawString(_font, "(OLDER - PgDn to newest)", new Vector2(panelLeft, logTop - 24f), OlderHint);
+                }
 
                 for (int i = 0; i < take; i++)
                 {

@@ -573,6 +573,52 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// P626 — send a real <c>FM_C_VOTE(19)</c> casting <paramref name="agree"/>
+    /// on the in-flight ballot <paramref name="ballotId"/> (the server relays
+    /// neither BALLOT(17) nor CANCEL_BALLOT(18) up, so VOTE is the client's only
+    /// ballot message, <c>Messages.h:185-188</c>; <c>Server.Dispatch.cs</c>
+    /// tallies it via <c>PendingBallot.TryCastVote</c>, fsmission.cpp:5847-5865).
+    /// The VoteYes/VoteNo keys read <c>ClientWorld.ActiveBallot</c> and call this.
+    /// </summary>
+    public void SendVote(short ballotId, bool agree)
+    {
+        var msg = new Vote { BallotId = ballotId, Agree = agree };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// P626 — send a real <c>FM_CS_DROP_PART(33)</c> for a CARGO part: the
+    /// selected cargo slot <paramref name="mount"/> (a negative mount in
+    /// -1..-5), encoded as a high-bit byte per native's signed-char Mount. The
+    /// server routes a negative mount to the cargo hold and drops it into space
+    /// as a treasure (<c>Server.HandleDropPart</c>, native TK_DropCargo
+    /// WinTrek.cpp:9698-9730). The EquipmentType field is unused on the cargo
+    /// path (the server resolves the slot by mount), so 0 is sent; the client
+    /// does not retain per-slot type metadata in flight.
+    /// </summary>
+    public void SendDropCargo(sbyte mount)
+    {
+        var msg = new DropPart { Et = 0, Mount = unchecked((byte)mount) };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// P626 — send a real <c>FM_CS_RELOAD(129)</c> requesting the server top up
+    /// the ship's pools / equipped launchers from its cargo hold. The port's
+    /// reload key computes one <see cref="ReloadData"/> per occupied cargo slot
+    /// (each a negative mount, amount-transfered = NA = consume the whole item);
+    /// the server applies each reloadable entry and skips non-reloadable ones
+    /// (P626 skip-and-continue), then re-broadcasts sector-wide. Native's
+    /// TK_Reload (WinTrek.cpp:9674-9695 → BaseClient::Reload clintlib.cpp:3425+)
+    /// sends exactly this message.
+    /// </summary>
+    public void SendReload(IReadOnlyList<ReloadData> entries)
+    {
+        var msg = new Reload { Entries = entries };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// P226 — send a real <c>FM_CS_FIRE_MISSILE(70)</c> launch request, the
     /// player's "fire my mounted missile launcher" wire message. Native declares
     /// FIRE_MISSILE as a bidirectional <c>CS</c> message (<c>Messages.h:547-557</c>)
@@ -779,6 +825,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case ChatMessage.Fmid:
                         _world.Apply(ChatMessage.Decode(m));
+                        break;
+                    case Ballot.Fmid:
+                        // P626 — a new in-flight ballot was announced (P187); the
+                        // world latches it as the ActiveBallot for the vote keys.
+                        _world.Apply(Ballot.Decode(m));
                         break;
                     case ChatBuoy.Fmid:
                         _world.Apply(ChatBuoy.Decode(m));

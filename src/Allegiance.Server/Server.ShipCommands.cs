@@ -477,7 +477,13 @@ public sealed partial class Server
 
         // The per-entry transfer loop (FedSrv.CPP:6529-6643). bBoot short-circuits
         // the batch WITHOUT rolling back earlier entries; the broadcast only
-        // happens when every entry was well-formed.
+        // happens when every entry was well-formed (the pinned P192 quirk:
+        // a malformed entry refuses the rest and suppresses the broadcast —
+        // CargoBayReloadTests.Reload_malformed_entry_refuses_rest_without_rollback_or_broadcast).
+        // P626 — the client's reload key therefore sends an entry ONLY for cargo
+        // slots it expects to reload cleanly (NA on ammo/fuel packs and orphan
+        // launchers all succeed); a spare weapon parked in cargo is not addressed
+        // by the client and is the caller's responsibility, exactly as native.
         bool bBoot = false;
         foreach (var entry in req.Entries)
         {
@@ -579,11 +585,20 @@ public sealed partial class Server
             return;
         }
 
-        // Resolve + remove; false means the mount held no part, which native
-        // treats as a silent no-op (FedSrv.CPP:6322).
-        if (!ship.TryRemovePart(req.Et, req.Mount, out var dropped))
+        // P626 — a negative (cargo-bay) mount drops a CARGO part (native's
+        // TK_DropCargo, WinTrek.cpp:9698-9730: it drops the selected cargo part
+        // into space); a non-negative mount drops an equipped part. The wire
+        // Mount is a signed char, so a high-bit byte is a negative mount.
+        sbyte signedMount = unchecked((sbyte)req.Mount);
+        bool droppedOk;
+        MountedPart dropped;
+        if (signedMount < 0) droppedOk = ship.TryRemoveCargoPart(signedMount, out dropped);
+        else droppedOk = ship.TryRemovePart(req.Et, req.Mount, out dropped);
+        if (!droppedOk)
         {
-            Console.WriteLine($"[droppart] {from} ship {ship.Id}: no mounted {req.Et} part at mount {req.Mount} — silent no-op (native, FedSrv.CPP:6322)");
+            Console.WriteLine(signedMount < 0
+                ? $"[droppart] {from} ship {ship.Id}: no cargo part at mount {signedMount} — silent no-op (native, FedSrv.CPP:6322)"
+                : $"[droppart] {from} ship {ship.Id}: no mounted {req.Et} part at mount {req.Mount} — silent no-op (native, FedSrv.CPP:6322)");
             return;
         }
 
@@ -2539,7 +2554,7 @@ public sealed partial class Server
                 HullId = ship.HullType.HullId,
                 FBoughtEverything = false,
                 FLaunch = false,
-                Parts = ship.Parts.Select(x => x.ToExpandedPartData()).ToArray(),
+                Parts = ship.ExportInventoryForAck().ToArray(),
             };
             SendPeer(from, FedPacket.Pack(new[] { refused.Encode() }));
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: {why} — REFUSED (ship unchanged; ack fbought=false fLaunch=false)");
@@ -2779,10 +2794,14 @@ public sealed partial class Server
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: cost 0 — no money movement");
         }
 
-        // The ACK's tail reflects the ship's REAL mounted parts after the apply
-        // (so the round-trip is byte-for-byte when every requested part mounted).
-        var ackParts = ship.Parts.Select(x => x.ToExpandedPartData()).ToArray();
-        bool allGranted = ackParts.Length == buy.Parts.Count && granted == buy.Parts.Count && skipped == 0;
+        // The ACK's tail reflects the ship's REAL inventory after the apply:
+        // equipped parts then the cargo hold (native's ProcessShipLoadout mixes
+        // both into one tail, P626). The byte-for-byte round-trip guarantee
+        // applies to the MOUNTED parts (the ones the buy requested), so the
+        // "everything granted" test counts only non-negative (mounted) entries.
+        var ackParts = ship.ExportInventoryForAck().ToArray();
+        int mountedAcked = ackParts.Count(p => p.MountId < 0x80);
+        bool allGranted = mountedAcked == buy.Parts.Count && granted == buy.Parts.Count && skipped == 0;
         // fBoughtEverything = every requested part was actually mounted. Kept
         // false for the zero-part hull-only case so those bytes stay identical
         // to P26/P27/P28 (preserving the tested adopt-a-hull path exactly).

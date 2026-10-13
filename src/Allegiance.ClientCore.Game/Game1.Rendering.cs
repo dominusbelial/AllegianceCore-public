@@ -1610,6 +1610,12 @@ public sealed partial class Game1
         if (!_directorActive)
             DrawChat();
 
+        // P626 — the in-flight cargo/inventory readout (selected part + hold
+        // occupancy), a small line under the chat log so the pilot sees what the
+        // NextCargo/NextPart/PrevPart/DropCargo keys are operating on.
+        if (!_directorActive)
+            DrawCargoHud();
+
             // P217 — the quick-chat voice-macro menu, on top of the chat log
             // (itself above the HUD). Only drawn while a menu level is open.
             if (_qcMenuOpen && _qcMenuNode is { } qn && _qcMenuPath.Count > 0)

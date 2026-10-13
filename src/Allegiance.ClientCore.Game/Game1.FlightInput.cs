@@ -569,6 +569,21 @@ public sealed partial class Game1
         // so a key held across the pre-flight→flight transition can't fire once.
         _lockVectorKeyWasDown       = ActionDown(ks, "LockVector");
         _cycleRadarKeyWasDown       = ActionDown(ks, "CycleRadar");
+        // P626 — prime the chat-scroll edge latches too (ChatPageUp/Down,
+        // PrevCommMsg/NextCommMsg) so a held page key can't fire on the first frame.
+        _chatPgUpWasDown            = ActionDown(ks, "ChatPageUp");
+        _chatPgDnWasDown            = ActionDown(ks, "ChatPageDown");
+        _chatMsgUpWasDown           = ActionDown(ks, "PrevCommMsg");
+        _chatMsgDnWasDown           = ActionDown(ks, "NextCommMsg");
+        _voteYesWasDown             = ActionDown(ks, "VoteYes");
+        _voteNoWasDown              = ActionDown(ks, "VoteNo");
+        // P626 — prime the in-flight cargo key edge latches (selection cycle,
+        // drop-cargo, reload) so a held key can't fire on the first frame.
+        _nextCargoWasDown           = ActionDown(ks, "NextCargo");
+        _nextPartWasDown            = ActionDown(ks, "NextPart");
+        _prevPartWasDown            = ActionDown(ks, "PrevPart");
+        _dropCargoWasDown           = ActionDown(ks, "DropCargo");
+        _reloadWasDown              = ActionDown(ks, "Reload");
     }
 
     /// <summary>P624 — is the ThrottleFull action held? The action's alternate
@@ -740,10 +755,75 @@ public sealed partial class Game1
         if (_qcMenuOpen)
             NavigateQuickChat(ks);
 
+        // P626 — chat buffer scroll (TK_PrevCommMsg/NextCommMsg/ChatPageUp/Down).
+        // Edge-triggered, applies whenever the chat pane is showing (flight, not
+        // inside the quick-chat menu). Steps/page are clamped against the live
+        // log length by ChatScroll. A freshly-arrived line snaps a scrolled-back
+        // view to the live edge (offset -> 0) so the pane never lingers on stale
+        // history over new activity.
+        if (!_qcMenuOpen)
+        {
+            int chatCount;
+            lock (_session.Gate) chatCount = _session.World.Events.Chats.Count;
+            if (chatCount != _lastChatCount && chatCount > 0 && _chatScrollOffset > 0)
+                _chatScrollOffset = 0;
+            _lastChatCount = chatCount;
+
+            bool pgUp = ActionDown(ks, "ChatPageUp");
+            if (pgUp && !_chatPgUpWasDown) _chatScrollOffset = ChatScroll.PageOlder(_chatScrollOffset, chatCount, ChatRenderer.MaxVisible);
+            _chatPgUpWasDown = pgUp;
+            bool pgDn = ActionDown(ks, "ChatPageDown");
+            if (pgDn && !_chatPgDnWasDown) _chatScrollOffset = ChatScroll.PageNewer(_chatScrollOffset, chatCount, ChatRenderer.MaxVisible);
+            _chatPgDnWasDown = pgDn;
+            bool msgUp = ActionDown(ks, "PrevCommMsg");
+            if (msgUp && !_chatMsgUpWasDown) _chatScrollOffset = ChatScroll.StepOlder(_chatScrollOffset, chatCount, ChatRenderer.MaxVisible);
+            _chatMsgUpWasDown = msgUp;
+            bool msgDn = ActionDown(ks, "NextCommMsg");
+            if (msgDn && !_chatMsgDnWasDown) _chatScrollOffset = ChatScroll.StepNewer(_chatScrollOffset, chatCount, ChatRenderer.MaxVisible);
+            _chatMsgDnWasDown = msgDn;
+        }
+
         // A modal UI consumes the keyboard: chat composition OR the quick-chat
         // menu both neutralise flight input / toggles / autopilot-steering, so
         // navigating or typing never also thrusts/turns the ship.
         bool composing = _chatActive || _qcMenuOpen;
+
+        // P626 — vote YES/NO (TK_VoteYes/TK_VoteNo, native WinTrek.cpp:10377-10387
+        // trekClient.Vote(bAgree)). Edge-triggered + composing-gated like every
+        // other in-flight key. Reads the active ballot (P187) and casts a real
+        // FM_C_VOTE(19) via ConnectionSession.SendVote; with no ballot in flight
+        // it surfaces a hint instead of silently doing nothing.
+        bool vy = ActionDown(ks, "VoteYes");
+        if (!composing && vy && !_voteYesWasDown) CastVote(agree: true);
+        _voteYesWasDown = vy;
+        bool vn = ActionDown(ks, "VoteNo");
+        if (!composing && vn && !_voteNoWasDown) CastVote(agree: false);
+        _voteNoWasDown = vn;
+
+        // P626 — in-flight cargo: selection cycle (TK_NextCargo / TK_NextPart /
+        // TK_PrevPart), drop-cargo (TK_DropCargo) and reload (TK_Reload).
+        // Edge-triggered + composing-gated like every key above. Selection
+        // cycling advances the same native "selected cargo part" (next = forward
+        // through the bay, prev = backward, wrapping); DropCargo drops the
+        // selected cargo part into space as a treasure; Reload tops up pools /
+        // launchers from the whole cargo hold. All three are no-ops with an
+        // empty hold (the helpers surface a hint), matching native's guards
+        // (TK_DropCargo requires a cargo part, flyingF(); WinTrek.cpp:9698).
+        bool nc = ActionDown(ks, "NextCargo");
+        if (!composing && nc && !_nextCargoWasDown) CycleSelectedCargo(next: true);
+        _nextCargoWasDown = nc;
+        bool np = ActionDown(ks, "NextPart");
+        if (!composing && np && !_nextPartWasDown) CycleSelectedCargo(next: true);
+        _nextPartWasDown = np;
+        bool pp = ActionDown(ks, "PrevPart");
+        if (!composing && pp && !_prevPartWasDown) CycleSelectedCargo(next: false);
+        _prevPartWasDown = pp;
+        bool dc = ActionDown(ks, "DropCargo");
+        if (!composing && dc && !_dropCargoWasDown) TryDropCargo();
+        _dropCargoWasDown = dc;
+        bool rl = ActionDown(ks, "Reload");
+        if (!composing && rl && !_reloadWasDown) TryReload();
+        _reloadWasDown = rl;
 
         // P268 — docked/hangar loadout screen. When the local ship is docked
         // (ShipEntity.StationId != -1 — the server's real DockedNotify/SHIP_STATUS
@@ -1576,6 +1656,12 @@ public sealed partial class Game1
             // the server log's [ctrlak] reject count can be checked.
             if (Environment.GetEnvironmentVariable("ALLEGIANCE_FLIGHTKEYS_PROOF") == "1")
                 RunFlightKeysProof(gameTime.ElapsedGameTime.TotalSeconds);
+
+            // P626 — real-window auto-proof of the in-flight utility pack (help
+            // overlay with the new commands, chat paging, cargo selection) so
+            // live-proof.sh can photograph the real backbuffer.
+            if (Environment.GetEnvironmentVariable("ALLEGIANCE_INFLIGHT_PROOF") == "1")
+                RunInFlightUtilityProof(gameTime.ElapsedGameTime.TotalSeconds);
 
             // P425 — command a same-side ship/drone (e.g. a Builder) from the
             // MonoGame client. Commander needs TWO selections at once — WHO to
