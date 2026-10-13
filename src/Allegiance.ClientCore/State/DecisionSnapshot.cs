@@ -27,6 +27,13 @@ public sealed class DecisionSnapshot
     /// <summary>Monotonic publish counter — a reader can detect a fresher snapshot.</summary>
     public long Version;
 
+    /// <summary>P636c — the <see cref="System.Environment.TickCount64"/> (ms, monotonic)
+    /// at which this snapshot was built and published. A reader can measure the
+    /// snapshot's age (<c>TickCount64 - PublishedTick64</c>) at decision time and
+    /// dead-reckon the frozen poses forward to "now" for the aim-critical engaged
+    /// target and own ship, restoring pre-P636 aim freshness without any lock.</summary>
+    public long PublishedTick64;
+
     /// <summary>The local player's ship id, or null before seating.</summary>
     public short? MyShipId;
 
@@ -77,6 +84,24 @@ public sealed class DecisionSnapshot
         }
         found = default;
         return false;
+    }
+
+    /// <summary>
+    /// P636c — extrapolate a snapshot ship's FROZEN position forward by
+    /// <paramref name="ageMs"/> (real milliseconds since the snapshot was
+    /// published) using its frozen velocity — uniform-motion dead-reckoning to
+    /// "now". This is what restores pre-P636 aim freshness: the lead/fire law
+    /// consumes <c>position + velocity × age</c> instead of the position as
+    /// frozen at publish (up to the ~25 Hz publish age old), so a fast target
+    /// crossing the view is aimed where it IS at decision time, not where it
+    /// was. Pure and deterministic (age is passed in) so the freshness guarantee
+    /// is unit-provable. Over the short publish ages measured (< 100 ms) uniform
+    /// motion is accurate; scans/navigation still use the raw frozen position.
+    /// </summary>
+    public static Vector3 DeadReckonPosition(in DecisionShip ship, double ageMs)
+    {
+        float s = (float)(ageMs / 1000.0);
+        return new Vector3(ship.PosX + ship.VelX * s, ship.PosY + ship.VelY * s, ship.PosZ + ship.VelZ * s);
     }
 }
 

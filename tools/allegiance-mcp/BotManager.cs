@@ -44,8 +44,36 @@ internal sealed partial class BotManager : IDisposable
     // live harness can measure the swarm before/after with the same binary.
     private static readonly bool LegacyNearestFlag =
         Environment.GetEnvironmentVariable("ALLEGIANCE_P622_LEGACY_NEAREST") == "1";
+
+    // P636c — A/B switch (default ON): when ALLEGIANCE_BOT_DECISION_SNAPSHOT=off,
+    // the decision read path reverts to the PRE-P636 live-table reads under
+    // cs.Gate (the P635 behaviour), so the P632 harness can measure snapshot-on
+    // vs snapshot-off lethality in ONE binary. Everything that "off" touches is
+    // a faithful re-enable of the P635 code that P636 replaced.
+    internal static readonly bool DecisionSnapshotEnabled =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_DECISION_SNAPSHOT") != "off";
+
+    // P636c — sub-switch to isolate the staleness FIX (default ON): when
+    // ALLEGIANCE_BOT_SNAPSHOT_DEADRECKON=off, the aim-critical pose reads return
+    // the RAW frozen snapshot pose (the P636b behaviour, no dead-reckoning),
+    // letting the harness measure the staleness fix vs the unfixed snapshot in
+    // isolation. Only meaningful when DecisionSnapshotEnabled (off-mode ignores it).
+    internal static readonly bool SnapshotDeadReckonEnabled =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_SNAPSHOT_DEADRECKON") != "off";
+
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly CancellationTokenSource _loopCts = new();
+
+    // ── P636c — snapshot-age instrumentation ─────────────────────────────
+    // The age (ms) of the decision snapshot each bot's aim actually consumed,
+    // sampled in EngageShipAt: how far the frozen pose lagged the decision's
+    // "now". Rolling window, reported via get_perf_stats so the P632 PERF line
+    // can prove whether snapshot staleness tracks the lethality drop. Static
+    // because EngageShipAt (the sampler) is a static method; one BotManager per
+    // process in the harness.
+    private static readonly object SnapAgeGate = new();
+    private static readonly List<double> _snapAgesMs = new();
+    private const int MaxSnapAgeSamples = 16384;
 
     // ── P633 — decision-loop measurement (get_perf_stats / item 1, 6) ────
     // The single decision thread's pass cadence, process resources and the
@@ -1551,27 +1579,64 @@ internal sealed partial class BotManager : IDisposable
                     // a pass no longer stalls behind the receive thread's bulk ship
                     // application under the same gate at 200v200.
                     var snapshot = pcs.World.Decision;
-                    if (snapshot.MyShipId is not { }) return;
-                    if (!(DecisionSnapshot.TryFind(snapshot.Ships, b.ShipId, out var meDs) && meDs.HasLatest)) return;
-                    Vector3 myPos = meDs.Position;
-                    short myCluster = meDs.SectorId;
+                    Vector3 myPos; short myCluster;
+                    if (!DecisionSnapshotEnabled)
+                    {
+                        // P636c "off" — P635 Phase A reads: own pose + sector live.
+                        if (pcs.World.MyShipId is null) return;
+                        if (!TryCsPose(pcs, b.ShipId, out myPos, out _)) return;
+                        myCluster = CsSector(pcs);
+                    }
+                    else
+                    {
+                        if (snapshot.MyShipId is not { }) return;
+                        if (!(DecisionSnapshot.TryFind(snapshot.Ships, b.ShipId, out var meDs) && meDs.HasLatest)) return;
+                        myPos = meDs.Position;
+                        myCluster = meDs.SectorId;
+                    }
                     double cnow = Now();
                     var cands = new List<BotTargetCandidate>();
                     bool friendly = false;
-                    foreach (var st in snapshot.Stations)
-                        if (st.SideId == b.Side && st.ClusterId == myCluster) { friendly = true; break; }
-                    foreach (var ship in snapshot.VisibleShips)
+                    if (!DecisionSnapshotEnabled)
                     {
-                        if (ship.ShipId == b.ShipId) continue;
-                        if (ship.SideId == b.Side) continue;      // a DIFFERENT side only
-                        if (ship.SectorId != myCluster) continue;   // co-located
-                        if (!ship.HasLatest) continue;
-                        float d = (ship.Position - myPos).Length();
-                        var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
-                        bool isThreat =
-                            (b.RecentAttackers.TryGetValue(ship.ShipId, out var at) && cnow - at < ThreatWindowSeconds)
-                            || (friendly && CombatTargetSelector.IsStationThreatening(cls));
-                        cands.Add(new BotTargetCandidate(ship.ShipId, ship.Position, cls, isThreat) { Distance = d });
+                        // P636c "off" — P635 Phase A: scan the live tables under
+                        // cs.Gate (each ship filtered by IsNotVisible, side, sector).
+                        lock (pcs.Gate)
+                        {
+                            foreach (var st in pcs.World.Stations.Values)
+                                if (st.SideId == b.Side && st.ClusterId == myCluster) { friendly = true; break; }
+                            foreach (var ship in pcs.World.Ships.Values)
+                            {
+                                if (ship.ShipId == b.ShipId || ship.IsNotVisible) continue;
+                                if (ship.SideId == b.Side) continue;
+                                if (ship.SectorId != myCluster) continue;
+                                if (ship.Latest is not { } lu) continue;
+                                float d = (lu.Position - myPos).Length();
+                                var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
+                                bool isThreat =
+                                    (b.RecentAttackers.TryGetValue(ship.ShipId, out var at) && cnow - at < ThreatWindowSeconds)
+                                    || (friendly && CombatTargetSelector.IsStationThreatening(cls));
+                                cands.Add(new BotTargetCandidate(ship.ShipId, lu.Position, cls, isThreat) { Distance = d });
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (var st in snapshot.Stations)
+                            if (st.SideId == b.Side && st.ClusterId == myCluster) { friendly = true; break; }
+                        foreach (var ship in snapshot.VisibleShips)
+                        {
+                            if (ship.ShipId == b.ShipId) continue;
+                            if (ship.SideId == b.Side) continue;      // a DIFFERENT side only
+                            if (ship.SectorId != myCluster) continue;   // co-located
+                            if (!ship.HasLatest) continue;
+                            float d = (ship.Position - myPos).Length();
+                            var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
+                            bool isThreat =
+                                (b.RecentAttackers.TryGetValue(ship.ShipId, out var at) && cnow - at < ThreatWindowSeconds)
+                                || (friendly && CombatTargetSelector.IsStationThreatening(cls));
+                            cands.Add(new BotTargetCandidate(ship.ShipId, ship.Position, cls, isThreat) { Distance = d });
+                        }
                     }
                     prep[i] = new PreparedEngagement(cands, friendly);
                 });
@@ -1905,6 +1970,14 @@ internal sealed partial class BotManager : IDisposable
     /// ship's sector, re-stamped by the server's SET_CLUSTER per transit).</summary>
     private static short CsSector(ConnectionSession cs)
     {
+        if (!DecisionSnapshotEnabled)
+        {
+            // P636c "off" — P635 live read under cs.Gate.
+            lock (cs.Gate)
+                if (cs.World.MyShipId is { } me2 && cs.World.Ships.TryGetValue(me2, out var e2))
+                    return e2.SectorId;
+            return -1;
+        }
         // P636 — read the lock-free decision snapshot instead of taking the world
         // gate: a decision pass no longer waits behind the receive thread's bulk
         // ship application under cs.Gate (the P632/P633 transit collapse).
@@ -1918,16 +1991,111 @@ internal sealed partial class BotManager : IDisposable
     /// P636 now from the lock-free decision snapshot (no gate acquisition).</summary>
     private static bool TryCsPose(ConnectionSession cs, short shipId, out Vector3 pos, out Orientation orient)
     {
-        var snap = cs.World.Decision;
-        if (DecisionSnapshot.TryFind(snap.Ships, shipId, out var e) && e.HasLatest)
+        if (!DecisionSnapshotEnabled)
         {
-            pos = e.Position;
-            orient = e.MaterializeOrientation();
+            // P636c "off" — the pre-P636 P635 read: the live entity's Latest
+            // pose under cs.Gate (fresh to the last applied update).
+            lock (cs.Gate)
+            {
+                if (cs.World.Ships.TryGetValue(shipId, out var e) && e.Latest is { } lu)
+                {
+                    pos = lu.Position;
+                    orient = lu.Orientation;
+                    return true;
+                }
+            }
+            pos = Vector3.Zero;
+            orient = Orientation.Identity;
+            return false;
+        }
+        var snap = cs.World.Decision;
+        if (DecisionSnapshot.TryFind(snap.Ships, shipId, out var e2) && e2.HasLatest)
+        {
+            pos = e2.Position;
+            orient = e2.MaterializeOrientation();
             return true;
         }
         pos = Vector3.Zero;
         orient = Orientation.Identity;
         return false;
+    }
+
+    /// <summary>
+    /// P636c — a FRESH, lock-free pose for <paramref name="shipId"/>: reads the
+    /// decision snapshot (no gate) but dead-reckons the frozen pose forward to
+    /// the reader's "now" by the real elapsed time since the snapshot was
+    /// published (<c>vel * age</c>). This restores pre-P636 aim freshness — the
+    /// engaged target's (and the bot's own) position the lead/fire law consumes —
+    /// without re-acquiring <c>cs.Gate</c> (the P636 lock-free benefit is kept:
+    /// scans still run on the raw snapshot; only the aim-critical poses are
+    /// extrapolated). Returns false exactly when <see cref="TryCsPose"/> would.
+    /// </summary>
+    private static bool TryCsFreshPose(ConnectionSession cs, short shipId, out Vector3 pos, out Vector3 vel, out Orientation orient)
+    {
+        if (!DecisionSnapshotEnabled)
+        {
+            lock (cs.Gate)
+            {
+                if (cs.World.Ships.TryGetValue(shipId, out var e) && e.Latest is { } lu)
+                {
+                    pos = lu.Position;
+                    vel = lu.Velocity;
+                    orient = lu.Orientation;
+                    return true;
+                }
+            }
+            pos = vel = Vector3.Zero;
+            orient = Orientation.Identity;
+            return false;
+        }
+        var snap = cs.World.Decision;
+        if (DecisionSnapshot.TryFind(snap.Ships, shipId, out var fe) && fe.HasLatest)
+        {
+            if (SnapshotDeadReckonEnabled)
+            {
+                double ageSec = (System.Environment.TickCount64 - snap.PublishedTick64) / 1000.0;
+                if (ageSec < 0) ageSec = 0;
+                pos = DecisionSnapshot.DeadReckonPosition(fe, ageSec * 1000.0);
+            }
+            else
+            {
+                pos = fe.Position;   // P636c probe — raw frozen snapshot pose (unfixed)
+            }
+            vel = fe.Velocity;
+            orient = fe.MaterializeOrientation();
+            return true;
+        }
+        pos = vel = Vector3.Zero;
+        orient = Orientation.Identity;
+        return false;
+    }
+
+    /// <summary>P636c — record one aim's snapshot age (ms) into the rolling window.</summary>
+    private static void RecordSnapAge(long publishedTick64)
+    {
+        if (!DecisionSnapshotEnabled) return;
+        double age = System.Environment.TickCount64 - publishedTick64;
+        if (age < 0) age = 0;
+        lock (SnapAgeGate)
+        {
+            _snapAgesMs.Add(age);
+            if (_snapAgesMs.Count > MaxSnapAgeSamples) _snapAgesMs.RemoveAt(0);
+        }
+    }
+
+    /// <summary>P636c — percentile summary of the sampled snapshot ages (ms).</summary>
+    private static (double Mean, double P95, double Max) SnapAgeSummary()
+    {
+        lock (SnapAgeGate)
+        {
+            if (_snapAgesMs.Count == 0) return (0, 0, 0);
+            var a = _snapAgesMs.ToArray();
+            System.Array.Sort(a);
+            int n = a.Length;
+            double mean = 0; foreach (var v in a) mean += v; mean /= n;
+            double p95 = a[(int)(n * 0.95)];
+            return (mean, p95, a[n - 1]);
+        }
     }
 
     private static Vector3 Vec3(float[] v) => v is { Length: >= 3 } ? new Vector3(v[0], v[1], v[2]) : Vector3.Zero;
@@ -1939,6 +2107,17 @@ internal sealed partial class BotManager : IDisposable
     private static bool TryBuildWarpDestMap(ConnectionSession cs, out Dictionary<short, short> map)
     {
         map = new Dictionary<short, short>();
+        if (!DecisionSnapshotEnabled)
+        {
+            // P636c "off" — P635 live read under cs.Gate.
+            lock (cs.Gate)
+            {
+                foreach (var w in cs.World.Warps.Values)
+                    if (cs.World.Warps.TryGetValue(w.DestinationId, out var partner))
+                        map[w.WarpId] = partner.ClusterId;
+            }
+            return map.Count > 0;
+        }
         var snap = cs.World.Decision;
         foreach (var w in snap.Warps)
             if (w.DestClusterId >= 0)
@@ -1955,6 +2134,26 @@ internal sealed partial class BotManager : IDisposable
     /// reads the decision snapshot's warps, no gate.</summary>
     private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, IReadOnlyDictionary<short, short> warpDest, out Vector3 pos, out float radius)
     {
+        if (!DecisionSnapshotEnabled)
+        {
+            // P636c "off" — P635 live read under cs.Gate.
+            lock (cs.Gate)
+            {
+                foreach (var w in cs.World.Warps.Values)
+                {
+                    if (w.ClusterId != cur) continue;
+                    if (warpDest.TryGetValue(w.WarpId, out var d) && d == next)
+                    {
+                        pos = Vec3(w.Position);
+                        radius = w.Radius;
+                        return true;
+                    }
+                }
+            }
+            pos = Vector3.Zero;
+            radius = 0f;
+            return false;
+        }
         var snap = cs.World.Decision;
         foreach (var w in snap.Warps)
         {
@@ -2374,22 +2573,57 @@ internal sealed partial class BotManager : IDisposable
             cs.SendOrderChange(bot.ShipId, OrderChange.CmdQueued, OrderChange.CmdCurrent, IgcObjectType.Ship, targetId);
             bot.LastTargetAt = now;
         }
-        if (!TryCsPose(cs, bot.ShipId, out var myPos, out var orient)) return;
+        if (!TryCsPose(cs, bot.ShipId, out var myPos0, out var orient0)) return;
+        var myPos = myPos0;
+        var orient = orient0;
 
         Vector3 targetPos, targetVel, myVel;
         short targetSector; short targetHullId;
-        // P636 — decision snapshot, no gate.
-        var esnap = cs.World.Decision;
-        if (!(DecisionSnapshot.TryFind(esnap.Ships, targetId, out var te) && te.HasLatest))
-        { LoiterCombat(bot, now); return; }
-        targetPos = te.Position;
-        targetVel = te.Velocity;
-        targetSector = te.SectorId;
-        targetHullId = te.HullId;
-        if (!(DecisionSnapshot.TryFind(esnap.Ships, bot.ShipId, out var me) && me.HasLatest))
-        { LoiterCombat(bot, now); return; }
-        myVel = me.Velocity;
-        if (targetSector != CsSector(cs)) { LoiterCombat(bot, now); return; }  // co-location guard (P429 one-sided)
+        if (!DecisionSnapshotEnabled)
+        {
+            // P636c "off" — P635: live target + own reads under cs.Gate.
+            lock (cs.Gate)
+            {
+                if (!cs.World.Ships.TryGetValue(targetId, out var te) || te.Latest is not { } tlu)
+                { LoiterCombat(bot, now); return; }
+                targetPos = tlu.Position;
+                targetVel = tlu.Velocity;
+                targetSector = te.SectorId;
+                targetHullId = te.HullId;
+                if (!cs.World.Ships.TryGetValue(bot.ShipId, out var me) || me.Latest is not { } mu)
+                { LoiterCombat(bot, now); return; }
+                myVel = mu.Velocity;
+            }
+            if (targetSector != CsSector(cs)) { LoiterCombat(bot, now); return; }  // co-location guard (P429 one-sided)
+        }
+        else
+        {
+            // P636c FIX — the aim-critical poses are read FRESH (dead-reckoned
+            // forward to "now" by vel×age, lock-free) instead of the raw frozen
+            // snapshot, so the lead/fire law consumes near-live geometry. The
+            // lead solve (`deltaP = targetPos − myPos`, `deltaV = targetVel −
+            // myVel`) and the fire gate (`angleToLead ≤ c_fMaxOffAngle`) are
+            // exactly the inputs P636's ~25 Hz freeze corrupted: a 40 ms-old
+            // target/own position at a closing speed of hundreds of u/s shifts
+            // the intercept point by tens of units, so the nose never settles on
+            // the lead and the bot fires far less (the 150v150 shot collapse
+            // 20353 → 10679 that drops kills 29 → 11). Everything else (the
+            // O(N) candidate scans, navigation) still reads the raw snapshot, so
+            // the P636 no-gate benefit is fully kept — no cs.Gate is acquired.
+            var esnap = cs.World.Decision;
+            if (!TryCsFreshPose(cs, bot.ShipId, out var fmyPos, out myVel, out var fmyOrient)) return;
+            myPos = fmyPos;
+            orient = fmyOrient;
+            if (!TryCsFreshPose(cs, targetId, out var ftPos, out targetVel, out _))
+            { LoiterCombat(bot, now); return; }
+            targetPos = ftPos;
+            if (!(DecisionSnapshot.TryFind(esnap.Ships, targetId, out var te2)))
+            { LoiterCombat(bot, now); return; }
+            targetSector = te2.SectorId;
+            targetHullId = te2.HullId;
+            RecordSnapAge(esnap.PublishedTick64);
+            if (targetSector != CsSector(cs)) { LoiterCombat(bot, now); return; }  // co-location guard (P429 one-sided)
+        }
 
         // The ballistics of the bot's LEAD weapon (first mounted gun) from the
         // REAL part/projectile data — never a literal.
@@ -2508,10 +2742,27 @@ internal sealed partial class BotManager : IDisposable
     /// (shipIGC.cpp:2545-2559). -1 when none.</summary>
     private static short NearestOtherEnemy(ConnectionSession cs, ActiveBot bot, short myCluster, Vector3 myPos, short exclude)
     {
+        short best = -1; float bestD = float.MaxValue;
+        if (!DecisionSnapshotEnabled)
+        {
+            // P636c "off" — P635 live scan under cs.Gate.
+            lock (cs.Gate)
+            {
+                foreach (var ship in cs.World.Ships.Values)
+                {
+                    if (ship.ShipId == bot.ShipId || ship.ShipId == exclude || ship.IsNotVisible) continue;
+                    if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
+                    if (ship.SectorId != myCluster) continue;   // co-located
+                    if (ship.Latest is not { } lu) continue;
+                    float d = (lu.Position - myPos).Length();
+                    if (d < bestD) { bestD = d; best = ship.ShipId; }
+                }
+            }
+            return best;
+        }
         // P636 — decision snapshot, no gate. P636b — iterate the VISIBLE ships
         // only (walking the full array to skip non-visible entries was an O(N)
         // cost per bot that scaled into the 200v200 collapse).
-        short best = -1; float bestD = float.MaxValue;
         var snap = cs.World.Decision;
         foreach (var ship in snap.VisibleShips)
         {
@@ -3511,6 +3762,26 @@ internal sealed partial class BotManager : IDisposable
     {
         var list = new List<(Vector3, short, short)>();
         short myCluster = CsSector(cs);
+        if (!DecisionSnapshotEnabled)
+        {
+            // P636c "off" — P635 live scan under cs.Gate (spatial index as before).
+            lock (cs.Gate)
+            {
+                var pts = new List<BotSpatialIndex.ShipPoint>();
+                foreach (var (id, ent) in cs.World.Ships)
+                {
+                    if (id == bot.ShipId) continue;
+                    if (ent.SideId != bot.Side) continue;
+                    if (ent.SectorId != myCluster) continue;
+                    if (ent.Latest is not { } lu) continue;
+                    pts.Add(new BotSpatialIndex.ShipPoint(id, lu.Position));
+                }
+                var gridOff = BotSpatialIndex.Build(myCluster, pts, 400f);
+                foreach (var (sid, pos) in gridOff.QueryRadius(myPos, reach))
+                    list.Add((pos, sid, bot.Side));
+            }
+            return list;
+        }
         // P636 — decision snapshot (no gate): same-side members only, never across
         // sides (honest visibility). Spatial-index build+query as before.
         // P636b — iterate the VISIBLE ships only (same-side members are visible by
@@ -4475,6 +4746,7 @@ internal sealed partial class BotManager : IDisposable
         }
         int bots = cadence.Count;
         double fleetRate = bots > 0 && wallPeriod > 0 ? bots / (wallPeriod / 1000.0) : 0.0;
+        var snapAge = SnapAgeSummary();
         return new BotPerfReport(
             core,
             pass,
@@ -4487,7 +4759,8 @@ internal sealed partial class BotManager : IDisposable
             fleetRate,                                  // fleet decisions per second
             res,
             maxGate,
-            decode);
+            decode,
+            snapAge);
     }
 
     // ── P539: real per-bot combat stats (shots / ship hits / kills / pods) ──
@@ -5053,7 +5326,8 @@ public readonly record struct BotPerfReport(
     double FleetDecisionRateHz,
     DecisionMetrics.ResourceSnapshot Resources,
     double MaxGateHoldMs,
-    double DecodeMbPerSec);
+    double DecodeMbPerSec,
+    (double MeanMs, double P95Ms, double MaxMs) SnapAgeMs);
 
 /// <summary>P431 — one bot tick's accept-and-translate decision (see
 /// <see cref="BotManager.DecideAcceptTranslate"/>): whether the bot must send a

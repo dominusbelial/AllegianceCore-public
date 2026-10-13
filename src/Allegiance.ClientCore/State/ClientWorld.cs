@@ -49,8 +49,18 @@ public sealed class ClientWorld
     /// <summary>P636 — minimum wall interval between snapshot publishes (ms).
     /// The decision loop targets ~20 Hz, so ~25 Hz publish is comfortably fresh
     /// while bounding the per-bot rebuild cost (it replaces the per-update
-    /// O(clusterShips) gate scans, not adds to them).</summary>
-    private const int DecisionSnapPublishIntervalMs = 40;
+    /// O(clusterShips) gate scans, not adds to them).
+    /// P636c — made overridable via ALLEGIANCE_BOT_SNAPSHOT_PUBLISH_MS (default
+    /// 40) so the live harness can inflate it to a genuinely STALE snapshot and
+    /// prove the staleness→lethality mechanism (and the dead-reckon recovery) in
+    /// a controlled A/B.</summary>
+    internal static int DecisionSnapPublishIntervalMs = ReadPublishInterval();
+    private static int ReadPublishInterval()
+    {
+        if (int.TryParse(System.Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_SNAPSHOT_PUBLISH_MS"), out var v) && v > 0)
+            return v;
+        return 40;
+    }
 
     private static DecisionSnapshot[] CreateSnapPool()
     {
@@ -89,6 +99,7 @@ public sealed class ClientWorld
         var target = _snapPool[_snapCursor];
         _snapCursor = (_snapCursor + 1) % _snapPool.Length;
         target.Version = ++_decisionSnapVersion;
+        target.PublishedTick64 = now;
         target.MyShipId = MyShipId;
         target.MySideId = MySideId;
         FillShipSnapshot(target);
