@@ -79,6 +79,48 @@ public sealed partial class Server
                 try { req = LogonRequest.Decode(m); }
                 catch (Exception e) { Console.WriteLine($"[wire] bad LOGONREQ from {from}: {e.Message}"); continue; }
 
+                // P646 (review finding H3) — ONE LOGON PER CONNECTION. Native
+                // asserts an existing player never sends LOGONREQ
+                // (FedSrv.CPP:4832 `assert (pfm->fmid != FM_C_LOGONREQ);
+                // shouldn't have a pfsPlayer yet if logging on`). The old code
+                // had no such check, so a seated peer re-sending a version-
+                // matching LOGONREQ got a fresh AllocateShipId(), a new
+                // _pendingSideSelect entry, and — on seating — overwrote
+                // _peerShips[from], orphaning the first ship in its sector with
+                // nobody owning it (repeatable for unlimited orphan ships from
+                // one connection). Two cases, neither allocates:
+                if (_peerShips.ContainsKey(from))
+                {
+                    // Already seated: reject (logged, rate-limited), no ack, no
+                    // id, no pending entry.
+                    var dl = _duplicateLogonLog.Ticket(from.Value);
+                    if (dl.Emit)
+                        Console.WriteLine($"[logon] {from} '{req.CharacterName}' DUPLICATE LOGONREQ from a seated peer — rejected (one logon per connection, FedSrv.CPP:4832)");
+                    else if (dl.Summarize)
+                        Console.WriteLine($"[logon] {from}: {dl.Suppressed} more duplicate LOGONREQs from a seated peer suppressed (rate-limited)");
+                    continue;
+                }
+                if (_pendingSideSelect.TryGetValue(from, out var pendingLogon))
+                {
+                    // Still awaiting side selection: the LOGONREQ is idempotent —
+                    // re-send the SAME LogonAck (same reserved ship id, same
+                    // validated/cookie), allocate nothing, register nothing new.
+                    Console.WriteLine($"[logon] {from} '{pendingLogon.Request.CharacterName}' re-LOGONREQ while pending side-select — re-sent same LogonAck (ship {pendingLogon.ShipId}), no new id");
+                    var reack = new LogonAck
+                    {
+                        CharNameOrFailureReason = pendingLogon.Request.VersionMatches ? $"Welcome {pendingLogon.Request.CharacterName}" : "wrong client version",
+                        TimeServer = (uint)pendingLogon.Request.Time + 1,
+                        ShipID = pendingLogon.Request.VersionMatches ? pendingLogon.ShipId : (short)0,
+                        FValidated = pendingLogon.Request.VersionMatches,
+                        FRetry = !pendingLogon.Request.VersionMatches,
+                        Cookie = (byte)(pendingLogon.Request.DwCookie & 0xFF),
+                    };
+                    SendPeer(from, FedPacket.Pack(new[] { reack.Encode() }));
+                    if (pendingLogon.Request.VersionMatches && _missions.Count > 0)
+                        SendSideRoster(from);
+                    continue;
+                }
+
                 var validated = req.VersionMatches;
                 // P619c — grant a connected HUMAN client (a character name NOT
                 // under the MCP harness prefix) the longer transport liveness

@@ -93,6 +93,14 @@ public sealed partial class Server
         // live 200v200 baseline shows whether a joiner's world data ever waits
         // behind the position stream. Gated on peers>0 (silent for the suites).
         TickProfiler.WindowReported += EmitPeerQueueWindow;
+        // P646 — per-profiler-window receive-funnel health: how many events the
+        // bounded drain handled vs deferred (a non-zero deferral = the per-tick
+        // budget bit; must stay 0 in normal 200v200 play), and how many would-block
+        // IOExceptions the transport reader caught (must stay ~0 for idle
+        // non-blocking pool peers — P646's Socket.Poll fix removed the old
+        // ~1 ms exception spin). Silent when no peers are connected (keeps the
+        // unit suites clean).
+        TickProfiler.WindowReported += EmitP646HealthWindow;
 
         if (mode == "off")
         {
@@ -173,6 +181,28 @@ public sealed partial class Server
         if (peers == 0) return;
         Console.WriteLine($"[p634-queue] peers={peers} maxOrderedPending={maxOrd} maxStreamPending={maxStr} " +
                           $"maxQueuedBytes={maxBytes} totalQueuedBytes={totalBytes} maxOldestGuaranteedMs={maxAge}");
+    }
+
+    // P646 — window-to-window deltas for the receive-funnel health report.
+    private long _lastDrained;
+    private long _lastDeferred;
+    private long _lastWouldBlockCatches;
+
+    /// <summary>P646 — per-profiler-window receive-funnel health (see
+    /// registration in <see cref="InitTimeDilation"/>): handled vs deferred
+    /// events in the bounded drain, and would-block reader exceptions. Prints
+    /// the DELTAS since the previous window. Silent with no peers.</summary>
+    private void EmitP646HealthWindow()
+    {
+        if (_host.BufferedPeerCount == 0 && _host.EventsDrained == 0) return;
+        long drained = _host.EventsDrained;
+        long deferred = _host.EventsDeferred;
+        long wbc = Allegiance.Core.Transport.TcpTransport.WouldBlockCatches;
+        Console.WriteLine($"[p646] drained=+{drained - _lastDrained} deferred=+{deferred - _lastDeferred} " +
+                          $"wouldBlockCatches=+{wbc - _lastWouldBlockCatches}");
+        _lastDrained = drained;
+        _lastDeferred = deferred;
+        _lastWouldBlockCatches = wbc;
     }
 
     /// <summary>

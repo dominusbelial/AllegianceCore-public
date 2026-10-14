@@ -57,6 +57,41 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     private readonly ConcurrentDictionary<uint, long> _bufferedPerPeer = new();
     private readonly PerPeerRateLimiter _dropLog = new();
 
+    // P646 (review finding H4) — bound the WORK each Drain does in one tick.
+    // The receive queue is bounded by the per-peer byte budget above, but that
+    // alone does not bound CPU: a steady stream of valid packets can keep the
+    // queue never-empty, so an unbounded `while (TryDequeue)` drain would defer
+    // simulation/broadcast indefinitely (the reviewer saw one Drain consume
+    // 1,000 self-replenishing events). Drain therefore (a) pulls at most the
+    // events present when it began plus <see cref="DrainBudgetEvents"/> more,
+    // and (b) services peers ROUND-ROBIN with a per-peer cap
+    // <see cref="DrainFairShareEvents"/>, so one flooding peer cannot starve
+    // the others. Anything over the budget is deferred (re-queued, keeping its
+    // byte reservation) and serviced in a later tick, preserving per-peer FIFO
+    // and the ordering of a peer's lifecycle events (join/leave) against its
+    // receives. Both seams are internal so tests can shrink them; the defaults
+    // are sized from the 200v200 baseline so legitimate input is never deferred
+    // there (measured per-tick event counts in docs/reports/P646_*.md).
+    internal static long DrainBudgetEvents { get; set; } = 8192;
+    internal static int DrainFairShareEvents { get; set; } = 256;
+    private long _eventsDrained;
+    private long _eventsDeferred;
+    /// <summary>P646 — cumulative events handled by <c>Drain</c> (test seam).</summary>
+    internal long EventsDrained => Interlocked.Read(ref _eventsDrained);
+    /// <summary>P646 — cumulative events deferred (over the per-tick budget /
+    /// per-peer fair share) instead of handled this tick (test seam). Non-zero
+    /// only under overload; 0 in normal 200v200 play.</summary>
+    internal long EventsDeferred => Interlocked.Read(ref _eventsDeferred);
+    /// <summary>P646 — release one peer's byte reservation WITHOUT ever
+    /// inserting an entry (a departed peer's entry must not be re-created by a
+    /// late receive — see OnPeerLeft/PeerLeftEvt ordering). Atomic update of an
+    /// existing entry only.</summary>
+    internal void RemovePeerAccounting(ConnectionId id)
+        => _bufferedPerPeer.TryRemove(id.Value, out _);
+    /// <summary>P646 — number of peers currently holding a buffered-byte
+    /// accounting entry (test seam; asserts churn leaves 0).</summary>
+    internal int BufferedPeerCount => _bufferedPerPeer.Count;
+
     // P645 — per-peer PING reply throttle. The native client sends at most one
     // PING per ~6 s (clintlib.cpp CheckServerLag, maxLagCheck=6.0f), so a 1 s
     // minimum reply interval is ~6× headroom for legitimate traffic while
@@ -1099,7 +1134,16 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // state so these tables stay bounded by the LIVE peer set, not by every
         // historical connection id (a connect/disconnect-churn attacker must not
         // be able to grow them either).
-        _bufferedPerPeer.TryRemove(id.Value, out _);
+        // P646 (review finding M2): the _bufferedPerPeer removal is DELIBERATELY
+        // deferred to the sim-thread PeerLeftEvt drain (Server.ReleasePeer →
+        // RemovePeerAccounting) instead of being done HERE on the transport
+        // thread. Doing it here raced a receive queued just before the leave:
+        // the receive's later release (formerly AddOrUpdate) re-created the
+        // entry for a departed peer, and nothing removed it again — one retained
+        // entry per historical connection. The drain releases reservations with
+        // a never-insert update (see ReleaseReservation), so it cannot re-create
+        // the entry; the ordered PeerLeftEvt (behind this peer's receives in its
+        // lane) removes it for good.
         _dropLog.Remove(id.Value);
         // P645 — release the departed peer's PING throttle state so these tables
         // stay bounded by the LIVE peer set (same rationale as _bufferedPerPeer).
@@ -1135,18 +1179,120 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     }
 
     /// <summary>
-    /// Atomically drain everything currently queued, invoking <paramref name="handle"/>
-    /// for each event on the calling (simulation) thread. Safe to call every tick.
+    /// Atomically drain the receive queue, invoking <paramref name="handle"/>
+    /// for each event on the calling (simulation) thread. Safe to call every
+    /// tick. P646 (review finding H4): the drain is BOUNDED — it pulls at most
+    /// the events present when it began plus <see cref="DrainBudgetEvents"/>
+    /// more, and services peers round-robin with a per-peer cap
+    /// (<see cref="DrainFairShareEvents"/>), so a self-replenishing flood can
+    /// neither run the drain forever (starving simulation/broadcast) nor starve
+    /// other peers. Anything over the budget is deferred to a later tick,
+    /// preserving per-peer FIFO and a peer's lifecycle-event ordering. Deferred
+    /// counts ride in <see cref="EventsDrained"/>/<see cref="EventsDeferred"/>.
     /// </summary>
-    public void Drain(Action<ITransportEvent> handle)
+    public int Drain(Action<ITransportEvent> handle)
     {
-        while (_events.TryDequeue(out var evt))
+        int snapshot = _events.Count;             // events present when we began
+        long budget = DrainBudgetEvents;
+        int fairShare = DrainFairShareEvents;
+
+        // Phase 1 — pull a bounded slice out of the shared FIFO into per-peer
+        // lanes. A consumed ReceiveEvt's reservation is NOT released here; it is
+        // released only when the event is actually HANDLED, so a deferred event
+        // keeps its reservation (it is still occupying queue memory).
+        var lanes = new Dictionary<uint, Queue<ITransportEvent>>();
+        var order = new List<uint>();
+        long pullCap = snapshot + budget;
+        long pulled = 0;
+        while (pulled < pullCap && _events.TryDequeue(out var evt))
         {
-            // P315: a consumed ReceiveEvt releases its reserved bytes back to
-            // the peer's budget, so the queue drains and the peer can send more.
+            uint key = PeerKeyOf(evt);
+            if (!lanes.TryGetValue(key, out var q)) { q = new Queue<ITransportEvent>(); lanes[key] = q; order.Add(key); }
+            q.Enqueue(evt);
+            pulled++;
+        }
+
+        // Phase 2 — service lanes round-robin until the per-tick budget is
+        // consumed or every lane is empty / over its fair share.
+        int processed = 0;
+        var handled = new Dictionary<uint, int>();
+        int idx = 0;
+        while (order.Count > 0 && processed < budget)
+        {
+            uint key = order[idx];
+            if (handled.TryGetValue(key, out int done) && done >= fairShare)
+            {
+                // This peer's share for this drain is spent; defer its remainder.
+                order.RemoveAt(idx);
+                if (order.Count == 0) break;
+                if (idx == order.Count) idx = 0;
+                continue;
+            }
+            var q = lanes[key];
+            var evt = q.Dequeue();
             if (evt is ReceivedEvt r)
-                _bufferedPerPeer.AddOrUpdate(r.From.Value, 0L, (_, old) => Math.Max(0, old - r.Data.Length));
+                ReleaseReservation(r);   // a handled receive frees its reserved bytes (never inserts)
             handle(evt);
+            processed++;
+            handled[key] = done + 1;
+            if (q.Count == 0)
+            {
+                order.RemoveAt(idx);
+                if (order.Count == 0) break;
+                if (idx == order.Count) idx = 0;
+            }
+            else
+            {
+                idx = (idx + 1) % order.Count;
+            }
+        }
+
+        // Phase 3 — re-queue whatever stayed in the lanes (over budget / over
+        // fair share) for a later tick. Per-peer FIFO is preserved (contiguous
+        // re-enqueue); these keep their byte reservations.
+        int deferred = 0;
+        foreach (var key in order)
+        {
+            var q = lanes[key];
+            deferred += q.Count;
+            while (q.Count > 0) _events.Enqueue(q.Dequeue());
+        }
+
+        Interlocked.Add(ref _eventsDrained, processed);
+        Interlocked.Add(ref _eventsDeferred, deferred);
+        return processed;
+    }
+
+    /// <summary>The per-peer bucket key for an event: receives and lifecycle
+    /// events bucket by the peer they belong to, so a peer's join → receives →
+    /// leave stay ordered in one FIFO lane (the accounting fix depends on the
+    /// leave being drained AFTER that peer's receives). SessionLost is global
+    /// (rare) and buckets under a key no peer id collides with.</summary>
+    private static uint PeerKeyOf(ITransportEvent evt) => evt switch
+    {
+        ReceivedEvt r => r.From.Value,
+        PeerJoinedEvt j => j.Id.Value,
+        PeerLeftEvt l => l.Id.Value,
+        _ => uint.MaxValue,
+    };
+
+    /// <summary>P646 (review finding M2) — a handled <see cref="ReceivedEvt"/>
+    /// releases its reserved bytes back to the peer's budget, but ONLY by
+    /// updating an EXISTING accounting entry (never inserting). Inserting here
+    /// is what re-created entries for departed peers whose receive was queued
+    /// just before their leave; the peer's entry is finally removed when its
+    /// ordered <see cref="PeerLeftEvt"/> drains (ReleasePeer → RemovePeerAccounting).
+    /// </summary>
+    private void ReleaseReservation(ReceivedEvt r)
+    {
+        for (;;)
+        {
+            if (!_bufferedPerPeer.TryGetValue(r.From.Value, out long cur))
+                return;                       // entry gone (peer released) — do NOT insert
+            long next = Math.Max(0, cur - r.Data.Length);
+            if (_bufferedPerPeer.TryUpdate(r.From.Value, next, cur))
+                return;                       // released
+            // lost a race with a concurrent insert — retry
         }
     }
 

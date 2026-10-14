@@ -1688,6 +1688,8 @@ public sealed partial class Game1 : Game
             foreach (var r in _asteroidRenderers) r?.Dispose();
         _nativeAsteroidRenderer?.Dispose();   // P567 — native per-rock .mdl meshes + textures
         _nativeStationRenderer?.Dispose();    // P564 — native per-station-type .mdl meshes + textures
+        _nativeShipRenderer?.Dispose();       // P646 — was never disposed (own GPU buffers/textures/effects)
+        _nativeTreasureRenderer?.Dispose();   // P646 — was never disposed (own GPU buffers/textures/effects)
         if (_asteroidTextures != null)
             foreach (var t in _asteroidTextures.Values) t.Dispose();
         _rockTextures?.Dispose();   // P421 — release the real original surface bitmaps
@@ -1707,6 +1709,20 @@ public sealed partial class Game1 : Game
         _explosionRenderer?.Dispose();
         _hullHitSparkRenderer?.Dispose();
         _shieldFlareRenderer?.Dispose();   // P463b
+        // P646 — the review flagged _nativeShipRenderer/_nativeTreasureRenderer;
+        // the disposal guard then surfaced these 11 more GraphicsDevice-owning
+        // renderers that UnloadContent also never disposed. Dispose all of them.
+        _stationRenderer?.Dispose();
+        _buildingEffectRenderer?.Dispose();
+        _treasureRenderer?.Dispose();
+        _chaffRenderer?.Dispose();
+        _damageDebrisRenderer?.Dispose();
+        _debrisRenderer?.Dispose();
+        _engineTrailRenderer?.Dispose();
+        _nozzleGlowRenderer?.Dispose();
+        _navStrobeRenderer?.Dispose();
+        _motionTrailRenderer?.Dispose();
+        _alephGlimpseRenderer?.Dispose();
         _explosionAssets?.Dispose();
         // P546 — dispose the enhanced renderers/smoke before their VfxAssets.
         _enhancedExplosionRenderer?.Dispose();

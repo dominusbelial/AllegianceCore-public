@@ -1469,9 +1469,18 @@ public sealed partial class Server
         // P281 — a pending side-select peer (logged on, not yet spawned) is
         // released the same way: drop it from the pending hold.
         _pendingSideSelect.Remove(id);
+        // P646 (review finding M2) — finally remove this peer's buffered-byte
+        // accounting entry NOW, on the sim thread, draining AFTER its queued
+        // receives (the lane ordering guarantees every receive that preceded the
+        // PeerLeftEvt/LOGOFF has already been released). Removing here (instead
+        // of on the transport thread's OnPeerLeft) closes the race where a
+        // receive queued just before the leave re-created the entry. Idempotent:
+        // a second release (LOGOFF then OnPeerLeft) is a harmless no-op.
+        _host.RemovePeerAccounting(id);
         // P315 — drop this peer's unsupported-fmid log-gate state so the
         // rate-limit table stays bounded by the live peer set.
         _unsupportedLog.Remove(id.Value);
+        _duplicateLogonLog.Remove(id.Value);   // P646 — trim with the peer (same rationale)
         // M1 — release every remaining connection-scoped cache keyed by this
         // peer. The original ReleasePeer only freed _pendingSideSelect /
         // _peerShips / _peerNames / _playerReady / _pendingJoinRequests; the

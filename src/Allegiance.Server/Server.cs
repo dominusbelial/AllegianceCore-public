@@ -88,6 +88,12 @@ public sealed partial class Server : IDisposable
     // by the live peer set.
     private readonly PerPeerRateLimiter _unsupportedLog = new();
 
+    // P646 (review finding H3) — rate-limits the "DUPLICATE LOGONREQ from a
+    // seated peer" refusal log so a duplicate-logon flood cannot force
+    // unbounded synchronous console I/O inside one tick (same rationale and
+    // trimming as _unsupportedLog; trimmed in ReleasePeer on peer leave).
+    private readonly PerPeerRateLimiter _duplicateLogonLog = new();
+
     // Source of randomness for the eject branch's random fallback heading
     // (Vector::RandomDirection, vector.cpp:37-49). Shared, never seeded by the
     // caller — non-deterministic directions are fine (the native is too).

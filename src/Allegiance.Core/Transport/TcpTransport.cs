@@ -775,11 +775,53 @@ public sealed class TcpTransport : ITransport
         return (type, body);
     }
 
+    /// <summary>P646 — how long a reader parks in <c>Socket.Poll</c> waiting for
+    /// readability on a NON-BLOCKING pool socket before re-checking (250 ms).
+    /// Long enough that an idle peer does not spin, short enough that shutdown/
+    /// closure is noticed promptly. Idle-wakes ≈ 4/s per peer, not ~1000/s of
+    /// thrown exceptions (P645's old would-block retry).</summary>
+    private const int ReadPollTimeoutMicros = 250_000;
+    private static long _wouldBlockCatches;
+    private static long _wouldBlockWaits;
+    /// <summary>P646 — cumulative would-block IOException catches in the read
+    /// path. Should stay ≈ 0 for idle non-blocking pool peers now that the
+    /// reader parks in <see cref="System.Net.Sockets.Socket.Poll"/> instead of
+    /// faulting ~1 ms apart.</summary>
+    public static long WouldBlockCatches => Interlocked.Read(ref _wouldBlockCatches);
+    /// <summary>P646 — cumulative times the reader waited in Poll with no data
+    /// ready (an idle-wake); shows the efficient-block path is engaged.</summary>
+    public static long WouldBlockWaits => Interlocked.Read(ref _wouldBlockWaits);
+
     private static void ReadExactly(Stream s, Span<byte> dst)
     {
         int off = 0;
         while (off < dst.Length)
         {
+            // P646 — block efficiently on a NON-BLOCKING pool socket instead of
+            // throwing+catching a would-block IOException every ~1 ms (P645's
+            // Thread.Sleep(1) retry burned CPU and allocated an exception object
+            // per idle peer per ms — up to ~390k exceptions/s at 390 idle peers).
+            // Poll SelectRead (plus a zero-timeout SelectError probe on a
+            // not-ready socket) with a sane timeout before Read, so an idle
+            // non-blocking peer parks in Poll and no exception is thrown when no
+            // data is pending. RESTRICTED to non-blocking sockets: a BLOCKING
+            // socket (the greet handshake, which carries a ReceiveTimeout, and
+            // thread-per-peer data reads) must keep using the plain blocking
+            // Read, because Socket.Poll bypasses the socket's ReceiveTimeout and
+            // would defeat the greeting timeout (a silent connection would never
+            // be dropped). A blocking Read parks the thread with no exception, so
+            // it needs no Poll. Sends stay non-blocking (P645's partial-write
+            // safety is untouched); the would-block catch below remains as a
+            // belt-and-suspenders fallback for the reader/worker race on a
+            // shared socket.
+            if (s is NetworkStream ns && ns.Socket is { Blocking: false } sock
+                && !sock.Poll(ReadPollTimeoutMicros, SelectMode.SelectRead))
+            {
+                Interlocked.Increment(ref _wouldBlockWaits);
+                if (sock.Poll(0, SelectMode.SelectError))
+                    throw new IOException("socket error");
+                continue;
+            }
             int n;
             try
             {
@@ -792,6 +834,7 @@ public sealed class TcpTransport : ITransport
                 // would-block when no data is pending instead of blocking.
                 // Retry rather than treating "no data right now" as a fatal
                 // error. Harmless for blocking sockets (would-block never fires).
+                Interlocked.Increment(ref _wouldBlockCatches);
                 Thread.Sleep(1);
                 continue;
             }

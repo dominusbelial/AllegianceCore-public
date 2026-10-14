@@ -491,3 +491,41 @@ isolation (verified 2026-10-14). Status: load-flake.
    StationsUpdate, LiveChat, GameOverPlayers, Conquest, SideElimination,
    FullSessionKill, Board_refused_once_mission_over) rotate run-to-run and remain
    ranked in the After table above.
+
+## P646 observation (2026-10-14, `scripts/run-tests.sh` on the final P646 tree)
+
+Receive-side hardening (one logon per connection, bounded fair drain, accounting
+leak fix, client renderer disposal, no would-block spin — `TcpTransport.ReadExactly`
+now parks in `Socket.Poll` only for NON-BLOCKING pool sockets). The transport
+change also touched the greet handshake, which shares `ReadExactly`; this was
+caught by the suite (see note below) and restricted so blocking sockets still
+honour `ReceiveTimeout`.
+
+The 4 failures observed in a full Core run are all **established live-wire
+load-flakes**, none in P646-touched code, none failing deterministically in
+isolation (different tests failed on different isolated runs):
+
+| test | ledger status | in P646 code? |
+|---|---|---|
+| `Core…GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | already-listed load-flake (see lines 432/461) | no |
+| `Core…LiveChatSectorWireTests.Individual_AllSector_and_FriendlySector_relay_to_real_peers_over_the_wire` | already-listed load-flake (see lines 216/419/432) | no |
+| `Core…LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown` | **new** load-flake | no |
+| `Core…ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines` (and `…Queued_writer_splits_multiline_and_flushes_trailing_partial_line`) | **new** load-flake | no |
+
+**Newly-observed flake (P646, documented for future runs):**
+`Core…LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown` —
+live-wire countdown/receipt timing under full-suite load; passes 3/3 isolated
+(2026-10-14). Status: load-flake.
+
+**Newly-observed flake (P646, documented for future runs):**
+`Core…ConsoleLogNonBlockingTests.Verbose_gate_…` and `…Queued_writer_splits_multiline_…` —
+console-writer thread timing under full-suite load (different tests fail on
+different runs); pass isolated (2026-10-14). Status: load-flake.
+
+**Regression caught by the suite (P646, FIXED):** `TcpTransportGreetTimeoutPoolTests.
+Silent_connection_is_eventually_dropped` / `…ThreadPerPeer…` failed because the first
+P646 `ReadExactly` applied `Socket.Poll` to BLOCKING sockets too, bypassing the
+socket's `ReceiveTimeout` so a silent greet never timed out. Fixed by restricting
+Poll to `Blocking:false` sockets (pool data sessions only); blocking reads keep
+using plain `Read` which honours `ReceiveTimeout`. Both greet-timeout classes pass
+after the fix.
