@@ -988,6 +988,17 @@ public sealed partial class Server
     /// </summary>
     private void HandleReqPingData(ConnectionId from)
     {
+        // P654 (H-32) — only a SEATED peer may request the ping roster, and the
+        // roster is scoped to the requester's OWN mission. Previously any
+        // pre-logon peer could pull the whole server-wide ship-id roster every
+        // 5 s (an information leak that fed H-25's id-from-the-wire exploits).
+        // Native answers every connection, but its mission is a full game the
+        // client is in; this port gates on a seated peer for safety (era
+        // constraint: native trusted its client's being in a mission).
+        if (!_peerShips.TryGetValue(from, out var requester))
+            return;   // pre-logon / unknown peer — silently ignore
+        Mission? requesterMission = requester.Ship.Mission;
+
         // The debounce gate (native PingQuery: elapsed > 5s ⇒ full roster).
         bool full = !_lastPingQuery.TryGetValue(from, out var last) || (_simNow - last) > 5.0;
         if (full)
@@ -1001,14 +1012,17 @@ public sealed partial class Server
         {
             // Debounced: send only the unchanged-window marker to the requester.
             SendPeer(from, FedPacket.Pack(new[] { marker.Encode() }));
-            Console.WriteLine($"[pingdata] {from}: REQPINGDATA debounced (<5s) — unchanged-window marker only");
-            return;
+            return;   // P654 (H-32) — debounced requests answered silently
         }
 
-        // Whole-server roster: one PINGDATA per live player, requester-only.
+        // Scoped roster: one PINGDATA per same-mission live player (requester
+        // only). Peers with no mission, or in another mission, are excluded.
         var entries = new List<PingData>();
         foreach (var kv in _peerShips)
         {
+            if (kv.Key == from) continue;
+            if (requesterMission is null || !ReferenceEquals(kv.Value.Ship.Mission, requesterMission))
+                continue;   // P654 (H-32) — scope to the requester's mission
             entries.Add(new PingData
             {
                 ShipId = kv.Value.Ship.Id,
@@ -1020,7 +1034,7 @@ public sealed partial class Server
 
         byte[] packet = FedPacket.Pack(entries.Select(e => e.Encode()).ToArray());
         SendPeer(from, packet);   // ONLY the requester sees any of this
-        Console.WriteLine($"[pingdata] {from}: full roster -> {_peerShips.Count} player(s) + terminator, requester-only");
+        Console.WriteLine($"[pingdata] {from}: roster -> {entries.Count - 1} same-mission player(s) + terminator, requester-only (H-32 scoped)");
     }
 
     /// <summary>

@@ -1266,6 +1266,48 @@ public sealed partial class Server
             humanGrace = ehg;
         TcpTransport.HumanGraceTimeout = TimeSpan.FromSeconds(humanGrace);
 
+        // P654 (H-15/H-02) — bind the connection/resource caps + frame cap +
+        // data-phase read deadline from config (env wins). Defaults keep the
+        // historical behaviour and accommodate the 200v200 rig only where the
+        // rig's recommended config raises them (the per-IP cap in particular —
+        // ~390 bots come from one Mac host).
+        int maxConn = tc?.MaxConnections is { } mc && mc > 0 ? mc : 1024;
+        int perIp = tc?.MaxConnectionsPerIp is { } pI && pI > 0 ? pI : 64;
+        int pendHs = tc?.MaxPendingHandshake is { } ph && ph > 0 ? ph : 256;
+        uint maxFrame = tc?.MaxFrameBytes is { } mf && mf > 0 ? (uint)mf : 64u * 1024;
+        int dataFrameTo = tc?.DataFrameReadTimeoutSeconds is { } dt && dt > 0 ? dt : 30;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MAX_CONNECTIONS");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var emc) && emc > 0) maxConn = emc;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MAX_PER_IP");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var epi) && epi > 0) perIp = epi;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MAX_PENDING_HANDSHAKE");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var eph) && eph > 0) pendHs = eph;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MAX_FRAME_BYTES");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var emf) && emf > 0) maxFrame = (uint)emf;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_DATA_FRAME_TIMEOUT_SECONDS");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var edt) && edt > 0) dataFrameTo = edt;
+        TcpTransport.MaxConnections = maxConn;
+        TcpTransport.MaxConnectionsPerIp = perIp;
+        TcpTransport.MaxPendingHandshake = pendHs;
+        TcpTransport.ServerInboundMaxFrame = maxFrame;
+        TcpTransport.DataFrameReadTimeout = TimeSpan.FromSeconds(dataFrameTo);
+
+        // P654 (H-24) — bind the per-peer message/chat token-bucket (native's
+        // chat budget) from config (env wins). Cited: c_chatBudgetMax=100 /
+        // c_chatBudgetCost=20 (fsship.h:24-25); refill +1/tick (FedSrv.CPP:8287).
+        int cbMax = tc?.ChatBudgetMax is { } cm && cm > 0 ? cm : 1000;
+        int cbCost = tc?.ChatBudgetCost is { } cc && cc > 0 ? cc : 20;
+        int cbRefill = tc?.ChatBudgetRefillPerTick is { } cr && cr > 0 ? cr : 5;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_CHAT_BUDGET_MAX");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var ecm) && ecm > 0) cbMax = ecm;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_CHAT_BUDGET_COST");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var ecc) && ecc > 0) cbCost = ecc;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_CHAT_BUDGET_REFILL");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var ecr) && ecr > 0) cbRefill = ecr;
+        _chatBudgetMax = cbMax;
+        _chatBudgetCost = cbCost;
+        _chatBudgetRefillPerTick = cbRefill;
+
         Console.WriteLine(_transportMode == TransportMode.Pool
             ? $"[boot] transport mode = pool ({_transportPoolWorkers} workers)"
             : "[boot] transport mode = thread-per-peer");

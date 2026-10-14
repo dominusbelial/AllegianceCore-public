@@ -129,6 +129,12 @@ public sealed class Reload : IFedMessage
         VarItem vi = VarItem.Read(buf.Slice(4));
         if (vi.Cb % ReloadData.Size != 0)
             throw new ArgumentException($"RELOAD cbReloads={vi.Cb} is not a whole number of ReloadData({ReloadData.Size}-byte) entries");
+        // P654 (H-35) — validate the entries slice BEFORE pre-sizing the list,
+        // so a claimed length that runs past the buffer cannot force a large
+        // allocation first (the old code built `new List<ReloadData>(n)` from the
+        // claimed cb before the Slice proved the range).
+        if (vi.Cb > 0 && (vi.Ib + (long)vi.Cb) > buf.Length)
+            throw new ArgumentException($"RELOAD entries [ib={vi.Ib}, cb={vi.Cb}] exceed buffer {buf.Length}");
         int n = vi.Cb / ReloadData.Size;
 
         short shipID = BitConverter.ToInt16(buf.Slice(8));
