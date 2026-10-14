@@ -488,7 +488,7 @@ public sealed partial class Server
     /// then the genuinely new ship-relative repositioning: <c>r = target.Radius +
     /// ripper.Radius + 25.0f</c> (<b>25, not the 50-margin station launch</b>),
     /// a <b>random</b> direction (<c>Vector::RandomDirection()</c>), the same
-    /// <see cref="ExitStationSpeed"/> velocity (<c>c_fcidExitStationSpeed</c>),
+    /// <c>c_fcidExitStationSpeed</c> (slot 4, stationIGC.cpp:307) velocity (<c>c_fcidExitStationSpeed</c>),
     /// zeroed turn rates, and relocation to the target ship's cluster.</item>
     /// <item><b>Ship anchor without enough energy</b> (<c>FedSrv.CPP:13451-13461</c>):
     /// broadcast <c>RIPCORD_ABORTED(187)</c> to everyone flying in the ripper's
@@ -1207,7 +1207,7 @@ public sealed partial class Server
         int launchSlots = bay?.LaunchSlots.Count ?? 0;
 
         var orientation = carrier.Orientation;                  // FedSrv.CPP:12963
-        float vLaunch = ExitStationSpeed;                       // c_fcidExitStationSpeed = 50, FedSrv.CPP:12959, missionigc.cpp:2689,2744
+        float vLaunch = lander.Mission!.Core.Constants.FloatConstants[4];                       // c_fcidExitStationSpeed = 50, FedSrv.CPP:12959, missionigc.cpp:2689,2744
 
         var position = carrier.Position + Jitter(0.5f);         // FedSrv.CPP:12964-12968 (small ±0.5 jitter)
         var velocity = carrier.Velocity;                        // FedSrv.CPP:12969
@@ -1279,7 +1279,7 @@ public sealed partial class Server
     /// <c>FedSrv.CPP:13461-13476</c>): place <paramref name="rip"/> at
     /// <c>targetPos + dir · (targetRadius + ripper.Radius + 25)</c> in a
     /// <b>random</b> unit direction, kick it outward at
-    /// <see cref="ExitStationSpeed"/>, zero its turn rates, orient it along
+    /// <c>c_fcidExitStationSpeed</c> (slot 4, stationIGC.cpp:307), zero its turn rates, orient it along
     /// the direction, and move it into <paramref name="targetSector"/>'s
     /// cluster. The energy cost is <b>not</b> applied here — it is the
     /// ship-branch's responsibility (<c>FedSrv.CPP:13452-13460</c>), so a probe
@@ -1289,7 +1289,7 @@ public sealed partial class Server
         float r = targetRadius + ShipRadius(rip) + 25.0f;
         Vector3 v = RandomDirection();
         rip.Position = targetPos + v * r;
-        rip.Velocity = v * ExitStationSpeed;
+        rip.Velocity = v * rip.Mission!.Core.Constants.FloatConstants[4];
         var o = new Orientation();
         o.Set(v);                       // Orientation o(v), FedSrv.CPP:13465
         rip.SetOrientation(o);
@@ -1818,7 +1818,7 @@ public sealed partial class Server
     /// P69/P113 — the shared station-launch reposition: push a ship radially
     /// outward from a station to just clear <see cref="Sector.DockRadius"/> by
     /// <see cref="LaunchClearMargin"/> and kick it outward at
-    /// <see cref="ExitStationSpeed"/>. Position = stationPos + dir·(DockRadius +
+    /// <c>c_fcidExitStationSpeed</c> (slot 4, stationIGC.cpp:307). Position = stationPos + dir·(DockRadius +
     /// LaunchClearMargin), velocity = dir·ExitStationSpeed, where <c>dir</c> is
     /// the station→ship direction (a fixed <c>(1,0,0)</c> fallback when the ship
     /// sits exactly at the station's position). This is the port's undock-launch
@@ -1836,7 +1836,7 @@ public sealed partial class Server
         var offset = ship.Position - stationPos;
         var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
         ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
-        ship.Velocity = dir * ExitStationSpeed;
+        ship.Velocity = dir * ship.Mission!.Core.Constants.FloatConstants[4];
     }
 
     /// <summary>

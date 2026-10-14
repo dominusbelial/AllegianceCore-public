@@ -385,7 +385,7 @@ public static class BucketCatalog
             // the c_didTeamMoney development (id 1).
             bool teamMoney = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
             int price = teamMoney
-                ? dev.Price
+                ? (int)core.Constants.FloatConstants[12]
                 : (int)(dev.Price * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentCost));
             uint timeToBuild = teamMoney
                 ? dev.TimeToBuild
@@ -541,7 +541,7 @@ public static class BucketCatalog
                 continue;
             bool teamMoney = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
             int price = teamMoney
-                ? dev.Price
+                ? (int)core.Constants.FloatConstants[12]
                 : (int)(dev.Price * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentCost));
             uint timeToBuild = teamMoney
                 ? dev.TimeToBuild

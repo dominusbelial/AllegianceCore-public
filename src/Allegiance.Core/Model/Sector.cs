@@ -1558,31 +1558,12 @@ public sealed class Sector : IClusterIgc
     /// </summary>
     public const float DockRadius = 200.0f;
 
-    /// <summary>
-    /// The shield "down" threshold <c>c_fcidDownedShield</c> — a station whose
-    /// <see cref="Station.ShieldFraction"/> is BELOW this may be captured by a
-    /// hostile board ship (the IGC collision gate, shipIGC.cpp:851); at or above
-    /// it the base is still protected and rejects the boarding attempt. Native
-    /// assigns the mission constant from <c>c_downedShield</c>
-    /// (missionigc.cpp:2745), whose literal value is 0.1f — the same value
-    /// already used at Ship.cs:64,3873 ("≤ 0.1 … the shield absorbs nothing")
-    /// and cited there. Reused verbatim, not re-derived.
-    /// </summary>
-    private const float DownedShieldFraction = 0.1f;
+    /// <summary>Loaded c_fcidDownedShield (slot 5), shipIGC.cpp:851.</summary>
+    private float DownedShieldFraction => Mission?.Core.Constants.FloatConstants[5] ?? 0.1f;
 
-    /// <summary>
-    /// The regeneration rate constant in the native formula
-    /// <c>dOre = dT · regenConst · (oreMax − ore)</c>
-    /// (<c>asteroidigc.h:52-55</c>). <c>c_fcidHe3Regeneration</c> is a mission
-    /// float-constant index (<c>igc.h:75</c>) whose actual default is set from
-    /// core data, so this port substitutes a flat value and says so. Chosen
-    /// <b>small</b> (relative to <see cref="MiningRate"/>) so that a rock the
-    /// miner is draining is observably held near-empty within a short test —
-    /// the "pool limits mining" behaviour the verification wants — while still
-    /// being the faithful native regrowth (continuous, no permanent depletion),
-    /// not a fabricated native constant.
-    /// </summary>
-    public const float He3Regeneration = 0.025f;
+    /// <summary>Loaded c_fcidHe3Regeneration (slot 14), asteroidigc.h:52-55.
+    /// Standalone sectors use the native constructor default (missionigc.cpp:2702).</summary>
+    public float He3Regeneration => Mission?.Core.Constants.FloatConstants[14] ?? (0.01f / 60f);
 
     /// <summary>
     /// The proximity padding added to an asteroid's radius when deciding whether
@@ -2862,7 +2843,7 @@ public sealed class Sector : IClusterIgc
     /// attacks a base, so it is never bounced — zero gameplay cost, and it keeps
     /// the pass from disturbing such bodies.</para>
     /// </remarks>
-    private static bool IsDockOrBoardCandidate(Ship ship, Station station)
+    private bool IsDockOrBoardCandidate(Ship ship, Station station)
     {
         // DOCK / RESCUE: the port's friendly-dock gate is same-side-only.
         if (ship.SideId is { } side && side == station.SideId) return true;
@@ -3917,7 +3898,12 @@ public sealed class Sector : IClusterIgc
 
             // ── rock-tapped log ──────────────────────────────────────────
             if (actual != minedOre)
-                Console.WriteLine($"[mine] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' tapped: yielded {actual:0.##} of {minedOre:0.##} requested — pool gates yield (regenerating)");
+            {
+                ConsoleLog.Write($"[mine] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' tapped: yielded {actual:0.##} of {minedOre:0.##} requested");
+                // shipIGC.cpp:2240-2244: a tapped NPC miner picks a new order.
+                if (ship.IsNpc && ship.PilotType == Ship.PilotTypeMiner)
+                    ship.RedirectTappedMiner();
+            }
 
             // ── host seam (throttled inside Asteroid.MineOre to the
             // native > 3.0 ore-change threshold, asteroidigc.h:246-251) ──
@@ -3927,7 +3913,7 @@ public sealed class Sector : IClusterIgc
                 ast.ClearPendingReport();
             }
 
-            ship.MiningAsteroid = ast;                 // P254: the specific rock this ship is now drilling (collision-exclusion consult)
+            if (!ship.IsNpc || ship.MiningAsteroidTarget == ast) ship.MiningAsteroid = ast; // P254: the specific rock this ship is now drilling (collision-exclusion consult)
 
         }
     }

@@ -1977,6 +1977,15 @@ public sealed class Ship : Model, IShipIgc
         foreach (var ast in sector.Mineable)
         {
             if (!ast.CanMineHe3) continue;                             // He3 gate (shipIGC.cpp:1955)
+            // common.cpp:608-613: autonomous selection rejects rocks with less
+            // than a quarter-load left after other miners' reservations.
+            if (IsNpc && PilotType == PilotTypeMiner)
+            {
+                int reserved = Mission?.Sectors.SelectMany(s => s.Models.OfType<Ship>()).Count(s =>
+                    s != this && s.IsNpc && s.SideId == SideId && s.MiningAsteroidTarget == ast) ?? 0;
+                if (ast.OreRemaining - reserved * EffectiveMineCapacity() <= EffectiveMineCapacity() * 0.25f)
+                    continue;
+            }
             if (ast.Data.Position is not { Length: 3 } p) continue;    // no position: can't measure (Sector.cs:2044)
             float dx = p[0] - Position.X;
             float dy = p[1] - Position.Y;
@@ -3012,7 +3021,7 @@ public sealed class Ship : Model, IShipIgc
         if (Mission?.Core.Constants.FloatConstants is { } fc && fc.Length > MountRateConstantIndex)
         {
             float rate = fc[MountRateConstantIndex];
-            if (rate > 0.0001f) return halfSecond / rate;
+            return halfSecond / rate;
         }
         return halfSecond;
     }
@@ -4413,19 +4422,15 @@ public sealed class Ship : Model, IShipIgc
     /// the <c>c_sabmRepair</c> capability</b> (<see cref="DataStationTypeIGC.SabmRepair"/>).</item>
     /// <item><b>Shield → 1.0</b> — unconditional, if a shield is mounted
     /// (<c>stationIGC.cpp:461-465</c>).</item>
-    /// <item><b>Afterburner deactivated</b> (<c>stationIGC.cpp:466-469</c>) — a
-    /// no-op here: afterburners are inert bookkeeping in this port (see
-    /// <see cref="MountedPart"/>), with no activation state to clear.</item>
+    /// <item><b>Afterburner deactivated</b> (<c>stationIGC.cpp:474-478</c>) —
+    /// clears the runtime activation and power ramp.</item>
     /// <item><b>Ammo + fuel → max</b> (<c>stationIGC.cpp:470-485</c>), but only
     /// if the station type carries the <c>c_sabmReload</c> capability
     /// (<see cref="DataStationTypeIGC.SabmReload"/>). <see cref="Ammo"/> →
     /// <see cref="DataHullTypeIGC.MaxAmmo"/>; every mounted pack's
     /// <c>Amount</c> → maxAmmo (ammo pack) / maxFuel (fuel pack), per
-    /// <c>ppack-&gt;SetAmount(...)</c>. Fuel is a documented no-op in this port:
-    /// there is no runtime fuel pool (only <see cref="Ammo"/>/<see cref="Energy"/>;
-    /// <see cref="DataHullTypeIGC.MaxFuel"/> is static-core data, never tracked
-    /// at runtime — see the <see cref=\"MountPart\"/>/reload notes), so the fuel
-    /// half of the reload reduces to the pack-amount bookkeeping only.</item>
+    /// <c>ppack-&gt;SetAmount(...)</c>. The runtime <see cref="Fuel"/>
+    /// pool is refilled through <see cref="SetFuel"/>.</item>
     /// <item><b>Energy → max</b> — <c>SetEnergy(pht-&gt;GetMaxEnergy())</c>,
     /// unconditional (<c>stationIGC.cpp:487-488</c>).</item>
     /// </list>
@@ -4453,7 +4458,8 @@ public sealed class Ship : Model, IShipIgc
         if (_parts.Any(p => p.EquipmentType == EquipmentType.Shield))
             _shieldFraction = 1.0f;
 
-        // 4. Afterburner deactivated — no-op (inert bookkeeping, see class doc).
+        // 4. stationIGC.cpp:474-478 — resupply clears the active power ramp.
+        DeactivateAfterburner();
 
         // 5. Ammo + fuel → max, gated on the station's c_sabmReload capability.
         if (stationType.HasCapability(DataStationTypeIGC.SabmReload))
@@ -4572,7 +4578,7 @@ public sealed class Ship : Model, IShipIgc
         if (amount > 0.0f)
         {
             float absorbed = amount / maxStrength;        // shieldIGC.cpp:155-156
-            const float down = 0.1f;                       // c_fcidDownedShield — mission-init override of the core's DataConstantsIGC slot (missionigc.cpp:2690,2745); hardcoded literal (see report, P87).
+            float down = Mission?.Core.Constants.FloatConstants[5] ?? 0.1f; // shieldIGC.cpp:158
 
             if (_shieldFraction <= down)                   // shieldIGC.cpp:160-164
             {
@@ -4639,6 +4645,7 @@ public sealed class Ship : Model, IShipIgc
         // (ramp + engine thrust) via the input flag, matching the two
         // `if (_ripcordModel is null)` guards in the native.
         float dT = (float)(timeStop - timeStart);
+        UpdateAfterburner(dT, useFuel: false); // shipIGC.cpp:2950: ramp before this step
         var kin = BuildKinematicsInputs();
 
         Vector3 velocity = Velocity;
@@ -4660,7 +4667,7 @@ public sealed class Ship : Model, IShipIgc
     {
         float abThrust = 0f;
         if (_mountedAfterburner is { Type.Type: DataPartTypeIGC.Afterburner ab })
-            abThrust = ab.MaxThrust;   // GetMaxThrustWithGA(); c_gaThrust = 1.0
+            abThrust = ab.MaxThrust * SideGlobalAttributes().Get(GlobalAttributeSet.Thrust); // afterburnerIGC.h:113-116
 
         return new ShipKinematics.Inputs(
             Controls: Controls,
@@ -4708,13 +4715,14 @@ public sealed class Ship : Model, IShipIgc
             return;
         }
 
-        var kin = BuildKinematicsInputs();
         int n = 1 + (int)(deltaT / Mission.TimeIncrement);
         float elapsed = 0f;
         for (int i = 1; i <= n; i++)
         {
             float next = deltaT * (i / (float)n);
             float dt = next - elapsed;
+            UpdateAfterburner(dt, useFuel: false); // shipIGC.cpp:3244-3297 calls ExecuteShipMove
+            var kin = BuildKinematicsInputs();
             ShipKinematics.Step(in kin, ref velocity, orientation, turnRates, dt);
             position += velocity * dt;
             elapsed = next;
@@ -6375,7 +6383,7 @@ public sealed class Ship : Model, IShipIgc
     /// can switch to the sell leg (otherwise the ship would hover at the rock
     /// forever — <see cref="ResolveMining"/> stops accruing at capacity).</para>
     /// </remarks>
-    private void DecideMiningOrSelling()
+    private void DecideMiningOrSelling(bool tapped = false)
     {
         _runawayCheckInterval = 5f; // PickDefaultOrder, shipIGC.h:2216
         if (TryTakeCover())
@@ -6384,7 +6392,7 @@ public sealed class Ship : Model, IShipIgc
             return;
         }
 
-        if (Ore < EffectiveMineCapacity())
+        if (Ore < EffectiveMineCapacity() * (tapped ? 0.5f : 1f))
         {
             if (FindNearestMinableAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
             {
@@ -6923,6 +6931,22 @@ public sealed class Ship : Model, IShipIgc
                Velocity.LengthSquared() < 1f; // shipIGC.cpp:1957-1964, strict bounds
     }
 
+    internal void RedirectTappedMiner()
+    {
+        // shipIGC.cpp:2240-2244; shipIGC.h:2280-2339.
+        _departingMineAsteroid = MiningAsteroidTarget;
+        MiningAsteroidTarget = null;
+        MiningAsteroid = null;
+        IsMining = false;
+        DecideMiningOrSelling(tapped: true);
+        // shipIGC.h:2327-2339: no more eligible rocks -> unload a partial bag.
+        if (MiningAsteroidTarget is null && PlanTarget is null && Ore > 0f)
+        {
+            PlanTarget = FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload);
+            PlanCommandId = PlanTarget is null ? OrderChange.CidNone : OrderChange.CidGoto;
+        }
+    }
+
     internal void RedirectDisplacedMiner()
     {
         // shipIGC.cpp:2141-2181: the loser stops drilling and heads to a
@@ -7301,7 +7325,7 @@ public sealed class Ship : Model, IShipIgc
     // most the singular ET_Afterburner@0 slot, so those members fold onto the
     // ship exactly like the cloak's do. The mounted fraction reuses the
     // MountedPart.FractionMounted wire byte (255 = 1.0) so the mount-ramp is
-    // the ship's existing part-mount mechanism, not a new float.
+    // the wire view of the native float accumulator below.
     /// <summary>P412 — the mounted ET_Afterburner@0 part, the only slot an
     /// afterburner engages from (native <c>CafterburnerIGC::fActive =
     /// (m_mountID == 0)</c>, afterburnerIGC.h:67-70). Null when none mounted,
@@ -7316,6 +7340,8 @@ public sealed class Ship : Model, IShipIgc
 
     /// <summary>P412 — the afterburner activation latch (<c>CafterburnerIGC::m_fActive</c>).</summary>
     private bool _afterburnerActive;
+    private MountedPart? _afterburnerMountPart;
+    private float _afterburnerMountedFraction;
 
     /// <summary>P412 — the native <c>c_fcidMountRate</c> float-constant index
     /// (<c>Igc/igc.h:69</c>) that drives the afterburner mount-ramp rate
@@ -7332,7 +7358,7 @@ public sealed class Ship : Model, IShipIgc
         if (Mission?.Core.Constants.FloatConstants is { } fc && fc.Length > AfterburnerMountRateConstantIndex)
         {
             float rate = fc[AfterburnerMountRateConstantIndex];
-            if (rate > 0.0001f) return rate;
+            return rate;
         }
         return defaultRate;
     }
@@ -7378,7 +7404,7 @@ public sealed class Ship : Model, IShipIgc
     /// <c>fuelUsed = power·fuelConsumption·maxThrust·dt</c> — draining the
     /// pool or, on an overdraw, zeroing it and deactivating ("out of gas").
     /// </summary>
-    private void UpdateAfterburner(float dt)
+    private void UpdateAfterburner(float dt, bool useFuel = true)
     {
         var ab = _mountedAfterburner;
         if (ab is null || ab.Type.Type is not DataPartTypeIGC.Afterburner type)
@@ -7396,13 +7422,22 @@ public sealed class Ship : Model, IShipIgc
         // Mount-ramp gate (afterburnerIGC.cpp:111-125): while the part is not
         // fully mounted (wire FractionMounted < 255), ramp it toward 1.0 at
         // mountRate and stay inert until fully mounted (the early return).
-        float frac = ab.FractionMounted / 255f;
+        if (!ReferenceEquals(ab, _afterburnerMountPart))
+        {
+            _afterburnerMountPart = ab;
+            _afterburnerMountedFraction = ab.FractionMounted / 255f;
+            if (_afterburnerMountedFraction < 1f) DeactivateAfterburner(); // afterburnerIGC.h:160-165
+        }
+        float frac = _afterburnerMountedFraction;
         if (frac < 1.0f)
         {
-            frac += dt * MountRate();
+            if (useFuel) frac += dt * MountRate();
+            _afterburnerMountedFraction = Math.Min(frac, 1f);
             if (frac >= 1.0f)
             {
                 frac = 1.0f;
+                int index = _parts.FindIndex(p => ReferenceEquals(p, ab));
+                if (index >= 0) _afterburnerMountPart = _parts[index] = WithFraction(ab, byte.MaxValue);
                 // native posts "%s ready." + mountsound here (afterburnerIGC.cpp:119-121);
                 // this port has no PostNotificationText wiring (same stance as cloak).
             }
@@ -7412,7 +7447,7 @@ public sealed class Ship : Model, IShipIgc
                 if (advanced != ab.FractionMounted)
                 {
                     int i = _parts.FindIndex(p => ReferenceEquals(p, ab));
-                    if (i >= 0) _parts[i] = WithFraction(_parts[i], advanced);
+                    if (i >= 0) _afterburnerMountPart = _parts[i] = WithFraction(_parts[i], advanced);
                 }
                 return;
             }
@@ -7438,7 +7473,7 @@ public sealed class Ship : Model, IShipIgc
                     DeactivateAfterburner();
             }
 
-            if (_afterburnerPower != 0.0f)   // bUseFuel=true here (the real burn)
+            if (_afterburnerPower != 0.0f && useFuel) // afterburnerIGC.cpp:148
             {
                 float fuelUsed = _afterburnerPower * type.FuelConsumption * type.MaxThrust * dt;
                 if (fuelUsed < fuel)
@@ -7450,6 +7485,27 @@ public sealed class Ship : Model, IShipIgc
                 }
             }
         }
+    }
+
+    /// <summary>Native shipIGC.cpp:368-408: lens-adjusted bounds damage
+    /// subtracts hull fraction directly; shields and armor do not absorb it.</summary>
+    private void ApplyOutOfBoundsDamage(double now, float dt)
+    {
+        if (Mission is not { } mission || StationId is not null || ParentShip is not null) return;
+        var fc = mission.Core.Constants.FloatConstants;
+        float lens = fc[0], radius = fc[1], bound = fc[2] * radius * radius;
+        // Synthetic cores with no spatial constants have no universe boundary.
+        if (lens <= 0f || bound <= 0f) return;
+        Vector3 p = Position;
+        float r2 = p.X * p.X + p.Y * p.Y + p.Z * p.Z / (lens * lens);
+        if (r2 <= bound) return;
+        float damage = dt * (r2 - bound) / (50f * bound);
+        float old = _fraction;
+        _fraction = Math.Max(0f, _fraction - damage);
+        if (_fraction > 0f)
+            mission.Site.DamageShipEvent(now, this, null, 0, damage, damage, p, p * 2f);
+        else if (old > 0f)
+            mission.Site.KillShipEvent(now, this, null, damage, p, p * 2f);
     }
 
     protected override void OnUpdate(double now, double dt)
@@ -7568,21 +7624,6 @@ public sealed class Ship : Model, IShipIgc
         // cross-side detection sweep). No-op on a ship with no ET_Cloak@0 part.
         UpdateCloak((float)dt);
 
-        // P389 — the mounted shield's per-tick regeneration (CshieldIGC::Update,
-        // shieldIGC.cpp:88), run within the ship's Update exactly where native
-        // calls its mounted parts' Update, alongside the cloak sim. Unconditional:
-        // a shield regrows from ANY fraction (including 0) every tick — it is
-        // NOT gated on the c_fcidDownedShield absorption threshold. No-op on a
-        // ship with no ET_Shield part mounted (silent, matching Station.Regenerate).
-        UpdateShield((float)dt);
-
-        // P412 — the mounted afterburner's per-tick sim (CafterburnerIGC::Update,
-        // afterburnerIGC.cpp:60-63) — the real fuel-consuming tick (mount ramp,
-        // activation, power ramp, fuel burn), run where native calls its mounted
-        // parts' Update (shipIGC.cpp:358-359) alongside the cloak/shield sims.
-        // No-op on a ship with no ET_Afterburner@0 part (silent).
-        UpdateAfterburner((float)dt);
-
         // Drive mounted weapons (CshipIGC::Update calls its parts' Update,
         // which for a weapon is CweaponIGC::Update → FireWeapon). Runs after the
         // movement step so the muzzle state reflects the tick's end; the weapon
@@ -7601,7 +7642,15 @@ public sealed class Ship : Model, IShipIgc
         // ([MaxFixedWeapons, MaxWeapons)) can have a gunner; fixed weapons
         // never do (native asserts w->GetGunner() null on that range,
         // shipIGC.cpp:322), so the loop keys off the weapon's mount index.
-        foreach (var weapon in _weapons)
+        // shipIGC.cpp:312-349: selected fixed gun first, then descending
+        // cyclic mounts; turret mounts ascend. Preserve energy priority.
+        int selected = (int)(StateM & ShipControlState.SelectedWeaponMask);
+        for (int i = _hull.MaxFixedWeapons; i > 0; i--)
+        {
+            int mount = (i + selected) % _hull.MaxFixedWeapons;
+            _weapons.FirstOrDefault(w => w.MountId == mount)?.Update(now);
+        }
+        foreach (var weapon in _weapons.Where(w => w.MountId >= _hull.MaxFixedWeapons).OrderBy(w => w.MountId))
         {
             if (weapon.MountId >= _hull.MaxFixedWeapons && weapon.Gunner is { } gunner)
             {
@@ -7611,6 +7660,9 @@ public sealed class Ship : Model, IShipIgc
             }
             weapon.Update(now);
         }
+
+        // shipIGC.cpp:347-349: weapons take energy before shield regeneration.
+        UpdateShield((float)dt);
 
         // P226 — the per-tick missile armament leg (the lock half of native
         // CmagazineIGC::Update, magazineigc.cpp:104-176): for a mounted missile
@@ -7628,6 +7680,12 @@ public sealed class Ship : Model, IShipIgc
         UpdateMountedMissileLock((float)dt);
         if ((StateM & ShipControlState.MissileFire) != 0)
             TryFireMissile(now);
+
+        // shipIGC.cpp:358-359 / afterburnerIGC.cpp:60-63: the second
+        // incremental update advances the mount and consumes fuel.
+        UpdateAfterburner((float)dt);
+
+        ApplyOutOfBoundsDamage(now, (float)dt);
 
         // P151 — NPC self-preservation (the per-tick trigger at
         // shipIGC.cpp:1934-1945): when the Plan slot holds no legal command,

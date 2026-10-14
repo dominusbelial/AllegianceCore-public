@@ -2456,10 +2456,12 @@ public sealed partial class Game1
 
             // Self-expire when RipcordSpeed seconds have elapsed since the
             // activation was decoded (abort clears it sooner via RIPCORD_ABORTED).
-            if (world.RipcordActiveSinceLocalMs is { } start)
+            if (world.RipcordActiveSinceLocalMs is not null)
             {
                 float dur = RipcordDurationSeconds(world);
-                if (dur > 0f && (Environment.TickCount64 - start) / 1000.0 >= dur)
+                float left = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
+                    world.RipcordActiveSinceLocalMs, Environment.TickCount64, dur, world.TimeScale);
+                if (dur > 0f && left <= 0f)
                 {
                     world.ClearRipcord();
                     return null;

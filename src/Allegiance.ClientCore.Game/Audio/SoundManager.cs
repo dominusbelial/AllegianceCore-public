@@ -720,10 +720,10 @@ public sealed class SoundManager : IDisposable
     /// no-op (the caller decides eligibility via
     /// <see cref="CountdownSound.TickAssetFor"/>); this method only speaks the
     /// matching asset it already holds. No-op when audio is not loaded.</summary>
-    public void PlayCountdownSecond(int second)
+    public void PlayCountdownSecond(int second, float gain = 1f)
     {
         if (IsLoaded && _countdownTicks.TryGetValue(second, out var sfx))
-            PlayWarnOneShot(sfx);
+            PlayOneShot(sfx, SoundCategory.Warning, gain);
     }
 
     /// <summary>Play the game-over callout (one-shot) — <c>vo_ma_gameover</c>.

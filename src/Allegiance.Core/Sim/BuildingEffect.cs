@@ -21,21 +21,9 @@ namespace Allegiance.Core.Sim;
 /// <see cref="Model.Sector.ResolveWarpCollisions"/>.
 /// </summary>
 /// <remarks>
-/// <para><b>Timing.</b> The native phases are four <c>10.0f</c> constants —
-/// <c>c_dtEnvelope = c_dtGrow = c_dtOpaque = c_dtShrink = 10.0f</c>
-/// (<c>buildingeffectigc.h:19-22</c>) — summing to a 40-second lifecycle, and the
-/// effect's completion time is built as
-/// <c>m_timeComplete = m_timeEnvelope + c_dtEnvelope + c_dtGrow + c_dtOpaque +
-/// c_dtShrink</c> (<c>buildingeffectigc.h:50-54</c>). This task needs only that
-/// sum, captured as <see cref="BuildDuration"/> and applied as the completion
-/// deadline <see cref="CompletionTime"/>. (Native nuance, recorded for the doc:
-/// the terminal transformation itself fires in <c>AsteroidUpdate</c> at the
-/// <b>shrink</b> boundary, <c>now &gt;= m_timeShrink</c>,
-/// <c>buildingeffectigc.h:314</c> — 30 s in — whereas the cosmetic object winds
-/// down to <c>m_timeComplete</c> (40 s). Since nothing observes the animation
-/// here, Stage 1 uses the full 40-second completion deadline the task specifies;
-/// the distinction is immaterial to the sim outcome and is noted rather than
-/// reproduced.)</para>
+/// <para><b>Timing.</b> The station appears at the shrink boundary, start +
+/// 30 seconds (buildingeffectigc.h:19-22,51-54,314-316). The cosmetic effect's
+/// remaining ten seconds do not delay the world transformation.</para>
 /// <para><b>Lifecycle.</b> On completion (<see cref="Model.Sector.ResolveBuildingEffects"/>
 /// seeing <c>now &gt;= CompletionTime</c>) the transformation is the native
 /// <c>AsteroidUpdate</c> terminal sequence (<c>buildingeffectigc.h:312-353</c>):
@@ -50,15 +38,9 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class BuildingEffect
 {
-    /// <summary>
-    /// The full lifecycle duration in sim-seconds — the sum of the four native
-    /// phase constants <c>c_dtEnvelope + c_dtGrow + c_dtOpaque + c_dtShrink =
-    /// 10+10+10+10 = 40</c> (<c>buildingeffectigc.h:19-22</c>), the same
-    /// accumulation <c>buildingeffectigc.h:50-54</c> folds into
-    /// <c>m_timeComplete</c>. Stage 1's whole reason for existing is the timing:
-    /// this is the single "how long does a build take" fact the mechanic carries.
-    /// </summary>
-    public const double BuildDuration = 40.0;
+    /// <summary>Station transformation at m_timeShrink, start + 30 s
+    /// (buildingeffectigc.h:19-22,51-54,314-316).</summary>
+    public const double BuildDuration = 30.0;
 
     /// <summary>The asteroid being transformed into a station — the native
     /// <c>m_pasteroid</c>, the rock <c>SetBuildingEffect</c>'d at Initialize
@@ -84,12 +66,12 @@ public sealed class BuildingEffect
     /// <c>m_pside</c>, captured from the Builder at Initialize
     /// (<c>buildingeffectigc.h:68</c>). Carried here so the completion keeps the
     /// side that committed to the build even if the Builder's own side were to
-    /// change before the 40 s elapse (faithful to native's capture-at-start).</summary>
+    /// change before the 30 s elapse (faithful to native's capture-at-start).</summary>
     public short SideId { get; }
 
     /// <summary>The sim-time at which the build completes and the asteroid →
     /// station transformation fires: <c>start + BuildDuration</c> (the native
-    /// <c>m_timeComplete</c>, <c>buildingeffectigc.h:54</c>).</summary>
+    /// <c>m_timeShrink</c>, <c>buildingeffectigc.h:53</c>).</summary>
     public double CompletionTime { get; }
 
     /// <summary>

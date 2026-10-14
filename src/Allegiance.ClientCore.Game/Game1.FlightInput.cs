@@ -2237,6 +2237,14 @@ public sealed partial class Game1
             }
         }
 
+        // trekigc.cpp:1016-1075: own-ship ripcord voice uses the same
+        // countdown waves, with the native -7 dB gain (sounddef.mdl:353-362).
+        float ripcordLeft = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
+            world.RipcordActiveSinceLocalMs, Environment.TickCount64,
+            RipcordDurationSeconds(world), world.TimeScale);
+        if (_ripcordCountdownSound.Update(world.RipcordActive, ripcordLeft) is { } ripcordSecond)
+            _sound?.PlayCountdownSecond(ripcordSecond, Audio.RipcordCountdownSound.Gain);
+
         // Game-over: fire once on the real transition of world.Mission.Stage
         // into Over — driven by the server's GAME_OVER(62) broadcast →
         // ClientWorld.Apply(GameOver) — reusing the exact same world.Mission /

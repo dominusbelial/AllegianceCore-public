@@ -560,14 +560,6 @@ public sealed partial class Server : IDisposable
     /// position noise; see the undock handler for the full reasoning.</summary>
     private const float LaunchClearMargin = 50f;
 
-    /// <summary>Outward speed (world units/sec) given to a ship on undock —
-    /// the native reference's own default <c>c_fExitStationSpeed</c>
-    /// (<c>missionigc.cpp:2689</c>), reused verbatim. Ensures fast initial
-    /// separation from the station; <see cref="Sector.LaunchCooldownSeconds"/>
-    /// (not this alone) is what actually guarantees no re-dock — see the
-    /// undock handler's own P75 comment for why both are needed.</summary>
-    private const float ExitStationSpeed = 50f;
-
     /// <summary>
     /// Optional seam for tests (and future launch logic): replace the default
     /// ship-on-logon allocation with a caller-supplied one. Receives the core,

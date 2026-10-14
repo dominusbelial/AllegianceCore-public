@@ -35,15 +35,12 @@ namespace Allegiance.Core.Sim;
 /// <c>CasteroidIGC::Update</c>, <c>asteroidigc.h:47-56</c>): the native engine
 /// does <b>not</b> deplete-forever — a He3-capable asteroid continuously
 /// regrows toward <c>oreMax</c> at a rate proportional to its deficit. This
-/// server reproduces that formula with a flat <see cref="Sector.He3Regeneration"/>
-/// constant in place of the per-mission <c>c_fcidHe3Regeneration</c> value
-/// (the actual default lives in the core data, not in code this port decodes —
-/// see <see cref="Sector.He3Regeneration"/>). The consequence, faithfully
-/// inherited: a parked miner is <em>never</em> permanently starved, so "mining
+/// server reads the loaded mission's c_fcidHe3Regeneration slot through
+/// <see cref="Sector.He3Regeneration"/> (asteroidigc.h:52-55).
+/// A parked miner is <em>never</em> permanently starved, so "mining
 /// stops when the pool hits zero" (the verification wording) manifests as the
 /// pool limiting the per-tick yield — <see cref="MineOre"/> returns less than
-/// requested — not as a hard stop. Picking a small regeneration constant (see
-/// Sector) keeps the pool-limited behaviour observable within a short test.</item>
+/// requested — not as a hard stop.</item>
 /// <item><b>He3 gate</b> (<see cref="CanMineHe3"/>): regeneration and mining
 /// both require the <c>c_aabmMineHe3</c> (0x01) capability bit
 /// (<c>igc.h:761</c>, <c>asteroidigc.h:49</c>, <c>shipIGC.cpp:1955</c>). An
