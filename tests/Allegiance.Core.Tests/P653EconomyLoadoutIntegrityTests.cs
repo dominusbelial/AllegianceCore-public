@@ -155,7 +155,12 @@ public sealed class P653EconomyLoadoutIntegrityTests
         var gun = w.Gun();
         w.Server.ShipSpawner = (_, mission, id) =>
         {
-            var ship = new Ship(id, w.Buyer.HullType, w.Buyer.Position, Vector3.Zero, Orientation.Identity) { SideId = 0 };
+            // A fresh DOCKED spawn (native fresh seats enter the base hangar,
+            // fsmission.cpp:791-796): boarding requires both parties docked
+            // (FedSrv.CPP:2342-2345), so this injected spawner docks its own
+            // ship explicitly (the default-path auto-dock is bypassed for
+            // injected spawners).
+            var ship = new Ship(id, w.Buyer.HullType, w.Buyer.Position, Vector3.Zero, Orientation.Identity) { SideId = 0, StationId = w.Buyer.StationId };
             mission.PlaceShip(ship, w.Sector);
             ship.MountPart(gun, 1, 0, 255);
             return (ship, w.Sector);

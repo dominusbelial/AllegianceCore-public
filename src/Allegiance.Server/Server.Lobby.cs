@@ -2687,6 +2687,10 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (requestedSideId is { } requested && ship.SideId != requested)
             sector = RepositionShipToSideHome(ship, mission, requested);
 
+        // P653 H-03: free-spawn provenance — server-granted spawn hardware has no
+        // purchase cost to refund, for BOTH the default and injected spawn paths.
+        ship.MarkSpawnLoadoutFree();
+
         // P653 H-06: fresh seats enter the friendly hangar and receive DOCKED
         // (native FedSrv/fsmission.cpp:791-796). This applies to the DEFAULT
         // spawn path that every real joiner uses (ShipSpawner null). An

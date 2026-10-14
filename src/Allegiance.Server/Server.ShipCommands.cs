@@ -2233,7 +2233,7 @@ public sealed partial class Server
     /// </summary>
     private bool StartBuildIfLegal(ConnectionId from, short commanderShipId, Ship target, OrderChange req)
     {
-        if (target.Dead || target.IsBuilding || target.StationId is not null
+        if (target.Dead || target.StationId is not null
             || target.Sector is null || !target.Sector.Models.Contains(target)) return false;
 
         // Gate 1 — Builder-role pilot (native LegalCommand requires
@@ -2250,6 +2250,10 @@ public sealed partial class Server
             RefuseBuild(from, commanderShipId, target, $"BUILD from a non-Builder ship ('{target.HullType.Name}', pilotType {target.PilotType}, no c_habmBuilder) — refused (native LegalCommand Builder-only gate, shipIGC.h:1699-1702)");
             return false;
         }
+        // H-18 single-commitment: a Builder already committed to a construction may
+        // not start another (checked AFTER the Builder-role gate so a non-Builder is
+        // still refused with a surfaced acknowledgement).
+        if (target.IsBuilding) return false;
 
         // Gate 2 — OT_asteroid target only (shipIGC.h:1699-1701).
         if (req.ObjectType != IgcObjectType.Asteroid)
@@ -2305,14 +2309,13 @@ public sealed partial class Server
             return false;
         }
 
-        // P652: an NPC keeps the accepted build target while traveling, so
-        // damage can trigger the native build-vs-repair distance exception
-        // (shipIGC.cpp:1752-1777). Drilling starts on arrival (2810-2827).
-        if (target.IsNpc)
-            target.SetBuilderBuild(rock);
-        else
-            sector.StartBuildingEffect(target, rock, st, sector.LastUpdate);
-        Console.WriteLine($"[build] {from} ship {target.Id} issued BUILD of '{st.Name}' at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — {(target.IsNpc ? "traveling before drilling" : "construction started")}");
+        // Legal: start the timed construction immediately. This is the DIRECT
+        // command path (H-18 / P163-165 "no travel-before-build gate"); the
+        // AUTONOMOUS builder keeps its P652 travel-then-drill in
+        // DecideBuilderDefaultOrder / TryStartBuilderBuild. The H-18 audit
+        // regressions require a direct BUILD to register a building effect now.
+        sector.StartBuildingEffect(target, rock, st, sector.LastUpdate);
+        Console.WriteLine($"[build] {from} ship {target.Id} (Builder hull '{target.HullType.Name}') issued BUILD of '{st.Name}' (type {st.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' → construction started");
         return true;
     }
 
