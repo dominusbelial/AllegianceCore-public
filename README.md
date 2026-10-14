@@ -70,6 +70,12 @@ dotnet run --project src/Allegiance.Server -- --config src/Allegiance.Server/ser
 dotnet run --project src/Allegiance.ClientCore.MonoGame -- 127.0.0.1 6073 "My Pilot"
 ```
 
+**What you should see:** the client logs on and opens the **READY CHECK** screen. Pick a
+team, press **Y** to ready up — a game starts once every team with a player in it is ready,
+so alone you start right away — and after a 15 s countdown you launch into space.
+**F1** shows every key; **F6** rebinds them. If the log says
+`HD sky asset '…' unavailable`, the sky pack path isn't set (step 3).
+
 The client and server need the art to render/run; `local.env` keys mirror the
 `ALLEGIANCE_ARTWORK_PATH` / `ALLEGIANCE_SKY_PACK_PATH` / `ALLEGIANCE_NATIVE_SRC_PATH`
 environment variables (`local.env` is gitignored — never commit machine paths). The sky
