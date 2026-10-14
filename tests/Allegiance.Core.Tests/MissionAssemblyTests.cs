@@ -170,7 +170,7 @@ public class MissionAssemblyTests
         Require.Artwork();
         var core = RepresentativeCore.Value;
         Assert.NotEmpty(core.Civilizations);
-        Assert.Equal(99, Corpus.Files.Count(f => { try { return IgcReader.ParseFile(f).Wrapper == IgcWrapper.VersionAndDataSize; } catch { return false; } }));
+        Assert.Equal(Corpus.ExpectedStaticCores, Corpus.Files.Count(f => { try { return IgcReader.ParseFile(f).Wrapper == IgcWrapper.VersionAndDataSize; } catch { return false; } }));
         Assert.Equal(111, AllMaps.Value.Count);
     }
 }

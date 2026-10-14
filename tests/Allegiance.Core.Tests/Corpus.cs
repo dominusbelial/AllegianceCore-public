@@ -6,21 +6,24 @@ namespace Allegiance.Core.Tests;
 /// Locates the shipped <c>.igc</c> corpus.
 /// </summary>
 /// <remarks>
-/// The artwork lives in <b>two</b> trees: the code repo carries only a handful
-/// of assets, the bulk sit in a separate <c>Artwork</c> checkout. A search
-/// scoped to one tree silently finds far too few files. 217 files on disk
-/// de-duplicate to <b>210 unique</b> by content.
+/// The corpus is the public FreeAllegiance <c>Artwork</c> checkout
+/// (<c>ALLEGIANCE_ARTWORK_PATH</c>) — what every contributor can clone — so the
+/// baselines below hold on any machine. Its <c>.igc</c> files de-duplicate to
+/// <b>209 unique</b> by content (98 static cores + 111 maps).
+/// The native C++ repo carries one more core, <c>artwork/tester.igc</c>; it used to be
+/// folded in, which made the totals true only on the developer's machine (a clean-room
+/// install failed 11 corpus tests). It now has its own NativeSource-gated test
+/// (<see cref="NativeTesterCoreTests"/>).
 /// </remarks>
 public static class Corpus
 {
     private static readonly string[] Roots =
     [
         ExternalPaths.Resolve(ExternalResourceKind.Artwork),
-        ExternalPaths.Resolve(ExternalResourceKind.NativeSource),
     ];
 
-    public const int ExpectedUniqueFiles = 210;
-    public const int ExpectedStaticCores = 99;
+    public const int ExpectedUniqueFiles = 209;
+    public const int ExpectedStaticCores = 98;
     public const int ExpectedMaps = 111;
 
     /// <summary>True when at least one corpus root exists on disk. Corpus-backed

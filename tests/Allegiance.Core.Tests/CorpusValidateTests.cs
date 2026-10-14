@@ -36,22 +36,22 @@ public class CorpusValidateTests
         }
 
         // Every core loads exactly once into a unique ID-keyed bucket.
-        Assert.Equal(99, cores.Count);
+        Assert.Equal(Corpus.ExpectedStaticCores, cores.Count);
 
         // Type counts per bucket, summed across all cores — must match README.
-        Assert.Equal(9369, cores.Sum(c => c.ProjectileTypes.Count));
-        Assert.Equal(5370, cores.Sum(c => c.MissileTypes.Count));
-        Assert.Equal(782, cores.Sum(c => c.MineTypes.Count));
-        Assert.Equal(4760, cores.Sum(c => c.ProbeTypes.Count));
-        Assert.Equal(619, cores.Sum(c => c.ChaffTypes.Count));
-        Assert.Equal(952, cores.Sum(c => c.Civilizations.Count));
-        Assert.Equal(38927, cores.Sum(c => c.HullTypes.Count));
-        Assert.Equal(10928, cores.Sum(c => c.PartTypes.Count));
-        Assert.Equal(11511, cores.Sum(c => c.Launchers.Count));
-        Assert.Equal(12659, cores.Sum(c => c.StationTypes.Count));
-        Assert.Equal(28500, cores.Sum(c => c.Developments.Count));
-        Assert.Equal(6503, cores.Sum(c => c.DroneTypes.Count));
-        Assert.Equal(99, cores.Sum(c => c.TreasureSets.Count));
+        Assert.Equal(9286, cores.Sum(c => c.ProjectileTypes.Count));
+        Assert.Equal(5315, cores.Sum(c => c.MissileTypes.Count));
+        Assert.Equal(774, cores.Sum(c => c.MineTypes.Count));
+        Assert.Equal(4714, cores.Sum(c => c.ProbeTypes.Count));
+        Assert.Equal(613, cores.Sum(c => c.ChaffTypes.Count));
+        Assert.Equal(943, cores.Sum(c => c.Civilizations.Count));
+        Assert.Equal(38548, cores.Sum(c => c.HullTypes.Count));
+        Assert.Equal(10828, cores.Sum(c => c.PartTypes.Count));
+        Assert.Equal(11396, cores.Sum(c => c.Launchers.Count));
+        Assert.Equal(12543, cores.Sum(c => c.StationTypes.Count));
+        Assert.Equal(28223, cores.Sum(c => c.Developments.Count));
+        Assert.Equal(6446, cores.Sum(c => c.DroneTypes.Count));
+        Assert.Equal(Corpus.ExpectedStaticCores, cores.Sum(c => c.TreasureSets.Count));
 
         // Core-internal cross-reference dangles, by kind (genuine data quirks —
         // successor chains that legitimately dangle across cores).

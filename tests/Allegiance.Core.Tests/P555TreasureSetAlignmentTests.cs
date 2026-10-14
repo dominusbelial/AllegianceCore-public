@@ -46,7 +46,7 @@ public sealed class P555TreasureSetAlignmentTests
                 Assert.Equal(pay[30] != 0, decoded.BZoneOnly);
             }
         }
-        Assert.Equal(99, total); // one per static core (PayloadDecodeTests counts 99)
+        Assert.Equal(Corpus.ExpectedStaticCores, total); // one per static core
     }
 
     /// <summary>Native <c>nTreasureData</c> at offset 28 always equals the

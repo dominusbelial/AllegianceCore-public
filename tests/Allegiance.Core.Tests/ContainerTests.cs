@@ -6,7 +6,7 @@ namespace Allegiance.Core.Tests;
 public class ContainerTests
 {
     [SkippableFact]
-    public void Corpus_is_discovered_across_both_trees()
+    public void Corpus_is_discovered_in_the_artwork_checkout()
     {
         Require.Artwork();
         Assert.Equal(Corpus.ExpectedUniqueFiles, Corpus.Files.Count);
@@ -17,7 +17,7 @@ public class ContainerTests
     /// original writer, exact byte consumption is the oracle: one wrong field
     /// width or offset desynchronises everything after it, so a stream that
     /// lands precisely on end-of-body is strong evidence the layout is right.
-    /// Measured 210/210 by an independent Python scanner on 2026-08-27.
+    /// Measured 210/210 by an independent Python scanner on 2026-08-27 (then incl. the native tester.igc; 209 in the artwork alone).
     /// </summary>
     [SkippableTheory]
     [MemberData(nameof(Corpus.Theory), MemberType = typeof(Corpus))]
@@ -31,7 +31,7 @@ public class ContainerTests
     }
 
     [SkippableFact]
-    public void Wrapper_split_is_99_cores_and_111_maps()
+    public void Wrapper_split_is_98_cores_and_111_maps()
     {
         Require.Artwork();
         var cores = 0; var maps = 0;

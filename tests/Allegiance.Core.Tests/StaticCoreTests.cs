@@ -17,10 +17,10 @@ public class StaticCoreTests
             .Where(t => t.File.Wrapper == IgcWrapper.VersionAndDataSize)
             .Select(t => (t.Path, t.File, Model.StaticCore.Load(t.File)));
 
-    /// <summary>All 99 cores load; loading itself is the duplicate-ID check.</summary>
+    /// <summary>All 98 artwork cores load; loading itself is the duplicate-ID check.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void All_99_static_cores_load_with_no_duplicate_IDs()
+    public void All_98_static_cores_load_with_no_duplicate_IDs()
     {
         Require.Artwork();
         var cores = Loaded().ToList();
