@@ -1,0 +1,530 @@
+--- P632 p646b model=port debug=0 ---
+RESULT botsReached=60/60 killsA=10 killsB=15 killsTotal=25 deathsA=15 deathsB=10 shots=35471 hits=22650 hitRate=63.9% friendly=0 shieldHits=14715 hullHits=7935 maxTargeted=57 maxVisibleEnemies=30
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1051 target= hull=Adv Scout
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1061 target= hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8123 hull=Adv Scout
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8123 hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1051 target= hull=Adv Scout
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8123 hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8117 hull=Adv Scout
+ACTIVE side=0 sector=1052 target=8130 hull=Adv Scout
+ACTIVE side=1 sector=1061 target= hull=Adv Scout
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8117 hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8117 hull=Adv Scout
+ACTIVE side=0 sector=1052 target=8120 hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8131 hull=Adv Scout
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8131 hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target=8130 hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8111 hull=Adv Scout
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1051 target= hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1051 target= hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8111 hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8111 hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8137 hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8137 hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8137 hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8115 hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target= hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target=8115 hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1051 target= hull=Adv Scout
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1051 target= hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1061 target= hull=Adv Scout
+ACTIVE side=0 sector=1050 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target= hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1051 target= hull=Adv Scout
+ACTIVE side=0 sector=1059 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target= hull=Adv Scout
+--- P636 DECISION PERF (snapshot fix) ---
+  P636PERF p646b: t=10s passMean=1.9 passP50=1.8 passP95=2.9 passMax=16.0 decisionHz=20.681 cpu=1.8 gen0=150 gen2=2 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=2.1 decLagP95=3.0 decLagMax=3
+  P636PERF p646b: t=20s passMean=2.6 passP50=2.2 passP95=5.1 passMax=16.0 decisionHz=19.783 cpu=2.5 gen0=298 gen2=2 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=0.0 decLagP95=0.0 decLagMax=1
+  P636PERF p646b: t=30s passMean=3.2 passP50=3.1 passP95=6.3 passMax=9.5 decisionHz=18.826 cpu=2.5 gen0=441 gen2=2 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=3.9 decLagP95=4.0 decLagMax=4
+  P636PERF p646b: t=40s passMean=3.3 passP50=3.1 passP95=5.9 passMax=9.5 decisionHz=19.564 cpu=2.0 gen0=584 gen2=3 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=4.9 decLagP95=5.0 decLagMax=5
+  P636PERF p646b: t=50s passMean=2.8 passP50=2.5 passP95=4.0 passMax=7.4 decisionHz=20.780 cpu=2.0 gen0=712 gen2=3 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=0.0 decLagP95=0.0 decLagMax=1
+  P636PERF p646b: t=60s passMean=2.3 passP50=2.2 passP95=3.2 passMax=6.9 decisionHz=19.674 cpu=1.8 gen0=847 gen2=3 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=1.9 decLagP95=2.0 decLagMax=2
+  P636PERF p646b: t=70s passMean=2.1 passP50=2.0 passP95=4.3 passMax=5.9 decisionHz=20.086 cpu=1.7 gen0=982 gen2=3 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=2.9 decLagP95=3.0 decLagMax=3
+  P636PERF p646b: t=80s passMean=2.1 passP50=1.9 passP95=2.8 passMax=6.3 decisionHz=19.913 cpu=1.7 gen0=1113 gen2=3 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=3.0 decLagP95=3.0 decLagMax=3
+  P636PERF p646b: t=90s passMean=2.2 passP50=2.1 passP95=3.0 passMax=6.3 decisionHz=20.026 cpu=2.1 gen0=1249 gen2=3 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=3.0 decLagP95=3.0 decLagMax=3
+  P636PERF p646b: t=100s passMean=2.5 passP50=2.4 passP95=3.5 passMax=7.3 decisionHz=20.848 cpu=2.6 gen0=1392 gen2=3 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=0.7 decLagP95=1.0 decLagMax=1
+  P636PERF p646b: t=110s passMean=2.8 passP50=2.6 passP95=5.2 passMax=7.3 decisionHz=20.278 cpu=1.9 gen0=1535 gen2=4 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=0.0 decLagP95=0.0 decLagMax=1
+  P636PERF p646b: t=120s passMean=2.8 passP50=2.6 passP95=5.5 passMax=7.3 decisionHz=19.867 cpu=2.6 gen0=1662 gen2=4 botCount=60 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=1.4 decLagP95=2.0 decLagMax=2
+--- SERVER LOG (kills/warp/collision tail) ---
+  [warp] ship 8097 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8109 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8121 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8100 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8112 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8099 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8098 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8111 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8102 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8110 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8114 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8124 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8122 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [collision] ship 8124 x ship 8122 sector 1061 pos Vector3 { X = 878.7715, Y = -2746.5276, Z = -658.07 } jiggle(0.04755595,0.047555912) -> COLLISION_EVENT(216) -> 30 peer(s) (union of both parties)
+  [warp] ship 8108 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [collision] ship 8122 x ship 8108 sector 1061 pos Vector3 { X = 884.11395, Y = -2744.4175, Z = -663.43884 } jiggle(0.018609574,0.018609598) -> COLLISION_EVENT(216) -> 30 peer(s) (union of both parties)
+  [warp] ship 8104 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8116 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8123 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [collision] ship 8108 x ship 8104 sector 1061 pos Vector3 { X = 862.98267, Y = -2704.2004, Z = -647.79803 } jiggle(0.007906438,0.007906446) -> COLLISION_EVENT(216) -> 30 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8104 sector 1061 pos Vector3 { X = 856.13904, Y = -2685.4038, Z = -642.9122 } jiggle(0.0074532973,0.0074533015) -> COLLISION_EVENT(216) -> 30 peer(s) (union of both parties)
+  [warp] ship 8120 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8126 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8133 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8101 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8113 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8106 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8118 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8128 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8134 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8125 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8136 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8135 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8132 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8103 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8138 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8115 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8145 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8130 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8140 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8148 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8146 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8127 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8137 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8147 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8144 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8097 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8105 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8117 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8109 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8150 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8142 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8121 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8152 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8099 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8149 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8139 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8111 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8129 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8156 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8107 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8119 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [collision] ship 8107 x ship 8119 sector 1059 pos Vector3 { X = -146.71878, Y = -5805.769, Z = -743.6058 } jiggle(0.47330314,0.473303) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8154 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8123 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8133 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8101 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8113 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8151 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8141 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8131 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8100 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8112 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8125 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8098 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8102 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8135 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8114 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8103 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8115 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [collision] ship 8097 x asteroid 3254 sector 1052 pos Vector3 { X = -1107.6334, Y = 2995.5425, Z = -548.27313 } jiggle(10.161082,0) -> COLLISION_EVENT(216) -> 61 peer(s) (union of both parties)
+  [warp] ship 8145 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8153 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8110 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8124 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8122 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8143 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8104 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8126 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8120 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8106 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8127 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8108 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8118 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8147 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8137 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8105 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8117 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8116 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8128 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8134 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8136 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8155 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8132 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8138 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8130 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8149 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8139 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8129 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8119 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8140 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8107 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8148 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8146 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8144 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8150 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8151 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8142 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8141 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8131 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8152 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8156 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8154 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8153 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8143 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [combat] ship 8133 killed by ship 8098 at sim-t 126.94999999999493 — KILL_SHIP(105) -> 59 peer(s)
+  [warp] ship 8155 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [combat] ship 8137 killed by ship 8106 at sim-t 139.04999999999737 — KILL_SHIP(105) -> 59 peer(s)
+  [collision] ship 8134 x ship 8131 sector 1052 pos Vector3 { X = -3219.8425, Y = 3155.03, Z = 64.569145 } jiggle(0.0757267,0.0757267) -> COLLISION_EVENT(216) -> 61 peer(s) (union of both parties)
+  [warp] ship 8133 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [combat] ship 8150 killed by ship 8111 at sim-t 155.40000000000109 — KILL_SHIP(105) -> 58 peer(s)
+  [combat] ship 8147 killed by ship 8110 at sim-t 160.90000000000234 — KILL_SHIP(105) -> 57 peer(s)
+  [warp] ship 8137 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8100 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8112 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8113 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [combat] ship 8154 killed by ship 8099 at sim-t 170.60000000000454 — KILL_SHIP(105) -> 53 peer(s)
+  [warp] ship 8098 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8124 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8122 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8133 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8103 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [collision] ship 8136 x ship 8129 sector 1052 pos Vector3 { X = -3274.3035, Y = 3045.4216, Z = -6.538633 } jiggle(0.01495719,0.01495719) -> COLLISION_EVENT(216) -> 61 peer(s) (union of both parties)
+  [collision] ship 8136 x ship 8129 sector 1052 pos Vector3 { X = -3274.5183, Y = 3044.7932, Z = -6.4741573 } jiggle(0.017301524,0.017301524) -> COLLISION_EVENT(216) -> 61 peer(s) (union of both parties)
+  [warp] ship 8120 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [collision] ship 8130 x ship 8140 sector 1052 pos Vector3 { X = -3251.2039, Y = 3077.3142, Z = 25.456364 } jiggle(0.85734767,0.8573476) -> COLLISION_EVENT(216) -> 61 peer(s) (union of both parties)
+  [warp] ship 8102 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [combat] ship 8132 killed by ship 8145 at sim-t 182.7500000000073 — KILL_SHIP(105) -> 47 peer(s)
+  [combat] ship 8105 killed by ship 8110 at sim-t 183.05000000000737 — KILL_SHIP(105) -> 46 peer(s)
+  [warp] ship 8126 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8147 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8125 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8137 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [combat] ship 8106 killed by ship 8107 at sim-t 193.40000000000973 — KILL_SHIP(105) -> 44 peer(s)
+  [warp] ship 8097 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8135 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8134 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8121 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8150 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [combat] ship 8129 killed by ship 8130 at sim-t 207.20000000001286 — KILL_SHIP(105) -> 39 peer(s)
+  [warp] ship 8148 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8109 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8146 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8139 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8105 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8151 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [combat] ship 8115 killed by ship 8116 at sim-t 211.60000000001386 — KILL_SHIP(105) -> 33 peer(s)
+  [warp] ship 8145 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8147 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8149 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8156 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8128 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8154 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8142 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8108 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8153 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [combat] ship 8119 killed by ship 8114 at sim-t 228.20000000001764 — KILL_SHIP(105) -> 26 peer(s)
+  [warp] ship 8111 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8132 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8129 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8127 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8138 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8115 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8105 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8155 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8106 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8113 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8150 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8140 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8143 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8117 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8110 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8103 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8119 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8154 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8104 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8129 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8141 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8125 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8115 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8097 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8135 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8152 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [collision] ship 8097 x ship 8135 sector 1050 pos Vector3 { X = -1429.4933, Y = 4619.542, Z = 259.3502 } jiggle(0.053273525,0.053273525) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8118 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8131 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8100 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8116 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8112 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8132 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8144 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [combat] ship 8150 killed by ship 8099 at sim-t 272.5500000000277 — KILL_SHIP(105) -> 16 peer(s)
+  [warp] ship 8098 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8121 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8124 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8137 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8122 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8109 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8130 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8106 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8151 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8120 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8102 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8119 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8145 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8149 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8142 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8136 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8126 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8139 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8123 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8153 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8114 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [combat] ship 8154 killed by ship 8105 at sim-t 295.800000000033 — KILL_SHIP(105) -> 12 peer(s)
+  [warp] ship 8134 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8111 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [combat] ship 8107 killed by ship 8106 at sim-t 305.4500000000352 — KILL_SHIP(105) -> 11 peer(s)
+  [warp] ship 8127 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8148 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8155 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8146 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8156 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8143 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8117 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8128 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8142 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8150 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8108 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8141 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8132 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8107 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8131 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8138 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [combat] ship 8106 killed by ship 8119 at sim-t 343.5000000000438 — KILL_SHIP(105) -> 10 peer(s)
+  [warp] ship 8137 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8140 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8154 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [collision] ship 8129 x ship 8142 sector 1052 pos Vector3 { X = -4570.2954, Y = 1952.0522, Z = 66.14271 } jiggle(15.804779,15.804781) -> COLLISION_EVENT(216) -> 61 peer(s) (union of both parties)
+  [warp] ship 8110 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8123 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8104 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8107 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8150 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8152 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8118 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8116 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8144 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8130 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8154 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8136 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8105 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8106 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8114 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8115 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [combat] ship 8150 killed by ship 8107 at sim-t 412.0500000000594 — KILL_SHIP(105) -> 10 peer(s)
+  [warp] ship 8129 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8106 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8154 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8132 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8113 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8105 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8119 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8150 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8103 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8115 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8100 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8135 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8124 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8112 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8098 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8097 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8122 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8125 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8113 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8102 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8126 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8120 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8139 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8106 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8121 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8151 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8109 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8103 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8145 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8149 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8135 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8134 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8146 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8097 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8153 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8150 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8125 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8148 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8100 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8133 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8111 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8124 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8112 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8128 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8122 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8139 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8156 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8121 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8098 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8151 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8127 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8143 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8109 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8102 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8145 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8149 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8126 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8120 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8155 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8133 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8153 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8108 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8117 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8119 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8111 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8138 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8107 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8134 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8146 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8154 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8148 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8127 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8143 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8141 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8131 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8140 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8155 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8110 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8128 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8156 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8117 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8104 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8137 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8152 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8118 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8108 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8116 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8144 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8123 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8141 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8138 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8129 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8131 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8146 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [combat] ship 8151 killed by ship 8126 at sim-t 580.5000000000198 — KILL_SHIP(105) -> 40 peer(s)
+  [warp] ship 8130 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [combat] ship 8111 killed by ship 8108 at sim-t 582.400000000018 — KILL_SHIP(105) -> 39 peer(s)
+  [collision] ship 8151 x ship 8111 sector 1050 pos Vector3 { X = 829.5047, Y = 1593.703, Z = -1.470057 } jiggle(5.7630763,5.7630763) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8140 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8137 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8136 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8110 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8148 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8106 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8104 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8114 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8098 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8123 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8128 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8152 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8118 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [collision] ship 8152 x ship 8118 sector 1052 pos Vector3 { X = -5368.066, Y = 2351.433, Z = 92.38393 } jiggle(1.6468165,1.6468166) -> COLLISION_EVENT(216) -> 61 peer(s) (union of both parties)
+  [combat] ship 8117 killed by ship 8126 at sim-t 600.3000000000018 — KILL_SHIP(105) -> 42 peer(s)
+  [warp] ship 8128 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [combat] ship 8102 killed by ship 8139 at sim-t 601.8500000000004 — KILL_SHIP(105) -> 42 peer(s)
+  [warp] ship 8128 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8116 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8107 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8144 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8147 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8151 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8113 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8111 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8103 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8100 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8099 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8130 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8136 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [combat] ship 8131 killed by ship 8108 at sim-t 624.6499999999796 — KILL_SHIP(105) -> 39 peer(s)
+  [warp] ship 8117 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8097 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8114 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8125 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8151 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8111 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8112 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [warp] ship 8109 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8105 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [combat] ship 8137 killed by ship 8122 at sim-t 645.8499999999603 — KILL_SHIP(105) -> 37 peer(s)
+  [combat] ship 8123 killed by ship 8108 at sim-t 646.1499999999601 — KILL_SHIP(105) -> 36 peer(s)
+  [warp] ship 8150 crossed from 'Alderan' (1052) to 'Juniper' (1061) via warp 2183
+  [collision] ship 8122 x ship 8120 sector 1052 pos Vector3 { X = -4296.3926, Y = 2385.922, Z = -88.43307 } jiggle(0.68663263,0.68663263) -> COLLISION_EVENT(216) -> 61 peer(s) (union of both parties)
+  [warp] ship 8115 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8102 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8117 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8131 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8121 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8135 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8132 crossed from 'Organia' (1051) to 'Juniper' (1061) via warp 2180
+  [warp] ship 8145 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8105 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8149 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8123 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8115 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8137 crossed from 'Ganymede' (1050) to 'Rigel' (1059) via warp 2176
+  [warp] ship 8127 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8146 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8131 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8113 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8129 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8147 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8143 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8103 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8153 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8099 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [combat] ship 8151 killed by ship 8108 at sim-t 688.4499999999216 — KILL_SHIP(105) -> 30 peer(s)
+  [warp] ship 8102 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8148 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8101 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8155 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8097 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8123 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186
+  [warp] ship 8132 crossed from 'Juniper' (1061) to 'Alderan' (1052) via warp 2182
+  [warp] ship 8098 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [warp] ship 8139 crossed from 'Alderan' (1052) to 'Rigel' (1059) via warp 2187
+  [warp] ship 8125 crossed from 'Rigel' (1059) to 'Ganymede' (1050) via warp 2177
+  [warp] ship 8128 crossed from 'Juniper' (1061) to 'Organia' (1051) via warp 2181
+  [combat] ship 8126 killed by ship 8111 at sim-t 704.499999999907 — KILL_SHIP(105) -> 29 peer(s)
+  [warp] ship 8137 crossed from 'Rigel' (1059) to 'Alderan' (1052) via warp 2186

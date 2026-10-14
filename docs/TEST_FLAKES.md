@@ -529,3 +529,25 @@ socket's `ReceiveTimeout` so a silent greet never timed out. Fixed by restrictin
 Poll to `Blocking:false` sockets (pool data sessions only); blocking reads keep
 using plain `Read` which honours `ReceiveTimeout`. Both greet-timeout classes pass
 after the fix.
+
+## P646b observation (2026-10-14, `scripts/run-tests.sh` on the final P646b tree)
+
+Bounded-drain carry-over fix (`ServerHost.Drain` — `_pendingLanes`/`_pendingOrder`
+fields + `ServerHostBoundedDrainTests`, the latter already 6/6 green). The failures
+in both full-suite runs are all **established live-wire load-flakes** in untouched
+code, none failing in isolation; one test (`ShipIdAllocationLiveTests`) is newly
+added to the ledger.
+
+| run | Lobby | MonoGame | ClientCore | Core | failures |
+|---|---|---|---|---|---|
+| 1 | 12/12 | 1968/1972 (3 skipped) | 749/749 | 4024/4027 | MonoGame: `ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy` (line 469); Core: `P590PodRescueTests.Pod_pickup_order_streams_queued_order_to_real_player_rescuer` (line 435), `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` (line 432), `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` (line 247) |
+| 2 | 12/12 | 1969/1972 (3 skipped) | 749/749 | 4024/4027 | Core: `ShipIdAllocationLiveTests.Valid_logon_advances_nextShipId` (**new**, added below), `LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire` (line 406), `AddPartTests.Part_pickup_destroys_then_accept_merges_amount_into_existing_mount` (line 247) |
+
+Every failure passes **3/3 in isolation** (verified 2026-10-14): ChatTargetCompose
+3/3, P590PodRescue 3/3, GameOverPlayers 2/3 (intermittent), AddPart 3/3,
+ShipIdAllocation 3/3, LiveCombatWire 3/3. None are in P646b-touched code.
+
+**Newly-observed flake (P646b, documented for future runs):**
+`Core…ShipIdAllocationLiveTests.Valid_logon_advances_nextShipId` —
+live-wire logon/ship-id-advance receipt timing under full-suite load; passes 3/3
+isolated (verified 2026-10-14). Status: load-flake.
