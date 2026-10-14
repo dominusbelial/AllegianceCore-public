@@ -111,11 +111,16 @@ connection accounting is released on peer reap.
 `ClosePeer` transport test — the closed connection seats no second ship.
 
 ### H-32 (Low) — REQPINGDATA answers pre-logon peers with the ship-id roster
-**Fix** (`Server.ShipCommands.cs`): `HandleReqPingData` requires a SEATED peer
-(returns silently otherwise) and scopes the roster to the requester's OWN
-mission; debounced requests are answered silently.
-**Test:** `...ReqPingData_AnsweredOnlyForSeatedPeer_ScopedToMission` — a seated
-peer gets a roster; a non-seated peer leaks zero PINGDATA.
+**Fix** (`Server.ShipCommands.cs`): for a SEATED pilot the ping roster is scoped
+to the requester's OWN mission (a pilot's roster no longer leaks ship ids from
+other missions). **Divergence, documented:** the audit suggested denying pre-logon
+peers outright, but that directly contradicts the maintained P200 pingdata
+feature test (`PingDataReqPingDataLiveTests`, a bare requester must get the
+roster — the lobby/observer case) and native (FedSrv.CPP:7743-7808 answers any
+connection). This port keeps native's bare-requester behaviour and fixes the real
+cross-mission leak for seated pilots.
+**Test:** `...ReqPingData_SeatedPeerGetsRoster_NormalActionWorks` (a seated peer
+gets its mission-scoped roster; the P200 live tests stay green).
 
 ### H-19 (Medium) — PLAYER_READY relays a forged ShipId
 **Fix** (`Server.Dispatch.cs`): the relay re-encodes with the sender's OWN ship
