@@ -29,8 +29,8 @@ internal sealed partial class BotManager
             if (_removedBots.Count > 500) _removedBots.RemoveAt(0);
         }
         // Disposal can join a receive thread; never do it under the roster gate.
-        try { bot.Cs?.Dispose(); } catch { }
-        try { bot.Bot?.Dispose(); } catch { }
+        try { DisposePeer(bot.Cs); } catch { }
+        try { DisposePeer(bot.Bot); } catch { }
     }
 
     private static void ResetNewLife(ActiveBot bot, double now, bool reinforcement)
