@@ -1278,7 +1278,27 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             var evt = q.Dequeue();
             if (evt is ReceivedEvt r)
                 ReleaseReservation(r);   // a handled receive frees its reserved bytes (never inserts)
-            handle(evt);
+            // P654 (H-34) — per-event exception barrier (defence in depth). Every
+            // dispatch branch already has its own try/catch, but the remaining
+            // throwers (logon-path code after decode, CaptureReceived file I/O on
+            // a full disk, ReleasePeer) would previously abort the WHOLE Drain,
+            // dropping every event already pulled into the lanes (PeerLeftEvt →
+            // ghost ship, byte reservations never released). Wrapping each
+            // handle() here means a throwing handler costs only that one event —
+            // the rest of the lane keeps its FIFO and the drain completes.
+            try
+            {
+                handle(evt);
+            }
+            catch (Exception ex)
+            {
+                // The event is gone from the lane (dequeued above) and its byte
+                // reservation already released (for a receive); do not let one
+                // bad event take the lane (and the drain) down. Log once.
+                var et = _dropLog.Ticket(PeerKeyOf(evt));
+                if (et.Emit)
+                    Console.WriteLine($"[drain] event handler threw for key {PeerKeyOf(evt)}: {ex.GetType().Name}: {ex.Message}");
+            }
             processed++;
             handled[key] = done + 1;
             if (q.Count == 0)

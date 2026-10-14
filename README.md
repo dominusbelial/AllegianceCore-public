@@ -93,7 +93,7 @@ showcase battles below):
 
 ```json
 "broadcast":    { "parallelBuild": true, "shipUpdateModel": "native" },
-"transport":    { "mode": "pool" },
+"transport":    { "mode": "pool", "maxConnections": 2048, "maxConnectionsPerIp": 1024 },
 "liveSettings": { "timeDilation": "auto" }
 ```
 
@@ -103,6 +103,8 @@ showcase battles below):
 ALLEGIANCE_BROADCAST_PARALLEL_BUILD=1 \
 ALLEGIANCE_SHIP_UPDATE_MODEL=native \
 ALLEGIANCE_TRANSPORT_MODE=pool \
+ALLEGIANCE_TRANSPORT_MAX_CONNECTIONS=2048 \
+ALLEGIANCE_TRANSPORT_MAX_PER_IP=1024 \
 dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance.Server/server.json
 ```
 
@@ -111,6 +113,9 @@ dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance
   roughly a fifth of the bandwidth of `port` at 400 players, and what keeps bot hosts
   responsive in big battles.
 - `transport: pool` serves all connections from a small worker pool.
+- `maxConnectionsPerIp` (default 64) is raised to 1024 for the big battles because
+  the ~390 bots all originate from ONE Mac bot host — the default per-IP ceiling is a
+  sane limit for a public server but would refuse the rig.
 - Server GC is on by default.
 - `timeDilation: auto` (the default) is EVE-style slow motion under load: when one crowded
   sector makes ticks run long, the game slows slightly instead of stuttering. In our 200v200

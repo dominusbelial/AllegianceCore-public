@@ -521,6 +521,58 @@ public sealed class TransportConfig
     /// <c>ALLEGIANCE_TRANSPORT_HUMAN_GRACE_SECONDS</c>.
     /// </summary>
     public int? HumanGraceSeconds { get; set; }
+
+    /// <summary>P654 (H-15) — hard ceiling on live client connections
+    /// (greetings + established). Absent → 1024. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_MAX_CONNECTIONS</c>.</summary>
+    public int? MaxConnections { get; set; }
+
+    /// <summary>P654 (H-15) — ceiling on client connections from ONE source IP
+    /// address. Absent → 64 (a sane public-server default). The 200v200 rig's
+    /// ~390 bots all originate from one Mac bot host, so the README's
+    /// recommended settings raise this (see README "Recommended settings").
+    /// Overridable by <c>ALLEGIANCE_TRANSPORT_MAX_PER_IP</c>.</summary>
+    public int? MaxConnectionsPerIp { get; set; }
+
+    /// <summary>P654 (H-02/H-15) — ceiling on connections still in the greeting
+    /// (pending-handshake) phase. Absent → 256. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_MAX_PENDING_HANDSHAKE</c>.</summary>
+    public int? MaxPendingHandshake { get; set; }
+
+    /// <summary>P654 (H-02/H-21) — the server's inbound DATA-phase frame cap in
+    /// bytes (largest legitimate client message is ~1.1 KB, so 64 KiB is
+    /// generous). A pre-auth peer can no longer claim a huge body up front.
+    /// Absent → 65536. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_MAX_FRAME_BYTES</c>.</summary>
+    public int? MaxFrameBytes { get; set; }
+
+    /// <summary>P654 (H-02) — read deadline (seconds) for an in-progress
+    /// server-inbound frame (and the data-phase idle grace, matching native's
+    /// 30 s link-dead tolerance, clintlib.cpp:2047). Absent → 30. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_DATA_FRAME_TIMEOUT_SECONDS</c>.</summary>
+    public int? DataFrameReadTimeoutSeconds { get; set; }
+
+    // ---- P654 (H-24) per-peer message/chat budget (native's chat budget) ----
+
+    /// <summary>P654 (H-24) — the per-peer chat/message token-bucket MAXIMUM.
+    /// Port of native <c>c_chatBudgetMax = 100</c> (fsship.h:24), sized up from
+    /// the modem era so today's busy commanders are not starved (era-constraint
+    /// sizing per the project rule — native's constants are cited in the code).
+    /// Absent → 1000. Overridable by <c>ALLEGIANCE_TRANSPORT_CHAT_BUDGET_MAX</c>.</summary>
+    public int? ChatBudgetMax { get; set; }
+
+    /// <summary>P654 (H-24) — the per-peer token cost of one chat / state-
+    /// changing message. Port of native <c>c_chatBudgetCost = 20</c>
+    /// (fsship.h:25), cited in code. Absent → 20. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_CHAT_BUDGET_COST</c>.</summary>
+    public int? ChatBudgetCost { get; set; }
+
+    /// <summary>P654 (H-24) — token refill per simulation tick. Native refills
+    /// +1 per tick (FedSrv.CPP:8287, IncrementChatBudget), capped at the max;
+    /// sized to +5 so today's sustained traffic (~100 msg/s) flows while a
+    /// flood is still sharply bounded. Absent → 5. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_CHAT_BUDGET_REFILL</c>.</summary>
+    public int? ChatBudgetRefillPerTick { get; set; }
 }
 
 /// <summary>

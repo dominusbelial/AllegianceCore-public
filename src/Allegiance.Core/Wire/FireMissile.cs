@@ -136,6 +136,11 @@ public sealed class FireMissile : IFedMessage
         VarItem vi = VarItem.Read(buf.Slice(4));
         if (vi.Cb % MissileLaunchData.Size != 0)
             throw new ArgumentException($"missileLaunchData cb={vi.Cb} is not a whole multiple of MissileLaunchData({MissileLaunchData.Size})");
+        // P654 (H-35) — validate the entries slice BEFORE pre-sizing the list
+        // (the old code built `new List<MissileLaunchData>(n)` from the claimed
+        // cb, and read the entries from a hard-coded offset instead of vi.Ib).
+        if (vi.Cb > 0 && (vi.Ib + (long)vi.Cb) > buf.Length)
+            throw new ArgumentException($"FIRE_MISSILE entries [ib={vi.Ib}, cb={vi.Cb}] exceed buffer {buf.Length}");
         int n = vi.Cb / MissileLaunchData.Size;
 
         WireReader r = new(buf);
@@ -152,8 +157,11 @@ public sealed class FireMissile : IFedMessage
         r.Advance(1);                               // trailing pad
         if (r.Position != FixedSize) throw new ArgumentException($"FIRE_MISSILE fixed-region underread: {r.Position} != {FixedSize}");
 
+        // Entries live at vi.Ib (P654/H-35 — the old code read them from a
+        // hard-coded offset 32 regardless of ib).
         var entries = new List<MissileLaunchData>(n);
-        for (int i = 0; i < n; i++) entries.Add(MissileLaunchData.Read(ref r));
+        WireReader er = new(buf.Slice(vi.Ib, vi.Cb));
+        for (int i = 0; i < n; i++) entries.Add(MissileLaunchData.Read(ref er));
 
         return new FireMissile
         {

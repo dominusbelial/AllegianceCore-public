@@ -138,6 +138,30 @@ public static class ConsoleLog
         else Interlocked.Increment(ref DroppedWrites);
     }
 
+    /// <summary>
+    /// P654 (H-27) — make an attacker-supplied string safe to embed in a log
+    /// line: truncate to <paramref name="maxLen"/> chars and escape every
+    /// control/format character (CR/LF/ANSI-ESC and friends) as a literal
+    /// <c>\uXXXX</c>, so a hostile 65 KB chat text or a rogue character name
+    /// cannot forge log lines, inject ANSI escapes, or blow up memory/disk with
+    /// one giant line. Use around any client-supplied string before it reaches
+    /// <c>Console.WriteLine</c> / <c>ConsoleLog.Write</c>.
+    /// </summary>
+    public static string Sanitize(string? s, int maxLen = 128)
+    {
+        if (string.IsNullOrEmpty(s)) return s ?? "";
+        if (s.Length > maxLen) s = s.Substring(0, maxLen) + "\u2026";
+        var sb = new StringBuilder(s.Length + 8);
+        foreach (var c in s)
+        {
+            if (char.IsControl(c) || char.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.Format)
+                sb.Append($"\\u{(int)c:X4}");
+            else
+                sb.Append(c);
+        }
+        return sb.ToString();
+    }
+
     private static void Drain()
     {
         foreach (var line in _queue.GetConsumingEnumerable())
