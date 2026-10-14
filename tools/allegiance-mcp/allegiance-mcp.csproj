@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- One process drives ~390 bot sessions (200v200): server GC (one heap per core) and
+         concurrent GC avoid the single-heap allocation-lock contention measured on the M4 Max
+         bot host with workstation GC (clash36: load 130-220, ~75% kernel time, bots freezing
+         in bursts; clash37 with server GC: load 24-76). DOTNET_gcServer=0 still overrides. -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
