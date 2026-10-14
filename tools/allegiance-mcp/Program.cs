@@ -120,6 +120,7 @@ internal static class Program
 
         using (mgr)
         {
+            Console.Error.WriteLine($"allegiance-mcp: gc = {(System.Runtime.GCSettings.IsServerGC ? "server" : "workstation")}/{System.Runtime.GCSettings.LatencyMode} (server GC recommended for large bot fleets)");
             Console.Error.WriteLine($"allegiance-mcp: connected to live server {host}:{port} (probe seated); serving stdio MCP tools...");
 
             var serverOptions = new McpServerOptions
