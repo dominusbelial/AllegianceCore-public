@@ -131,6 +131,9 @@ not on the server or the machine you play on.
 
 ## More
 
+- **[Sky pack](https://github.com/dominusbelial/AllegianceCore-sky)** — optional HD sky art (star field,
+  nebulae, deep-field galaxies, distant and giant sky objects; NASA/ESA/Hubble/Webb imagery,
+  credited). Clone it and set `ALLEGIANCE_SKY_PACK_PATH` (see Quick start).
 - **[Full guide](docs/GUIDE.md)** — everything: art paths, Docker, the Android
   head, client flags, testing, architecture, troubleshooting.
 - **[Contributing](CONTRIBUTING.md)** — build/test steps, the native-reference
