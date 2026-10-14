@@ -1709,6 +1709,7 @@ public sealed class Sector : IClusterIgc
             var station = ev.B.Data as Station ?? ev.A.Data as Station;
             if (ord is null || (ship is null && probe is null && asteroid is null && station is null)) continue;
             if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe) || ReferenceEquals(ord, asteroid) || ReferenceEquals(ord, station)) continue;
+            if (ord is Missile { IsDud: true }) continue; // missileigc.cpp:428
             if (spent.Contains(ord)) continue;            // already terminated this step
 
             // P467 — the round's damage multiplier from its LAUNCHER's side
@@ -3493,7 +3494,7 @@ public sealed class Sector : IClusterIgc
             // detonate an aleph (native missileigc.cpp:459-466: `if (eabm &
             // c_eabmWarpBomb)`). Any other missile touching an aleph does
             // nothing — it does not arm a delayed blast.
-            if (!missile.MissileType.HasWarpBombCapability) continue;
+            if (missile.IsDud || !missile.MissileType.HasWarpBombCapability) continue;
 
             foreach (var warp in _warps)
             {

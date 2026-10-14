@@ -2888,21 +2888,15 @@ public sealed partial class Server
             var ship = kv.Value.Ship;
             var part = ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
             if (part is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) continue;
-            if (part.Amount <= 0) continue;
             if (ship.Mission is not { } mission) continue;
             if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) continue;
 
-            // Only a Ship command target can build lock (UpdateMissileLock's target
-            // gate); express "no lock target" as targetShipId = NA(-1) + zero pos.
-            short targetShipId = -1;
-            Vector3 targetPos = Vector3.Zero;
-            if (ship.CommandTarget is Ship target)
-            {
-                targetShipId = target.Id;
-                targetPos = target.Position;
-            }
-
-            var msg = MissileLockUpdate.From(ship.Id, targetShipId, ship.MissileLock, targetPos, missileType.ModelName);
+            var target = ship.CommandTarget;
+            short targetShipId = target?.Id ?? -1;
+            Vector3 targetPos = target?.Position ?? Vector3.Zero;
+            bool ready = part.Amount > 0 && part.MountedFraction >= 1f && mission.LastUpdate > part.TimeLoaded;
+            var msg = MissileLockUpdate.From(ship.Id, targetShipId, ship.MissileLock, targetPos,
+                missileType.ModelName, target is null ? IgcObjectType.Ship : EquipmentTarget.TypeOf(target), ready);
             SendPeerCoalescing(kv.Key, FedPacket.Pack(msg.Encode()), CoalesceMissileLock);
             ConsoleLog.Write($"[missilelock] peer {kv.Key} ship {ship.Id} target {(targetShipId == -1 ? "none" : targetShipId.ToString())} lock {ship.MissileLock:F3} \"{missileType.ModelName}\" -> MISSILE_LOCK_UPDATE(204)");
         }

@@ -1122,7 +1122,7 @@ public sealed partial class Game1
         // cross the 16-bit wire stateM (igc.h:829,2457-2465), so the wire request is
         // the player-launch path and the server fires authoritatively against its own
         // CommandTarget lock. A ~250 ms throttle bounds chatter while held; the
-        // server's lock-rebuild is the real fire-rate limiter. Bound to Left Ctrl —
+        // magazine's load deadline is the fire-rate limiter. Bound to Left Ctrl —
         // unclaimed by every other binding (W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/
         // Enter/Back/Escape/Space/K/C/N/OemTilde/[ /] all taken) and the common
         // flight-sim missile-fire convention (the brief's own suggestion).
@@ -1130,7 +1130,7 @@ public sealed partial class Game1
         if (!composing && missileCtrl)
         {
             long nowMs = Environment.TickCount64;
-            if (nowMs - _lastMissileSendMs >= 250)
+            if (nowMs - _lastMissileSendMs >= 250 && _session.World.MissileLock.IsReady)
             {
                 _lastMissileSendMs = nowMs;
                 _session.SendFireMissile();

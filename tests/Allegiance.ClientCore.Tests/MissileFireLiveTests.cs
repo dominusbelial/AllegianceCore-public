@@ -99,7 +99,8 @@ public class MissileFireLiveTests
         Ship? placedTarget = null;
         SetShipSpawner(server, (core, mission, shipId) =>
         {
-            var hull = core.HullTypes.Values.First();
+            // Target must actually be visible under native magazine/FedSrv CanSee gates.
+            var hull = core.HullTypes.Values.First() with { ScannerRange = 10000, Signature = 1 };
             var ship = new Ship(shipId, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
             mission.PlaceShip(ship, mission.Sectors[0]);

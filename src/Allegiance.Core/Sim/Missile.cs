@@ -80,7 +80,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         double now,
         Model? launcher = null,
         Model? target = null,
-        float lockFraction = 1f)
+        float lockFraction = 1f, bool dud = false)
         : base(id, position)
     {
         _sector = sector ?? throw new ArgumentNullException(nameof(sector));
@@ -90,6 +90,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         Launcher = launcher;
         Target = target;
         LockFraction = lockFraction;
+        IsDud = dud;
         _timeExpire = now + missileType.Lifespan;
         // P549 — native missileigc.cpp:104: `m_timeActivate = now +
         // dataMissileType->readyTime`. The missile only begins homing and
@@ -142,6 +143,10 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// directly by the caller (e.g. <see cref="Ship.FireMissile"/>'s
     /// <c>lockFraction</c> argument); stored for inspection.</summary>
     public float LockFraction { get; }
+
+    /// <summary>Native m_bDisarmed: early server fire (FedSrv.CPP:5434;
+    /// missileigc.cpp:128,428). Duds ignore contact collisions (including warps); native expiry still explodes.</summary>
+    public bool IsDud { get; }
 
     /// <summary>The absolute time (mission-seconds) at which this missile expires
     /// and removes itself.</summary>
@@ -277,7 +282,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
             // cluster (missileigc.cpp:371-375). The port's cluster == sector, and
             // its membership primitive is the sector's model list (Sector.Add/
             // Remove, the same mechanism that backs Ship.Sector).
-            if (!_sector.Models.Contains(t))
+            if (!EquipmentTarget.IsPresent(t, _sector))
             {
                 Target = null;   // lost our target — revert to straight line
             }

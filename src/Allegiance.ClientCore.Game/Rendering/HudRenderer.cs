@@ -795,6 +795,7 @@ public sealed class HudRenderer
     private static (string tag, Color color) StatusTag(WeaponStatus s) => s switch
     {
         WeaponStatus.Reloading => ("RELOAD", ReloadAmber),
+        WeaponStatus.NotReady => ("NOT READY", ReloadAmber),
         WeaponStatus.Depleted => ("DEPLETED", Warning),
         _ => ("READY", TextDim),
     };

@@ -406,12 +406,8 @@ public sealed class Ship : Model, IShipIgc
     /// <summary>
     /// P269 — the ship's effective detection signature, the port of
     /// <c>CshipIGC::GetSignature()</c> = <c>baseSignature · GetCloaking()</c>
-    /// (<c>shipIGC.h:268-270</c>). The base is the hull signature plus the cloak
-    /// part's own signature contribution while its emitter is on (the
-    /// <c>ChangeSignature(+typeData-&gt;signature)</c> of
-    /// <c>CcloakIGC::Activate</c>, <c>cloakigc.h:76</c> — the same
-    /// active-emitter signature every active part adds, cf. shield/afterburner/
-    /// weapon), all scaled by <see cref="Cloaking"/>. Fed to
+    /// (<c>shipIGC.h:268-270</c>). The base is the hull signature plus every
+    /// active part's contribution, all scaled by <see cref="Cloaking"/>. Fed to
     /// <see cref="Model.Sector.ResolveCrossSideVisibility"/> so the per-object
     /// detection sweep (<c>VisibilityMath.DetectionRadius = scannerRadius +
     /// targetRadius + scannerRange · targetSignature</c>) uses a reduced
@@ -419,9 +415,17 @@ public sealed class Ship : Model, IShipIgc
     /// target.GetSignature()</c> (shipIGC.h:353) that makes a fully-cloaked ship
     /// effectively undetectable within ordinary detection range.
     /// </summary>
+    // Native active-part additions: weaponIGC.h:109,122; afterburnerIGC.h:78,89;
+    // shieldIGC.h:72,76; magazineigc.h:74,78; dispenserigc.h:74,79.
     public float EffectiveSignature =>
-        (HullType.Signature + (_cloakEmitterActive && _mountedCloak is { } ck ? ck.Type.Signature : 0.0f))
-        * Cloaking;
+        (HullType.Signature
+         + _weapons.Where(w => w.Active).Sum(w => _parts.FirstOrDefault(p => p.FunctionalWeapon == w)?.Type.Signature
+             ?? Mission?.Core.PartTypes.Values.FirstOrDefault(p => p.Type == w.Type).Signature ?? 0f)
+         + _parts.Where(p => p.MountId == 0 && p.EquipmentType is
+             EquipmentType.Shield or EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher)
+             .Sum(p => p.Type.Signature)
+         + (_afterburnerActive && _mountedAfterburner is { } ab ? ab.Type.Signature : 0f)
+         + (_cloakEmitterActive && _mountedCloak is { } ck ? ck.Type.Signature : 0f)) * Cloaking;
 
     /// <summary>
     /// Fractional hull integrity (<c>m_fraction</c>): 1.0 = full hull, 0.0 =
@@ -1324,6 +1328,8 @@ public sealed class Ship : Model, IShipIgc
         return false;
     }
 
+    private Model? _commandTarget;
+
     /// <summary>
     /// The ship's current command target (<c>m_commandTargets[c_cmdCurrent]</c>,
     /// <c>shipIGC.h:2624</c>) exposed as a nullable model — the subset of the
@@ -1336,7 +1342,19 @@ public sealed class Ship : Model, IShipIgc
     /// <c>null</c> means "no current target" (native returns NULL for an
     /// unset slot) — the common case, under which the leading path is inert.
     /// </summary>
-    public Model? CommandTarget { get; set; }
+    public Model? CommandTarget
+    {
+        get => _commandTarget;
+        set
+        {
+            // Native shipIGC.h:743-746 clears magazine lock on target change.
+            if (!ReferenceEquals(_commandTarget, value)
+                && (_commandTarget is null || value is null || _commandTarget.Id != value.Id
+                    || EquipmentTarget.TypeOf(_commandTarget) != EquipmentTarget.TypeOf(value)))
+                MissileLock = 0f;
+            _commandTarget = value;
+        }
+    }
 
     /// <summary>
     /// P219 — the per-ship staleness counter that drives the heavy/light
@@ -2695,15 +2713,16 @@ public sealed class Ship : Model, IShipIgc
             }
         }
 
+        if (type.Type is DataPartTypeIGC.MissileLauncher ml && Mission is { } m
+            && m.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt))
+            part.TimeLoaded = fractionMounted == 255 ? LastUpdate : LastUpdate + 1.0 / MountRate() + mt.LoadTime;
         _parts.Add(part);
         BumpLoadout();
 
-        // CshieldIGC::Arm (shieldIGC.h:99-103): mounting a Shield part charges
-        // it to fully up (m_fraction = 1.0f). The shield is now functional
-        // (Phase 2 of the roadmap) rather than inert bookkeeping, so the
-        // charge fraction reflects the just-mounted fresh shield.
+        // Ready spawn/dock parts are armed (shieldIGC.h:99-103); a flight
+        // mount starts discharged (shieldIGC.cpp:134) and later regenerates.
         if (type.Type is DataPartTypeIGC.Shield)
-            _shieldFraction = 1.0f;
+            _shieldFraction = fractionMounted == 255 ? 1f : 0f;
 
         // P173: raise the host seam so the server can broadcast a real
         // FM_S_LOADOUT_CHANGE(96) carrying the current whole loadout (this
@@ -2864,7 +2883,7 @@ public sealed class Ship : Model, IShipIgc
             _cargo[CargoSlotForMount(mount)] = AsCargoPart(part);
             return;
         }
-        MountPart(part.Type, part.Amount, (byte)mount, part.FractionMounted);
+        MountPart(part.Type, part.Amount, (byte)mount, 0); // shipIGC.cpp:1567: every mount move resets readiness
     }
 
     /// <summary>A <see cref="MountedPart"/> as a cargo-hold entry: same wire
@@ -2877,6 +2896,8 @@ public sealed class Ship : Model, IShipIgc
         Amount = p.Amount,
         MountId = 0,
         FractionMounted = p.FractionMounted,
+        MountedFraction = p.MountedFraction,
+        TimeLoaded = p.TimeLoaded,
         Type = p.Type,
         FunctionalWeapon = null,
     };
@@ -2963,7 +2984,7 @@ public sealed class Ship : Model, IShipIgc
                 if (mounted.FunctionalWeapon is { } w) _weapons.Remove(w);
             }
             _cargo[slot] = null;                         // cargo launcher leaves cargo...
-            MountPart(part.Type, part.Amount, 0, part.FractionMounted);  // ...and mounts at 0 (SetMountID(0))
+            MountPart(part.Type, part.Amount, 0, 0);  // ...and mounts at 0 (SetMountID(0))
             return true;
         }
         else
@@ -2974,7 +2995,7 @@ public sealed class Ship : Model, IShipIgc
             else SetCargoPartAmount(slot, (short)(amount - amountTransfered));
             SetPartAmount(mounted, (short)(mounted.Amount + amountTransfered));  // add to equipped
             ResetEquippedFraction(launcherType);         // mounted-fraction reset (FedSrv.CPP:6637)
-            // ResetTimeLoaded() N/A — no per-launcher reload-time tracker here.
+            // WithFraction resets the magazine load deadline too (magazineigc.h:146-149).
             return true;
         }
     }
@@ -3224,8 +3245,11 @@ public sealed class Ship : Model, IShipIgc
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.EquipmentType == et && p.MountId == 0 && p.FractionMounted != 0)
+            if (p.EquipmentType == et && p.MountId == 0)
+            {
                 _parts[i] = WithFraction(p, 0);
+                Mission?.Site.LoadoutChangeEvent(this, _parts[i], LoadoutChange.Mounted);
+            }
         }
     }
 
@@ -3238,19 +3262,25 @@ public sealed class Ship : Model, IShipIgc
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0 && p.FractionMounted != 0)
+            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0)
+            {
                 _parts[i] = WithFraction(p, 0);
+                Mission?.Site.LoadoutChangeEvent(this, _parts[i], LoadoutChange.Mounted);
+            }
         }
     }
 
     /// <summary>Rewrite a <see cref="MountedPart"/>'s <c>FractionMounted</c> wire
     /// byte via list-entry replacement (the properties are <c>init</c>-only).</summary>
-    private static MountedPart WithFraction(MountedPart p, byte fractionMounted) => new()
+    private MountedPart WithFraction(MountedPart p, byte fractionMounted) => new()
     {
         PartId = p.PartId,
         Amount = p.Amount,
         MountId = p.MountId,
         FractionMounted = fractionMounted,
+        TimeLoaded = fractionMounted == 0 && p.Type.Type is DataPartTypeIGC.MissileLauncher ml
+            && Mission is { } mission && mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt)
+            ? LastUpdate + 1.0 / MountRate() + mt.LoadTime : p.TimeLoaded,
         Type = p.Type,
         FunctionalWeapon = p.FunctionalWeapon,
     };
@@ -3266,6 +3296,8 @@ public sealed class Ship : Model, IShipIgc
         Amount = amount,
         MountId = p.MountId,
         FractionMounted = p.FractionMounted,
+        MountedFraction = p.MountedFraction,
+        TimeLoaded = p.TimeLoaded,
         Type = p.Type,
         FunctionalWeapon = p.FunctionalWeapon,
     };
@@ -3281,6 +3313,8 @@ public sealed class Ship : Model, IShipIgc
             Amount = amount,
             MountId = p.MountId,
             FractionMounted = p.FractionMounted,
+            MountedFraction = p.MountedFraction,
+            TimeLoaded = p.TimeLoaded,
             Type = p.Type,
             FunctionalWeapon = p.FunctionalWeapon,
         };
@@ -3304,18 +3338,23 @@ public sealed class Ship : Model, IShipIgc
     private void RepointMount(MountedPart part, byte mountId)
     {
         int idx = _parts.IndexOf(part);
-        if (idx < 0) return;   // defensive; every caller passes a live member
+        if (idx < 0 || part.MountId == mountId) return;
+        part.FunctionalWeapon?.Deactivate(); // weaponIGC.cpp:110
+        part = WithFraction(part, 0); // shipIGC.cpp:1567
         _parts[idx] = new MountedPart
         {
             PartId = part.PartId,
             Amount = part.Amount,
             MountId = mountId,
             FractionMounted = part.FractionMounted,
+            MountedFraction = part.MountedFraction,
+            TimeLoaded = part.TimeLoaded,
             Type = part.Type,
             FunctionalWeapon = part.FunctionalWeapon,
         };
         BumpLoadout();
         part.FunctionalWeapon?.SetMountId(mountId);
+        Mission?.Site.LoadoutChangeEvent(this, _parts[idx], LoadoutChange.Mounted);
     }
 
     /// <summary>
@@ -3330,13 +3369,15 @@ public sealed class Ship : Model, IShipIgc
     public void SetPartAmount(MountedPart part, short amount)
     {
         int idx = _parts.IndexOf(part);
-        if (idx < 0) return;   // defensive; every caller passes a live member
+        if (idx < 0) return;
         _parts[idx] = new MountedPart
         {
             PartId = part.PartId,
             Amount = amount,
             MountId = part.MountId,
             FractionMounted = part.FractionMounted,
+            MountedFraction = part.MountedFraction,
+            TimeLoaded = part.TimeLoaded,
             Type = part.Type,
             FunctionalWeapon = part.FunctionalWeapon,
         };
@@ -3706,7 +3747,7 @@ public sealed class Ship : Model, IShipIgc
     /// solve — the <see cref="Ship.UpdateMissileLock"/>-produced lock quality
     /// a caller may supply once the buildup mechanic exists.</para>
     /// </remarks>
-    public Missile FireMissile(DataMissileTypeIGC missileType, double now, Model? target = null, float lockFraction = 1f)
+    public Missile FireMissile(DataMissileTypeIGC missileType, double now, Model? target = null, float lockFraction = 1f, bool dud = false)
     {
         var sector = Sector
             ?? throw new InvalidOperationException("a placed ship must be in a sector before it can fire a missile");
@@ -3717,7 +3758,7 @@ public sealed class Ship : Model, IShipIgc
         Vector3 velocity = missileType.InitialSpeed * forward + Velocity;   // inherit launcher velocity (Weapon.cs:213-215)
         Vector3 position = Position + Velocity * (float)(now - LastUpdate); // muzzle at origin (no hull mesh, Weapon.cs:217)
 
-        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this, target, lockFraction);
+        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this, target, lockFraction, dud);
         sector.Add(missile);
 
         // P90: raise the host seam so the server can broadcast the real
@@ -3728,79 +3769,28 @@ public sealed class Ship : Model, IShipIgc
         return missile;
     }
 
-    /// <summary>
-    /// P181 — the current lock quality (0..1) of this ship's missile lock
-    /// against <see cref="CommandTarget"/>, the port of the native magazine's
-    /// <c>m_lock</c> (<c>Igc/magazineigc.cpp:104-176</c>). <c>0</c> by default,
-    /// written only by <see cref="UpdateMissileLock"/> and consumed by the
-    /// caller as the <c>lockFraction</c> it supplies to
-    /// <see cref="FireMissile"/>. Every validity gate failure resets it to
-    /// <c>0</c> (matching native's "any gate failure resets to the
-    /// <c>m_lock=0.0f</c> already set before the gate",
-    /// <c>magazineigc.cpp:140-141</c>).
-    /// </summary>
+    /// <summary>Normalized magazine lock quality. Launches multiply by the missile
+    /// type's MaxLock (magazineigc.cpp:110-123).</summary>
     public float MissileLock { get; private set; }
 
-    /// <summary>
-    /// P181 — advance this ship's missile lock quality by one sim chunk
-    /// (<paramref name="dt"/> seconds) against the current
-    /// <see cref="CommandTarget"/>, porting native <c>CmagazineIGC::Update</c>'s
-    /// lock-build block (<c>Igc/magazineigc.cpp:104-176</c>) as a
-    /// directly-callable capability. <b>Not wired</b> into any control-input /
-    /// live-fire path (there is no <c>missileFireIGC</c>-equivalent bit in
-    /// <see cref="ShipControlState"/>, and the native state bit is documented as
-    /// not transmitted in the wire mask, <c>Igc/igc.h:829-834</c>) — exactly the
-    /// "caller supplies the type directly" precedent of
-    /// <see cref="FireMissile"/>.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Flow (in native order):</b> ripcord active ⇒ lock <c>0</c>; no
-    /// command target ⇒ lock <c>0</c>; the validity gate (same sector, hostile
-    /// side, damageable) ⇒ lock <c>0</c> on any failure; the range gate ⇒ lock
-    /// <c>0</c> on failure; a <see cref="DataMissileTypeIGC.MaxLock"/> of <c>0</c>
-    /// ⇒ instant full lock <c>1f</c> (some missile types need no lock at all,
-    /// <c>magazineigc.cpp:145-146</c>); otherwise the real angle-off-bow
-    /// buildup/decay (see the derivation in <c>docs/MISSILE_LOCK_P181.md</c>),
-    /// clamped to <c>[0,1]</c>.</para>
-    /// <para><b>Explicit, verified omissions</b> (each confirmed to have no
-    /// equivalent in this port, per the P181 task brief): the <c>CanSee</c> gate
-    /// (no visibility/sensor model — every valid target is treated as visible),
-    /// the <c>AlliedSides</c> half of the hostility test (no alliance system —
-    /// hostile is a bare <c>SideId</c> inequality, the P159/P162 idiom), and the
-    /// warp-bomb targeting branch (no warp-bomb capability flag is decoded on
-    /// <see cref="DataMissileTypeIGC"/> — only the "damageable, non-warp" target
-    /// case applies; the port's separate <c>WarpBomb</c> feature is unrelated).
-    /// The ECM multiplier, by contrast, IS applied: the brief asserted "no ECM
-    /// field anywhere in this port", but <see cref="DataHullTypeIGC.Ecm"/> is in
-    /// fact decoded (Data/DataHullTypeIGC.cs:33,220), so native's
-    /// <c>lockTime·ECM</c> denominator for a ship target is ported faithfully
-    /// (see <c>docs/MISSILE_LOCK_P181.md</c>). A lock target must be a living
-    /// <see cref="Ship"/> with a <see cref="SideId"/> differing from this ship's
-    /// — the only <see cref="Model"/> kind with both a side and a sector
-    /// membership in this port, and the natural missile-lock target (native's
-    /// primary case, and the ECM-bearing <c>OT_ship</c> branch of the buildup
-    /// formula).</para>
-    /// </remarks>
+    /// <summary>Native magazineigc.cpp:104-178 lock acquisition: same-cluster,
+    /// hostile visible damageable targets, or warps for warp bombs. Non-ship
+    /// targets use LockTime without the ship-only hull ECM multiplier.</summary>
     public void UpdateMissileLock(DataMissileTypeIGC missileType, double dt)
     {
         // 1. Mid-ripcord ⇒ lock resets to zero (magazineigc.cpp:104-105).
         if (IsRipcordActive) { MissileLock = 0f; return; }
 
-        // 2. Resolve the target = the command target; no target ⇒ no lock
-        //    (magazineigc.cpp:108, gate failure ⇒ m_lock=0).
-        if (CommandTarget is not Ship target) { MissileLock = 0f; return; }
-
-        // 3. Validity gate (magazineigc.cpp:127-132): target in the same
-        //    sector/cluster (this ship's own sector's model-list membership —
-        //    the same primitive Stage 1's Missile.cs homing code uses via
-        //    `_sector.Models.Contains(t)`, Missile.cs:191), on a hostile side
-        //    (bare SideId inequality; no alliance system), and damageable (a
-        //    living ship — the combat-pass "can take damage" notion, which a
-        //    dead ship has left). CanSee and AlliedSides omitted (no port
-        //    equivalents, above).
-        if (Sector is not { } sector || !sector.Models.Contains(target)) { MissileLock = 0f; return; }
-        if (SideId is not { } sideId) { MissileLock = 0f; return; }
-        if (target.SideId is not { } otherSide || otherSide == sideId || target.Dead) { MissileLock = 0f; return; }
+        // magazineigc.cpp:127-132: hostile, visible, same cluster, damageable
+        // (warp bombs require a warp instead). Static objects use model views.
+        if (CommandTarget is not { } target || Sector is not { } sector
+            || !EquipmentTarget.IsPresent(target, sector)
+            || Mission?.AreSidesFriendly(SideId, EquipmentTarget.SideOf(target)) == true
+            || (missileType.HasWarpBombCapability ? target is not EquipmentTarget { ObjectType: IgcObjectType.Warp }
+                : !EquipmentTarget.IsDamageable(target)))
+        { MissileLock = 0f; return; }
+        if (SideId is { } sid && !EquipmentTarget.CanSee(target, sid, sector))
+        { MissileLock = 0f; return; }
 
         // 4. Range gate (magazineigc.cpp:134-143): 1.0 < |dP|² < maxRange² where
         //    maxRange = InitialSpeed·Lifespan + 0.5·Acceleration·Lifespan².
@@ -3830,15 +3820,9 @@ public sealed class Ship : Model, IShipIgc
         float lockAngle = missileType.LockAngle;
         float v = (lockAngle - angleOffBow) / lockAngle;
         if (v < 0.0f) v *= lockTime;
-        // Native scales the denominator by the TARGET SHIP's hull ECM
-        // (magazineigc.cpp:165-167, the OT_ship branch — the only target kind
-        // this port locks onto). DataHullTypeIGC.Ecm IS decoded in this port
-        // (Data/DataHullTypeIGC.cs:33,220) — contrary to the P181 brief's "no
-        // ECM field" claim — so the multiplier is applied faithfully. (This is
-        // the one verified divergence from the brief's omissions; see
-        // docs/MISSILE_LOCK_P181.md.) A non-positive ECM (degenerate data) is
-        // treated as 1 to avoid dividing by zero.
-        float ecm = target.HullType.Ecm > 0f ? target.HullType.Ecm : 1f;
+        // magazineigc.cpp:165-167: hull ECM applies only to a ship target.
+        // Degenerate non-positive ECM retains the port's defensive fallback.
+        float ecm = target is Ship ts && ts.HullType.Ecm > 0f ? ts.HullType.Ecm : 1f;
         MissileLock = Math.Clamp(MissileLock + v * (float)dt / (lockTime * ecm), 0f, 1f);
     }
 
@@ -3859,31 +3843,21 @@ public sealed class Ship : Model, IShipIgc
         if (Mission is not { } mission) return;
         var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
         if (launcher is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) return;
-        if (launcher.Amount <= 0) return;
+        if (launcher.Amount <= 0 || launcher.MountedFraction < 1f || launcher.TimeLoaded >= LastUpdate + dt)
+        { MissileLock = 0f; return; }
+        if ((StateM & ShipControlState.MissileFire) != 0) return; // native fires using the OLD lock
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return;
         UpdateMissileLock(missileType, dt);
     }
 
     /// <summary>
-    /// P226 — attempt to fire the mounted missile launcher (<c>ET_Magazine</c>@0).
-    /// Public so the server's inbound <c>FM_CS_FIRE_MISSILE(70)</c> handler can call
-    /// it directly (the same direct-callable precedent as <see cref="FireMissile"/> /
-    /// <see cref="UpdateMissileLock"/>). Shared by the two real launch triggers:
-    /// <see cref="OnUpdate"/>'s held-bit
-    /// leg (missileFireIGC, the magazineigc.cpp:111 NPC/local auto-fire) and the
-    /// server's inbound <c>FM_CS_FIRE_MISSILE(70)</c> handler
-    /// (FedSrv.CPP:5413-5507, the player path). Gates, in order: a mounted
-    /// <see cref="DataPartTypeIGC.MissileLauncher"/>, ammo remaining, and lock
-    /// sufficiency — a <c>MaxLock == 0</c> type needs none
-    /// (<see cref="UpdateMissileLock"/>'s own gate 5 already snaps it to
-    /// <c>1f</c>), otherwise the lock must have reached full (<c>&gt;= 1f</c>),
-    /// the same threshold that method enforces, not a new one. On a successful
-    /// launch the lock is consumed (reset to <c>0</c>, native's
-    /// <c>SetLock(0.0f)</c> after fire, FedSrv.CPP:5507) so it must rebuild
-    /// before the next shot — the natural fire-rate limiter — and the launcher's
-    /// <c>Amount</c> decrements. Returns whether a missile was actually created.
+    /// Fire the mounted magazine with any lock quality, including zero.
+    /// Native local/NPC fire is gated by mount/load readiness (magazineigc.cpp:85-120).
+    /// Player wire requests use the reported normalized lock and create a dud
+    /// when more than 0.5s early (FedSrv.CPP:5433-5434,5468); every shot consumes
+    /// ammunition, clears lock and starts LoadTime (FedSrv.CPP:5507-5510).
     /// </summary>
-    public bool TryFireMissile(double now)
+    public bool TryFireMissile(double now, bool clientRequest = false, float? requestedLock = null)
     {
         if (Mission is not { } mission) return false;
         var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
@@ -3891,12 +3865,21 @@ public sealed class Ship : Model, IShipIgc
         if (launcher.Amount <= 0) return false;
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return false;
 
-        bool lockReady = missileType.MaxLock == 0f || MissileLock >= 1f;
-        if (!lockReady) return false;
-
-        FireMissile(missileType, now, CommandTarget, MissileLock);
-        MissileLock = 0f;                                              // lock consumed (FedSrv.CPP:5507)
-        SetPartAmount(launcher, (short)(launcher.Amount - 1));         // ammo decrement (FedSrv.CPP:5744-5745)
+        // Native local/NPC update waits for strict load readiness; the server
+        // accepts an early player request as a disarmed dud with 0.5s tolerance
+        // (magazineigc.cpp:103,118; FedSrv.CPP:5433-5434,5468).
+        if (Sector is null || IsRipcordActive) return false;
+        if (!clientRequest && (launcher.MountedFraction < 1f || launcher.TimeLoaded >= now)) return false;
+        bool dud = clientRequest && now + 0.5 < launcher.TimeLoaded;
+        Model? target = CommandTarget;
+        if (target is not null && (!EquipmentTarget.IsPresent(target, Sector)
+            || SideId is { } sid && !EquipmentTarget.CanSee(target, sid, Sector))) target = null;
+        launcher.TimeLoaded = now + missileType.LoadTime;
+        float launchLock = (requestedLock is { } l && float.IsFinite(l)
+            ? Math.Clamp(l, 0f, 1f) : MissileLock) * missileType.MaxLock;
+        MissileLock = 0f; // magazineigc.cpp:115-118: reset before the fire callback
+        FireMissile(missileType, now, target, launchLock, dud);
+        SetPartAmount(launcher, (short)(launcher.Amount - 1));         // ammo decrement (FedSrv.CPP:5509-5510)
         return true;
     }
 
@@ -4521,7 +4504,7 @@ public sealed class Ship : Model, IShipIgc
     private DataPartTypeIGC.Shield? MountedShieldType()
     {
         var shieldPart = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield);
-        return shieldPart?.Type.Type as DataPartTypeIGC.Shield;
+        return shieldPart is { MountedFraction: >= 1f } ? shieldPart.Type.Type as DataPartTypeIGC.Shield : null;
     }
 
     /// <summary>P389 — the mounted shield's per-tick regeneration, the port of
@@ -4545,6 +4528,8 @@ public sealed class Ship : Model, IShipIgc
     /// port's regen precedent (<c>Station.Regenerate</c>) is silent.</summary>
     private void UpdateShield(float dt)
     {
+        if (_parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield && p.MountId == 0)
+            is { MountedFraction: < 1f }) { _shieldFraction = 0f; return; }
         if (MountedShieldType() is not { } st) return;
         // shieldIGC.cpp:88: m_fraction += GetRegeneration()*dt/GetMaxStrength();
         // clamped to [0,1] (SetFraction, shieldIGC.h:126-147); the defensive clamp
@@ -7237,12 +7222,10 @@ public sealed class Ship : Model, IShipIgc
 
         // bActive = the cloak-active control bit AND fit-to-cloak (native
         // cloakigc.cpp:80-81: (stateM & cloakActiveIGC) && mountedFraction >= 1).
-        // The mountedFraction>=1 term collapses to "the part is present" (the
-        // loadout buys parts mounted-ready; the native mounting ramp is a
-        // separate notification-only concern not ported here). The docked/parent/
+        // The docked/parent/
         // ripcord gates mirror SetStateM (shipIGC.cpp:1595-1601) refusing the bit
         // while docked/boarded/ripped.
-        bool bActive = (StateM & ShipControlState.CloakActive) != 0
+        bool bActive = cloak.MountedFraction >= 1f && (StateM & ShipControlState.CloakActive) != 0
                        && StationId is null
                        && ParentShip is null
                        && !IsRipcordActive;
@@ -7616,6 +7599,16 @@ public sealed class Ship : Model, IShipIgc
                 Energy = 0.0f;
         }
 
+        // weaponIGC.h:33-48; magazineigc.cpp:85-100; shieldIGC.cpp:65-85.
+        // Keep float progress, then notify the wire at the readiness edge.
+        foreach (var part in _parts.ToArray())
+        {
+            if (part.EquipmentType == EquipmentType.Afterburner || part.MountedFraction >= 1f) continue;
+            part.MountedFraction = Math.Min(1f, part.MountedFraction + (float)dt * MountRate());
+            if (part.MountedFraction >= 1f)
+                Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Mounted);
+        }
+
         // P269 — the per-tick cloak sim (CcloakIGC::Update, cloakigc.cpp:59),
         // run within the ship's Update exactly where native calls its mounted
         // parts' Update, after the movement step so the tick's controls are
@@ -7667,11 +7660,11 @@ public sealed class Ship : Model, IShipIgc
         // P226 — the per-tick missile armament leg (the lock half of native
         // CmagazineIGC::Update, magazineigc.cpp:104-176): for a mounted missile
         // launcher (ET_Magazine@0) with ammo, build/decay MissileLock toward
-        // CommandTarget every tick. Then honour the held missile-fire bit
-        // (missileFireIGC) by attempting a launch when lock+ammo allow — the
+        // CommandTarget while loaded. Honour the held missile-fire bit
+        // (missileFireIGC) using the previous lock when mount/load readiness allow — the
         // NPC/local auto-fire lever of magazineigc.cpp:111. Real PLAYER ships
         // instead trigger through the inbound FM_CS_FIRE_MISSILE(70) handler
-        // (Server.HandleFireMissile), which runs the same fire gate; the 16-bit
+        // (Server.HandleFireMissile), which marks early shots as duds; the 16-bit
         // wire stateM cannot carry this high-word bit (igc.h:829,2457-2465), so
         // it is never set on a player ship's wire-owned StateM here. This leg
         // runs for every ship that carries the bit in its local StateM (an NPC

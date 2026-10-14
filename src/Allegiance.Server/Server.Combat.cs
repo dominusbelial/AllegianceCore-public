@@ -355,14 +355,14 @@ public sealed partial class Server
 
         var msg = new FireMissile
         {
-            Lock = 0f,                               // no homing target this slice
+            Lock = m.LockFraction,
             TimeFired = timeFired,
             MissileTypeId = m.MissileType.ExpendableTypeId,
             LauncherId = shooter.Id,
             ClusterId = m.OwnerSector.Id,
-            TargetType = 0,                          // OT_* placeholder — no target this slice
-            TargetId = -1,                           // NA — no target
-            BDud = false,
+            TargetType = (int)EquipmentTarget.TypeOf(m.Target),
+            TargetId = m.Target?.Id ?? -1,
+            BDud = m.IsDud,
             // Exactly one missile per fire — this slice always sends a single
             // missile, never a salvo (see class doc).
             Entries =

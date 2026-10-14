@@ -261,12 +261,15 @@ public class CargoBayReloadTests
         PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null, 4000);
 
         short ammoBefore = ship.Ammo;
+        seat.ObserverBot.ResetLoadoutChanges();
+        bool ResetSeen() => seat.ObserverBot.LoadoutChanges.Any(l => l.SidShip == ship.Id
+            && l.Parts.Any(p => p.PartId == weapon.PartId && p.MountId == 1 && p.FractionMounted == 0));
         foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
         seat.SubjectBot.SendReload(new ReloadData(AmountTransfered: 6, Mount: -1));
 
         PumpUntil(seat.Server,
             () => ship.Ammo == (short)(ammoBefore + 6)
-               && ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted == 0
+               && ResetSeen()
                && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
             4000);
 
@@ -274,8 +277,8 @@ public class CargoBayReloadTests
         Assert.Equal((short)(ammoBefore + 6), ship.Ammo);
         // Cargo pack drained 10 -> 4.
         Assert.Equal(4, ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount);
-        // Ammo-weapon mounted-fraction reset to 0.
-        Assert.Equal(0, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted);
+        // The reset is an edge; the authoritative part keeps mounting while TCP delivers it.
+        Assert.True(ResetSeen());
         // Sector relay reached the same-sector observer with shipID filled in.
         var relay = seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id);
         Assert.Equal(new ReloadData(6, -1), relay.Entries.Single());
@@ -339,19 +342,22 @@ public class CargoBayReloadTests
         Assert.Equal(2, ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0).Amount);
         Assert.Equal(5, ship.CargoHold[Ship.CargoSlotForMount(-2)]!.Amount);
 
+        seat.ObserverBot.ResetLoadoutChanges();
+        bool ResetSeen() => seat.ObserverBot.LoadoutChanges.Any(l => l.SidShip == ship.Id
+            && l.Parts.Any(p => p.PartId == launcher.PartId && p.MountId == 0 && p.Amount == 5 && p.FractionMounted == 0));
         foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
         // Transfer 3 rounds from cargo to the equipped launcher.
         seat.SubjectBot.SendReload(new ReloadData(AmountTransfered: 3, Mount: -2));
 
         PumpUntil(seat.Server,
             () => ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0).Amount == 5
-               && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
+               && ResetSeen() && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
             4000);
 
         // Equipped launcher 2 -> 5 (added the transferred 3) and fraction reset.
         var equipped = ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0);
         Assert.Equal(5, equipped.Amount);
-        Assert.Equal(0, equipped.FractionMounted);
+        Assert.True(ResetSeen());
         // Cargo launcher drained 5 -> 2 (did not fully terminate).
         Assert.Equal(2, ship.CargoHold[Ship.CargoSlotForMount(-2)]!.Amount);
         Assert.Equal(new ReloadData(3, -2), seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id).Entries.Single());

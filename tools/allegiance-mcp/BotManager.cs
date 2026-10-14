@@ -3663,7 +3663,7 @@ bool isThreat =
         if (bot.LauncherPartId is null || bot.MissileReadyTime <= 0) return;
         if (now - bot.LastFireAt < bot.MissileReadyTime) return;
         bool full;
-        lock (cs.Gate) full = cs.World.MissileLock.IsFullLock;
+        lock (cs.Gate) full = cs.World.MissileLock.IsReady && cs.World.MissileLock.IsFullLock;
         if (!full) return;
 
         // P557 — native evasion gate (shipIGC.cpp:2585-2594): fire only when the

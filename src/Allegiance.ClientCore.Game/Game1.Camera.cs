@@ -90,7 +90,7 @@ public sealed partial class Game1
             // position, so the box stays glued to the smoothly-drawn hull instead
             // of jittering. Falls back to the wire position only when the target
             // ship was not rendered this frame.
-            if (ResolveShipAnchor(_poses, world.Ships, lockState.TargetId, out var lockSimPos))
+            if (lockState.TargetType == IgcObjectType.Ship && ResolveShipAnchor(_poses, world.Ships, lockState.TargetId, out var lockSimPos))
                 xnaTarget = PoseConverter.ToXna(lockSimPos);
             else
                 xnaTarget = PoseConverter.ToXna(lockState.TargetPosition);

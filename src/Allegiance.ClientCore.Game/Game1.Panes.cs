@@ -753,7 +753,8 @@ public sealed partial class Game1
             else continue;   // not a weapon system (shield/cloak/pack/afterburner)
 
             slots.Add(new Flight.WeaponSlotDescriptor(
-                p.MountId, Rendering.ShopLayout.AsciiSafe(part.Name), consumes, p.Amount));
+                p.MountId, Rendering.ShopLayout.AsciiSafe(part.Name), consumes, p.Amount,
+                p.FractionMounted == 255 && (part.Type is not DataPartTypeIGC.MissileLauncher || _session.World.MissileLock.IsReady)));
         }
         return _weaponReloadTracker.Update((float)_nowSeconds, ammoFrac, reloadArrived, slots);
     }

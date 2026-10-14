@@ -545,6 +545,7 @@ public sealed class ClientWorld
     // P230 — the local ship's missile-lock snapshot (from the owner-only
     // MISSILE_LOCK_UPDATE(204)) plus the previous-frame state used to edge-detect
     // the partial/full/lost console tips (native console.cpp:929-946).
+    private IgcObjectType _prevLockTargetType;
     private MissileLockState _missileLock = MissileLockState.None;
     private MissileLockFeedback.LockState _prevLockState = MissileLockFeedback.LockState.None;
     private short _prevLockTargetId = -1;
@@ -3938,13 +3939,14 @@ public sealed class ClientWorld
     private void Apply(MissileLockUpdate m)
     {
         _missileLock = new MissileLockState(
-            m.LockFraction, m.TargetShipId, m.TargetPosition, m.MissileTypeName);
+            m.LockFraction, m.TargetShipId, m.TargetPosition, m.MissileTypeName, m.TargetType, m.IsReady);
 
         var curr = MissileLockFeedback.Classify(m.LockFraction);
-        bool targetChanged = m.TargetShipId != _prevLockTargetId;
+        bool targetChanged = m.TargetShipId != _prevLockTargetId || m.TargetType != _prevLockTargetType;
         string? tip = MissileLockFeedback.TipFor(_prevLockState, curr, targetChanged, m.MissileTypeName);
         _prevLockState = curr;
         _prevLockTargetId = m.TargetShipId;
+        _prevLockTargetType = m.TargetType;
 
         if (tip is not null)
         {

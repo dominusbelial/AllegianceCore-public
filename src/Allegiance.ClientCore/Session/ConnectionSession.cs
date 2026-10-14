@@ -646,13 +646,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// (one launch-data entry, <c>TargetId = NA</c>) and lets the server resolve
     /// the mounted launcher + its lock against the ship's own CommandTarget. Held
     /// callers (the <c>Game1</c> Left-Control fire key) re-send while the button is
-    /// held; the server's lock-rebuild rate-limits actual launches.
+    /// held; the client waits for the server's load-readiness update.
     /// </summary>
     public void SendFireMissile()
     {
+        float lockFraction;
+        lock (_gate) lockFraction = _world.MissileLock.LockFraction;
         var msg = new FireMissile
         {
-            Lock = 0f,                               // server-computed lock governs
+            Lock = lockFraction,    // normalized lock; server applies the type MaxLock
             TimeFired = 0u,                          // server-authoritative time
             MissileTypeId = 0,                       // server overrides from mounted launcher
             LauncherId = 0,                          // server overrides

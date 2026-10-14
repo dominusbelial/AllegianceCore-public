@@ -56,6 +56,27 @@ lifepod hull-change. Fixed by gating the revive on a confirmed NON-lifepod hull;
 after the fix all three pass in isolation AND in the clean Run B.
 
 
+## P651 observation (2026-10-14)
+
+The required unfiltered sequential assembly passes on the P651 equipment tree
+reported Core **4189 pass / 1 fail**, ClientCore **873 pass / 2 fail**, and
+MonoGame **1974 pass / 0 fail / 3 optional Meshy-pack skips**. Each failure was
+rerun by exact method filter **3× alone**, after the assembly passes; all passed
+3/3, so they are load flakes under the task lane rule:
+
+| test | full-pass symptom | isolation |
+|---|---|---|
+| `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector` | bystander activation receipt collection empty | 3/3 pass |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | async logon drain order differs from connection order | 3/3 pass |
+| `ShipDeleteGoneLiveTests.DockOut_WatcherLatchesGone_UndockReturnsAndClears` | docker's own `StationId` receipt failed to latch | 3/3 pass |
+
+The last symptom occurs during the test's docking setup, before its watcher
+latch assertion; it is distinct from the historical P472/P482 product fix.
+P651's new equipment regressions and affected classes passed 3× focused runs.
+See [P651 report](reports/P651_EQUIPMENT_RULES.md) for native citations and the
+complete verification record. No new quarantine tags or timing-only product
+changes were introduced.
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition

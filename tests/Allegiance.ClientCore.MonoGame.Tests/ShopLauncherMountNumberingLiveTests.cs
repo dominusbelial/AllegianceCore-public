@@ -130,7 +130,7 @@ public sealed class ShopLauncherMountNumberingLiveTests
         {
             if (lo.Kind != LauncherKind.Missile) continue;
             if (lo.Part.Type is not DataPartTypeIGC.MissileLauncher ml) continue;
-            if (!core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt) || mt.MaxLock != 0f) continue;
+            if (!core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt) || mt.MaxLock != 0f || mt.HasWarpBombCapability) continue;
             foreach (var h in Catalog.Hulls)
                 if (h.CanMountPart(lo.Part))
                     return (lo, h);
@@ -163,6 +163,9 @@ public sealed class ShopLauncherMountNumberingLiveTests
         SetShipSpawner(server, (core, mission, shipId) =>
         {
             var (lo, hull) = MountableNoLockLauncher(core);
+            // Native magazine locking requires a visible, damageable target;
+            // warp bombs use warp targets and are excluded by the selector.
+            hull = hull with { ScannerRange = 10000, Signature = 1 };
             chosenLo = lo;
             chosenHull = hull;
 
