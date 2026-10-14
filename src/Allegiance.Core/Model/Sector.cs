@@ -78,6 +78,12 @@ public sealed class Sector : IClusterIgc
     /// </summary>
     internal IReadOnlyList<Side>? MissionSides { get; set; }
 
+    internal Mission? Mission { get; set; }
+    private Model? _updatingModel;
+    private double _modelStateTime;
+    private readonly Queue<Explosion> _pendingExplosions = new();
+    private bool _resolvingExplosions;
+
     /// <summary>The time of the most recent <see cref="Update"/>, or 0 before the first.</summary>
     public double LastUpdate { get; private set; }
 
@@ -662,7 +668,13 @@ public sealed class Sector : IClusterIgc
         // during its own Update (C++ capture-next, clusterIGC.cpp:243-250).
         var snapshot = _models.ToArray();
         foreach (var model in snapshot)
-            model.Update(timeUpdate);            // l->data()->Update(now) (clusterIGC.cpp:251)
+        {
+            if (!_models.Contains(model)) continue; // a previous model's blast may destroy it
+            _updatingModel = model;
+            _modelStateTime = timeUpdate;
+            try { model.Update(timeUpdate); }
+            finally { _updatingModel = null; }
+        }
 
         // The C++ collision block sits AFTER the models loop, still inside the
         // same cluster Update, gated on activeF && bStarted (clusterIGC.cpp:255).
@@ -1454,26 +1466,15 @@ public sealed class Sector : IClusterIgc
     /// re-entry still surfaces as a non-zero block counter.</summary>
     public static bool WarpReEntryGuardEnabled { get; set; } = false;
 
-    /// <summary>
-    /// The <b>warp-bomb delay</b>, in seconds — the time between a warp being
-    /// hit by a warp-bomb missile and the real explosion detonating at the
-    /// aleph. This is the mission float constant <c>c_fcidWarpBombDelay</c>
-    /// (<c>igc.h:98: <c>const FloatConstantID c_fcidWarpBombDelay = 32;</c></c>),
-    /// which native sets at mission init to <c>c_fWarpBombDelay = 15.0f</c>
-    /// (<c>missionigc.cpp:2726</c> and the assignment at
-    /// <c>missionigc.cpp:2777</c>: <c>floatConstants[32] = c_fWarpBombDelay</c>).
-    /// <see cref="FedSrvSiteBase.WarpBombEvent"/> reads it via
-    /// <c>GetFloatConstant(c_fcidWarpBombDelay)</c> (<c>FedSrv.CPP:12551</c>)
-    /// for <c>timeExplosion = pwarp->GetLastUpdate() + &lt;delay&gt;</c> — the
-    /// same slot <see cref="ServerHost.ExitWarpSpeedBonus"/> and
-    /// <c>Ship.DamageConstant</c> index into. Like <see cref="Mission.IncomePerPayday"/>,
-    /// the mission overwrites whatever the core's <c>FloatConstants[32]</c> holds,
-    /// so we use the fixed value <c>15.0f</c> and say so (index and value both
-    /// verified directly against the reference source — this session located the
-    /// index, which the task's framing left open). Used by both the trigger pass
-    /// (schedule) and the server's broadcast (wire timeExplosion tick).
-    /// </summary>
+    /// <summary>Native default (missionigc.cpp:2777), retained for existing
+    /// host callers. Simulation reads the loaded slot through EffectiveWarpBombDelay.</summary>
     public const double WarpBombDelaySeconds = 15.0;
+
+    /// <summary>Loaded c_fcidWarpBombDelay, slot 32 (igc.h:98;
+    /// FedSrv.CPP:12551). Standalone sectors use the native default.</summary>
+    public double EffectiveWarpBombDelay => Mission?.Core.Constants.FloatConstants is { Length: > 32 } fc
+        ? fc[32] : WarpBombDelaySeconds;
+
 
     /// <summary>
     /// The single source of truth for how much larger the <b>rendered</b>
@@ -3192,110 +3193,112 @@ public sealed class Sector : IClusterIgc
     }
 
 
-    /// <summary>
-    /// The <b>explosion / blast-radius resolution</b> pass — the port of the
-    /// native <c>CclusterIGC::Update</c> explosion block
-    /// (<c>clusterIGC.cpp:362-467</c>), resolved <b>immediately and
-    /// synchronously</b> against each target's current position. Given a
-    /// <see cref="Explosion"/>, every live <see cref="Ship"/> within
-    /// <see cref="Explosion.Radius"/> of <see cref="Explosion.Position"/> takes
-    /// the squared-distance-falloff damage <c>amount = e.Amount·f²</c> where
-    /// <c>f = 1 − d/radius</c> and <c>d</c> is the distance from the blast
-    /// centre to the ship's <em>surface</em> (centre-minus-the-ship's-own
-    /// radius, <c>clusterIGC.cpp:420,424-429</c>); every live <see cref="Mine"/>
-    /// within <see cref="Explosion.Radius"/> instead gets
-    /// <see cref="Mine.ReduceStrength(amount)"/> with the identical falloff
-    /// (<c>clusterIGC.cpp:448-458</c>). Targets only <see cref="Ship"/> and
-    /// <see cref="Mine"/> (asteroids/stations/probes have no damage/destruction
-    /// model in this port yet — the native's list includes them,
-    /// <c>clusterIGC.cpp:378-379</c>, but this codebase can't act on that
-    /// fidelity without building those models first).
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Immediate-resolution simplification (stated plainly).</b> The
-    /// native queues an <c>ExplosionData</c> in <c>m_explosions</c> and resolves
-    /// it on a <em>later</em> tick, projecting each target's position by
-    /// <c>dt = (e.time − m_lastUpdate) − m_tOffset</c>
-    /// (<c>clusterIGC.cpp:409,419</c>). This port resolves the blast the moment
-    /// it is created, using each target's <em>current</em> position — the same
-    /// honest simplification category as P95's "no swept dwell-time math." With
-    /// ships and static mines (both of which stand effectively still on the
-    /// tick where the blast resolves, since <see cref="ResolveMineDetonations"/>
-    /// fires immediately), the projection would add nothing but a fraction of a
-    /// second of displacement.</para>
-    /// <para><b>Shared damage path.</b> Ships use the reused
-    /// <see cref="Ship.ReceiveDamage"/> — shields, armor matrix and the
-    /// friendly-fire contract all flow through the one real path, not a
-    /// reimplementation. The friendly gate is the existing one: a ship whose
-    /// <see cref="Ship.SideId"/> equals the launcher's (<c>Ship</c> launcher only)
-    /// or that <em>is</em> the launcher is skipped, exactly the gate
-    /// <see cref="ResolveMineDetonations"/>/<see cref="ResolveCombatCollisions"/>
-    /// enforce (no new gate invented). Mines are <em>not</em> side-gated — the
-    /// native calls <c>ReduceStrength</c> on every mine in radius regardless of
-    /// side (<c>clusterIGC.cpp:441-458</c>), so neither is this pass.</para>
-    /// <para><b>Mutation safety.</b> Iterates a snapshot, so a target that
-    /// removes itself mid-pass (a <see cref="Ship"/> killed by the blast, a
-    /// <see cref="Mine"/> whose <see cref="Mine.ReduceStrength"/> crosses the
-    /// <c>0.25f</c> threshold) cannot invalidate the walk. Each target is
-    /// processed at most once per blast.</para>
-    /// </remarks>
+    /// <summary>Native clusterIGC.cpp:378-435: damage ships, asteroids, stations,
+    /// missiles and probes at the explosion timestamp, with surface-distance
+    /// squared falloff and NoWarn/NoDebris flags. Mines use ReduceStrength
+    /// (clusterIGC.cpp:441-458). Each recipient owns its friendly/repair rules.</summary>
     public void ResolveExplosion(Explosion e, double now)
     {
-        var snapshot = _models.ToArray();
-
-        // Ships: falloff ReceiveDamage via the one real damage path, gated by
-        // launcher side (self + friendly).
-        foreach (var model in snapshot)
+        // A missile killed by splash can create another blast (FedSrv.CPP:12524-12529).
+        // Drain those after the current blast, like native's explosion list, to
+        // avoid recursive damage walks and process each death exactly once.
+        _pendingExplosions.Enqueue(e);
+        if (_resolvingExplosions) return;
+        _resolvingExplosions = true;
+        try
         {
-            if (model is not Ship ship) continue;
-            if (ship.Dead) continue;
-            if (e.Launcher is Ship launcherShip)
-            {
-                if (ReferenceEquals(launcherShip, ship)) continue;      // never hit your own launcher
-                if (launcherShip.SideId is { } launcherSide && ship.SideId == launcherSide)
-                    continue;                                          // friendly-fire gate
-            }
-
-            float shipRadius = 0.5f * ship.HullType.Length;            // shipIGC.cpp:1419
-            float d = (e.Position - ship.Position).Length() - shipRadius;
-            if (d >= e.Radius) continue;                                // outside blast (clusterIGC.cpp:422)
-
-            float amount = e.Amount;
-            if (d > 0f)                                                 // (clusterIGC.cpp:425-429)
-            {
-                float f = 1f - (d / e.Radius);
-                amount *= f * f;
-            }
-
-            ship.ReceiveDamage(e.DamageType, amount, e.Time, e.Position, ship.Position, e.Launcher);
-            if (ship.Dead) _models.Remove(ship);                        // killed: leaves the sector (death contract)
+            while (_pendingExplosions.TryDequeue(out var blast)) ApplyExplosion(blast);
         }
+        finally { _resolvingExplosions = false; }
+    }
 
-        // Mines: ReduceStrength with the identical falloff, no side gate.
-        foreach (var model in snapshot)
+    private void ApplyExplosion(Explosion e)
+    {
+        byte type = (byte)(e.DamageType | BlastDamage.NoWarn | BlastDamage.NoDebris); // clusterIGC.cpp:431
+        var models = _models.ToArray();
+        var stations = _stationRuntimes.ToArray();
+        var asteroids = _mineable.ToArray();
+        foreach (var target in models)
         {
-            if (model is not Mine mine) continue;
-
-            // Surface-distance falloff for a mine treats it as point-like
-            // (radius 0): the port's decoded base `Radius` for OT_mineType is a
-            // constant junk sentinel (−1.07e8 on every PCore001 mine; see
-            // ReduceStrength remarks / EXPLOSION_PROPAGATION_P96.md), so it is
-            // deliberately NOT fed into the falloff. A mine sits inside the
-            // blast if its position is within e.Radius — the native's intent,
-            // minus a few units of negligible surface radius vs. blast radii of
-            // ~100 (clusterIGC.cpp:448: d = |e.pos − p| − pTarget->GetRadius()).
-            float d = (e.Position - mine.Position).Length();
-            if (d >= e.Radius) continue;                                // outside blast
-
-            float amount = e.Amount;
-            if (d > 0f)
+            if (!_models.Contains(target)) continue; // native GetCluster()==this (clusterIGC.cpp:416)
+            float radius = target switch
             {
-                float f = 1f - (d / e.Radius);
-                amount *= f * f;
+                Ship ship when !ship.Dead => .5f * ship.HullType.Length,
+                Missile missile when !missile.Dead => missile.MissileType.Radius,
+                Probe probe when !probe.Dead => probe.ProbeType.Radius,
+                _ => -1
+            };
+            if (radius < 0) continue;
+            // Native dt=(e.time-m_lastUpdate)-m_tOffset (clusterIGC.cpp:409,419).
+            // The port integrates models separately; each clock identifies the
+            // timestamp of its stored position, including a model mid-OnUpdate.
+            double stateTime = ReferenceEquals(target, _updatingModel) ? _modelStateTime : target.LastUpdate;
+            Vector3 p = target.Position + target.CollisionVelocity * (float)(e.Time - stateTime);
+            if (!ExplosionAmount(e, p, radius, out float amount)) continue;
+            switch (target)
+            {
+                case Ship ship:
+                    ship.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher);
+                    if (ship.Dead) Remove(ship);
+                    break;
+                case Missile missile:
+                    missile.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher);
+                    break;
+                case Probe probe:
+                    probe.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher);
+                    break;
             }
-
-            mine.ReduceStrength(amount);    // removes + raises MineDestroyedEvent when it crosses 0.25f
         }
+        // Static runtime stations/asteroids live outside Models in this port.
+        foreach (var station in stations)
+        {
+            if (station.Dead || !_stationRuntimes.Contains(station)
+                || !ExplosionAmount(e, station.Center, station.Radius, out float amount)) continue;
+            if (station.ReceiveDamage(type, amount, e.Time, station.Center, e.Position, e.Launcher) == DamageResult.Killed)
+            {
+                RemoveStation(station);
+                var mission = Mission ?? station.Mission ?? (e.Launcher as Ship)?.Mission;
+                // The native launcher can be NULL (warpIGC.h:77,87).
+                mission?.Site.KillStationEvent(station, e.Launcher!, amount);
+                if (mission is not null)
+                {
+                    var (winner, changed) = mission.RecomputeConquestAndTerritory(null);
+                    if (changed || winner is not null) mission.Site.VictoryByStationsComputed(mission, changed, winner);
+                    mission.Site.SideLostRestartStation(mission, station.SideId);
+                }
+            }
+        }
+        foreach (var asteroid in asteroids)
+        {
+            var p = new Vector3(asteroid.Data.Position[0], asteroid.Data.Position[1], asteroid.Data.Position[2]);
+            if (asteroid.Dead || !_mineable.Contains(asteroid)
+                || !ExplosionAmount(e, p, asteroid.Radius, out float amount)) continue;
+            if (asteroid.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher) == DamageResult.Killed)
+            {
+                RemoveAsteroid(asteroid);
+                (Mission ?? (e.Launcher as Ship)?.Mission)?.Site.KillAsteroidEvent(asteroid, true);
+            }
+        }
+        foreach (var mine in models.OfType<Mine>())
+        {
+            if (!_models.Contains(mine)) continue;
+            // Retain the existing point-like mine convention: decoded type
+            // Radius is a junk sentinel in the stock corpus (SIM-0067).
+            if (ExplosionAmount(e, mine.Position, 0, out float amount)) mine.ReduceStrength(amount);
+        }
+    }
+
+    private static bool ExplosionAmount(Explosion e, Vector3 p, float radius, out float amount)
+    {
+        float d = (e.Position - p).Length() - radius; // clusterIGC.cpp:420
+        amount = e.Amount;
+        if (!(d < e.Radius)) return false;          // strict boundary (clusterIGC.cpp:422)
+        if (d > 0)
+        {
+            float f = 1 - d / e.Radius;
+            amount *= f * f;                        // clusterIGC.cpp:424-429
+        }
+        return true;
     }
 
     /// <summary>
@@ -3469,8 +3472,8 @@ public sealed class Sector : IClusterIgc
     /// <remarks>
     /// <para><b>Trigger behaviour (scope P101).</b> On a live
     /// <see cref="Missile"/> within a warp's collision volume: (1) compute
-    /// <c>timeExplosion = now + <see cref="WarpBombDelaySeconds"/></c> and
-    /// schedule the real delayed detonation at the warp's position;
+    /// <c>timeExplosion = now + <see cref="EffectiveWarpBombDelay"/></c> and
+    /// schedule the real delayed detonation for the warp pair;
     /// (2) <b>consume the missile</b> — remove it from the sector at trigger
     /// time, not at <c>timeExplosion</c>, honoring the same terminate-on-hit
     /// contract every other missile-impact path honors; (3) raise
@@ -3490,12 +3493,8 @@ public sealed class Sector : IClusterIgc
     /// (<c>ServerHost.WarpBombEvent</c>) implements that; the pass only raises the
     /// event. The event route is the missile's launcher site, exactly like the
     /// destroy event — a launcher-less missile raises nothing.</para>
-    /// <para><b>No destination gate.</b> Unlike the ship-transit pass
-    /// (<see cref="ResolveWarpCollisions"/> skips a dangling warp), the bomb
-    /// trigger does <b>not</b> require <see cref="ResolvedWarp.Destination"/>:
-    /// native bombards whatever warp it hits — the destination is only consulted
-    /// for the (unported) dual-end explosion and the late-joiner re-export, both
-    /// out of scope. A warp with no destination still detonates here.</para>
+    /// <para>A dangling warp can consume a bomb, but supplies no fabricated
+    /// destination. Only a dual bomb can then explode at its source.</para>
     /// </remarks>
     private void ResolveWarpBombTriggers(double now)
     {
@@ -3519,9 +3518,9 @@ public sealed class Sector : IClusterIgc
                 float dz = missile.Position.Z - wpos.Z;
                 if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
 
-                // (1) schedule the delayed detonation at the warp's position.
-                double timeExplosion = now + WarpBombDelaySeconds;
-                ScheduleWarpBomb(timeExplosion, wpos, missile.MissileType);
+                // (1) schedule the pair's detonation using the loaded core delay.
+                double timeExplosion = now + EffectiveWarpBombDelay;
+                ScheduleWarpBomb(timeExplosion, warp, missile.MissileType);
 
                 // (2) consume the missile NOW (at trigger, not at timeExplosion) —
                 // the same terminate-on-impact contract every other missile path
@@ -3545,72 +3544,39 @@ public sealed class Sector : IClusterIgc
         }
     }
 
-    /// <summary>
-    /// The <b>warp-bomb detonation</b> pass — the timed half of the pair. Once
-    /// per sector tick it scans the sector's <b>scheduled</b> warp bombs (a
-    /// <see cref="ScheduleWarpBomb"/> record created by
-    /// <see cref="ResolveWarpBombTriggers"/> when a missile hit the warp) and,
-    /// for each whose <see cref=\"ScheduledWarpBomb.TimeExplosion\"/> has
-    /// arrived, resolves a <b>real</b> <see cref=\"Explosion\"/> at the warp's
-    /// position via the reused <see cref=\"ResolveExplosion\"/> engine — nothing
-    /// detonates before its scheduled instant. This mirrors how the native warp
-    /// polls its <c>m_bombs</c> list each <c>Update</c>
-    /// (<c>warpIGC.h:54-90</c>) and pops bombs whose <c>timeExplosion &lt;= now</c>,
-    /// creating an explosion at the warp position with the missile type's
-    /// <c>DamageType</c>, <c>Power</c> and <c>BlastRadius</c>
-    /// (<c>warpIGC.h:65-67,71-77</c>). <b>The amount is the missile's
-    /// <c>Power</c>, not <c>BlastPower</c></b> — the task's framing guessed
-    /// <c>BlastPower</c> (the normal missile blast, P97), but the native warp-bomb
-    /// detonation uses <c>GetPower()</c> (<c>warpIGC.h:66</c>), so this follows
-    /// the reference; it is documented in the report. <c>Launcher = null</c>, so
-    /// <see cref=\"ResolveExplosion\"/>'s friendly-fire gate is inert — every
-    /// ship in the blast takes falloff damage, exactly the native
-    /// <c>CreateExplosion(..., NULL)</c> (<c>warpIGC.h:77</c>). The dual-capability
-    /// destination-end explosion (<c>warpIGC.h:79-87</c>) and the
-    /// <c>WarpBombLink</c>/<c>GetBombs()</c> late-joiner re-export are both out
-    /// of scope (see the task report).</summary>
-    /// <remarks>Timer shape: a stored absolute sim-time (<c>TimeExplosion</c>)
-    /// checked each tick — the same "store a deadline, poll for it" shape the
-    /// <see cref=\"Probe\"/>/<see cref=\"Mine\"/>/<see cref=\"Missile\"/> expiry
-    /// (<c>now &gt;= stored deadline</c>) uses, and the same shape the native
-    /// warp uses for its own bomb list. Iterated backward so a detonated entry
-    /// can be removed mid-walk without disturbing pending ones.</remarks>
+    /// <summary>Native warpIGC.h:58-89: pop due bombs in time order. Power
+    /// and BlastRadius come from the missile type, launcher is NULL, destination
+    /// always explodes and source explodes only for WarpBombDual (0x02).</summary>
     private void ResolveWarpBombDetonations(double now)
     {
-        for (int i = _warpBombs.Count - 1; i >= 0; i--)
+        while (_warpBombs.Count > 0 && _warpBombs[0].TimeExplosion <= now)
         {
-            var b = _warpBombs[i];
-            if (now < b.TimeExplosion) continue;      // nothing detonates early
-            var blast = new Explosion(
-                b.MissileType.DamageType,
-                b.MissileType.Power,                  // warpIGC.h:66 — GetPower(), not BlastPower
-                b.MissileType.BlastRadius,            // warpIGC.h:67
-                b.TimeExplosion,
-                b.Position,
-                null);                                // warpIGC.h:77 — NULL launcher, no friendly gate
-            ResolveExplosion(blast, now);
-            _warpBombs.RemoveAt(i);
+            var bomb = _warpBombs[0];
+            _warpBombs.RemoveAt(0); // remove before damage callbacks can add bombs
+            if ((bomb.MissileType.EabmCapabilities & 0x02) != 0) // warpIGC.h:70
+                DetonateWarpBomb(this, bomb.Warp, bomb, now);
+            if (bomb.Warp.Partner() is { } partner && bomb.Warp.Destination is { } destination)
+                DetonateWarpBomb(destination, partner, bomb, now); // warpIGC.h:79-87
         }
     }
 
-    /// <summary>
-    /// A single pending warp-bomb detonation scheduled at
-    /// <see cref="ResolveWarpBombTriggers"/> time and resolved by
-    /// <see cref="ResolveWarpBombDetonations"/> when the sim clock reaches
-    /// <see cref="TimeExplosion"/>. Carries the missile type's decoded
-    /// <c>DamageType</c>/<c>Power</c>/<c>BlastRadius</c> implicitly (via
-    /// <see cref="MissileType"/>) so the detonation reuses the <em>same</em>
-    /// fields a normal missile blast uses, and the bombed warp's position so
-    /// the explosion resolves at the aleph.
-    /// </summary>
-    private sealed record ScheduledWarpBomb(double TimeExplosion, Vector3 Position, DataMissileTypeIGC MissileType);
+    private static void DetonateWarpBomb(Sector sector, ResolvedWarp warp, ScheduledWarpBomb bomb, double now)
+    {
+        if (warp.Warp.Position is not { Length: 3 } p) return;
+        sector.ResolveExplosion(new Explosion(bomb.MissileType.DamageType,
+            bomb.MissileType.Power, bomb.MissileType.BlastRadius, bomb.TimeExplosion,
+            new Vector3(p[0], p[1], p[2]), null), now); // warpIGC.h:65-87
+    }
 
-    /// <summary>Schedule a warp-bomb detonation at <paramref name="position"/>
-    /// for <paramref name="timeExplosion"/>, using the missile type's decoded
-    /// blast fields. Called by <see cref="ResolveWarpBombTriggers"/>; later
-    /// ticks resolve it via <see cref="ResolveWarpBombDetonations"/>.</summary>
-    private void ScheduleWarpBomb(double timeExplosion, Vector3 position, DataMissileTypeIGC missileType)
-        => _warpBombs.Add(new ScheduledWarpBomb(timeExplosion, position, missileType));
+    private sealed record ScheduledWarpBomb(double TimeExplosion, ResolvedWarp Warp, DataMissileTypeIGC MissileType);
+
+    private void ScheduleWarpBomb(double timeExplosion, ResolvedWarp warp, DataMissileTypeIGC missileType)
+    {
+        var bomb = new ScheduledWarpBomb(timeExplosion, warp, missileType);
+        int index = _warpBombs.FindIndex(b => b.TimeExplosion > timeExplosion);
+        if (index < 0) _warpBombs.Add(bomb);
+        else _warpBombs.Insert(index, bomb);
+    }
 
     /// <summary>
     /// The <b>dock trigger</b> pass, run once per sector tick after the warp

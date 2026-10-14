@@ -4133,18 +4133,10 @@ public sealed class Ship : Model, IShipIgc
     /// Faithful to the C++ within this slice's stated scope, with every
     /// deviation explicit:
     /// <list type="bullet">
-    /// <item><b>Friendly-fire gate implemented.</b> The reference returns
-    /// <c>c_drNoDamage</c> when the launcher is friendly and friendly-fire is
-    /// off (<c>shipIGC.cpp:1222-1228</c>). Our ships now carry an optional
-    /// <see cref="SideId"/>, and the sector collision pass enforces the gate:
-    /// a projectile never damages another ship whose <see cref="SideId"/>
-    /// equals the launcher's (<c>Sector.ResolveCombatCollisions</c>,
-    /// <c>src/Allegiance.Core/Model/Sector.cs:190-195</c>). Friendly fire is
-    /// always off — there is no toggle in this codebase to turn it on. The
-    /// self-launcher exclusion (a ship cannot damage itself) remains, handled
-    /// separately just above (<c>Sector.cs:189</c>); both sit at the same
-    /// pass, and this method itself is unchanged — a same-side hit simply
-    /// never reaches it.</item>
+    /// <item><b>Friendly-fire gate.</b> Native shipIGC.cpp:1222-1228: friendly
+    /// and allied damage is suppressed when Mission.AllowFriendlyFire is off
+    /// and amount is nonnegative. Repairs bypass immunity; self splash can
+    /// damage the launcher when friendly fire is on.</item>
     /// <item><b>Shields ported (P87).</b> A mounted <c>Shield</c> part
     /// (<c>EquipmentType.Shield</c>) now participates in damage absorption:
     /// <c>leakage = ApplyShieldDamage(...)</c> (ported <c>CshieldIGC::ApplyDamage</c>,
@@ -4181,23 +4173,10 @@ public sealed class Ship : Model, IShipIgc
         Vector3 position2,
         Model? launcher)
     {
-        // P549 — native shipIGC.cpp:1222-1228: if the launcher exists and is
-        // FRIENDLY (same side; this port has no alliance/AlliedSides concept, so
-        // the `pside == launcher->GetSide() || AlliedSides(...)` predicate
-        // collapses to same-side, the established P190/P203 precedent), friendly
-        // fire is OFF (it always is here — there is no toggle), and the damage is
-        // positive (`amount >= 0.0f`, i.e. not a repair), the damage is dropped
-        // entirely (c_drNoDamage). This is the authoritative suppression that
-        // also makes friendly RAMMING harmless: the ship-ship collision pass
-        // hands the same-side launcher to ReceiveDamage, and this gate returns
-        // NoDamage before any hull is harmed — the physical bounce still happens.
-        if (launcher is Ship friendlyShooter
-            && SideId is { } friendlySide
-            && friendlySide == friendlyShooter.SideId
-            && amount >= 0.0f)
-        {
+        // Native shipIGC.cpp:1222-1228: friendly immunity only with FF off
+        // and amount >= 0; self damage with FF on and repair both reach this path.
+        if (BlastDamage.Suppressed(Mission, SideId, launcher, amount))
             return DamageResult.NoDamage;
-        }
 
         float maxHP = EffectiveMaxHitPoints();   // GetHitPoints() (shipIGC.cpp:1232) — GA-scaled max armor
         float dtmArmor = DamageConstant(type);
@@ -4421,7 +4400,7 @@ public sealed class Ship : Model, IShipIgc
         var core = Mission?.Core;
         if (core is null) return 1.0f;
         var dm = core.Constants.DamageConstants;
-        int dmg = type, def = defenseType;
+        int dmg = type & BlastDamage.Mask, def = defenseType; // missionigc.h:155
         if (dmg < 0 || dmg >= DataConstantsIGC.DmgidMax || def < 0 || def >= DataConstantsIGC.DefidMax)
             return 1.0f;
         return MathF.Max(dm[dmg][def], 0.0f);

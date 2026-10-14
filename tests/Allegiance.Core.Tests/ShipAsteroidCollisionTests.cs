@@ -259,7 +259,10 @@ public sealed class ShipAsteroidCollisionTests
 
         // The rock's native share: hp1·damage2/(hp1+damage2), over the rock's HP.
         float rockAmount = hp1 * damage2 / (hp1 + damage2);
-        float expectedRockFrac = MathF.Max(0f, 1f - rockAmount / rock.Data.HitPoints);
+        // P649: NULL-launcher damage uses the rock's owning core too
+        // (asteroidigc.h:135), including a zero collision-to-asteroid cell.
+        float rockDtm = mission.Core.Constants.DamageConstants[0][Asteroid.DefenseType];
+        float expectedRockFrac = MathF.Max(0f, 1f - rockAmount * rockDtm / rock.Data.HitPoints);
 
         Assert.True(dtm > 0f, $"representative core must apply non-zero collision damage (row 0) to hull def {hull.DefenseType}");
         Assert.True(actualDrop > 0.025f, $"real damage must land (fraction {preFrac:0.####} → {postFrac:0.####}, drop {actualDrop:0.####})");
@@ -353,7 +356,7 @@ public sealed class ShipAsteroidCollisionTests
     public void Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram()
     {
         Require.Artwork();
-        (float ShipDrop, float RockFraction) Run(bool shielded)
+        (float ShipDrop, float RockFraction, float RockDtm) Run(bool shielded)
         {
             var recording = new RecordingIgcSite();
             var mission = NewStartedMission(recording);
@@ -374,11 +377,11 @@ public sealed class ShipAsteroidCollisionTests
             Pump(mission, 1);
             float drop = pre - ship.Fraction;
             Assert.True(!ship.Dead, "ship must survive the single ram to observe hull loss");
-            return (drop, rock.Fraction);
+            return (drop, rock.Fraction, mission.Core.Constants.DamageConstants[0][Asteroid.DefenseType]);
         }
 
-        var (unshielded, rockAfterUnshielded) = Run(false);
-        var (shielded, rockAfterShielded) = Run(true);
+        var (unshielded, rockAfterUnshielded, rockDtm) = Run(false);
+        var (shielded, rockAfterShielded, _) = Run(true);
 
         // The unshielded ship takes real collision damage to its hull.
         Assert.True(unshielded > 0.012f,
@@ -397,8 +400,15 @@ public sealed class ShipAsteroidCollisionTests
         // the identical unshielded ram. The runs are deterministic and differ
         // ONLY in the shield mount, so any rock-fraction gap is caused by the
         // fix (pre-P392 hp1 was hull-only for both, giving equal rock damage).
-        Assert.True(rockAfterShielded < rockAfterUnshielded,
-            $"shielded ram must damage the rock more (frac {rockAfterShielded:0.####} vs {rockAfterUnshielded:0.####})");
+        if (rockDtm > 0)
+            Assert.True(rockAfterShielded < rockAfterUnshielded,
+                $"shielded ram must damage the rock more (frac {rockAfterShielded:0.####} vs {rockAfterUnshielded:0.####})");
+        else
+        {
+            // Native asteroidigc.h:135: a zero matrix cell nullifies both hits.
+            Assert.Equal(1f, rockAfterUnshielded);
+            Assert.Equal(1f, rockAfterShielded);
+        }
 
         Console.WriteLine($"P392-SHIELD: identical asteroid ram — unshielded hull drop {unshielded:0.####}, "
                           + $"shielded drop {shielded:0.####} (shield absorbs real asteroid-collision damage); "

@@ -54,10 +54,10 @@ namespace Allegiance.Core.Sim;
 /// (a probe is hit through the same generic collision dispatch a ship is — the
 /// native excludes only <c>OT_mine</c>, <c>projectileIGC.cpp:166-169</c>;
 /// nothing special-cases <c>OT_probe</c>), handled by <see cref=\"ReceiveDamage\"/>.
-/// Unlike a ship, <b>a probe has no friendly-fire gate</b> (native
-/// <c>probeigc.h:74-89</c> blocks damage only for an <em>armed</em> probe, which
-/// this port cannot yet produce) — see <see cref=\"ReceiveDamage\"/> for the
-/// full citation. One further native attribute of a real probe is likewise
+/// The P100/P491 combat contract allows friendly damage to every probe.
+/// Native sensor and RescueAny probes behave this way; the armed-probe
+/// exception in probeigc.h:74-89 remains deliberately omitted (see ReceiveDamage).
+/// One further native attribute of a real probe is likewise
 /// <em>not</em> modelled here: <b>scanning/detection</b>
 /// (<c>c_mtScanner</c>, <c>c_mtSeenBySide</c>, <c>c_mtPredictable</c> —
 /// <c>probeigc.cpp:115</c> — the actual point of a reconnaissance probe, plus
@@ -263,79 +263,13 @@ public sealed class Probe : Model
     public Model? Target { get => _target; set => _target = value; }
 
     /// <summary>
-    /// Port of <c>CprobeIGC::ReceiveDamage</c>
-    /// (<c>src/Igc/probeigc.h:65-146</c>) — a probe's <em>only</em> damage entry
-    /// point, called the identical way a ship's is. Any ordnance's generic
-    /// collision dispatch treats a probe exactly like a ship once it clears the
-    /// single <c>OT_mine</c> special-case (<c>src/Igc/projectileIGC.cpp:166-169</c>
-    /// ignores only <c>OT_mine</c>; nothing excludes <c>OT_probe</c>, and the
-    /// generic <c>if (pModel-&gt;GetAttributes() &amp; c_mtDamagable)</c> branch at
-    /// <c>projectileIGC.cpp:177-190</c> calls <c>IdamageIGC::ReceiveDamage</c>
-    /// through the same interface a ship implements;<c>missileigc.cpp:446-447</c>
-    /// is the identical shape for missiles). So the port of the collision /
-    /// impact mechanics themselves needed <b>no new code</b> — a probe just became
-    /// a second valid target type in <c>Sector.ResolveCombatCollisions</c>,
-    /// which dispatches here. Two real simplifications fall out of the native
-    /// formula, both cited precisely in the P100 report:
-    /// <list type="bullet">
-    /// <item><b>No friendly-fire gate (P491 keeps the P100 no-gate).</b> The
-    /// native gate (<c>probeigc.h:74-89</c>) only <em>blocks</em> damage inside
-    /// a nested condition whose inner return requires an <b>armed</b> probe —
-    /// <c>if (m_probeType-&gt;GetProjectileType() != NULL) return c_drNoDamage</c>
-    /// (<c>probeigc.h:87-88</c>). The two authorial comments directly above it
-    /// (&quot;Always damage probes. No more friendly probes blocking base exits
-    /// and alephs !!!&quot;, <c>probeigc.h:80</c>, and &quot;Allow friendly probes
-    /// to be damaged&quot;, <c>probeigc.h:86</c>) match the code, not contradict
-    /// it. <b>P491 deliberately does not port the armed half of the gate</b>:
-    /// the port's entrenched <c>P100</c> test contract asserts a probe takes
-    /// same-side damage whether or not it is armed (probeigc.h's armed exemption
-    /// was out of P100's reach — no probe could be armed then), and reversing it
-    /// would break that contract for no gain to the firing deliverable. So
-    /// damage always applies to a <c>Probe</c> target, regardless of side or
-    /// arming — a real, cited behavior difference from <c>Ship</c>'s gate
-    /// (<c>shipIGC.cpp:1222-1228</c>). The armed probe's own rounds are kept off
-    /// itself by <see cref="Projectile.OriginProbe"/> in the collision pass (the
-    /// native self-launch), not by a damage gate.</item>
-    /// <item><b>No shield branch.</b> A probe never mounts a <c>Shield</c> part
-    /// — damage goes straight to the hull fraction, no
-    /// <c>ApplyShieldDamage</c> analogue needed.</item>
-    /// </list>
-    /// Formula (<c>probeigc.h:91-140</c>, assuming <paramref name="amount"/> ≥ 0 —
-    /// see below): <c>amount × DamageConstant(type, ProbeType.DefenseType)</c>
-    /// (<c>probeigc.h:95</c>), then <c>_fraction −= amount/maxHP</c> where
-    /// <c>maxHP = ProbeType.HitPoints</c> (<c>probeigc.h:94,116</c>); if the
-    /// result is ≤ 0, clamp to 0 and — <b>only the first crossing</b>
-    /// (<c>oldFraction &gt; 0</c>, <c>probeigc.h:121</c>) — destroy: remove from
-    /// the sector and raise <see cref="IIgcSite.ProbeDestroyedEvent"/> exactly
-    /// once, the identical pair <see cref="OnUpdate"/>'s expiry branch makes,
-    /// then return <c>DamageResult.Killed</c>. Otherwise return
-    /// <c>DamageResult.HullDamage</c>.
-    /// <list type="bullet">
-    /// <item><b>Repair branch not ported.</b> Native's negative-<c>amount</c>
-    /// branch (<c>probeigc.h:101-110</c>) is dead code everywhere in this
-    /// codebase — no repair source exists for anything (even
-    /// <c>Ship.ReceiveDamage</c> only keeps it structurally,
-    /// <c>Ship.cs:608-616</c>) — so we assume <paramref name="amount"/> ≥ 0 and
-    /// state so plainly rather than silently dropping it.</item>
-    /// <item><b>Achievement-mask side effect not ported</b>
-    /// (<c>probeigc.h:126-135</c>, <c>SetAchievementMask(c_achmProbeKill)</c>):
-    /// no achievement system exists in this port.</item>
-    /// <item><b>No damage-track / debris.</b> Like <see cref="Ship"/>'s own
-    /// port (credit-only track, <c>Ship.cs:621</c>), and the debris
-    /// <c>AddDamage(position2 − position1, m_fraction)</c>
-    /// (<c>probeigc.h:142-143</c>) needs a <c>ThingSite</c> this port does not
-    /// simulate (native's <c>c_dmgidNoDebris</c> gate, <c>probeigc.h:142</c>) —
-    /// both omitted, matching <see cref="Ship"/>'s precedent.</item>
-    /// <item><b>No experience multiplier.</b> Native applies the ship-launcher's
-    /// experience multiplier (<c>probeigc.h:98-99</c>); ships here have no
-    /// accumulated experience, matching <see cref="Ship"/>'s omission
-    /// (<c>Ship.cs:583</c>).</item>
-    /// </list>
-    /// The launcher (<c>m_launcher</c>) doubles as the route to the host seam,
-    /// exactly as in <see cref="OnUpdate"/>. Called by
-    /// <see cref="Model.Sector.ResolveCombatCollisions"/> for a <c>Probe</c>
-    /// target; its <c>Dead</c> after the call governs the caller's removal,
-    /// identically to the ship path's <c>ship.Dead</c>.
+    /// Native probeigc.h:65-146 damage/repair math, preserving the P100/P491
+    /// no-friendly-fire-gate contract for all probes. Native sensors and
+    /// RescueAny probes allow friendly damage (74-89); its armed-probe immunity
+    /// is deliberately omitted here, as before P649. Matrix
+    /// and ship-launcher experience scale damage/repair (95-99). Repairs cap
+    /// at one (101-109); a first lethal crossing removes the probe and notifies
+    /// its mission (116-139). Splash carries NoDebris (142-143).
     /// </summary>
     public DamageResult ReceiveDamage(
         byte type,
@@ -345,15 +279,18 @@ public sealed class Probe : Model
         Vector3 position2,
         Model? launcher)
     {
-        // Assume amount >= 0 — the repair (negative-amount) branch is not ported
-        // (dead code; see remarks). Stated plainly, not silently dropped.
-        // NOTE (P491): native's armed-probe same-side friendly-fire immunity
-        // (probeigc.h:74-89) is deliberately NOT ported — see the remarks'
-        // "Friendly-fire gate" item. The port keeps the P100 no-gate for every
-        // probe, armed or not; the armed probe's own rounds pass through its
-        // body via Projectile.OriginProbe in the collision pass instead.
+        // P649b: retain the P100/P491 friendly-hit contract for direct hits and
+        // splash alike. Native probeigc.h:74-89 exempts sensors/RescueAny but
+        // protects armed probes; that armed exception is deliberately not ported.
         float maxHP = ProbeType.HitPoints;
         amount *= DamageConstant(type, ProbeType.DefenseType);   // probeigc.h:95
+        if (launcher is Ship source) amount *= source.ExperienceMultiplier; // probeigc.h:97-99
+        if (amount < 0)                                        // probeigc.h:101-109
+        {
+            if (maxHP > 0) _fraction = MathF.Min(1, _fraction - amount / maxHP);
+            return DamageResult.HullDamage;
+        }
+        if (amount == 0) return DamageResult.HullDamage;
 
         DamageResult dr = DamageResult.HullDamage;               // probeigc.h:91
         float oldFraction = _fraction;                           // probeigc.h:92
@@ -369,8 +306,7 @@ public sealed class Probe : Model
                 // sector and raise ProbeDestroyedEvent (the C++'s
                 // KillProbeEvent(this), probeigc.h:138).
                 _sector.Remove(this);
-                if (Launcher is Ship launcherShip)
-                    launcherShip.Mission?.Site.ProbeDestroyedEvent(this);
+                (_sector.Mission ?? (Launcher as Ship)?.Mission)?.Site.ProbeDestroyedEvent(this);
                 dr = DamageResult.Killed;                       // probeigc.h:139
             }
         }
@@ -692,10 +628,10 @@ public sealed class Probe : Model
     /// driven from <see cref="DataConstantsIGC"/>, not hardcoded.</summary>
     private float DamageConstant(byte type, byte defenseType)
     {
-        var core = Launcher is Ship launcherShip ? launcherShip.Mission?.Core : null;
+        var core = _sector.Mission?.Core ?? (Launcher as Ship)?.Mission?.Core;
         if (core is null) return 1.0f;
         var dm = core.Constants.DamageConstants;
-        int dmg = type, def = defenseType;
+        int dmg = type & BlastDamage.Mask, def = defenseType; // missionigc.h:155
         if (dmg < 0 || dmg >= DataConstantsIGC.DmgidMax || def < 0 || def >= DataConstantsIGC.DefidMax)
             return 1.0f;
         return MathF.Max(dm[dmg][def], 0.0f);

@@ -60,14 +60,9 @@ namespace Allegiance.Core.Sim;
 /// vulnerable</b>), the <c>c_sabmPedestal</c> capability bit (a flag-pedestal
 /// station is indestructible — implemented, <see cref="SabmPedestal"/>, the
 /// same one-line bit addition P114 made for the hull <c>Habm</c> bits), and the
-/// friendly-fire gate. The friendly-fire gate <c>(launcher &amp;&amp; amount ≥ 0
-/// &amp;&amp; !bAllowFriendlyFire &amp;&amp; AlliedSides(...))</c> simplifies
-/// to <b>same-side-only</b>: this port has no <c>bAllowFriendlyFire</c> toggle
-/// (friendly fire is always off, the established <see cref="Ship"/> precedent)
-/// and no alliance/<c>AlliedSides</c> concept (the <c>bAllowAlliedRip</c> P112
-/// precedent), so the gate becomes <c>launcher is a Ship with a SideId equal to
-/// the station's SideId</c>. The invulnerability combination returns
-/// <c>DamageResult.NoDamage</c> exactly as native.</item>
+/// friendly-fire gate. <see cref="Mission.AllowFriendlyFire"/> controls the
+/// native non-repair friendly/allied immunity (stationIGC.cpp:128-130).
+/// The invulnerability combination returns DamageResult.NoDamage.</item>
 /// <item><b>No hull-damage fallback when shield-less.</b> Confirmed reading the
 /// native: when <c>dtmShield == 0</c> OR <c>MaxShieldHitPoints == 0</c> the
 /// damage path falls to <c>dr = c_drNoDamage</c> (<c>stationIGC.cpp:203-204</c>)
@@ -369,7 +364,7 @@ public sealed class Station : IStationIgc, ISideVisible
     /// by the exact native ratio <c>dmg = (absorbedOverflow · maxShield ·
     /// dtmArmor) / (maxArmor · dtmShield)</c> (<c>stationIGC.cpp:186</c>) — the
     /// precise formula the tests assert — and the shield clamps to 0.</item>
-    /// <item><b>Friendly fire simplified to same-side-blocked.</b> See the class
+    /// <item><b>Friendly fire follows the mission toggle and allies.</b> See the class
     /// remarks: the native invulnerability early-return
     /// (<c>stationIGC.cpp:126-133</c>) collapses to pedestal
     /// (<see cref="SabmPedestal"/>) + same-side. A friendly hit returns
@@ -398,7 +393,7 @@ public sealed class Station : IStationIgc, ISideVisible
         // Invulnerability gates (stationIGC.cpp:126-133). bInvulnerableStations
         // (a mission param) is NOT decoded in this port → default = vulnerable
         // (stated plainly in the class remarks). What remains: a flag-pedestal
-        // station, and friendly fire simplified to same-side-only.
+        // station, and the mission's friendly-fire/alliance damage gate.
         if (Type.HasCapability(SabmPedestal))
             return DamageResult.NoDamage;
 
@@ -417,10 +412,8 @@ public sealed class Station : IStationIgc, ISideVisible
         if (amount >= 0.0f && launcher is Ship als && als.Mission is { } am)
             am.Site.DamageStationEvent(this, launcher, type, amount);
 
-        if (launcher is Ship shooter
-            && amount >= 0.0f
-            && shooter.SideId is { } shooterSide
-            && SideId == shooterSide)
+        // Native stationIGC.cpp:128-130: repair bypasses friendly immunity.
+        if (BlastDamage.Suppressed(Mission, SideId, launcher, amount))
             return DamageResult.NoDamage;
 
         float maxArmor = EffectiveMaxArmor();                      // stationIGC.cpp:137 (GA-scaled)
@@ -597,10 +590,10 @@ public sealed class Station : IStationIgc, ISideVisible
     /// </summary>
     private float DamageConstant(byte type, byte defenseType, Model? launcher)
     {
-        var core = launcher is Ship launcherShip ? launcherShip.Mission?.Core : null;
+        var core = Mission?.Core ?? (launcher as Ship)?.Mission?.Core;
         if (core is null) return 1.0f;
         var dm = core.Constants.DamageConstants;
-        int dmg = type, def = defenseType;
+        int dmg = type & BlastDamage.Mask, def = defenseType; // missionigc.h:155
         if (dmg < 0 || dmg >= DataConstantsIGC.DmgidMax || def < 0 || def >= DataConstantsIGC.DefidMax)
             return 1.0f;
         return MathF.Max(dm[dmg][def], 0.0f);
