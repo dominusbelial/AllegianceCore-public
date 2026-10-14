@@ -378,6 +378,10 @@ public class AutoReloadOnEmptyTests
             // assertion forced everyone into one sector — the very bug P368 fixes.
             Assert.Equal(subject.Sector!.Id, observer.Sector!.Id);
             Assert.NotEqual(subject.Sector!.Id, third.Sector!.Id);
+            // P653 H-06 docks fresh default-spawn ships (native FedSrv/fsmission.cpp:791-796),
+            // but H-22 requires flying/alive/unboarded for wire inventory ops. Seat the
+            // subject flying so SWAP_PART/auto-reload mechanics are exercised (audit gate kept).
+            subject.StationId = null;
             return new Seat(server, bots, subject, bots[0], observerBot);
         }
         catch

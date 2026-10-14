@@ -557,6 +557,12 @@ public class LiveWinConditionTests
         Assert.True(got < 4000, "no assignment");
         short myId = client.ShipAssignment!.Ship.ShipId;
 
+        // P653 H-26 restores native's child-or-CAN_CHEAT suicide gate (FedSrv.CPP:6338):
+        // a lone pod may no longer suicide. Enable the configured admin predicate for the
+        // test connection (native's CanCheat escape hatch) — this is the Started-stage
+        // CONTROL proving the message/handler reachability the refusal test then negates.
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig { Enabled = true, AllowNames = ["GUINEA"] };
+
         client.SendSuicide();
         int killed = PumpUntil(server,
             () => client.Deletes.Any(d => d.ShipId == myId && d.Sdr == ShipDelete.SdrKilled),
