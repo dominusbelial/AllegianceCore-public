@@ -202,3 +202,157 @@ P617 overview; these scores describe matrix coverage, not full native UI fidelit
   removes the temporary worktree afterward. Inspect the frames for the warp
   target and mode switches before accepting visible parity; then run the full
   live suite, including the turret proof and alliance join/update tests.
+
+## P642b
+
+Continued the interrupted working tree on 2026-10-14, including the brief's
+live/socket update. Changes remain uncommitted; no commits or pushes were made.
+The earlier socket restrictions above describe the P642 run, not this verification.
+
+### Root causes and fixes
+
+1. **Renderer disposal guard:** `09f757f9` already contains the real
+   `_commandGridRenderer?.Dispose()` call in `Game1.UnloadContent` (line 1716).
+   The failure was the guard's stale, independently maintained `DisposedOnUnload`
+   registry, not a missing disposal call. Retained the production disposal,
+   synchronized that one registry entry, and strengthened the guard to check
+   every reflected disposable renderer's actual `Dispose()` call inside the
+   source method. Comments cannot satisfy that check. This is the genuine test
+   bug that justifies retaining the interrupted run's registry correction:
+   deleting the real disposal now fails the guard even with the registry entry.
+
+2. **F1 help overflow:** wave 2 enlarged the camera/console groups, and packing
+   groups in catalogue order placed the large late group below the panel.
+   `HelpOverlayLayout` now packs tallest groups first into the shortest column,
+   preserves catalogue order for a single column and stable equal-height ties,
+   and returns slots indexed in the original order. The action map still
+   generates all help entries. `HelpOverlayTests` is unchanged.
+
+3. **Turret promotion confirmation:** the gunner's own boarding status arrived
+   promptly, but the carrier's client could still have `gunner.ParentId == -1`
+   when PROMOTE arrived. PROMOTE names only the promoted child, so the new
+   receive handler returned early on that client; later periodic status updated
+   the seats without the demotion notice. Captured this with temporary receive
+   instrumentation (removed). Successful BOARD_SHIP now immediately flushes
+   the existing SHIP_STATUS to peers on that mission/side, before any later
+   PROMOTE. Native sets the boarder's state/parent and flushes queued messages
+   in `FedSrv/FedSrv.CPP:2450-2470`; the client derives the old parent and posts
+   both notices in `clintlib/appmsg.cpp:824-849`. No new acknowledgement codec
+   or client-side seat guess was introduced. The existing live proof still
+   checks next-seat, wraparound, the role swap, and both exact notices.
+
+4. **P641 inventory round trip:** the original `p641` character did not match
+   the configured harness's `mcp-` prefix, so its money/tech grant never applied
+   and BUY_LOADOUT could be refused. Retained the partial fix to use `mcp-p641`
+   and phase-specific timeout messages. After that fix, the live run exposed
+   purchased cargo incorrectly realized as an equipped weapon at unsigned
+   mount 255, instead of signed cargo mount -1. BUY_LOADOUT now routes negative
+   mounts into `Ship.CargoHold` through `TryMountCargoPart`, without realizing
+   cargo weapons. Loadout broadcasts include the whole inventory, hardware
+   value includes cargo, and the wire part ceiling counts both stores. Native
+   purchase preserves signed mounts (`Igc/shipIGC.h:901-921,1030-1039`), and
+   negative mounts address cargo (`Igc/shipIGC.cpp:1520-1548`). The live test adds
+   server cargo/equipped assertions and retains all production unmount, mount,
+   replace, four weapon selections, booster fuel/release, and drop checks.
+
+5. **Ammo RELOAD reset:** the port must clear P641's cached fractional mounting
+   remainder as well as the byte fraction, including when that byte is already
+   zero. RELOAD now removes the relevant cached progress unconditionally;
+   clearing a loadout also clears that cache. Mount advancement now stops while
+   docked or boarded, matching native's cluster/parent update gates
+   (`Igc/shipIGC.cpp:266-271`; native docked ships leave their cluster).
+
+6. **Launcher RELOAD reset:** the same stale-progress fix applies to the equipped
+   launcher at mount zero. Native resets ammo weapons and partially replenished
+   launchers to zero (`FedSrv/FedSrv.CPP:6574-6581,6637-6638`), then advances their
+   readiness on later flight updates (`Igc/weaponIGC.h:33-49`,
+   `Igc/dispenserigc.cpp:86-102`). The two old live tests asserted a permanently
+   zero fraction after pumping more ticks for another socket's receipt; with
+   P641's real mounting progression this could reach 240 or observe a partial
+   fraction such as 2. Their live assertions now require an unready part after
+   reload, while preserving the exact ammo/launcher amounts, cargo amounts and
+   sector broadcast checks. Two new deterministic simulation cases assert
+   **exactly zero immediately after each reload**, prove a second reset clears
+   a sub-byte remainder (0.75 + 0.5 would otherwise become byte 1), retain zero
+   while docked/boarded, then advance and finish in flight. This corrects the
+   asynchronous observation premise without disabling native mounting or
+   dropping the exact-zero reset regression check.
+
+7. **Side-only elimination:** inspected `git diff 89a60f77`. Wave 2 did not
+   change side elimination, GAME_OVER/GAME_OVER_PLAYERS construction or routing,
+   or side/score roster logic. Its sole server change was the initial alliance
+   snapshot during logon plus its builder in `Server.Lobby.cs`; neither mutates
+   side activity or game-over state. The named test is already quarantined in
+   `docs/TEST_FLAKES.md` with a measured 2/10 isolated timing-flake rate.
+   No elimination code or test was changed for P642b.
+
+### Measured verification
+
+- `dotnet build AllegianceCore.slnx --no-restore -m:1`: **0 warnings / 0 errors**.
+- Each brief-listed test ran in a fresh process three times, sequentially, with
+  real `dotnet test --no-build`: **21 passed / 0 failed / 0 skipped**.
+
+| Brief item / isolated test | Passes |
+|---|---:|
+| 1 — RendererDisposalGuardTests.Every_disposable_renderer_field_is_disposed_in_UnloadContent | 3/3 |
+| 2 — HelpOverlayTests.Table_BalancesIntoTypicalPanelWithoutOverflow | 3/3 |
+| 3 — PromoteTurretKeyLiveTests.Live_promote_turret_key_over_production_send_promotes_the_gunner | 3/3 |
+| 4 — P641FlightPartsLiveTests.Production_inventory_commands_weapon_selection_and_booster_roundtrip | 3/3 |
+| 5 — CargoBayReloadTests.Reload_transfers_ammo_updates_ship_ammo_resets_weapon_fraction_and_broadcasts | 3/3 |
+| 6 — CargoBayReloadTests.Reload_swaps_cargo_launcher_ammo_into_equipped_partially_loaded_launcher | 3/3 |
+| 7 — SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone | 3/3 |
+
+Then ran the three **full, unfiltered assemblies once each**, sequentially,
+including live sockets and quarantined tests:
+
+| Assembly (`dotnet test tests/<assembly> --no-build`) | Passed | Failed | Skipped | Total |
+|---|---:|---:|---:|---:|
+| Allegiance.Core.Tests | 4098 | 1 | 0 | 4099 |
+| Allegiance.ClientCore.Tests | 812 | 9 | 0 | 821 |
+| Allegiance.ClientCore.MonoGame.Tests | 2117 | 0 | 3 | 2120 |
+| **Total** | **7027** | **10** | **3** | **7040** |
+
+All seven requested regressions also passed in their full assemblies. The three
+skips are the existing optional Meshy pack catalogue/content tests; that private
+pack is absent. No filter or new skip excluded any requested test.
+
+Every other full-suite failure was subsequently run **three times in fresh
+isolated processes**: **30 case passes / 0 failures / 0 skips**, covering all ten
+failed cases (the travelling-fighter theory has two cases).
+
+| Assembly / full-suite failure | Isolated reruns |
+|---|---:|
+| Core — ConquestTerritoryLiveTests.Conquest_win_in_one_mission_does_not_leak_to_another | 3/3 |
+| ClientCore — BotAcceptsAndEngagesOrderLiveTests.ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget | 3/3 |
+| ClientCore — BotFixRegressionTests.DefenseAfterArrival_ReturnsToOriginalObjective_AndPreservesStaging | 3/3 |
+| ClientCore — BotFixRegressionTests.DefenseAlert_BoundedNearestWing_ResumesOriginalRouteAfterQuietAndMinimum | 3/3 |
+| ClientCore — BotFixRegressionTests.DefenseDetour_FliesHomeWarp_PreservesObjectivePath_AndRecordsArrival | 3/3 |
+| ClientCore — BotFixRegressionTests.DefenseDisableSwitch_RestoresTravelPastThreats_AndIgnoresAlerts | 3/3 |
+| ClientCore — BotFixRegressionTests.DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber | 3/3 |
+| ClientCore — BotFixRegressionTests.DefenseTravellingFighter_AnswersReceivedHitOnSelfOrFriendlyAsset_ThenResumes | 3/3 **each** (asset=false, asset=true) |
+| ClientCore — ClientReadyUpUnfreezesNormalMapLiveTests.Harness_ready_up_starts_normal_map_mission_and_opposing_combat_bot_moves | 3/3 |
+
+The Core failure is already quarantined in `docs/TEST_FLAKES.md` (2/10 historical
+isolated failures). Its observed failure was the other mission's peer receiving
+a GAME_STATE; no conquest or routing code changed in wave 2/P642b.
+
+The ClientCore failures expose an existing fixture-order problem, beyond socket
+load: `BotManager.DecisionSnapshotEnabled` is a `static readonly` copy of mutable
+`ClientWorld.DecisionSnapshotEnabled` (`tools/allegiance-mcp/BotManager.cs:65`).
+Snapshot fixtures temporarily enable the latter, while the defense fixture
+disables it (`BotBaseDefenseTests.cs:14-16`). Initializing the manager while the
+flag is enabled leaves its readers using snapshots after publishing is disabled;
+its sector/pose reads then return empty-world results (observed sector -1 and
+frozen bots). These manager/fixture files are unchanged from `89a60f77`; P642b
+also makes no ClientWorld changes. The fresh-process 3/3 results distinguish
+these order-dependent failures from the requested deterministic regressions.
+No unrelated bot/snapshot code or tests were edited.
+
+- The two new exact-zero/reset-progress simulation cases passed in isolation
+  and in the full Core assembly.
+- `scripts/check-p642-parity.py`: **231 audit rows / 438 matrix rows validated**;
+  existing scores unchanged. `git diff --check` and
+  `bash -n scripts/proof-p642.sh`: passed.
+- Evidence: `/tmp/p642b-build.log`, `/tmp/p642b-results/*.trx`,
+  `/tmp/p642b-full-{Core,ClientCore,MonoGame}.log`,
+  `/tmp/p642b-verification.json`, and `/tmp/p642b-rechecks.json`.

@@ -266,7 +266,7 @@ public class CargoBayReloadTests
 
         PumpUntil(seat.Server,
             () => ship.Ammo == (short)(ammoBefore + 6)
-               && ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted == 0
+               && ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted < ExpandedPartData.FullyMounted
                && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
             4000);
 
@@ -274,8 +274,11 @@ public class CargoBayReloadTests
         Assert.Equal((short)(ammoBefore + 6), ship.Ammo);
         // Cargo pack drained 10 -> 4.
         Assert.Equal(4, ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount);
-        // Ammo-weapon mounted-fraction reset to 0.
-        Assert.Equal(0, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted);
+        // Native resets to zero, then weaponIGC.h:33-49 advances readiness on
+        // subsequent flight ticks. The observer receipt happens asynchronously.
+        // P641FlightPartsSimTests asserts the exact zero before any update.
+        Assert.InRange(ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted,
+            (byte)0, (byte)(ExpandedPartData.FullyMounted - 1));
         // Sector relay reached the same-sector observer with shipID filled in.
         var relay = seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id);
         Assert.Equal(new ReloadData(6, -1), relay.Entries.Single());
@@ -351,7 +354,8 @@ public class CargoBayReloadTests
         // Equipped launcher 2 -> 5 (added the transferred 3) and fraction reset.
         var equipped = ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0);
         Assert.Equal(5, equipped.Amount);
-        Assert.Equal(0, equipped.FractionMounted);
+        // dispenserigc.cpp:86-102 advances the native reset on later ticks.
+        Assert.InRange(equipped.FractionMounted, (byte)0, (byte)(ExpandedPartData.FullyMounted - 1));
         // Cargo launcher drained 5 -> 2 (did not fully terminate).
         Assert.Equal(2, ship.CargoHold[Ship.CargoSlotForMount(-2)]!.Amount);
         Assert.Equal(new ReloadData(3, -2), seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id).Entries.Single());

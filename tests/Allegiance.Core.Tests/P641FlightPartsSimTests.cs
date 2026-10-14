@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Wire;
 using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
@@ -128,5 +129,50 @@ public class P641FlightPartsSimTests
         Assert.False(ship.TrySwapPartWithCargo(EquipmentType.Weapon, 0, -6));
         Assert.True(ship.TryRemovePart(EquipmentType.Weapon, 0, out _));
         Assert.Empty(ship.Weapons);
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Reload_resets_exactly_to_zero_then_mounts_again_only_in_flight(bool launcher)
+    {
+        Require.Artwork();
+        var m = Mission();
+        var ship = Ship(m, 100, 0);
+        var weapon = m.Core.PartTypes.Values.First(p => p.Type is DataPartTypeIGC.Weapon { CAmmoPerShot: > 0 }
+            && InFlightPartRules.CanMount(ship.HullType, p, 0));
+        var part = launcher ? weapon with { Type = new DataPartTypeIGC.ChaffLauncher(m.Core.ChaffTypes.Values.First().ExpendableTypeId), PartMask = 0 } : weapon;
+        ship.MountPart(part, 2, 0, 255);
+        var cargo = launcher ? part : weapon with { PartId = 904, Type = new DataPartTypeIGC.Pack(0, 10) };
+        Assert.True(ship.TryMountCargoPart(cargo, 10, -1, 0));
+
+        Assert.True(ship.TryApplyReloadEntry(-1, 3));
+        Assert.Equal(0, ship.Parts.Single().FractionMounted); // FedSrv.CPP:6574-6581,6637
+        Assert.Equal(7, ship.CargoHold[0]!.Amount);
+        if (launcher) Assert.Equal(5, ship.Parts.Single().Amount);
+
+        // A second reset must discard even a sub-byte mounting remainder.
+        float rate = m.Core.Constants.FloatConstants[10]; // c_fcidMountRate
+        double now = .75 / (ExpandedPartData.FullyMounted * rate);
+        ship.Update(now);
+        Assert.Equal(0, ship.Parts.Single().FractionMounted);
+        Assert.True(ship.TryApplyReloadEntry(-1, 1));
+        Assert.Equal(0, ship.Parts.Single().FractionMounted);
+        now += .5 / (ExpandedPartData.FullyMounted * rate);
+        ship.Update(now);
+        Assert.Equal(0, ship.Parts.Single().FractionMounted); // stale .75 + .5 would become 1
+        ship.StationId = 123;
+        ship.Update(now += .1);
+        Assert.Equal(0, ship.Parts.Single().FractionMounted);
+        ship.StationId = null;
+        ship.ParentShip = Ship(m, 101, 0);
+        ship.Update(now += .1);
+        Assert.Equal(0, ship.Parts.Single().FractionMounted);
+        ship.ParentShip = null;
+        ship.Update(now += .1);
+        Assert.InRange(ship.Parts.Single().FractionMounted, (byte)1, (byte)(ExpandedPartData.FullyMounted - 1));
+        ship.Update(now + 10);
+        Assert.Equal(ExpandedPartData.FullyMounted, ship.Parts.Single().FractionMounted);
     }
 }

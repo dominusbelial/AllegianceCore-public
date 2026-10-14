@@ -2569,7 +2569,7 @@ public sealed class Ship : Model, IShipIgc
     /// (even when a weapon couldn't be realized) unless refused.</returns>
     public MountedPart? MountPart(DataPartTypeIGC type, short amount, byte mountId, byte fractionMounted)
     {
-        if (_parts.Count >= byte.MaxValue)
+        if (_parts.Count + _cargo.Count(p => p is not null) >= byte.MaxValue)
             return null;
 
         var part = new MountedPart
@@ -2610,6 +2610,25 @@ public sealed class Ship : Model, IShipIgc
         Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Mounted);
 
         return part;
+    }
+
+    /// <summary>Install purchased cargo at a signed wire mount, without
+    /// realizing equipment. Native ProcessShipLoadout/CreateAndAddPart uses
+    /// the signed mount (shipIGC.h:901-921,1030-1039; shipIGC.cpp:1520-1548).</summary>
+    public bool TryMountCargoPart(DataPartTypeIGC type, short amount, int mount, byte fractionMounted)
+    {
+        if (mount >= 0 || mount < -CargoCapacity) return false;
+        int slot = CargoSlotForMount(mount);
+        if (_cargo[slot] is not null || _parts.Count + _cargo.Count(p => p is not null) >= byte.MaxValue) return false;
+        var part = new MountedPart
+        {
+            PartId = type.PartId, Type = type, Amount = amount,
+            MountId = 0, FractionMounted = fractionMounted,
+        };
+        _cargo[slot] = part;
+        BumpLoadout();
+        Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Mounted);
+        return true;
     }
 
     /// <summary>
@@ -2776,6 +2795,10 @@ public sealed class Ship : Model, IShipIgc
     private readonly Dictionary<(short PartId, byte Mount), float> _flightMountProgress = new();
     private void AdvanceFlightMounts(float dt)
     {
+        // Native shipIGC.cpp:266-271 updates only ships in a cluster without
+        // a parent. Docked ships retain a Sector in this port, but their reload
+        // readiness must remain reset until they launch.
+        if (StationId is not null || ParentShip is not null) return;
         for (int i = 0; i < _parts.Count; i++)
         {
             var part = _parts[i];
@@ -3153,8 +3176,11 @@ public sealed class Ship : Model, IShipIgc
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.EquipmentType == et && p.MountId == 0 && p.FractionMounted != 0)
+            if (p.EquipmentType == et && p.MountId == 0)
+            {
+                _flightMountProgress.Remove((p.PartId, p.MountId));
                 _parts[i] = WithFraction(p, 0);
+            }
         }
     }
 
@@ -3167,8 +3193,11 @@ public sealed class Ship : Model, IShipIgc
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0 && p.FractionMounted != 0)
+            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0)
+            {
+                _flightMountProgress.Remove((p.PartId, p.MountId));
                 _parts[i] = WithFraction(p, 0);
+            }
         }
     }
 
@@ -4134,6 +4163,7 @@ public sealed class Ship : Model, IShipIgc
     /// <c>ProcessShipLoadout</c> rebuilds the ship's mounts wholesale.</summary>
     public void ClearLoadout()
     {
+        _flightMountProgress.Clear();
         _weapons.Clear();
         _parts.Clear();
         BumpLoadout();

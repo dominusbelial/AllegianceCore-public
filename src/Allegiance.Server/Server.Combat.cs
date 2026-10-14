@@ -525,9 +525,7 @@ public sealed partial class Server
         {
             HullId = ship.HullType.HullId,
             SidShip = ship.Id,
-            Parts = ship.Parts
-                .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, p.FractionMounted))
-                .ToArray(),
+            Parts = ship.ExportInventoryForAck().ToArray(),
             Passengers = ship.ChildShips
                 .Select(c => new PassengerData(c.Id, (byte)(c.TurretId ?? 0)))
                 .ToArray(),

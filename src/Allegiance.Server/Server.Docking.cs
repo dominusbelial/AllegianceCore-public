@@ -1397,9 +1397,10 @@ public sealed partial class Server
     }
 
     /// <summary>The boarder's surrendered hardware value = hull price + Σ
-    /// mounted part prices (<c>CshipIGC::GetValue</c>, <c>shipIGC.h:396-406</c>).</summary>
+    /// equipped and cargo part prices (<c>CshipIGC::GetValue</c>, <c>shipIGC.h:396-406</c>).</summary>
     private static int ShipValue(Ship ship) =>
-        ship.HullType.Price + ship.Parts.Sum(p => p.Type.Price);
+        ship.HullType.Price + ship.Parts.Sum(p => p.Type.Price)
+        + ship.CargoHold.Sum(p => p?.Type.Price ?? 0);
 
     /// <summary>P494 — an expendable launcher part (native <c>ET_Magazine /
     /// ET_Dispenser / ET_ChaffLauncher</c>, the only equipment kinds
