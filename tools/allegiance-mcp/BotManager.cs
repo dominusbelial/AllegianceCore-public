@@ -62,7 +62,9 @@ internal sealed partial class BotManager : IDisposable
     // honour it directly and make `off` perform ZERO publishes (the fix this task
     // measures); this tool-side flag delegates to it so the read path and the
     // publish path can never disagree about the mode.
-    internal static readonly bool DecisionSnapshotEnabled = Allegiance.ClientCore.State.ClientWorld.DecisionSnapshotEnabled;
+    // Do not capture this mutable flag at type initialization: a test's scoped
+    // override must select the same mode for both publishing and decision reads.
+    internal static bool DecisionSnapshotEnabled => ClientWorld.DecisionSnapshotEnabled;
 
     // P636c — sub-switch to isolate the staleness FIX (default ON): when
     // ALLEGIANCE_BOT_SNAPSHOT_DEADRECKON=off, the aim-critical pose reads return
