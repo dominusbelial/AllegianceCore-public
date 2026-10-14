@@ -988,16 +988,19 @@ public sealed partial class Server
     /// </summary>
     private void HandleReqPingData(ConnectionId from)
     {
-        // P654 (H-32) — only a SEATED peer may request the ping roster, and the
-        // roster is scoped to the requester's OWN mission. Previously any
-        // pre-logon peer could pull the whole server-wide ship-id roster every
-        // 5 s (an information leak that fed H-25's id-from-the-wire exploits).
-        // Native answers every connection, but its mission is a full game the
-        // client is in; this port gates on a seated peer for safety (era
-        // constraint: native trusted its client's being in a mission).
-        if (!_peerShips.TryGetValue(from, out var requester))
-            return;   // pre-logon / unknown peer — silently ignore
-        Mission? requesterMission = requester.Ship.Mission;
+        // P654 (H-32) — scope the ping roster to the requester's OWN mission
+        // when the requester is a SEATED pilot, so a player's roster does not
+        // leak ship ids from OTHER missions (the audit's cross-mission leak).
+        // A BARE requester (connected, not yet seated — the P200 lobby/observer
+        // case, and native's behaviour: FedSrv.CPP:7743-7808 answers any
+        // connection) still gets the whole-server roster, exactly as the P200
+        // feature test requires. NOTE: the audit suggested denying pre-logon
+        // peers outright, but that directly contradicts the maintained P200
+        // pingdata feature test (BareRequester must get the roster) and native;
+        // this port keeps native's bare-requester behaviour and fixes the real
+        // cross-mission leak for seated pilots (see report).
+        bool seated = _peerShips.TryGetValue(from, out var requester);
+        Mission? requesterMission = seated ? requester!.Ship.Mission : null;
 
         // The debounce gate (native PingQuery: elapsed > 5s ⇒ full roster).
         bool full = !_lastPingQuery.TryGetValue(from, out var last) || (_simNow - last) > 5.0;
@@ -1015,14 +1018,15 @@ public sealed partial class Server
             return;   // P654 (H-32) — debounced requests answered silently
         }
 
-        // Scoped roster: one PINGDATA per same-mission live player (requester
-        // only). Peers with no mission, or in another mission, are excluded.
+        // Roster: one PINGDATA per live player. For a SEATED pilot it is scoped
+        // to the pilot's own mission (H-32); a bare requester sees the whole
+        // server (native / P200).
         var entries = new List<PingData>();
         foreach (var kv in _peerShips)
         {
             if (kv.Key == from) continue;
-            if (requesterMission is null || !ReferenceEquals(kv.Value.Ship.Mission, requesterMission))
-                continue;   // P654 (H-32) — scope to the requester's mission
+            if (requesterMission is not null && !ReferenceEquals(kv.Value.Ship.Mission, requesterMission))
+                continue;   // P654 (H-32) — scope to the seated requester's mission
             entries.Add(new PingData
             {
                 ShipId = kv.Value.Ship.Id,
@@ -1034,7 +1038,8 @@ public sealed partial class Server
 
         byte[] packet = FedPacket.Pack(entries.Select(e => e.Encode()).ToArray());
         SendPeer(from, packet);   // ONLY the requester sees any of this
-        Console.WriteLine($"[pingdata] {from}: roster -> {entries.Count - 1} same-mission player(s) + terminator, requester-only (H-32 scoped)");
+        Console.WriteLine($"[pingdata] {from}: roster -> {entries.Count - 1} player(s) + terminator, requester-only"
+                          + (requesterMission is not null ? " (H-32 scoped to mission)" : " (whole-server, bare requester)"));
     }
 
     /// <summary>

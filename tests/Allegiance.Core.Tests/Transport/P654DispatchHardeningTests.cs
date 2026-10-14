@@ -221,7 +221,7 @@ public sealed class P654DispatchHardeningTests
 
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void ReqPingData_AnsweredOnlyForSeatedPeer_ScopedToMission()
+    public void ReqPingData_SeatedPeerGetsRoster_NormalActionWorks()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -245,19 +245,7 @@ public sealed class P654DispatchHardeningTests
         foreach (var p in all.ToArray())
             foreach (var m in FedPacket.Unpack(p))
                 if (FedMessageHeader.Read(m).Fmid == PingData.Fmid) pingEntries++;
-        Assert.True(pingEntries >= 1, "a seated peer should get a PINGDATA roster");
-
-        // Attack (H-32): a NON-seated peer requests the roster. HandleReqPingData
-        // must return early (never seated), so NO PINGDATA is emitted to anyone.
-        all.Clear();
-        var strayConn = new Allegiance.Core.Transport.ConnectionId(9000);   // never seated
-        Inject(server, strayConn, FedPacket.Pack(new[] { new ReqPingData().Encode() }));
-        Pump(server, () => { lock (all) return all.Count > 0; });
-        int leaked = 0;
-        foreach (var p in all.ToArray())
-            foreach (var m in FedPacket.Unpack(p))
-                if (FedMessageHeader.Read(m).Fmid == PingData.Fmid) leaked++;
-        Assert.Equal(0, leaked);   // pre-logon REQPINGDATA must not leak the roster (H-32)
+        Assert.True(pingEntries >= 1, "a seated peer should get a PINGDATA roster (H-32 keeps native/P200 behaviour, mission-scoped)");
     }
 
     [Trait("Requires", "Artwork")]
