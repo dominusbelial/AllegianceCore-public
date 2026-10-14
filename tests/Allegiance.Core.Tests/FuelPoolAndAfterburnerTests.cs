@@ -240,11 +240,11 @@ public class FuelPoolAndAfterburnerTests
         Require.Artwork();
         var ship = NewShip();
         ship.SetFuel(0f);
-        ship.MountPart(FuelPackType(amount: 5000), amount: 5000, mountId: 1, fractionMounted: 255);
-        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 1, -1), "fuel pack must land in cargo");
+        ship.MountPart(FuelPackType(amount: 5000), amount: 5000, mountId: 0, fractionMounted: 255);
+        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 0, -1), "fuel pack must land in cargo");
 
         // NA (-1) terminates the whole pack and adds its full amount to Fuel;
-        // SetFuel clamps to MaxFuel (1000), leaving the excess discarded.
+        // MountPart clamps the pack to MaxFuel (1000) before transfer.
         Assert.True(ship.TryApplyReloadEntry(mount: -1, amountTransfered: -1));
 
         Assert.Equal(PinnedHull.Value.MaxFuel, ship.Fuel, 3);          // exactly the real max
