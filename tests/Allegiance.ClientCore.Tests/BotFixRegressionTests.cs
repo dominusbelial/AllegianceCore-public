@@ -15,7 +15,7 @@ namespace Allegiance.ClientCore.Tests;
 
 // Probes exercise the production controller and wire-applied worlds without TCP.
 [Collection("DecisionSnapshotFlag")]
-public sealed class BotFixRegressionTests
+public sealed partial class BotFixRegressionTests
 {
     private const BindingFlags Fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     private static readonly Type BotType = typeof(BotManager).GetNestedType("ActiveBot", BindingFlags.NonPublic)!;

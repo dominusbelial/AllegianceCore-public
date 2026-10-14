@@ -26,6 +26,7 @@ internal sealed partial class BotManager : IDisposable
     private readonly ushort _port;
     private readonly object _gate = new();
     private readonly List<ActiveBot> _bots = new();
+    private readonly StallWatchdog _stallTelemetry;
 
     // ── P622 — per-pass target-engagement coordination ──────────────────
     // Written ONLY by the single Loop thread. `_tickEngagers` accumulates the
@@ -198,7 +199,9 @@ internal sealed partial class BotManager : IDisposable
     {
         _host = host;
         _port = port;
-        using var ownership = new PendingOwnership();
+        using var telemetryOwnership = new PendingOwnership();
+        _stallTelemetry = telemetryOwnership.Own(new StallWatchdog());
+        using var ownership = new PendingOwnership(DisposePeer);
         Probe = ownership.Own(new ConnectionSession());
         Probe.World.CountOnlyProjectiles = true;
         Probe.World.ReckonRemotes = false;   // P633 — headless probe: no render consumption
@@ -213,6 +216,7 @@ internal sealed partial class BotManager : IDisposable
         Relocator = CreateNetworkedRelocator();
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
         ownership.Transfer();
+        telemetryOwnership.Transfer();
     }
 
     /// <summary>P554 — how long the networked arena relocator waits for the
@@ -288,7 +292,7 @@ internal sealed partial class BotManager : IDisposable
     /// startup therefore fails loudly instead of serving tools against nothing.</summary>
     private void ConnectProbe()
     {
-        Probe.Connect(_port, "mcp-probe", _host);
+        _stallTelemetry.Connect(Probe, "mcp-probe", _host, _port);
         Probe.SendLogonRequest(Request("mcp-probe"));
         if (!WaitUntil(() => Probe.Ack is { FValidated: true }, 12000))
             throw new InvalidOperationException($"startup probe: no validated LOGONACK from {_host}:{_port}");
@@ -411,13 +415,30 @@ internal sealed partial class BotManager : IDisposable
     public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
         bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null,
         short wingmanBehaviour = Showcase.DefaultScenarioWingman,
+        IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null, bool reportFailure = true)
+    {
+        try
+        {
+            return SpawnBotCore(hullId, hullName, side, parts, behavior, targetSector, launcherPartId, launcherRequestName,
+                useStaging, arena, arenaPosition, arenaFacing, wingmanBehaviour, routePath, routeIndex, role);
+        }
+        catch (Exception ex)
+        {
+            if (reportFailure) SpawnLaunch.LogFailure(side ?? ProbeSide, hullName, ex.Message);
+            throw;
+        }
+    }
+
+    private SpawnResult SpawnBotCore(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
+        bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null,
+        short wingmanBehaviour = Showcase.DefaultScenarioWingman,
         IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null)
     {
         if (!ServerReady)
             throw new InvalidOperationException("spawn_bot: server probe not connected/validated — cannot spawn");
 
-        // Validate / auto-pick the side. Default = the probe's own side (guarantees
-        // the probe sees the bot's live pose). An explicit side is validated against
+        // Validate / auto-pick the side. Default = the probe's own side.
+        // An explicit side is validated against
         // the real roster when it reports positive ids, else the {0,1} universe.
         short chosenSide;
         if (side is { } requested)
@@ -445,7 +466,7 @@ internal sealed partial class BotManager : IDisposable
         }
 
         string name = NextName();
-        using var ownership = new PendingOwnership();
+        using var ownership = new PendingOwnership(DisposePeer);
         ActiveBot bot = null!;
         ownership.OnFailure(() => { if (bot is not null) RemoveInactiveBot(bot, "spawn failed"); });
         short shipId;
@@ -459,16 +480,7 @@ internal sealed partial class BotManager : IDisposable
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
             var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning));
-            if (actualSide == ProbeSide)
-            {
-                if (!WaitUntil(() => ProbeHasShip(shipId) || !cs.Connected, 4000))
-                    throw new InvalidOperationException(
-                        $"spawn_bot: server never began streaming ship '{name}' (hull id {hullId} '{hullName}') "
-                        + "after BUY_LOADOUT — the loadout may have been refused by the server's ApplyLoadout");
-                if (!cs.Connected)
-                    throw new InvalidOperationException($"spawn_bot: bot '{name}' disconnected during launch");
-            }
-            // Cross-side from the probe: launch is trusted from the seat round-trip.
+            DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
@@ -488,7 +500,7 @@ internal sealed partial class BotManager : IDisposable
         {
             // idle / weave: a plain BotClass client (same-side observable by the probe).
             var b = ownership.Own(new BotClass { AutoSelectSideAfterLogon = false, RetainRawCombatUpdates = false });
-            b.Connect(_port, name, _host);
+            _stallTelemetry.Connect(b, name, _host, _port);
             b.SendLogonRequest(Request(name));
             if (!WaitUntil(() => b.Ack is { FValidated: true }, 12000))
                 throw new InvalidOperationException($"spawn_bot: bot '{name}' never got a validated LOGONACK from {_host}:{_port}");
@@ -502,31 +514,19 @@ internal sealed partial class BotManager : IDisposable
             // auto-start (see ConnectProbe's ready-up comment).
             b.SendPlayerReady(true, shipId);
 
-            // P473 — reset the ack accumulator so the only ack considered is the
-            // one answering THIS purchase (not the seat's join-burst default-hull
-            // ack), then wait for it and evaluate it against the requested
-            // loadout BEFORE trusting any streaming signal: a refused purchase
-            // leaves the (already-seated) ship streaming with its unchanged
-            // default hull, so ProbeHasShip alone would silently pass. Refusal
-            // throws; a partial grant is surfaced as a warning.
+            // Only this peer's purchase ack and fresh own launch state count.
+            // Preserve refusal / successor / partial-grant loadout reporting.
+            var ownLaunched = SpawnLaunch.Observe(b, shipId);
             b.ResetBuyLoadoutAcks();
-            b.SendBuyLoadout(hullId, fLaunch: true, finalParts);
-            granted = WaitForAck(() => b.BuyLoadoutAcks, name, hullId, finalParts, out grantWarning);
-            if (actualSide == ProbeSide)
-            {
-                // Same side as the probe: require the probe to actually stream the
-                // ship (proof the loadout was accepted and the ship is real).
-                if (!WaitUntil(() => ProbeHasShip(shipId) || !b.Connected, 4000))
-                    throw new InvalidOperationException(
-                        $"spawn_bot: server never began streaming ship '{name}' (hull id {hullId} '{hullName}') "
-                        + "after BUY_LOADOUT — the loadout may have been refused by the server's ApplyLoadout");
-                if (!b.Connected)
-                    throw new InvalidOperationException($"spawn_bot: bot '{name}' disconnected during launch");
-            }
+            granted = BuyAndConfirmLaunch(name, hullId, finalParts, () => b.Connected, ownLaunched,
+                () => b.SendBuyLoadout(hullId, fLaunch: true, finalParts), () => b.BuyLoadoutAcks, out grantWarning);
+            DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
                 Bot = b,
+                ShipId = shipId,
+                Launched = true,
                 Parts = finalParts,
                 WeaponPartId = Catalog.FirstWeaponPartId(finalParts),
                 LauncherPartId = launcherPartId,
@@ -625,11 +625,35 @@ internal sealed partial class BotManager : IDisposable
             Console.WriteLine($"[p539d] arena: bot {name} (ship {bot.ShipId} side {actualSide}) relocated to mirrored spot in sector {ts}");
         }
 
+        if (!IsParticipating(bot))
+            throw new InvalidOperationException($"spawn_bot: bot '{name}' disconnected before registration completed");
         bot.SpawnPending = false;
         ownership.Transfer();
         int count;
         lock (_gate) count = _bots.Count;
         return new SpawnResult(name, shipId, actualSide, hullName, count, granted, grantWarning);
+    }
+
+    public bool IsSpawnActive(SpawnResult result)
+    {
+        lock (_gate) return _bots.Any(b => b.Name == result.Name && !b.SpawnPending && IsParticipating(b));
+    }
+
+    private void DiagnoseProbeLaunch(string name, short shipId, short side)
+    {
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_MCP_SPAWN_PROBE_DIAGNOSTICS") == "1" && side == ProbeSide)
+            Console.Error.WriteLine($"[p657] bot '{name}' own launch confirmed; probeSeen={ProbeHasShip(shipId)} (diagnostic only)");
+    }
+
+    private static LoadoutGrant BuyAndConfirmLaunch(string name, short hullId, IReadOnlyList<ExpandedPartData> parts,
+        Func<bool> connected, Func<bool> ownLaunched, Action send, Func<IReadOnlyList<BuyLoadoutAck>> acks, out string? warning)
+    {
+        var ack = SpawnLaunch.Confirm(name, connected, ownLaunched, send, acks,
+            a => EvaluateGrant(name, hullId, parts, new LoadoutGrant(a.HullId, a.Parts)), SpawnLaunch.TimeoutMs,
+            matches: a => a.HullId == hullId || IsSuccessorOf(hullId, a.HullId));
+        var grant = new LoadoutGrant(ack.HullId, ack.Parts.ToList());
+        warning = EvaluateGrant(name, hullId, parts, grant);
+        return grant;
     }
 
     /// <summary>P554 — on an arena-relocation failure the bot must not linger as
@@ -654,11 +678,11 @@ internal sealed partial class BotManager : IDisposable
     /// </summary>
     private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning)
     {
-        using var ownership = new PendingOwnership();
+        using var ownership = new PendingOwnership(DisposePeer);
         var cs = ownership.Own(new ConnectionSession());
         cs.World.CountOnlyProjectiles = true;
         cs.World.ReckonRemotes = false;   // P633 — headless bot harness: no render consumption of dead-reckoners
-        cs.Connect(_port, name, _host);
+        _stallTelemetry.Connect(cs, name, _host, _port);
         cs.SendLogonRequest(Request(name));
         if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
             throw new InvalidOperationException($"combat client '{name}' never got a validated LOGONACK from {_host}:{_port}");
@@ -674,9 +698,10 @@ internal sealed partial class BotManager : IDisposable
         cs.SendPlayerReady(true, shipId);
         // P473 — reset the ack accumulator so the only ack considered is the one
         // answering THIS purchase (not the seat's join-burst default-hull ack).
+        var ownLaunched = SpawnLaunch.Observe(cs, shipId);
         cs.ResetBuyLoadoutAcks();
-        cs.SendBuyLoadout(hullId, fLaunch: true, parts);
-        granted = WaitForAck(() => cs.BuyLoadoutAcks, name, hullId, parts, out warning);
+        granted = BuyAndConfirmLaunch(name, hullId, parts, () => cs.Connected && !cs.Lost, ownLaunched,
+            () => cs.SendBuyLoadout(hullId, fLaunch: true, parts), () => cs.BuyLoadoutAcks, out warning);
         ownership.Transfer();
         return cs;
     }
@@ -1029,13 +1054,13 @@ internal sealed partial class BotManager : IDisposable
         {
             if (_commanders.TryGetValue(side, out var existing) && existing.Connected)
                 return existing;
-            existing?.Dispose();
+            DisposePeer(existing);
             string name = $"mcp-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
-            using var ownership = new PendingOwnership();
+            using var ownership = new PendingOwnership(DisposePeer);
             var cs = ownership.Own(new ConnectionSession());
             cs.World.CountOnlyProjectiles = true;
             cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
-            cs.Connect(_port, name, _host);
+            _stallTelemetry.Connect(cs, name, _host, _port);
             cs.SendLogonRequest(Request(name));
             if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
                 throw new InvalidOperationException($"commander: side {side} peer '{name}' never got a validated LOGONACK from {_host}:{_port}");
@@ -1485,39 +1510,6 @@ internal sealed partial class BotManager : IDisposable
         return requested;
     }
 
-    /// <summary>
-    /// P473 — wait for the real <c>BUY_LOADOUT_ACK(5)</c> that answers THIS
-    /// purchase, take it as the granted loadout, and evaluate it against the
-    /// requested loadout (<see cref="EvaluateGrant"/>: refusal throws, partial
-    /// is a warning). The caller must <c>ResetBuyLoadoutAcks</c> immediately
-    /// before its <see cref="SendBuyLoadout"/> so the list holds only THIS
-    /// purchase's acks (a peer also gets a join-burst ack for its default hull
-    /// at seat). Definitively recognizes the purchase by waiting for an ack that
-    /// reflects the REQUESTED hull (a no-op same-hull buy's ack carries it too),
-    /// or — P488 — an ack that reflects a SUCCESSOR of the requested hull (a
-    /// side that has out-teched the requested hull is granted the successor, so
-    /// its ack HullId differs); a refused purchase (no such ack) is evaluated
-    /// from the last ack (which acks the unchanged hull) so the refusal is
-    /// reported, not swallowed.
-    /// </summary>
-    private static LoadoutGrant WaitForAck(Func<IReadOnlyList<BuyLoadoutAck>> acks, string name, short requestedHull, IReadOnlyList<ExpandedPartData> requestedParts, out string? warning)
-    {
-        WaitUntil(() =>
-        {
-            var list = acks();
-            return list.Count > 0 && list.Any(a => a.HullId == requestedHull || IsSuccessorOf(requestedHull, a.HullId));
-        }, 4000);
-
-        var all = acks();
-        if (all.Count == 0)
-            throw new InvalidOperationException(
-                $"spawn_bot: bot '{name}' never received a BUY_LOADOUT_ACK after requesting hull {requestedHull} — the purchase was not processed by the server's ApplyLoadout");
-        var ack = all.LastOrDefault(a => a.HullId == requestedHull || IsSuccessorOf(requestedHull, a.HullId)) ?? all[^1];
-        var granted = new LoadoutGrant(ack.HullId, ack.Parts.ToList());
-        warning = EvaluateGrant(name, requestedHull, requestedParts, granted);
-        return granted;
-    }
-
     /// <summary>The real core, resolved once (PCore001 — the same core the
     /// server boots), used to tell a P488 successor upgrade from a P441 refusal
     /// by walking the requested hull's successor chain.</summary>
@@ -1603,9 +1595,10 @@ internal sealed partial class BotManager : IDisposable
             passStartMs = Now() * 1000.0;
             lock (_metricsGate) _lastWallPeriodMs = passStartMs - lastPassStartMs;
             lastPassStartMs = passStartMs;
+            var passSw = Stopwatch.StartNew();
+            _stallTelemetry.Metrics.BeginPass();
             try
             {
-                var passSw = Stopwatch.StartNew();
                 double now = Now();
                 ActiveBot[] snap;
                 lock (_gate) snap = _bots.ToArray();
@@ -1615,6 +1608,7 @@ internal sealed partial class BotManager : IDisposable
                 _tickEngagers.Clear();
                 foreach (var b in snap)
                     if (IsParticipating(b) && !b.SpawnPending && !b.InScenario && b.Cs is { } lifeCs) RefreshLife(b, lifeCs, now);
+                UpdateDefense(snap, now);
 
                 // P636d — LAZY publish: request a fresh decision snapshot from every
                 // seated bot's receive thread BEFORE this pass reads .Decision. The
@@ -1791,12 +1785,16 @@ bool isThreat =
                 // id; re-propagate its ready intent so the next wave starts.
                 try { ReReadyProbe(); } catch { }
 
-                // P633 — record this pass's decision time + periodically sample
-                // the bot process's resources and decode throughput (item 1/6).
-                passSw.Stop();
-                RecordPass(passSw.Elapsed.TotalMilliseconds);
             }
             catch { }
+            finally
+            {
+                // Keep the stall pass open through resource sampling too: a
+                // wait in that work must be visible as an unfinished/long pass.
+                try { RecordPass(passSw.Elapsed.TotalMilliseconds); } catch { }
+                passSw.Stop();
+                _stallTelemetry.Metrics.EndPass(passSw.Elapsed.TotalMilliseconds);
+            }
 
             // P633 — FIXED decision cadence (item 2): sleep `target − elapsed`,
             // never `50 ms + pass time`, so a busy fight keeps bots deciding on
@@ -2082,7 +2080,7 @@ bool isThreat =
         try
         {
             var cs = SeatCombatClient(name, bot.Side, bot.HullId, parts, out short shipId, out short actualSide, out var upGranted, out var upWarning);
-            try { old.Dispose(); } catch { }   // free the old plain-client peer now that the combat one is real
+            try { DisposePeer(old); } catch { }   // free the old plain-client peer now that the combat one is real
             bot.Bot = null;
             bot.Cs = cs;
             bot.ShipId = shipId;
@@ -2574,14 +2572,15 @@ bool isThreat =
         if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
         short myCluster = CsSector(cs);
 
-        // P431 — the commanded ship-target wins over the coordinated choice. While
+        // P431 — outside a temporary defence engagement, the commanded ship-target
+        // wins over the coordinated choice. Defence preserves the order for resumption. While
         // it is alive and co-located, engage exactly it; if it is not currently
         // engageable (cross-side visibility can be intermittent — P429) or not yet
         // co-located, loiter (committed to this order, attacking no one else). The
         // order is only released by a NEW superseding order (DecideAcceptTranslate),
         // not by a transient visibility gap.
         ClearInvalidOrderedTarget(bot, cs);
-        if (bot.OrderedTargetId is { } ordered)
+        if (!bot.DefendingInPlace && bot.OrderedTargetId is { } ordered)
         {
             bool engageable; short osector;
             lock (cs.Gate)
@@ -2737,6 +2736,14 @@ bool isThreat =
             candidates = candidates.Where(c => bot.RecentAttackers.TryGetValue(c.Id, out var at)
                 && now - at < ThreatWindowSeconds).ToList();
         var ctx = new BotSelectionContext(bot.ShipId, myCluster, 0, _tickEngagers);
+        if (bot.DefendingInPlace && bot.DefenseTargets.Count > 0)
+        {
+            candidates = candidates.Where(c => bot.DefenseTargets.Contains(c.Id)).ToList();
+            // Fill bomber/capital threat caps first, then other observed attackers.
+            var stationThreats = candidates.Where(c => CombatTargetSelector.IsStationThreatening(c.Class)).ToList();
+            var priority = CombatTargetSelector.PickBy(!CombatTargetSelector.SpreadFirst, stationThreats, ctx);
+            if (priority is { } pick) return pick;
+        }
         return CombatTargetSelector.Select(candidates, ctx);
     }
 
@@ -3096,6 +3103,11 @@ bool isThreat =
                     && atk.SideId != -1 && atk.SideId != bot.Side)
                     bot.RecentAttackers[h.SourceId] = now;
 
+                if (h.SourceId >= 0 && cs.World.Ships.TryGetValue(h.SourceId, out var assetAttacker)
+                    && assetAttacker.SideId >= 0 && assetAttacker.SideId != bot.Side
+                    && (tgtSide == bot.Side || (cs.World.Stations.TryGetValue(h.TargetId, out var station) && station.SideId == bot.Side)))
+                    bot.RecentAssetAttackers[h.SourceId] = now;
+
                 // P556 — TTK: record the FIRST damaging enemy hit on this victim
                 // (our own hit on a different-side ship; shield- or hull-absorbed —
                 // a shielded victim soaks hits from first contact, so a stronger
@@ -3133,6 +3145,8 @@ bool isThreat =
             if (now - bot.LastAttackersPruneAt > 5.0)
             {
                 bot.LastAttackersPruneAt = now;
+                foreach (var id in bot.RecentAssetAttackers.Where(a => now - a.Value > ThreatWindowSeconds).Select(a => a.Key).ToArray())
+                    bot.RecentAssetAttackers.Remove(id);
                 if (bot.RecentAttackers.Count > 0)
                 {
                     var stale = bot.RecentAttackers
@@ -4275,52 +4289,9 @@ bool isThreat =
         return (a, b, -axis, axis);
     }
 
-    /// <summary>[vz DriveEnemyContingent] Drive one combat bot a tick. The bot is
-    /// already launched at spawn; if it has a <c>target_sector</c> it routes real
-    /// warps along the BFS shortest path there before engaging; otherwise (or once
-    /// arrived) it engages any different-side ship already in its own cluster.
-    /// P539: tallies real combat stats, and a bot whose own ship has become a
-    /// LIFEPOD stops combat and flies home to dock instead of fighting.</summary>
-    private void DriveCombat(ActiveBot bot, double now, PreparedEngagement? prep)
+    /// <summary>Keep warp telemetry and arrival clearance on both objective and defence legs.</summary>
+    private static void RecordCombatSectorTransition(ActiveBot bot, ConnectionSession cs, short cur, double now)
     {
-        using var frameScope = new DecisionFrameScope(bot.Cs);
-        var cs = bot.Cs!;
-        if (!IsParticipating(bot) || !RefreshLife(bot, cs, now)) return;
-        if (DecisionSnapshotEnabled && SnapshotFor(cs).MissionGeneration != cs.World.MissionGeneration) return;
-        if (cs.World.MyShipId is not { } my) return;     // not seated yet
-        bot.ShipId = my;
-
-        // P539 — tally this bot's REAL combat stats (hits/kills) from its own
-        // wire/world events each tick.
-        SampleCombatStats(bot, cs, my, now);
-
-        // P539 — a lifepod stops fighting and flies home to dock.
-        if (UpdatePodState(bot, cs, now))
-        {
-            DrivePodHome(bot, cs, now);
-            return;
-        }
-
-        if (bot.TargetSector is not { } goal) { EngageCombat(bot, now, prep); return; }
-
-        // P539d — arena: both sides were relocated to mirrored spots in the target
-        // sector at spawn; no travel, so engage in place (travel can't decide it).
-        if (bot.Arena)
-        {
-            if (!bot.Arrived) { bot.Arrived = true; bot.ArrivedAt ??= now; }
-            EngageCombat(bot, now, prep);
-            return;
-        }
-
-        short cur = CsSector(cs);
-        if (cur < 0) return;                             // own pose not streaming yet
-
-        // P539d — arrival + warp-hop telemetry (a pod relaunch is not a warp hop).
-        if (cur == goal && !bot.Arrived)
-        {
-            bot.Arrived = true;
-            bot.ArrivedAt ??= now;
-        }
         if (!bot.IsPod && bot.LastCluster >= 0 && cur != bot.LastCluster)
         {
             if (bot.WarpHops.Count == 0 || bot.WarpHops[^1].To != cur)
@@ -4348,6 +4319,57 @@ bool isThreat =
                 }
             }
         }
+    }
+
+    /// <summary>Drive real combat, pod recovery and objective travel, temporarily
+    /// interrupting travel for visible attackers or an active base defence.</summary>
+    private void DriveCombat(ActiveBot bot, double now, PreparedEngagement? prep)
+    {
+        using var frameScope = new DecisionFrameScope(bot.Cs);
+        var cs = bot.Cs!;
+        if (!IsParticipating(bot) || !RefreshLife(bot, cs, now)) return;
+        if (DecisionSnapshotEnabled && SnapshotFor(cs).MissionGeneration != cs.World.MissionGeneration) return;
+        if (cs.World.MyShipId is not { } my) return;     // not seated yet
+        bot.ShipId = my;
+
+        // P539 — tally this bot's REAL combat stats (hits/kills) from its own
+        // wire/world events each tick.
+        SampleCombatStats(bot, cs, my, now);
+
+        // P539 — a lifepod stops fighting and flies home to dock.
+        if (UpdatePodState(bot, cs, now))
+        {
+            DrivePodHome(bot, cs, now);
+            return;
+        }
+
+        short defenseSector = CsSector(cs);
+        if (!bot.Arena && defenseSector >= 0) RecordCombatSectorTransition(bot, cs, defenseSector, now);
+        if (defenseSector >= 0 && TryDriveDefense(bot, defenseSector, now)) return;
+        // Clear a temporary combat target before resuming travel.
+        if (bot.TargetSector is { } objective && defenseSector != objective)
+            bot.TargetId = null;
+
+        if (bot.TargetSector is not { } goal) { EngageCombat(bot, now, prep); return; }
+
+        // P539d — arena: both sides were relocated to mirrored spots in the target
+        // sector at spawn; no travel, so engage in place (travel can't decide it).
+        if (bot.Arena)
+        {
+            if (!bot.Arrived) { bot.Arrived = true; bot.ArrivedAt ??= now; }
+            EngageCombat(bot, now, prep);
+            return;
+        }
+
+        short cur = CsSector(cs);
+        if (cur < 0) return;                             // own pose not streaming yet
+
+        // P539d — arrival + warp-hop telemetry (a pod relaunch is not a warp hop).
+        if (cur == goal && !bot.Arrived)
+        {
+            bot.Arrived = true;
+            bot.ArrivedAt ??= now;
+        }
 
         // P610 — EXIT CLEAR-OUT: right after crossing an aleph keep flying along
         // the exit direction (the full-throttle Pursue; dodge still pre-empts an
@@ -4368,7 +4390,7 @@ bool isThreat =
         }
         bot.ExitClearFrom = null;   // cleared (or never set) — normal logic resumes
 
-        if (bot.Arrived) { EngageCombat(bot, now, prep); return; }
+        if (bot.Arrived && cur == goal) { EngageCombat(bot, now, prep); return; }
 
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
             && HasVisibleAttacker(bot, cs, cur, now))
@@ -4627,6 +4649,8 @@ bool isThreat =
         /// <summary>P637 — the bot's showcase role (Fighter/Bomber/Scout/...),
         /// so a caller can see which role got which target/route.</summary>
         public required string Role { get; init; }
+        public string State { get; init; } = "active";
+        public short? DefenseSector { get; init; }
         /// <summary>P637 — the sector this bot is ROUTING to (its own objective:
         /// the rendezvous for fighters, the enemy home sector for bombers).
         /// -1 when the bot has no target sector (engages in place).</summary>
@@ -4747,6 +4771,8 @@ bool isThreat =
                             WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                             RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
                             Role = bot.Role, TargetSector = bot.TargetSector ?? -1,
+                            State = bot.DefenseSector is not null || bot.DefendingInPlace ? "defending" : "active",
+                            DefenseSector = bot.DefenseSector ?? (bot.DefendingInPlace ? sector : null),
                             StagingSector = bot.StagingSector, StagePhase = bot.StagePhase,
                             Velocity = [vel.X, vel.Y, vel.Z], Speed = speed, Idle = idle,
                         });
@@ -4765,6 +4791,8 @@ bool isThreat =
                         WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                         RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
                         Role = bot.Role, TargetSector = bot.TargetSector ?? -1,
+                        State = bot.DefenseSector is not null || bot.DefendingInPlace ? "defending" : "active",
+                        DefenseSector = bot.DefenseSector,
                         StagingSector = bot.StagingSector, StagePhase = bot.StagePhase,
                         Velocity = [0, 0, 0], Speed = 0, Idle = idle2,
                     });
@@ -5046,7 +5074,8 @@ bool isThreat =
             maxGate,
             decode,
             snapAge,
-            (snapPubPerSec, snapPubMsPerSec, dlMean, dlP95, dlMax));
+            (snapPubPerSec, snapPubMsPerSec, dlMean, dlP95, dlMax),
+            _stallTelemetry.Snapshot());
     }
 
     // ── P539: real per-bot combat stats (shots / ship hits / kills / pods) ──
@@ -5341,28 +5370,32 @@ bool isThreat =
         }
         foreach (var bot in toDispose)
         {
-            try { bot.Bot?.Dispose(); } catch { }
-            try { bot.Cs?.Dispose(); } catch { }
+            try { DisposePeer(bot.Bot); } catch { }
+            try { DisposePeer(bot.Cs); } catch { }
         }
     }
 
     public void Dispose()
     {
         _loopCts.Cancel();
-        lock (_gate)
-            foreach (var bot in _bots)
-            {
-                try { bot.Bot?.Dispose(); } catch { }
-                try { bot.Cs?.Dispose(); } catch { }
-            }
-        _bots.Clear();
+        if (_loopThread.IsAlive) _loopThread.Join(500);
+        ActiveBot[] bots;
+        lock (_gate) { bots = _bots.ToArray(); _bots.Clear(); }
+        foreach (var bot in bots)
+        {
+            try { DisposePeer(bot.Bot); } catch { }
+            try { DisposePeer(bot.Cs); } catch { }
+        }
         lock (_commanders)
         {
-            foreach (var c in _commanders.Values) { try { c.Dispose(); } catch { } }
+            foreach (var c in _commanders.Values) { try { DisposePeer(c); } catch { } }
             _commanders.Clear();
         }
-        Probe.Dispose();
+        DisposePeer(Probe);
+        _stallTelemetry.Dispose();
     }
+
+    private void DisposePeer(IDisposable? peer) => _stallTelemetry.Close(peer);
 
     /// <summary>
     /// The per-bot bookkeeping. Exactly one of <see cref="Bot"/> (idle/weave — a
@@ -5426,6 +5459,11 @@ bool isThreat =
         // "threats first" priority: a ship shooting at me is engaged before idle
         // combat ships or miners.
         public readonly Dictionary<short, double> RecentAttackers = new();
+        public readonly Dictionary<short, double> RecentAssetAttackers = new();
+        public long DefenseChatCursor;
+        public short? DefenseSector;
+        public bool DefendingInPlace;
+        public HashSet<short> DefenseTargets = new();
         public double LastAttackersPruneAt = double.NegativeInfinity;
         public double LastTargetAt = double.NegativeInfinity;
         public double LastBoostAt = double.NegativeInfinity;
@@ -5639,7 +5677,8 @@ public readonly record struct BotPerfReport(
     double MaxGateHoldMs,
     double DecodeMbPerSec,
     (double MeanMs, double P95Ms, double MaxMs) SnapAgeMs,
-    (double PublishPerSec, double PublishMsPerSec, double DecodeLagMean, double DecodeLagP95, double DecodeLagMax) SnapshotStats);
+    (double PublishPerSec, double PublishMsPerSec, double DecodeLagMean, double DecodeLagP95, double DecodeLagMax) SnapshotStats,
+    StallReport Stall);
 
 /// <summary>P431 — one bot tick's accept-and-translate decision (see
 /// <see cref="BotManager.DecideAcceptTranslate"/>): whether the bot must send a

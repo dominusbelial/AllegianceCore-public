@@ -68,6 +68,7 @@ internal static class McpTools
                     type = "object",
                     properties = new
                     {
+                        refill = new { type = "boolean", @default = true, description = "Retry each failed or disconnected slot once at the end of spawning. Summary counts only bots still connected at completion; failures lists every failed attempt." },
                         size = new { type = "integer", description = "Homogeneous mode: bots PER SIDE to spawn (total = 2×size). Used when no `fleet`/`fleet_a`/`fleet_b`/`preset` is given. 5 / 10 / 15 are the intended presets." },
                         hull = new { type = "string", description = "Homogeneous mode: hull name/substring used for every bot. Defaults to the same real fighter spawn_bot / vizfight use." },
                         fleet = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet used for BOTH sides: array of { hull (name/substring), count (int ≥1), tech (optional int ≥0) }. Each entry spawns `count` bots of that hull with its native preferred loadout advanced by `tech`." },
@@ -198,7 +199,7 @@ internal static class McpTools
         args ??= new Dictionary<string, JsonElement>();
         try
         {
-            return name switch
+            var result = name switch
             {
                 "spawn_bot" => SpawnBot(args, mgr),
                 "spawn_scenario" => SpawnScenario(args, mgr),
@@ -216,6 +217,7 @@ internal static class McpTools
                     .Select(b => new {
                         name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull,
                         role = b.Role, sector = b.Sector, behavior = b.Behavior,
+                        state = b.State, defenseSector = b.DefenseSector,
                         target = b.Target, orderedTarget = b.OrderedTarget, engagers = b.Engagers,
                         pos = b.Position,
                         // P637 — role → target → route → staging + live motion.
@@ -228,19 +230,34 @@ internal static class McpTools
                     })))),
                 _ => Err($"unknown tool '{name}'"),
             };
+            return name == "spawn_bot" && result.IsError == true ? SpawnBotError(args, mgr, result) : result;
         }
         catch (ArgumentException ex)
         {
-            return Err(ex.Message);                       // unresolvable hull/part/side, bad behavior
+            return name == "spawn_bot" ? SpawnBotError(args, mgr, Err(ex.Message)) : Err(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Err(ex.Message);                       // server-side refusal / not-ready
+            return name == "spawn_bot" ? SpawnBotError(args, mgr, Err(ex.Message)) : Err(ex.Message);
         }
         catch (Exception ex)
         {
-            return Err($"spawn failed unexpectedly: {ex.Message}");
+            var error = Err($"spawn failed unexpectedly: {ex.Message}");
+            return name == "spawn_bot" ? SpawnBotError(args, mgr, error) : error;
         }
+    }
+
+    internal static CallToolResult SpawnBotError(IDictionary<string, JsonElement> args, BotManager mgr, CallToolResult error)
+    {
+        int? side = OptInt(args, "side") ?? (mgr.ProbeSide >= 0 ? mgr.ProbeSide : null);
+        string reason = string.Join(" ", error.Content.OfType<TextContentBlock>().Select(c => c.Text));
+        SpawnLaunch.LogFailure(side, OptStr(args, "hull") ?? "(unspecified)", reason);
+        return Err(JsonSerializer.Serialize(new
+        {
+            ok = false, requested = 1, spawned = 0, failed = 1,
+            sides = new[] { new { side, requested = 1, spawned = 0, failed = 1 } },
+            failures = new[] { new { side, error = reason } },
+        }));
     }
 
     private static CallToolResult SpawnBot(IDictionary<string, JsonElement> args, BotManager mgr)
@@ -318,10 +335,15 @@ internal static class McpTools
                 : Catalog.ResolveLauncher(la).Id;
         }
 
-        var result = mgr.SpawnBot(flyHullId, flyHullName, side is { } sv ? (short)sv : null, parts, behavior, targetSector, launcherId, launcherRequest);
+        var result = mgr.SpawnBot(flyHullId, flyHullName, side is { } sv ? (short)sv : null, parts, behavior, targetSector, launcherId, launcherRequest, reportFailure: false);
+        if (!mgr.IsSpawnActive(result))
+            throw new InvalidOperationException($"spawn_bot: bot '{result.Name}' disconnected or was disposed before reporting");
         return Ok(JsonSerializer.Serialize(new
         {
             ok = true,
+            requested = 1, spawned = 1, failed = 0,
+            sides = new[] { new { side = result.Side, requested = 1, spawned = 1, failed = 0 } },
+            failures = Array.Empty<object>(),
             name = result.Name,
             shipId = result.ShipId,
             hull = result.Hull,
@@ -408,10 +430,8 @@ internal static class McpTools
             return Err($"spawn_scenario: staging a fight needs at least two sides; this server has: {string.Join(", ", sides)}");
         short sideA = sides[0], sideB = sides[1];
 
-        int spawnedA = 0, spawnedB = 0;
-        var failures = new List<object>();
-        var grants = new List<object>();   // P473 — per-bot granted loadout + warning
-        int warnings = 0;
+        var spawnSlots = new List<SpawnBatch.Slot>();
+        bool refill = OptBool(args, "refill", def: true);
         // P556 — each side's resolved tech loadout (effective hull + parts). The
         // effective hull id is what each side's spawn REQUESTS so the server
         // mounts the successor hull, not the base.
@@ -493,27 +513,19 @@ internal static class McpTools
             { raIdx = BotManager.PickLeastLoadedRoute(routeCounts[sideA]); routeCounts[sideA][raIdx]++; raPath = rsA[raIdx]; }
             if (routePlans.TryGetValue(sideB, out var rsB))
             { rbIdx = BotManager.PickLeastLoadedRoute(routeCounts[sideB]); routeCounts[sideB][rbIdx]++; rbPath = rsB[rbIdx]; }
-            try
-            {
-                var ra = mgr.SpawnBot(flyHullIdA, flyHullNameA, sideA, partsA, "combat", targetSector, launcherId, launcherRequest,
-                    useStaging: staging, arena: arena, arenaPosition: arena ? spotA.Pos : null, arenaFacing: arena ? spotA.Fwd : null,
-                    routePath: raPath, routeIndex: raIdx);
-                spawnedA++;
-                grants.Add(new { side = sideA, name = ra.Name, grantedHull = ra.Granted.HullId, grantedParts = ra.Granted.Parts.Select(p => p.PartId).ToArray(), warning = ra.Warning });
-                if (ra.Warning is not null) warnings++;
-            }
-            catch (Exception ex) { failures.Add(new { index = i, side = sideA, error = ex.Message }); }
-            try
-            {
-                var rb = mgr.SpawnBot(flyHullIdB, flyHullNameB, sideB, partsB, "combat", targetSector, launcherId, launcherRequest,
-                    useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null,
-                    routePath: rbPath, routeIndex: rbIdx);
-                spawnedB++;
-                grants.Add(new { side = sideB, name = rb.Name, grantedHull = rb.Granted.HullId, grantedParts = rb.Granted.Parts.Select(p => p.PartId).ToArray(), warning = rb.Warning });
-                if (rb.Warning is not null) warnings++;
-            }
-            catch (Exception ex) { failures.Add(new { index = i, side = sideB, error = ex.Message }); }
+            spawnSlots.Add(new(i, sideA, flyHullNameA, () => mgr.SpawnBot(
+                flyHullIdA, flyHullNameA, sideA, partsA, "combat", targetSector, launcherId, launcherRequest,
+                useStaging: staging, arena: arena, arenaPosition: arena ? spotA.Pos : null, arenaFacing: arena ? spotA.Fwd : null,
+                routePath: raPath, routeIndex: raIdx, reportFailure: false)));
+            spawnSlots.Add(new(i, sideB, flyHullNameB, () => mgr.SpawnBot(
+                flyHullIdB, flyHullNameB, sideB, partsB, "combat", targetSector, launcherId, launcherRequest,
+                useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null,
+                routePath: rbPath, routeIndex: rbIdx, reportFailure: false)));
         }
+        var batch = new SpawnBatch(spawnSlots);
+        batch.Run(refill, mgr.IsSpawnActive);
+        var grants = GrantReports(batch);
+        int warnings = batch.Results.Count(r => r.Warning is not null);
 
         var summary = new
         {
@@ -536,16 +548,17 @@ internal static class McpTools
                 sideA = SideReport(tlA, techA),
                 sideB = SideReport(tlB, techB),
             },
-            sideA = new { side = sideA, spawned = spawnedA },
-            sideB = new { side = sideB, spawned = spawnedB },
+            refill,
+            sideA = batch.Counts(sideA),
+            sideB = batch.Counts(sideB),
             // P473 — the REAL granted loadout per bot and the partial-grant
             // warning count; a refusal surfaces as a per-bot failure above.
             grants,
             warnings,
-            failures,
+            failures = batch.Failures,
             note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence.",
         };
-        if (spawnedA == 0 && spawnedB == 0)
+        if (batch.Results.Count == 0)
             return Err(JsonSerializer.Serialize(summary));   // complete failure: an error result
         return Ok(JsonSerializer.Serialize(summary));
     }
@@ -637,10 +650,8 @@ internal static class McpTools
         if (args.TryGetValue("minefields", out var mfj) && mfj.ValueKind == JsonValueKind.Object)
             minefieldReports = LayMinefields(mfj, mgr, targetSector, sideA, sideB, core);
 
-        int spawned = 0;
-        var failures = new List<object>();
-        var grants = new List<object>();
-        int warnings = 0;
+        var spawnSlots = new List<SpawnBatch.Slot>();
+        bool refill = OptBool(args, "refill", def: true);
 
         // P635 — multi-route wings: split each side across ALL its distinct
         // entry alephs into the rendezvous (instead of funnelling the whole fleet
@@ -696,45 +707,42 @@ internal static class McpTools
         {
             var slot = slots[si];
             var spot = arena && arenaSpots.Count > si ? arenaSpots[si] : default;
-            try
-            {
-                // P637 — per-role target: a BOMBER's own objective is the ENEMY
-                // HOME sector (its garrison), not the fighter rendezvous; every
-                // other role converges on the rendezvous.
-                short? botTarget = BotManager.ResolveScenarioTarget(arena, slot.Role, targetSector,
-                    mgr.FindSideHomeSector(slot.Side == sideA ? sideB : sideA) ?? -1);
+            // P637 — per-role target: a BOMBER's own objective is the ENEMY
+            // HOME sector (its garrison), not the fighter rendezvous; every
+            // other role converges on the rendezvous.
+            short? botTarget = BotManager.ResolveScenarioTarget(arena, slot.Role, targetSector,
+                mgr.FindSideHomeSector(slot.Side == sideA ? sideB : sideA) ?? -1);
 
-                // P635/P637 — assign this bot to the least-loaded wing of its
-                // side. A bomber goes on its OWN (home → enemy-home) route wing,
-                // never a fighter wing (whose rendezvous staging it would wait on).
-                IReadOnlyList<short>? routePath = null;
-                int routeIndex = -1;
-                if (!arena && slot.Role == Showcase.HullRole.Bomber && botTarget >= 0
-                    && bomberPlans.TryGetValue(slot.Side, out var bs))
-                {
-                    var bc = bomberCounts[slot.Side];
-                    routeIndex = BotManager.PickLeastLoadedRoute(bc);
-                    bc[routeIndex]++;
-                    routePath = bs[routeIndex];
-                }
-                else if (routePlans.TryGetValue(slot.Side, out var rs))
-                {
-                    var counts = routeCounts[slot.Side];
-                    routeIndex = BotManager.PickLeastLoadedRoute(counts);
-                    counts[routeIndex]++;
-                    routePath = rs[routeIndex];
-                }
-                var r = mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", botTarget,
-                    slot.LauncherId, slot.LauncherName, useStaging: staging, arena: arena,
-                    arenaPosition: arena ? spot.Pos : null, arenaFacing: arena ? spot.Fwd : null,
-                    wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
-                    role: slot.Role.ToString());
-                spawned++;
-                grants.Add(new { side = slot.Side, name = r.Name, grantedHull = r.Granted.HullId, grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning });
-                if (r.Warning is not null) warnings++;
+            // P635/P637 — assign this bot to the least-loaded wing of its
+            // side. A bomber goes on its OWN (home → enemy-home) route wing,
+            // never a fighter wing (whose rendezvous staging it would wait on).
+            IReadOnlyList<short>? routePath = null;
+            int routeIndex = -1;
+            if (!arena && slot.Role == Showcase.HullRole.Bomber && botTarget >= 0
+                && bomberPlans.TryGetValue(slot.Side, out var bs))
+            {
+                var bc = bomberCounts[slot.Side];
+                routeIndex = BotManager.PickLeastLoadedRoute(bc);
+                bc[routeIndex]++;
+                routePath = bs[routeIndex];
             }
-            catch (Exception ex) { failures.Add(new { index = si, side = slot.Side, hull = slot.SourceHull, error = ex.Message }); }
+            else if (routePlans.TryGetValue(slot.Side, out var rs))
+            {
+                var counts = routeCounts[slot.Side];
+                routeIndex = BotManager.PickLeastLoadedRoute(counts);
+                counts[routeIndex]++;
+                routePath = rs[routeIndex];
+            }
+            spawnSlots.Add(new(si, slot.Side, slot.SourceHull, () => mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", botTarget,
+                slot.LauncherId, slot.LauncherName, useStaging: staging, arena: arena,
+                arenaPosition: arena ? spot.Pos : null, arenaFacing: arena ? spot.Fwd : null,
+                wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
+                role: slot.Role.ToString(), reportFailure: false)));
         }
+        var batch = new SpawnBatch(spawnSlots);
+        batch.Run(refill, mgr.IsSpawnActive);
+        var grants = GrantReports(batch);
+        int warnings = batch.Results.Count(r => r.Warning is not null);
 
         var (faRep, fbRep) = BuildFleetReport(core, slots);
         var summary = new
@@ -750,18 +758,25 @@ internal static class McpTools
             routes = routesNote,
             maxPerRoute,
             bombersTarget = "enemy home sector (P637 — non-rendezvous roles get their own route/staging toward their own objective, never wait on a fighter wing's release)",
-            sideA = new { side = sideA, spawned = totalA, fleet = faRep },
-            sideB = new { side = sideB, spawned = totalB, fleet = fbRep },
+            refill,
+            sideA = new { side = sideA, requested = totalA, spawned = batch.Counts(sideA).spawned, failed = batch.Counts(sideA).failed, refilled = batch.Counts(sideA).refilled, fleet = faRep },
+            sideB = new { side = sideB, requested = totalB, spawned = batch.Counts(sideB).spawned, failed = batch.Counts(sideB).failed, refilled = batch.Counts(sideB).refilled, fleet = fbRep },
             minefields = minefieldReports,
             grants,
             warnings,
-            failures,
+            failures = batch.Failures,
             note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence. fleet lists the resolved per-hull loadout and whether the slice carries mines (mounted mine dispenser) / missiles; each bot's wingman flags are in `wingman`.",
         };
-        if (spawned == 0)
+        if (batch.Results.Count == 0)
             return Err(JsonSerializer.Serialize(summary));
         return Ok(JsonSerializer.Serialize(summary));
     }
+
+    private static object[] GrantReports(SpawnBatch batch) => batch.Results.Select(r => (object)new
+    {
+        side = r.Side, name = r.Name, grantedHull = r.Granted.HullId,
+        grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning,
+    }).ToArray();
 
     /// <summary>P557 — one spawn_scenario combat bot slot (fully resolved).</summary>
     private sealed record ShowcaseSpawnSlot(
@@ -1049,6 +1064,7 @@ internal static class McpTools
             },
             decisionRateHz = ps.DecisionRateHz,
             decisionOverruns = mgr.DecisionOverruns,
+            stall = StallWatchdog.JsonSnapshot(ps.Stall),
             removedBots = mgr.RemovedBots(),
             fleetDecisionRateHz = ps.FleetDecisionRateHz,
             resources = new
