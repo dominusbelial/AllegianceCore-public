@@ -57,6 +57,8 @@ internal sealed class SpawnBatch
         Refresh();
     }
 
+    internal bool WasRefilled(string name) => Enumerable.Range(0, _results.Length).Any(i => _results[i]?.Name == name && _refilled[i]);
+
     public SideCounts Counts(short side)
     {
         int requested = 0, spawned = 0, refilled = 0;
