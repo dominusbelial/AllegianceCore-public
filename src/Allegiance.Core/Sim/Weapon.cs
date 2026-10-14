@@ -146,7 +146,7 @@ public sealed class Weapon
 
     /// <summary>
     /// Per-part update — the port of <c>CweaponIGC::Update</c>
-    /// (<c>weaponIGC.h:30-63</c>) minus the mounting ramp: select-then-activate,
+    /// (<c>weaponIGC.h:30-63</c>): readiness gate, select-then-activate,
     /// and fire when active. Calling this is what "firing on demand from a test"
     /// means this slice — the ship's <see cref="Ship.OnUpdate"/> invokes it for
     /// each mounted weapon inside the authoritative <c>Mission.Update</c>, and a
@@ -154,6 +154,11 @@ public sealed class Weapon
     /// </summary>
     public void Update(double now)
     {
+        if (!_ship.IsWeaponMountReady(this))
+        {
+            Deactivate();
+            return;
+        }
         if (!_active && IsWeaponSelected())
             Activate();
 

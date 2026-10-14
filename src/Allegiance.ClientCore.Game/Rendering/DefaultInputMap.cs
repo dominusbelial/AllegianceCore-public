@@ -113,7 +113,7 @@ public static partial class DefaultInputMap
         0x2E => Keys.Delete,
         0x60 => Keys.NumPad0, 0x61 => Keys.NumPad1, 0x62 => Keys.NumPad2, 0x63 => Keys.NumPad3,
         0x64 => Keys.NumPad4, 0x65 => Keys.NumPad5, 0x66 => Keys.NumPad6, 0x67 => Keys.NumPad7,
-        0x68 => Keys.NumPad8, 0x69 => Keys.NumPad9, 0x6B => Keys.OemPlus, 0x6D => Keys.OemMinus,
+        0x68 => Keys.NumPad8, 0x69 => Keys.NumPad9, 0x6B => Keys.Add, 0x6D => Keys.Subtract,
         0x6E => Keys.OemPeriod, 0x6F => Keys.OemQuestion,
         0x70 => Keys.F1, 0x71 => Keys.F2, 0x72 => Keys.F3, 0x73 => Keys.F4, 0x74 => Keys.F5,
         0x75 => Keys.F6, 0x76 => Keys.F7, 0x77 => Keys.F8, 0x78 => Keys.F9, 0x79 => Keys.F10,

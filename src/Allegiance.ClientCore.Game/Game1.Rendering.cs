@@ -366,7 +366,7 @@ public sealed partial class Game1
                 // lighting. Falls back to a sane fixed white light when the
                 // cluster is unknown, so objects never render black.
                 _sectorLighting = world.Ships.TryGetValue(me, out var ownLite)
-                    && world.Clusters.TryGetValue(ownLite.SectorId, out var dcLite)
+                    && world.Clusters.TryGetValue(RenderSector(ownLite.SectorId), out var dcLite)
                         ? Allegiance.Core.Rendering.SectorLighting.FromCluster(dcLite.LightDirection, dcLite.LightColor)
                         : Allegiance.Core.Rendering.SectorLighting.FromCluster(null, 0xFFFFFFFF);
 
@@ -581,9 +581,10 @@ public sealed partial class Game1
                 {
                     // In cockpit mode the local hull is not drawn — you are inside
                     // it; every OTHER known ship still renders normally.
-                    if (_cameraMode == CameraMode.Cockpit && id == me)
+                    if ((_cameraMode == CameraMode.Cockpit && id == me) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id))
                         continue;
 
+                    if (!ShipInDrawnSector(id, me)) continue;
                     var xnaPos = PoseConverter.ToXna(pose.Position);
                     var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
                     // P270 — alpha-blend cloaked ships (subtle shimmer over
@@ -706,7 +707,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownW))
                     {
-                        short myWarpSector = ownW.SectorId;
+                        short myWarpSector = RenderSector(ownW.SectorId);
                         foreach (var (_, wp) in world.Warps)
                         {
                             if (wp.ClusterId != myWarpSector) continue;
@@ -808,7 +809,7 @@ public sealed partial class Game1
                     world.PruneExpiredBuildingEffects(buildNow);
                     if (world.Ships.TryGetValue(me, out var ownBe))
                     {
-                        short myBeSector = ownBe.SectorId;
+                        short myBeSector = RenderSector(ownBe.SectorId);
                         foreach (var (_, be) in world.BuildingEffects)
                         {
                             if (be.ClusterId != myBeSector) continue;
@@ -1056,7 +1057,7 @@ public sealed partial class Game1
                     world.PruneExpiredMissiles(mNow);
                     if (world.Ships.TryGetValue(me, out var ownMs))
                     {
-                        short myMissileSector = ownMs.SectorId;
+                        short myMissileSector = RenderSector(ownMs.SectorId);
                         foreach (var (_, ms) in world.Missiles)
                         {
                             if (ms.ClusterId != myMissileSector) continue;
@@ -1143,7 +1144,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownPb))
                     {
-                        short myProbeSector = ownPb.SectorId;
+                        short myProbeSector = RenderSector(ownPb.SectorId);
                         foreach (var (_, pe) in world.Probes)
                         {
                             if (pe.ClusterId != myProbeSector) continue;
@@ -1173,7 +1174,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownMine))
                     {
-                        short myMineSector = ownMine.SectorId;
+                        short myMineSector = RenderSector(ownMine.SectorId);
                         var mineTypes = _shopCatalog?.MineTypes;
                         foreach (var (_, me2) in world.Mines)
                         {
@@ -1239,7 +1240,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownTr))
                     {
-                        short myTreasureSector = ownTr.SectorId;
+                        short myTreasureSector = RenderSector(ownTr.SectorId);
                         foreach (var (_, te) in world.Treasures)
                         {
                             if (te.ClusterId != myTreasureSector) continue;
@@ -1447,7 +1448,7 @@ public sealed partial class Game1
                     world.PruneExpiredExplosions(nowLocalMs);
                     if (world.MyShipId is { } meX && world.Ships.TryGetValue(meX, out var ownX))
                     {
-                        ownSectorId = ownX.SectorId;
+                        ownSectorId = RenderSector(ownX.SectorId);
                         foreach (var ex in world.Explosions)
                             if (ex.ClusterId == ownSectorId) _drawExplosions.Add(ex);
                     }
@@ -1586,6 +1587,7 @@ public sealed partial class Game1
                 // only ever appears when the player has a ship + camera, which is
                 // exactly when a local tactical picture is wanted.
                 // P580 — suppressed while the director is recording (clean b-roll).
+                DrawCommandGrid(view, proj, cameraEye);
                 if (!_directorActive)
                     DrawRadar(view, proj, cameraEye, gameTime.TotalGameTime.TotalSeconds);
 
@@ -1596,7 +1598,7 @@ public sealed partial class Game1
                 // live; default OFF (--aleph-glimpse on).
                 if (_alephGlimpse && world.MyShipId is { } gm
                     && world.Ships.TryGetValue(gm, out var gs)
-                    && world.Clusters.TryGetValue(gs.SectorId, out var gdc))
+                    && world.Clusters.TryGetValue(RenderSector(gs.SectorId), out var gdc))
                 {
                     DrawAlephGlimpses(view, proj, cameraEye, world, gdc);
                 }
@@ -1604,6 +1606,7 @@ public sealed partial class Game1
 
             // 2D HUD overlay on top of the 3D scene (P211).
             DrawHud();
+            DrawCommandHud();
 
             // P501 — semi-transparent touch sticks + buttons, above the HUD but
             // beneath the starmap/chat overlays. Skipped internally when no touch
@@ -1631,6 +1634,7 @@ public sealed partial class Game1
         // NextCargo/NextPart/PrevPart/DropCargo keys are operating on.
         if (!_directorActive)
             DrawCargoHud();
+            DrawFlightPartsHud();
 
             // P217 — the quick-chat voice-macro menu, on top of the chat log
             // (itself above the HUD). Only drawn while a menu level is open.
@@ -1682,8 +1686,11 @@ public sealed partial class Game1
                 _session.World.MyMoney,
                 _session.World.ActiveBallot?.BallotText,
                 _session.World.IsTeamLeader,
-                ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null);
-            _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines);
+                ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null,
+                $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} CHARACTER SHEET");
+            if (_consolePanes.Team == TeamConsoleSize.Mini)
+                lines = TeamPaneLayout.Compact(lines, _session.World.ScoreRoster, _session.World.MySideId);
+            _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines, _consolePanes.Team == TeamConsoleSize.Mini);
         }
 
         // P271 — mission-briefing popup (pre-launch): the dismissible briefing
@@ -1722,7 +1729,7 @@ public sealed partial class Game1
         // cockpit scene). Only present while the local ship is actually docked.
         // Its P273 sub-view is the teleport pane (board a teammate's turret /
         // teleport to a station); otherwise the P268 hangar loadout shows.
-        if (_dockedActive && _investActive && _investDefs is not null)
+        if (_dockedActive && _cameraMode != CameraMode.Command && _investActive && _investDefs is not null)
         {
             // P487 — the investment pane sub-view (native PurchasesPaneImpl),
             // drawn in the same docked-panel style as the teleport/hangar views.
@@ -1734,12 +1741,12 @@ public sealed partial class Game1
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, money: _session.World.MyMoney,
                 backdropAlpha: Rendering.DockedScreenRenderer.InvestBackdropAlpha);
         }
-        else if (_dockedActive && _teleportActive && _teleportModel is { } telPane)
+        else if (_dockedActive && _cameraMode != CameraMode.Command && _teleportActive && _teleportModel is { } telPane)
         {
             var telRows = Rendering.TeleportLayout.Build(telPane);
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows, money: _session.World.MyMoney);
         }
-        else if (_dockedActive && _shopModel is { } dockShop)
+        else if (_dockedActive && _cameraMode != CameraMode.Command && !_hangarOnly && _shopModel is { } dockShop)
         {
             // P519 — render the effective hull's real in-game model orbiting
             // behind the panes at native cmExternalOrbit rates; the translucent
@@ -1752,6 +1759,9 @@ public sealed partial class Game1
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows, _session.World.MyMoney,
                 backdropAlpha: 0.62f);
         }
+
+        DrawConsolePanes();
+        DrawMainMenu();
 
         // P262 — game-over result screen, drawn above EVERYTHING (even the help
         // keymap) so it is unmissable: the "why did everything stop" answer.
@@ -1833,12 +1843,12 @@ public sealed partial class Game1
         var world = _session.World;
         DataClusterIGC? sky = null;
         if (world.MyShipId is { } m && world.Ships.TryGetValue(m, out var ownS)
-            && world.Clusters.TryGetValue(ownS.SectorId, out var dc))
+            && world.Clusters.TryGetValue(RenderSector(ownS.SectorId), out var dc))
         {
             sky = dc;
-            if (ownS.SectorId != _skySector)
+            if (RenderSector(ownS.SectorId) != _skySector)
             {
-                _skySector = ownS.SectorId;
+                _skySector = RenderSector(ownS.SectorId);
                 _blackSky.SetCluster(dc);
                 _nativeSky.SetCluster(dc);
                 _hdSky.SetCluster(dc);
@@ -2016,7 +2026,8 @@ public sealed partial class Game1
         // the depth silhouettes match exactly what the color pass can draw.
         foreach (var (id, pose) in _poses)
         {
-            if (_cameraMode == CameraMode.Cockpit && id == me) continue;
+            if ((_cameraMode == CameraMode.Cockpit && id == me) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id)) continue;
+            if (!ShipInDrawnSector(id, me)) continue;
             var xnaPos = PoseConverter.ToXna(pose.Position);
             var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
             // P566 — native depth geometry (original .mdl at native scale); else the
@@ -2043,7 +2054,7 @@ public sealed partial class Game1
         {
             if (world.Ships.TryGetValue(me, out var own))
             {
-                short mySector = own.SectorId;
+                short mySector = RenderSector(own.SectorId);
                 foreach (var (id, ast) in world.Asteroids)
                 {
                     if (ast.ClusterId != mySector) continue;
@@ -2088,7 +2099,7 @@ public sealed partial class Game1
         {
             if (world.Ships.TryGetValue(me, out var ownSt))
             {
-                short myStSector = ownSt.SectorId;
+                short myStSector = RenderSector(ownSt.SectorId);
                 _drawStations.AddRange(Rendering.StationSceneGather.ColourPass(world.Stations, myStSector, ResolveStationRadius, ResolveStationModel));
             }
         }
@@ -2528,6 +2539,7 @@ public sealed partial class Game1
         // event cadence is unspecified, so the port uses a fixed ~400 ms phase.
         bool flashOn = (((long)gameTime.TotalGameTime.TotalMilliseconds / 400) & 1) == 0;
         var warningSnapshot = new Dictionary<short, short>();
+        var highlights = new HashSet<short>();
         var sites = new List<StarmapLayout.ClusterSite>();
         IReadOnlyList<ClusterInfo.WarpEdge>? edges = null;
         short? current = null;
@@ -2539,6 +2551,7 @@ public sealed partial class Game1
         IReadOnlyDictionary<short, int>? knownEnemySectors = null;
         lock (_session.Gate)
         {
+            highlights.UnionWith(world.HighlightedClusters);
             if (world.Graph is { } g)
             {
                 edges = g.Warps;
@@ -2634,7 +2647,7 @@ public sealed partial class Game1
             float panelY = (vp.Height - panelH) / 2f;
             _starmapRenderer.Draw(sites, edges, current, _selectedSectorId,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors);
+                flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors, highlights);
             if (pane is { } p)
                 _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH,
                     world.MySideId is { } mySide && sideColors.TryGetValue(mySide, out var mc) ? mc : (Color?)null);
@@ -2645,7 +2658,7 @@ public sealed partial class Game1
             // mini-map — current sector + warp topology at a glance, always on.
             _starmapRenderer.DrawMini(sites, edges, current,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, owners, SideColor, knownEnemySectors);
+                flashOn, vp, owners, SideColor, knownEnemySectors, highlights);
         }
     }
 
@@ -2694,7 +2707,7 @@ public sealed partial class Game1
         {
             if (world.MyShipId is not { } me) return;
             if (!world.Ships.TryGetValue(me, out var ownEnt)) return;
-            short mySector = ownEnt.SectorId;
+            short mySector = RenderSector(ownEnt.SectorId);
             // P624 — radar mode filter (All/Default/Target/Minimal) + my side for
             // the enemy/friendly test; snapshot under the gate with everything else.
             var radarMode = _radarMode;
@@ -2710,7 +2723,7 @@ public sealed partial class Game1
                 if (ownEnt.Latest is not { } ownUp) return;
                 ownSimPos = ownUp.Position;
             }
-            var ownPos = PoseConverter.ToXna(ownSimPos);
+            // Project with the eye that drew the scene, including commanding and drone views.
 
             // P326 — the former local function Add(...) is inlined below (it
             // captured per-frame state — ownPos/view/proj/w/h/inset and the
@@ -2722,7 +2735,7 @@ public sealed partial class Game1
             // otherwise still match mySector and show on the radar frozen).
             foreach (var (id, ship) in world.Ships)
             {
-                if (id == me || ship.IsNotVisible) continue;
+                if (id == me || ship.IsNotVisible || ship.Unknown || ship.ParentId >= 0) continue;
                 if (ship.SectorId != mySector) continue;
                 if (ship.Latest is not { }) continue;                     // keep the Latest gate
                 // P527 — anchor to the pose the renderer drew THIS frame (P448b
@@ -2732,7 +2745,7 @@ public sealed partial class Game1
                 // steady miner). Fallback to raw only when not rendered.
                 if (!ResolveRadarContactAnchor(_poses, world.Ships, id, out var shipPos)) continue;
                 var site = RadarProjection.Project(
-                    PoseConverter.ToXna(shipPos), ownPos, view, proj, w, h, inset);
+                    PoseConverter.ToXna(shipPos), cameraEye, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownSimPos - shipPos).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 // P372 — resolve the contact's REAL side colour from the side
@@ -2770,7 +2783,7 @@ public sealed partial class Game1
                 if (st.ClusterId != mySector) continue;
                 var sp = Vec(st.Position);
                 var site = RadarProjection.Project(
-                    PoseConverter.ToXna(sp), ownPos, view, proj, w, h, inset);
+                    PoseConverter.ToXna(sp), cameraEye, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownSimPos - sp).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 bool isSel = RadarTargetSelection.IsSelected(
@@ -2789,7 +2802,7 @@ public sealed partial class Game1
                 if (wp.ClusterId != mySector) continue;
                 var wPos = Vec(wp.Position);
                 var site = RadarProjection.Project(
-                    PoseConverter.ToXna(wPos), ownPos, view, proj, w, h, inset);
+                    PoseConverter.ToXna(wPos), cameraEye, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownSimPos - wPos).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 bool isSel = RadarTargetSelection.IsSelected(
@@ -2816,7 +2829,7 @@ public sealed partial class Game1
                     if (ast.ClusterId != mySector) continue;
                     if (!RadarInvestAsteroidSelection.IsBuildSpot(investAabm, ast.AabmCapabilities)) continue;
                     var aPos = PoseConverter.ToXna(Vec(ast.Position));
-                    var aSite = RadarProjection.Project(aPos, ownPos, view, proj, w, h, inset);
+                    var aSite = RadarProjection.Project(aPos, cameraEye, view, proj, w, h, inset);
                     float aOp = RadarBracketLayout.Opacity((ownSimPos - Vec(ast.Position)).Length(),
                         RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                     _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
@@ -3039,16 +3052,14 @@ public sealed partial class Game1
     /// </summary>
     private int FixedMountCount()
     {
-        var world = _session.World;
-        if (world.MyShipId is { } me
-            && world.Ships.TryGetValue(me, out var ent)
-            && ent.Loadout is { Count: > 0 } lo)
+        lock (_session.Gate)
         {
-            int mounts = lo.Select(p => p.MountId).Where(m => m >= 0).Distinct().Count();
-            if (mounts > 0)
-                return Math.Min(mounts, ShipControlState.SelectedWeaponMask + 1);
+            if (_session.World.MyShipId is { } id && _session.World.Ships.TryGetValue(id, out var ship)
+                && _shopCatalog is { } catalog)
+                foreach (var hull in catalog.Hulls)
+                    if (hull.HullId == ship.HullId) return hull.MaxFixedWeapons;
         }
-        return ShipControlState.SelectedWeaponMask + 1;
+        return 0;
     }
 
     /// <summary>Adopt the sim's <c>float[3]</c> wire position as a <see cref="SimVec"/>.</summary>

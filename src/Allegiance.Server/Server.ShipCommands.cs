@@ -124,9 +124,9 @@ public sealed partial class Server
     /// <c>LeaveShip()</c> sends a dedicated acknowledgement — they only flush
     /// the <c>SHIP_STATUS</c> updates queued by their <c>ShipStatus-&gt;SetState</c>
     /// calls (<c>FedSrv.CPP:2450-2457</c>). This port's equivalent mechanism is
-    /// the existing per-tick status refresh (<see cref="BroadcastShipStates"/>
-    /// → <see cref="MakeOwnShipStatus"/>, which now derives the boarded state
-    /// directly from the ship), so <b>no new success message is introduced</b>.</item>
+    /// an immediate same-side status refresh using <see cref="MakeOwnShipStatus"/>,
+    /// so all clients know the parent before a subsequent PROMOTE arrives.
+    /// <b>No new success message is introduced</b>.</item>
     /// <item><b>Failure ⇒ <c>BOARD_NACK(178)</c> to the requester alone.</b>
     /// <c>g.fm.SendMessages(pfsPlayer-&gt;GetConnection(), ...)</c>
     /// (<c>FedSrv.CPP:6412-6416</c>). Covers: not a started mission; the leave
@@ -168,6 +168,16 @@ public sealed partial class Server
         {
             SendBoardNack(from, req.SidParent);
             ConsoleLog.Write($"[boardship] {from} ship {ship.Id} -> sidParent {req.SidParent} refused — BOARD_NACK(178) to requester only");
+        }
+        else
+        {
+            // Native BoardShip flushes the queued SHIP_STATUS changes
+            // (FedSrv.CPP:2450-2457). A periodic teammate refresh can arrive
+            // after PROMOTE, whose wire payload names only the child.
+            var packet = FedPacket.Pack([MakeOwnShipStatus(ship.Id, live).Encode()]);
+            foreach (var peer in _peerShips)
+                if (peer.Value.Ship.Mission == mission && peer.Value.Ship.SideId == ship.SideId)
+                    SendPeer(peer.Key, packet);
         }
     }
 
@@ -2752,7 +2762,11 @@ public sealed partial class Server
             // P314 — the MountPart cap (Ship.cs) refuses a fresh mount once a
             // ship is at the wire's 255-part ceiling; log and count it skipped
             // instead of letting a 256th part crash ExportShip.Encode later.
-            if (ship.MountPart(partType, amount, mountId, fraction) is null)
+            int mount = unchecked((sbyte)mountId);
+            bool mounted = mount < 0
+                ? ship.TryMountCargoPart(partType, amount, mount, fraction)
+                : ship.MountPart(partType, amount, mountId, fraction) is not null;
+            if (!mounted)
             {
                 ConsoleLog.Write($"[loadout] {from} ship {ship.Id}: refused mounting part {partType.PartId} at mount {mountId} — ship already at the 255-part wire ceiling; counted as skipped");
                 skipped++;

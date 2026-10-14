@@ -15,7 +15,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// The renderer turns a column index into an x-offset using the measured column
 /// width (text measurement is necessarily font-dependent and stays there).
 ///
-/// Strategy: each group is placed in the column with the LOWEST current
+/// Strategy: tallest groups first, each placed in the column with the LOWEST current
 /// cumulative height (ties break to the leftmost). This yields evenly-sized
 /// columns — a key legibility trait here, where wide two-column lines would
 /// clip on narrow viewports but several balanced narrow columns fit — and is
@@ -50,7 +50,7 @@ public sealed class HelpOverlayLayout
     ///
     /// Column count is derived so the table spreads into a comfortable number of
     /// narrow columns (driven by both the row total and the available panel
-    /// height — never fewer than 1 nor more than 4), then each group is placed
+    /// height — never fewer than 1 nor more than 6), then each group is placed
     /// in the currently shortest column (leftmost wins ties), which keeps
     /// columns near-equal and guarantees each column's total fits the panel.
     /// </summary>
@@ -83,8 +83,18 @@ public sealed class HelpOverlayLayout
         int k = (int)System.MathF.Ceiling(System.MathF.Max(totalRows / 10f, rowsForHeight));
         k = System.Math.Clamp(k, 1, 6);
 
+        // A large camera group placed late can overflow even the shortest
+        // column. Pack tallest-first when balancing multiple columns; preserve
+        // catalogue order within a single column and equal-height ties.
+        var order = new List<int>();
+        for (int i = 0; i < groupHeights.Count; i++) order.Add(i);
+        if (k > 1) order.Sort((a, b) =>
+        {
+            int height = groupHeights[b].CompareTo(groupHeights[a]);
+            return height != 0 ? height : a.CompareTo(b);
+        });
         var columnHeights = new float[k];
-        for (int i = 0; i < groupHeights.Count; i++)
+        foreach (int i in order)
         {
             float h = groupHeights[i];
 

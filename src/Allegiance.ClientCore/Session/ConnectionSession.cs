@@ -234,6 +234,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// The server streams that sector's ships to an ADMIN spectator (ignoring
     /// side visibility) and ignores it for non-admins (no information leak).
     /// </summary>
+    /// <summary>Native sectormap.cpp:1499-1507, team sector-mark relay.</summary>
+    public void SendHighlightCluster(short clusterId, bool highlight) =>
+        Send(FedPacket.Pack([new HighlightCluster { ClusterId = clusterId, Highlight = highlight }.Encode()]));
+
     public void SendViewClusterRequest(short clusterId)
     {
         var msg = new ViewClusterRequest { ClusterId = clusterId, OtTarget = -1, OidTarget = -1 };
@@ -587,6 +591,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P641 — guaranteed native in-flight move/swap (clintlib.h:2371-2400).</summary>
+    public void SendSwapPart(EquipmentType type, sbyte oldMount, sbyte newMount)
+    {
+        var msg = new SwapPart { EtOld = type, MountOld = oldMount, MountNew = newMount };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>
     /// P626 — send a real <c>FM_C_VOTE(19)</c> casting <paramref name="agree"/>
     /// on the in-flight ballot <paramref name="ballotId"/> (the server relays
@@ -855,6 +866,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // server-side. Consumer of an already-broadcast message —
                         // no wire-protocol change.
                         _world.Apply(Reload.Decode(m));
+                        break;
+                    case ChangeAlliances.Fmid:
+                        _world.Apply(ChangeAlliances.Decode(m));
+                        break;
+                    case SwapPart.Fmid:
+                        _world.Apply(SwapPart.Decode(m));
+                        break;
+                    case DropPart.Fmid:
+                        _world.Apply(DropPart.Decode(m));
                         break;
                     case ChatMessage.Fmid:
                         _world.Apply(ChatMessage.Decode(m));
@@ -1177,6 +1197,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // reply (appmsg.cpp:1856). Previously unconsumed, so the
                         // real client never heard the denial or the arrival jump.
                         _world.Apply(TeleportAck.Decode(m));
+                        break;
+                    case Promote.Fmid:
+                        _world.Apply(Promote.Decode(m));
+                        break;
+                    case HighlightCluster.Fmid:
+                        _world.Apply(HighlightCluster.Decode(m));
+                        break;
+                    case ViewClusterReply.Fmid:
+                        _world.Apply(ViewClusterReply.Decode(m));
                         break;
                     case BoardNack.Fmid:
                         // P638 — FM_S_BOARD_NACK(178): boarding refusal

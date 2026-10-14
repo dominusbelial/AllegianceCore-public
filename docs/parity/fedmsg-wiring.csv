@@ -27,8 +27,8 @@ POSTER,27,S,—,neither (codec only),na — POSTER deliberately not built (dead-
 TREASURE,28,S,"Server.Combat, Server.ShipCommands",ConnectionSession (real client),Treasure entity created to render (P293),—,done
 DESTROY_TREASURE,30,S,Server.Docking,ConnectionSession (real client),Treasure entity removed (P293),appmsg.cpp:244,done
 NEW_SHIP_INSTANCE,31,CS,—,neither (codec only),"Real client does NOT consume (candidate: NEW_SHIP_INSTANCE — codec only, neither side wired)",—,partial
-DROP_PART,33,CS,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Client sends DROP_PART (SendDropPart/SendDropCargo); broadcast echo effect realized via TREASURE(28),appmsg.cpp:1411,done
-SWAP_PART,34,CS,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Client sends SWAP_PART; server echo NOT consumed by real client,appmsg.cpp:1430,partial
+DROP_PART,33,CS,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),P641: sender; own/remote mounted or cargo removal (ClientWorld.FlightParts.cs:28); treasure remains server-created,appmsg.cpp:1411,done
+SWAP_PART,34,CS,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),P641: production sender; guaranteed server echo updates own/remote mounted and cargo inventory (ClientWorld.FlightParts.cs:14),appmsg.cpp:1430,done
 PING,35,CS,"Server.Lifecycle, Server.Dispatch",ConnectionSession (real client),Client PING echo feeds own-ship server clock (P508),appmsg.cpp:394,done
 URLROOT,36,S,—,neither (codec only),na — URLROOT deliberately not built (dead-in-native),appmsg.cpp:73,na
 MISSION_STAGE,37,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),MissionStage stored (P187/P188 stages),appmsg.cpp:2314,done
@@ -111,7 +111,7 @@ ADD_PART,164,S,Server.ShipCommands,Bot only (harness),Real client does NOT consu
 ENTER_LIFEPOD,166,S,Server.Combat,ConnectionSession (real client),own ship -> lifepod hull + 'You have entered a lifepod.' (appmsg.cpp:1945),appmsg.cpp:1945,done
 LIGHT_SHIPS_UPDATE,175,S,Server.Broadcast,ConnectionSession (real client),LightShipsUpdate pose refresh (visibility sync P347),appmsg.cpp:684,done
 HEAVY_SHIPS_UPDATE,176,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),HeavyShipsUpdate pose refresh (cross-side visibility P347/P375),appmsg.cpp:736,done
-VIEW_CLUSTER,177,S,Server.ShipCommands,neither (codec only),Real client does NOT consume (candidate: VIEW_CLUSTER sector-stream reply),appmsg.cpp:443,partial
+VIEW_CLUSTER,177,S,Server.ShipCommands,ConnectionSession (real client),Server-confirmed docked sector preview and command camera framing (P640),appmsg.cpp:443,done
 BOARD_NACK,178,S,"Server.Docking, Server.ShipCommands",ConnectionSession (real client),'Teleportation failed.' boarding-refusal line (appmsg.cpp:1899),appmsg.cpp:1899,done
 ASTEROIDS_UPDATE,179,S,Server.Broadcast,ConnectionSession (real client),AsteroidsUpdate live ore/health stored (P423),appmsg.cpp:607,done
 ASTEROID_DRAINED,180,S,—,neither (codec only),na — ASTEROID_DRAINED deliberately not built,appmsg.cpp:1718,na
@@ -123,15 +123,15 @@ RIPCORD_ACTIVATE,185,S,Server.Docking,ConnectionSession (real client),RipcordAct
 RIPCORD_DENIED,186,S,Server.Docking,ConnectionSession (real client),RipcordDenied system-chat reason (P414),appmsg.cpp:965,done
 RIPCORD_ABORTED,187,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),RipcordAborted HUD clear + cue (P414),appmsg.cpp:973,done
 WARP_BOMB,188,S,"ServerHost, Server.Lifecycle",Bot only (harness),Real client does NOT consume (candidate: WARP_BOMB),appmsg.cpp:850,partial
-PROMOTE,189,S,"Server.Dispatch, Server.ShipCommands",neither (codec only),Real client does NOT consume the PROMOTE(189) broadcast (send path done P416) — demoted to partial,appmsg.cpp:824,partial
-PROMOTE,190,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),"Client sends PROMOTE (SendPromote, P416)",appmsg.cpp:824,partial
+PROMOTE,189,S,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),Transfer command hull/loadout/pose and boarded children; pilot/gunner HUD feedback (P640),appmsg.cpp:824,done
+PROMOTE,190,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Client sends PROMOTE; server swaps seats; client consumes PROMOTE(189) (P416/P640),appmsg.cpp:824,done
 CREATE_BUCKETS,191,S,Server.Lobby,ConnectionSession (real client),CreateBuckets dev-tech mask seed (P284),appmsg.cpp:2372,done
 RELAUNCH_SHIP,192,S,Server.Docking,Bot only (harness),Real client does NOT consume (candidate: RELAUNCH_SHIP),appmsg.cpp:132,partial
 BANDWIDTH,193,C,—,client→server (sender),na — BANDWIDTH deliberately not built,—,na
 PINGDATA,194,S,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Real client does NOT consume (candidate: PINGDATA),—,partial
 REQPINGDATA,195,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Real client does NOT send REQPINGDATA (bot-only),—,done
 CHANGE_ALLIANCE,196,C,"(C) server handler: Server.Lobby, Server.Dispatch",client→server (sender),Real client does NOT send CHANGE_ALLIANCE (owner via bot/harness),—,done
-CHANGE_ALLIANCES,197,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: CHANGE_ALLIANCES),appmsg.cpp:2554,partial
+CHANGE_ALLIANCES,197,S,Server.Lobby,ConnectionSession (real client),P642: six alliance-group values replace client state; native friendly/enemy/allied-base targeting consumes them (ClientWorld.Alliances.cs:10),appmsg.cpp:2554,done
 ASTEROID_MINED,198,S,Server.Combat,ConnectionSession (real client),updates asteroid live ore fraction (appmsg.cpp:1733),appmsg.cpp:1733,done
-HIGHLIGHT_CLUSTER,199,CS,Server.Dispatch,Bot only (harness),Real client does NOT consume (candidate: HIGHLIGHT_CLUSTER),appmsg.cpp:1749,partial
+HIGHLIGHT_CLUSTER,199,CS,Server.Dispatch,ConnectionSession (real client),Per-sector commander mark on full map/mini-map/HUD; receivedobjective on activation (P640),appmsg.cpp:1749,done
 CLUSTERINFO,200,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),ClusterInfo map graph applied (P225),—,done

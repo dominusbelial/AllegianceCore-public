@@ -50,10 +50,10 @@ public static class InputActionCatalog
         D = new InputActionDef[]
     {
         // -- MOVEMENT (port scheme; native uses thrust axes + mouse - see report) --
-        new("ThrustForward", "MOVEMENT", "Throttle forward (held thrust) [TK_ThrustForward]", K(Keys.W)),
-        new("ThrustBackward", "MOVEMENT", "Throttle backward (held thrust) [TK_ThrustBackward]", K(Keys.S)),
-        new("ThrustLeft", "MOVEMENT", "Strafe left [TK_ThrustLeft]", K(Keys.Q)),
-        new("ThrustRight", "MOVEMENT", "Strafe right [TK_ThrustRight]", K(Keys.E)),
+        new("ThrustForward", "MOVEMENT", "Throttle forward (held thrust) [TK_ThrustForward]", K(Keys.W), K(Keys.Tab)),
+        new("ThrustBackward", "MOVEMENT", "Throttle backward (held thrust) [TK_ThrustBackward]", K(Keys.S), K(Keys.S)),
+        new("ThrustLeft", "MOVEMENT", "Strafe left [TK_ThrustLeft]", K(Keys.Q), K(Keys.A)),
+        new("ThrustRight", "MOVEMENT", "Strafe right [TK_ThrustRight]", K(Keys.E), K(Keys.D)),
         // P624 — vertical strafe (TK_ThrustUp/Down, igc.h:46/47). Native's
         // defaultinputmap.mdl binds these to W/X — but W is the port's
         // deliberate thrust-forward key (P625 catalog) and X is LeaderCommand,
@@ -74,9 +74,9 @@ public static class InputActionCatalog
         new("PitchDown", "MOVEMENT", "Pitch down [TK_PitchDown]", K(Keys.Down)),
         new("YawLeft", "MOVEMENT", "Yaw left [TK_YawLeft]", K(Keys.Left)),
         new("YawRight", "MOVEMENT", "Yaw right [TK_YawRight]", K(Keys.Right)),
-        new("RollLeft", "MOVEMENT", "Roll left [TK_RollLeft]", K(Keys.A)),
-        new("RollRight", "MOVEMENT", "Roll right [TK_RollRight]", K(Keys.D)),
-        new("FireBooster", "MOVEMENT", "Afterburner boost (hold) [TK_FireBooster]", K(Keys.LeftShift)),
+        new("RollLeft", "MOVEMENT", "Roll left [TK_RollLeft]", K(Keys.A), K(Keys.Q)),
+        new("RollRight", "MOVEMENT", "Roll right [TK_RollRight]", K(Keys.D), K(Keys.E)),
+        new("FireBooster", "MOVEMENT", "Afterburner boost (hold) [TK_FireBooster]", K(Keys.LeftShift), K(Keys.Space)),
 
         // -- CRUISE THROTTLE (native bindings already, defaultinputmap.mdl:25-32) --
         new("ThrottleUp", "CRUISE THROTTLE", "Cruise throttle up (persistent, 20% steps) [TK_ThrottleUp]", K(Keys.OemPlus), K(Keys.OemPlus)),
@@ -101,17 +101,24 @@ public static class InputActionCatalog
         new("FireWeapon", "WEAPONS", "Fire weapons (hold) [TK_FireWeapon]", K(Keys.Space), null),
         new("FireMissile", "WEAPONS", "Fire missile (hold) [TK_FireMissile]", K(Keys.LeftControl), null),
         new("ToggleGroupFire", "WEAPONS", "Group-fire / single toggle [TK_ToggleGroupFire]", K(Keys.OemTilde), null),
-        new("PrevWeapon", "WEAPONS", "Previous weapon [TK_PrevWeapon]", K(Keys.OemOpenBrackets), K(Keys.OemOpenBrackets)),
-        new("NextWeapon", "WEAPONS", "Next weapon [TK_NextWeapon]", K(Keys.OemCloseBrackets), K(Keys.OemCloseBrackets)),
+        new("PrevWeapon", "WEAPONS", "Previous weapon [TK_PrevWeapon]", K(Keys.OemOpenBrackets), null),
+        new("NextWeapon", "WEAPONS", "Next weapon [TK_NextWeapon]", K(Keys.OemCloseBrackets), null),
+        // P641: native defaults defaultinputmap.mdl:76-79 (TK 145..148).
+        new("ToggleWeapon1", "WEAPONS", "Select weapon 1 / group [TK_ToggleWeapon1]", K(Keys.D1), K(Keys.D1)),
+        new("ToggleWeapon2", "WEAPONS", "Select weapon 2 / group [TK_ToggleWeapon2]", K(Keys.D2), K(Keys.D2)),
+        new("ToggleWeapon3", "WEAPONS", "Select weapon 3 / group [TK_ToggleWeapon3]", K(Keys.D3), K(Keys.D3)),
+        new("ToggleWeapon4", "WEAPONS", "Select weapon 4 / group [TK_ToggleWeapon4]", K(Keys.D4), K(Keys.D4)),
+        // TK_ToggleBooster is declared (igc.h:287), unhandled/unbound in native.
+        new("ToggleBooster", "WEAPONS", "Toggle booster [TK_ToggleBooster]", S(Keys.B), null),
         new("DropChaff", "WEAPONS", "Drop chaff [TK_DropChaff]", K(Keys.C), K(Keys.Z)),
         new("ToggleCloak", "WEAPONS", "Toggle cloak [TK_ToggleCloak]", K(Keys.F), K(Keys.G)),
         new("Ripcord", "WEAPONS", "Ripcord to selected starmap sector / cancel [TK_Ripcord]", C(Keys.R), C(Keys.R)),
         new("DropMine", "WEAPONS", "Drop mine / probe [TK_DropMine]", K(Keys.N), K(Keys.C)),
         new("Suicide", "WEAPONS", "Suicide [TK_Suicide] - ejects from a turret as gunner", A(Keys.K), new KeyBinding(Keys.D, InputModifiers.Shift | InputModifiers.Control)),
-        new("PromoteTurret1", "WEAPONS", "Promote turret gunner seat 1 to command [TK_PromoteTurret1]", C(Keys.D1), C(Keys.D1)),
-        new("PromoteTurret2", "WEAPONS", "Promote turret gunner seat 2 to command [TK_PromoteTurret2]", C(Keys.D2), C(Keys.D2)),
-        new("PromoteTurret3", "WEAPONS", "Promote turret gunner seat 3 to command [TK_PromoteTurret3]", C(Keys.D3), C(Keys.D3)),
-        new("PromoteTurret4", "WEAPONS", "Promote turret gunner seat 4 to command [TK_PromoteTurret4]", C(Keys.D4), C(Keys.D4)),
+        new("PromoteTurret1", "WEAPONS", "Promote turret gunner seat 1 to command [TK_PromoteTurret1]", C(Keys.D1), null),
+        new("PromoteTurret2", "WEAPONS", "Promote turret gunner seat 2 to command [TK_PromoteTurret2]", C(Keys.D2), null),
+        new("PromoteTurret3", "WEAPONS", "Promote turret gunner seat 3 to command [TK_PromoteTurret3]", C(Keys.D3), null),
+        new("PromoteTurret4", "WEAPONS", "Promote turret gunner seat 4 to command [TK_PromoteTurret4]", C(Keys.D4), null),
 
         // -- INVENTORY / CARGO (P626) — in-flight cargo selection + drop + reload.
         // Native handlers: TK_NextCargo cycles the selected cargo item
@@ -128,24 +135,30 @@ public static class InputActionCatalog
         // starmap is expanded (P272) — a different context, so native wins in
         // flight. NextPart/PrevPart (igc.h:232-233) declare "select previous/next
         // part from inventory" but native binds them to nothing and has no case
-        // handler in WinTrek.cpp (only NextCargo is wired); the port registers
-        // them as unbound-but-rebindable commands (F6) over the SAME cargo
-        // selection, mirroring that they exist as commands without a default key.
+        // handler in WinTrek.cpp (only NextCargo is wired).
+        // P641 gives them inventory selection across mounted equipment and cargo,
+        // with port defaults period / Shift+period; their native defaults remain unbound.
+        // Generic inventory TKs have no native handlers/defaults (igc.h:234-237).
+        // Port bindings operate on the selected inventory entry using SWAP_PART.
+        new("MountPart", "INVENTORY / CARGO", "Mount selected cargo into empty equipment [TK_MountPart]", S(Keys.M), null),
+        new("UnmountPart", "INVENTORY / CARGO", "Unmount selected equipment into cargo [TK_UnmountPart]", C(Keys.U), null),
+        new("ReplacePart", "INVENTORY / CARGO", "Swap selected cargo with compatible equipment [TK_ReplacePart]", S(Keys.U), null),
+        new("DropPart", "INVENTORY / CARGO", "Drop selected inventory part [TK_DropPart]", C(Keys.Delete), null),
         new("NextCargo", "INVENTORY / CARGO", "Rotate the selected cargo item [TK_NextCargo]", K(Keys.OemComma), K(Keys.OemComma)),
         new("DropCargo", "INVENTORY / CARGO", "Drop the selected cargo item into space [TK_DropCargo]", C(Keys.OemComma), C(Keys.OemComma)),
         new("Reload", "INVENTORY / CARGO", "Reload weapons/afterburner/magazines from cargo [TK_Reload]", S(Keys.R), K(Keys.R)),
-        new("PrevPart", "INVENTORY / CARGO", "Select previous part from inventory [TK_PrevPart]", U(), null),
-        new("NextPart", "INVENTORY / CARGO", "Select next part from inventory [TK_NextPart]", U(), null),
+        new("PrevPart", "INVENTORY / CARGO", "Select previous part from inventory [TK_PrevPart]", S(Keys.OemPeriod), null),
+        new("NextPart", "INVENTORY / CARGO", "Select next part from inventory [TK_NextPart]", K(Keys.OemPeriod), null),
 
         // -- TARGETING / AUTOPILOT --
-        new("Target", "TARGETING / AUTOPILOT", "Cycle target (nearest first) [TK_Target]", K(Keys.T), K(Keys.T)),
+        new("Target", "TARGETING / AUTOPILOT", "Cycle target (nearest first) [TK_Target]", K(Keys.T), null),
         new("ToggleAutopilot", "TARGETING / AUTOPILOT", "Toggle autopilot to target [TK_ToggleAutoPilot]", K(Keys.G), K(Keys.P)),
-        new("TargetEnemyNearest", "TARGETING / AUTOPILOT", "Nearest enemy ship (repeat: next) [TK_TargetEnemyNearest]", K(Keys.U), K(Keys.F)),
-        new("TargetFriendlyNearest", "TARGETING / AUTOPILOT", "Nearest friendly ship (repeat: next) [TK_TargetFriendlyNearest]", S(Keys.U), S(Keys.F)),
-        new("TargetEnemyBaseNearest", "TARGETING / AUTOPILOT", "Nearest enemy base, ANY sector (repeat: next) [TK_TargetEnemyBaseNearest]", K(Keys.Z), K(Keys.U)),
-        new("TargetFriendlyBaseNearest", "TARGETING / AUTOPILOT", "Nearest friendly base, ANY sector (repeat: next) [TK_TargetFriendlyBaseNearest]", S(Keys.Z), S(Keys.U)),
-        new("TargetNothing", "TARGETING / AUTOPILOT", "Target nothing (clear target / autopilot) [TK_TargetNothing]", K(Keys.OemSemicolon), K(Keys.OemSemicolon)),
-        new("TargetCenter", "TARGETING / AUTOPILOT", "Target center (nearest to reticle) [TK_TargetCenter]", K(Keys.OemQuotes), K(Keys.OemQuotes)),
+        new("TargetEnemyNearest", "TARGETING / AUTOPILOT", "Nearest enemy utility ship [TK_TargetEnemyNearest]", K(Keys.U), S(Keys.F)),
+        new("TargetFriendlyNearest", "TARGETING / AUTOPILOT", "Nearest friendly ship [TK_TargetFriendlyNearest]", S(Keys.U), S(Keys.T)),
+        new("TargetEnemyBaseNearest", "TARGETING / AUTOPILOT", "Nearest enemy base, ANY sector [TK_TargetEnemyBaseNearest]", K(Keys.Z), S(Keys.U)),
+        new("TargetFriendlyBaseNearest", "TARGETING / AUTOPILOT", "Nearest friendly base, ANY sector [TK_TargetFriendlyBaseNearest]", S(Keys.Z), S(Keys.B)),
+        new("TargetNothing", "TARGETING / AUTOPILOT", "Target nothing (clear target / autopilot) [TK_TargetNothing]", K(Keys.OemSemicolon), null),
+        new("TargetCenter", "TARGETING / AUTOPILOT", "Target center (nearest to reticle) [TK_TargetCenter]", K(Keys.OemQuotes), null),
         // P623 — CLASS-FILTERED targeting: the 33 TK_Target{Enemy|Friendly}
         // {Bomber|Fighter|Miner|Constructor|Lifepod|MajorBase}[Nearest|Prev]
         // commands (igc.h:377-415). Each class resolves to a Habm/Sabm ability-bit
@@ -195,7 +208,7 @@ public static class InputActionCatalog
         // -- QUEUED ORDERS (RECEIVED COMMAND) --
         new("AcceptCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Accept the pending order [TK_AcceptCommand]", K(Keys.Home), K(Keys.OemOpenBrackets)),
         new("RejectCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Reject / decline the pending order [TK_RejectCommand]", K(Keys.End), K(Keys.OemCloseBrackets)),
-        new("ClearCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Clear whatever order is already accepted [TK_ClearCommand]", K(Keys.Delete), K(Keys.Delete)),
+        new("ClearCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Clear whatever order is already accepted [TK_ClearCommand]", K(Keys.Delete), null),
 
         // -- COMMANDED SHIP (DRONE) --
         // P626 — CycleCommandee moved OFF PageDown (its P425 binding) because
@@ -222,18 +235,53 @@ public static class InputActionCatalog
         new("VoteYes", "VOTE / COMMAND", "Vote YES on the active ballot [TK_VoteYes]", K(Keys.Y), K(Keys.Y)),
         new("VoteNo", "VOTE / COMMAND", "Vote NO on the active ballot [TK_VoteNo]", C(Keys.N), K(Keys.N)),
 
+        // P642: native unbound commands remain rebindable; port chords avoid existing actions.
+        new("TargetNearest", "TARGETING / AUTOPILOT", "Target nearest target [TK_TargetNearest]", U(), null),
+        new("TargetPrev", "TARGETING / AUTOPILOT", "Target previous target [TK_TargetPrev]", U(), null),
+        new("TargetEnemy", "TARGETING / AUTOPILOT", "Target next enemy utility ship [TK_TargetEnemy]", U(), K(Keys.F)),
+        new("TargetEnemyPrev", "TARGETING / AUTOPILOT", "Target previous enemy utility ship [TK_TargetEnemyPrev]", C(Keys.F), C(Keys.F)),
+        new("TargetFriendly", "TARGETING / AUTOPILOT", "Target next friendly ship [TK_TargetFriendly]", U(), K(Keys.T)),
+        new("TargetFriendlyPrev", "TARGETING / AUTOPILOT", "Target previous friendly ship [TK_TargetFriendlyPrev]", U(), C(Keys.T)),
+        new("TargetEnemyBase", "TARGETING / AUTOPILOT", "Target next enemy base [TK_TargetEnemyBase]", U(), K(Keys.U)),
+        new("TargetEnemyBasePrev", "TARGETING / AUTOPILOT", "Target previous enemy base [TK_TargetEnemyBasePrev]", U(), C(Keys.U)),
+        new("TargetFriendlyBase", "TARGETING / AUTOPILOT", "Target next friendly base [TK_TargetFriendlyBase]", U(), K(Keys.B)),
+        new("TargetFriendlyBasePrev", "TARGETING / AUTOPILOT", "Target previous friendly base [TK_TargetFriendlyBasePrev]", C(Keys.B), C(Keys.B)),
+        new("TargetWarp", "TARGETING / AUTOPILOT", "Target next aleph [TK_TargetWarp]", A(Keys.W), null),
+        new("TargetWarpNearest", "TARGETING / AUTOPILOT", "Target nearest aleph [TK_TargetWarpNearest]", U(), null),
+        new("TargetWarpPrev", "TARGETING / AUTOPILOT", "Target previous aleph [TK_TargetWarpPrev]", U(), null),
+        new("TargetFlag", "TARGETING / AUTOPILOT", "Target next enemy flag [TK_TargetFlag]", A(Keys.G), null),
+        new("TargetFlagNearest", "TARGETING / AUTOPILOT", "Target nearest enemy flag [TK_TargetFlagNearest]", U(), null),
+        new("TargetFlagPrev", "TARGETING / AUTOPILOT", "Target previous enemy flag [TK_TargetFlagPrev]", U(), null),
+        new("TargetArtifact", "TARGETING / AUTOPILOT", "Target next artifact [TK_TargetArtifact]", A(Keys.A), null),
+        new("TargetArtifactNearest", "TARGETING / AUTOPILOT", "Target nearest artifact [TK_TargetArtifactNearest]", U(), null),
+        new("TargetArtifactPrev", "TARGETING / AUTOPILOT", "Target previous artifact [TK_TargetArtifactPrev]", U(), null),
+        new("TargetAlliedBase", "TARGETING / AUTOPILOT", "Target next allied base [TK_TargetAlliedBase]", A(Keys.Z), null),
+        new("TargetAlliedBaseNearest", "TARGETING / AUTOPILOT", "Target nearest allied base [TK_TargetAlliedBaseNearest]", U(), null),
+        new("TargetAlliedBasePrev", "TARGETING / AUTOPILOT", "Target previous allied base [TK_TargetAlliedBasePrev]", U(), null),
+        new("TargetSelf", "TARGETING / AUTOPILOT", "Select your own ship [TK_TargetSelf]", U(), null),
+        new("ConModeCombat", "CAMERA / VIEW", "Return to combat cockpit [TK_ConModeCombat]", A(Keys.F2), K(Keys.F2)),
+        new("ConModeGameState", "CAMERA / VIEW", "Game state / mission scores [TK_ConModeGameState]", A(Keys.F7), K(Keys.OemQuestion)),
+        new("ConModeNav", "CAMERA / VIEW", "Sector navigation pane [TK_ConModeNav]", S(Keys.F7), K(Keys.F7)),
+        new("ConModeInventory", "CAMERA / VIEW", "Inventory / docked loadout [TK_ConModeInventory]", S(Keys.F4), K(Keys.F4)),
+        new("ConModeMiniTeam", "CAMERA / VIEW", "Mini team roster [TK_ConModeMiniTeam]", A(Keys.F6), S(Keys.F6)),
+        new("ViewExternal", "CAMERA / VIEW", "External camera / cockpit [TK_ViewExternal]", A(Keys.V), null),
+        new("ToggleGrid", "CAMERA / VIEW", "Show or hide command grid [TK_ToggleGrid]", C(Keys.OemPeriod), C(Keys.OemPeriod)),
+        new("OccupyNextTurret", "CAMERA / VIEW", "Move to next turret on your carrier [TK_OccupyNextTurret]", A(Keys.OemComma), null),
+        new("MainMenu", "CAMERA / VIEW", "Open main menu [TK_MainMenu]", K(Keys.Escape), K(Keys.Escape)),
+
         // -- CAMERA / VIEW (native wins the F-row) --
         new("CycleView", "CAMERA / VIEW", "Cycle view: cockpit -> chase -> turret -> missile-cam", K(Keys.V), K(Keys.V)),
         // P624 — look-around cameras (TK_ViewRear & friends; native sets an
         // absolute head yaw, WinTrek.cpp:9733-9791, only in cockpit/external-
         // chase). Native leaves them UNBOUND in defaultinputmap.mdl (keyboard
         // look reached them via the joystick-hat patch, WinTrek.cpp:8445-8462),
-        // so the port claims the number-row D1-D8 as a compass ring (see the
-        // P624 report; all are HELD — release snaps the head back to forward).
-        new("ViewFrontLeft", "CAMERA / VIEW", "Look front-left (hold) [TK_ViewFrontLeft]", K(Keys.D1), null),
-        new("ViewFrontRight", "CAMERA / VIEW", "Look front-right (hold) [TK_ViewFrontRight]", K(Keys.D2), null),
-        new("ViewLeft", "CAMERA / VIEW", "Look left (hold) [TK_ViewLeft]", K(Keys.D3), null),
-        new("ViewRight", "CAMERA / VIEW", "Look right (hold) [TK_ViewRight]", K(Keys.D4), null),
+        // P641 reserves native D1-D4 for weapons and moves these four looks to
+        // Alt+D1-D4. The remaining D6-D8 looks retain their P624 bindings.
+        // All are HELD — release snaps the head back to forward.
+        new("ViewFrontLeft", "CAMERA / VIEW", "Look front-left (hold) [TK_ViewFrontLeft]", A(Keys.D1), null),
+        new("ViewFrontRight", "CAMERA / VIEW", "Look front-right (hold) [TK_ViewFrontRight]", A(Keys.D2), null),
+        new("ViewLeft", "CAMERA / VIEW", "Look left (hold) [TK_ViewLeft]", A(Keys.D3), null),
+        new("ViewRight", "CAMERA / VIEW", "Look right (hold) [TK_ViewRight]", A(Keys.D4), null),
         new("ViewRearLeft", "CAMERA / VIEW", "Look rear-left (hold) [TK_ViewRearLeft]", K(Keys.D6), null),
         new("ViewRear", "CAMERA / VIEW", "Look rear (hold) [TK_ViewRear]", K(Keys.D7), null),
         new("ViewRearRight", "CAMERA / VIEW", "Look rear-right (hold) [TK_ViewRearRight]", K(Keys.D8), null),
@@ -249,7 +297,19 @@ public static class InputActionCatalog
         new("FreeCam", "CAMERA / VIEW", "Free-flight spectator camera (detached) [P612]", K(Keys.F8), null),
         new("OrbitCam", "CAMERA / VIEW", "Orbit spectator camera (locks a ship/station) [P612]", K(Keys.F9), null),
         new("Director", "CAMERA / VIEW", "Director b-roll camera (opt-in, hides HUD) [P580]", K(Keys.F2), null),
-        new("FollowCam", "CAMERA / VIEW", "Spectator-follow camera [P580]", K(Keys.F3), null),
+        new("FollowCam", "CAMERA / VIEW", "Spectator-follow camera [P580]", C(Keys.F3), null),
+        // TK_ViewCommand(38) unbound; TK_ConModeCommand(68) F3 is its native alias
+        // (WinTrek.cpp:9894-9933; defaultinputmap.mdl:36,64).
+        new("ViewCommand", "CAMERA / VIEW", "Tactical 3D command view [TK_ViewCommand / TK_ConModeCommand]", K(Keys.F3), K(Keys.F3)),
+        new("ToggleCommand", "CAMERA / VIEW", "Command view: three-quarter / top down [TK_ToggleCommand]", S(Keys.F6), S(Keys.F3)),
+        new("TrackCommandView", "CAMERA / VIEW", "Command view: track selected target [TK_TrackCommandView]", C(Keys.F7), null),
+        new("DroneFollow", "COMMANDED SHIP (DRONE)", "Follow commanded drone / wingman (external)", C(Keys.F8), null),
+        new("DroneCockpit", "COMMANDED SHIP (DRONE)", "View through commanded drone / wingman", C(Keys.F9), null),
+        // Native sectormap.cpp:1491: Ctrl + right mouse, no TK identity.
+        new("CommandSelectionAdd", "CAMERA / VIEW", "Hold for left-click add/remove command recipient (native mouse selection)", K(Keys.LeftShift), null),
+        new("SectorHighlightModifier", "CAMERA / VIEW", "Hold for right-click sector mark (leader toggles, teammate clears locally)", K(Keys.LeftControl), null),
+        new("ZoomOut", "CAMERA / VIEW", "Camera zoom out [TK_ZoomOut]", K(Keys.Subtract), K(Keys.Subtract)),
+        new("ZoomIn", "CAMERA / VIEW", "Camera zoom in [TK_ZoomIn]", K(Keys.Add), K(Keys.Add)),
         new("ToggleHud", "CAMERA / VIEW", "Toggle HUD (hide/show overlays for clean frames) [P612]", C(Keys.F1), null),
         new("ToggleMouse", "CAMERA / VIEW", "Mouse flight toggle [TK_ToggleMouse]", K(Keys.M), K(Keys.V)),
         new("InvertMouse", "CAMERA / VIEW", "Invert mouse pitch (session only)", C(Keys.M), null),
@@ -276,7 +336,7 @@ public static class InputActionCatalog
         // 117), which this port's P625 Controls/rebind screen already occupies,
         // so the port defaults it to the free Ctrl+T chord (rebindable via F6).
         // Deviation from native's default is documented in P639 report.
-        new("TeamPane", "CAMERA / VIEW", "Team roster: pilots, rank, status, kills", C(Keys.T), null),
+        new("TeamPane", "CAMERA / VIEW", "Expanded team roster [TK_ConModeTeam]", C(Keys.T), K(Keys.F6)),
         new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.F1), K(Keys.F1)),
         new("OpenKeyBindings", "CAMERA / VIEW", "Open Controls (rebind keys) [P625]", K(Keys.F6), null),
         new("ScreenShot", "CAMERA / VIEW", "Take a screen shot [TK_ScrnShot]", K(Keys.PrintScreen), K(Keys.PrintScreen)),
@@ -291,8 +351,8 @@ public static class InputActionCatalog
         new("StartChat", "CHAT", "Open chat / send line [TK_StartChat]", K(Keys.Enter), K(Keys.Enter)),
         new("ChatDelete", "CHAT", "Delete last char in chat", K(Keys.Back), null),
         new("CycleChatTarget", "CHAT", "Cycle chat recipient (while composing)", K(Keys.Tab), null),
-        new("QuickChat", "CHAT", "Open quick-chat menu [TK_QuickChatMenu]", K(Keys.R), null),
-        new("CancelChat", "CHAT", "Cancel chat / close menu [TK_MainMenu]", K(Keys.Escape), K(Keys.Escape)),
+        new("QuickChat", "CHAT", "Open quick-chat menu [TK_QuickChatMenu]", K(Keys.R), K(Keys.OemTilde)),
+        new("CancelChat", "CHAT", "Cancel chat / close quick-chat", K(Keys.Escape), K(Keys.Escape)),
         // P626 — chat buffer scroll. TK_NextCommMsg/PrevCommMsg step the chat
         // scroll focus one line (igc.h:227-228: "scroll focus to next/previous
         // chat message"); TK_ChatPageUp/Down page the chat pane by a screenful

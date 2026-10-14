@@ -42,38 +42,31 @@ architecture). Weighted % weights each row by its 1–5 veteran-visibility weigh
 
 | Area | rows | done | partial | missing | na | done% (unwtd) | done% (weighted) |
 |---|---|---|---|---|---|---|---|
-| **commands** (TK_ player commands) | 203 | 123 | 21 | 46 | 13 | 64.7% | 71.9% |
-| **fedmsg** (network messages) | 136 | 91 | 34 | 0 | 11 | 72.8% | 73.6% |
-| **parts** (types + ability bits) | 40 | 31 | 9 | 0 | 0 | 77.5% | 82.4% |
-| **screens** (client screens/panes) | 27 | 16 | 7 | 1 | 3 | 66.7% | 73.6% |
-| **commander** (team features) | 20 | 18 | 1 | 0 | 1 | 94.7% | 96.3% |
-| **lobby** (training + lobby flow) | 12 | 9 | 3 | 0 | 0 | 75.0% | 76.5% |
-| **TOTAL** | 438 | 288 | 75 | 47 | 28 | 70.2% | 75.2% |
+| **commands (TK_ player commands)** | 203 | 158 | 7 | 25 | 13 | 83.2% | 87.5% |
+| **fedmsg (network messages)** | 136 | 98 | 27 | 0 | 11 | 78.4% | 79.0% |
+| **parts (types + ability bits)** | 40 | 33 | 7 | 0 | 0 | 82.5% | 86.3% |
+| **screens (client screens/panes)** | 27 | 19 | 4 | 1 | 3 | 79.2% | 86.8% |
+| **commander (team features)** | 20 | 19 | 0 | 0 | 1 | 100.0% | 100.0% |
+| **lobby (training + lobby flow)** | 12 | 9 | 3 | 0 | 0 | 75.0% | 76.5% |
+| **TOTAL** | 438 | 336 | 48 | 26 | 28 | 82.0% | 84.7% |
 
-> **P627 scorecard refresh.** Rows above are re-computed from the authoritative
-> `docs/parity/parity-matrix.csv` on P627 (same formula as documented above:
-> `done %` over non-na rows, weighted by each row's 1–5 weight). The **fedmsg**
-> row is the audited correction from `docs/reports/P627_FEDMSG_WIRING_AUDIT.md`:
-> BALLOT(17) and SHIP_STATUS(90) were false-positive "partials" (already consumed
-> by the real client under their own class), PLAYER_RESCUED(16) was a genuine
-> trivial gap now wired, and PROMOTE(189) was an over-claimed "done" (the server
-> broadcast is not consumed by the real client). The other areas' numbers drift
-> from the original P617 snapshot purely because parity-matrix.csv gained rows in
-> the intervening P-tasks (e.g. the P625b action-map row).
+> **P642 scorecard refresh (2026-10-14).** Recomputed from the current matrix.
+> P642 verifies every command row and every row touched by P623–P641, closes 30
+> commands and alliance receive wiring, and corrects nine overstated command
+> statuses. [Full audit and validation](P642_COMMANDS_MATRIX_AUDIT.md),
+> [verified rows](P642_VERIFIED_ROWS.csv), [changes and reasons](P642_CHANGED_ROWS.csv).
 
-Headlines
-- **Commander/team features are essentially complete** (95–96%) — the tactical layer vets
-  care about (wing orders, queued commands, investments, build/research, drones, ballots,
-  alliances, chat/quick-chat, stats) is all present.
-- **Commands are the biggest gap** (32% / 43%). The port implements a focused, hard-coded
-  core binding set; the long tail of native niche bindings (per-class target stepping, swap-
-  part/cargo keys, console modes, view cameras, training-mission clock) is absent.
-- **Parts/ability types** are strongly implemented (77% / 82%); every ability bit is at
-  least **decoded** from the core (`DataHullTypeIGC.cs`, `DataMissileTypeIGC.cs`).
-- **fedmsg** 66% / 67% is a **conservative lower bound** (see §8 caveat): many
-  server→client messages the classifier could not confirm a client dispatch-case for are
-  in fact handled under renamed classes (e.g. `SHIP_STATUS`(90) is consumed by the client
-  as `case ShipStatusMessage.Fmid`). A wiring verification pass is ranked below.
+Current findings:
+
+- Commands are 83.2% unweighted / 87.5% weighted. Remaining gaps include specific
+  swap keys, training controls, accepted-target dispatch and standalone camera
+  commands; arithmetic helpers and shared camera cycling are marked partial.
+- Fedmsg is 78.4% / 79.0%; dispatch coverage explicitly tracks 89 consumed and
+  29 known unconsumed messages, including the port-added message set.
+- Parts are 82.5% / 86.3%; screens are 79.2% / 86.8%. Career database and wing
+  UI limitations remain documented in screen rows.
+- Commander coverage is 100% over applicable matrix rows; lobby remains 75.0%
+  / 76.5%. Historical P617 findings below retain their original audit context.
 
 Checklist completeness (native total vs classified):
 | area | native total | rows classified | covered |

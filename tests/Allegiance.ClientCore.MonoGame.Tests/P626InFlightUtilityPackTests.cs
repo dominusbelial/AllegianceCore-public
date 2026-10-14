@@ -120,8 +120,8 @@ public class P626InFlightUtilityPackTests
     [InlineData("NextCargo", Keys.OemComma, "TK_NextCargo")]
     [InlineData("DropCargo", Keys.OemComma, "TK_DropCargo")]
     [InlineData("Reload", Keys.R, "TK_Reload")]
-    [InlineData("PrevPart", Keys.None, "TK_PrevPart")]
-    [InlineData("NextPart", Keys.None, "TK_NextPart")]
+    [InlineData("PrevPart", Keys.OemPeriod, "TK_PrevPart")]
+    [InlineData("NextPart", Keys.OemPeriod, "TK_NextPart")]
     [InlineData("VoteYes", Keys.Y, "TK_VoteYes")]
     [InlineData("VoteNo", Keys.N, "TK_VoteNo")]
     public void Catalogue_RegistersP626Command_WithKeyAndNativeName(string action, Keys key, string nativeName)
