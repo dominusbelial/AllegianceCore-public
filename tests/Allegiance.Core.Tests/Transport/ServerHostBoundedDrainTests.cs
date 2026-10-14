@@ -146,4 +146,98 @@ public sealed class ServerHostBoundedDrainTests
         }
         finally { SrvHost.MaxBufferedBytesPerPeer = ob; }
     }
+
+    [Fact]
+    public void Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released()
+    {
+        long ob = SrvHost.DrainBudgetEvents;
+        long os = SrvHost.DrainFairShareEvents;
+        long omb = SrvHost.MaxBufferedBytesPerPeer;
+        SrvHost.DrainBudgetEvents = 400;      // < the flood size → forces carry-over
+        SrvHost.DrainFairShareEvents = 64;    // fair share → the peer needs several drains
+        SrvHost.MaxBufferedBytesPerPeer = 100_000;
+        try
+        {
+            var host = new SrvHost();
+            var peer = new ConnectionId(77);
+            const int N = 500;
+            for (int i = 0; i < N; i++)
+                ((ITransportSite)host).OnReceive(peer, Frame(i));
+            ((ITransportSite)host).OnPeerLeft(peer);
+
+            int received = 0, nextSeq = 0, leaves = 0;
+            // Drain until the peer's PeerLeftEvt has been handled (bounded loop).
+            for (int d = 0; d < 2000 && leaves == 0; d++)
+            {
+                host.Drain(e =>
+                {
+                    if (e is Recv r && r.From == peer)
+                    {
+                        // Every receive handled exactly once, STRICTLY in order.
+                        Assert.Equal(nextSeq, BitConverter.ToInt32(r.Data, 0));
+                        nextSeq++;
+                        received++;
+                    }
+                    else if (e is PeerLeft pl && pl.Id == peer)
+                    {
+                        host.RemovePeerAccounting(pl.Id);   // Server.ReleasePeer → RemovePeerAccounting
+                        leaves++;
+                    }
+                });
+            }
+            Assert.Equal(N, received);        // nothing dropped
+            Assert.Equal(N, nextSeq);         // in order
+            Assert.Equal(1, leaves);          // the leave IS eventually handled (not dropped with the lane)
+            Assert.Equal(0, host.BufferedPeerCount);   // accounting removed, no reservation leak
+        }
+        finally { SrvHost.DrainBudgetEvents = ob; SrvHost.DrainFairShareEvents = (int)os; SrvHost.MaxBufferedBytesPerPeer = omb; }
+    }
+
+    [Fact]
+    public void Carried_events_keep_fifo_ahead_of_mid_drain_arrivals()
+    {
+        long ob = SrvHost.DrainBudgetEvents;
+        long os = SrvHost.DrainFairShareEvents;
+        long omb = SrvHost.MaxBufferedBytesPerPeer;
+        SrvHost.DrainBudgetEvents = 1;        // budget 1 → every event but the first is carried
+        SrvHost.DrainFairShareEvents = int.MaxValue;   // no fair-share cut: isolates the reorder bug
+        SrvHost.MaxBufferedBytesPerPeer = 1000;
+        try
+        {
+            var host = new SrvHost();
+            var x = new ConnectionId(11);
+            ((ITransportSite)host).OnReceive(x, Frame(1));
+            ((ITransportSite)host).OnReceive(x, Frame(2));
+            ((ITransportSite)host).OnReceive(x, Frame(3));
+
+            var seen = new List<int>();
+            bool injected = false;
+            // Drain 1: serves seq 1 (the budget), carrying 2 and 3. On serving
+            // seq 1, an interleaved arrival (seq 4) is enqueued onto the shared
+            // tail — what a transport thread does mid-drain. The carried 2,3
+            // must NOT end up behind it.
+            host.Drain(e =>
+            {
+                if (e is Recv r && r.From == x)
+                {
+                    seen.Add(BitConverter.ToInt32(r.Data, 0));
+                    if (!injected) { injected = true; ((ITransportSite)host).OnReceive(x, Frame(4)); }
+                }
+            });
+            host.Drain(e => { if (e is Recv r && r.From == x) seen.Add(BitConverter.ToInt32(r.Data, 0)); });
+            host.Drain(e => { if (e is Recv r && r.From == x) seen.Add(BitConverter.ToInt32(r.Data, 0)); });
+            host.Drain(e => { if (e is Recv r && r.From == x) seen.Add(BitConverter.ToInt32(r.Data, 0)); });
+
+            Assert.Equal(new[] { 1, 2, 3, 4 }, seen);
+        }
+        finally { SrvHost.DrainBudgetEvents = ob; SrvHost.DrainFairShareEvents = (int)os; SrvHost.MaxBufferedBytesPerPeer = omb; }
+    }
+
+    /// <summary>An 8-byte receive frame whose first 4 bytes hold the sequence.</summary>
+    private static byte[] Frame(int seq)
+    {
+        var b = new byte[8];
+        BitConverter.GetBytes(seq).CopyTo(b, 0);
+        return b;
+    }
 }

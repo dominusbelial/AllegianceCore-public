@@ -45,6 +45,29 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 {
     private readonly ConcurrentQueue<ITransportEvent> _events = new();
 
+    // P646b — the drain's per-peer carry-over, owned by the SIMULATION thread
+    // (only Drain touches these; the transport threads write solely to
+    // _events / _bufferedPerPeer). Unlike P646's re-enqueue-to-_events-tail,
+    // a peer's not-yet-handled events STAY in its own lane across drains,
+    // appended ahead of any freshly-arrived events for that peer, so:
+    //   * nothing is ever dropped (a lane leaves the rotation only when empty,
+    //     so even a fair-share-exhausted flooding peer's PeerLeftEvt is still
+    //     carried and eventually handled — its lane is never abandoned);
+    //   * per-peer FIFO always holds (carried events precede later arrivals,
+    //     which are appended AFTER them, never interleaved);
+    //   * the round-robin order is STABLE across drains (a lane keeps its
+    //     position; keys are only added on first sight and removed when empty).
+    // Worst-case growth is bounded by the receive-side byte reservation (P315):
+    // a ReceivedEvt is enqueued only while its peer's reserved in-flight bytes
+    // stay under MaxBufferedBytesPerPeer, and a reservation is released only
+    // when the event is handled — so at any instant the sum of un-handled
+    // ReceivedEvt lengths per peer is ≤ MaxBufferedBytesPerPeer. The lane can
+    // therefore never hold more than MaxBufferedBytesPerPeer/min-frame-length
+    // receives per peer (plus its one PeerLeftEvt/PeerJoinedEvt), regardless
+    // of how aggressively the peer floods.
+    private readonly Dictionary<uint, Queue<ITransportEvent>> _pendingLanes = new();
+    private readonly List<uint> _pendingOrder = new();
+
     // P315 (review finding H3) — bound the inbound receive queue. The tick loop
     // drains _events once per pass (~20 Hz); a peer sending valid-CRC packets
     // faster than that drain would otherwise grow the queue — and the copied
@@ -1181,54 +1204,72 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <summary>
     /// Atomically drain the receive queue, invoking <paramref name="handle"/>
     /// for each event on the calling (simulation) thread. Safe to call every
-    /// tick. P646 (review finding H4): the drain is BOUNDED — it pulls at most
-    /// the events present when it began plus <see cref="DrainBudgetEvents"/>
-    /// more, and services peers round-robin with a per-peer cap
-    /// (<see cref="DrainFairShareEvents"/>), so a self-replenishing flood can
+    /// tick. P646 (review finding H4): the drain is BOUNDED — it services at
+    /// most <see cref="DrainBudgetEvents"/> per tick and per-peer at most
+    /// <see cref="DrainFairShareEvents"/>, so a self-replenishing flood can
     /// neither run the drain forever (starving simulation/broadcast) nor starve
-    /// other peers. Anything over the budget is deferred to a later tick,
-    /// preserving per-peer FIFO and a peer's lifecycle-event ordering. Deferred
-    /// counts ride in <see cref="EventsDrained"/>/<see cref="EventsDeferred"/>.
+    /// other peers. P646b: the over-budget/over-fair-share remainder is NOT
+    /// re-enqueued to the shared tail (which dropped fair-share-exhausted lanes
+    /// and reordered a peer's carried events behind later arrivals); it is kept
+    /// in the drain thread's per-peer carry-over lanes (<see cref="_pendingLanes"/>),
+    /// so no event is ever dropped and per-peer FIFO (and a peer's
+    /// join → receives → leave order) always holds. Deferred counts ride in
+    /// <see cref="EventsDrained"/>/<see cref="EventsDeferred"/>.
     /// </summary>
     public int Drain(Action<ITransportEvent> handle)
     {
-        int snapshot = _events.Count;             // events present when we began
         long budget = DrainBudgetEvents;
         int fairShare = DrainFairShareEvents;
 
-        // Phase 1 — pull a bounded slice out of the shared FIFO into per-peer
-        // lanes. A consumed ReceiveEvt's reservation is NOT released here; it is
-        // released only when the event is actually HANDLED, so a deferred event
-        // keeps its reservation (it is still occupying queue memory).
-        var lanes = new Dictionary<uint, Queue<ITransportEvent>>();
-        var order = new List<uint>();
-        long pullCap = snapshot + budget;
+        // Phase 1 — pull a bounded slice out of the shared FIFO into the
+        // per-peer lanes, APPENDED after anything already carried from a
+        // previous drain (so a peer's carried events always precede its newer
+        // arrivals → per-peer FIFO across drains). A consumed ReceiveEvt's
+        // reservation is NOT released here; it is released only when the event
+        // is actually HANDLED, so a deferred event keeps its reservation (it is
+        // still occupying queue memory). The pull is bounded (the events
+        // present when we began plus the budget) so the drain phase itself is
+        // bounded; the carry-over cannot grow without limit anyway, because the
+        // per-peer byte reservation bounds how many un-handled receives a
+        // flooding peer can have in flight (see _pendingLanes comment).
         long pulled = 0;
+        int snapshot = _events.Count;
+        long pullCap = snapshot + budget;
         while (pulled < pullCap && _events.TryDequeue(out var evt))
         {
             uint key = PeerKeyOf(evt);
-            if (!lanes.TryGetValue(key, out var q)) { q = new Queue<ITransportEvent>(); lanes[key] = q; order.Add(key); }
+            if (!_pendingLanes.TryGetValue(key, out var q))
+            {
+                q = new Queue<ITransportEvent>();
+                _pendingLanes[key] = q;
+                _pendingOrder.Add(key);   // new peer joins the end of the rotation
+            }
             q.Enqueue(evt);
             pulled++;
         }
 
-        // Phase 2 — service lanes round-robin until the per-tick budget is
-        // consumed or every lane is empty / over its fair share.
+        // Phase 2 — service lanes round-robin (STABLE order: carried lanes keep
+        // their position) until the per-tick budget is consumed or every lane is
+        // empty / over its fair share. A lane leaves the rotation ONLY when it
+        // is empty — never when it merely hits its fair share, so nothing is
+        // dropped and a flooding peer's PeerLeftEvt is still carried.
         int processed = 0;
         var handled = new Dictionary<uint, int>();
         int idx = 0;
-        while (order.Count > 0 && processed < budget)
+        int fairSkips = 0;   // consecutive fair-share skips → stop when nobody can be served
+        while (_pendingOrder.Count > 0 && processed < budget)
         {
-            uint key = order[idx];
+            uint key = _pendingOrder[idx];
+            var q = _pendingLanes[key];
             if (handled.TryGetValue(key, out int done) && done >= fairShare)
             {
-                // This peer's share for this drain is spent; defer its remainder.
-                order.RemoveAt(idx);
-                if (order.Count == 0) break;
-                if (idx == order.Count) idx = 0;
+                // This peer's share for this drain is spent; defer its
+                // remainder but KEEP its lane in the rotation for next drain.
+                if (++fairSkips >= _pendingOrder.Count) break;  // everyone over share
+                idx = (idx + 1) % _pendingOrder.Count;
                 continue;
             }
-            var q = lanes[key];
+            fairSkips = 0;
             var evt = q.Dequeue();
             if (evt is ReceivedEvt r)
                 ReleaseReservation(r);   // a handled receive frees its reserved bytes (never inserts)
@@ -1237,26 +1278,23 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             handled[key] = done + 1;
             if (q.Count == 0)
             {
-                order.RemoveAt(idx);
-                if (order.Count == 0) break;
-                if (idx == order.Count) idx = 0;
+                _pendingLanes.Remove(key);
+                _pendingOrder.RemoveAt(idx);
+                if (_pendingOrder.Count == 0) break;
+                if (idx == _pendingOrder.Count) idx = 0;
+                fairSkips = 0;
             }
             else
             {
-                idx = (idx + 1) % order.Count;
+                idx = (idx + 1) % _pendingOrder.Count;
             }
         }
 
-        // Phase 3 — re-queue whatever stayed in the lanes (over budget / over
-        // fair share) for a later tick. Per-peer FIFO is preserved (contiguous
-        // re-enqueue); these keep their byte reservations.
+        // Phase 3 — count whatever is left sitting in the lanes as deferred
+        // (it keeps its byte reservation and is carried to the next drain).
         int deferred = 0;
-        foreach (var key in order)
-        {
-            var q = lanes[key];
+        foreach (var q in _pendingLanes.Values)
             deferred += q.Count;
-            while (q.Count > 0) _events.Enqueue(q.Dequeue());
-        }
 
         Interlocked.Add(ref _eventsDrained, processed);
         Interlocked.Add(ref _eventsDeferred, deferred);
