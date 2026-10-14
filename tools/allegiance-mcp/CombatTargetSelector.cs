@@ -56,6 +56,13 @@ public static class CombatTargetSelector
         _ => CapFighter,
     };
 
+    // P637 — focus-fire vs P622 spread measurement switch (DEFAULT OFF): when
+    // ALLEGIANCE_P622_LEAST_ENGAGED=1, Pick reverts to P622's LEAST-ENGAGED-FIRST
+    // spreading so the live harness can measure focus-fire (fill-to-cap) vs the
+    // P622 spread (one engager per target) before/after with the same binary.
+    public static readonly bool SpreadFirst =
+        System.Environment.GetEnvironmentVariable("ALLEGIANCE_P622_LEAST_ENGAGED") == "1";
+
     /// <summary>Classify a real hull into a combat-target class for P622's
     /// cap/tier decision. Native cues: a miner/builder/pod/drone is
     /// non-combat (c_habmMiner igc.h:740, c_habmBuilder :741, c_habmLifepod
@@ -149,29 +156,41 @@ public static class CombatTargetSelector
             if (!hasCombat) miners.Add(c);   // miners only eligible in the lone regime
         }
 
-        var pick = Pick(threats, ctx);
+        var pick = PickBy(!SpreadFirst, threats, ctx);
         if (pick is { } th) return th;
-        pick = Pick(combat, ctx);
+        pick = PickBy(!SpreadFirst, combat, ctx);
         if (pick is { } cm) return cm;
-        pick = Pick(miners, ctx);
+        pick = PickBy(!SpreadFirst, miners, ctx);
         if (pick is { } mn) return mn;
 
         return BotTargetChoice.Holding();
     }
 
-    /// <summary>Among <paramref name="pool"/> choose the LEAST-ENGAGED eligible
-    /// candidate (engager count &lt; its class cap), tie-breaking by nearest
-    /// distance. null when the pool is empty or every member is over-cap.</summary>
-    private static BotTargetChoice? Pick(List<BotTargetCandidate> pool, BotSelectionContext ctx)
+    /// <summary>Among <paramref name="pool"/> choose the eligible candidate for
+    /// this bot. P637 focus-fire (concentrate=true): fill the MOST-ENGAGED eligible
+    /// target (greatest current engager count, tie-broken by nearest) up to its
+    /// class cap before starting another — so a fight concentrates and kills
+    /// land instead of P622's 1-per-target spreading. With concentrate=false it
+    /// picks the LEAST-ENGAGED eligible candidate (P622's spread, tie-broken by
+    /// nearest). A candidate whose cap is already full in this pass is skipped,
+    /// falling through to the next tier. null when the pool is empty or every
+    /// member is over-cap. Pure so the concentration rule is unit-provable.</summary>
+    public static BotTargetChoice? PickBy(bool concentrate, List<BotTargetCandidate> pool, BotSelectionContext ctx)
     {
         BotTargetCandidate? best = null;
-        int bestEngagers = int.MaxValue;
+        int bestEngagers = concentrate ? int.MinValue : int.MaxValue;
         float bestD = float.MaxValue;
         foreach (var c in pool)
         {
             int eng = ctx.EngagerCounts.TryGetValue(c.Id, out var e) ? e : 0;
             if (eng >= CapFor(c.Class)) continue;      // over-cap → not eligible
-            if (eng < bestEngagers || (eng == bestEngagers && c.Distance < bestD))
+            // Focus-fire (P637): pick the most-engaged eligible target (fill it to
+            // cap) before starting a new one; nearest tie-break. Spread (P622):
+            // pick the least-engaged eligible target so bots spread one-per-target.
+            bool better = concentrate
+                ? (eng > bestEngagers || (eng == bestEngagers && c.Distance < bestD))
+                : (eng < bestEngagers || (eng == bestEngagers && c.Distance < bestD));
+            if (better)
             {
                 best = c; bestEngagers = eng; bestD = c.Distance;
             }

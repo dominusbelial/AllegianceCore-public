@@ -118,12 +118,15 @@ public class P622CombatTargetSpreadTests
         Assert.True(ch.Hold);
     }
 
-    // ── 4. Least-engaged spreading across distinct targets ────────────────
+    // ── 4. P622 spreading → P637 focus-fire (scope 5 follow-up) ───────────
 
-    /// <summary>Two fighters, cap 3 each: the second bot takes the OTHER fighter
-    /// (fewer engagers) instead of piling on the first — real spreading.</summary>
+    /// <summary>P637 — DEFAULT is now FOCUS-FIRE: after bot1 engages target A,
+    /// the second bot keeps FILLING A (most-engaged, under its cap) instead of
+    /// spreading to B, so a fight concentrates and kills land. (P622's spread
+    /// is retained behind the ALLEGIANCE_P622_LEAST_ENGAGED measurement switch;
+    /// see P637BomberRoutingAndStagingTests.SpreadSwitch_StillPicksLeastEngaged.)</summary>
     [Fact]
-    public void Spread_SecondBotTakesLeastEngagedOtherTarget()
+    public void FocusFire_SecondBotFillsSameTarget()
     {
         var f1 = Cand(9102, H.Fighter, dist: 100f);
         var f2 = Cand(9103, H.Fighter, dist: 120f);
@@ -132,10 +135,11 @@ public class P622CombatTargetSpreadTests
         var b1 = CombatTargetSelector.Select(all, Ctx(Empty));
         Assert.False(b1.Hold);
 
-        // After b1 took 9102, b2 must prefer the OTHER target (9103, 0 engagers).
+        // After b1 took 9102, the next bot (focus-fire) keeps piling onto 9102
+        // (1 engager, under cap 3) — concentrating, not spreading.
         var b2 = CombatTargetSelector.Select(all, Ctx(new Dictionary<short, int> { [(short)b1.TargetId!.Value] = 1 }));
         Assert.False(b2.Hold);
-        Assert.Equal((short)9103, b2.TargetId!.Value);
+        Assert.Equal((short)9102, b2.TargetId!.Value);
     }
 
     /// <summary>Tie-break: within the same (zero) engager level the NEAREST

@@ -407,7 +407,7 @@ internal sealed partial class BotManager : IDisposable
     public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
         bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null,
         short wingmanBehaviour = Showcase.DefaultScenarioWingman,
-        IReadOnlyList<short>? routePath = null, int routeIndex = -1)
+        IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null)
     {
         if (!ServerReady)
             throw new InvalidOperationException("spawn_bot: server probe not connected/validated — cannot spawn");
@@ -535,6 +535,8 @@ internal sealed partial class BotManager : IDisposable
         // the loadout carries one (detected from the parts actually requested).
         bot.WingmanBehaviour = wingmanBehaviour;
         bot.MineDispenserPartId = FindMineDispenser(finalParts);
+        // P637 — the bot's showcase role (drives its OWN target sector + route).
+        if (role is { Length: > 0 }) bot.Role = role;
 
         // P635 — multi-route wing assignment (route path + wing index).
         if (routePath is { Count: > 0 } rp)
@@ -546,7 +548,14 @@ internal sealed partial class BotManager : IDisposable
         // P539d — fair-contact bookkeeping (combat bots only; idle/weave bots
         // never travel or fight, so staging/arena leave them be).
         bot.LaunchedAt = Now();
-        bot.UseStaging = useStaging && behavior == "combat";
+        // P637 — a NON-rendezvous role (bomber) does NOT stage: it is on its OWN
+        // objective (the enemy home), so the fair-contact staging barrier for the
+        // fighter rendezvous would only strand it (it can never "assemble" a
+        // fighter wing). Routing straight toward its own target (with its own
+        // route path honoured by RoutePathSuffix) lets it actually reach the
+        // enemy base. Fighters keep the staging barrier.
+        bot.UseStaging = useStaging && behavior == "combat"
+            && !string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase);
         if (arena && behavior == "combat")
         {
             bot.Arena = true;
@@ -950,6 +959,23 @@ internal sealed partial class BotManager : IDisposable
         lock (Probe.Gate)
             return RouteEnumeration(Probe.World.Warps, home, rendezvous, maxRoutes);
     }
+
+    /// <summary>P637 — a NON-rendezvous role's OWN target: a BOMBER's objective
+    /// is the ENEMY HOME sector (its garrison); every other role converges on
+    /// the fighter <paramref name="rendezvous"/>. Pure so the role→target rule
+    /// is unit-provable. When the enemy home can't be resolved (negative) the
+    /// bomber falls back to the rendezvous.</summary>
+    public static short ResolveRoleTarget(Showcase.HullRole role, short rendezvous, short enemyHome)
+        => role == Showcase.HullRole.Bomber && enemyHome >= 0 ? enemyHome : rendezvous;
+
+    /// <summary>P637 — whether two bots belong to the SAME staging/release group:
+    /// same side, SAME target goal sector, and same route wing. Two bots that
+    /// share a side and route index but target DIFFERENT goals (a bomber aiming
+    /// at the enemy home vs a fighter at the rendezvous) are NOT the same group,
+    /// so neither waits on the other's release. Pure so the grouping rule is
+    /// unit-provable.</summary>
+    public static bool SameStagingGroup(short sideA, short goalA, int routeA, short sideB, short goalB, int routeB)
+        => sideA == sideB && goalA == goalB && routeA == routeB;
 
     /// <summary>
     /// P635 — the pure wing-assignment rule: pick the LEAST-LOADED route (argmin of
@@ -2254,6 +2280,27 @@ bool isThreat =
         return false;
     }
 
+    /// <summary>P637 — resolve the warp for this bot's next hop and fly it,
+    /// REFRESHING the warp-destination map on demand. The previous sticky cache
+    /// (<c>bot.WarpDest ??= …</c>) snapshotted a PARTIAL map — a bot that started
+    /// routing before its client's EXPORT warp batch (OT_warp, server
+    /// Server.Lobby.cs:3473 sends ALL warps on export) landed was permanently
+    /// blind to cross-country warps and could never fly its own route to the
+    /// enemy home (warpFound=false → loiter forever). Rebuilding the ~map-size
+    /// dict per consultation is cheap and always reflects the client's current
+    /// warp knowledge. Returns true (and flew the leg) only when the warp is
+    /// found; false → the caller loiters.</summary>
+    private static bool TransitWarp(ConnectionSession cs, ActiveBot bot, short cur, short next)
+    {
+        if (TryBuildWarpDestMap(cs, out var m) && TryFindWarpTo(cs, cur, next, m, out var wp, out _))
+        {
+            bot.WarpDest = m;   // refresh — never keep a stale partial snapshot
+            FlyWarpLeg(bot, wp);   // P560 — full-throttle fly-through (Pursue)
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>P496 — the warp-hop approach law: a warp has NO "arrival" short
     /// of its transit sphere (the aleph transit fires at
     /// <c>|ship−warp| ≤ warp.Radius + ship.Radius</c>; the sector pass at
@@ -3040,7 +3087,7 @@ bool isThreat =
     /// unarmed pods"). When the bot relaunches into a fresh (non-pod) hull the
     /// pod state is cleared and combat resumes.
     /// </summary>
-    private static bool UpdatePodState(ActiveBot bot, ConnectionSession cs)
+    private static bool UpdatePodState(ActiveBot bot, ConnectionSession cs, double now)
     {
         short hull;
         short stationId;
@@ -3091,19 +3138,26 @@ bool isThreat =
             // engaged IMMEDIATELY in its home sector — where there is no enemy —
             // and sat in `combat` on the station ring forever instead of re-routing
             // to the target sector. Resetting makes it re-BFS from home to the
-            // target (EnsureCombatPath) and re-enter staging (UseStaging).
+            // target (EnsureCombatPath).
+            // P637 — a relaunched bot is a REINFORCEMENT, not part of the initial
+            // fair-contact launch, so it must NOT re-enter the staging barrier:
+            // its wing has almost certainly already RELEASED and advanced, and
+            // re-staging would strand it at home holding forever for a wing that
+            // is no longer there (the observed "relaunched bots idle at home with
+            // target null"). Mark it released (StagePhase = 2) so it routes
+            // straight to its own target and rejoins the fight.
             bot.Arrived = false;
             bot.ArrivedAt = null;
             bot.StagingSector = -1;
-            bot.StagePhase = 0;
+            bot.StagePhase = StageReleasedPhase;
+            bot.ReleasedAt ??= now;
             bot.FirstStagingAt = null;
-            bot.ReleasedAt = null;
             bot.Path = new List<short>();
             bot.PathStart = -1;
             bot.PathGoal = -1;
             bot.WarpDest = null;
             bot.LastCluster = -1;
-            Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) relaunched into hull {hull} — re-routing to target sector {bot.TargetSector} to rejoin the fight");
+            Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) relaunched into hull {hull} — re-routing to target sector {bot.TargetSector} to rejoin the fight (P637: reinforcement skips staging, routes straight)");
         }
         return false;
     }
@@ -3449,10 +3503,7 @@ bool isThreat =
         if (bot.Path.Count == 0) { LoiterCombat(bot, now); return; }
         short next = CombatNextHop(bot, cur);
         if (next == cur) return;
-        bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
-        if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, next, wd, out var warpPos, out _))
-            FlyWarpLeg(bot, warpPos);   // P560 — full-throttle fly-through (Pursue)
-        else
+        if (!TransitWarp(cs, bot, cur, next))
             LoiterCombat(bot, now);
     }
 
@@ -3740,6 +3791,16 @@ bool isThreat =
     /// forced to advance anyway (a straggler must not freeze the group forever;
     /// also covers a bot stuck unroutable that never stages).</summary>
     public const double StagingHoldSeconds = 15.0;
+    /// <summary>P539d — the staging PHASE values on <see cref="ActiveBot.StagePhase"/>:
+    /// 0 transit-to-stage, 1 holding (waiting on the wing), 2 released/advanced.</summary>
+    public const byte StageTransitPhase = 0;
+    public const byte StageHoldPhase = 1;
+    public const byte StageReleasedPhase = 2;
+    /// <summary>P637 — whether a staging phase is RELEASED (≥ the released phase):
+    /// a released bot routes straight to its target instead of holding for its
+    /// wing. A relaunched reinforcement is placed in the released phase so it
+    /// never re-enters a barrier its wing already left.</summary>
+    public static bool IsStageReleased(byte phase) => phase >= StageReleasedPhase;
     /// <summary>Horizon (units) for the cross-side approach avoidance: only a
     /// ship this close and inside the forward path cone is steered around.</summary>
     public const float AvoidHorizon = 200f;
@@ -4169,7 +4230,7 @@ bool isThreat =
         SampleCombatStats(bot, cs, my, now);
 
         // P539 — a lifepod stops fighting and flies home to dock.
-        if (UpdatePodState(bot, cs))
+        if (UpdatePodState(bot, cs, now))
         {
             DrivePodHome(bot, cs, now);
             return;
@@ -4263,7 +4324,7 @@ bool isThreat =
                     bot.StagingSector = bot.Path.Count >= 2 && bot.Path[^1] == goal ? bot.Path[^2] : cur;
                 }
             }
-            if (bot.StagePhase < 2)
+            if (!IsStageReleased(bot.StagePhase))
             {
                 EnsureCombatPath(bot, cur, bot.StagingSector, now);
                 if (bot.Path.Count == 0) { LoiterCombat(bot, now); bot.LastCluster = cur; return; }
@@ -4272,10 +4333,7 @@ bool isThreat =
                 {
                     // Still en route to the staging sector.
                     MaybeNarrateTransit(bot, cs, now, cur, bot.StagingSector, "stage");
-                    bot.WarpDest ??= TryBuildWarpDestMap(cs, out var sm) ? sm : null;
-                    if (bot.WarpDest is { } sd && TryFindWarpTo(cs, cur, next, sd, out var sp, out _))
-                        FlyWarpLeg(bot, sp);   // P560 — full-throttle fly-through (Pursue)
-                    else LoiterCombat(bot, now);
+                    if (!TransitWarp(cs, bot, cur, next)) LoiterCombat(bot, now);
                     bot.LastCluster = cur;
                     return;
                 }
@@ -4286,10 +4344,10 @@ bool isThreat =
                 // Loitering in-sector is robust (no reliance on a precise
                 // warp-adjacent hold point) and preserves the fair-contact property:
                 // no bot trickles into the rendezvous ahead of its wing's group.
-                if (bot.StagePhase == 0) { bot.StagePhase = 1; bot.FirstStagingAt ??= now; }
-                if (StageReleaseRequired(bot.Side, bot.RouteIndex, now))
+                if (bot.StagePhase == StageTransitPhase) { bot.StagePhase = StageHoldPhase; bot.FirstStagingAt ??= now; }
+                if (StageReleaseRequired(bot.Side, goal, bot.RouteIndex, now))
                 {
-                    bot.StagePhase = 2;
+                    bot.StagePhase = StageReleasedPhase;
                     bot.ReleasedAt ??= now;
                     Console.WriteLine($"[p539d] side {bot.Side} wing r{bot.RouteIndex} bot {bot.Name} released from staging (wing assembled/timeout) — advancing together through final warp to {goal}");
                     // fall through to the normal transit below (this is the release tick)
@@ -4303,8 +4361,8 @@ bool isThreat =
                         int alive, staged;
                         lock (_gate)
                         {
-                            alive = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && !o.IsPod && !o.PodDocked);
-                            staged = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && o.StagePhase >= 1 && !o.IsPod && !o.PodDocked);
+                            alive = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is { } og && og == goal && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && !o.IsPod && !o.PodDocked);
+                            staged = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is { } og && og == goal && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && o.StagePhase >= StageHoldPhase && !o.IsPod && !o.PodDocked);
                         }
                         // P633 — the per-bot per-side staging narration is also
                         // verbosity-gated + non-blocking (per-bot every 4 s it
@@ -4323,19 +4381,7 @@ bool isThreat =
         if (bot.Path.Count == 0) { LoiterCombat(bot, now); bot.LastCluster = cur; return; }   // unroutable / no CLUSTERINFO yet
         short gn = CombatNextHop(bot, cur);
         if (gn == cur) { bot.Arrived = true; bot.ArrivedAt ??= now; bot.LastCluster = cur; EngageCombat(bot, now, prep); return; }
-        bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
-        if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, gn, wd, out var warpPos, out _))
-        {
-            // P560 — fly THROUGH the aleph at full throttle (Pursue). The warp
-            // hop has no "arrival" short of its transit sphere, so the braking
-            // CombatFlyTo/WarpApproachParams law made a small hull ease off
-            // inside the mouth, emerge slowly and linger until the cooldown
-            // expired — re-crossing the aleph it just exited (the live bot
-            // ping-pong). Pursuit keeps full throttle through the mouth. P489's
-            // dodge pre-emption (inside FlyWarpLeg) still runs first.
-            FlyWarpLeg(bot, warpPos);
-        }
-        else
+        if (!TransitWarp(cs, bot, cur, gn))
             LoiterCombat(bot, now);
         bot.LastCluster = cur;
     }
@@ -4364,44 +4410,50 @@ bool isThreat =
     }
 
     /// <summary>
-    /// P539d/P635 — whether THE wing (<paramref name="side"/>, <paramref name="routeIndex"/>)
-    /// has finished staging and may advance. A wing releases when:
-    ///   (a) its own living combat bots are all staged AND every OTHER wing of the side
-    ///       (that still has living bots) is also staged — the P635 synchronous-arrival
-    ///       barrier, so all wings cross into the rendezvous together as ONE fight; or
+    /// P539d/P635/P637 — whether THE wing (<paramref name="side"/>, <paramref name="goal"/>,
+    /// <paramref name="routeIndex"/>) has finished staging and may advance. A staging group
+    /// is identified by (side, goal, routeIndex): the bots converging on the SAME target
+    /// sector along the SAME route wing. P637 keys by <paramref name="goal"/> (the bot's
+    /// own target) so a BOMBER (own goal = enemy home sector) is NEVER grouped with — or
+    /// made to wait on — a fighter wing whose goal is the rendezvous, even if they share a
+    /// route index. A wing releases when:
+    ///   (a) its own living combat bots are all staged AND every OTHER group of the side
+    ///       (that still has living bots, same goal) is also staged — the P635 synchronous-
+    ///       arrival barrier, so all wings cross into the rendezvous together as ONE fight; or
     ///   (b) this wing's first-staged bot has waited past its timeout
     ///       (StagingHoldSeconds + a per-route sync offset that lets a LONGER route wait
     ///       longer, so its trailing bots have time to stage before it is forced out).
     /// The timeout overrides the barrier so a straggler/stuck wing never freezes the
     /// group forever. A wing with no living bots releases trivially. Single-threaded
     /// (called from the Loop); iterates the bot list under <c>_gate</c>.</summary>
-    private bool StageReleaseRequired(short side, int routeIndex, double now)
+    private bool StageReleaseRequired(short side, short goal, int routeIndex, double now)
     {
-        // Per-route aggregate under _gate: (alive, staged, firstStagingAt, routeHops).
-        var per = new Dictionary<(short Side, int Route), (int Alive, int Staged, double? First, int Hops)>();
+        // Per-group aggregate under _gate: (alive, staged, firstStagingAt, routeHops),
+        // keyed by (side, goal, routeIndex) so distinct objectives never co-aggregate.
+        var per = new Dictionary<(short Side, short Goal, int Route), (int Alive, int Staged, double? First, int Hops)>();
         lock (_gate)
             foreach (var o in _bots)
             {
-                if (o.Cs is null || o.Behavior != "combat" || !o.UseStaging || o.TargetSector is null) continue;
-                if (o.Side != side) continue;
-                if (o.IsPod || o.PodDocked) continue;         // not living
-                var key = (side, o.RouteIndex);
+                if (o.Cs is null || o.Behavior != "combat" || !o.UseStaging || o.TargetSector is not { } og) continue;
+                if (o.Side != side || og != goal) continue;          // P637 — same objective only
+                if (o.IsPod || o.PodDocked) continue;                // not living
+                var key = (side, og, o.RouteIndex);
                 (int Alive, int Staged, double? First, int Hops) zero = (0, 0, null, RouteHopsOf(o));
                 var cur = per.TryGetValue(key, out var e) ? e : zero;
-                int st = cur.Staged + (o.StagePhase >= 1 ? 1 : 0);
+                int st = cur.Staged + (o.StagePhase >= StageHoldPhase ? 1 : 0);
                 double? f = cur.First ?? o.FirstStagingAt;
                 per[key] = (cur.Alive + 1, st, f, cur.Hops);
             }
 
-        if (!per.TryGetValue((side, routeIndex), out var mine))
-            return true;                                     // this wing has no living bots
+        if (!per.TryGetValue((side, goal, routeIndex), out var mine))
+            return true;                                            // this wing has no living bots
 
-        // Sync barrier: every OTHER wing of the side with living bots is assembled.
+        // Sync barrier: every OTHER group of the side (same goal) with living bots is assembled.
         bool allOthersAssembled = true;
         int sideMaxHops = 0;
-        foreach (var ((rs, ri), r) in per)
+        foreach (var ((rs, rg, ri), r) in per)
         {
-            if (rs != side) continue;
+            if (!SameStagingGroup(rs, rg, ri, side, goal, routeIndex)) continue;
             sideMaxHops = Math.Max(sideMaxHops, r.Hops);
             if (ri == routeIndex) continue;
             if (r.Alive > 0 && r.Staged < r.Alive) allOthersAssembled = false;
@@ -4497,6 +4549,31 @@ bool isThreat =
         /// <summary>A human-readable label for the bot's assigned route (e.g.
         /// "R1:Ganymede→Rigel→Alderan"); "single" when not on a multi-route wing.</summary>
         public required string RouteName { get; init; }
+        // P637 — role → target → route → staging visibility.
+        /// <summary>P637 — the bot's showcase role (Fighter/Bomber/Scout/...),
+        /// so a caller can see which role got which target/route.</summary>
+        public required string Role { get; init; }
+        /// <summary>P637 — the sector this bot is ROUTING to (its own objective:
+        /// the rendezvous for fighters, the enemy home sector for bombers).
+        /// -1 when the bot has no target sector (engages in place).</summary>
+        public required short TargetSector { get; init; }
+        /// <summary>P637 — the sector this bot holds at while staging (−1 = not
+        /// staging, or already released).</summary>
+        public required short StagingSector { get; init; }
+        /// <summary>P637 — the staging phase: 0 transit-to-stage, 1 holding,
+        /// 2 released/advanced (a bot at home with phase 1 is still waiting on
+        /// its wing).</summary>
+        public required int StagePhase { get; init; }
+        // P637 — live motion (scope 6).
+        /// <summary>P637 — the bot's LIVE velocity (from its own ClientWorld,
+        /// dead-reckoned regardless of the decision-snapshot flag).</summary>
+        public required double[] Velocity { get; init; }
+        /// <summary>P637 — scalar speed (velocity magnitude), for detecting idle.</summary>
+        public required double Speed { get; init; }
+        /// <summary>P637 — whether the bot is IDLE: speed ≈ 0 for longer than
+        /// the idle window while not docked (a bot stuck at home holding shows
+        /// idle=true so it can be counted live).</summary>
+        public required bool Idle { get; init; }
     }
 
     private static bool BotWorldReady(ActiveBot bot)
@@ -4524,8 +4601,48 @@ bool isThreat =
         return $"R{bot.RouteIndex}:" + string.Join("→", rp);
     }
 
+    // ── P637 — idle detection ─────────────────────────────────────────────
+    /// <summary>Below this scalar speed (m/s) a bot counts as "not moving".</summary>
+    public const double IdleSpeedMps = 1.0;
+    /// <summary>A bot whose speed has been below the idle threshold (or with no
+    /// observed movement) for this long, while NOT docked, is reported idle.</summary>
+    public const double IdleWindowSec = 5.0;
+    /// <summary>P637 — the pure idle rule: a bot is IDLE when it is NOT docked and
+    /// has had no movement (speed below <see cref="IdleSpeedMps"/>) for longer than
+    /// <see cref="IdleWindowSec"/>. Pure so the live "count the idle bots" flag is
+    /// unit-provable.</summary>
+    public static bool IsBotIdle(bool docked, double now, double lastMoveAt, double speed)
+        => !docked && (now - lastMoveAt) > IdleWindowSec && speed < IdleSpeedMps;
+
+    /// <summary>P637 — the bot's LIVE pose + velocity from ITS OWN ClientWorld's
+    /// live entity (the fresh, snapshot-INDEPENDENT source: <c>e.Latest</c> is
+    /// maintained by the receive thread even when the decision snapshot publish
+    /// is OFF — the P636d default). This is the honest "where is it right now"
+    /// for list_active_bots, avoiding a stale probe/snapshot pose. False when the
+    /// bot has no Cs peer or its own ship isn't in its world yet.</summary>
+    private static bool TryBotOwnLiveMotion(ActiveBot bot, out Vector3 pos, out Vector3 vel, out short sector)
+    {
+        pos = vel = Vector3.Zero;
+        sector = -1;
+        if (bot.Cs is not { } cs) return false;
+        short sid = bot.ShipId >= 0 ? bot.ShipId : ShipIdOf(bot);
+        if (sid < 0) return false;
+        lock (cs.Gate)
+        {
+            if (cs.World.Ships.TryGetValue(sid, out var e) && e.Latest is { } lu)
+            {
+                pos = lu.Position;
+                vel = lu.Velocity;
+                sector = e.SectorId;
+                return true;
+            }
+        }
+        return false;
+    }
+
     public IReadOnlyList<ActiveBotView> ActiveBots()
     {
+        double now = Now();
         var views = new List<ActiveBotView>();
         lock (_gate)
         {
@@ -4534,10 +4651,17 @@ bool isThreat =
                 try
                 {
                     short shipId = ShipIdOf(bot);
-                    // Authoritative live pose from the probe's real ClientWorld
-                    // (same-side ships anywhere — the vizfight visibility rule).
-                    if (TryProbePose(shipId, out var pos, out var sector))
+                    // P637 — prefer the bot's OWN ClientWorld live pose + velocity
+                    // (fresh regardless of the decision-snapshot flag), dead-reckoned
+                    // honesty. The probe remains the fallback for a bot with no Cs.
+                    Vector3 pos, vel = Vector3.Zero;
+                    short sector;
+                    bool own = TryBotOwnLiveMotion(bot, out pos, out vel, out sector);
+                    if (!own) own = TryProbePose(shipId, out pos, out sector);
+                    if (own)
                     {
+                        double speed = vel.Length();
+                        bool idle = IsBotIdle(bot.PodDocked, now, bot.LastMoveAt, speed);
                         views.Add(new ActiveBotView
                         {
                             Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
@@ -4547,34 +4671,16 @@ bool isThreat =
                             WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
                             WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                             RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
-                        });
-                        continue;
-                    }
-                    if (bot.Cs is { } cs)
-                    {
-                        // A cross-side combat bot: the probe can't see it. Read its
-                        // REAL pose/sector from ITS OWN ClientWorld (the truthful
-                        // source — vizfight reads enemy poses this way).
-                        short sec = -1;
-                        Vector3 p = Vector3.Zero;
-                        lock (cs.Gate)
-                            if (cs.World.Ships.TryGetValue(shipId, out var e) && e.Latest is { } lu)
-                            { sec = e.SectorId; p = lu.Position; }
-                        views.Add(new ActiveBotView
-                        {
-                            Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
-                            Sector = sec, Behavior = bot.Behavior,
-                            Position = [p.X, p.Y, p.Z], Target = bot.TargetId, OrderedTarget = bot.OrderedTargetId,
-                            Engagers = EngagersOf(bot),
-                            WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
-                            WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
-                            RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
+                            Role = bot.Role, TargetSector = bot.TargetSector ?? -1,
+                            StagingSector = bot.StagingSector, StagePhase = bot.StagePhase,
+                            Velocity = [vel.X, vel.Y, vel.Z], Speed = speed, Idle = idle,
                         });
                         continue;
                     }
                     // Cross-side idle/weave (rare): report the assigned sector + a
                     // zeroed position honestly (the documented scope of visibility).
                     short s = bot.Bot is { } b2 && b2.ShipAssignment is { } a ? a.SectorId : (short)-1;
+                    bool idle2 = IsBotIdle(bot.PodDocked, now, bot.LastMoveAt, 0.0);
                     views.Add(new ActiveBotView
                     {
                         Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
@@ -4583,6 +4689,9 @@ bool isThreat =
                         WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),
                         WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                         RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
+                        Role = bot.Role, TargetSector = bot.TargetSector ?? -1,
+                        StagingSector = bot.StagingSector, StagePhase = bot.StagePhase,
+                        Velocity = [0, 0, 0], Speed = 0, Idle = idle2,
                     });
                 }
                 catch { /* one bot's bad state never breaks list_active_bots */ }
@@ -4773,6 +4882,7 @@ bool isThreat =
                 if (bot.Samples.Count > MaxSamplesPerBot)
                     bot.Samples.RemoveRange(0, bot.Samples.Count - MaxSamplesPerBot);
             }
+            bot.LastMoveAt = now;   // P637 — last observed movement (idle flag)
         }
         bot.LastPos = pos;
         bot.LastPosAt = now;
@@ -5283,6 +5393,10 @@ bool isThreat =
         // UseMines / UseMissiles / Strafe this bot obeys in combat (scenario
         // default = DefaultScenarioWingman; override per fleet entry / bot).
         public short WingmanBehaviour = Showcase.DefaultScenarioWingman;
+        /// <summary>P637 — the bot's showcase role ("fighter"/"bomber"/...,
+        /// see <see cref="Showcase.HullRole"/>). Determines its OWN target sector
+        /// (bombers → enemy home) and its route/staging group.</summary>
+        public string Role = "fighter";
         /// <summary>P558 — whether the PREVIOUS attack tick held the
         /// afterburner button. Native's band-Engage afterburner rule fires
         /// afterburners at relativeSpeed &lt; −15 only if the drone was already
@@ -5307,6 +5421,10 @@ bool isThreat =
         public bool HasPos;                  // a live position has been observed at least once
         public Vector3 LastPos;              // last-observed real position
         public double LastPosAt;             // wall-clock time of the last observed change
+        /// <summary>P637 — wall-clock (harness Now()) of the last observed MOVEMENT
+        /// (speed above the idle threshold). Used to flag a bot idle in
+        /// list_active_bots.</summary>
+        public double LastMoveAt = double.NegativeInfinity;
         public readonly object SampleGate = new();
         public List<CadenceSample> Samples = new();
 

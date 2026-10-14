@@ -213,7 +213,16 @@ internal static class McpTools
                 "list_parts" => Ok(JsonSerializer.Serialize(Catalog.AllParts()
                     .Select(p => new { id = p.Id, name = p.Name, category = p.Category }))),
                 "list_active_bots" => Ok(JsonSerializer.Serialize(mgr.ActiveBots()
-                    .Select(b => new { name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull, sector = b.Sector, behavior = b.Behavior, target = b.Target, orderedTarget = b.OrderedTarget, engagers = b.Engagers, pos = b.Position }))),
+                    .Select(b => new {
+                        name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull,
+                        role = b.Role, sector = b.Sector, behavior = b.Behavior,
+                        target = b.Target, orderedTarget = b.OrderedTarget, engagers = b.Engagers,
+                        pos = b.Position,
+                        // P637 — role → target → route → staging + live motion.
+                        targetSector = b.TargetSector, routeIndex = b.RouteIndex, route = b.RouteName,
+                        stagingSector = b.StagingSector, stagePhase = b.StagePhase,
+                        velocity = b.Velocity, speed = b.Speed, idle = b.Idle,
+                    }))),
                 _ => Err($"unknown tool '{name}'"),
             };
         }
@@ -663,26 +672,60 @@ internal static class McpTools
                     $"{kv.Key}: {string.Join(" | ", kv.Value.Select(r => string.Join("→", r)))}"));
         }
 
+        // P637 — non-rendezvous roles (bombers) target the ENEMY HOME sector
+        // (their own objective — the enemy's garrison), not the fighter
+        // rendezvous, and get their OWN route/staging toward that target so
+        // they never wait on a fighter wing's release. Resolved once per side
+        // at spawn (same discovery as the fighter wings). Empty when the
+        // enemy home can't be resolved (the bot then just goes to the
+        // rendezvous like everyone else).
+        var bomberPlans = new Dictionary<short, List<List<short>>>();
+        var bomberCounts = new Dictionary<short, int[]>();
+        foreach (var side in new[] { sideA, sideB })
+        {
+            short enemyHome = mgr.FindSideHomeSector(side == sideA ? sideB : sideA) ?? -1;
+            if (enemyHome < 0) continue;
+            var bRoutes = mgr.FindRoutes(enemyHome, mgr.FindSideHomeSector(side), 3);
+            if (bRoutes.Count > 0) { bomberPlans[side] = bRoutes; bomberCounts[side] = new int[bRoutes.Count]; }
+        }
+
         for (int si = 0; si < slots.Count; si++)
         {
             var slot = slots[si];
             var spot = arena && arenaSpots.Count > si ? arenaSpots[si] : default;
             try
             {
-                // P635 — assign this bot to the least-loaded wing of its side.
+                // P637 — per-role target: a BOMBER's own objective is the ENEMY
+                // HOME sector (its garrison), not the fighter rendezvous; every
+                // other role converges on the rendezvous.
+                short botTarget = BotManager.ResolveRoleTarget(slot.Role, targetSector ?? -1,
+                    mgr.FindSideHomeSector(slot.Side == sideA ? sideB : sideA) ?? -1);
+
+                // P635/P637 — assign this bot to the least-loaded wing of its
+                // side. A bomber goes on its OWN (home → enemy-home) route wing,
+                // never a fighter wing (whose rendezvous staging it would wait on).
                 IReadOnlyList<short>? routePath = null;
                 int routeIndex = -1;
-                if (routePlans.TryGetValue(slot.Side, out var rs))
+                if (slot.Role == Showcase.HullRole.Bomber && botTarget >= 0
+                    && bomberPlans.TryGetValue(slot.Side, out var bs))
+                {
+                    var bc = bomberCounts[slot.Side];
+                    routeIndex = BotManager.PickLeastLoadedRoute(bc);
+                    bc[routeIndex]++;
+                    routePath = bs[routeIndex];
+                }
+                else if (routePlans.TryGetValue(slot.Side, out var rs))
                 {
                     var counts = routeCounts[slot.Side];
                     routeIndex = BotManager.PickLeastLoadedRoute(counts);
                     counts[routeIndex]++;
                     routePath = rs[routeIndex];
                 }
-                var r = mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", targetSector,
+                var r = mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", botTarget,
                     slot.LauncherId, slot.LauncherName, useStaging: staging, arena: arena,
                     arenaPosition: arena ? spot.Pos : null, arenaFacing: arena ? spot.Fwd : null,
-                    wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex);
+                    wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
+                    role: slot.Role.ToString());
                 spawned++;
                 grants.Add(new { side = slot.Side, name = r.Name, grantedHull = r.Granted.HullId, grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning });
                 if (r.Warning is not null) warnings++;
@@ -703,6 +746,7 @@ internal static class McpTools
             wingman,
             routes = routesNote,
             maxPerRoute,
+            bombersTarget = "enemy home sector (P637 — non-rendezvous roles get their own route/staging toward their own objective, never wait on a fighter wing's release)",
             sideA = new { side = sideA, spawned = totalA, fleet = faRep },
             sideB = new { side = sideB, spawned = totalB, fleet = fbRep },
             minefields = minefieldReports,
@@ -720,7 +764,7 @@ internal static class McpTools
     private sealed record ShowcaseSpawnSlot(
         short FlyHullId, string FlyHullName, short Side, IReadOnlyList<ExpandedPartData> Parts,
         short? LauncherId, string? LauncherName, short Wingman,
-        string SourceHull, int Tech, bool CarriesMines);
+        string SourceHull, int Tech, bool CarriesMines, Showcase.HullRole Role);
 
     /// <summary>Expand one side's fleet into per-bot spawn slots: per entry,
     /// resolve the native-preferred loadout at its `tech` (P555/P556); when
@@ -755,7 +799,7 @@ internal static class McpTools
                     }
                 }
                 slots.Add(new ShowcaseSpawnSlot(tl.HullId, tl.HullName, side, parts, launcherId, launcherName,
-                    wingman, e.HullName, e.Tech, carriesMines));
+                    wingman, e.HullName, e.Tech, carriesMines, Showcase.ClassifyHull(eff)));
             }
         }
     }

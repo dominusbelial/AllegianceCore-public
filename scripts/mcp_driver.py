@@ -67,7 +67,7 @@ while proc.poll() is None:
             r = call("tools/call", {"name": cmd["tool"], "arguments": cmd.get("args", {})}, cmd.get("timeout", 900))
             res = r.get("result", r)
             text = "\n".join(c.get("text", "") for c in res.get("content", [])) if isinstance(res, dict) else str(res)
-            log("RESULT", cmd["tool"], "isError=" + str(res.get("isError") if isinstance(res, dict) else None), "\n" + text[:6000])
+            log("RESULT", cmd["tool"], "isError=" + str(res.get("isError") if isinstance(res, dict) else None), "\n" + text[:400000])
         except Exception as e:
             log("ERROR", cmd["tool"], repr(e))
 log("SERVER EXITED code", proc.returncode)
