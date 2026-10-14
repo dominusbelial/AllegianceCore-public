@@ -26,6 +26,7 @@ public sealed class DecisionSnapshot
 {
     /// <summary>Monotonic publish counter — a reader can detect a fresher snapshot.</summary>
     public long Version;
+    public long MissionGeneration;
 
     /// <summary>P636c — the <see cref="System.Environment.TickCount64"/> (ms, monotonic)
     /// at which this snapshot was built and published. A reader can measure the
@@ -103,6 +104,19 @@ public sealed class DecisionSnapshot
         float s = (float)(ageMs / 1000.0);
         return new Vector3(ship.PosX + ship.VelX * s, ship.PosY + ship.VelY * s, ship.PosZ + ship.VelZ * s);
     }
+    /// <summary>Integrate frozen angular rates using the native ShipKinematics axis signs.
+    /// Position and attitude are evaluated at the same decision time.</summary>
+    public static Orientation DeadReckonOrientation(in DecisionShip ship, double ageMs)
+    {
+        var orientation = ship.MaterializeOrientation();
+        float seconds = (float)Math.Max(0, ageMs / 1000.0);
+        orientation.Yaw(ship.TurnYaw * seconds);
+        orientation.Pitch(-ship.TurnPitch * seconds);
+        orientation.Roll(ship.TurnRoll * seconds);
+        orientation.Renormalize();
+        return orientation;
+    }
+
 }
 
 /// <summary>P636 — the decision-relevant subset of one ship, as a value copy in the
@@ -122,6 +136,7 @@ public struct DecisionShip
     public float PosX, PosY, PosZ;    // Latest.Position
     public float VelX, VelY, VelZ;    // Latest.Velocity
     // Orientation's 3x3 basis (r00..r22) — enough to rebuild an Orientation for aiming.
+    public float TurnYaw, TurnPitch, TurnRoll;
     public float R00, R01, R02, R10, R11, R12, R20, R21, R22;
 
     public bool IsVisible => (Flags & 1) != 0;

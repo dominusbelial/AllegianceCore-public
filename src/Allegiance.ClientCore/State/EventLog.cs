@@ -46,6 +46,13 @@ public sealed class EventLog
 
     /// <summary>Ship deaths (KILL_SHIP, 105), in arrival order.</summary>
     public IReadOnlyList<KillShip> Kills => _kills;
+    public long KillSequence { get; private set; }
+    public long ChatSequence { get; private set; }
+    // Sequences remain monotonic across Clear, so existing consumers keep working.
+    public IEnumerable<KillShip> KillsAfter(long sequence) =>
+        _kills.Skip((int)Math.Clamp(sequence - (KillSequence - _kills.Count), 0, _kills.Count));
+    public IEnumerable<ChatMessage> ChatsAfter(long sequence) =>
+        _chats.Skip((int)Math.Clamp(sequence - (ChatSequence - _chats.Count), 0, _chats.Count));
 
     /// <summary>The server's relay of a player-ready announce (PLAYER_READY, 45),
     /// in arrival order — echoes of the sender's own or a teammate's ready-state
@@ -64,10 +71,10 @@ public sealed class EventLog
     }
 
     // ── internal append sites, driven by ClientWorld.Apply on the receive thread ──
-    internal void Record(ChatMessage m) => Append(_chats, m);
+    internal void Record(ChatMessage m) { ChatSequence++; Append(_chats, m); }
     internal void Record(ChatBuoy m) => Append(_chatBuoys, m);
     internal void Record(Payday m) => Append(_paydays, m);
-    internal void Record(KillShip m) => Append(_kills, m);
+    internal void Record(KillShip m) { KillSequence++; Append(_kills, m); }
     internal void Record(PlayerReady m) => Append(_playerReadyEchoes, m);
 
     private static void Append<T>(List<T> list, T item)

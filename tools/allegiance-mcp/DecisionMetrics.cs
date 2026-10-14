@@ -70,7 +70,7 @@ public static class DecisionMetrics
     /// P636b — a deadline-based FIXED decision cadence. Drives the bot decision
     /// loop so each pass starts ~<c>periodMs</c> after the previous one, and
     /// guarantees the loop NEVER busy-spins: when a pass overshoots its tick it
-    /// still yields a small minimum (<c>minYieldMs</c>), instead of looping with
+    /// drops the debt and waits a full period (at least <c>minYieldMs</c>), instead of looping with
     /// zero sleep (the P636 behaviour that spun at ~670 Hz once the lock-free
     /// snapshot made passes faster than the period, starving the receive threads
     /// and collapsing combat at scale). Pure + wall-clock-free so it is unit-
@@ -81,6 +81,7 @@ public static class DecisionMetrics
         private readonly double _periodMs;
         private readonly double _minYieldMs;
         private double _nextTickMs;
+        public long OverrunCount { get; private set; }
 
         public LoopCadence(double periodMs, double minYieldMs = 1.0)
         {
@@ -96,15 +97,21 @@ public static class DecisionMetrics
         /// <summary>
         /// Called after finishing a pass at wall time <paramref name="nowMs"/>:
         /// returns the ms to sleep so the next pass starts ~one period after this
-        /// one. Advances the tick by exactly one period. If the pass overshot its
-        /// tick (work + prior drift &gt; period), returns <see cref="_minYieldMs"/>
-        /// rather than 0 so the loop yields and never busy-spins.
+        /// one. On an overrun drops accumulated debt and schedules one period from now;
+        /// fast subsequent passes cannot run catch-up bursts.
         /// </summary>
         public double SleepForRemainder(double nowMs)
         {
             double sleep = _nextTickMs - nowMs;
-            _nextTickMs += _periodMs;                 // advance exactly one period
-            return sleep > 0 ? sleep : _minYieldMs;
+            if (sleep <= 0)
+            {
+                OverrunCount++;
+                // Drop all debt and give the receive threads one full period.
+                sleep = Math.Max(_periodMs, _minYieldMs);
+                _nextTickMs = nowMs + sleep;
+            }
+            _nextTickMs += _periodMs;
+            return sleep;
         }
     }
 

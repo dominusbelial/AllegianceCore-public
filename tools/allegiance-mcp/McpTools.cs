@@ -222,7 +222,10 @@ internal static class McpTools
                         targetSector = b.TargetSector, routeIndex = b.RouteIndex, route = b.RouteName,
                         stagingSector = b.StagingSector, stagePhase = b.StagePhase,
                         velocity = b.Velocity, speed = b.Speed, idle = b.Idle,
-                    }))),
+                        status = "active",
+                    }).Cast<object>().Concat(mgr.RemovedBots().Select(b => (object)new {
+                        name = b.Name, shipId = b.ShipId, status = "removed", reason = b.Reason,
+                    })))),
                 _ => Err($"unknown tool '{name}'"),
             };
         }
@@ -681,7 +684,7 @@ internal static class McpTools
         // rendezvous like everyone else).
         var bomberPlans = new Dictionary<short, List<List<short>>>();
         var bomberCounts = new Dictionary<short, int[]>();
-        foreach (var side in new[] { sideA, sideB })
+        foreach (var side in arena ? Array.Empty<short>() : new[] { sideA, sideB })
         {
             short enemyHome = mgr.FindSideHomeSector(side == sideA ? sideB : sideA) ?? -1;
             if (enemyHome < 0) continue;
@@ -698,7 +701,7 @@ internal static class McpTools
                 // P637 — per-role target: a BOMBER's own objective is the ENEMY
                 // HOME sector (its garrison), not the fighter rendezvous; every
                 // other role converges on the rendezvous.
-                short botTarget = BotManager.ResolveRoleTarget(slot.Role, targetSector ?? -1,
+                short? botTarget = BotManager.ResolveScenarioTarget(arena, slot.Role, targetSector,
                     mgr.FindSideHomeSector(slot.Side == sideA ? sideB : sideA) ?? -1);
 
                 // P635/P637 — assign this bot to the least-loaded wing of its
@@ -706,7 +709,7 @@ internal static class McpTools
                 // never a fighter wing (whose rendezvous staging it would wait on).
                 IReadOnlyList<short>? routePath = null;
                 int routeIndex = -1;
-                if (slot.Role == Showcase.HullRole.Bomber && botTarget >= 0
+                if (!arena && slot.Role == Showcase.HullRole.Bomber && botTarget >= 0
                     && bomberPlans.TryGetValue(slot.Side, out var bs))
                 {
                     var bc = bomberCounts[slot.Side];
@@ -1045,6 +1048,8 @@ internal static class McpTools
                 max = ps.DecisionPass.MaxMs,
             },
             decisionRateHz = ps.DecisionRateHz,
+            decisionOverruns = mgr.DecisionOverruns,
+            removedBots = mgr.RemovedBots(),
             fleetDecisionRateHz = ps.FleetDecisionRateHz,
             resources = new
             {

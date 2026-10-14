@@ -51,7 +51,7 @@ internal sealed partial class BotManager : IDisposable
     private static readonly bool LegacyNearestFlag =
         Environment.GetEnvironmentVariable("ALLEGIANCE_P622_LEGACY_NEAREST") == "1";
 
-    // P636c — A/B switch (default ON): when ALLEGIANCE_BOT_DECISION_SNAPSHOT=off,
+    // P636c — A/B switch (default OFF): when ALLEGIANCE_BOT_DECISION_SNAPSHOT=off,
     // the decision read path reverts to the PRE-P636 live-table reads under
     // cs.Gate (the P635 behaviour), so the P632 harness can measure snapshot-on
     // vs snapshot-off lethality in ONE binary. Everything that "off" touches is
@@ -82,7 +82,8 @@ internal sealed partial class BotManager : IDisposable
     // because EngageShipAt (the sampler) is a static method; one BotManager per
     // process in the harness.
     private static readonly object SnapAgeGate = new();
-    private static readonly List<double> _snapAgesMs = new();
+    private static readonly double[] _snapAgesMs = new double[MaxSnapAgeSamples];
+    private static int _snapAgeCount, _snapAgeNext;
     private const int MaxSnapAgeSamples = 16384;
 
     // ── P633 — decision-loop measurement (get_perf_stats / item 1, 6) ────
@@ -197,7 +198,9 @@ internal sealed partial class BotManager : IDisposable
     {
         _host = host;
         _port = port;
-        Probe = new ConnectionSession();
+        using var ownership = new PendingOwnership();
+        Probe = ownership.Own(new ConnectionSession());
+        Probe.World.CountOnlyProjectiles = true;
         Probe.World.ReckonRemotes = false;   // P633 — headless probe: no render consumption
         ConnectProbe();
         // P554 — a standalone MCP always talks to a NETWORKED server (host/port),
@@ -209,6 +212,7 @@ internal sealed partial class BotManager : IDisposable
         // allow-listed) it returns false and the arena path throws a clear error.
         Relocator = CreateNetworkedRelocator();
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
+        ownership.Transfer();
     }
 
     /// <summary>P554 — how long the networked arena relocator waits for the
@@ -441,7 +445,9 @@ internal sealed partial class BotManager : IDisposable
         }
 
         string name = NextName();
-        ActiveBot bot;
+        using var ownership = new PendingOwnership();
+        ActiveBot bot = null!;
+        ownership.OnFailure(() => { if (bot is not null) RemoveInactiveBot(bot, "spawn failed"); });
         short shipId;
         short actualSide;
         LoadoutGrant granted = default;
@@ -452,7 +458,7 @@ internal sealed partial class BotManager : IDisposable
             // A combat bot is driven as its own ConnectionSession (mirrors vizfight's
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
-            var cs = SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning);
+            var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning));
             if (actualSide == ProbeSide)
             {
                 if (!WaitUntil(() => ProbeHasShip(shipId) || !cs.Connected, 4000))
@@ -481,7 +487,7 @@ internal sealed partial class BotManager : IDisposable
         else
         {
             // idle / weave: a plain BotClass client (same-side observable by the probe).
-            var b = new BotClass { AutoSelectSideAfterLogon = false };
+            var b = ownership.Own(new BotClass { AutoSelectSideAfterLogon = false, RetainRawCombatUpdates = false });
             b.Connect(_port, name, _host);
             b.SendLogonRequest(Request(name));
             if (!WaitUntil(() => b.Ack is { FValidated: true }, 12000))
@@ -548,6 +554,17 @@ internal sealed partial class BotManager : IDisposable
         // P539d — fair-contact bookkeeping (combat bots only; idle/weave bots
         // never travel or fight, so staging/arena leave them be).
         bot.LaunchedAt = Now();
+        if (targetSector is { } objective)
+        {
+            lock (Probe.Gate)
+                if (Probe.World.Clusters.TryGetValue(objective, out var cluster)) bot.ObjectiveName = cluster.Name;
+        }
+        if (bot.Cs is { } initialCs)
+        {
+            bot.LifeSession = initialCs;
+            bot.LifeGeneration = initialCs.World.MissionGeneration;
+            bot.LifeCookie = initialCs.World.Mission?.Cookie;
+        }
         // P637 — a NON-rendezvous role (bomber) does NOT stage: it is on its OWN
         // objective (the enemy home), so the fair-contact staging barrier for the
         // fighter rendezvous would only strand it (it can never "assemble" a
@@ -608,17 +625,19 @@ internal sealed partial class BotManager : IDisposable
             Console.WriteLine($"[p539d] arena: bot {name} (ship {bot.ShipId} side {actualSide}) relocated to mirrored spot in sector {ts}");
         }
 
-        int count = _bots.Count;
+        bot.SpawnPending = false;
+        ownership.Transfer();
+        int count;
+        lock (_gate) count = _bots.Count;
         return new SpawnResult(name, shipId, actualSide, hullName, count, granted, grantWarning);
     }
 
     /// <summary>P554 — on an arena-relocation failure the bot must not linger as
     /// an orphan wire peer; dispose its connection(s) and return the clear error
     /// that the tool surfaces (instead of silently staging).</summary>
-    private static Exception FailArena(string name, ActiveBot bot, string message)
+    private Exception FailArena(string name, ActiveBot bot, string message)
     {
-        try { bot.Cs?.Dispose(); } catch { }
-        try { bot.Bot?.Dispose(); } catch { }
+        RemoveInactiveBot(bot, "arena spawn failed");
         Console.WriteLine($"[p554] arena: {message}");
         return new InvalidOperationException(message);
     }
@@ -635,7 +654,9 @@ internal sealed partial class BotManager : IDisposable
     /// </summary>
     private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning)
     {
-        var cs = new ConnectionSession();
+        using var ownership = new PendingOwnership();
+        var cs = ownership.Own(new ConnectionSession());
+        cs.World.CountOnlyProjectiles = true;
         cs.World.ReckonRemotes = false;   // P633 — headless bot harness: no render consumption of dead-reckoners
         cs.Connect(_port, name, _host);
         cs.SendLogonRequest(Request(name));
@@ -656,6 +677,7 @@ internal sealed partial class BotManager : IDisposable
         cs.ResetBuyLoadoutAcks();
         cs.SendBuyLoadout(hullId, fLaunch: true, parts);
         granted = WaitForAck(() => cs.BuyLoadoutAcks, name, hullId, parts, out warning);
+        ownership.Transfer();
         return cs;
     }
 
@@ -1009,7 +1031,9 @@ internal sealed partial class BotManager : IDisposable
                 return existing;
             existing?.Dispose();
             string name = $"mcp-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
-            var cs = new ConnectionSession();
+            using var ownership = new PendingOwnership();
+            var cs = ownership.Own(new ConnectionSession());
+            cs.World.CountOnlyProjectiles = true;
             cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
             cs.Connect(_port, name, _host);
             cs.SendLogonRequest(Request(name));
@@ -1021,6 +1045,7 @@ internal sealed partial class BotManager : IDisposable
             cs.SendPlayerReady(true, cs.World.MyShipId!.Value);
             Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — P473 grant money in wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
             _commanders[side] = cs;
+            ownership.Transfer();
             return cs;
         }
     }
@@ -1588,6 +1613,8 @@ internal sealed partial class BotManager : IDisposable
                 // engager counts so each pass recomputes the coordinated spread
                 // from scratch (single decision thread; readers use _engagersSnapshot).
                 _tickEngagers.Clear();
+                foreach (var b in snap)
+                    if (IsParticipating(b) && !b.SpawnPending && !b.InScenario && b.Cs is { } lifeCs) RefreshLife(b, lifeCs, now);
 
                 // P636d — LAZY publish: request a fresh decision snapshot from every
                 // seated bot's receive thread BEFORE this pass reads .Decision. The
@@ -1625,11 +1652,12 @@ internal sealed partial class BotManager : IDisposable
                 // cap / threat-tier / detachment-and-hold / P431-order-wins
                 // guarantees are preserved bit-for-bit (see the two-phase
                 // equivalence unit test).
+                BuildPassSpatialIndices(snap);
                 var prep = new PreparedEngagement?[snap.Length];
                 System.Threading.Tasks.Parallel.For(0, snap.Length, i =>
                 {
                     var b = snap[i];
-                    if (b.InScenario || b.Behavior != "combat" || b.Cs is not { } pcs) return;
+                    if (!IsParticipating(b) || b.SpawnPending || b.ObjectivesPending || b.InScenario || b.Behavior != "combat" || b.Cs is not { } pcs) return;
                     if (pcs.World.MyShipId is null) return;                 // not seated yet
                     // P636 — Phase A now reads the lock-free DECISION SNAPSHOT
                     // (published by each bot's receive thread) instead of scanning
@@ -1638,6 +1666,9 @@ internal sealed partial class BotManager : IDisposable
                     // a pass no longer stalls behind the receive thread's bulk ship
                     // application under the same gate at 200v200.
                     var snapshot = pcs.World.Decision;
+                    if (DecisionSnapshotEnabled && snapshot.MissionGeneration != pcs.World.MissionGeneration) return;
+                    b.DecisionFrame = snapshot;
+                    using var frameScope = new DecisionFrameScope(pcs, snapshot);
                     Vector3 myPos; short myCluster;
                     if (!DecisionSnapshotEnabled)
                     {
@@ -1711,12 +1742,15 @@ bool isThreat =
                         // driven by the scenario's own controller thread (blocking
                         // the tool call), never by this generic loop, so the two
                         // never race on the same wire peer.
+                        if (bot.SpawnPending) continue;
+                        if (!IsParticipating(bot)) { RemoveInactiveBot(bot, "connection lost"); continue; }
                         if (bot.InScenario) continue;
 
                         // P431 — every active bot accepts real teammate orders each
                         // tick (no human to ask: MCP bots obey immediately) and adopts
                         // the commanded ship-target; this may upgrade an idle/weave
                         // BotClass into a combat ConnectionSession and set Behavior.
+                        using var frameScope = new DecisionFrameScope(bot.Cs, bot.DecisionFrame);
                         HandleOrders(bot, now);
                         if (bot.Behavior == "combat")
                         {
@@ -2091,7 +2125,7 @@ bool isThreat =
         // P636 — read the lock-free decision snapshot instead of taking the world
         // gate: a decision pass no longer waits behind the receive thread's bulk
         // ship application under cs.Gate (the P632/P633 transit collapse).
-        var snap = cs.World.Decision;
+        var snap = SnapshotFor(cs);
         if (snap.MyShipId is { } me && DecisionSnapshot.TryFind(snap.Ships, me, out var e))
             return e.SectorId;
         return -1;
@@ -2118,7 +2152,7 @@ bool isThreat =
             orient = Orientation.Identity;
             return false;
         }
-        var snap = cs.World.Decision;
+        var snap = SnapshotFor(cs);
         if (DecisionSnapshot.TryFind(snap.Ships, shipId, out var e2) && e2.HasLatest)
         {
             pos = e2.Position;
@@ -2158,12 +2192,12 @@ bool isThreat =
             orient = Orientation.Identity;
             return false;
         }
-        var snap = cs.World.Decision;
+        var snap = SnapshotFor(cs);
         if (DecisionSnapshot.TryFind(snap.Ships, shipId, out var fe) && fe.HasLatest)
         {
             if (SnapshotDeadReckonEnabled)
             {
-                double ageSec = (System.Environment.TickCount64 - snap.PublishedTick64) / 1000.0;
+                double ageSec = ((_frameSession == cs ? _frameNow : Environment.TickCount64) - snap.PublishedTick64) / 1000.0;
                 if (ageSec < 0) ageSec = 0;
                 pos = DecisionSnapshot.DeadReckonPosition(fe, ageSec * 1000.0);
             }
@@ -2172,7 +2206,9 @@ bool isThreat =
                 pos = fe.Position;   // P636c probe — raw frozen snapshot pose (unfixed)
             }
             vel = fe.Velocity;
-            orient = fe.MaterializeOrientation();
+            orient = SnapshotDeadReckonEnabled
+                ? DecisionSnapshot.DeadReckonOrientation(fe, Math.Max(0, (_frameSession == cs ? _frameNow : Environment.TickCount64) - snap.PublishedTick64))
+                : fe.MaterializeOrientation();
             return true;
         }
         pos = vel = Vector3.Zero;
@@ -2186,10 +2222,16 @@ bool isThreat =
         if (!DecisionSnapshotEnabled) return;
         double age = System.Environment.TickCount64 - publishedTick64;
         if (age < 0) age = 0;
+        RecordSnapshotAgeSample(age);
+    }
+
+    private static void RecordSnapshotAgeSample(double age)
+    {
         lock (SnapAgeGate)
         {
-            _snapAgesMs.Add(age);
-            if (_snapAgesMs.Count > MaxSnapAgeSamples) _snapAgesMs.RemoveAt(0);
+            _snapAgesMs[_snapAgeNext] = age;
+            _snapAgeNext = (_snapAgeNext + 1) % MaxSnapAgeSamples;
+            _snapAgeCount = Math.Min(MaxSnapAgeSamples, _snapAgeCount + 1);
         }
     }
 
@@ -2198,8 +2240,8 @@ bool isThreat =
     {
         lock (SnapAgeGate)
         {
-            if (_snapAgesMs.Count == 0) return (0, 0, 0);
-            var a = _snapAgesMs.ToArray();
+            if (_snapAgeCount == 0) return (0, 0, 0);
+            var a = _snapAgesMs.Take(_snapAgeCount).ToArray();
             System.Array.Sort(a);
             int n = a.Length;
             double mean = 0; foreach (var v in a) mean += v; mean /= n;
@@ -2228,7 +2270,7 @@ bool isThreat =
             }
             return map.Count > 0;
         }
-        var snap = cs.World.Decision;
+        var snap = SnapshotFor(cs);
         foreach (var w in snap.Warps)
             if (w.DestClusterId >= 0)
                 map[w.WarpId] = w.DestClusterId;
@@ -2264,7 +2306,7 @@ bool isThreat =
             radius = 0f;
             return false;
         }
-        var snap = cs.World.Decision;
+        var snap = SnapshotFor(cs);
         foreach (var w in snap.Warps)
         {
             if (w.ClusterId != cur) continue;
@@ -2351,7 +2393,10 @@ bool isThreat =
                 return;
             }
             if (bot.WorldReadyAt < 0) bot.WorldReadyAt = now;   // latch first readiness
-            bot.Path = RoutePathSuffix(bot, cur, goal) ?? g.FindShortestPath(cur, goal);
+            bot.Path = RoutePathSuffix(bot, cur, goal)
+                ?? (bot.UseStaging && !IsStageReleased(bot.StagePhase) && goal == bot.StagingSector
+                    && bot.TargetSector is { } rendezvous && rendezvous != cur
+                    ? g.FindShortestPathAvoiding(cur, goal, rendezvous) : g.FindShortestPath(cur, goal));
         }
         bot.PathStart = cur;
         bot.PathGoal = goal;
@@ -2367,10 +2412,10 @@ bool isThreat =
     private static List<short>? RoutePathSuffix(ActiveBot bot, short cur, short goal)
     {
         if (bot.RoutePath is not { Count: > 0 } rp) return null;
-        if (rp[^1] != goal) return null;                  // this route targets another rendezvous
+        int end = rp.IndexOf(goal);
         int idx = rp.IndexOf(cur);
-        if (idx < 0) return null;                         // off-route -> shortest-path fallback
-        return rp.Skip(idx).ToList();
+        if (idx < 0 || end < idx) return null;
+        return rp.Skip(idx).Take(end - idx + 1).ToList();
     }
 
     /// <summary>[vz EnemyNextHop] The next cluster on the path after
@@ -2397,6 +2442,7 @@ bool isThreat =
     /// transit volume).</para></summary>
     private static void CombatFlyTo(ActiveBot bot, Vector3 target, float arrival, float brake, int stateM)
     {
+        using var frameScope = new DecisionFrameScope(bot.Cs);
         var cs = bot.Cs!;
         if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return;
         // P489 — dodge pre-empts the straight-line goal, exactly like the server
@@ -2440,7 +2486,7 @@ bool isThreat =
                     }
             }
             if (pathShips is not null && AvoidShipsInPath(pos, target, AvoidHorizon, AvoidCosHalfAngle,
-                    AvoidClearancePad + HullRadius(bot.HullId) + 6f, pathShips, bot.TargetId, out var avoidGoal))
+                    AvoidClearancePad + HullRadius(ActualHullId(bot)) + 6f, pathShips, bot.TargetId, out var avoidGoal))
                 target = avoidGoal;
         }
         var toTarget = target - pos;
@@ -2479,7 +2525,7 @@ bool isThreat =
             myVel = mu.Velocity;
         }
         var core = Catalog.RepresentativeCore();
-        if (core.HullTypes.TryGetValue(bot.HullId, out var hull) && hull.Mass > 0f && hull.Thrust > 0f)
+        if (core.HullTypes.TryGetValue(ActualHullId(bot), out var hull) && hull.Mass > 0f && hull.Thrust > 0f)
         {
             // P497 — a board-capable hull does not dodge the station it is flying
             // into to board (native boards by flying into the bay, not by evading
@@ -2522,7 +2568,9 @@ bool isThreat =
     /// one, while it is alive.</summary>
     private void EngageCombat(ActiveBot bot, double now, PreparedEngagement? prep)
     {
+        using var frameScope = new DecisionFrameScope(bot.Cs);
         var cs = bot.Cs!;
+        if (!IsParticipating(bot)) return;
         if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
         short myCluster = CsSector(cs);
 
@@ -2532,6 +2580,7 @@ bool isThreat =
         // co-located, loiter (committed to this order, attacking no one else). The
         // order is only released by a NEW superseding order (DecideAcceptTranslate),
         // not by a transient visibility gap.
+        ClearInvalidOrderedTarget(bot, cs);
         if (bot.OrderedTargetId is { } ordered)
         {
             bool engageable; short osector;
@@ -2555,6 +2604,20 @@ bool isThreat =
                 LoiterCombat(bot, now);   // committed to this order; not engageable right now
             }
             return;
+        }
+
+        if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
+            && (bot.Arena || bot.TargetSector is null || bot.TargetSector == myCluster))
+        {
+            short? station;
+            lock (cs.Gate) station = PickEnemyStation(cs.World.Stations.Values, bot.Side, myCluster, myPos);
+            bool attacked = HasVisibleAttacker(bot, cs, myCluster, now);
+            if (station is { } id && !attacked)
+            {
+                bot.TargetId = id;
+                EngageShipAt(bot, cs, id, now, 0, 0, stationTarget: true);
+                return;
+            }
         }
 
         // P622 measurement switch (DEFAULT OFF): when ALLEGIANCE_P622_LEGACY_NEAREST
@@ -2583,6 +2646,13 @@ bool isThreat =
             LoiterCombat(bot, now);      // hold/loiter at the staging point
             return;
         }
+        lock (cs.Gate)
+            if (!cs.World.Ships.TryGetValue(best, out var current) || current.IsNotVisible
+                || current.SideId == bot.Side || current.SectorId != myCluster
+                || cs.World.MyShipId != bot.ShipId
+                || !cs.World.Ships.TryGetValue(bot.ShipId, out var ownCurrent) || ownCurrent.SectorId != myCluster)
+            { bot.TargetId = null; LoiterCombat(bot, now); return; }
+        if (!IsParticipating(bot)) return;
         bot.TargetId = best;
         // Register this engager in the current pass (single Loop thread).
         int newCount = (_tickEngagers.TryGetValue(best, out var prev) ? prev : 0) + 1;
@@ -2662,23 +2732,17 @@ bool isThreat =
                 }
             }
         }
-        var ctx = new BotSelectionContext(bot.ShipId, myCluster, TeammatesInCluster(cs, bot, myCluster), _tickEngagers);
+        if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
+            && !bot.Arena && bot.TargetSector is { } destination && destination != myCluster)
+            candidates = candidates.Where(c => bot.RecentAttackers.TryGetValue(c.Id, out var at)
+                && now - at < ThreatWindowSeconds).ToList();
+        var ctx = new BotSelectionContext(bot.ShipId, myCluster, 0, _tickEngagers);
         return CombatTargetSelector.Select(candidates, ctx);
     }
 
     /// <summary>P622 — count this side's LIVING combat bots currently co-located
     /// in <paramref name="myCluster"/> (the bot's own side, for the selector's
     /// context). Cheap; runs on the single Loop thread under _gate.</summary>
-    private int TeammatesInCluster(ConnectionSession cs, ActiveBot bot, short myCluster)
-    {
-        int n = 0;
-        lock (_gate)
-            foreach (var o in _bots)
-                if (o != bot && o.Cs is not null && o.Behavior == "combat" && !o.IsPod && !o.PodDocked
-                    && o.Side == bot.Side && o.Cs.World.Ships.TryGetValue(o.ShipId, out var me) && me.SectorId == myCluster)
-                    n++;
-        return n;
-    }
 
     /// <summary>[vz EngageEnemy's engagement body, P558-rewritten] Point the bot
     /// at <paramref name="targetId"/> via a real cross-side ORDER_CHANGE target
@@ -2699,11 +2763,20 @@ bool isThreat =
     /// weapon range (the P556 root cause). Shared by the nearest-enemy and P431
     /// commanded-target paths.</summary>
     private static void EngageShipAt(ActiveBot bot, ConnectionSession cs, short targetId, double now,
-        int engagerCount, int engagerRank)
+        int engagerCount, int engagerRank, bool stationTarget = false)
     {
+        using var frameScope = new DecisionFrameScope(cs);
+        lock (cs.Gate)
+        {
+            if (cs.World.MyShipId != bot.ShipId || !cs.World.Ships.TryGetValue(bot.ShipId, out var ownLife)
+                || ownLife.StationId >= 0) return;
+            if (!stationTarget && (!cs.World.Ships.TryGetValue(targetId, out var targetLife)
+                || targetLife.IsNotVisible || targetLife.SideId == bot.Side || targetLife.SectorId != ownLife.SectorId))
+            { LoiterCombat(bot, now); return; }
+        }
         if (now - bot.LastTargetAt > 3)
         {
-            cs.SendOrderChange(bot.ShipId, OrderChange.CmdQueued, OrderChange.CmdCurrent, IgcObjectType.Ship, targetId);
+            cs.SendOrderChange(bot.ShipId, OrderChange.CmdQueued, OrderChange.CmdCurrent, (stationTarget ? IgcObjectType.Station : IgcObjectType.Ship), targetId);
             bot.LastTargetAt = now;
         }
         if (!TryCsPose(cs, bot.ShipId, out var myPos0, out var orient0)) return;
@@ -2712,7 +2785,27 @@ bool isThreat =
 
         Vector3 targetPos, targetVel, myVel;
         short targetSector; short targetHullId;
-        if (!DecisionSnapshotEnabled)
+        float stationRadius = 0;
+        if (stationTarget)
+        {
+            lock (cs.Gate)
+            {
+                if (!cs.World.Stations.TryGetValue(targetId, out var station) || station.SideId == bot.Side
+                    || station.ClusterId != CsSector(cs) || station.Position is not { Length: 3 } p
+                    || !cs.World.Ships.TryGetValue(bot.ShipId, out var own) || own.Latest is not { } ownPose)
+                { LoiterCombat(bot, now); return; }
+                myPos = ownPose.Position;
+                orient = ownPose.Orientation;
+                myVel = ownPose.Velocity;
+                targetPos = new Vector3(p[0], p[1], p[2]);
+                targetVel = Vector3.Zero;
+                targetSector = station.ClusterId;
+                targetHullId = -1;
+                if (Catalog.RepresentativeCore().StationTypes.TryGetValue(station.StationTypeId, out var type))
+                    stationRadius = type.Radius;
+            }
+        }
+        else if (!DecisionSnapshotEnabled)
         {
             // P636c "off" — P635: live target + own reads under cs.Gate.
             lock (cs.Gate)
@@ -2743,7 +2836,7 @@ bool isThreat =
             // 20353 → 10679 that drops kills 29 → 11). Everything else (the
             // O(N) candidate scans, navigation) still reads the raw snapshot, so
             // the P636 no-gate benefit is fully kept — no cs.Gate is acquired.
-            var esnap = cs.World.Decision;
+            var esnap = SnapshotFor(cs);
             if (!TryCsFreshPose(cs, bot.ShipId, out var fmyPos, out myVel, out var fmyOrient)) return;
             myPos = fmyPos;
             orient = fmyOrient;
@@ -2780,7 +2873,7 @@ bool isThreat =
 
         // Lead aim: where the round actually intercepts the moving target
         // (native solveForLead → the intercept time `t` powers the bands).
-        float targetR = HullRadius(targetHullId);
+        float targetR = stationTarget ? stationRadius : HullRadius(targetHullId);
         Vector3 aim = Vector3.Zero;
         bool haveLead = false;
         float t = 0f;
@@ -2815,7 +2908,7 @@ bool isThreat =
         float relativeSpeed = ownDirSpeed - targetDirSpeed;
 
         var steer = SolveAttackSteer(angleToLead, t, lifespan, relativeSpeed, targetDirSpeed,
-            MaxSpeed(bot.HullId), Showcase.StrafeEnabled(bot.WingmanBehaviour),
+            MaxSpeed(ActualHullId(bot)), Showcase.StrafeEnabled(bot.WingmanBehaviour),
             Showcase.InRangeAggressive(bot.WingmanBehaviour), bot.AttackAfterburnerHeld);
 
         if (steer.ThrottleOverride) throttle = steer.ThrottleValue;
@@ -2896,7 +2989,7 @@ bool isThreat =
         // P636 — decision snapshot, no gate. P636b — iterate the VISIBLE ships
         // only (walking the full array to skip non-visible entries was an O(N)
         // cost per bot that scaled into the 200v200 collapse).
-        var snap = cs.World.Decision;
+        var snap = SnapshotFor(cs);
         foreach (var ship in snap.VisibleShips)
         {
             if (ship.ShipId == bot.ShipId || ship.ShipId == exclude) continue;
@@ -2981,7 +3074,8 @@ bool isThreat =
         {
             // Real shots: this bot's own fired rounds (the shooter's own peer
             // always receives its PROJECTILE_INSTANCE).
-            foreach (var pj in cs.World.TakeNewProjectiles())
+            if (cs.World.CountOnlyProjectiles) bot.ShotsFired += cs.World.TakeOwnProjectileCount();
+            else foreach (var pj in cs.World.TakeNewProjectiles())
                 if (pj.LauncherId == myShipId) bot.ShotsFired++;
 
             // Real hits attributed to the shooter: only hull-hits WE caused,
@@ -3015,10 +3109,9 @@ bool isThreat =
             bot.EnemyHullHits += buckets.EnemyHull;
             bot.FriendlyHits += buckets.Friendly;
             bot.NoneHits += buckets.None;
-            var kills = cs.World.Events.Kills;
-            for (int i = Math.Min(bot.KillCursor, kills.Count); i < kills.Count; i++)
+            var events = cs.World.Events;
+            foreach (var k in events.KillsAfter(bot.KillCursor))
             {
-                var k = kills[i];
                 if (k.IdCredit == myShipId && k.TypeCredit == 0) bot.Kills++;   // OT_ship killer
                 // P556 — TTK: an observed death (KILL_SHIP of a ship we first
                 // hit, of any credited killer) resolves that victim's
@@ -3033,7 +3126,7 @@ bool isThreat =
                         }
                 }
             }
-            bot.KillCursor = kills.Count;
+            bot.KillCursor = events.KillSequence;
 
             // P622 — lazily prune the attacker-window map (a handful of entries
             // per tick; bounded by the enemies that actually shoot this bot).
@@ -3089,6 +3182,7 @@ bool isThreat =
     /// </summary>
     private static bool UpdatePodState(ActiveBot bot, ConnectionSession cs, double now)
     {
+        HandleRelaunchAck(bot, cs);
         short hull;
         short stationId;
         lock (cs.Gate)
@@ -3122,41 +3216,16 @@ bool isThreat =
             if (!bot.PodDocked && stationId != -1)
             {
                 bot.PodDocked = true;
+                bot.PodsDockedTotal++;
                 bot.PodDockStationId = stationId;
                 Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) DOCKED at station {stationId} — pod reached home");
             }
             return true;
         }
+        if (bot.IsPod && stationId >= 0) return true; // purchase ACK precedes launch SET_CLUSTER
         if (bot.IsPod)
         {
-            bot.IsPod = false;
-            // P560 — a relaunched bot must return to the FIGHT, so reset every
-            // route/arrival/staging latch that carried over from its pre-death
-            // life. Without this, a bot that had already reached the rendezvous
-            // kept `Arrived == true` after relaunching at home, so the main loop
-            // (BotManager.UpdateBot `if (bot.Arrived) { EngageCombat; return; }`)
-            // engaged IMMEDIATELY in its home sector — where there is no enemy —
-            // and sat in `combat` on the station ring forever instead of re-routing
-            // to the target sector. Resetting makes it re-BFS from home to the
-            // target (EnsureCombatPath).
-            // P637 — a relaunched bot is a REINFORCEMENT, not part of the initial
-            // fair-contact launch, so it must NOT re-enter the staging barrier:
-            // its wing has almost certainly already RELEASED and advanced, and
-            // re-staging would strand it at home holding forever for a wing that
-            // is no longer there (the observed "relaunched bots idle at home with
-            // target null"). Mark it released (StagePhase = 2) so it routes
-            // straight to its own target and rejoins the fight.
-            bot.Arrived = false;
-            bot.ArrivedAt = null;
-            bot.StagingSector = -1;
-            bot.StagePhase = StageReleasedPhase;
-            bot.ReleasedAt ??= now;
-            bot.FirstStagingAt = null;
-            bot.Path = new List<short>();
-            bot.PathStart = -1;
-            bot.PathGoal = -1;
-            bot.WarpDest = null;
-            bot.LastCluster = -1;
+            ResetNewLife(bot, now, reinforcement: true);
             Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) relaunched into hull {hull} — re-routing to target sector {bot.TargetSector} to rejoin the fight (P637: reinforcement skips staging, routes straight)");
         }
         return false;
@@ -3179,7 +3248,7 @@ bool isThreat =
     {
         ctrl = ControlData.Neutral;
         var core = Catalog.RepresentativeCore();
-        if (!core.HullTypes.TryGetValue(bot.HullId, out var hull)) return false;
+        if (!core.HullTypes.TryGetValue(ActualHullId(bot), out var hull)) return false;
 
         DataStationIGC st;
         lock (cs.Gate)
@@ -3245,7 +3314,7 @@ bool isThreat =
         }
         else { distanceRest = 0f; positionRest = pos; }
 
-        float totalRadius = HullRadius(bot.HullId) + stype.Radius + 10f;
+        float totalRadius = HullRadius(ActualHullId(bot)) + stype.Radius + 10f;
         var step = DockApproach.DockStation(
             pos, vel, orient, center, bays, nLand, distanceRest, positionRest,
             totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false);
@@ -3326,7 +3395,7 @@ bool isThreat =
         // P610 — travel spacing: softly sidestep nearby same-side teammates so big
         // fleets stream instead of rubbing and the reactive dodge rarely has to
         // fire during transit. Never stalls forward progress (lateral push only).
-        float hullR = HullRadius(bot.HullId);
+        float hullR = HullRadius(ActualHullId(bot));
         var mates = SameSideShipsNearby(cs, bot, pos, TravelSpacingMultiple * hullR);
         if (mates is not null && mates.Count > 0)
             aim = ApplyTravelSeparation(pos, aim, mates, TravelSpacingMultiple * hullR, TravelSpacingStrength);
@@ -3435,7 +3504,7 @@ bool isThreat =
     /// </summary>
     private void DrivePodHome(ActiveBot bot, ConnectionSession cs, double now)
     {
-        if (bot.PodDocked) return;   // already home — the server holds it docked
+        if (bot.PodDocked) { RelaunchDockedPod(bot, cs, now); return; }
 
         if (bot.PodStationId < 0)
         {
@@ -3907,46 +3976,39 @@ bool isThreat =
     private static IEnumerable<(Vector3 Pos, short Id, short Side)> SameSideShipsInLine(
         ConnectionSession cs, ActiveBot bot, Vector3 myPos, float reach)
     {
-        var list = new List<(Vector3, short, short)>();
-        short myCluster = CsSector(cs);
-        if (!DecisionSnapshotEnabled)
-        {
-            // P636c "off" — P635 live scan under cs.Gate (spatial index as before).
-            lock (cs.Gate)
-            {
-                var pts = new List<BotSpatialIndex.ShipPoint>();
-                foreach (var (id, ent) in cs.World.Ships)
-                {
-                    if (id == bot.ShipId) continue;
-                    if (ent.SideId != bot.Side) continue;
-                    if (ent.SectorId != myCluster) continue;
-                    if (ent.Latest is not { } lu) continue;
-                    pts.Add(new BotSpatialIndex.ShipPoint(id, lu.Position));
-                }
-                var gridOff = BotSpatialIndex.Build(myCluster, pts, 400f);
-                foreach (var (sid, pos) in gridOff.QueryRadius(myPos, reach))
-                    list.Add((pos, sid, bot.Side));
-            }
-            return list;
-        }
-        // P636 — decision snapshot (no gate): same-side members only, never across
-        // sides (honest visibility). Spatial-index build+query as before.
-        // P636b — iterate the VISIBLE ships only (same-side members are visible by
-        // definition; the old full-array walk to find them was O(N) per bot).
-        var snap = cs.World.Decision;
+        short sector = CsSector(cs);
+        if (bot.FriendlyGrids is { } grids && grids.TryGetValue(sector, out var grid))
+            return grid.QueryRadius(myPos, reach).Where(s => s.Id != bot.ShipId)
+                .Select(s => (s.Pos, s.Id, bot.Side));
+        // A new sector or a scenario-owned bot can miss the pass cache. Copy
+        // under the receive gate and filter directly; never build a grid per bot.
         var points = new List<BotSpatialIndex.ShipPoint>();
-        foreach (var ship in snap.VisibleShips)
+        lock (cs.Gate)
+            foreach (var ship in cs.World.Ships.Values)
+                if (ship.SideId == bot.Side && ship.SectorId == sector && ship.Latest is { } pose)
+                    points.Add(new(ship.ShipId, pose.Position));
+        return points.Where(s => s.Id != bot.ShipId
+            && (s.Position - myPos).LengthSquared() <= reach * reach)
+            .Select(s => (s.Position, s.Id, bot.Side));
+    }
+
+    private static void BuildPassSpatialIndices(ActiveBot[] bots)
+    {
+        foreach (var b in bots) b.FriendlyGrids = null;
+        foreach (var side in bots.Where(IsParticipating).Where(b => !b.SpawnPending && !b.InScenario && b.Cs is not null).GroupBy(b => b.Side))
         {
-            if (ship.ShipId == bot.ShipId) continue;
-            if (ship.SideId != bot.Side) continue;
-            if (ship.SectorId != myCluster) continue;
-            if (!ship.HasLatest) continue;
-            points.Add(new BotSpatialIndex.ShipPoint(ship.ShipId, ship.Position));
+            var cs = side.First().Cs!;
+            var points = new Dictionary<short, List<BotSpatialIndex.ShipPoint>>();
+            lock (cs.Gate)
+                foreach (var ship in cs.World.Ships.Values)
+                {
+                    if (ship.SideId != side.Key || ship.Latest is not { } pose) continue;
+                    if (!points.TryGetValue(ship.SectorId, out var list)) points[ship.SectorId] = list = new();
+                    list.Add(new(ship.ShipId, pose.Position));
+                }
+            var grids = points.ToDictionary(p => p.Key, p => BotSpatialIndex.Build(p.Key, p.Value, 400f));
+            foreach (var bot in side) bot.FriendlyGrids = grids;
         }
-        var grid = BotSpatialIndex.Build(myCluster, points, 400f);
-        foreach (var (sid, pos) in grid.QueryRadius(myPos, reach))
-            list.Add((pos, sid, bot.Side));
-        return list;
     }
 
     /// <summary>P553 — pure rule for the "the dodge owns the combat tick" fix:
@@ -4221,7 +4283,10 @@ bool isThreat =
     /// LIFEPOD stops combat and flies home to dock instead of fighting.</summary>
     private void DriveCombat(ActiveBot bot, double now, PreparedEngagement? prep)
     {
+        using var frameScope = new DecisionFrameScope(bot.Cs);
         var cs = bot.Cs!;
+        if (!IsParticipating(bot) || !RefreshLife(bot, cs, now)) return;
+        if (DecisionSnapshotEnabled && SnapshotFor(cs).MissionGeneration != cs.World.MissionGeneration) return;
         if (cs.World.MyShipId is not { } my) return;     // not seated yet
         bot.ShipId = my;
 
@@ -4305,6 +4370,14 @@ bool isThreat =
 
         if (bot.Arrived) { EngageCombat(bot, now, prep); return; }
 
+        if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
+            && HasVisibleAttacker(bot, cs, cur, now))
+        {
+            EngageCombat(bot, now, prep);
+            bot.LastCluster = cur;
+            return;
+        }
+
         // ── P539d — travel-with-staging: gather the whole side at a staging sector
         //    (the last sector before the rendezvous), hold just outside the final
         //    warp's transit sphere until the side is assembled (or the timeout),
@@ -4361,8 +4434,8 @@ bool isThreat =
                         int alive, staged;
                         lock (_gate)
                         {
-                            alive = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is { } og && og == goal && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && !o.IsPod && !o.PodDocked);
-                            staged = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is { } og && og == goal && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && o.StagePhase >= StageHoldPhase && !o.IsPod && !o.PodDocked);
+                            alive = _bots.Count(o => IsParticipating(o) && o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is { } og && og == goal && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && !o.IsPod && !o.PodDocked);
+                            staged = _bots.Count(o => IsParticipating(o) && o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is { } og && og == goal && o.Side == bot.Side && o.RouteIndex == bot.RouteIndex && o.StagePhase >= StageHoldPhase && !o.IsPod && !o.PodDocked);
                         }
                         // P633 — the per-bot per-side staging narration is also
                         // verbosity-gated + non-blocking (per-bot every 4 s it
@@ -4426,7 +4499,7 @@ bool isThreat =
     /// The timeout overrides the barrier so a straggler/stuck wing never freezes the
     /// group forever. A wing with no living bots releases trivially. Single-threaded
     /// (called from the Loop); iterates the bot list under <c>_gate</c>.</summary>
-    private bool StageReleaseRequired(short side, short goal, int routeIndex, double now)
+    private bool StageReleaseRequired(short side, short goal, int routeIndex, double now, bool? syncOverride = null)
     {
         // Per-group aggregate under _gate: (alive, staged, firstStagingAt, routeHops),
         // keyed by (side, goal, routeIndex) so distinct objectives never co-aggregate.
@@ -4434,14 +4507,15 @@ bool isThreat =
         lock (_gate)
             foreach (var o in _bots)
             {
-                if (o.Cs is null || o.Behavior != "combat" || !o.UseStaging || o.TargetSector is not { } og) continue;
+                if (!IsParticipating(o) || o.SpawnPending || o.Cs is null || o.Behavior != "combat" || !o.UseStaging || o.TargetSector is not { } og) continue;
                 if (o.Side != side || og != goal) continue;          // P637 — same objective only
                 if (o.IsPod || o.PodDocked) continue;                // not living
                 var key = (side, og, o.RouteIndex);
                 (int Alive, int Staged, double? First, int Hops) zero = (0, 0, null, RouteHopsOf(o));
                 var cur = per.TryGetValue(key, out var e) ? e : zero;
                 int st = cur.Staged + (o.StagePhase >= StageHoldPhase ? 1 : 0);
-                double? f = cur.First ?? o.FirstStagingAt;
+                double? f = cur.First is { } oldFirst && o.FirstStagingAt is { } newFirst
+                    ? Math.Min(oldFirst, newFirst) : cur.First ?? o.FirstStagingAt;
                 per[key] = (cur.Alive + 1, st, f, cur.Hops);
             }
 
@@ -4453,7 +4527,7 @@ bool isThreat =
         int sideMaxHops = 0;
         foreach (var ((rs, rg, ri), r) in per)
         {
-            if (!SameStagingGroup(rs, rg, ri, side, goal, routeIndex)) continue;
+            if (rs != side || rg != goal) continue;
             sideMaxHops = Math.Max(sideMaxHops, r.Hops);
             if (ri == routeIndex) continue;
             if (r.Alive > 0 && r.Staged < r.Alive) allOthersAssembled = false;
@@ -4466,7 +4540,7 @@ bool isThreat =
         // Domingo (2026-10-13): wings don't have to arrive together. By default each
         // wing advances as soon as IT is assembled (or times out); set
         // ALLEGIANCE_BOT_SYNC_WINGS=on to restore the P635 side-wide barrier.
-        if (!SyncWings) return myAssembled || timedOut;
+        if (!(syncOverride ?? SyncWings)) return myAssembled || timedOut;
         return (myAssembled && allOthersAssembled) || timedOut;
     }
 
@@ -4483,11 +4557,11 @@ bool isThreat =
         b.RoutePath is { Count: > 0 } rp ? rp.Count - 1 : 0;
 
     /// <summary>
-    /// P635 — the per-route release-timeout offset that keeps a LONGER route from
-    /// timing out (and releasing into the rendezvous) before its trailing bots have
-    /// staged: <c>(sideWidestHops − routeHops) × SecondsPerHop</c>, clamped ≥ 0. A
-    /// shorter route has the smallest offset so it is not forced out early; a longer
-    /// route gets a bigger window. Pure so the timing is unit-provable.</summary>
+    /// P635 — the per-route release-timeout offset compensates for the extra
+    /// transit still needed by the widest route when a shorter wing stages first:
+    /// <c>(sideWidestHops − routeHops) × SecondsPerHop</c>, clamped ≥ 0. A
+    /// shorter route gets a larger window to wait for the longer wing; the widest
+    /// route uses the base timeout. Pure so the timing is unit-provable.</summary>
     public static double SyncOffsetSeconds(int routeIndex, int sideWidestHops, int routeHops)
     {
         _ = routeIndex;                                    // (kept for call-site clarity)
@@ -4648,6 +4722,7 @@ bool isThreat =
         {
             foreach (var bot in _bots)
             {
+                if (!IsParticipating(bot) || bot.SpawnPending) continue;
                 try
                 {
                     short shipId = ShipIdOf(bot);
@@ -4900,6 +4975,8 @@ bool isThreat =
     /// redundant no-op alongside the seat-time ready).</summary>
     private void ReReadyBot(ActiveBot bot)
     {
+        if (!IsParticipating(bot)) return;
+        if (bot.Cs is { } lifeCs && !RefreshLife(bot, lifeCs, Now())) return;
         short cur;
         if (bot.Cs is { } cs) { lock (cs.Gate) cur = cs.World.MyShipId ?? -1; }
         else if (bot.Bot is { } b) cur = b.ShipAssignment?.Ship.ShipId ?? -1;
@@ -4999,11 +5076,14 @@ bool isThreat =
     public CombatSummary GetCombatSummary()
     {
         var rows = new List<BotCombatRow>();
+        int podsCreated = 0, podsDocked = 0;
         lock (_gate)
         {
             foreach (var bot in _bots)
             {
                 if (bot.Cs is null) continue;   // combat bots only (idle/weave have no world)
+                podsCreated += bot.Deaths;
+                podsDocked += bot.PodsDockedTotal;
                 double hr = bot.ShotsFired > 0 ? (double)bot.ShipHits / bot.ShotsFired : 0.0;
                 rows.Add(new BotCombatRow(
                     bot.Name, bot.Side, bot.ShotsFired, bot.ShipHits,
@@ -5018,8 +5098,8 @@ bool isThreat =
             rows.Sum(r => r.FriendlyHits),
             rows.Sum(r => r.EnemyShieldHits),
             rows.Sum(r => r.EnemyHullHits),
-            rows.Count(r => r.IsPod || r.PodDocked) /* pods created ≈ any ever-pod */,
-            rows.Count(r => r.PodDocked),
+            podsCreated,
+            podsDocked,
             rows.Count(r => r.IsPod && !r.PodDocked));
     }
 
@@ -5358,6 +5438,20 @@ bool isThreat =
         // P539 — lifepod state: whether the bot's own ship is currently a pod,
         // the home station it chose, and whether the pod reached (docked at) a
         // station — the live "pods reached home vs lingered" measure.
+        public ConnectionSession? LifeSession;
+        public long LifeGeneration;
+        public uint? LifeCookie;
+        public string? ObjectiveName;
+        public bool ObjectivesPending;
+        public int RelaunchAttempts;
+        public double RelaunchAt = double.NegativeInfinity;
+        public bool RelaunchAckHandled;
+        public bool RelaunchExhausted;
+        public int PodsDockedTotal;
+        public bool SpawnPending = true;
+        public bool Inactive;
+        public Dictionary<short, BotSpatialIndex>? FriendlyGrids;
+        public DecisionSnapshot? DecisionFrame;
         public bool IsPod;
         public bool EverPod;                         // has this bot ever become a pod
         public short PodStationId = -1;
@@ -5378,7 +5472,7 @@ bool isThreat =
         public long FriendlyHits;        // friendly-fire hits by this bot
         public long NoneHits;            // hits by this bot on a no-side/no-ship target (-1)
         public long Kills;
-        public int KillCursor;
+        public long KillCursor;
         // P433 — the real missile launcher this bot carries (null = gun-only),
         // the real inter-shot readiness delay of its missile, and the wall-clock
         // of the last SendFireMissile() (paces firing like the guns' refire).

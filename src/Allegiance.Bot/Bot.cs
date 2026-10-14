@@ -62,6 +62,9 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ExportWarp> _warpExports = new();         // P480: new-world warp EXPORTs (re-join burst)
     private readonly List<ExportStation> _stationExports = new();   // P480: new-world station EXPORTs (re-join burst)
     private readonly List<PlayerInfo> _playerInfos = new();
+    /// <summary>Retain projectile/heavy-update observer logs; headless fleet peers disable these.</summary>
+    public bool RetainRawCombatUpdates { get; set; } = true;
+
     private readonly List<ProjectileInstance> _projectileInstances = new();
     private readonly List<FireMissile> _fireMissiles = new();
     private readonly List<MissileDestroyed> _missileDestroyeds = new();
@@ -1815,7 +1818,7 @@ public sealed class Bot : ITransportSite, IDisposable
                         _playerInfos.Add(PlayerInfo.Decode(m));
                         break;
                     case ProjectileInstance.Fmid:
-                        _projectileInstances.Add(ProjectileInstance.Decode(m));
+                        if (RetainRawCombatUpdates) _projectileInstances.Add(ProjectileInstance.Decode(m));
                         break;
                     case FireMissile.Fmid:
                         _fireMissiles.Add(FireMissile.Decode(m));
@@ -1889,7 +1892,7 @@ public sealed class Bot : ITransportSite, IDisposable
                         _probesUpdates.Add(ProbesUpdate.Decode(m));
                         break;
                     case HeavyShipsUpdate.Fmid:
-                        _heavyShipsUpdates.Add(HeavyShipsUpdate.Decode(m));
+                        if (RetainRawCombatUpdates) _heavyShipsUpdates.Add(HeavyShipsUpdate.Decode(m));
                         break;
                     case LightShipsUpdate.Fmid:
                         _lightShipsUpdates.Add(LightShipsUpdate.Decode(m));

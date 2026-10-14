@@ -224,6 +224,10 @@ internal sealed partial class BotManager
     /// hull can reach a dock point.</summary>
     private void DriveScenarioAttacker(ActiveBot bot, short stationSector, Vector3 stationCenter, int stateM, double now)
     {
+        using var frameScope = new DecisionFrameScope(bot.Cs);
+        if (!IsParticipating(bot) || !RefreshLife(bot, bot.Cs!, now)) return;
+        if (DecisionSnapshotEnabled && SnapshotFor(bot.Cs!).MissionGeneration != bot.Cs!.World.MissionGeneration) return;
+        if (UpdatePodState(bot, bot.Cs!, now)) { DrivePodHome(bot, bot.Cs!, now); return; }
         short cur = CsSector(bot.Cs!);
         if (cur == stationSector)
         {
@@ -245,14 +249,18 @@ internal sealed partial class BotManager
     /// (a team chat carrying the station type's real sound id + native text)
     /// and the P455 "<Side> is no more." elimination line. Returns the rows and
     /// the new cursor.</summary>
-    private (List<ScenarioRow> Rows, int Cursor) DrainScenarioChats(
-        ActiveBot observer, int cursor, string stationName, string botLabel, double t)
+    private (List<ScenarioRow> Rows, long Cursor) DrainScenarioChats(
+        ActiveBot observer, long cursor, string stationName, string botLabel, double t)
     {
         var rows = new List<ScenarioRow>();
         var cs = observer.Cs!;
         ChatMessage[] chats;
-        lock (cs.Gate) chats = cs.World.Events.Chats.Skip(cursor).ToArray();
-        int newCursor = cursor + chats.Length;
+        long newCursor;
+        lock (cs.Gate)
+        {
+            chats = cs.World.Events.ChatsAfter(cursor).ToArray();
+            newCursor = cs.World.Events.ChatSequence;
+        }
         foreach (var c in chats)
         {
             string msg = c.Message ?? "";
@@ -334,7 +342,7 @@ internal sealed partial class BotManager
                       bomberHull = plan.BomberHullName, antiBaseWeapon = plan.AntiBaseWeaponName }));
 
             // Let the join-burst settle so the observer streams the station.
-            int chatCursor = 0;
+            long chatCursor = 0;
             double lastSample = -10;
             bool stationDied = false;
             double? killedAt = null;
@@ -507,7 +515,7 @@ internal sealed partial class BotManager
                 new { bombers = size, escorts = size, defenders,
                       bomberHull = plan.BomberHullName, antiBaseWeapon = plan.AntiBaseWeaponName }));
 
-            int chatCursor = 0;
+            long chatCursor = 0;
             double lastSample = -10;
             bool stationDied = false;
             double? killedAt = null;
@@ -719,7 +727,7 @@ internal sealed partial class BotManager
             ev.Add(new ScenarioRow(Now() - t0, "group_spawned",
                 new { boardingHull = plan.BoardingHullName, escortHull = plan.EscortHullName, escorts, defenders }));
 
-            int chatCursor = 0;
+            long chatCursor = 0;
             double lastSample = -10;
             double shieldKnockedAt = -1;
             double capturedAt = -1;

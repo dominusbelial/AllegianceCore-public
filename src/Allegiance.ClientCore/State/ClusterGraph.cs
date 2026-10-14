@@ -70,6 +70,9 @@ public sealed class ClusterGraph
         return result;
     }
 
+    public List<short> FindShortestPathAvoiding(short from, short to, short banned) =>
+        from == banned || to == banned ? [] : BfsAvoiding(BuildAdjacency(), from, to, banned);
+
     private static List<short> BfsAvoiding(Dictionary<short, List<short>> adj, short from, short to, short banned)
     {
         if (from == to) return [from];

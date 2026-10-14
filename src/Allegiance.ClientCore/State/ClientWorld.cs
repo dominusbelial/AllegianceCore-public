@@ -30,19 +30,8 @@ public sealed class ClientWorld
     // ── P636 — lock-free decision snapshot ──────────────────────────────────
     // Published by the RECEIVE thread (the sole world writer) via
     // PublishDecisionSnapshot(); read LOCK-FREE by the bot decision loop through
-    // Decision. The snapshots live in a small RING POOL: the writer refills the
-    // next pool slot (reusing its arrays unless the object count grew) and then
-    // atomically swaps the published pointer. A snapshot object is never mutated
-    // while it is (or was recently) the published one, because the ring cycles
-    // through POOL_SIZE slots — a slot is not refilled until POOL_SIZE publishes
-    // (~8 × 40 ms ≈ 320 ms) have elapsed, far beyond any decision pass's hold on
-    // the published snapshot (measured p95 ≈ 75 ms, max ≈ 150 ms), so a reader
-    // never observes a torn half-refilled snapshot. This reuse keeps the publish
-    // path allocation-light at steady state (the P636 "double-buffer swap" family)
-    // so it does not add to the GC-gen2 pressure it is meant to relieve.
-    private const int DecisionSnapPoolSize = 8;
-    private readonly DecisionSnapshot[] _snapPool = CreateSnapPool();
-    private int _snapCursor;
+    // Decision. Published snapshots own their arrays for their entire lifetime.
+    // A fixed-delay ring cannot prove readers have finished during a long hitch.
     private DecisionSnapshot _publishedDecision = DecisionSnapshot.Empty;
     private long _decisionSnapVersion;
     private long _lastDecisionSnapPublishTick;
@@ -99,12 +88,6 @@ public sealed class ClientWorld
     private long _snapPublishTicks;           // cumulative rebuild wall-time, Stopwatch ticks
     private long _lastAppliedTick64;          // wall stamp of the newest applied update (decode lag)
 
-    private static DecisionSnapshot[] CreateSnapPool()
-    {
-        var pool = new DecisionSnapshot[DecisionSnapPoolSize];
-        for (int i = 0; i < pool.Length; i++) pool[i] = new DecisionSnapshot();
-        return pool;
-    }
 
     /// <summary>
     /// P636 — the latest published <see cref="DecisionSnapshot"/> for LOCK-FREE
@@ -120,7 +103,7 @@ public sealed class ClientWorld
     /// P636 — (re)build and publish the decision snapshot. CALLED ONLY ON THE
     /// RECEIVE THREAD, which is the sole writer of the live tables — the rebuild
     /// reads them here without taking the gate (safe: no other thread mutates them),
-    /// writes into the next ring-pool slot (arrays reused unless growth is needed),
+    /// fills fresh arrays owned by this snapshot for its entire lifetime,
     /// then atomically swaps the published reference so concurrent readers never
     /// observe a torn half-built snapshot.
     /// P636d — now LAZY and request-driven (the P636d fix for the receive-thread
@@ -155,9 +138,9 @@ public sealed class ClientWorld
         _lastPublishedWorldGen = _worldGen;
 
         long sw = System.Diagnostics.Stopwatch.GetTimestamp();
-        var target = _snapPool[_snapCursor];
-        _snapCursor = (_snapCursor + 1) % _snapPool.Length;
+        var target = new DecisionSnapshot();
         target.Version = ++_decisionSnapVersion;
+        target.MissionGeneration = MissionGeneration;
         target.PublishedTick64 = now;
         target.MyShipId = MyShipId;
         target.MySideId = MySideId;
@@ -230,9 +213,7 @@ public sealed class ClientWorld
     private void FillShipSnapshot(DecisionSnapshot target)
     {
         // Exact-size array: consumers iterate `.Ships` directly, so there must be
-        // no phantom trailing entries. Reused (no allocation) when the ship count is
-        // unchanged from the last publish into this buffer — i.e. steady state; a
-        // fresh array is allocated only when the count grows/shrinks.
+        // no phantom trailing entries. Published arrays are never refilled.
         var arr = target.Ships;
         if (arr.Length != _ships.Count) arr = target.Ships = new DecisionShip[_ships.Count];
         int n = 0;
@@ -252,6 +233,10 @@ public sealed class ClientWorld
             {
                 s.Flags |= 2;   // bit1 = HasLatest (a pose is available)
                 s.PosX = lu.Position.X; s.PosY = lu.Position.Y; s.PosZ = lu.Position.Z;
+                var rates = lu.TurnRates;
+                s.TurnYaw = rates[ControlData.AxisYaw];
+                s.TurnPitch = rates[ControlData.AxisPitch];
+                s.TurnRoll = rates[ControlData.AxisRoll];
                 s.VelX = lu.Velocity.X; s.VelY = lu.Velocity.Y; s.VelZ = lu.Velocity.Z;
                 var r = lu.Orientation.GetRight();
                 var u = lu.Orientation.GetUp();
@@ -1066,6 +1051,17 @@ public sealed class ClientWorld
     /// never drains; a MCP bot connection (which never prunes) drains here. A
     /// defensive reset guards against an external prune shrinking the list
     /// underneath the cursor.</summary>
+    /// <summary>Headless observers count their own rounds without retaining rendering entities.
+    /// Set before receiving traffic. The game client leaves this false.</summary>
+    public bool CountOnlyProjectiles { get; set; }
+    private long _ownProjectileCount;
+    public long TakeOwnProjectileCount()
+    {
+        long count = _ownProjectileCount;
+        _ownProjectileCount = 0;
+        return count;
+    }
+
     public List<ProjectileEntity> TakeNewProjectiles()
     {
         if (_projectileDrainCursor > _projectiles.Count) _projectileDrainCursor = 0;
@@ -1456,6 +1452,7 @@ public sealed class ClientWorld
     /// </summary>
     public void Reset()
     {
+        MissionGeneration++;
         MyShipId = null;
         MySideId = null;
         // P636 — a fresh connection starts with an empty published snapshot; a
@@ -1488,6 +1485,8 @@ public sealed class ClientWorld
         _asteroidLive.Clear();
         _stationLive.Clear();
         _projectiles.Clear();
+        _ownProjectileCount = 0;
+        _projectileDrainCursor = 0;
         _missiles.Clear();
         MarkSnapshotDirty();
         Diag.Clear();
@@ -1851,6 +1850,9 @@ public sealed class ClientWorld
 
         var e = Upsert(set.Ship.ShipId);
         e.IsMine = true;
+        // Native SET_CLUSTER calls SetStation(NULL) (appmsg.cpp:1044-1049).
+        // It confirms launch immediately, before the next periodic SHIP_STATUS.
+        e.StationId = -1;
         // P585 — remember whether this SET_CLUSTER moved the own ship to a new
         // sector (a warp-bound sector change = the arrival half of a transit),
         // before the seat below overwrites SectorId.
@@ -2797,6 +2799,11 @@ public sealed class ClientWorld
             return;
         }
 
+        if (CountOnlyProjectiles)
+        {
+            if (m.LauncherId == MyShipId) _ownProjectileCount++;
+            return;
+        }
         _projectiles.Add(new ProjectileEntity
         {
             LauncherId = m.LauncherId,
@@ -3440,8 +3447,11 @@ public sealed class ClientWorld
     /// session lock, like the receive thread that invokes this via
     /// <see cref="Apply(MissionStageMessage)"/>.
     /// </summary>
+    public long MissionGeneration { get; private set; }
+
     public void BeginNextMission()
     {
+        MissionGeneration++;
         MyShipId = null;
         Graph = null;
         CountdownStartLocalMs = null;
@@ -3466,6 +3476,8 @@ public sealed class ClientWorld
         _asteroidLive.Clear();
         _stationLive.Clear();
         _projectiles.Clear();
+        _ownProjectileCount = 0;
+        _projectileDrainCursor = 0;
         _missiles.Clear();
         MarkSnapshotDirty();
         Diag.Clear();
