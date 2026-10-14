@@ -17,5 +17,6 @@
     "displayName": "My Allegiance Server (compose)",
     "publicAddress": "127.0.0.1",
     "heartbeatIntervalSeconds": 25
-  }
+  },
+  "liveSettings": { "timeDilation": "auto" }
 }

@@ -178,10 +178,12 @@ public sealed class LiveSettingsConfig
     /// measures the smoothed tick cost and lowers the sim time scale toward
     /// <c>nominal/cost</c> (clamped to [0.1, 1.0]) when the server can't hold real
     /// time, easing back to full speed when load drops. An admin <c>timescale</c>
-    /// cheat always overrides auto (manual wins). Default <c>"off"</c> until a 221
-    /// run confirms the tuning (Domingo decides the default after that).
+    /// cheat always overrides auto (manual wins). Default <c>"auto"</c> since
+    /// 2026-10-14 (Domingo, after the 221 200v200 A/B: clash39 with auto had no tick
+    /// over 143 ms and no bot drops, vs 253 ms / 141 drops with off and 201 ms / 28 drops
+    /// at 15 Hz; game speed averaged 0.92, minimum 0.73). Set <c>"off"</c> to disable.
     /// </summary>
-    public string TimeDilation { get; set; } = "off";
+    public string TimeDilation { get; set; } = "auto";
 
     /// <summary>P618 — EMA smoothing of the measured tick cost
     /// (<c>sim.timeDilation.alpha</c>). Lower = smoother, slower to react.</summary>
