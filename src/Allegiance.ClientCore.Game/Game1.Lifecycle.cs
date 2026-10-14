@@ -626,6 +626,7 @@ public sealed partial class Game1
             }
         }
         _chaffRenderer = new ChaffRenderer(GraphicsDevice, chaffTextures);
+        _spoofRetargetRenderer = new Rendering.SpoofRetargetRenderer(GraphicsDevice);
 
         // P288 — the three P287-imported missile content models (mis05/mis400/
         // artifact). Loaded alongside the native-.mdl demo renderer above; the

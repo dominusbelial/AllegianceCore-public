@@ -30,6 +30,13 @@ public enum ClientSoundEventKind
     /// failure). Queued only when the aborted ship is the local player's own,
     /// so Game1 plays the single "ripcord aborted" VO cue exactly once.</summary>
     RipcordAborted,
+
+    /// <summary>P638 — this ship's teleport dock request was accepted
+    /// (TELEPORT_ACK, 102, with a real station id): the player relocated to a
+    /// station and native plays the <c>personalJumpSound</c> (appmsg.cpp:1901).
+    /// Mapped to the <c>jumpin</c> one-shot, the same wave native's jumpSound
+    /// plays.</summary>
+    TeleportArrived,
 }
 
 /// <summary>A single observed sound event.</summary>

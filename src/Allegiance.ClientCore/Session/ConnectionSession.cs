@@ -1154,6 +1154,42 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // client never saw its live kill bonus.
                         _world.Apply(OwnShipKillBonusUpdate.Decode(m));
                         break;
+                    case TeleportAck.Fmid:
+                        // P638 — FM_S_TELEPORT_ACK(102): accepted/denied teleport
+                        // reply (appmsg.cpp:1856). Previously unconsumed, so the
+                        // real client never heard the denial or the arrival jump.
+                        _world.Apply(TeleportAck.Decode(m));
+                        break;
+                    case BoardNack.Fmid:
+                        // P638 — FM_S_BOARD_NACK(178): boarding refusal
+                        // (appmsg.cpp:1899). Previously dropped silently.
+                        _world.Apply(BoardNack.Decode(m));
+                        break;
+                    case MissileSpoofed.Fmid:
+                        // P638 — FM_S_MISSILE_SPOOFED(110): a missile's lock was
+                        // broken by chaff (appmsg.cpp:1667). Retarget onto the decoy.
+                        _world.Apply(MissileSpoofed.Decode(m));
+                        break;
+                    case EndSpoofing.Fmid:
+                        // P638 — FM_S_END_SPOOFING(111): close the spoof window
+                        // (appmsg.cpp:1686).
+                        _world.Apply(EndSpoofing.Decode(m));
+                        break;
+                    case EnterLifepod.Fmid:
+                        // P638 — FM_S_ENTER_LIFEPOD(166): forced into a Lifepod
+                        // (appmsg.cpp:1945).
+                        _world.Apply(EnterLifepod.Decode(m));
+                        break;
+                    case LeaveShip.Fmid:
+                        // P638 — FM_S_LEAVE_SHIP(94): a ship left its boarded
+                        // parent (appmsg.cpp:1914).
+                        _world.Apply(LeaveShip.Decode(m));
+                        break;
+                    case AsteroidMined.Fmid:
+                        // P638 — FM_S_ASTEROID_MINED(198): authoritative He3-mined
+                        // ore sync (appmsg.cpp:1733).
+                        _world.Apply(AsteroidMined.Decode(m));
+                        break;
                     default:
                         // P627 — no case matched this fmid: the real client does not
                         // consume it. Record it (bounded distinct set) so the

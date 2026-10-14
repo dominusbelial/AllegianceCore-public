@@ -216,7 +216,7 @@ fedmsg,12 PROJECTILE_INSTANCE,Inc/Messages.h:131,done,Wire/ProjectileInstance.cs
 fedmsg,13 RANK_INFO,Inc/Messages.h:148,partial,Wire/RankInfo.cs (server emits; no client handler found),4
 fedmsg,14 SET_START_TIME,Inc/Messages.h:153,done,Wire/SetStartTime.cs,4
 fedmsg,15 SET_TEAM_INFO,Inc/Messages.h:157,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
-fedmsg,16 PLAYER_RESCUED,Inc/Messages.h:163,done,"Wire/PlayerRescued.cs; dispatched in ConnectionSession (P627; world Apply already existed)",4
+fedmsg,16 PLAYER_RESCUED,Inc/Messages.h:163,done,Wire/PlayerRescued.cs; dispatched in ConnectionSession (P627; world Apply already existed),4
 fedmsg,17 BALLOT,Inc/Messages.h:170,done,"Wire/Ballot.cs; dispatched+applied (ActiveBallot, P626) — was a false-positive partial",4
 fedmsg,18 CANCEL_BALLOT,Inc/Messages.h:179,partial,Wire/CancelBallot.cs (server emits; no client handler found),4
 fedmsg,19 VOTE,Inc/Messages.h:183,done,Wire/Vote.cs,4
@@ -271,15 +271,15 @@ fedmsg,85 PROBE_DESTROYED,Inc/Messages.h:608,done,Wire/ProbeDestroyed.cs,4
 fedmsg,86 ASTEROID_DESTROYED,Inc/Messages.h:613,partial,Wire/AsteroidDestroyed.cs (server emits; no client handler found),4
 fedmsg,87 FIRE_EXPENDABLE,Inc/Messages.h:619,partial,Wire/FireExpendable.cs (server emits; no client handler found),4
 fedmsg,89 TREASURE_SETS,Inc/Messages.h:624,partial,Wire/TreasureSets.cs (server emits; no client handler found),4
-fedmsg,90 SHIP_STATUS,Inc/Messages.h:630,done,"Wire/ShipStatus.cs (ShipStatusMessage); dispatched+applied — was a false-positive partial",4
+fedmsg,90 SHIP_STATUS,Inc/Messages.h:630,done,Wire/ShipStatus.cs (ShipStatusMessage); dispatched+applied — was a false-positive partial,4
 fedmsg,92 PROBES_UPDATE,Inc/Messages.h:644,partial,Wire/ProbesUpdate.cs (server emits; no client handler found),4
 fedmsg,93 ORDER_CHANGE,Inc/Messages.h:648,done,Wire/OrderChange.cs,4
-fedmsg,94 LEAVE_SHIP,Inc/Messages.h:656,partial,Wire/LeaveShip.cs (server emits; no client handler found),4
+fedmsg,94 LEAVE_SHIP,Inc/Messages.h:656,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(LeaveShip),4
 fedmsg,95 JOINED_MISSION,Inc/Messages.h:660,partial,Wire/JoinedMission.cs (server emits; no client handler found),5
 fedmsg,96 LOADOUT_CHANGE,Inc/Messages.h:667,partial,Wire/LoadoutChange.cs (server emits; no client handler found),4
 fedmsg,99 ACTIVE_TURRET_UPDATE,Inc/Messages.h:673,done,Wire/ActiveTurretUpdate.cs,4
 fedmsg,100 INACTIVE_TURRET_UPDATE,Inc/Messages.h:678,done,Wire/InactiveTurretUpdate.cs,4
-fedmsg,102 TELEPORT_ACK,Inc/Messages.h:681,partial,Wire/TeleportAck.cs (server emits; no client handler found),4
+fedmsg,102 TELEPORT_ACK,Inc/Messages.h:681,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(TeleportAck),4
 fedmsg,103 BOARD_SHIP,Inc/Messages.h:686,done,Wire/BoardShip.cs,4
 fedmsg,104 VIEW_CLUSTER,Inc/Messages.h:690,done,Wire/ViewClusterRequest.cs,4
 fedmsg,105 KILL_SHIP,Inc/Messages.h:696,done,Wire/KillShip.cs,5
@@ -287,8 +287,8 @@ fedmsg,106 SET_WINGID,Inc/Messages.h:705,partial,Wire/SetWingId.cs (server handl
 fedmsg,107 ICQ_CHAT_ACK,Inc/Messages.h:711,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,108 CHATBUOY,Inc/Messages.h:716,done,Wire/ChatBuoy.cs,4
 fedmsg,109 CREATE_CHAFF,Inc/Messages.h:724,done,Wire/CreateChaff.cs,4
-fedmsg,110 MISSILE_SPOOFED,Inc/Messages.h:731,partial,Wire/MissileSpoofed.cs (server emits; no client handler found),4
-fedmsg,111 END_SPOOFING,Inc/Messages.h:735,partial,Wire/EndSpoofing.cs (server emits; no client handler found),4
+fedmsg,110 MISSILE_SPOOFED,Inc/Messages.h:731,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(MissileSpoofed),4
+fedmsg,111 END_SPOOFING,Inc/Messages.h:735,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(EndSpoofing),4
 fedmsg,112 AUTODONATE,Inc/Messages.h:738,done,Wire/AutoDonate.cs,4
 fedmsg,113 MISSIONPARAMS,Inc/Messages.h:743,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,114 PAYDAY,Inc/Messages.h:747,done,Wire/Payday.cs,4
@@ -310,11 +310,11 @@ fedmsg,157 START_GAME,Inc/Messages.h:868,done,Wire/StartGame.cs,4
 fedmsg,162 ACQUIRE_TREASURE,Inc/Messages.h:871,partial,Wire/AcquireTreasure.cs (server emits; no client handler found),4
 fedmsg,163 TREASURE_ACK,Inc/Messages.h:877,done,Wire/TreasureAck.cs,4
 fedmsg,164 ADD_PART,Inc/Messages.h:881,partial,Wire/AddPart.cs (server emits; no client handler found),4
-fedmsg,166 ENTER_LIFEPOD,Inc/Messages.h:886,partial,Wire/EnterLifepod.cs (server emits; no client handler found),4
+fedmsg,166 ENTER_LIFEPOD,Inc/Messages.h:886,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(EnterLifepod),4
 fedmsg,175 LIGHT_SHIPS_UPDATE,Inc/Messages.h:890,done,Wire/LightShipsUpdate.cs,4
 fedmsg,176 HEAVY_SHIPS_UPDATE,Inc/Messages.h:895,done,Wire/HeavyShipsUpdate.cs,4
 fedmsg,177 VIEW_CLUSTER,Inc/Messages.h:907,partial,Wire/ViewClusterReply.cs (server emits; no client handler found),4
-fedmsg,178 BOARD_NACK,Inc/Messages.h:913,partial,Wire/BoardNack.cs (server emits; no client handler found),4
+fedmsg,178 BOARD_NACK,Inc/Messages.h:913,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(BoardNack),4
 fedmsg,179 ASTEROIDS_UPDATE,Inc/Messages.h:926,done,Wire/AsteroidsUpdate.cs,4
 fedmsg,180 ASTEROID_DRAINED,Inc/Messages.h:930,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,181 BUILDINGEFFECT_DESTROYED,Inc/Messages.h:936,done,Wire/BuildingEffectDestroyed.cs,4
@@ -325,7 +325,7 @@ fedmsg,185 RIPCORD_ACTIVATE,Inc/Messages.h:955,done,Wire/RipcordActivate.cs,4
 fedmsg,186 RIPCORD_DENIED,Inc/Messages.h:962,done,Wire/RipcordDenied.cs,4
 fedmsg,187 RIPCORD_ABORTED,Inc/Messages.h:965,done,Wire/RipcordAborted.cs,4
 fedmsg,188 WARP_BOMB,Inc/Messages.h:969,partial,Wire/WarpBomb.cs (server emits; no client handler found),4
-fedmsg,189 PROMOTE,Inc/Messages.h:975,partial,"Wire/Promote.cs — client SEND path done (SendPromote P416); server PROMOTE(189) broadcast NOT consumed by real client (P627)",4
+fedmsg,189 PROMOTE,Inc/Messages.h:975,partial,Wire/Promote.cs — client SEND path done (SendPromote P416); server PROMOTE(189) broadcast NOT consumed by real client (P627),4
 fedmsg,190 PROMOTE,Inc/Messages.h:979,partial,Wire/Promote.cs (codec only; no server handler),4
 fedmsg,191 CREATE_BUCKETS,Inc/Messages.h:983,done,Wire/CreateBuckets.cs,4
 fedmsg,192 RELAUNCH_SHIP,Inc/Messages.h:988,partial,Wire/RelaunchShip.cs (server emits; no client handler found),4
@@ -334,7 +334,7 @@ fedmsg,194 PINGDATA,Inc/Messages.h:1006,partial,Wire/PingData.cs (server emits; 
 fedmsg,195 REQPINGDATA,Inc/Messages.h:1012,done,Wire/ReqPingData.cs,4
 fedmsg,196 CHANGE_ALLIANCE,Inc/Messages.h:1017,done,Wire/ChangeAlliance.cs,4
 fedmsg,197 CHANGE_ALLIANCES,Inc/Messages.h:1022,partial,Wire/ChangeAlliances.cs (server emits; no client handler found),4
-fedmsg,198 ASTEROID_MINED,Inc/Messages.h:1027,partial,Wire/AsteroidMined.cs (server emits; no client handler found),4
+fedmsg,198 ASTEROID_MINED,Inc/Messages.h:1027,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(AsteroidMined),4
 fedmsg,199 HIGHLIGHT_CLUSTER,Inc/Messages.h:1033,partial,Wire/HighlightCluster.cs (server handled; client consumer not found),4
 fedmsg,200 CLUSTERINFO,Inc/Messages.h:1039,done,Wire/ClusterInfo.cs,4
 screens,Main game screen / HUD,WinTrek/gamescreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs,5

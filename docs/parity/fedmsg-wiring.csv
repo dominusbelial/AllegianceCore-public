@@ -72,12 +72,12 @@ TREASURE_SETS,89,S,Server.Lobby,Bot only (harness),Real client does NOT consume 
 SHIP_STATUS,90,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),ShipStatus roster applied (P320); false-positive partial now done,appmsg.cpp:2713,done
 PROBES_UPDATE,92,S,Server.Broadcast,Bot only (harness),Real client does NOT consume (candidate: PROBES_UPDATE),appmsg.cpp:584,partial
 ORDER_CHANGE,93,CS,"ServerHost, Server.Docking",Bot only (harness),Client sends ORDER_CHANGE (SendOrderChange); relay echo NOT consumed by real client,appmsg.cpp:1822,done
-LEAVE_SHIP,94,S,"Server.Docking, Server.ShipCommands",neither (codec only),Real client does NOT consume (candidate: LEAVE_SHIP),appmsg.cpp:1914,partial
+LEAVE_SHIP,94,S,"Server.Docking, Server.ShipCommands",ConnectionSession (real client),own ship detaches; '<name> has left your ship.' / lifepod (appmsg.cpp:1914),appmsg.cpp:1914,done
 JOINED_MISSION,95,S,Server.Lobby,neither (codec only),Real client does NOT consume (candidate: JOINED_MISSION),appmsg.cpp:2150,partial
 LOADOUT_CHANGE,96,S,"ServerHost, Server.Lifecycle",neither (codec only),Real client does NOT consume (candidate: LOADOUT_CHANGE),appmsg.cpp:1991,partial
 ACTIVE_TURRET_UPDATE,99,C,"(C) server handler: Server.Broadcast, Server.Dispatch",client→server (sender),Client sends ACTIVE_TURRET_UPDATE (SendActiveTurret),appmsg.cpp:2087,done
 INACTIVE_TURRET_UPDATE,100,C,(C) server handler: Server.Dispatch,client→server (sender),Client sends INACTIVE_TURRET_UPDATE (SendInactiveTurret),appmsg.cpp:2110,done
-TELEPORT_ACK,102,S,Server.Docking,Bot only (harness),Real client does NOT consume (candidate: TELEPORT_ACK notice),appmsg.cpp:1856,partial
+TELEPORT_ACK,102,S,Server.Docking,ConnectionSession (real client),accepted->jump sound (appmsg.cpp:1901); denied->'Teleport failed' line,appmsg.cpp:1856,done
 BOARD_SHIP,103,C,"(C) server handler: Server.Docking, Server.Dispatch",client→server (sender),Client sends BOARD_SHIP (SendBoardShip),—,done
 VIEW_CLUSTER,104,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Client sends VIEW_CLUSTER (SendViewClusterRequest),appmsg.cpp:443,done
 KILL_SHIP,105,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),KillShip death processed (P105/P370),appmsg.cpp:2747,done
@@ -85,8 +85,8 @@ SET_WINGID,106,CS,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Real
 ICQ_CHAT_ACK,107,S,—,neither (codec only),na — ICQ_CHAT_ACK deliberately not built,—,na
 CHATBUOY,108,CS,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),ChatBuoy order applied (CHATBUOY_RELAY P67),appmsg.cpp:2660,done
 CREATE_CHAFF,109,S,Server.ShipCommands,ConnectionSession (real client),CreateChaff transient entity to render (P292),appmsg.cpp:1642,done
-MISSILE_SPOOFED,110,S,Server.ShipCommands,Bot only (harness),Real client does NOT consume (candidate: MISSILE_SPOOFED),appmsg.cpp:1667,partial
-END_SPOOFING,111,S,Server.ShipCommands,Bot only (harness),Real client does NOT consume (candidate: END_SPOOFING),appmsg.cpp:1686,partial
+MISSILE_SPOOFED,110,S,Server.ShipCommands,ConnectionSession (real client),missile retargeted onto last chaff decoy + retarget line (appmsg.cpp:1667),appmsg.cpp:1667,done
+END_SPOOFING,111,S,Server.ShipCommands,ConnectionSession (real client),clears last-chaff spoof pointer (appmsg.cpp:1686),appmsg.cpp:1686,done
 AUTODONATE,112,C,"(C) server handler: PlayerWallet, Server.Lobby",client→server (sender),Real client does NOT send AUTODONATE (bot-only),appmsg.cpp:1192,done
 MISSIONPARAMS,113,CS,—,neither (codec only),na — MISSIONPARAMS deliberately not built,appmsg.cpp:2692,na
 PAYDAY,114,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),Payday applied (income),appmsg.cpp:1281,done
@@ -108,11 +108,11 @@ START_GAME,157,C,"(C) server handler: Server.Lobby, Server.Dispatch",client→se
 ACQUIRE_TREASURE,162,S,Server.Docking,Bot only (harness),Real client does NOT consume (candidate: ACQUIRE_TREASURE),appmsg.cpp:262,partial
 TREASURE_ACK,163,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Real client does NOT send TREASURE_ACK (bot-only),—,done
 ADD_PART,164,S,Server.ShipCommands,Bot only (harness),Real client does NOT consume (candidate: ADD_PART),appmsg.cpp:1384,partial
-ENTER_LIFEPOD,166,S,Server.Combat,neither (codec only),Real client does NOT consume (candidate: ENTER_LIFEPOD; eject via EJECT P540),appmsg.cpp:1945,partial
+ENTER_LIFEPOD,166,S,Server.Combat,ConnectionSession (real client),own ship -> lifepod hull + 'You have entered a lifepod.' (appmsg.cpp:1945),appmsg.cpp:1945,done
 LIGHT_SHIPS_UPDATE,175,S,Server.Broadcast,ConnectionSession (real client),LightShipsUpdate pose refresh (visibility sync P347),appmsg.cpp:684,done
 HEAVY_SHIPS_UPDATE,176,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),HeavyShipsUpdate pose refresh (cross-side visibility P347/P375),appmsg.cpp:736,done
 VIEW_CLUSTER,177,S,Server.ShipCommands,neither (codec only),Real client does NOT consume (candidate: VIEW_CLUSTER sector-stream reply),appmsg.cpp:443,partial
-BOARD_NACK,178,S,"Server.Docking, Server.ShipCommands",neither (codec only),Real client does NOT consume (candidate: BOARD_NACK refusal),appmsg.cpp:1899,partial
+BOARD_NACK,178,S,"Server.Docking, Server.ShipCommands",ConnectionSession (real client),'Teleportation failed.' boarding-refusal line (appmsg.cpp:1899),appmsg.cpp:1899,done
 ASTEROIDS_UPDATE,179,S,Server.Broadcast,ConnectionSession (real client),AsteroidsUpdate live ore/health stored (P423),appmsg.cpp:607,done
 ASTEROID_DRAINED,180,S,—,neither (codec only),na — ASTEROID_DRAINED deliberately not built,appmsg.cpp:1718,na
 BUILDINGEFFECT_DESTROYED,181,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),BuildingEffectDestroyed construction removed (P294),appmsg.cpp:1775,done
@@ -132,6 +132,6 @@ PINGDATA,194,S,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Real cl
 REQPINGDATA,195,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Real client does NOT send REQPINGDATA (bot-only),—,done
 CHANGE_ALLIANCE,196,C,"(C) server handler: Server.Lobby, Server.Dispatch",client→server (sender),Real client does NOT send CHANGE_ALLIANCE (owner via bot/harness),—,done
 CHANGE_ALLIANCES,197,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: CHANGE_ALLIANCES),appmsg.cpp:2554,partial
-ASTEROID_MINED,198,S,Server.Combat,Bot only (harness),Real client does NOT consume (candidate: ASTEROID_MINED),appmsg.cpp:1733,partial
+ASTEROID_MINED,198,S,Server.Combat,ConnectionSession (real client),updates asteroid live ore fraction (appmsg.cpp:1733),appmsg.cpp:1733,done
 HIGHLIGHT_CLUSTER,199,CS,Server.Dispatch,Bot only (harness),Real client does NOT consume (candidate: HIGHLIGHT_CLUSTER),appmsg.cpp:1749,partial
 CLUSTERINFO,200,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),ClusterInfo map graph applied (P225),—,done

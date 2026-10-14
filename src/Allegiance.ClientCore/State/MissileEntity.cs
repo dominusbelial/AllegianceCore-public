@@ -52,4 +52,14 @@ public sealed class MissileEntity
     /// <summary>Local monotonic receipt instant (<see cref="Environment.TickCount64"/>)
     /// of the last update that touched this entity, for the stale pruner.</summary>
     public long LastUpdatedLocalMs;
+
+    /// <summary>P638 — <c>FM_S_MISSILE_SPOOFED(110)</c> marked this missile's
+    /// lock as broken: its target was retargeted onto the most recently
+    /// deployed chaff decoy (native <c>pmissile->SetTarget(m_pchaffLastCreated)</c>,
+    /// appmsg.cpp:1667-1681). Because this renderer-only client has no static
+    /// core and no per-missile target id, it reproduces the retarget as the
+    /// chaff's world position (<c>null</c> when no spoof has been recorded),
+    /// so the renderer can draw the missile aiming at the decoy. Cleared by
+    /// the usual <c>FM_S_MISSILE_DESTROYED(83)</c>/stale-pruner removal.</summary>
+    public Vector3? SpoofTargetPosition;
 }

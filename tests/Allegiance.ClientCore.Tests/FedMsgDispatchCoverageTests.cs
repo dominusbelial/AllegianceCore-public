@@ -63,12 +63,15 @@ public class FedMsgDispatchCoverageTests
         (60, "MoneyChange"), (61, "DockedNotify"), (62, "GameOver"), (63, "GameOverPlayers"),
         (65, "BucketStatus"), (68, "SideInactive"), (70, "FireMissile"), (75, "SideTechChange"),
         (76, "SideAttributeChange"), (77, "Eject"), (78, "SingleShipUpdate"), (83, "MissileDestroyed"),
-        (84, "MineDestroyed"), (85, "ProbeDestroyed"), (90, "ShipStatusMessage"), (105, "KillShip"),
-        (108, "ChatBuoy"), (109, "CreateChaff"), (114, "Payday"), (115, "SetMoney"),
+        (84, "MineDestroyed"), (85, "ProbeDestroyed"), (90, "ShipStatusMessage"),
+        (94, "LeaveShip"), (102, "TeleportAck"), (105, "KillShip"),
+        (108, "ChatBuoy"), (109, "CreateChaff"), (110, "MissileSpoofed"), (111, "EndSpoofing"),
+        (114, "Payday"), (115, "SetMoney"),
         (116, "AutoDonateUpdate"), (121, "SetTeamLeader"), (123, "SetMissionOwner"), (125, "JoinSide"),
-        (129, "Reload"), (175, "LightShipsUpdate"), (176, "HeavyShipsUpdate"), (179, "AsteroidsUpdate"),
+        (129, "Reload"), (166, "EnterLifepod"), (175, "LightShipsUpdate"), (176, "HeavyShipsUpdate"),
+        (178, "BoardNack"), (179, "AsteroidsUpdate"),
         (181, "BuildingEffectDestroyed"), (183, "ShipReset"), (185, "RipcordActivate"), (186, "RipcordDenied"),
-        (187, "RipcordAborted"), (191, "CreateBuckets"), (200, "ClusterInfo"),
+        (187, "RipcordAborted"), (191, "CreateBuckets"), (198, "AsteroidMined"), (200, "ClusterInfo"),
         // port-added server-sent messages the real client also dispatches:
         (204, "MissileLockUpdate"), (205, "MissileUpdate"), (206, "OwnShipMiningUpdate"),
         (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"), (209, "ScoreRosterUpdate"),
@@ -105,13 +108,9 @@ public class FedMsgDispatchCoverageTests
         (89, "TREASURE_SETS", "treasure-sets broadcast; DROP_TREASURE sets not modelled"),
         (92, "PROBES_UPDATE", "per-cluster probe list sync; probe sensor model partial (P98-P100)"),
         (93, "ORDER_CHANGE", "relay echo; order state surfaced via QueuedCommandUpdate(215)"),
-        (94, "LEAVE_SHIP", "leave-board broadcast; boarding teardown via SHIP_STATUS refresh"),
         (95, "JOINED_MISSION", "joined-mission announce; side-select flow uses SIDE_ROSTER(211)"),
         (96, "LOADOUT_CHANGE", "loadout refresh broadcast; re-docked state via DockedNotify(61)+BUY_LOADOUT_ACK(5)"),
-        (102, "TELEPORT_ACK", "teleport denied/accepted notice (appmsg.cpp:1856); teleport UI partial"),
         (106, "SET_WINGID", "wing-assignment broadcast; wing UI not surfaced"),
-        (110, "MISSILE_SPOOFED", "missile spoof notice; spoofing effect partial (no ECM render)"),
-        (111, "END_SPOOFING", "spoofing end; same partial spoofing effect"),
         (124, "QUIT_MISSION", "quit-mission broadcast; game-over/leave path local"),
         (126, "QUIT_SIDE", "side-quit broadcast; side-select roster via SIDE_ROSTER(211)"),
         (128, "ENTER_GAME", "enter-game announce; spawn handled via SET_CLUSTER(7)"),
@@ -119,16 +118,13 @@ public class FedMsgDispatchCoverageTests
         (156, "GAIN_FLAG", "flag gain broadcast; conquest flag mechanic not implemented"),
         (162, "ACQUIRE_TREASURE", "treasure acquired notice; treasure pickup via DESTROY_TREASURE(30)"),
         (164, "ADD_PART", "part-added broadcast; loadout state via BUY_LOADOUT_ACK(5)"),
-        (166, "ENTER_LIFEPOD", "forced-lifepod notice; eject path via EJECT(77) P540"),
         (177, "VIEW_CLUSTER", "sector-view streaming reply; spectator cam uses VIEW_CLUSTER(104) request only"),
-        (178, "BOARD_NACK", "board refusal; boarding gated client-side, no nack surfaced"),
         (182, "REQUEST_MONEY", "request-money broadcast; donation feature partial (P197-P199)"),
         (188, "WARP_BOMB", "warp-bomb explosion; no warp-bomb mechanic"),
         (189, "PROMOTE", "turret-seat promotion broadcast; send path (SendPromote) done, receive unconsumed"),
         (192, "RELAUNCH_SHIP", "server relaunch notice; launch handled via BUY_LOADOUT_ACK(5) fLaunch"),
         (194, "PINGDATA", "bandwidth ping stats; connectivity via PING(35) echoes P508"),
         (197, "CHANGE_ALLIANCES", "alliance-set broadcast; alliances only via game-owner chat (P190)"),
-        (198, "ASTEROID_MINED", "He3 mined notice; mining economy via OwnShipMiningUpdate(206)"),
         (199, "HIGHLIGHT_CLUSTER", "sector-highlight broadcast; commander-map highlight partial"),
     };
 
@@ -294,8 +290,8 @@ public class FedMsgDispatchCoverageTests
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(75, ExpectedConsumedServerSent.Length);
-        Assert.Equal(43, KnownUnconsumedServerSent.Length);
+        Assert.Equal(82, ExpectedConsumedServerSent.Length);
+        Assert.Equal(36, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

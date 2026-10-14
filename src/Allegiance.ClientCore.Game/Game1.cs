@@ -117,6 +117,7 @@ public sealed partial class Game1 : Game
     private TreasureRenderer _treasureRenderer = null!;
     private NativeTreasureRenderer _nativeTreasureRenderer = null!;
     private ChaffRenderer _chaffRenderer = null!;
+    private Rendering.SpoofRetargetRenderer _spoofRetargetRenderer = null!;
 
     // P235 — missile exhaust trail. The pure particle pool (no MonoGame on its
     // surface) plus the camera-facing billboard renderer. _trailNowSec is the
@@ -1696,6 +1697,7 @@ public sealed partial class Game1 : Game
         _probeRenderer?.Dispose();
         _mineRenderer?.Dispose();
         _trailRenderer?.Dispose();
+        _spoofRetargetRenderer?.Dispose();
         _warpParticleRenderer?.Dispose();
         _explosionRenderer?.Dispose();
         _hullHitSparkRenderer?.Dispose();

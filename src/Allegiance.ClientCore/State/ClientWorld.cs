@@ -397,6 +397,13 @@ public sealed class ClientWorld
     private readonly Dictionary<short, BuildingEffectEntity> _buildingEffects = new();
     private readonly Dictionary<short, TreasureEntity> _treasures = new();
     private readonly List<ChaffEntity> _chaff = new();
+
+    /// <summary>P638 — the world position of the most recently created chaff
+    /// decoy (from <c>CREATE_CHAFF(109)</c>), the port's stand-in for native's
+    /// <c>m_pchaffLastCreated</c> pointer (appmsg.cpp:1686). The next
+    /// <c>MISSILE_SPOOFED(110)</c> retargets the named missile onto this decoy;
+    /// <c>END_SPOOFING(111)</c> clears it (native sets the pointer to NULL).</summary>
+    private Vector3? _lastChaffPosition;
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly List<HullHitEntity> _hullHits = new();   // P364 impact sparks
     // P623 — VICTIM_DAMAGED(217) attributions (attacker id, damage, ms) for the
@@ -1789,6 +1796,35 @@ public sealed class ClientWorld
                 // our own ship — latches the autopilot-home (consume in Game1).
                 Apply(eject);
                 break;
+            case TeleportAck teleportAck:
+                // P638 — FM_S_TELEPORT_ACK(102): accepted/denied teleport reply.
+                Apply(teleportAck);
+                break;
+            case BoardNack boardNack:
+                // P638 — FM_S_BOARD_NACK(178): boarding/teleport refusal.
+                Apply(boardNack);
+                break;
+            case MissileSpoofed missileSpoofed:
+                // P638 — FM_S_MISSILE_SPOOFED(110): a missile's lock was broken
+                // by chaff; retarget it onto the decoy.
+                Apply(missileSpoofed);
+                break;
+            case EndSpoofing endSpoofing:
+                // P638 — FM_S_END_SPOOFING(111): close the spoof-resolution window.
+                Apply(endSpoofing);
+                break;
+            case EnterLifepod enterLifepod:
+                // P638 — FM_S_ENTER_LIFEPOD(166): forced into a Lifepod hull.
+                Apply(enterLifepod);
+                break;
+            case LeaveShip leaveShip:
+                // P638 — FM_S_LEAVE_SHIP(94): a ship left its boarded parent.
+                Apply(leaveShip);
+                break;
+            case AsteroidMined asteroidMined:
+                // P638 — FM_S_ASTEROID_MINED(198): authoritative He3-mined ore sync.
+                Apply(asteroidMined);
+                break;
         }
     }
 
@@ -2530,6 +2566,10 @@ public sealed class ClientWorld
             V0 = m.V0,
             ReceivedLocalMs = Environment.TickCount64,
         });
+        // P638 — remember the newest decoy's spawn position so a following
+        // MISSILE_SPOOFED(110) can retarget a missile onto it (native's
+        // m_pchaffLastCreated, appmsg.cpp:1686).
+        _lastChaffPosition = m.P0;
     }
 
     /// <summary>Remove chaff entries whose lifetime has elapsed by the given
@@ -3129,6 +3169,128 @@ public sealed class ClientWorld
         if (line is null) return;
         _feedbackLines.Add(line.Value with { AtSeconds = NowSeconds() });
         if (_feedbackLines.Count > MaxFeedbackLines) _feedbackLines.RemoveAt(0);
+    }
+
+    // ── P638 — parity wave 2: player feedback messages ───────────────────────
+
+    /// <summary>P638 — <c>FM_S_TELEPORT_ACK(102)</c>: the reply to our teleport
+    /// dock request (<c>FedSrv.CPP:7054-7131</c>), sent to our own connection
+    /// only. Accepted (<c>stationID != NA</c>) → native docks the ship and plays
+    /// the <c>personalJumpSound</c> (appmsg.cpp:1901); the dock/relocation state
+    /// itself arrives via the follow-up <c>SET_CLUSTER</c>/<c>SHIP_RESET</c>, so
+    /// here we just queue the arrival jump cue. Denied (<c>stationID == NA</c>)
+    /// → native silently ignores the request (appmsg.cpp:1856-1874) — that is
+    /// exactly the "why didn't that work?" gap this wave targets, so the
+    /// refusal is surfaced as a system line.</summary>
+    private void Apply(TeleportAck m)
+    {
+        if (m.StationId == -1)
+        {
+            PostSystemLine("Teleport failed - unable to relocate to that station.");
+            return;
+        }
+        RecordSoundEvent(ClientSoundEventKind.TeleportArrived, m.StationId);
+    }
+
+    /// <summary>P638 — <c>FM_S_BOARD_NACK(178)</c>: the server refused our
+    /// board/leave request (<c>FedSrv.CPP:6412-6416</c>), own connection only.
+    /// Native surfaces it as a popup in the teleport pane's <c>OnBoardFailed</c>
+    /// (teleportpane.cpp:276-293): "Teleportation canceled - no turret positions
+    /// were open." (when the requested parent had a free turret, playing the
+    /// <c>noTurretsSound</c>) else "Teleportation failed.". The MonoGame client
+    /// has no modal box, so it surfaces the catch-all native string as a system
+    /// line (the port's convention for refusals, cf. <see cref="RipcordDenied"/>).
+    /// It cannot reliably assess the target's free-turret count, so the generic
+    /// branch is used; the <c>noTurretsSound</c> has no ported asset.</summary>
+    private void Apply(BoardNack m)
+    {
+        PostSystemLine("Teleportation failed.");
+    }
+
+    /// <summary>P638 — <c>FM_S_MISSILE_SPOOFED(110)</c>: one missile's lock was
+    /// broken and it was retargeted onto the most recently deployed chaff decoy
+    /// (native <c>pmissile->SetTarget(m_pchaffLastCreated)</c>, appmsg.cpp:1667-1681).
+    /// This renderer-only client has no static core / per-missile target id, so
+    /// it reproduces the retarget as the decoy's world position on the missile
+    /// entity — letting the renderer draw the missile aiming at the decoy.
+    /// Broadcast to the whole side (Server.ShipCommands.cs HandleFireExpendable).</summary>
+    private void Apply(MissileSpoofed m)
+    {
+        if (_lastChaffPosition is not { } chaffPos) return;
+        if (_missiles.TryGetValue(m.MissileId, out var missile))
+            missile.SpoofTargetPosition = chaffPos;
+    }
+
+    /// <summary>P638 — <c>FM_S_END_SPOOFING(111)</c>: closes the spoof-resolution
+    /// window by forgetting which decoy was "last created" (native sets
+    /// <c>m_pchaffLastCreated = NULL</c>, appmsg.cpp:1686-1690). Clears the port's
+    /// stand-in so a later <c>MISSILE_SPOOFED</c> no longer resolves against this
+    /// decoy. Already-spoofed missiles keep their retarget (native does the same).</summary>
+    private void Apply(EndSpoofing m)
+    {
+        _lastChaffPosition = null;
+    }
+
+    /// <summary>P638 — <c>FM_S_ENTER_LIFEPOD(166)</c>: sent to the dying player's
+    /// own connection only (<c>FedSrv.CPP:12059-12062</c>) to force them into their
+    /// side's Lifepod hull, detached from any parent and with a fresh loadout
+    /// (native appmsg.cpp:1945-1990: <c>SetParentShip(NULL)</c>, <c>OnBoardShip</c>,
+    /// <c>SetBaseHullType(lifepod)</c>, <c>ReplaceLoadout</c>). Mirrors the own-ship
+    /// half of <see cref="Apply(Eject)"/>. Native's conversion is silent; the
+    /// notice line is modern surfacing so the forced transition is visible.</summary>
+    private void Apply(EnterLifepod m)
+    {
+        if (m.ShipId != MyShipId) return;
+        MarkSnapshotDirty();
+        var ent = Upsert(m.ShipId);
+        ent.ParentId = -1;                             // SetParentShip(NULL), :1952
+        if (LifepodHullResolver(ent.SideId) is { } lifepod)
+            ent.HullId = lifepod;                      // SetBaseHullType(lifepod), :1963
+        PostSystemLine("You have entered a lifepod.");
+    }
+
+    /// <summary>P638 — <c>FM_S_LEAVE_SHIP(94)</c>: broadcast to the whole side
+    /// that a ship detached from its parent (<c>FedSrv.CPP:2316</c>). Native
+    /// (appmsg.cpp:1914-1945): the leaver detaches; if the leaver is OUR ship we
+    /// are thrown into a Lifepod; if the leaver's parent is our ship we get
+    /// "<c>%s has left your ship.</c>" (:1935-1936). The own-ship notice line is
+    /// modern surfacing (native performs the conversion silently).</summary>
+    private void Apply(LeaveShip m)
+    {
+        if (m.SidChild == MyShipId)
+        {
+            MarkSnapshotDirty();
+            var ent = Upsert(m.SidChild);
+            ent.ParentId = -1;                          // SetParentShip(NULL), :1920
+            // Disembarking a boarded seat with no own hull -> native converts to
+            // the side's Lifepod (:1924-1929).
+            if (LifepodHullResolver(ent.SideId) is { } lp)
+                ent.HullId = lp;
+            PostSystemLine("You have left your ship.");
+            return;
+        }
+        if (_ships.TryGetValue(m.SidChild, out var child))
+        {
+            bool leftOurShip = child.ParentId == MyShipId;
+            child.ParentId = -1;                        // no longer boarded anywhere
+            if (leftOurShip)
+                PostSystemLine($"{DisplayNameFor(m.SidChild)} has left your ship.");
+        }
+    }
+
+    /// <summary>P638 — <c>FM_S_ASTEROID_MINED(198)</c>: the server's authoritative
+    /// "this He3 rock was mined" notice carrying the rock's remaining ore as a
+    /// div-240 <c>BytePercentage</c> (native <c>SetOreWithFraction</c>,
+    /// appmsg.cpp:1733-1744, Xynth #132). Complements the periodic
+    /// <c>ASTEROIDS_UPDATE(179)</c> sync (P423) by refreshing the live ore
+    /// fraction immediately, so the renderer's rock readout depletes in step
+    /// with the sim rather than waiting for the next cadence tick.</summary>
+    private void Apply(AsteroidMined m)
+    {
+        float oreFrac = Math.Clamp(m.BpOreFraction / 240.0f, 0f, 1f);
+        _asteroidLive[m.AsteroidId] = new AsteroidLiveState(
+            OreFraction: oreFrac,
+            Fraction: _asteroidLive.TryGetValue(m.AsteroidId, out var prev) ? prev.Fraction : 0f);
     }
 
     /// <summary>P370 — <c>FM_S_SHIP_DELETE(20)</c>: the server's explicit "this

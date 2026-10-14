@@ -428,6 +428,13 @@ public sealed partial class Game1
                     snd.PlayRipcordAborted();
                     Console.WriteLine($"[monogame] audio: ripcord aborted (ship {ev.Id})");
                     break;
+                case ClientSoundEventKind.TeleportArrived:
+                    // P638 — our teleport dock request was accepted; native
+                    // plays the personalJumpSound (appmsg.cpp:1901), mapped to
+                    // the jumpin one-shot (native jumpSound, SoundManager.PlayJump).
+                    snd.PlayJump();
+                    Console.WriteLine($"[monogame] audio: teleport arrived (station {ev.Id})");
+                    break;
             }
         }
     }

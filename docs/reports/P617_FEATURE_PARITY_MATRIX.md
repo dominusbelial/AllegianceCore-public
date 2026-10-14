@@ -43,12 +43,12 @@ architecture). Weighted % weights each row by its 1–5 veteran-visibility weigh
 | Area | rows | done | partial | missing | na | done% (unwtd) | done% (weighted) |
 |---|---|---|---|---|---|---|---|
 | **commands** (TK_ player commands) | 203 | 123 | 21 | 46 | 13 | 64.7% | 71.9% |
-| **fedmsg** (network messages) | 136 | 84 | 41 | 0 | 11 | 67.2% | 68.2% |
+| **fedmsg** (network messages) | 136 | 91 | 34 | 0 | 11 | 72.8% | 73.6% |
 | **parts** (types + ability bits) | 40 | 31 | 9 | 0 | 0 | 77.5% | 82.4% |
 | **screens** (client screens/panes) | 27 | 16 | 7 | 1 | 3 | 66.7% | 73.6% |
 | **commander** (team features) | 20 | 18 | 1 | 0 | 1 | 94.7% | 96.3% |
 | **lobby** (training + lobby flow) | 12 | 9 | 3 | 0 | 0 | 75.0% | 76.5% |
-| **TOTAL** | 438 | 281 | 82 | 47 | 28 | 68.5% | 73.3% |
+| **TOTAL** | 438 | 288 | 75 | 47 | 28 | 70.2% | 75.2% |
 
 > **P627 scorecard refresh.** Rows above are re-computed from the authoritative
 > `docs/parity/parity-matrix.csv` on P627 (same formula as documented above:
