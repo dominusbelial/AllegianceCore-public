@@ -126,6 +126,16 @@ public sealed partial class Server
         // deadline has passed enters the start countdown without a ready-up
         // (native's unattended restart, fsmission.cpp:3539-3546).
         Step("autoRestarts", () => AdvanceAutoRestarts(now));
+        // P660: refresh the absolute sim-clock sample during both timer phases.
+        // This PING broadcast is a port adaptation; native SET_START_TIME stays unchanged.
+        if (TickIndex % Math.Max(1, _config.UpdatesPerSecond) == 0)
+            Step("countdownClock", () =>
+            {
+                var clock = FedPacket.Pack(new[] { new Ping { TimeServer = (uint)(now * 1000) }.Encode() });
+                foreach (var m in _missions)
+                    if (_autoRestartDeadline.ContainsKey(m) || _startCountdownDeadline.ContainsKey(m))
+                        SendToMissionPeers(m, clock);
+            });
         // P281 — the side-select drain: seat ready/timed-out pending peers in
         // logon order (deterministic), incl. the auto-assign timeout.
         Step("sideSelection", () => AdvanceSideSelection(now));

@@ -62,6 +62,10 @@ public sealed partial class Server
         _config = config;
         _period = _config.UpdatesPerSecond > 0 ? 1.0 / _config.UpdatesPerSecond : 0.05;
         _simNow = 0.0;
+        var next = _config.LiveSettings?.AutoNextMatch;
+        if (next is not null && (!double.IsFinite(next.IntermissionSeconds) || next.IntermissionSeconds < 0
+            || next.IntermissionSeconds > 3600))
+            throw new InvalidDataException("liveSettings.autoNextMatch.intermissionSeconds must be finite and in [0, 3600]");
         ConsoleLog.Verbose = _config.ConsoleVerbose;   // P318: gate the high-frequency per-tick lines
 
         // P594 — the P591b/P591c warp re-entry guard is a NON-NATIVE QoL safety
@@ -993,7 +997,7 @@ public sealed partial class Server
         if (fromMapGen)
         {
             var pmp = ToCoreParams(mg!, g.Teams, g.CivIds);
-            map = MissionMapGenerator.Generate(pmp, core, 0.0);
+            map = MissionMapGenerator.Generate(pmp, core, _simNow);
             Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg!.Type}, "
                 + $"{map.Clusters.Count} sectors / {map.Warps.Count} warps / "
                 + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids");
@@ -1019,7 +1023,7 @@ public sealed partial class Server
         for (int t = 0; t < g.Teams; t++)
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
-        var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
+        var mission = Mission.Assemble(core, map, sides, _host, _simNow);  // site bound; core resolved
         // P402 — remember whether this mission's map came from MapGen so the
         // debug-topology machinery below (and the join/death/respawn paths that
         // share its station helpers) can tell a generated arena from the real

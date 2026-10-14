@@ -747,6 +747,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         {
                             var ping = Ping.Decode(m);
                             _pingEchoes.Add((ping.TimeServer, Environment.TickCount64));
+                            _world.Apply(ping);
                         }
                         catch { /* ignore a malformed echo */ }
                         break;

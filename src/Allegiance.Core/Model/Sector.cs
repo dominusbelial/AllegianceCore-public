@@ -227,7 +227,12 @@ public sealed class Sector : IClusterIgc
     private readonly List<BuildingEffect> _pendingBuildingEffectCreations = [];
 
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
-    public Sector(DataClusterIGC cluster) => Cluster = cluster;
+    public Sector(DataClusterIGC cluster, double initialTime = 0)
+    {
+        Cluster = cluster;
+        // Native CclusterIGC::Initialize seeds m_lastUpdate = now (clusterIGC.cpp:27-37).
+        LastUpdate = initialTime;
+    }
 
     internal void AttachStations(IEnumerable<DataStationIGC> stations, StaticCore core)
     {

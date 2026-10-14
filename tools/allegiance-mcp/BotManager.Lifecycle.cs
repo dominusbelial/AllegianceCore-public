@@ -148,7 +148,7 @@ internal sealed partial class BotManager
             if (bot.ShipId != ship || missionChanged)
             {
                 bool reinforcement = bot.IsPod && !missionChanged;
-                if (missionChanged) { RestoreFinaleForNextMission(bot); bot.CompletedPodCycles = 0; }
+                if (missionChanged) { RestoreFinaleForNextMission(bot, now, world.GameOverResult); bot.CompletedPodCycles = 0; }
                 ResetNewLife(bot, now, reinforcement);
                 if (!reinforcement)
                 {

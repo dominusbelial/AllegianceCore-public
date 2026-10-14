@@ -857,6 +857,7 @@ public sealed partial class Game1 : Game
     // per-second tick plays exactly once, not every frame it happens to still be
     // true; _gameOverCuePlayed fires the game-over callout exactly once on the
     // real Stage → Over transition.
+    private long _nextMatchGeneration;
     private bool _countdownStartCuePlayed;
     private int _countdownLastSecond;
     private bool _gameOverCuePlayed;

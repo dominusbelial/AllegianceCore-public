@@ -58,7 +58,7 @@ public sealed class GameOverScreenRenderer
     /// (kills/deaths/ejections/rescues/baseKills/baseCaptures/artifacts/flags),
     /// mirroring native <c>gameoverscreen.cpp</c>'s per-player columns.</summary>
     public void Draw(Viewport viewport, GameOverPanelInfo info,
-        IReadOnlyList<Allegiance.Core.Wire.GameOverPlayerEntry> players)
+        IReadOnlyList<Allegiance.Core.Wire.GameOverPlayerEntry> players, int? nextMatchSeconds = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -127,6 +127,14 @@ public sealed class GameOverScreenRenderer
                 DrawSmall(line, new Vector2(panelX + (panelW - lineSz.X) / 2f, cursorY),
                     ReasonColor, 1f);
                 cursorY += lineSz.Y + 5f;
+            }
+
+            if (nextMatchSeconds is { } seconds)
+            {
+                string timer = GameOverPanelInfo.NextMatchTimer(seconds);
+                var size = _small.MeasureString(timer);
+                DrawSmall(timer, new Vector2(panelX + (panelW - size.X) / 2f, cursorY), WinnerColor, 1f);
+                cursorY += size.Y + 12f;
             }
 
             // P583 — per-player scoreboard table.

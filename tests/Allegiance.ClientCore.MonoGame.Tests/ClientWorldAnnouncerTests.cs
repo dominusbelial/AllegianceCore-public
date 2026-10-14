@@ -76,7 +76,7 @@ public class ClientWorldAnnouncerTests
     }
 
     [Fact]
-    public void SetStartTime_RecordsTheCountdownAnchorOnce()
+    public void SetStartTime_ReplacesTheRestartDeadlineWithTheBriefingDeadline()
     {
         var world = new ClientWorld();
         Assert.Null(world.CountdownStartLocalMs);
@@ -84,10 +84,11 @@ public class ClientWorldAnnouncerTests
         world.Apply(new SetStartTime { TimeStart = 900000 });
         Assert.NotNull(world.CountdownStartLocalMs);
 
-        // The countdown is one-shot per mission — a second SET_START_TIME must
-        // not re-anchor (keeps Game1's per-second ticks continuous).
-        long first = world.CountdownStartLocalMs!.Value;
-        world.Apply(new SetStartTime { TimeStart = 950000 });
-        Assert.Equal(first, world.CountdownStartLocalMs);
+        // Native can reset SET_START_TIME between intermission and briefing.
+        long now = Environment.TickCount64;
+        world.ObserveServerTime(940000, now);
+        world.Apply(new SetStartTime { TimeStart = 955000 });
+        Assert.Equal(15, world.CountdownRemainingSeconds(now));
+
     }
 }

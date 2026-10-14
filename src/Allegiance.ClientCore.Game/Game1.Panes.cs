@@ -698,8 +698,8 @@ public sealed partial class Game1
             return false;
         if (world.CountdownStartLocalMs is { } cd)
         {
-            double elapsed = (Environment.TickCount64 - cd) / 1000.0;
-            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
+            int remaining = world.CountdownRemainingSeconds() ?? (int)Math.Ceiling(
+                Audio.CountdownSound.BriefingCountdownSeconds - (Environment.TickCount64 - cd) / 1000.0);
             if (remaining <= 0)
                 return false;      // countdown over → mission live → auto-close
             remainingSeconds = remaining;
@@ -1171,8 +1171,8 @@ public sealed partial class Game1
         int? launchCountdown = null;
         if (world.CountdownStartLocalMs is { } cd)
         {
-            double elapsed = (Environment.TickCount64 - cd) / 1000.0;
-            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
+            int remaining = world.CountdownRemainingSeconds() ?? (int)Math.Ceiling(
+                Audio.CountdownSound.BriefingCountdownSeconds - (Environment.TickCount64 - cd) / 1000.0);
             if (remaining > 0) launchCountdown = remaining;
         }
 

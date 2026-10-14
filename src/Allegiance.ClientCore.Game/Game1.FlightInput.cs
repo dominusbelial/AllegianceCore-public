@@ -276,6 +276,22 @@ public sealed partial class Game1
         // of lobby/flying state), so a server-converted SHIP_UPDATE time is ready by
         // undock. Cheap: only drains received echoes + sends a ~1 Hz ping.
         PumpServerClock();
+        var world = _session.World;
+        if (_nextMatchGeneration != world.MissionGeneration)
+        {
+            _nextMatchGeneration = world.MissionGeneration;
+            _briefingDismissed = false;
+            _countdownStartCuePlayed = false;
+            _countdownLastSecond = 0;
+            _gameOverCuePlayed = false;
+            _ownReady = false;
+        }
+        // P660: the server holds flight through intermission and briefing.
+        // Stay on the scoreboard during intermission, then show ReadyCheck's
+        // normal briefing until the authoritative Started transition releases it.
+        if (_state == ClientState.Flying && world.MissionGeneration > 0
+            && world.Mission?.Stage is (int)MissionStage.NotStarted or (int)MissionStage.Starting)
+            _state = ClientState.ReadyCheck;
         var ks = Keyboard.GetState();
 
         // P320 — session-loss detection (see ConnectionSession.SessionLost). The
@@ -313,7 +329,7 @@ public sealed partial class Game1
         bool back = ActionDown(ks, "GameOverBack");
         bool goBackEdge = back && !_gameOverBackWasDown;
         if (goBackEdge
-            && _state == ClientState.Flying
+            && _state is ClientState.Flying or ClientState.ReadyCheck
             && _session.World.GameOverResult is { }
             && !_chatActive && !_qcMenuOpen)
         {
@@ -455,6 +471,8 @@ public sealed partial class Game1
         // machine's due actions into the pending slots the handlers below
         // consume, BEFORE any state logic runs this frame.
         FeedAutoProofObservations();
+
+        UpdateMissionCountdownSound(world);
 
         // Top-level state dispatch: the server browser (default entry) and the
         // transient connecting state don't run any flight logic; only Flying does.
@@ -2203,40 +2221,6 @@ public sealed partial class Game1
         // screen (P268) takes over and the player launches via BUY_LOADOUT
         // (fLaunch=true) or the fallback timer.
 
-        // P216 — mission announcer cues, from the same real per-frame mission
-        // read. Countdown: the server's SET_START_TIME(14) broadcast is what
-        // announces the countdown — the client's Mission.Stage is pinned to
-        // StageStarted by the join burst (Server.cs:2138), so it cannot
-        // distinguish the brief STAGE_STARTING window; the real "countdown
-        // began" signal is that SET_START_TIME receipt, anchored on the world as
-        // CountdownStartLocalMs (the same timeStart field native's
-        // CheckCountdownSound anchors on, WinTrek.cpp:11144). Fire the
-        // countdownstart callout once at the opening, then each per-second tick
-        // (countdown10..countdown1) exactly once per distinct seconds-remaining,
-        // mirroring native's m_nLastCountdown change-detection (WinTrek.cpp:11150).
-        if (world.CountdownStartLocalMs is { } cdStart)
-        {
-            if (!_countdownStartCuePlayed)
-            {
-                _sound?.PlayCountdownStart();
-                _countdownStartCuePlayed = true;
-                _countdownLastSecond = 0;
-                Console.WriteLine("[monogame] audio: countdown-start");
-            }
-
-            double elapsed = (Environment.TickCount64 - cdStart) / 1000.0;
-            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
-            if (remaining != _countdownLastSecond)
-            {
-                _countdownLastSecond = remaining;
-                if (Audio.CountdownSound.TickAssetFor(remaining) is { })
-                {
-                    _sound?.PlayCountdownSecond(remaining);
-                    Console.WriteLine($"[monogame] audio: countdown tick {remaining}");
-                }
-            }
-        }
-
         // Game-over: fire once on the real transition of world.Mission.Stage
         // into Over — driven by the server's GAME_OVER(62) broadcast →
         // ClientWorld.Apply(GameOver) — reusing the exact same world.Mission /
@@ -3100,4 +3084,33 @@ public sealed partial class Game1
         if (wasEngaged) _sound?.PlayAutopilotDisengage();
         RefreshWindowTitle();
     }
+
+    // Native CheckCountdownSound (WinTrek.cpp:11137-11159) runs while the
+    // briefing holds the player on the team screen, as well as in flight.
+    private void UpdateMissionCountdownSound(Allegiance.ClientCore.State.ClientWorld world)
+    {
+        if (world.Mission?.Stage == (int)MissionStage.Starting && world.CountdownStartLocalMs is { } cdStart)
+        {
+            if (!_countdownStartCuePlayed)
+            {
+                _sound?.PlayCountdownStart();
+                _countdownStartCuePlayed = true;
+                _countdownLastSecond = 0;
+                Console.WriteLine("[monogame] audio: countdown-start");
+            }
+
+            int remaining = world.CountdownRemainingSeconds() ?? (int)Math.Ceiling(
+                Audio.CountdownSound.BriefingCountdownSeconds - (Environment.TickCount64 - cdStart) / 1000.0);
+            if (remaining != _countdownLastSecond)
+            {
+                _countdownLastSecond = remaining;
+                if (Audio.CountdownSound.TickAssetFor(remaining) is { })
+                {
+                    _sound?.PlayCountdownSecond(remaining);
+                    Console.WriteLine($"[monogame] audio: countdown tick {remaining}");
+                }
+            }
+        }
+    }
+
 }

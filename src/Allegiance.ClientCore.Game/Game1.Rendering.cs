@@ -1759,11 +1759,12 @@ public sealed partial class Game1
         // (world.GameOverResult), resolving its real winner/reason via
         // GameOverPanelInfo. The local player's own side (MySideId) decides the
         // victorious/defeated/draw title; all text is real wire data.
-        if (_state == ClientState.Flying
+        if (_state is ClientState.Flying or ClientState.ReadyCheck
             && _session.World.GameOverResult is { } go)
         {
             var info = Rendering.GameOverPanelInfo.From(go, _session.World.MySideId);
-            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, _session.World.GameOverPlayersList);
+            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, _session.World.GameOverPlayersList,
+                _session.World.IsIntermission ? _session.World.CountdownRemainingSeconds() : null);
         }
 
         // P306 — end of frame: if this render was a capture frame, restore the
