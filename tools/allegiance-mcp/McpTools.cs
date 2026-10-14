@@ -17,9 +17,9 @@ namespace Allegiance.Tools.McpSpawner;
 /// </summary>
 internal static class McpTools
 {
-    public static IReadOnlyList<Tool> Definitions()
+    public static IReadOnlyList<Tool> Definitions(bool supervisor = false)
     {
-        return
+        Tool[] definitions =
         [
             new Tool
             {
@@ -56,9 +56,12 @@ internal static class McpTools
             new Tool
             {
                 Name = "list_active_bots",
-                Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector, position, (for combat bots) current target ship id, and — when a bot is under a real accepted teammate order — the specific `orderedTarget` ship id it is obeying (distinct from its spawn-time behavior and its current live target). This is the only visibility into spawned bots; there is intentionally no despawn/command tool.",
+                Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector, position, (for combat bots) current target ship id, and — when a bot is under a real accepted teammate order — the specific `orderedTarget` ship id it is obeying (distinct from its spawn-time behavior and its current live target). Includes removal history. Supervisor mode also offers stop_bots, clear_bots and despawn_bot.",
                 InputSchema = Schema(new { type = "object" }),
             },
+            new Tool { Name = "stop_bots", Description = "Disconnect all spawned bots; keep the MCP server and probes running.", InputSchema = Schema(new { type = "object" }) },
+            new Tool { Name = "clear_bots", Description = "Disconnect all spawned bots and clear their removal history.", InputSchema = Schema(new { type = "object" }) },
+            new Tool { Name = "despawn_bot", Description = "Disconnect the named bot (exact name).", InputSchema = Schema(new { type = "object", properties = new { name = new { type = "string" } }, required = new[] { "name" } }) },
             new Tool
             {
                 Name = "spawn_scenario",
@@ -187,6 +190,7 @@ internal static class McpTools
                 }),
             },
         ];
+        return supervisor ? definitions : definitions.Where(t => t.Name is not ("stop_bots" or "clear_bots" or "despawn_bot")).ToArray();
     }
 
     private static JsonElement Schema(object schema) =>
@@ -201,6 +205,10 @@ internal static class McpTools
         {
             var result = name switch
             {
+                "stop_bots" => Ok(JsonSerializer.Serialize(new { stopped = mgr.StopBots(null, false) })),
+                "clear_bots" => Ok(JsonSerializer.Serialize(new { cleared = mgr.StopBots(null, true) })),
+                "despawn_bot" => OptStr(args, "name") is { Length: > 0 } botName
+                    ? Ok(JsonSerializer.Serialize(new { stopped = mgr.StopBots(botName, false) })) : Err("despawn_bot: required name is missing"),
                 "spawn_bot" => SpawnBot(args, mgr),
                 "spawn_scenario" => SpawnScenario(args, mgr),
                 "get_perf_stats" => GetPerfStats(args, mgr),
@@ -522,9 +530,10 @@ internal static class McpTools
                 useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null,
                 routePath: rbPath, routeIndex: rbIdx, reportFailure: false)));
         }
-        var batch = new SpawnBatch(spawnSlots);
+        var batch = new SpawnBatch(mgr.Partition?.Select(spawnSlots) ?? spawnSlots);
+        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = size }, new { side = sideB, requested = size } } }));
         batch.Run(refill, mgr.IsSpawnActive);
-        var grants = GrantReports(batch);
+        var grants = GrantReports(batch, mgr.Partition is not null);
         int warnings = batch.Results.Count(r => r.Warning is not null);
 
         var summary = new
@@ -558,7 +567,7 @@ internal static class McpTools
             failures = batch.Failures,
             note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence.",
         };
-        if (batch.Results.Count == 0)
+        if (batch.Results.Count == 0 && (batch.Counts(sideA).requested + batch.Counts(sideB).requested > 0 || mgr.Partition is null))
             return Err(JsonSerializer.Serialize(summary));   // complete failure: an error result
         return Ok(JsonSerializer.Serialize(summary));
     }
@@ -647,7 +656,7 @@ internal static class McpTools
 
         // Lay minefields (native layer drones) BEFORE the fleets meet.
         var minefieldReports = new List<object>();
-        if (args.TryGetValue("minefields", out var mfj) && mfj.ValueKind == JsonValueKind.Object)
+        if (!mgr.PlanOnly && (mgr.Partition is null || mgr.Partition.Index == 0) && args.TryGetValue("minefields", out var mfj) && mfj.ValueKind == JsonValueKind.Object)
             minefieldReports = LayMinefields(mfj, mgr, targetSector, sideA, sideB, core);
 
         var spawnSlots = new List<SpawnBatch.Slot>();
@@ -739,9 +748,10 @@ internal static class McpTools
                 wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
                 role: slot.Role.ToString(), reportFailure: false)));
         }
-        var batch = new SpawnBatch(spawnSlots);
+        var batch = new SpawnBatch(mgr.Partition?.Select(spawnSlots) ?? spawnSlots);
+        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = totalA }, new { side = sideB, requested = totalB } } }));
         batch.Run(refill, mgr.IsSpawnActive);
-        var grants = GrantReports(batch);
+        var grants = GrantReports(batch, mgr.Partition is not null);
         int warnings = batch.Results.Count(r => r.Warning is not null);
 
         var (faRep, fbRep) = BuildFleetReport(core, slots);
@@ -759,20 +769,24 @@ internal static class McpTools
             maxPerRoute,
             bombersTarget = "enemy home sector (P637 — non-rendezvous roles get their own route/staging toward their own objective, never wait on a fighter wing's release)",
             refill,
-            sideA = new { side = sideA, requested = totalA, spawned = batch.Counts(sideA).spawned, failed = batch.Counts(sideA).failed, refilled = batch.Counts(sideA).refilled, fleet = faRep },
-            sideB = new { side = sideB, requested = totalB, spawned = batch.Counts(sideB).spawned, failed = batch.Counts(sideB).failed, refilled = batch.Counts(sideB).refilled, fleet = fbRep },
+            sideA = new { side = sideA, requested = batch.Counts(sideA).requested, spawned = batch.Counts(sideA).spawned, failed = batch.Counts(sideA).failed, refilled = batch.Counts(sideA).refilled, fleet = faRep },
+            sideB = new { side = sideB, requested = batch.Counts(sideB).requested, spawned = batch.Counts(sideB).spawned, failed = batch.Counts(sideB).failed, refilled = batch.Counts(sideB).refilled, fleet = fbRep },
             minefields = minefieldReports,
             grants,
             warnings,
             failures = batch.Failures,
             note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence. fleet lists the resolved per-hull loadout and whether the slice carries mines (mounted mine dispenser) / missiles; each bot's wingman flags are in `wingman`.",
         };
-        if (batch.Results.Count == 0)
+        if (batch.Results.Count == 0 && (batch.Counts(sideA).requested + batch.Counts(sideB).requested > 0 || mgr.Partition is null))
             return Err(JsonSerializer.Serialize(summary));
         return Ok(JsonSerializer.Serialize(summary));
     }
 
-    private static object[] GrantReports(SpawnBatch batch) => batch.Results.Select(r => (object)new
+    private static object[] GrantReports(SpawnBatch batch, bool worker) => batch.Results.Select(r => worker ? (object)new
+    {
+        side = r.Side, name = r.Name, grantedHull = r.Granted.HullId,
+        grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning, refilled = batch.WasRefilled(r.Name),
+    } : new
     {
         side = r.Side, name = r.Name, grantedHull = r.Granted.HullId,
         grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning,

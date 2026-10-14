@@ -15,6 +15,15 @@ internal sealed partial class BotManager
             .Select(b => new RemovedBotView(b.Name, b.ShipId, "connection lost"))).ToArray();
     }
 
+    internal int StopBots(string? name, bool clearHistory)
+    {
+        ActiveBot[] bots;
+        lock (_gate) bots = _bots.Where(b => name is null || b.Name == name).ToArray();
+        foreach (var bot in bots) RemoveInactiveBot(bot, "stopped by operator");
+        if (clearHistory) lock (_gate) _removedBots.Clear();
+        return bots.Length;
+    }
+
     private static bool IsParticipating(ActiveBot bot) => !bot.Inactive &&
         (bot.Cs is { } cs ? cs.Connected && !cs.Lost : bot.Bot?.Connected == true);
 

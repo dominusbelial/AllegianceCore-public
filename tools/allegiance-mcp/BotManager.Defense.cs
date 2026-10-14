@@ -24,7 +24,6 @@ internal sealed partial class BotManager
     internal const float StationThreatRange = 2500;
     private DefenseSettings? _defenseSettings;
     private DefenseSettings DefenseConfig => _defenseSettings ??= DefenseSettings.Read(Environment.GetEnvironmentVariable);
-    private readonly record struct DefenseKey(uint? Cookie, long Generation, short Side, short Sector);
     private sealed class DefenseIncident(double now)
     {
         public double Started = now;
@@ -85,6 +84,12 @@ internal sealed partial class BotManager
             }
         }
 
+        if (Partition is not null)
+        {
+            ApplyGlobalDefense(bots, now);
+            return;
+        }
+
         foreach (var (key, incident) in DefenseIncidents.ToArray())
         {
             if (!liveKeys.Contains(key) || (now - incident.LastThreat >= DefenseQuietSeconds
@@ -123,6 +128,7 @@ internal sealed partial class BotManager
 
     private void NoteDefenseThreat(DefenseKey key, double now)
     {
+        if (Partition is not null) _localThreats[key] = now;
         if (!DefenseIncidents.TryGetValue(key, out var incident)) DefenseIncidents[key] = new(now);
         else incident.LastThreat = now;
     }

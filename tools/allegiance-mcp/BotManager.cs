@@ -195,8 +195,12 @@ internal sealed partial class BotManager : IDisposable
     /// reachable before they run.</summary>
     public bool ServerReady => Probe.Ack is { FValidated: true };
 
-    public BotManager(string host, ushort port)
+    internal WorkerPartition? Partition { get; }
+    internal bool PlanOnly { get; set; }
+
+    public BotManager(string host, ushort port, WorkerPartition? partition = null)
     {
+        Partition = partition;
         _host = host;
         _port = port;
         using var telemetryOwnership = new PendingOwnership();
@@ -1498,7 +1502,7 @@ internal sealed partial class BotManager : IDisposable
         // P473 — the "mcp-" prefix matches the server's liveSettings.testHarness
         // characterNamePrefix (default "mcp-"), so a granted debug server treats
         // every MCP bot as a harness connection — and a human's name never does.
-        return $"mcp-b{n:D3}-{rand}";
+        return Partition is { } p ? $"mcp-w{p.Index + 1}-b{n:D3}-{rand}" : $"mcp-b{n:D3}-{rand}";
     }
 
     /// <summary>The side the server actually seated the ship on (from the real
@@ -1600,6 +1604,7 @@ internal sealed partial class BotManager : IDisposable
             try
             {
                 double now = Now();
+                long coordinationEpoch = CoordinationEpoch;
                 ActiveBot[] snap;
                 lock (_gate) snap = _bots.ToArray();
                 // P622 — start a fresh engagement pass: clear the accumulated
@@ -1784,6 +1789,7 @@ bool isThreat =
                 // server re-seats it on the rebuilt mission with a fresh ship
                 // id; re-propagate its ready intent so the next wave starts.
                 try { ReReadyProbe(); } catch { }
+                if (Partition is not null) PublishCoordination(snap, now, coordinationEpoch);
 
             }
             catch { }
@@ -4440,7 +4446,7 @@ bool isThreat =
                 // warp-adjacent hold point) and preserves the fair-contact property:
                 // no bot trickles into the rendezvous ahead of its wing's group.
                 if (bot.StagePhase == StageTransitPhase) { bot.StagePhase = StageHoldPhase; bot.FirstStagingAt ??= now; }
-                if (StageReleaseRequired(bot.Side, goal, bot.RouteIndex, now))
+                if (StageReleaseRequired(bot.Side, goal, bot.RouteIndex, now, missionCookie: cs.World.Mission?.Cookie))
                 {
                     bot.StagePhase = StageReleasedPhase;
                     bot.ReleasedAt ??= now;
@@ -4521,8 +4527,11 @@ bool isThreat =
     /// The timeout overrides the barrier so a straggler/stuck wing never freezes the
     /// group forever. A wing with no living bots releases trivially. Single-threaded
     /// (called from the Loop); iterates the bot list under <c>_gate</c>.</summary>
-    private bool StageReleaseRequired(short side, short goal, int routeIndex, double now, bool? syncOverride = null)
+    private bool StageReleaseRequired(short side, short goal, int routeIndex, double now, bool? syncOverride = null, uint? missionCookie = null)
     {
+        if (Partition is not null)
+            return !CoordinationHolding && FreshCoordination is { } decisions && decisions.Epoch == CoordinationEpoch
+                && decisions.Releases.Contains(new StageKey(side, goal, routeIndex, missionCookie));
         // Per-group aggregate under _gate: (alive, staged, firstStagingAt, routeHops),
         // keyed by (side, goal, routeIndex) so distinct objectives never co-aggregate.
         var per = new Dictionary<(short Side, short Goal, int Route), (int Alive, int Staged, double? First, int Hops)>();
@@ -5014,6 +5023,12 @@ bool isThreat =
         if (bot.Cs is { } cs2) cs2.SendPlayerReady(true, cur);
         else if (bot.Bot is { } b2) b2.SendPlayerReady(true, cur);
         Console.WriteLine($"[p598] re-readied bot '{bot.Name}' ship {cur} after rotation (PLAYER_READY true)");
+    }
+
+    internal BotCadence[] CadenceSamples(string? filter)
+    {
+        lock (_gate) return _bots.Where(b => filter is null || b.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            .Select(b => { lock (b.SampleGate) return new BotCadence(b.Name, b.Samples.ToArray()); }).ToArray();
     }
 
     /// <summary>Aggregate every tracked bot's rolling cadence samples into a real
