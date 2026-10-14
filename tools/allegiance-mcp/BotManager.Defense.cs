@@ -45,7 +45,7 @@ internal sealed partial class BotManager
 
     private static bool DefenseAvailable(ActiveBot bot) => IsParticipating(bot) && !bot.SpawnPending
         && !bot.ObjectivesPending && !bot.InScenario && !bot.Arena && bot.Behavior == "combat"
-        && bot.Cs is not null && !bot.IsPod && !bot.PodDocked
+        && bot.Cs is not null && !bot.FinaleEscort && !bot.IsPod && !bot.PodDocked
         && !Catalog.IsLifepodHull(ActualHullId(bot));
 
     private void UpdateDefense(ActiveBot[] bots, double now)

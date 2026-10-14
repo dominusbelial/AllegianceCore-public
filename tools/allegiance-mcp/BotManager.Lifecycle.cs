@@ -35,6 +35,12 @@ internal sealed partial class BotManager
 
     private static void ResetNewLife(ActiveBot bot, double now, bool reinforcement)
     {
+        if (reinforcement && bot.IsPod && bot.PodDocked)
+        {
+            bot.CompletedPodCycles++;
+            if (bot.FinaleBomberActive && bot.FinaleGrantVerified && bot.Finale is { } finale)
+                lock (finale.Sync) finale.StrikeStartedAt ??= now;
+        }
         bot.IsPod = bot.PodDocked = false;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
         bot.PodStationCenter = Vector3.Zero;
@@ -89,6 +95,8 @@ internal sealed partial class BotManager
             }
             return;
         }
+        if (bot.RelaunchAttempts == 0) PrepareFinaleRelaunch(bot, now);
+        if (bot.FinaleBomberActive) bot.FinaleGrantVerified = false;
         cs.ResetBuyLoadoutAcks();
         bot.RelaunchAttempts++;
         bot.RelaunchAt = now;
@@ -106,6 +114,14 @@ internal sealed partial class BotManager
             {
                 bot.GrantWarning = EvaluateGrant(bot.Name, bot.HullId, bot.Parts ?? [], grant);
                 bot.Granted = grant;
+                if (bot.FinaleBomberActive)
+                {
+                    bot.FinaleGrantVerified = ack.FBoughtEverything && ack.HullId == bot.HullId
+                        && (bot.Parts ?? []).All(p => ack.Parts.Any(a => a.PartId == p.PartId
+                            && a.MountId == p.MountId && a.Amount >= p.Amount));
+                    if (!bot.FinaleGrantVerified)
+                        bot.GrantWarning = $"finale: {bot.Name} strike purchase was not fully granted (check hull, mounts and ammunition). {bot.GrantWarning}";
+                }
             }
             catch (InvalidOperationException ex) { bot.GrantWarning = ex.Message; Console.WriteLine($"[relaunch] {ex.Message}"); }
         }
@@ -123,6 +139,7 @@ internal sealed partial class BotManager
             if (bot.ShipId != ship || missionChanged)
             {
                 bool reinforcement = bot.IsPod && !missionChanged;
+                if (missionChanged) { RestoreFinaleForNextMission(bot); bot.CompletedPodCycles = 0; }
                 ResetNewLife(bot, now, reinforcement);
                 if (!reinforcement)
                 {

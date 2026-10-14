@@ -1615,6 +1615,7 @@ internal sealed partial class BotManager : IDisposable
                 _tickEngagers.Clear();
                 foreach (var b in snap)
                     if (IsParticipating(b) && !b.SpawnPending && !b.InScenario && b.Cs is { } lifeCs) RefreshLife(b, lifeCs, now);
+                UpdateFinales(now);
                 UpdateDefense(snap, now);
 
                 // P636d — LAZY publish: request a fresh decision snapshot from every
@@ -2567,7 +2568,7 @@ bool isThreat =
     /// ship-target order (an accepted teammate order) TAKES PRECEDENCE over
     /// nearest-enemy — the bot engages THAT specific ship, never the nearest
     /// one, while it is alive.</summary>
-    private void EngageCombat(ActiveBot bot, double now, PreparedEngagement? prep)
+    private void EngageCombat(ActiveBot bot, double now, PreparedEngagement? prep, bool? legacyNearest = null)
     {
         using var frameScope = new DecisionFrameScope(bot.Cs);
         var cs = bot.Cs!;
@@ -2612,9 +2613,10 @@ bool isThreat =
             && (bot.Arena || bot.TargetSector is null || bot.TargetSector == myCluster))
         {
             short? station;
-            lock (cs.Gate) station = PickEnemyStation(cs.World.Stations.Values, bot.Side, myCluster, myPos);
+            lock (cs.Gate) station = FinaleStationTarget(bot, myCluster)
+                ?? PickEnemyStation(cs.World.Stations.Values, bot.Side, myCluster, myPos);
             bool attacked = HasVisibleAttacker(bot, cs, myCluster, now);
-            if (station is { } id && !attacked)
+            if (station is { } id && (!attacked || bot.FinaleBomberActive))
             {
                 bot.TargetId = id;
                 EngageShipAt(bot, cs, id, now, 0, 0, stationTarget: true);
@@ -2622,10 +2624,17 @@ bool isThreat =
             }
         }
 
+        if (PickDefenseDutyTarget(bot, myCluster, myPos) is { } duty)
+        {
+            bot.TargetId = duty;
+            EngageShipAt(bot, cs, duty, now, 0, 0);
+            return;
+        }
+
         // P622 measurement switch (DEFAULT OFF): when ALLEGIANCE_P622_LEGACY_NEAREST
         // is set, revert to the pre-P622 per-bot nearest-enemy pick so the P622
         // live harness can measure the swarm before/after with the same binary.
-        if (LegacyNearestFlag)
+        if (legacyNearest ?? LegacyNearestFlag)
         {
             short leg = NearestEnemyFallback(bot, cs, myPos, myCluster);
             if (leg < 0) { bot.TargetId = null; LoiterCombat(bot, now); return; }
@@ -2929,8 +2938,11 @@ bool isThreat =
         // (and by default, non-aggressive) it burns after the escaped target.
         if (steer.Escape)
         {
-            short alt = NearestOtherEnemy(cs, bot, CsSector(cs), myPos, exclude: targetId);
-            if (alt >= 0) bot.TargetId = alt;
+            if (!bot.FinaleEscort && !bot.DefendingInPlace && !bot.FinaleBomberActive)
+            {
+                short alt = NearestOtherEnemy(cs, bot, CsSector(cs), myPos, exclude: targetId);
+                if (alt >= 0) bot.TargetId = alt;
+            }
             state |= ShipControlState.AfterburnerButton;
         }
 
@@ -3104,7 +3116,10 @@ bool isThreat =
                 if (h.TargetId == myShipId && h.SourceId != -1
                     && cs.World.Ships.TryGetValue(h.SourceId, out var atk)
                     && atk.SideId != -1 && atk.SideId != bot.Side)
+                {
                     bot.RecentAttackers[h.SourceId] = now;
+                    if (bot.FinaleBomberActive) bot.FinaleProtectedSince ??= now;
+                }
 
                 if (h.SourceId >= 0 && cs.World.Ships.TryGetValue(h.SourceId, out var assetAttacker)
                     && assetAttacker.SideId >= 0 && assetAttacker.SideId != bot.Side
@@ -3127,7 +3142,12 @@ bool isThreat =
             var events = cs.World.Events;
             foreach (var k in events.KillsAfter(bot.KillCursor))
             {
-                if (k.IdCredit == myShipId && k.TypeCredit == 0) bot.Kills++;   // OT_ship killer
+                if (k.IdCredit == myShipId && k.TypeCredit == 0)
+                {
+                    bot.Kills++;
+                    if (bot.Finale is { } finale)
+                        lock (finale.Sync) if (!finale.Rotated) finale.Kills.Enqueue((now, bot.Side));
+                }   // OT_ship killer
                 // P556 — TTK: an observed death (KILL_SHIP of a ship we first
                 // hit, of any credited killer) resolves that victim's
                 // first-hit→death interval into a sample for its side.
@@ -3216,6 +3236,8 @@ bool isThreat =
                 bot.IsPod = true;
                 bot.EverPod = true;
                 bot.Deaths++;
+                if (bot.FinaleBomberActive && bot.Finale is { } finale)
+                    lock (finale.Sync) { finale.BombersKilled++; bot.FinaleProtectedSince = null; bot.FinaleGrantVerified = false; }
                 // P539d — classify this death: a credited ship shooter (KILL_SHIP
                 // TypeCredit 0 = OT_ship, distinct killer) = gunfire kill; otherwise
                 // (no credited shooter — a ram/crash) = collision/other death.
@@ -4348,6 +4370,7 @@ bool isThreat =
 
         short defenseSector = CsSector(cs);
         if (!bot.Arena && defenseSector >= 0) RecordCombatSectorTransition(bot, cs, defenseSector, now);
+        if (TryDriveFinaleEscort(bot, now)) return;
         if (defenseSector >= 0 && TryDriveDefense(bot, defenseSector, now)) return;
         // Clear a temporary combat target before resuming travel.
         if (bot.TargetSector is { } objective && defenseSector != objective)
@@ -5527,6 +5550,11 @@ bool isThreat =
         /// see <see cref="Showcase.HullRole"/>). Determines its OWN target sector
         /// (bombers → enemy home) and its route/staging group.</summary>
         public string Role = "fighter";
+        public int CompletedPodCycles;
+        public FinaleRun? Finale;
+        public FinaleOriginal? FinaleOriginal;
+        public bool FinaleBomberReserved, FinaleBomberActive, FinaleEscort, FinaleResetObserved, FinaleGrantVerified;
+        public double? FinaleProtectedSince;
         /// <summary>P558 — whether the PREVIOUS attack tick held the
         /// afterburner button. Native's band-Engage afterburner rule fires
         /// afterburners at relativeSpeed &lt; −15 only if the drone was already
