@@ -232,11 +232,9 @@ public class DropPartTests
             // ── Phase 1: drop a non-empty mounted WEAPON at mount 0 ────────────
             short pidW = OneRealWeapon();
             var subjectHull = Subj().HullType.HullId;
-            subBot.SendBuyLoadout(subjectHull, fLaunch: false, parts:
-            [
-                new ExpandedPartData(pidW, Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted),
-            ]);
-            PumpUntil(server, () => Subj().Parts.Count == 1, 4000);
+            // H-06: prepare the flying inventory directly; the wire action
+            // under test is DROP_PART, not an in-flight purchase.
+            Subj().MountPart(Subj().Mission!.Core.PartTypes[pidW], 20, 0, ExpandedPartData.FullyMounted);
             Assert.Single(Subj().Parts);
             Assert.Equal(pidW, Subj().Parts.Single(p => p.MountId == 0).PartId);
 
@@ -305,20 +303,17 @@ public class DropPartTests
             Assert.Contains(Subj().Sector!.Models.OfType<Treasure>(),
                 t => t.Data.ObjectId == data.ObjectId && t.Code == TreasureCode.Part);
 
-            // ── Phase 2: drop an EMPTY (Amount==0) PACK at mount 1 ────────────
+            // ── Phase 2: drop an EMPTY (Amount==0) PACK at mount 0 ────────────
             short pidP = OneRealPack();
             Assert.NotEqual(pidW, pidP);
-            subBot.SendBuyLoadout(subjectHull, fLaunch: false, parts:
-            [
-                new ExpandedPartData(pidP, Amount: 0, MountId: 1, FractionMounted: ExpandedPartData.FullyMounted),
-            ]);
-            PumpUntil(server, () => Subj().Parts.Count == 1 && Subj().Parts[0].MountId == 1, 4000);
+            // H-07 / hullTypeIGC.h:199-213: non-weapons mount at zero.
+            Subj().MountPart(Subj().Mission!.Core.PartTypes[pidP], 0, 0, ExpandedPartData.FullyMounted);
             Assert.Single(Subj().Parts);
-            Assert.Equal(pidP, Subj().Parts.Single(p => p.MountId == 1).PartId);
-            Assert.Equal((short)0, Subj().Parts.Single(p => p.MountId == 1).Amount);
+            Assert.Equal(pidP, Subj().Parts.Single(p => p.MountId == 0).PartId);
+            Assert.Equal((short)0, Subj().Parts.Single(p => p.MountId == 0).Amount);
 
             foreach (var b in bots) { b.ResetDropPartsReceived(); b.ResetTreasureSpawnsReceived(); }
-            subBot.SendDropPart(EquipmentType.Pack, mount: 1);
+            subBot.SendDropPart(EquipmentType.Pack, mount: 0);
 
             // DROP_PART still broadcasts sector-wide…
             PumpUntil(server,
@@ -327,7 +322,7 @@ public class DropPartTests
             Assert.Empty(Subj().Parts);
             Assert.Equal(subjectId, obsBot.DropParts.Single().ShipID);
             Assert.Equal(EquipmentType.Pack, obsBot.DropParts.Single().Et);
-            Assert.Equal((byte)1, obsBot.DropParts.Single().Mount);
+            Assert.Equal((byte)0, obsBot.DropParts.Single().Mount);
 
             // …but NO TREASURE follows (empty Pack is the native skip).
             PumpUntil(server, () => false, 20);   // let any wrongful treasure arrive

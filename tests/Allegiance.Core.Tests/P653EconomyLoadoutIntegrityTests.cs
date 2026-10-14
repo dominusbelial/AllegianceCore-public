@@ -167,7 +167,9 @@ public sealed class P653EconomyLoadoutIntegrityTests
         };
         var live = (Srv.LiveShip)w.Call("AssignShip", new LogonRequest(), (short)120, (short)0)!;
         w.Server.TestSeedPeers([(w.Conn, live.Ship, live.Sector), (new ConnectionId(2), w.Mate, w.Sector)]);
+        long treasury = w.Mission.Sides[0].Money;
         w.Send(new BoardShip { SidParent = w.Mate.Id });
+        Assert.Equal(treasury, w.Mission.Sides[0].Money);
         Assert.Equal(0, w.Server.Ships.Single(l => l.Ship == live.Ship).Wallet.Money);
         Assert.Empty(live.Ship.Parts);
     }
@@ -264,8 +266,15 @@ public sealed class P653EconomyLoadoutIntegrityTests
         using var w = new World();
         var fighter = w.Buyer.HullType with { TtbmRequired = new byte[50], SuccessorHullId = -1 };
         ((Dictionary<short, DataHullTypeIGC>)w.Mission.Core.HullTypes)[fighter.HullId] = fighter;
-        w.Buyer.ChangeHull(w.Mission.Core.HullTypes[w.Mission.Sides[0].Civilization.Lifepod]);
+        var pod = w.Mission.Core.HullTypes[w.Mission.Sides[0].Civilization.Lifepod];
+        w.Buyer.ChangeHull(pod);
         w.Wallet.Money = 1000;
+        var dock = w.Buyer.StationId;
+        w.Buyer.StationId = null;
+        w.Send(new BuyLoadoutRequest { HullId = fighter.HullId, FLaunch = true });
+        Assert.Equal(pod.HullId, w.Buyer.HullType.HullId); // H-06: no in-space pod un-death
+        Assert.Equal(1000, w.Wallet.Money);
+        w.Buyer.StationId = dock;
         w.Send(new BuyLoadoutRequest { HullId = fighter.HullId, FLaunch = true });
         Assert.Equal(fighter.HullId, w.Buyer.HullType.HullId);
         Assert.Null(w.Buyer.StationId);
@@ -365,10 +374,16 @@ public sealed class P653EconomyLoadoutIntegrityTests
         w.Wallet.Money = 1000;
         var gun = w.Gun();
         var pack = w.Pack();
-        w.Buy(new(gun.PartId, 1, 0, 255), new(pack.PartId, 10, 0, 255));
+        w.Send(new BuyLoadoutRequest { HullId = w.Buyer.HullType.HullId, FLaunch = true,
+            Parts = [new(gun.PartId, 1, 0, ExpandedPartData.FullyMounted), new(pack.PartId, 10, 0, ExpandedPartData.FullyMounted)] });
         Assert.Equal(1, w.Changes);
         var loadout = Allegiance.Core.Wire.LoadoutChange.Decode(Assert.Single(w.Output, m => FedMessageHeader.Read(m).Fmid == Allegiance.Core.Wire.LoadoutChange.Fmid));
         Assert.Equal(2, loadout.Parts.Count);
+        Assert.All(loadout.Parts, p => Assert.Equal(ExpandedPartData.FullyMounted, p.FractionMounted));
+        // Launch can refill the pack: the one published snapshot must carry
+        // the actual final inventory, not a prelaunch purchase snapshot.
+        Assert.Equal(w.Buyer.Parts.Single(p => p.PartId == pack.PartId).Amount,
+            loadout.Parts.Single(p => p.PartId == pack.PartId).Amount);
         w.Buyer.StationId = null;
         w.Changes = 0;
         w.Send(new SwapPart { EtOld = EquipmentType.Weapon, MountOld = 0, MountNew = -1 });
@@ -426,6 +441,11 @@ public sealed class P653EconomyLoadoutIntegrityTests
         w.Mission.PlaceShip(builder, w.Sector);
         var order = new OrderChange { ShipID = builder.Id, CommandId = OrderChange.CidBuild, ObjectType = IgcObjectType.Asteroid, ObjectID = rock.Data.AsteroidId, Command = OrderChange.CmdAccepted };
         w.Send(order);
+        // Native build orders travel before drilling (shipIGC.cpp:2810-2827).
+        // Reach the accepted rock before testing H-18's committed-state guard.
+        var rp = rock.Data.Position;
+        builder.Position = new Vector3(rp[0], rp[1], rp[2]);
+        typeof(Ship).GetMethod("TryStartBuilderBuild", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(builder, [0d]);
         Assert.Single(w.Sector.BuildingEffects);
         var otherRock = rock.Data with { AsteroidId = 30001 };
         w.Sector.AttachAsteroids([otherRock]);
@@ -439,6 +459,7 @@ public sealed class P653EconomyLoadoutIntegrityTests
         w.Mission.PlaceShip(other, w.Sector);
         order.ShipID = other.Id;
         w.Send(order);
+        Assert.Null(other.BuilderAsteroidTarget); // occupied rock cannot be accepted, even before arrival
         Assert.Single(w.Sector.BuildingEffects);
         w.Sector.Remove(builder);
         w.Sector.Update(100);
@@ -458,12 +479,17 @@ public sealed class P653EconomyLoadoutIntegrityTests
         var order = new OrderChange { ShipID = builder.Id, CommandId = OrderChange.CidBuild, ObjectType = IgcObjectType.Asteroid, ObjectID = rock.Data.AsteroidId };
         w.Send(order);
         Assert.Empty(w.Sector.BuildingEffects);
+        Assert.Null(builder.BuilderAsteroidTarget);
         builder.StationId = null;
         w.Mission.Sides[0].LeaderShipId = w.Mate.Id;
         w.Send(order);
         Assert.Empty(w.Sector.BuildingEffects);
+        Assert.Null(builder.BuilderAsteroidTarget);
         w.Mission.Sides[0].LeaderShipId = w.Buyer.Id;
         w.Send(order);
+        var rp = rock.Data.Position;
+        builder.Position = new Vector3(rp[0], rp[1], rp[2]);
+        typeof(Ship).GetMethod("TryStartBuilderBuild", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(builder, [0d]);
         Assert.Single(w.Sector.BuildingEffects);
         int stations = w.Sector.Stations.Count;
         typeof(Sector).GetMethod("ResolveBuildingEffects", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(w.Sector, [BuildingEffect.BuildDuration]);

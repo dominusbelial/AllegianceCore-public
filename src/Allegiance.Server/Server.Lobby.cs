@@ -2691,16 +2691,10 @@ private void CompleteStartCountdown(Mission mission, double now)
         // purchase cost to refund, for BOTH the default and injected spawn paths.
         ship.MarkSpawnLoadoutFree();
 
-        // P653 H-06: fresh seats enter the friendly hangar and receive DOCKED
-        // (native FedSrv/fsmission.cpp:791-796). This applies to the DEFAULT
-        // spawn path that every real joiner uses (ShipSpawner null). An
-        // INJECTED ShipSpawner is a test/debug placement hook that explicitly
-        // decides the ship's position and state (often a flying ship placed at
-        // a chosen coordinate) — docking such a ship would override the
-        // harness's placement intent, so the dock is applied only to the
-        // default path. The purchase gate that H-06 enforces lives on the
-        // BUY_LOADOUT handler itself and is unaffected by how the ship spawned.
-        if (ShipSpawner is null)
+        // Native fresh seats enter the hangar (fsmission.cpp:791-796).
+        // Include built-in debug arenas used by MCP BUY_LOADOUT(fLaunch).
+        // An explicitly replaced test hook still owns its placement/state.
+        if (ShipSpawner is null || ReferenceEquals(ShipSpawner, _hangarShipSpawner))
             DockInitialLoadout(ship, sector);
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
     }

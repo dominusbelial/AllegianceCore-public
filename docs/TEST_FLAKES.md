@@ -56,6 +56,35 @@ lifepod hull-change. Fixed by gating the revive on a confirmed NON-lifepod hull;
 after the fix all three pass in isolation AND in the clean Run B.
 
 
+## P653c observation (2026-10-14)
+
+The economy/loadout follow-up resolved all **54 observed baseline failures**.
+Final unfiltered suites: Core **4178 pass / 1 fail**, ClientCore **869 pass / 0
+fail**, MonoGame **1969 pass / 0 fail / 3 existing optional private-pack skips**.
+See [P653C_FINISH.md](reports/P653C_FINISH.md) and the durable
+[per-case evidence](reports/P653C_RESULTS.json).
+
+The sole final-suite failure was
+`ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count`
+(the sampled window included an older empty HEAVY update). After all complete
+runs finished, it passed **3/3 individual runs**. No budget assertion or product
+code was changed and no quarantine trait was added.
+
+Additional earlier-snapshot receipt failures in `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity`,
+`LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission`, and
+`LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector`
+also passed **3/3 individually**. The existing quarantined
+`GameOverPlayersWireTests.Conquest_win_in_one_mission_does_not_leak_game_over_players_to_another`
+and `LiveWinConditionTests.Board_refused_once_mission_over` passed the final
+full suite but remained **2/3 in isolation**, consistent with their existing
+entries below. Their quarantine status is unchanged.
+
+P653c also corrected arrival-order fixtures (pickup, pod rescue, station-alert
+peer roles, and ship-delete watcher/departer seating), waited for an actual
+encoded ore decline, and made the legacy slow-hull negative control compare
+against the decoded transit sphere rather than an arbitrary 150-unit margin.
+Those checks retain their behavioral assertions; production steering is unchanged.
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition

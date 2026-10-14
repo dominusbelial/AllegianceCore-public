@@ -170,17 +170,20 @@ public sealed class ShopLauncherMountNumberingLiveTests
             // and a command target — the MissileFireLiveTests arrangement.
             var ship = new Ship(shipId, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
-            mission.PlaceShip(ship, mission.Sectors[0]);
+            // H-06: a real friendly station is required for the purchase.
+            var home = mission.Sectors.First(s => s.Stations.Any(st => st.SideId == ship.SideId));
+            ship.StationId = home.Stations.First(st => st.SideId == ship.SideId).StationId;
+            mission.PlaceShip(ship, home);
 
             var target = new Ship((short)(shipId + 553), hull, new Vector3(120f, 0f, 0f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 1) target.SideId = mission.Sides[1].Id; else target.SideId = 99;
-            mission.PlaceShip(target, mission.Sectors[0]);
+            mission.PlaceShip(target, home);
             ship.Orientation.Set((target.Position - ship.Position).Normalize());
             ship.CommandTarget = target;
 
             placedShip = ship;
             placedTarget = target;
-            return (ship, mission.Sectors[0]);
+            return (ship, home);
         });
         server.Boot(Config());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;  // bypass the ready-up lobby
@@ -225,7 +228,9 @@ public sealed class ShopLauncherMountNumberingLiveTests
             p => Assert.Equal((byte)0, p.MountId));
 
         // L — send the pending loadout over the real wire (same hull -> free-mount).
-        session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: false, parts: shop.ChosenParts);
+        // Keep this mechanics fixture's exact kit sellable (no successor substitution).
+        foreach (var p in kit.Append(lo.Part)) EconomyLoadoutTestSetup.Sell(psh.Mission!, p);
+        session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
 
         // The server grants every part; the launcher — ET_Magazine — is at MOUNT 0.
         int applied = PumpUntil(server, () => psh.Parts.Any(p => p.PartId == lo.Part.PartId), 3000);
@@ -233,7 +238,7 @@ public sealed class ShopLauncherMountNumberingLiveTests
         var launcher = psh.Parts.First(p => p.PartId == lo.Part.PartId);
         Assert.Equal(EquipmentType.Magazine, launcher.EquipmentType);
         Assert.Equal((byte)0, launcher.MountId);                 // ★ the P437 fix: granted at mount 0, not 4-10
-        Assert.Equal(lo.Ammo, launcher.Amount);
+        Assert.Equal(Ship.ClampPartAmount(hull, psh.Mission!.Core, lo.Part, lo.Ammo), launcher.Amount);
         Assert.Equal(kit.Count, psh.Parts.Count(p => p.PartId != lo.Part.PartId));  // the kit parts also mounted
 
         // The client's authoritative granted loadout carries it at mount 0 too.
@@ -242,6 +247,11 @@ public sealed class ShopLauncherMountNumberingLiveTests
         var grantedMag = granted!.FirstOrDefault(p => p.PartId == lo.Part.PartId);
         Assert.NotEqual(default(ExpandedPartData), grantedMag);
         Assert.Equal((byte)0, grantedMag.MountId);
+
+        // Keep the launched ship outside the station's dock volume.
+        tgt.Position = psh.Position + new Vector3(120f, 0f, 0f);
+        psh.Orientation.Set((tgt.Position - psh.Position).Normalize());
+        Assert.Null(psh.StationId);
 
         // LOCK genuinely builds: with the launcher at mount 0, UpdateMountedMissileLock
         // actually runs each tick; the MaxLock==0 type snaps to full, and the owner's
@@ -252,10 +262,17 @@ public sealed class ShopLauncherMountNumberingLiveTests
         // FIRE: a real FIRE_MISSILE(70) is accepted and fires — a homing missile
         // appears at the command target and the launcher's ammo decrements.
         int ammoBefore = launcher.Amount;
+        Missile? created = null;
+        // H-08 can leave a one-round launcher. Observe its real creation
+        // event, even if collision consumes the missile within this tick.
+        var site = psh.Mission!.Site;
+        var bridge = site.GetType().GetField("MissileCreated")!;
+        var broadcast = (Action<Missile>?)bridge.GetValue(site);
+        bridge.SetValue(site, broadcast + (Action<Missile>)(m => created = m));
         session.SendFireMissile();
-        int fired = PumpUntil(server, () => psh.Sector!.Models.OfType<Missile>().Any(), 2000);
-        Assert.True(fired < 2000, "FIRE_MISSILE(70) never produced a missile");
-        var missile = psh.Sector!.Models.OfType<Missile>().Single();
+        int fired = PumpUntil(server, () => created is not null, 2000);
+        Assert.True(fired < 2000, $"FIRE_MISSILE(70) never produced a missile: ammo={psh.Parts.First(p => p.PartId == lo.Part.PartId).Amount}, dock={psh.StationId}, stage={psh.Mission.Stage}, lock={psh.MissileLock}, target={psh.CommandTarget?.Id}");
+        var missile = created!;
         Assert.Same(tgt, missile.Target);
         Assert.Equal((short)(ammoBefore - 1),
             psh.Parts.First(p => p.PartId == lo.Part.PartId).Amount);

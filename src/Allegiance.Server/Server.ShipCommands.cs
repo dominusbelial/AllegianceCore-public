@@ -2220,16 +2220,10 @@ public sealed partial class Server
     /// the port's stand-in for native "the builder reaches the asteroid's
     /// cluster"; a rock elsewhere is refused rather than crashing the tick.</item>
     /// </list>
-    /// A legal command starts the timed construction immediately via
-    /// <see cref="Model.Sector.StartBuildingEffect"/> — this port's established
-    /// builder behavior (P163-165 "no travel-before-build gate", P285): unlike
-    /// native, it does not fly the ship to and physically ENTER the asteroid
-    /// first, because the P168 collision-avoidance would deflect a ship trying
-    /// to occupy the rock's volume and native's enter is superseded by the
-    /// building-effect's collision exemption (<c>buildingeffectigc.h:256-258</c>)
-    /// which this port does not implement. The legality gate (the task's core)
-    /// is real and enforced; the approach is abstracted exactly as the NPC
-    /// autonomous Builder and P285 already abstract it.
+    /// NPC constructors retain an accepted target while traveling and register
+    /// construction only on arrival (native shipIGC.cpp:2810-2827). Player
+    /// Builder hulls use the existing immediate effect path. A registered
+    /// effect commits its constructor and asteroid until completion or abort.
     /// </summary>
     private bool StartBuildIfLegal(ConnectionId from, short commanderShipId, Ship target, OrderChange req)
     {
@@ -2250,10 +2244,13 @@ public sealed partial class Server
             RefuseBuild(from, commanderShipId, target, $"BUILD from a non-Builder ship ('{target.HullType.Name}', pilotType {target.PilotType}, no c_habmBuilder) — refused (native LegalCommand Builder-only gate, shipIGC.h:1699-1702)");
             return false;
         }
-        // H-18 single-commitment: a Builder already committed to a construction may
-        // not start another (checked AFTER the Builder-role gate so a non-Builder is
-        // still refused with a surfaced acknowledgement).
-        if (target.IsBuilding) return false;
+        // H-18: only an actual construction effect commits a constructor.
+        // IsBuilding also marks an idle reservation (P652c). Repeating the
+        // accepted order is harmless; changing its rock cannot start a second build.
+        if (target.IsBuilding && !target.IsNpc) return false;
+        var commitment = target.Sector.BuildingEffects.FirstOrDefault(e => ReferenceEquals(e.Builder, target));
+        if (commitment is not null)
+            return req.ObjectType == IgcObjectType.Asteroid && req.ObjectID == commitment.Target.Data.AsteroidId;
 
         // Gate 2 — OT_asteroid target only (shipIGC.h:1699-1701).
         if (req.ObjectType != IgcObjectType.Asteroid)
@@ -2309,13 +2306,14 @@ public sealed partial class Server
             return false;
         }
 
-        // Legal: start the timed construction immediately. This is the DIRECT
-        // command path (H-18 / P163-165 "no travel-before-build gate"); the
-        // AUTONOMOUS builder keeps its P652 travel-then-drill in
-        // DecideBuilderDefaultOrder / TryStartBuilderBuild. The H-18 audit
-        // regressions require a direct BUILD to register a building effect now.
-        sector.StartBuildingEffect(target, rock, st, sector.LastUpdate);
-        Console.WriteLine($"[build] {from} ship {target.Id} (Builder hull '{target.HullType.Name}') issued BUILD of '{st.Name}' (type {st.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' → construction started");
+        // Native constructors travel to the accepted rock before drilling
+        // (shipIGC.cpp:2810-2827). SetBuilderBuild releases idle reservations;
+        // the arrival path and Sector enforce H-18's single commitment.
+        if (target.IsNpc)
+            target.SetBuilderBuild(rock);
+        else
+            sector.StartBuildingEffect(target, rock, st, sector.LastUpdate);
+        Console.WriteLine($"[build] {from} ship {target.Id} issued BUILD of '{st.Name}' at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — {(target.IsNpc ? "traveling before drilling" : "construction started")}");
         return true;
     }
 

@@ -21,6 +21,7 @@
   <!-- P597 — shared skip-helpers for corpus-backed tests (see TestRequire.cs). -->
   <ItemGroup>
     <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
+    <Compile Include="../_shared/EconomyLoadoutTestSetup.cs" Link="_shared/EconomyLoadoutTestSetup.cs" />
   </ItemGroup>
 
   <ItemGroup>

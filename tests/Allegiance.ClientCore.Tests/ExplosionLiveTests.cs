@@ -91,6 +91,9 @@ public class ExplosionLiveTests
         Assert.True(joined < 4000, "exploder must be assigned a ship");
 
         // Press the kill button: a real death over the real transport.
+        // H-26 / FedSrv.CPP:6338: death-fixture connection explicitly has CanCheat.
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig
+            { Enabled = true, AllowNames = ["EXPLODER"] };
         session.SendSuicide();
 
         // The server's BroadcastKillShip → SendExplosionEvent must deliver a

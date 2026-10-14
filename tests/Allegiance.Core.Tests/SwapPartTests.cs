@@ -41,7 +41,7 @@ public class SwapPartTests
     private static (short a, short b) TwoRealWeapons()
     {
         var weapons = Core().PartTypes.Values
-            .Where(p => p.EquipmentType == EquipmentType.Weapon)
+            .Where(p => p.EquipmentType == EquipmentType.Weapon && p.PartMask == 1)
             .OrderBy(p => p.PartId)
             .Select(p => p.PartId)
             .Take(2)
@@ -136,11 +136,11 @@ public class SwapPartTests
         server.ShipSpawner = (core, mission, shipId) =>
         {
             short side = mission.Sides[seq % mission.Sides.Count].Id;
-            var scouts = core.HullTypes.Values
-                .Where(h => h.Name.Contains("Scout", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(h => h.HullId)
-                .ToList();
-            var hull = scouts.Count > 0 ? scouts[0] : core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // H-07 / hullTypeIGC.h:199-213: all three requested gun slots
+            // must accept both real weapons (a one-hardpoint Scout cannot).
+            var guns = TwoRealWeapons();
+            var hull = core.HullTypes.Values.First(h => h.GroupId >= 0 &&
+                Enumerable.Range(0, 3).All(m => h.CanMountPart(core.PartTypes[guns.a], m) && h.CanMountPart(core.PartTypes[guns.b], m)));
             var ship = new Ship(shipId, hull, new Vector3(288f, 771f, 866f), Vector3.Zero, Orientation.Identity) { SideId = side };
             mission.PlaceShip(ship, mission.Sectors[0]);
             seq++;
@@ -194,9 +194,11 @@ public class SwapPartTests
                 new ExpandedPartData(pidA, Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted),
                 new ExpandedPartData(pidB, Amount: 20, MountId: 1, FractionMounted: ExpandedPartData.FullyMounted),
             };
-            subBot.SendBuyLoadout(subjectHull, fLaunch: false, parts: twoParts);
             Ship Subj() => server.Ships.Single(s => s.Ship.Id == subjectId).Ship;
-            PumpUntil(server, () => Subj().Parts.Count >= 2, 4000);
+            // The test action is SWAP_PART; set up its legal flying inventory
+            // directly rather than abusing an in-flight BUY_LOADOUT (H-06).
+            foreach (var p in twoParts)
+                Subj().MountPart(Subj().Mission!.Core.PartTypes[p.PartId], p.Amount, p.MountId, p.FractionMounted);
             Assert.Equal(2, Subj().Parts.Count);
             Assert.Equal(pidA, Subj().Parts.Single(p => p.MountId == 0).PartId);
             Assert.Equal(pidB, Subj().Parts.Single(p => p.MountId == 1).PartId);

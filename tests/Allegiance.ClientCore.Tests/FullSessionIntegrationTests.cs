@@ -114,12 +114,13 @@ public class FullSessionIntegrationTests
     private static (Ship Ship, Sector Sector) SpawnDocked(
         StaticCore core, Mission mission, short shipId, out short stationId)
     {
-        var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        // H-07: the fixture purchases a real gun at hardpoint zero.
+        var hull = EconomyLoadoutTestSetup.WeaponHull(core);
         var st = mission.Sectors.SelectMany(s => s.Stations).First(s => s.SideId >= 0);
         var sector = mission.Sectors.First(s => s.Stations.Contains(st));
         var ship = new Ship(shipId, hull, new Vector3(20f, 0f, 0f) + StationPos(st), Vector3.Zero, Orientation.Identity)
         {
-            SideId = st.SideId,
+            SideId = st.SideId, StationId = st.StationId,
         };
         mission.PlaceShip(ship, sector);
         stationId = st.StationId;
@@ -274,7 +275,8 @@ public class FullSessionIntegrationTests
             8000);
         Assert.True(armed < 8000, $"loadout+launch never composed (parts={(subject.World.Ships[subjectId].Loadout?.Count)}, stat={subject.World.Ships[subjectId].StationId})");
         Assert.Single(subject.World.Ships[subjectId].Loadout!);
-        Assert.Equal(requested, subject.World.Ships[subjectId].Loadout![0]);  // real part, byte-exact
+        Assert.Equal(requested, subject.BuyLoadoutAcks.Last(a => a.Parts.Count > 0).Parts[0]);
+        Assert.Equal(requested, subject.World.Ships[subjectId].Loadout![0]); // native BytePercentage full mount is 240
         Assert.Equal(hull, subject.World.Ships[subjectId].HullId);            // hull unchanged
         Assert.Equal(-1, subject.World.Ships[subjectId].StationId);           // undocked/flying
 
