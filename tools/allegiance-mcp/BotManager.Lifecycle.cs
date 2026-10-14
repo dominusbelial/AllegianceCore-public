@@ -59,6 +59,8 @@ internal sealed partial class BotManager
         bot.FriendlyGrids = null;
         bot.DecisionFrame = null;
         bot.RecentAttackers.Clear();
+        bot.RecentAssetAttackers.Clear();
+        EndDefense(bot);
         bot.LastAttackersPruneAt = bot.LastTargetAt = bot.LastFireAt = bot.LastMineAt = double.NegativeInfinity;
         bot.LastBoostAt = bot.LastCloakAt = double.NegativeInfinity;
         bot.AttackAfterburnerHeld = false;
@@ -124,6 +126,7 @@ internal sealed partial class BotManager
                 ResetNewLife(bot, now, reinforcement);
                 if (!reinforcement)
                 {
+                    bot.DefenseChatCursor = 0;
                     bot.RoutePath = null; // sector ids from the previous map are invalid
                     bot.ObjectivesPending = true;
                 }

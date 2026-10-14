@@ -1615,6 +1615,7 @@ internal sealed partial class BotManager : IDisposable
                 _tickEngagers.Clear();
                 foreach (var b in snap)
                     if (IsParticipating(b) && !b.SpawnPending && !b.InScenario && b.Cs is { } lifeCs) RefreshLife(b, lifeCs, now);
+                UpdateDefense(snap, now);
 
                 // P636d — LAZY publish: request a fresh decision snapshot from every
                 // seated bot's receive thread BEFORE this pass reads .Decision. The
@@ -2574,14 +2575,15 @@ bool isThreat =
         if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
         short myCluster = CsSector(cs);
 
-        // P431 — the commanded ship-target wins over the coordinated choice. While
+        // P431 — outside a temporary defence engagement, the commanded ship-target
+        // wins over the coordinated choice. Defence preserves the order for resumption. While
         // it is alive and co-located, engage exactly it; if it is not currently
         // engageable (cross-side visibility can be intermittent — P429) or not yet
         // co-located, loiter (committed to this order, attacking no one else). The
         // order is only released by a NEW superseding order (DecideAcceptTranslate),
         // not by a transient visibility gap.
         ClearInvalidOrderedTarget(bot, cs);
-        if (bot.OrderedTargetId is { } ordered)
+        if (!bot.DefendingInPlace && bot.OrderedTargetId is { } ordered)
         {
             bool engageable; short osector;
             lock (cs.Gate)
@@ -2737,6 +2739,14 @@ bool isThreat =
             candidates = candidates.Where(c => bot.RecentAttackers.TryGetValue(c.Id, out var at)
                 && now - at < ThreatWindowSeconds).ToList();
         var ctx = new BotSelectionContext(bot.ShipId, myCluster, 0, _tickEngagers);
+        if (bot.DefendingInPlace && bot.DefenseTargets.Count > 0)
+        {
+            candidates = candidates.Where(c => bot.DefenseTargets.Contains(c.Id)).ToList();
+            // Fill bomber/capital threat caps first, then other observed attackers.
+            var stationThreats = candidates.Where(c => CombatTargetSelector.IsStationThreatening(c.Class)).ToList();
+            var priority = CombatTargetSelector.PickBy(!CombatTargetSelector.SpreadFirst, stationThreats, ctx);
+            if (priority is { } pick) return pick;
+        }
         return CombatTargetSelector.Select(candidates, ctx);
     }
 
@@ -3096,6 +3106,11 @@ bool isThreat =
                     && atk.SideId != -1 && atk.SideId != bot.Side)
                     bot.RecentAttackers[h.SourceId] = now;
 
+                if (h.SourceId >= 0 && cs.World.Ships.TryGetValue(h.SourceId, out var assetAttacker)
+                    && assetAttacker.SideId >= 0 && assetAttacker.SideId != bot.Side
+                    && (tgtSide == bot.Side || (cs.World.Stations.TryGetValue(h.TargetId, out var station) && station.SideId == bot.Side)))
+                    bot.RecentAssetAttackers[h.SourceId] = now;
+
                 // P556 — TTK: record the FIRST damaging enemy hit on this victim
                 // (our own hit on a different-side ship; shield- or hull-absorbed —
                 // a shielded victim soaks hits from first contact, so a stronger
@@ -3133,6 +3148,8 @@ bool isThreat =
             if (now - bot.LastAttackersPruneAt > 5.0)
             {
                 bot.LastAttackersPruneAt = now;
+                foreach (var id in bot.RecentAssetAttackers.Where(a => now - a.Value > ThreatWindowSeconds).Select(a => a.Key).ToArray())
+                    bot.RecentAssetAttackers.Remove(id);
                 if (bot.RecentAttackers.Count > 0)
                 {
                     var stale = bot.RecentAttackers
@@ -4275,52 +4292,9 @@ bool isThreat =
         return (a, b, -axis, axis);
     }
 
-    /// <summary>[vz DriveEnemyContingent] Drive one combat bot a tick. The bot is
-    /// already launched at spawn; if it has a <c>target_sector</c> it routes real
-    /// warps along the BFS shortest path there before engaging; otherwise (or once
-    /// arrived) it engages any different-side ship already in its own cluster.
-    /// P539: tallies real combat stats, and a bot whose own ship has become a
-    /// LIFEPOD stops combat and flies home to dock instead of fighting.</summary>
-    private void DriveCombat(ActiveBot bot, double now, PreparedEngagement? prep)
+    /// <summary>Keep warp telemetry and arrival clearance on both objective and defence legs.</summary>
+    private static void RecordCombatSectorTransition(ActiveBot bot, ConnectionSession cs, short cur, double now)
     {
-        using var frameScope = new DecisionFrameScope(bot.Cs);
-        var cs = bot.Cs!;
-        if (!IsParticipating(bot) || !RefreshLife(bot, cs, now)) return;
-        if (DecisionSnapshotEnabled && SnapshotFor(cs).MissionGeneration != cs.World.MissionGeneration) return;
-        if (cs.World.MyShipId is not { } my) return;     // not seated yet
-        bot.ShipId = my;
-
-        // P539 — tally this bot's REAL combat stats (hits/kills) from its own
-        // wire/world events each tick.
-        SampleCombatStats(bot, cs, my, now);
-
-        // P539 — a lifepod stops fighting and flies home to dock.
-        if (UpdatePodState(bot, cs, now))
-        {
-            DrivePodHome(bot, cs, now);
-            return;
-        }
-
-        if (bot.TargetSector is not { } goal) { EngageCombat(bot, now, prep); return; }
-
-        // P539d — arena: both sides were relocated to mirrored spots in the target
-        // sector at spawn; no travel, so engage in place (travel can't decide it).
-        if (bot.Arena)
-        {
-            if (!bot.Arrived) { bot.Arrived = true; bot.ArrivedAt ??= now; }
-            EngageCombat(bot, now, prep);
-            return;
-        }
-
-        short cur = CsSector(cs);
-        if (cur < 0) return;                             // own pose not streaming yet
-
-        // P539d — arrival + warp-hop telemetry (a pod relaunch is not a warp hop).
-        if (cur == goal && !bot.Arrived)
-        {
-            bot.Arrived = true;
-            bot.ArrivedAt ??= now;
-        }
         if (!bot.IsPod && bot.LastCluster >= 0 && cur != bot.LastCluster)
         {
             if (bot.WarpHops.Count == 0 || bot.WarpHops[^1].To != cur)
@@ -4348,6 +4322,57 @@ bool isThreat =
                 }
             }
         }
+    }
+
+    /// <summary>Drive real combat, pod recovery and objective travel, temporarily
+    /// interrupting travel for visible attackers or an active base defence.</summary>
+    private void DriveCombat(ActiveBot bot, double now, PreparedEngagement? prep)
+    {
+        using var frameScope = new DecisionFrameScope(bot.Cs);
+        var cs = bot.Cs!;
+        if (!IsParticipating(bot) || !RefreshLife(bot, cs, now)) return;
+        if (DecisionSnapshotEnabled && SnapshotFor(cs).MissionGeneration != cs.World.MissionGeneration) return;
+        if (cs.World.MyShipId is not { } my) return;     // not seated yet
+        bot.ShipId = my;
+
+        // P539 — tally this bot's REAL combat stats (hits/kills) from its own
+        // wire/world events each tick.
+        SampleCombatStats(bot, cs, my, now);
+
+        // P539 — a lifepod stops fighting and flies home to dock.
+        if (UpdatePodState(bot, cs, now))
+        {
+            DrivePodHome(bot, cs, now);
+            return;
+        }
+
+        short defenseSector = CsSector(cs);
+        if (!bot.Arena && defenseSector >= 0) RecordCombatSectorTransition(bot, cs, defenseSector, now);
+        if (defenseSector >= 0 && TryDriveDefense(bot, defenseSector, now)) return;
+        // Clear a temporary combat target before resuming travel.
+        if (bot.TargetSector is { } objective && defenseSector != objective)
+            bot.TargetId = null;
+
+        if (bot.TargetSector is not { } goal) { EngageCombat(bot, now, prep); return; }
+
+        // P539d — arena: both sides were relocated to mirrored spots in the target
+        // sector at spawn; no travel, so engage in place (travel can't decide it).
+        if (bot.Arena)
+        {
+            if (!bot.Arrived) { bot.Arrived = true; bot.ArrivedAt ??= now; }
+            EngageCombat(bot, now, prep);
+            return;
+        }
+
+        short cur = CsSector(cs);
+        if (cur < 0) return;                             // own pose not streaming yet
+
+        // P539d — arrival + warp-hop telemetry (a pod relaunch is not a warp hop).
+        if (cur == goal && !bot.Arrived)
+        {
+            bot.Arrived = true;
+            bot.ArrivedAt ??= now;
+        }
 
         // P610 — EXIT CLEAR-OUT: right after crossing an aleph keep flying along
         // the exit direction (the full-throttle Pursue; dodge still pre-empts an
@@ -4368,7 +4393,7 @@ bool isThreat =
         }
         bot.ExitClearFrom = null;   // cleared (or never set) — normal logic resumes
 
-        if (bot.Arrived) { EngageCombat(bot, now, prep); return; }
+        if (bot.Arrived && cur == goal) { EngageCombat(bot, now, prep); return; }
 
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
             && HasVisibleAttacker(bot, cs, cur, now))
@@ -4627,6 +4652,8 @@ bool isThreat =
         /// <summary>P637 — the bot's showcase role (Fighter/Bomber/Scout/...),
         /// so a caller can see which role got which target/route.</summary>
         public required string Role { get; init; }
+        public string State { get; init; } = "active";
+        public short? DefenseSector { get; init; }
         /// <summary>P637 — the sector this bot is ROUTING to (its own objective:
         /// the rendezvous for fighters, the enemy home sector for bombers).
         /// -1 when the bot has no target sector (engages in place).</summary>
@@ -4747,6 +4774,8 @@ bool isThreat =
                             WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                             RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
                             Role = bot.Role, TargetSector = bot.TargetSector ?? -1,
+                            State = bot.DefenseSector is not null || bot.DefendingInPlace ? "defending" : "active",
+                            DefenseSector = bot.DefenseSector ?? (bot.DefendingInPlace ? sector : null),
                             StagingSector = bot.StagingSector, StagePhase = bot.StagePhase,
                             Velocity = [vel.X, vel.Y, vel.Z], Speed = speed, Idle = idle,
                         });
@@ -4765,6 +4794,8 @@ bool isThreat =
                         WorldNotReadyAttempts = bot.WorldNotReadyAttempts,
                         RouteIndex = bot.RouteIndex, RouteName = RouteNameOf(bot),
                         Role = bot.Role, TargetSector = bot.TargetSector ?? -1,
+                        State = bot.DefenseSector is not null || bot.DefendingInPlace ? "defending" : "active",
+                        DefenseSector = bot.DefenseSector,
                         StagingSector = bot.StagingSector, StagePhase = bot.StagePhase,
                         Velocity = [0, 0, 0], Speed = 0, Idle = idle2,
                     });
@@ -5426,6 +5457,11 @@ bool isThreat =
         // "threats first" priority: a ship shooting at me is engaged before idle
         // combat ships or miners.
         public readonly Dictionary<short, double> RecentAttackers = new();
+        public readonly Dictionary<short, double> RecentAssetAttackers = new();
+        public long DefenseChatCursor;
+        public short? DefenseSector;
+        public bool DefendingInPlace;
+        public HashSet<short> DefenseTargets = new();
         public double LastAttackersPruneAt = double.NegativeInfinity;
         public double LastTargetAt = double.NegativeInfinity;
         public double LastBoostAt = double.NegativeInfinity;

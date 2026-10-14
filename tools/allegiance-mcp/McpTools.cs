@@ -216,6 +216,7 @@ internal static class McpTools
                     .Select(b => new {
                         name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull,
                         role = b.Role, sector = b.Sector, behavior = b.Behavior,
+                        state = b.State, defenseSector = b.DefenseSector,
                         target = b.Target, orderedTarget = b.OrderedTarget, engagers = b.Engagers,
                         pos = b.Position,
                         // P637 — role → target → route → staging + live motion.
