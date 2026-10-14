@@ -1652,12 +1652,8 @@ public sealed partial class Server
     {
         short cid = chat.CommandID;
 
-        // Native arms a 120&nbsp;s runaway-return cooldown on the drone so it
-        // does not abandon the player command to run away
-        // (SetRunawayCheckCooldown(120.0f), FedSrv.CPP:3193). This port has NO
-        // runaway-return pass — a commanded drone never autonomously abandons a
-        // player command to return to base — so the cooldown has no consumer.
-        // Named gap, not silently dropped (see the P469 report).
+        // FedSrv.CPP:3193: player orders defer runaway checks for 120 seconds.
+        drone.SetRunawayCheckCooldown(120f);
 
         // Resolve the order's target model (FedSrv.CPP:3197-3260). Buoy-from-pdb
         // construction is out of scope: the P403 ChatBuoy path already owns
@@ -1690,6 +1686,8 @@ public sealed partial class Server
             ConsoleLog.Write($"[drone] ship {sender.Id}: order cid={cid} to NPC {drone.Id} legal but no matching port sim arm — not executed (unsupported; see P469 report)");
             return;
         }
+
+        drone.ResetRunawayForNewOrder(); // SetCommand resets even an identical order (shipIGC.h:725-764)
 
         // Reply "Affirmative." to the commander (FedSrv.CPP:3256-3257).
         SendDroneAffirmative(from, sender, drone);
@@ -2133,16 +2131,12 @@ public sealed partial class Server
     /// capability bit is refused (not every rock is buildable, per the 0x08
     /// <c>c_aabmBuildable</c> bit this port already decodes).</item>
     /// </list>
-    /// A legal command starts the timed construction immediately via
-    /// <see cref="Model.Sector.StartBuildingEffect"/> — this port's established
-    /// builder behavior (P163-165 "no travel-before-build gate", P285): unlike
-    /// native, it does not fly the ship to and physically ENTER the asteroid
-    /// first, because the P168 collision-avoidance would deflect a ship trying
-    /// to occupy the rock's volume and native's enter is superseded by the
-    /// building-effect's collision exemption (<c>buildingeffectigc.h:256-258</c>)
-    /// which this port does not implement. The legality gate (the task's core)
-    /// is real and enforced; the approach is abstracted exactly as the NPC
-    /// autonomous Builder and P285 already abstract it.
+    /// A legal NPC command retains the build target until the constructor
+    /// arrives and stops; then it registers the existing timed construction
+    /// effect (native build order arrival, shipIGC.cpp:2810-2827). The ordered
+    /// rock is exempt from approach/drilling impact damage, alongside the
+    /// mining target exemption. Player Builder hulls keep the established
+    /// immediate <see cref="Model.Sector.StartBuildingEffect"/> path.
     /// </summary>
     private void HandlePlayerBuildOrder(ConnectionId from, LiveShip live, Ship target, OrderChange req)
     {
@@ -2283,10 +2277,14 @@ public sealed partial class Server
             return false;
         }
 
-        // Legal: start the timed construction immediately — this port's
-        // established builder behavior (P163-165 "no travel-before-build gate").
-        sector.StartBuildingEffect(target, rock, st, sector.LastUpdate);
-        Console.WriteLine($"[build] {from} ship {target.Id} (Builder hull '{target.HullType.Name}') issued BUILD of '{st.Name}' (type {st.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' → construction started (P163-165 flow, no travel-before-build gate)");
+        // P652: an NPC keeps the accepted build target while traveling, so
+        // damage can trigger the native build-vs-repair distance exception
+        // (shipIGC.cpp:1752-1777). Drilling starts on arrival (2810-2827).
+        if (target.IsNpc)
+            target.SetBuilderBuild(rock);
+        else
+            sector.StartBuildingEffect(target, rock, st, sector.LastUpdate);
+        Console.WriteLine($"[build] {from} ship {target.Id} issued BUILD of '{st.Name}' at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — {(target.IsNpc ? "traveling before drilling" : "construction started")}");
         return true;
     }
 

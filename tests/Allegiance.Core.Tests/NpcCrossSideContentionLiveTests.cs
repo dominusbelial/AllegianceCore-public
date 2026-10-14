@@ -11,49 +11,9 @@ using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
-/// <summary>
-/// P167 — cross-side asteroid-contention lockout. When an ENEMY-side ship (a
-/// different <see cref="Ship.SideId"/> — this port's no-alliance convention for
-/// "enemy") also wants the <em>identical</em> asteroid, the port's per-tick
-/// <see cref="Ship.ArbitrateAsteroidContention"/> (native
-/// <c>CshipIGC::PlotShipMove</c> "miners mine" block, <c>Igc/shipIGC.cpp:
-/// 2088-2204</c>) skips the P159 same-side least-ore/redirect-to-sell
-/// resolution entirely and evicts <em>every</em> contender on <em>both</em>
-/// sides — clearing each one's <see cref="Ship.MiningAsteroidTarget"/> with
-/// <b>no</b> station redirect (the native <c>nEnemy &gt; 0</c> branch,
-/// <c>shipIGC.cpp:2187-2203</c>), so <b>nobody wins</b> and no one is sent to
-/// sell.
-///
-/// Legs (harness mirrors P159/NpcAsteroidContentionLiveTests: booted in-process
-/// server + one seated bot, no Windows VM; mission advanced by the server's own
-/// deterministic <see cref="Srv.TickSim"/>, one 0.05 s chunk each):
-///   • Cross-side eviction, no redirect — two same-side idle NPCs and one
-///     enemy-side idle NPC, all three forced onto the identical rock (the same
-///     "force it via test setup" pattern P159 used). The FIRST arbitration sees
-///     all three genuinely contending at once, so the cross-side branch fires
-///     and evicts all three: every <see cref="Ship.MiningAsteroidTarget"/>
-///     cleared, every <see cref="Ship.PlanTarget"/> still <c>null</c> (no
-///     redirect-to-sell, distinguishing it from the same-side loser path, which
-///     would set <c>PlanTarget</c> to an unload station). Without P167 this
-///     assertion fails — P159's same-side logic would let the least-ore ship
-///     keep the rock and redirect the other same-side ship.
-///   • Durable lockout — over a long pump window, <b>none</b> of the three ever
-///     actually mines (no ship's <see cref="Ship.Ore"/> rises), and the two
-///     cross-side-denied ships (the would-be same-side least-ore winner and the
-///     enemy) are never redirected to sell: the lockout overrides P159's
-///     least-ore grant entirely.
-///
-/// Honest note (documented, not hidden): this port's eager per-tick
-/// <see cref="Ship.DecideMiningOrSelling"/> re-picks a mining target for an idle
-/// ship every tick, so a same-side ship processed before the enemy re-acquires
-/// its rock may momentarily see no enemy contender and fall back to P159's
-/// same-side path (redirecting the richer one to a friendly unload). That is the
-/// port's inherited per-tick desync — a pre-existing consequence of the P159
-/// design the task explicitly excludes from changing, not the cross-side branch
-/// itself (which never redirects). The legs below therefore assert the
-/// cross-side lockout on the simultaneous-contention eviction and the durable
-/// no-mining outcome that holds regardless of that artifact.
-/// </summary>
+/// <summary>Live complement of P652's socket-free enemy-miner tests:
+/// physically ready opposing miners retain their orders, clear drilling state,
+/// and award no ore (Igc/shipIGC.cpp:2189-2203).</summary>
 [Collection("LiveNetwork")]
 public sealed class NpcCrossSideContentionLiveTests
 {
@@ -167,7 +127,7 @@ public sealed class NpcCrossSideContentionLiveTests
     /// least-ore winner is denied, overriding P159's grant entirely.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Enemy_contender_evicts_everyone_no_redirect_and_none_mines()
+    public void Enemy_ready_contender_blocks_everyone_without_clearing_orders_or_redirecting()
     {
         Require.Artwork();
         var (srv, mission, sector, rock, unload, sideA, sideB) = BootFixture(out var bot);
@@ -190,6 +150,11 @@ public sealed class NpcCrossSideContentionLiveTests
             var poor = srv.SpawnNpcShip(mission, sector, sideB, spawnPoor);
             var rich = srv.SpawnNpcShip(mission, sector, sideB, spawnRich);
             var enemy = srv.SpawnNpcShip(mission, sector, sideA, spawnEnemy);   // ENEMY side
+            // P652: park all three inside their native readiness envelope.
+            poor.Position = rp + new Vector3(rock.Radius + 0.5f * poor.HullType.Length + 20f, 0, 0);
+            rich.Position = rp - new Vector3(rock.Radius + 0.5f * rich.HullType.Length + 20f, 0, 0);
+            enemy.Position = rp + new Vector3(0, rock.Radius + 0.5f * enemy.HullType.Length + 20f, 0);
+            poor.Velocity = rich.Velocity = enemy.Velocity = Vector3.Zero;
             poor.Ore = 10f;   // would-be same-side LEAST-ore → P159 winner … absent the enemy
             rich.Ore = 40f;
             enemy.Ore = 25f;
@@ -208,33 +173,19 @@ public sealed class NpcCrossSideContentionLiveTests
             rich.MiningAsteroidTarget = rock;
             enemy.MiningAsteroidTarget = rock;
 
-            // ── Stage 1: the simultaneous-contention eviction ────────────────
-            // With all three genuinely contending at once, the FIRST arbitration
-            // hits the cross-side branch (an enemy is present) and evicts EVERY
-            // contender on both sides with NO redirect. Sampling immediately
-            // after the eviction: all three MiningAsteroidTarget cleared, all
-            // three PlanTarget still null. (Without P167 this fails: P159's
-            // same-side logic would let the least-ore ship keep the rock and
-            // redirect the other same-side ship to sell.)
+            // The native cross-side branch clears mining/wants state, keeping
+            // the mine command intact (shipIGC.cpp:2189-2203).
             srv.TickSim();
             foreach (var s in new[] { poor, rich, enemy })
             {
-                Assert.Null(s.MiningAsteroidTarget);
+                Assert.Same(rock, s.MiningAsteroidTarget);
+                Assert.Null(s.MiningAsteroid);
                 Assert.False(s.PlanTarget.HasValue,
                     $"cross-side eviction must not redirect {s.Id} to a station (same-side loser path would)");
             }
-            Console.WriteLine("P167-EVICT: first simultaneous cross-side arbitration evicted poor/rich/enemy with no station redirect");
+            Console.WriteLine("P652-LOCKOUT: ready enemies retain orders with no mining or station redirect");
 
-            // ── Stage 2: durable lockout over a long window ──────────────────
-            // None of the three ever actually mines the CONTESTED ROCK (no ore
-            // accrues) — the cross-side lockout overrides P159's least-ore grant
-            // entirely: even the would-be same-side WINNER (poor) is denied the
-            // rock. P167 still never redirects the ENEMY to sell. The same-side
-            // "winner" poor may, under P386, later be P159-redirected to SELL in a
-            // no-enemy window once a displaced miner re-enters the decision cycle
-            // (native-faithful re-contention) — that is a corrected behavior, not
-            // a P167 regression; P167's own no-redirect-at-first-eviction is still
-            // asserted in Stage 1 above.
+            // Ready enemies keep the rock locked out across subsequent ticks.
             float sPoor = poor.Ore, sRich = rich.Ore, sEnemy = enemy.Ore;
             bool poorMined = false, richMined = false, enemyMined = false;
             bool enemyRedirected = false;

@@ -169,21 +169,15 @@ public sealed class DirectNpcBuildOrderLiveTests
 
     /// <summary>Spawn a real Builder drone on the COMMANDER'S own side (so
     /// FindSameSideShip resolves it as the commandee), with a configured station
-    /// type, sitting near the compatible rock in the same sector. The drone is
-    /// RESERVED (<see cref="Ship.IsBuilding"/>=true) on purpose: that suppresses
-    /// the P165 autonomous Builder decision (<c>!IsBuilding</c> gate,
-    /// Ship.cs:6680), which would otherwise grab a compatible rock on the very
-    /// first idle tick and build it before the commander's wire order lands —
-    /// isolating THIS test's direct-command path from the (separate, in-scope-out)
-    /// autonomous Builder. The commander's explicit order is the thing under
-    /// test; the drone committing to it is what makes it non-idle in real play
-    /// anyway (StartBuildingEffect sets the same flag).</summary>
+    /// type, sitting near the compatible rock in the same sector.
+    /// WaitsForBuildOrder suppresses autonomous build selection while the
+    /// commander's order is in flight; IsBuilding reflects actual drilling.</summary>
     private static Ship SpawnBuilderDrone(Srv srv, Mission mission, Sector sector, short side, short builderDroneId, DataStationTypeIGC stationType, Vector3 pos)
     {
         var drone = srv.SpawnNpcShip(mission, sector, side, pos, builderDroneId);
         Assert.Equal(Ship.PilotTypeBuilder, drone.PilotType);   // gate premise: really a Builder drone
         drone.BuilderStationType = stationType;                  // what it constructs (P285 stand-in for the stocked station type)
-        drone.IsBuilding = true;                                 // reserved for the commander — no autonomous re-decide
+        drone.WaitsForBuildOrder = true;                         // native stand-by until the commander orders a build
         return drone;
     }
 
@@ -207,7 +201,7 @@ public sealed class DirectNpcBuildOrderLiveTests
             var rp = RockPos(rock);
             var drone = SpawnBuilderDrone(srv, mission, sector, side, builderDroneId, stationType, new Vector3(rp.X + 300f, rp.Y, rp.Z));
             Assert.NotEqual(commander.Id, drone.Id);   // a different ship — commanding SOMEONE ELSE
-            Assert.True(drone.IsBuilding);             // reserved (see SpawnBuilderDrone) — the commander's order is the thing under test
+            Assert.False(drone.IsBuilding);            // waiting for the commander's order, not drilling yet
             Assert.Empty(sector.BuildingEffects);
 
             // ── The commander sends the direct Build order over the real wire,

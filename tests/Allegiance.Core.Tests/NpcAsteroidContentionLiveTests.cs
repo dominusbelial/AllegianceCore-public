@@ -191,6 +191,10 @@ public sealed class NpcAsteroidContentionLiveTests
                 "both NPCs must spawn beyond docking range of the unload station");
             var poor = srv.SpawnNpcShip(mission, sector, npcSide, spawnPoor);
             var rich = srv.SpawnNpcShip(mission, sector, npcSide, spawnRich);
+            // P652: only physically ready miners arbitrate; traveling orders do not contend.
+            poor.Position = rp + new Vector3(rock.Radius + 0.5f * poor.HullType.Length + 20f, 0, 0);
+            rich.Position = rp - new Vector3(rock.Radius + 0.5f * rich.HullType.Length + 20f, 0, 0);
+            poor.Velocity = rich.Velocity = Vector3.Zero;
             poor.Ore = 10f;   // lower-ore → the WINNER (least ore keeps the rock)
             rich.Ore = 40f;   // higher-ore → the LOSER (displaced to sell)
             Assert.True(poor.IsNpc && rich.IsNpc);
@@ -202,9 +206,8 @@ public sealed class NpcAsteroidContentionLiveTests
             Assert.Same(rock, poor.FindNearestMinableAsteroidAnyCluster());
             Assert.Same(rock, rich.FindNearestMinableAsteroidAnyCluster());
 
-            // Arbitration resolves in the same tick the loser decides (it is
-            // per-tick, shipIGC.cpp:2088-2204), so we pump straight to the settled
-            // state rather than expecting a stable both-holding-the-rock window.
+            // P652 arbitration runs after every miner has established readiness.
+            // Both parked contenders are ready on the same tick.
             Pump(srv,
                 () => poor.MiningAsteroidTarget is not null
                    && rich.MiningAsteroidTarget is null
@@ -268,6 +271,10 @@ public sealed class NpcAsteroidContentionLiveTests
             // Spawn order == _models insertion order == GetShipUpdateCandidates order.
             var first = srv.SpawnNpcShip(mission, sector, npcSide, spawnFirst);
             var second = srv.SpawnNpcShip(mission, sector, npcSide, spawnSecond);
+            // P652: only physically ready miners arbitrate; traveling orders do not contend.
+            first.Position = rp + new Vector3(rock.Radius + 0.5f * first.HullType.Length + 20f, 0, 0);
+            second.Position = rp - new Vector3(rock.Radius + 0.5f * second.HullType.Length + 20f, 0, 0);
+            first.Velocity = second.Velocity = Vector3.Zero;
             first.Ore = 25f; second.Ore = 25f;   // EQUAL ore → tie must be broken by encounter order
             Assert.True(first.IsNpc && second.IsNpc);
             Assert.Same(rock, first.FindNearestMinableAsteroidAnyCluster());
