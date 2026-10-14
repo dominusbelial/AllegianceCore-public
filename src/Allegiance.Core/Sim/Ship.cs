@@ -459,7 +459,11 @@ public sealed class Ship : Model, IShipIgc
     /// to a non-dead state (see <c>Server.EjectSurvivor</c>); also the natural
     /// unit-test seam for <see cref="Dead"/>.
     /// </summary>
-    public void SetFraction(float value) => _fraction = value;
+    public void SetFraction(float value)
+    {
+        _fraction = value;
+        if (value > _fractionLastOrder) _fractionLastOrder = value; // shipIGC.h:316-317
+    }
 
     /// <summary>P494 — set the mounted shield's charge fraction (native
     /// <c>pshield-&gt;SetFraction(1.0f)</c>, FedSrv.CPP:12952-12954). The public
@@ -1467,12 +1471,32 @@ public sealed class Ship : Model, IShipIgc
     /// <c>shipIGC.h:1559-1597</c> is overkill here; see NPC_TAKE_COVER_P151.md).
     /// Same <see cref="DataStationIGC"/> typing rationale as
     /// <see cref="AcceptedTarget"/>.</summary>
-    public DataStationIGC? PlanTarget { get; set; }
+    private DataStationIGC? _planTarget;
+    public DataStationIGC? PlanTarget
+    {
+        get => _planTarget;
+        set
+        {
+            if (EqualityComparer<DataStationIGC?>.Default.Equals(_planTarget, value)) return;
+            _planTarget = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>The command id paired with <see cref="PlanTarget"/>
     /// (<c>m_commandIDs[c_cmdPlan]</c>). Defaults to <see cref="OrderChange.CidNone"/>
     /// (<c>c_cidNone = -1</c>) — an unset slot carries no command id.</summary>
-    public short PlanCommandId { get; set; } = OrderChange.CidNone;
+    private short _planCommandId = OrderChange.CidNone;
+    public short PlanCommandId
+    {
+        get => _planCommandId;
+        set
+        {
+            if (EqualityComparer<short>.Default.Equals(_planCommandId, value)) return;
+            _planCommandId = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>
     /// P403 — the player-issued "goto" order, the port's realization of native's
@@ -1500,7 +1524,17 @@ public sealed class Ship : Model, IShipIgc
     /// <see cref="GotoWaypoint"/> as "not idle", so an NPC under a goto does not
     /// wander off to mine/sell/build while commanded. <c>null</c> = no active goto.</para>
     /// </summary>
-    public GotoOrder? GotoWaypoint { get; set; }
+    private GotoOrder? _gotoWaypoint;
+    public GotoOrder? GotoWaypoint
+    {
+        get => _gotoWaypoint;
+        set
+        {
+            if (EqualityComparer<GotoOrder?>.Default.Equals(_gotoWaypoint, value)) return;
+            _gotoWaypoint = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>
     /// P156 — the asteroid this <see cref="IsNpc"/> ship is currently heading
@@ -1516,13 +1550,21 @@ public sealed class Ship : Model, IShipIgc
     /// decision cycle (setting one clears the other, matching native's single
     /// pointer), and <see cref="ApplyNpcAutopilot"/> steers toward whichever is
     /// set (station wins defensively if both ever held). <c>null</c> = no
-    /// current mining objective. This field is <b>read-only</b> to the
-    /// economics — <see cref="Model.Sector.ResolveMining"/> accumulates
-    /// <see cref="Ore"/> purely geometrically when the ship parks beside a
-    /// <c>CanMineHe3</c> rock and the sell path on dock converts it; this slot
-    /// only records the decision to go there.
+    /// current mining objective. P652 makes this the NPC accrual target too;
+    /// player mining retains the port's geometric arrival trigger. Both
+    /// participate in <see cref="Model.Sector.ResolveMining"/> arbitration.
     /// </summary>
-    public Asteroid? MiningAsteroidTarget { get; set; }
+    private Asteroid? _miningAsteroidTarget;
+    public Asteroid? MiningAsteroidTarget
+    {
+        get => _miningAsteroidTarget;
+        set
+        {
+            if (EqualityComparer<Asteroid?>.Default.Equals(_miningAsteroidTarget, value)) return;
+            _miningAsteroidTarget = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>
     /// P254 — the specific <see cref="Asteroid"/> this ship is <em>currently</em>
@@ -1556,7 +1598,17 @@ public sealed class Ship : Model, IShipIgc
     /// <see cref="ApplyNpcAutopilot"/> steers toward it exactly like a
     /// <see cref="MiningAsteroidTarget"/>. <c>null</c> = no current layer
     /// objective.</summary>
-    public Asteroid? LayerAsteroidTarget { get; set; }
+    private Asteroid? _layerAsteroidTarget;
+    public Asteroid? LayerAsteroidTarget
+    {
+        get => _layerAsteroidTarget;
+        set
+        {
+            if (EqualityComparer<Asteroid?>.Default.Equals(_layerAsteroidTarget, value)) return;
+            _layerAsteroidTarget = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>
     /// P459 — the <see cref="PilotTypeLayer"/> drone's <b>laid expendable</b>,
@@ -1591,7 +1643,17 @@ public sealed class Ship : Model, IShipIgc
     /// pursuit — matching native's same-sector-only <c>FindTarget</c>, which
     /// passes no <c>c_ttAnyCluster</c>, <c>shipIGC.h:2441-2443</c>).
     /// <c>null</c> = no current combat objective.</summary>
-    public Ship? AttackTarget { get; set; }
+    private Ship? _attackTarget;
+    public Ship? AttackTarget
+    {
+        get => _attackTarget;
+        set
+        {
+            if (_attackTarget == value) return;
+            _attackTarget = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>
     /// P166 — the ally ship (the "charge") this <see cref="PilotTypeWingman"/>
@@ -1612,7 +1674,17 @@ public sealed class Ship : Model, IShipIgc
     /// or fall back to escorting; when <see cref="AttackTarget"/> is null the
     /// Wingman escorts — <see cref="ApplyNpcAutopilot"/> steers toward this
     /// slot's live position. <c>null</c> = not assigned to protect anyone.</summary>
-    public Ship? DefendTarget { get; set; }
+    private Ship? _defendTarget;
+    public Ship? DefendTarget
+    {
+        get => _defendTarget;
+        set
+        {
+            if (_defendTarget == value) return;
+            _defendTarget = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>
     /// P590 — the friendly <c>c_habmLifepod</c> pod this rescue-capable ship is
@@ -1631,7 +1703,17 @@ public sealed class Ship : Model, IShipIgc
     /// server-autopiloted; a client-driven peer that receives the pickup order
     /// is marked here too, but its diversion is the controller's (documented
     /// in the P590 report).</summary>
-    public Ship? PickupTarget { get; set; }
+    private Ship? _pickupTarget;
+    public Ship? PickupTarget
+    {
+        get => _pickupTarget;
+        set
+        {
+            if (_pickupTarget == value) return;
+            _pickupTarget = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>
     /// P591 — the target where this <see cref="PilotTypeLayer"/> drone has been
@@ -1650,7 +1732,17 @@ public sealed class Ship : Model, IShipIgc
     /// <c>null</c> = no lay order (the Layer falls back to its idle default
     /// order). Cleared by <see cref="SetGoto"/> / <see cref="SetLayerBuild"/>
     /// for mutual exclusion.</summary>
-    public LayerBuildGoal? LayerBuildOrder { get; set; }
+    private LayerBuildGoal? _layerBuildOrder;
+    public LayerBuildGoal? LayerBuildOrder
+    {
+        get => _layerBuildOrder;
+        set
+        {
+            if (EqualityComparer<LayerBuildGoal?>.Default.Equals(_layerBuildOrder, value)) return;
+            _layerBuildOrder = value;
+            DronePlanChanged();
+        }
+    }
 
     /// <summary>P591 — the goal slot for a commanded Layer's build/lay target:
     /// the <see cref="ClusterId"/> the lay point lives in, the world-space
@@ -1764,7 +1856,9 @@ public sealed class Ship : Model, IShipIgc
         float bestDistanceSquared = float.MaxValue;
         foreach (var station in sector.Stations)
         {
-            if (station.SideId != sideId) continue;                                                      // c_ttFriendly (common.cpp:269-273)
+            if (station.SideId != sideId &&
+                (!IsFriendlySide(station.SideId) || (abilityBit & (DataStationTypeIGC.SabmUnload |
+                    DataStationTypeIGC.SabmRestart | DataStationTypeIGC.SabmRipcord)) != 0)) continue; // common.cpp:269-321
             if (!core.StationTypes.TryGetValue(station.StationTypeId, out var type)) continue;           // no type → no capability to test
             if (!type.HasCapability(abilityBit)) continue;                                               // FindableModel OT_station (common.cpp:321)
 
@@ -4353,7 +4447,7 @@ public sealed class Ship : Model, IShipIgc
 
         // 2. Hull → 1.0, gated on the station's c_sabmRepair capability.
         if (stationType.HasCapability(DataStationTypeIGC.SabmRepair))
-            _fraction = 1.0f;
+            SetFraction(1.0f);
 
         // 3. Shield → 1.0, unconditional if a shield is mounted.
         if (_parts.Any(p => p.EquipmentType == EquipmentType.Shield))
@@ -4960,6 +5054,7 @@ public sealed class Ship : Model, IShipIgc
             }
             // Mutual exclusion (native single c_cmdPlan): exactly one active objective.
             PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+            BuilderAsteroidTarget = null;
             MiningAsteroidTarget = null; LayerAsteroidTarget = null;
             AttackTarget = null; DefendTarget = null; LayerBuildOrder = null;
             // Re-arm cross-cluster nav + ripcord caches for the fresh target.
@@ -4994,6 +5089,7 @@ public sealed class Ship : Model, IShipIgc
             // Mutual exclusion (native single c_cmdPlan): exactly one objective.
             GotoWaypoint = null;
             PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+            BuilderAsteroidTarget = null;
             MiningAsteroidTarget = null; LayerAsteroidTarget = null;
             AttackTarget = null; DefendTarget = null; PickupTarget = null;
             LayerBuildOrder = g;
@@ -5009,8 +5105,21 @@ public sealed class Ship : Model, IShipIgc
 
     private void ApplyNpcAutopilot(double now)
     {
+        if (StationId is not null) return;
         if (!IsNpc && GotoWaypoint is null) return;          // real player Controls are wire-only (P155) — UNLESS a player-issued goto is active (P403)
         if (Sector is not { } sector) return;
+
+        // P652b: an arrived miner holds its stopped mining position before
+        // travel avoidance. Native mining controls precede generic movement
+        // (shipIGC.cpp:2249-2260). Letting Dodge accelerate a ready contender
+        // near a station drops it from arbitration and lets an enemy collect
+        // ore from a rock that is still contested. Departure/retreat plans
+        // fail readiness and continue through the ordinary travel path.
+        if (MiningAsteroidTarget is { } mine && IsReadyToMine(mine))
+        {
+            SteerToward(Position, AutopilotArrivalRadius, AutopilotBrakeStartDistance);
+            return;
+        }
 
         // P168 — Stage 1 universal collision avoidance (native Dodge), a
         // PRE-EMPTING check that runs ahead of every goal-resolution branch for
@@ -5052,7 +5161,16 @@ public sealed class Ship : Model, IShipIgc
         // wingman-attacks nor takes cover meanwhile (those decision gates are
         // widened elsewhere to treat an active GotoWaypoint as "not idle"). Feeds
         // the SAME SteerToward/CrossClusterWarpGoal machinery as every other goal.
-        if (GotoWaypoint is { } gw)
+        if (IsRunningAway && _retreatRepairShip is { Dead: false, Sector: { } repairSector } repairShip)
+        {
+            if (sector == repairSector) goal = repairShip.Position;
+            else if (!TryRipcordOrDefer(repairSector.Id, now, $"repair carrier {repairShip.Id}"))
+            {
+                goal = CrossClusterWarpGoal(repairSector.Id, $"repair carrier {repairShip.Id}");
+                goalIsWarp = goal is not null;
+            }
+        }
+        else if (GotoWaypoint is { } gw)
         {
             if (sector.Id == gw.ClusterId)
             {
@@ -5127,12 +5245,18 @@ public sealed class Ship : Model, IShipIgc
                 goalIsWarp = goal is not null;
             }
         }
-        else if (MiningAsteroidTarget is { } rock && rock.Data.Position is { Length: 3 } rp)
+        else if ((MiningAsteroidTarget ?? BuilderAsteroidTarget) is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
             if (sector.Id == rock.Data.ClusterId)
             {
                 goal = new Vector3(rp[0], rp[1], rp[2]);      // same-cluster — direct flight
                 goalIsWarp = false;
+                // Native mines only while stopped inside radius sum +30
+                // (shipIGC.cpp:1957-1964). Hold just inside that envelope;
+                // steering toward the center pulled a working miner back out
+                // of its stopped state and bypassed readiness intermittently.
+                arrivalRadius = rock.Radius + 0.5f * HullType.Length + 25f;
+                brakeStartDistance = Math.Max(AutopilotBrakeStartDistance, arrivalRadius + 100f);
             }
             else if (!TryRipcordOrDefer(rock.Data.ClusterId, now, $"asteroid {rock.Data.AsteroidId} '{rock.Data.Name}'"))
             {
@@ -5449,7 +5573,7 @@ public sealed class Ship : Model, IShipIgc
         bool ignoreShip(Ship s) => ReferenceEquals(s, this)
             || ReferenceEquals(s, AttackTarget) || ReferenceEquals(s, DefendTarget)
             || ReferenceEquals(s, PickupTarget);   // P590 — don't dodge the pod being approached
-        bool ignoreAsteroid(Asteroid a) => ReferenceEquals(a, MiningAsteroidTarget)
+        bool ignoreAsteroid(Asteroid a) => ReferenceEquals(a, BuilderAsteroidTarget) || ReferenceEquals(a, MiningAsteroidTarget)
             || ReferenceEquals(a, LayerAsteroidTarget)
             || ReferenceEquals(a, _departingMineAsteroid);   // P528b: the rock a full miner is leaving (until departed)
         // P170 — a station that is the ship's OWN docking/approach goal must not
@@ -6244,11 +6368,8 @@ public sealed class Ship : Model, IShipIgc
     /// heading to sell" as the single <c>c_cmdPlan</c> pointer, so whenever this
     /// cycle sets one target it clears the other (<see cref="MiningAsteroidTarget"/>
     /// ↔ <see cref="PlanTarget"/>): an NPC is never heading to both at once.</para>
-    /// <para><b>Applies to every <see cref="IsNpc"/> ship.</b> This port has no
-    /// distinct pilot-type dispatch (<see cref="IsNpc"/> is the single
-    /// archetype marker, P148), so the "miner" decision cycle is simply what
-    /// every NPC in this port does when idle — the established simplification,
-    /// not a new one this task invents.</para>
+    /// <para>Only Miner pilots run this cycle. P652 also applies the native
+    /// default hide decision before selecting a new mining trip.</para>
     /// <para><b>Stale mining target.</b> A <see cref="MiningAsteroidTarget"/> is
     /// obsolete once the bag fills; the caller clears it when full so this cycle
     /// can switch to the sell leg (otherwise the ship would hover at the rock
@@ -6256,6 +6377,13 @@ public sealed class Ship : Model, IShipIgc
     /// </remarks>
     private void DecideMiningOrSelling()
     {
+        _runawayCheckInterval = 5f; // PickDefaultOrder, shipIGC.h:2216
+        if (TryTakeCover())
+        {
+            _runawayCheckInterval = 90f; // shipIGC.h:2243
+            return;
+        }
+
         if (Ore < EffectiveMineCapacity())
         {
             if (FindNearestMinableAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
@@ -6326,6 +6454,8 @@ public sealed class Ship : Model, IShipIgc
     /// </remarks>
     private void DecideLayerDefaultOrder()
     {
+        _runawayCheckInterval = 5f; // PickDefaultOrder, shipIGC.h:2216
+
         if (FindLeastTargetedAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
             LayerAsteroidTarget = rock;
@@ -6381,6 +6511,8 @@ public sealed class Ship : Model, IShipIgc
     /// </remarks>
     private void DecideWingmanDefaultOrder()
     {
+        _runawayCheckInterval = 5f; // PickDefaultOrder, shipIGC.h:2216
+
         if (FindNearestEnemyShip() is { } enemy)
         {
             AttackTarget = enemy;
@@ -6447,6 +6579,8 @@ public sealed class Ship : Model, IShipIgc
     /// </remarks>
     private void DecideBuilderDefaultOrder()
     {
+        _runawayCheckInterval = 5f; // PickDefaultOrder, shipIGC.h:2216
+
         if (BuilderStationType is not { } stationType)
         {
             // No configured station type: nothing to build — stand by (do not
@@ -6478,9 +6612,10 @@ public sealed class Ship : Model, IShipIgc
 
         if (FindLeastTargetedAsteroidAnyCluster(stationType.AabmBuild) is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
-            sector.StartBuildingEffect(this, rock, stationType, sector.LastUpdate);
+            BuilderAsteroidTarget = rock; // fly before drilling; shipIGC.cpp:2810-2827
+            TryStartBuilderBuild(sector.LastUpdate);
             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
-            ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) → starting build of '{stationType.Name}' (type {stationType.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
+            ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) → traveling to build '{stationType.Name}' (type {stationType.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
         }
         else
         {
@@ -6723,171 +6858,302 @@ public sealed class Ship : Model, IShipIgc
         }
     }
 
-    /// <summary>
-    /// P159 — real-time fair-share arbitration among same-side miners targeting
-    /// the exact same asteroid, the port of the "Special case up front: miners
-    /// mine" block of native <c>CshipIGC::PlotShipMove</c>
-    /// (<c>Igc/shipIGC.cpp:2088-2204</c>, which runs every tick a miner holds
-    /// <c>wantsToMineMaskIGC</c>). For a ship with a non-null
-    /// <see cref="MiningAsteroidTarget"/>, it surveys every other undocked NPC
-    /// ship in the same sector sharing the <em>identical</em>
-    /// <see cref="MiningAsteroidTarget"/> reference; <b>same-side</b>
-    /// contenders (<see cref="SideId"/> match) are arbitrated by least
-    /// <see cref="Ore"/>, while a <b>cross-side</b> contender (a different
-    /// <see cref="SideId"/> — an enemy, this port's no-alliance convention)
-    /// triggers the P167 lockout that evicts <em>every</em> contender on both
-    /// sides. For the same-side case: when more than one exists, the contender
-    /// currently carrying the least <see cref="Ore"/> keeps the rock and every
-    /// other contender has its <see cref="MiningAsteroidTarget"/> cleared and
-    /// is redirected to the nearest friendly
-    /// <see cref="DataStationTypeIGC.SabmUnload"/> station — the exact same
-    /// "go sell" redirect the full-bag branch of
-    /// <see cref="DecideMiningOrSelling"/> uses — to dispose of whatever it
-    /// already holds.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Real-time arbitration, not avoidance-at-selection-time.</b>
-    /// Matching native, two same-side NPCs may still both initially pick the
-    /// same rock (<see cref="DecideMiningOrSelling"/> has no search-time
-    /// collision avoidance either); the fairness is enforced continuously
-    /// afterward — whichever contender currently has the least ore keeps
-    /// mining, every other is peeled off to go sell. Because it runs <b>every
-    /// tick</b> a ship holds a target (see the call site in
-    /// <see cref="OnUpdate"/>), a later-arriving poorer contender is honoured
-    /// as soon as its presence is observable, not only at the instant the
-    /// target was picked.</para>
-    /// <para><b>Winner grant is implicit.</b> <see cref="Model.Sector.ResolveMining"/>
-    /// accrues ore purely geometrically for any ship parked beside a
-    /// <c>CanMineHe3</c> rock, so "keeping the right to mine" is simply the
-    /// loser being removed from the rock — the native's explicit
-    /// <c>pshipMin-&gt;SetStateBits(miningMaskIGC|wantsToMineMaskIGC,
-    /// miningMaskIGC)</c> (<c>shipIGC.cpp:2185</c>) has no separate mask to set
-    /// here, so the winner needs no write beyond retaining its
-    /// <see cref="MiningAsteroidTarget"/>.</para>
-    /// <para><b>Redirect-to-sell, not to a second rock.</b> A displaced
-    /// contender's <see cref="MiningAsteroidTarget"/> is cleared and it is sent
-    /// toward the nearest friendly unload station — the native's
-    /// <c>SetStateBits(miningMaskIGC|wantsToMineMaskIGC,0)</c> then
-    /// <c>FindTarget(..., c_sabmUnload|c_sabmLand)</c> +
-    /// <c>SetCommand(c_cmdPlan, pmodel, c_cidGoto)</c>
-    /// (<c>shipIGC.cpp:2156-2168</c>). It does <b>not</b> look for a different
-    /// asteroid. If no unload-capable station is reachable it stands by (the
-    /// native <c>SetCommand(c_cmdAccepted, NULL, c_cidNone)</c> else-branch,
-    /// <c>shipIGC.cpp:2174-2178</c>), logged and non-crashing exactly like the
-    /// stand-by in <see cref="DecideMiningOrSelling"/>.</para>
-    /// <para><b>Tie-break.</b> "Least ore" uses the native's strict
-    /// <c>fOre &lt; fOreMin</c> replace (<c>shipIGC.cpp:2121</c>): on an ore
-    /// tie the <em>first</em> contender encountered in
-    /// <see cref="Model.Sector.GetShipUpdateCandidates"/> order (stable
-    /// <c>_models</c> insertion order) keeps the rock. Matched here; no reason
-    /// to deviate.</para>
-    /// <para><b>Cross-side lockout (P167).</b> Native's <c>nEnemy &gt; 0</c> branch
-    /// (<c>shipIGC.cpp:2187-2203</c>) is now implemented: when a ship with a
-    /// different <see cref="SideId"/> — an "enemy", this port's established
-    /// no-alliance convention — also wants the exact same rock, this method
-    /// skips the same-side least-ore/redirect-to-sell resolution entirely and
-    /// evicts <em>every</em> contender on <em>both</em> sides: each has its
-    /// <see cref="MiningAsteroidTarget"/> cleared with <b>no</b> station
-    /// redirect (unlike the same-side loser path, which redirects to sell).
-    /// Native's eviction loop has no side filter and never calls the unload
-    /// redirect; evicted ships simply stand idle and their own next tick's
-    /// <see cref="DecideMiningOrSelling"/> re-decides from the cleared state,
-    /// possibly re-picking the same or a different rock if nothing else
-    /// changed (the honest, faithful outcome). P159's own report named this
-    /// branch and deferred it; P167 closes that gap. Real (non-NPC) player
-    /// ships are likewise never arbitrated — the call site is gated on
-    /// <see cref="IsNpc"/> — matching native's <c>c_ptMiner</c> +
-    /// <c>SetAutopilot(true)</c> gate (<c>shipIGC.cpp:2061</c>, 2088).</para>
-    /// </remarks>
-    private void ArbitrateAsteroidContention()
+    // P652 — SetCommand(c_cmdPlan) damage baseline and runaway clock
+    // (Igc/shipIGC.h:748-764); initial interval: shipIGC.cpp:186.
+    private float _fractionLastOrder = 1f;
+    private double _timeRanAway;
+    private float _runawayCheckInterval = 31f;
+    private bool _changingRetreatPlan;
+    private bool _droneClockInitialized;
+    public bool IsRunningAway { get; private set; }
+
+    private Asteroid? _builderAsteroidTarget;
+    /// <summary>The accepted constructor build target while traveling, before
+    /// drilling begins (shipIGC.cpp:1756-1777,2810-2827).</summary>
+    public Asteroid? BuilderAsteroidTarget
     {
-        if (Sector is not { } sector) return;
-        if (MiningAsteroidTarget is not { } rock) return;
-        if (SideId is not { } sideId) return;
-
-        // Physically-present undocked ships in this sector. Reused deliberately
-        // rather than adding a new accessor: GetShipUpdateCandidates() is the
-        // faithful port of native's pcluster->GetShips() membership (undocked,
-        // non-boarded, non-dead — Sector.cs:290-302), which is exactly the set
-        // native's own arbitration loop iterates (shipIGC.cpp:2106). The name
-        // is network-flavoured but the selection is cluster-physical membership,
-        // a legitimate dual-purpose read, so no parallel _models walk is added.
-        var ships = sector.GetShipUpdateCandidates();
-
-        // Count same-side contenders sharing the EXACT asteroid reference (this
-        // port's MiningAsteroidTarget is an Asteroid reference — Ship.cs:666 —
-        // so "the same rock" means the identical object, mirroring native's
-        // pointer comparison m_commandTargets[c_cmdPlan] equality,
-        // shipIGC.cpp:2113). Track the contender with the least ore (strict <,
-        // shipIGC.cpp:2121: first-found wins a tie). THIS ship is counted like
-        // any other, so if it is the richest contender it redirects itself.
-        Ship? pshipMin = null;
-        float fOreMin = float.MaxValue;
-        int nFriendly = 0;
-        int nEnemy = 0;
-        foreach (var ship in ships)
+        get => _builderAsteroidTarget;
+        set
         {
-            if (ship.MiningAsteroidTarget != rock) continue;   // same target pointer (shipIGC.cpp:2113)
-            if (ship.SideId != sideId)                         // a DIFFERENT side = enemy — no alliance system in this port (shipIGC.cpp:2115)
+            if (_builderAsteroidTarget == value) return;
+            _builderAsteroidTarget = value;
+            DronePlanChanged();
+        }
+    }
+
+    /// <summary>Native WingmanBehaviour bits (igc.h:789-790); default from
+    /// shipIGC.cpp:197. Only the retreat bits are consumed here.</summary>
+    public int WingmanBehaviour { get; set; } = 0x22; // UseMissiles | RunAt60Hull
+
+    private sealed record DroneOrder(DataStationIGC? Station, short Command,
+        Asteroid? Mine, Asteroid? Build, Asteroid? Layer, GotoOrder? Goto, LayerBuildGoal? Lay,
+        Ship? Attack, Ship? Defend, Ship? Pickup);
+    private DroneOrder? _orderBeforeRetreat;
+    private Ship? _retreatRepairShip;
+
+    private void DronePlanChanged()
+    {
+        if (_changingRetreatPlan || !IsNpc) return;
+        _fractionLastOrder = Fraction;
+        _timeRanAway = LastUpdate;
+        IsRunningAway = false;
+        _orderBeforeRetreat = null;
+        _retreatRepairShip = null;
+    }
+
+    /// <summary>Native SetRunawayCheckCooldown (shipIGC.h:1737-1739), used
+    /// for the 120-second player command grace period (FedSrv.CPP:3193).</summary>
+    public void SetRunawayCheckCooldown(float seconds) => _runawayCheckInterval = seconds;
+
+    internal bool IsReadyToMine(Asteroid rock)
+    {
+        // P652b: this port has always mined player ships by proximity. NPC
+        // pilot/plan gates model native readiness (shipIGC.cpp:1950-1967),
+        // but must not become prerequisites for that existing player path.
+        // Side-less fixtures use identity mining attributes, as before P652.
+        if (Dead || StationId is not null || ParentShip is not null || Mission is null ||
+            IsRunningAway || IsBuilding || IsRipcordActive || !rock.CanMineHe3 ||
+            rock.Data.ClusterId != Sector?.Id || Ore >= EffectiveMineCapacity() ||
+            rock.Data.Position is not { Length: 3 } p) return false;
+        if (IsNpc && (PilotType != PilotTypeMiner || MiningAsteroidTarget != rock ||
+            PlanTarget is not null || GotoWaypoint is not null)) return false;
+        float radius = rock.Radius + 0.5f * HullType.Length + Allegiance.Core.Model.Sector.MiningProximityPadding;
+        float distanceSquared = (Position - new Vector3(p[0], p[1], p[2])).LengthSquared();
+        return (IsNpc ? distanceSquared < radius * radius : distanceSquared <= radius * radius) &&
+               Velocity.LengthSquared() < 1f; // shipIGC.cpp:1957-1964, strict bounds
+    }
+
+    internal void RedirectDisplacedMiner()
+    {
+        // shipIGC.cpp:2141-2181: the loser stops drilling and heads to a
+        // station with Unload OR Land. Keep the departure-rock dodge exemption.
+        var rock = MiningAsteroidTarget;
+        _departingMineAsteroid = rock;
+        MiningAsteroid = null;
+        MiningAsteroidTarget = null;
+        IsMining = false;
+        var station = FindNearestFriendlyStationAnyCluster(
+            DataStationTypeIGC.SabmUnload | DataStationTypeIGC.SabmLand);
+        PlanTarget = station;
+        PlanCommandId = station is null ? OrderChange.CidNone : OrderChange.CidGoto;
+        if (station is null) { AcceptedTarget = null; AcceptedCommandId = OrderChange.CidNone; }
+        else if (Ore < EffectiveMineCapacity())
+            SendDroneChat(DroneComingHomeEmptySound, "Coming home empty");
+    }
+
+    // DEFSOUND ordinal values from Igc/sounds.h, included by igc.h:456-464.
+    private const short DroneTooMuchDamageSound = 1327;
+    private const short DroneComingHomeEmptySound = 1329;
+    private const short DroneTooCrowdedSound = 1342;
+    private const short ConstructorRunningSound = 1343;
+    private double _lastMiningComplaint;
+    private float _miningComplaintInterval = 30f; // shipIGC.cpp:25
+
+    private void SendDroneChat(short sound, string message)
+    {
+        if (SideId is { } side) Mission?.Site.SendChat(this, ChatTarget.Team, side, sound, message);
+    }
+
+    internal void ComplainMiningCrowded(double now)
+    {
+        // shipIGC.h:1723-1734: bounded exponential backoff. Use the same
+        // random [1.5,2.5] multiplier; chat is a host seam, not a new transport.
+        if (now < _lastMiningComplaint + _miningComplaintInterval) return;
+        _lastMiningComplaint = now;
+        if (_miningComplaintInterval < 600f)
+            _miningComplaintInterval *= 1.5f + Random.Shared.NextSingle();
+        SendDroneChat(DroneTooCrowdedSound, "Miner requesting unoccupied He3 asteriod.");
+    }
+
+    private void TryTeleportUnload()
+    {
+        // shipIGC.cpp:1969-1992: no speed, docking, own-side or Unload gate
+        // here; only the miner's same-cluster Goto plan and 0x800 capability.
+        const short teleportUnload = 0x800; // c_sabmTeleportUnload, igc.h:755
+        if (!IsNpc || PilotType != PilotTypeMiner || StationId is not null || Dead || Ore <= 0 ||
+            PlanCommandId != OrderChange.CidGoto || PlanTarget is not { } plan ||
+            Sector is not { } sector || Mission is not { } mission || plan.ClusterId != sector.Id) return;
+        var station = sector.StationRuntimes.FirstOrDefault(s => s.StationId == plan.StationId);
+        if (station is null || !station.Type.HasCapability(teleportUnload)) return;
+        float radius = station.Radius + 0.5f * HullType.Length + 100f;
+        var p = station.Data.Position;
+        if ((Position - new Vector3(p[0], p[1], p[2])).LengthSquared() >= radius * radius) return;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == SideId);
+        if (side is null) return;
+        float proceeds = Ore * EffectiveOreCreditPerUnit();
+        side.Money += (long)proceeds;
+        mission.Site.PaydayEvent(side, proceeds);
+        Ore = 0;
+        PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+        AcceptedTarget = null; AcceptedCommandId = OrderChange.CidNone;
+        MiningAsteroidTarget = null;
+        DecideMiningOrSelling(); // PickDefaultOrder, shipIGC.cpp:1991
+    }
+
+    /// <summary>Accept an NPC constructor build plan, retaining it for the
+    /// build-distance retreat exception until arrival (shipIGC.cpp:1756-1777).</summary>
+    public void SetBuilderBuild(Asteroid rock)
+    {
+        // P652c: IsBuilding can also be an idle reservation. Only a registered
+        // effect means drilling has actually started; preserve that construction
+        // on repeated orders, but release a reservation for the accepted trip.
+        if (Sector?.BuildingEffects.Any(e => ReferenceEquals(e.Builder, this)) == true) return;
+        IsBuilding = false;
+        PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+        GotoWaypoint = null; MiningAsteroidTarget = null; LayerAsteroidTarget = null;
+        LayerBuildOrder = null; AttackTarget = null; DefendTarget = null; PickupTarget = null;
+        BuilderAsteroidTarget = rock;
+        DronePlanChanged();
+    }
+
+    /// <summary>Refresh the native command damage/clock baseline even when an
+    /// explicitly repeated order has identical targets (shipIGC.h:725-764).</summary>
+    public void ResetRunawayForNewOrder() => DronePlanChanged();
+
+    private void TryStartBuilderBuild(double now)
+    {
+        if (!IsNpc || PilotType != PilotTypeBuilder || IsRunningAway || IsBuilding || StationId is not null ||
+            PlanTarget is not null || GotoWaypoint is not null || BuilderAsteroidTarget is not { } rock ||
+            BuilderStationType is not { } type || Sector is not { } sector ||
+            rock.Data.ClusterId != sector.Id || !sector.Mineable.Contains(rock)) return;
+        var p = rock.Data.Position;
+        float radius = rock.Radius + 0.5f * HullType.Length + 30f;
+        if ((Position - new Vector3(p[0], p[1], p[2])).LengthSquared() >= radius * radius ||
+            Velocity.LengthSquared() >= 1f) return;
+        BuilderAsteroidTarget = null;
+        sector.StartBuildingEffect(this, rock, type, now);
+    }
+
+    private (DataStationIGC? Station, Ship? Carrier) FindRetreatRepairDestination()
+    {
+        if (Sector is not { } start) return (null, null);
+        var visited = new HashSet<Sector> { start };
+        var frontier = new Queue<Sector>();
+        frontier.Enqueue(start);
+        while (frontier.TryDequeue(out var sector))
+        {
+            var station = FindNearestFriendlyStationIn(sector, DataStationTypeIGC.SabmRepair);
+            Ship? carrier = null;
+            float best = station is { } st
+                ? (new Vector3(st.Position[0], st.Position[1], st.Position[2]) - Position).LengthSquared()
+                : float.MaxValue;
+            // Native passes c_sabmRepair (0x40) to FindTarget for both
+            // stations and ships; the hull bit at 0x40 is IsRipcordTarget
+            // (common.cpp:290-298), rather than c_habmCarrier (0x400).
+            if (HullType.HasCapability(DataHullTypeIGC.HabmLandOnCarrier))
+                foreach (var candidate in sector.GetShipUpdateCandidates())
+                {
+                    if (candidate == this || !IsFriendlySide(candidate.SideId) ||
+                        !candidate.HullType.HasCapability(DataStationTypeIGC.SabmRepair)) continue;
+                    float distance = (candidate.Position - Position).LengthSquared();
+                    if (distance < best) { best = distance; carrier = candidate; }
+                }
+            if (carrier is not null) return (null, carrier);
+            if (station is not null) return (station, null);
+            foreach (var warp in sector.Warps)
+                if (warp.Destination is { } next && visited.Add(next)) frontier.Enqueue(next);
+        }
+        return (null, null);
+    }
+
+    private bool IsFriendlySide(short? other)
+    {
+        if (SideId is not { } side || other is null) return false;
+        if (other == side) return true;
+        var group = Mission?.Sides.FirstOrDefault(s => s.Id == side)?.AllyGroup;
+        return group is not null && Mission!.Sides.Any(s => s.Id == other && s.AllyGroup == group);
+    }
+
+    private void UpdateDamageRetreat(double now)
+    {
+        // PreplotShipMove: carriers never run; building, boarded and ripcording
+        // ships do not start a retreat (shipIGC.cpp:1709,1724-1726).
+        if (!IsNpc || PilotType >= PilotTypePlayer || PilotType == PilotTypeCarrier ||
+            ParentShip is not null || IsBuilding || StationId is not null || Dead ||
+            (IsRipcordActive && !IsRunningAway)) return;
+        if (now < _timeRanAway + _runawayCheckInterval) return;
+
+        bool run;
+        if (PilotType == PilotTypeBuilder || PilotType == PilotTypeLayer)
+        {
+            run = Fraction < _fractionLastOrder; // shipIGC.cpp:1752
+            // Ordered builders/layers keep building when the target is no
+            // farther away than local repair. A remote target is infinitely far.
+            var buildTarget = BuilderAsteroidTarget ?? _orderBeforeRetreat?.Build;
+            var layTarget = LayerBuildOrder ?? _orderBeforeRetreat?.Lay;
+            short? buildCluster = buildTarget?.Data.ClusterId ?? layTarget?.ClusterId;
+            Vector3? buildPosition = buildTarget is { } build
+                ? new Vector3(build.Data.Position[0], build.Data.Position[1], build.Data.Position[2])
+                : layTarget?.Position;
+            if (run && buildCluster is not null)
             {
-                nEnemy++;                                      // native counts these separately (nEnemy, shipIGC.cpp:2117)
-                continue;                                      // an enemy is never a least-ore candidate for the same-side grant
+                var local = FindNearestFriendlyStation(DataStationTypeIGC.SabmRepair);
+                if (local is null) run = false;
+                else if (buildCluster == Sector?.Id && buildPosition is { } bp)
+                {
+                    var p = local.Value.Position;
+                    run = (Position - bp).LengthSquared() >
+                        (Position - new Vector3(p[0], p[1], p[2])).LengthSquared();
+                }
             }
-            nFriendly++;
-            if (ship.Ore < fOreMin) { fOreMin = ship.Ore; pshipMin = ship; }
+        }
+        else if (PilotType == PilotTypeWingman)
+        {
+            bool exempt = Weapons.Any(w => w.MountId == 0 && w.ProjectileType.Power < 0) ||
+                AcceptedTarget is not null;
+            run = !exempt && (Fraction < _fractionLastOrder || IsRunningAway) &&
+                ((WingmanBehaviour & 0x20) != 0 ? Fraction < 0.6f :
+                 (WingmanBehaviour & 0x10) != 0 && Fraction < 0.3f); // shipIGC.cpp:1730-1748
+        }
+        else
+        {
+            bool hullSafe = Fraction >= 0.95f ||
+                (!IsRunningAway && Fraction >= _fractionLastOrder && Fraction > 0.5f);
+            run = !hullSafe || (MountedShieldType() is not null && ShieldFraction < 0.75f);
         }
 
-        // P167 — cross-side lockout, native's nEnemy > 0 branch (shipIGC.cpp:2187-2203).
-        // When an ENEMY-side ship also wants this exact rock, NOBODY on either side
-        // gets to mine it: skip the same-side least-ore/redirect-to-sell resolution
-        // entirely and evict EVERY contender (both sides) sharing this asteroid
-        // reference — clear MiningAsteroidTarget on each with NO station redirect
-        // (unlike the same-side loser path just above). Native's loop has no side
-        // filter (pship is any cluster ship wanting this rock) and never calls the
-        // FindNearestFriendlyStationAnyCluster sell-redirect; evicted ships simply go
-        // idle and their own next tick's DecideMiningOrSelling naturally re-decides
-        // from the cleared state — possibly re-picking the same or a different rock
-        // if nothing else changed (the honest, faithful outcome, not a bug).
-        if (nEnemy > 0)
+        if (run && !IsRunningAway)
         {
-            foreach (var ship in ships)
+            var (station, carrier) = FindRetreatRepairDestination();
+            if (station is null && carrier is null) return;
+            _orderBeforeRetreat = new DroneOrder(PlanTarget, PlanCommandId, MiningAsteroidTarget,
+                BuilderAsteroidTarget, LayerAsteroidTarget, GotoWaypoint, LayerBuildOrder, AttackTarget, DefendTarget, PickupTarget);
+            _changingRetreatPlan = true;
+            _departingMineAsteroid = MiningAsteroidTarget;
+            MiningAsteroidTarget = null; MiningAsteroid = null; IsMining = false;
+            BuilderAsteroidTarget = null; LayerAsteroidTarget = null; LayerBuildOrder = null;
+            GotoWaypoint = null; AttackTarget = null; DefendTarget = null; PickupTarget = null;
+            _retreatRepairShip = carrier;
+            PlanTarget = carrier is null ? station : null;
+            PlanCommandId = OrderChange.CidGoto;
+            _changingRetreatPlan = false;
+            _fractionLastOrder = Fraction;
+            IsRunningAway = true; _timeRanAway = now; _runawayCheckInterval = 10f;
+            SendDroneChat(PilotType == PilotTypeBuilder ? ConstructorRunningSound : DroneTooMuchDamageSound,
+                PilotType == PilotTypeBuilder ? "Constructor heading for cover." : "Forget this. I have to go get repaired.");
+        }
+        else if (!run && IsRunningAway)
+        {
+            var previous = _orderBeforeRetreat;
+            _changingRetreatPlan = true;
+            PlanTarget = null; PlanCommandId = OrderChange.CidNone; GotoWaypoint = null;
+            // shipIGC.cpp:1918-1930: miners that fled into another sector
+            // re-decide locally rather than blindly returning to the old rock.
+            if (previous is not null && !(PilotType == PilotTypeMiner &&
+                (previous.Mine?.Data.ClusterId ?? previous.Station?.ClusterId ?? previous.Goto?.ClusterId) is { } oldCluster &&
+                oldCluster != Sector?.Id))
             {
-                if (ship.MiningAsteroidTarget != rock) continue;   // every contender, both sides — no side filter (shipIGC.cpp:2191-2203)
-                ship.MiningAsteroidTarget = null;                  // SetStateBits(miningMask|wantsToMine,0) — nobody wins at all (shipIGC.cpp:2191)
-                ConsoleLog.Write($"[npc] ship {ship.Id} (side {ship.SideId}) denied asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — enemy contender present, cross-side lockout evicts every contender, no redirect");
+                PlanTarget = previous.Station; PlanCommandId = previous.Command;
+                MiningAsteroidTarget = previous.Mine; BuilderAsteroidTarget = previous.Build;
+                LayerAsteroidTarget = previous.Layer; GotoWaypoint = previous.Goto; LayerBuildOrder = previous.Lay;
+                AttackTarget = previous.Attack; DefendTarget = previous.Defend; PickupTarget = previous.Pickup;
             }
-            return;                                                // never falls through to the same-side least-ore grant
+            else if (PilotType == PilotTypeMiner) { AcceptedTarget = null; AcceptedCommandId = OrderChange.CidNone; }
+            _changingRetreatPlan = false;
+            IsRunningAway = false; _orderBeforeRetreat = null; _retreatRepairShip = null;
+            _fractionLastOrder = Fraction; _timeRanAway = now;
         }
 
-        if (nFriendly <= 1) return;   // nobody else wants this rock — keep mining, nothing to arbitrate
-
-        // More than one same-side contender: only pshipMin (least ore) keeps the
-        // right to mine; every other loser is cleared of the mining target and
-        // redirected to go sell (shipIGC.cpp:2137-2185).
-        foreach (var ship in ships)
-        {
-            if (ship == pshipMin) continue;                    // the winner keeps mining
-            if (ship.MiningAsteroidTarget != rock) continue;
-            if (ship.SideId != sideId) continue;
-
-            ship.MiningAsteroidTarget = null;                  // SetStateBits(miningMask|wantsToMine,0), shipIGC.cpp:2156
-            var station = ship.FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload);
-            if (station is { } st)
-            {
-                ship.PlanTarget = st;                          // SetCommand(c_cmdPlan, station, c_cidGoto), shipIGC.cpp:2168
-                ship.PlanCommandId = OrderChange.CidGoto;
-                ConsoleLog.Write($"[npc] ship {ship.Id} (side {ship.SideId}) displaced from asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' by same-side lower-ore miner {pshipMin?.Id} — going to sell at unload station {st.StationId} '{st.Name}'");
-            }
-            else
-            {
-                // No unload-capable friendly station reachable: stand by (native
-                // SetCommand(c_cmdAccepted, NULL, c_cidNone), shipIGC.cpp:2174-2178),
-                // matching DecideMiningOrSelling's no-station stand-by.
-                ship.PlanTarget = null;
-                ship.PlanCommandId = OrderChange.CidNone;
-                ConsoleLog.Write($"[npc] ship {ship.Id} (side {ship.SideId}) displaced from asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — no unload station reachable, standing by");
-            }
-        }
     }
 
     /// <summary>
@@ -7229,6 +7495,16 @@ public sealed class Ship : Model, IShipIgc
         // not, still exempts the rock it is departing).
         UpdateMineDeparture();
 
+        if (IsNpc && !_droneClockInitialized)
+        {
+            _droneClockInitialized = true;
+            _timeRanAway = LastUpdate; // native initializes with creation time (shipIGC.cpp:189)
+            _lastMiningComplaint = LastUpdate;
+        }
+        UpdateDamageRetreat(now);
+        TryTeleportUnload();
+        TryStartBuilderBuild(now);
+
         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
         // BEFORE the flight model reads them (ExecuteMove derives all motion
         // from Controls). Real player ships (IsNpc false) are never touched.
@@ -7245,7 +7521,7 @@ public sealed class Ship : Model, IShipIgc
         // UpdateWingmanCombat reflects any just-made acquire/switch/return-to-
         // escort (a returned-to-escort Wingman releases the trigger; a switched
         // one aims at the new threat).
-        if (IsNpc && PilotType == PilotTypeWingman)
+        if (IsNpc && PilotType == PilotTypeWingman && !IsRunningAway)
         {
             if (DefendTarget is not null)
                 UpdateWingmanDefend();
@@ -7365,7 +7641,7 @@ public sealed class Ship : Model, IShipIgc
         // never evaluate take-cover.
         // P403 — an active GotoWaypoint also suppresses Accepted promotion (a
         // commanded ship has exactly one objective; the goto is it).
-        if (PlanTarget is null && GotoWaypoint is null)
+        if (!IsRunningAway && PlanTarget is null && GotoWaypoint is null)
         {
             if (AcceptedTarget is { } accepted)                    // LegalCommand(Accepted), shipIGC.cpp:1936
             {
@@ -7461,17 +7737,15 @@ public sealed class Ship : Model, IShipIgc
                     // construction runs to completion in Sector's per-tick
                     // resolver (StartBuildingEffect / ResolveBuildingEffects).
                     // P403 — an active goto also counts as non-idle.
-                    if (!IsBuilding && StationId is null && GotoWaypoint is null)
+                    if (!IsBuilding && BuilderAsteroidTarget is null && StationId is null && GotoWaypoint is null)
                         DecideBuilderDefaultOrder();
                 }
 
                 // P151 take-cover: only when STILL fully idle after the decision
                 // cycle (a just-picked mining/layer trip isn't instantly
                 // preempted), preserving mutual exclusion. Ordering is
-                // decision-first — if both a damaged-ship hide and an objective
-                // could apply, the objective wins (P156 scope: no priority system
-                // engineered; damage interrupting a trip is an accepted, unhandled
-                // gap).
+                // The miner default cycle checks hide first; active work is
+                // interrupted by UpdateDamageRetreat before movement (P652).
                 //
                 // P160 — deliberately NOT gated on PilotType: native's take-cover
                 // applies to any damaged NPC regardless of pilot type
@@ -7507,26 +7781,14 @@ public sealed class Ship : Model, IShipIgc
                 // P403 — an active GotoWaypoint is likewise not idle: a ship
                 // under a player-issued goto is commanded and must not be
                 // diverted into take-cover.
-                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && DefendTarget is null && !IsBuilding && PlanTarget is null && GotoWaypoint is null && LayerBuildOrder is null)
+                if (PilotType == PilotTypeMiner && MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && DefendTarget is null && !IsBuilding && BuilderAsteroidTarget is null && PlanTarget is null && GotoWaypoint is null && LayerBuildOrder is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }
 
-        // P159 — real-time same-side asteroid contention arbitration. Runs EVERY
-        // tick for an IsNpc ship holding a mining target (NOT gated on the idle
-        // check that gates DecideMiningOrSelling above): once a ship has picked
-        // a rock it is never idle again (MiningAsteroidTarget non-null), so a
-        // decision-time-only check would never re-arbitrate a later-arriving
-        // poorer contender. Native's block runs unconditionally every tick
-        // wantsToMineMaskIGC is set (shipIGC.cpp:2088-2091) — the same per-tick
-        // lifetime, placed here so this tick's already-decided state is the one
-        // arbitrated and the loser's sell redirect is the final word.
-        // P160 — additionally gated on Miner: only a miner holds a mining target
-        // (the decision cycle that sets it is Miner-gated above), so the gate is
-        // self-documenting rather than load-bearing, but makes the exclusion
-        // explicit for a non-miner's never-populated MiningAsteroidTarget.
-        if (IsNpc && PilotType == PilotTypeMiner && MiningAsteroidTarget is not null)
-            ArbitrateAsteroidContention();
+        // P652 arbitration is sector-wide, after all ships have established
+        // readiness and before any ore accrues (shipIGC.cpp:2092-2203).
+
     }
 }
 

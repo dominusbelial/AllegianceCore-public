@@ -916,13 +916,18 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // needs no reset here: the sell leg's mutual exclusion (Ship.cs:5139)
         // already nulled it. All four use the existing "unset slot" convention
         // (OrderChange.CidNone default, Ship.cs:971).
-        sh.PlanTarget = null;
-        sh.PlanCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
-        sh.AcceptedTarget = null;
-        sh.AcceptedCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+        // P652: a repair retreat keeps its paused accepted order until the
+        // native ten-second recheck resumes it after repair (shipIGC.cpp:1916-1930).
+        if (!sh.IsRunningAway)
+        {
+            sh.PlanTarget = null;
+            sh.PlanCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+            sh.AcceptedTarget = null;
+            sh.AcceptedCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+        }
         if (sh.IsNpc)
         {
-            var pcNote = $"[npc] ship {sh.Id} arrived at station {ds.Station.StationId} — PlanTarget/AcceptedTarget cleared, ready to re-decide next tick";
+            var pcNote = $"[npc] ship {sh.Id} arrived at station {ds.Station.StationId} — {(sh.IsRunningAway ? "repair retreat order retained" : "PlanTarget/AcceptedTarget cleared, ready to re-decide next tick")}";
             Console.WriteLine(pcNote);
             ReportNotable(pcNote);                 // spectator event feed (same text as dockNote)
         }
@@ -937,7 +942,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // the ship docking at its OWN side's station (#ALLY comment: "Only
         // offload at your own bases"). (The previous port citation pointed at
         // shipIGC.cpp:1969-1990 — that is the separate NPC teleport-offload leg,
-        // listed as a P551 follow-up; this SetStation branch is the real
+        // now implemented in Ship.TryTeleportUnload by P652; this is the
         // dock-sale gate.)
         // Reuse the established credit-then-report shape of Mission.Update's
         // payday pass (Mission.cs:298-300): credit the owning side's treasury,
