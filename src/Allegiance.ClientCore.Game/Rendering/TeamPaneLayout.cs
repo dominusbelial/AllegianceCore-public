@@ -1,0 +1,111 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Allegiance.Core.Wire;
+
+namespace Allegiance.ClientCore.MonoGame.Rendering;
+
+/// <summary>
+/// P639 — pure (MonoGame-free) layout of the TEAM PANE: the full-roster screen
+/// showing every side's pilots with their rank name, ship status, kills and
+/// deaths, plus a footer with the local commander's money and any active
+/// ballot. Data is the periodic <c>ScoreRosterUpdate(209)</c> snapshot
+/// (<c>ClientWorld.ScoreRoster</c>), the <c>RANK_INFO(13)</c> rank table
+/// (<c>ClientWorld.RankTable</c>), and the live ship entity table
+/// (<c>ClientWorld.Ships</c>, flattened to <see cref="ShipBrief"/> by the
+/// caller so this layout stays MonoGame- and ClientCore-free and headless-
+/// testable).
+///
+/// <para><b>Native fidelity.</b> Native's <c>teampane.cpp</c> /
+/// <c>teamscreen.cpp</c> list the full roster: pilots, their ships, wings,
+/// status, money and commander actions. Of those, this port has real wire data
+/// for pilots, ship status and money; it has <b>no wing roster</b> on the wire
+/// (<c>SET_WINGID(106)</c> is a documented unconsumed message — see
+/// fedmsg-wiring.csv — so wing assignments never travel to this client), which
+/// is an era/infra constraint marked in the pane and the report, not faked.
+/// Pilot rows, status and money are all real wire data; the self row is
+/// highlighted.</para>
+///
+/// <para><b>Ship status</b> is derived from the live ship entity: dead/gone →
+/// "<c>DEAD</c>"; docked (<c>StationId != -1</c>, the same docked gate the
+/// autoproof uses, Game1.AutoProof.cs:42-43) → "<c>DOCKED</c>"; otherwise the
+/// sector "<c>SEC &lt;id&gt;</c>".</para>
+///
+/// <para><b>ASCII safety</b> applies to every string (see
+/// <see cref="ScoreboardLayout.AsciiSafe"/>).</para>
+/// </summary>
+public static class TeamPaneLayout
+{
+    /// <summary>The flattened per-pilot ship state the caller extracts from
+    /// <c>ClientWorld.Ships</c> (kept MonoGame/ClientCore-free so this layout is
+    /// headless-testable).</summary>
+    public readonly record struct ShipBrief(short HullId, short SectorId, short StationId, bool Dead, bool Gone);
+
+    public enum LineKind { Blank, Title, SideHeader, Pilot, Money, Ballot, Note, Hint }
+
+    /// <summary>One roster line, ready to draw. <see cref="Highlight"/> marks the
+    /// local player's own row.</summary>
+    public readonly record struct Line(LineKind Kind, string Text, bool Highlight = false);
+
+    /// <summary>
+    /// Build the ordered, ASCII-safe team-pane lines. Sides are grouped in id
+    /// order; pilots within a side are sorted by name. The local player (matched
+    /// by <paramref name="selfName"/>) is highlighted. <paramref name="ships"/>
+    /// maps a character name to its <see cref="ShipBrief"/> for the status
+    /// column (absent names fall back to "?" — a pilot with no ship entity yet).
+    /// </summary>
+    public static IReadOnlyList<Line> Build(
+        IReadOnlyList<ScoreRosterEntry> entries,
+        IReadOnlyList<RankInfoEntry> rankTable,
+        IReadOnlyDictionary<string, ShipBrief> ships,
+        Func<short, bool>? isSideActive,
+        int? myMoney,
+        string? activeBallot,
+        bool isLeader,
+        string? selfName)
+    {
+        var lines = new List<Line>();
+        lines.Add(new Line(LineKind.Title, "TEAM PANE  (T TOGGLE)"));
+
+        foreach (var g in entries.GroupBy(e => e.SideId).OrderBy(g => g.Key))
+        {
+            bool destroyed = isSideActive is not null && !isSideActive(g.Key);
+            lines.Add(new Line(LineKind.SideHeader,
+                destroyed ? $"SIDE {g.Key}  (DESTROYED)" : $"SIDE {g.Key}  (players: {g.Count()})"));
+
+            foreach (var e in g.OrderBy(e => e.CharacterName, StringComparer.Ordinal))
+            {
+                bool self = selfName != null && string.Equals(e.CharacterName, selfName, StringComparison.Ordinal);
+                string rankName = RankNameLookup.Lookup(rankTable, e.Rank);
+                string status = StatusFor(ships, e.CharacterName);
+                string hull = ships.TryGetValue(e.CharacterName, out var sb) && sb.HullId > 0 ? $" HLD{sb.HullId}" : "";
+                string text = $"    {ScoreboardLayout.AsciiSafe(e.CharacterName),-18}  " +
+                              $"{ScoreboardLayout.AsciiSafe(rankName),-14}  " +
+                              $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}";
+                lines.Add(new Line(LineKind.Pilot, text, self));
+            }
+        }
+
+        lines.Add(new Line(LineKind.Blank, ""));
+        if (myMoney is { } money)
+            lines.Add(new Line(LineKind.Money, $"MY MONEY: {money}"));
+
+        if (isLeader && !string.IsNullOrWhiteSpace(activeBallot))
+            lines.Add(new Line(LineKind.Ballot, $"ACTIVE BALLOT: {ScoreboardLayout.AsciiSafe(activeBallot)}"));
+
+        lines.Add(new Line(LineKind.Note,
+            "WINGS: SET_WINGID(106) not consumed by this client - wing roster unavailable (infra constraint)"));
+        lines.Add(new Line(LineKind.Hint, "T TOGGLE  |  B LEADERBOARD  |  P CHARACTER SHEET"));
+
+        return lines;
+    }
+
+    private static string StatusFor(IReadOnlyDictionary<string, ShipBrief> ships, string name)
+    {
+        if (!ships.TryGetValue(name, out var sb)) return "?";
+        if (sb.Dead || sb.Gone) return "DEAD";
+        if (sb.StationId != -1) return "DOCKED";
+        if (sb.SectorId > 0) return $"SEC {sb.SectorId}";
+        return "?";
+    }
+}

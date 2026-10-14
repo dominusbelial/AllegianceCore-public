@@ -1645,7 +1645,7 @@ public sealed partial class Game1
         if (_state == ClientState.Flying && _scoreboardVisible)
         {
             var rows = Rendering.ScoreboardLayout.Build(
-                _session.World.ScoreRoster, _session.World.IsSideActive);
+                _session.World.ScoreRoster, _session.World.RankTable, _session.World.IsSideActive);
             string? self = _session.World.Ships.TryGetValue(
                 _session.World.MyShipId ?? -1, out var se) ? se.CharacterName : null;
             _scoreboardRenderer.Draw(GraphicsDevice.Viewport, rows, self);
@@ -1653,13 +1653,37 @@ public sealed partial class Game1
 
         // P275 — P Pilot Info overlay: the local player's OWN live stats (kills,
         // deaths, combat rating, rank, score) extracted from the same periodic
-        // ScoreRosterUpdate(209) snapshot as the scoreboard. Independent flag from
+        // ScoreRosterUpdate(209) snapshot as the scoreboard, with their rank NAME
+        // resolved from the RANK_INFO(13) table. Independent flag from
         // the scoreboard, so both can be open at once; drawn only while flying.
         if (_state == ClientState.Flying && _pilotInfoVisible)
         {
             var info = Rendering.PilotInfoLayout.Build(_session.World.ScoreRoster,
-                _session.World.Ships.TryGetValue(_session.World.MyShipId ?? -1, out var pe) ? pe.CharacterName : null);
+                _session.World.Ships.TryGetValue(_session.World.MyShipId ?? -1, out var pe) ? pe.CharacterName : null,
+                _session.World.RankTable);
             _pilotInfoRenderer.Draw(GraphicsDevice.Viewport, info);
+        }
+
+        // P639 — Ctrl+T Team Pane: the full-roster screen (every side's pilots
+        // with rank name, ship status, kills/deaths, plus money / active-ballot
+        // footer). Built from the same ScoreRoster + RankTable as the scoreboard
+        // plus the live ship entity table flattened to name→ShipBrief. Shown
+        // while flying, independent of the scoreboard/pilot-info flags.
+        if (_state == ClientState.Flying && _teamPaneVisible)
+        {
+            var ships = _session.World.Ships;
+            var briefs = new Dictionary<string, Rendering.TeamPaneLayout.ShipBrief>();
+            foreach (var ent in ships.Values)
+                briefs[ent.CharacterName] = new Rendering.TeamPaneLayout.ShipBrief(
+                    ent.HullId, ent.SectorId, ent.StationId, ent.IsDead, ent.IsGone);
+            var lines = Rendering.TeamPaneLayout.Build(
+                _session.World.ScoreRoster, _session.World.RankTable, briefs,
+                _session.World.IsSideActive,
+                _session.World.MyMoney,
+                _session.World.ActiveBallot?.BallotText,
+                _session.World.IsTeamLeader,
+                ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null);
+            _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines);
         }
 
         // P271 — mission-briefing popup (pre-launch): the dismissible briefing

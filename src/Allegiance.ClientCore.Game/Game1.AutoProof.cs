@@ -456,6 +456,17 @@ public sealed partial class Game1
         // draws top-most) captures the updated credit text.
         if (_autoPlan.AutoCredits) _creditsVisible = true;
 
+        // P639 — --auto-screen: force one of the three screen overlays open so
+        // the real-backbuffer shot captures the leaderboard / character sheet /
+        // team pane. Mirrors the B/P/Ctrl+T toggles' visible flags; only the
+        // requested one is forced (independent flags, so they compose cleanly).
+        switch (_autoPlan.AutoScreen)
+        {
+            case LiveProof.AutoScreenKind.Leaderboard: _scoreboardVisible = true; break;
+            case LiveProof.AutoScreenKind.CharSheet: _pilotInfoVisible = true; break;
+            case LiveProof.AutoScreenKind.TeamPane: _teamPaneVisible = true; break;
+        }
+
         // P570 — dismiss the briefing popup first so the real-backbuffer proof
         // frame isn't obscured by it (the briefing only auto-dismisses in the
         // offscreen-capture path; mirror what ALLEGIANCE_AUTOSHOT does).

@@ -11,7 +11,7 @@ SET_BRIEFING_TEXT,9,S,Server.Lobby,ConnectionSession (real client),Briefing text
 PLAYERINFO,10,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),PlayerInfo roster applied to world,appmsg.cpp:2217,done
 STATIC_MAP_INFO,11,S,—,neither (codec only),na — STATIC_MAP_INFO deliberately not built (dead-in-native),appmsg.cpp:3353,na
 PROJECTILE_INSTANCE,12,CS,"Server.Lifecycle, Server.Combat",ConnectionSession (real client),Projectile entity appended to render bolts/streaks (P231),—,done
-RANK_INFO,13,S,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: rank display),appmsg.cpp:3372,partial
+RANK_INFO,13,S,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),Rank-name table stored on world (P639); char sheet/scoreboard/team pane resolve Rank id → name,appmsg.cpp:3372,done
 SET_START_TIME,14,S,Server.Lobby,ConnectionSession (real client),Countdown start time stored (mission start),appmsg.cpp:2702,done
 SET_TEAM_INFO,15,CS,—,neither (codec only),na — SET_TEAM_INFO deliberately not built,appmsg.cpp:2541,na
 PLAYER_RESCUED,16,S,Server.Docking,ConnectionSession (real client),Rescue feedback line produced (P578); DISPATCHED by P627,appmsg.cpp:309,done

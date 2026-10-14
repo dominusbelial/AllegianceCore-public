@@ -144,6 +144,37 @@ public class P572AutoProofTests
         Assert.False(off.AutoCredits);
     }
 
+    [Theory]
+    [InlineData("leaderboard", AutoScreenKind.Leaderboard)]
+    [InlineData("b", AutoScreenKind.Leaderboard)]
+    [InlineData("charsheet", AutoScreenKind.CharSheet)]
+    [InlineData("p", AutoScreenKind.CharSheet)]
+    [InlineData("teampane", AutoScreenKind.TeamPane)]
+    [InlineData("team", AutoScreenKind.TeamPane)]
+    [InlineData("none", AutoScreenKind.None)]
+    public void ParseScreen_MapsAliases(string token, AutoScreenKind expected)
+    {
+        // P639 — the three screen overlays forced open for real-window proof.
+        Assert.Equal(expected, AutoProofPlan.ParseScreen(token));
+        Assert.Equal(AutoScreenKind.None, AutoProofPlan.ParseScreen("bogus"));
+    }
+
+    [Fact]
+    public void Parse_AutoScreenFlag_SetsKindAndActivatesPlan()
+    {
+        var plan = AutoProofPlan.Parse(new[] { "--auto-screen", "teampane" }, out var rest);
+        Assert.Equal(AutoScreenKind.TeamPane, plan.AutoScreen);
+        Assert.True(plan.AnyActive);
+        Assert.Empty(rest);
+
+        var eq = AutoProofPlan.Parse(new[] { "--auto-screen=leaderboard" }, out _);
+        Assert.Equal(AutoScreenKind.Leaderboard, eq.AutoScreen);
+
+        var off = AutoProofPlan.Parse(new[] { "--auto-screen=none" }, out _);
+        Assert.Equal(AutoScreenKind.None, off.AutoScreen);
+        Assert.False(off.AnyActive);
+    }
+
     [Fact]
     public void Machine_EmitsDeterministicInitialActions()
     {

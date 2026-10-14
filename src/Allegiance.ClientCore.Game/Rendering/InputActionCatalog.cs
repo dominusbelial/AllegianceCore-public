@@ -270,6 +270,13 @@ public static class InputActionCatalog
         new("MouseSensitivityUp", "CAMERA / VIEW", "Mouse flight: sensitivity up", C(Keys.D8), null),
         new("Scoreboard", "CAMERA / VIEW", "In-mission scoreboard (kills / deaths)", K(Keys.B), null),
         new("PilotInfo", "CAMERA / VIEW", "Pilot info (your own live stats)", K(Keys.P), null),
+        // P639 — TeamPane: the full-roster team screen (every side's pilots,
+        // rank, ship status, kills/deaths). Native TK identity is TK_ConModeTeam
+        // (igc.h:295); its native default is F6 (defaultinputmap.mdl keycode
+        // 117), which this port's P625 Controls/rebind screen already occupies,
+        // so the port defaults it to the free Ctrl+T chord (rebindable via F6).
+        // Deviation from native's default is documented in P639 report.
+        new("TeamPane", "CAMERA / VIEW", "Team roster: pilots, rank, status, kills", C(Keys.T), null),
         new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.F1), K(Keys.F1)),
         new("OpenKeyBindings", "CAMERA / VIEW", "Open Controls (rebind keys) [P625]", K(Keys.F6), null),
         new("ScreenShot", "CAMERA / VIEW", "Take a screen shot [TK_ScrnShot]", K(Keys.PrintScreen), K(Keys.PrintScreen)),

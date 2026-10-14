@@ -305,6 +305,8 @@ public sealed partial class Game1
         _scoreboardRenderer = new Rendering.ScoreboardOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
         // P275 — Pilot Info overlay (your own live stats), same panel conventions.
         _pilotInfoRenderer = new Rendering.PilotInfoOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        // P639 — Team Pane (full roster), same panel conventions.
+        _teamPaneRenderer = new Rendering.TeamPaneRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P268 — the docked/hangar loadout shop. Loads the real static core the
         // server boots (PCore001.igc under the artwork dir) purely as the shop's

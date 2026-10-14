@@ -1079,6 +1079,11 @@ public sealed partial class Game1 : Game
     private Rendering.PilotInfoOverlayRenderer _pilotInfoRenderer = null!;
     private bool _pilotInfoVisible;
     private bool _pilotInfoKeyWasDown; // edge-detect P so holding it doesn't re-fire
+    // P639 — the Team Pane (full roster; Ctrl+T toggles, rebindable). Same
+    // independent-flag / edge-detect discipline as the scoreboard/pilot toggles.
+    private Rendering.TeamPaneRenderer _teamPaneRenderer = null!;
+    private bool _teamPaneVisible;
+    private bool _teamPaneKeyWasDown;
     private long _lastMissileSendMs = 0; // P226 throttle: re-arm so the first hold fires immediately.
     // Was long.MinValue, but Environment.TickCount64 - long.MinValue overflows a
     // long (unchecked arithmetic wraps to an unpredictable/negative value), so the

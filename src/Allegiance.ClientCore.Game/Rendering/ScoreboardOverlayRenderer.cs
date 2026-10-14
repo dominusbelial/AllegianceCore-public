@@ -1,17 +1,21 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// P265 — draws the in-mission scoreboard overlay: a translucent panel listing
-/// every real-side player's name, side, kills and deaths (from the periodic
-/// owner-only <c>ScoreRosterUpdate(209)</c> snapshot in
-/// <c>ClientWorld.ScoreRoster</c>). It is a small floating panel (unlike the
-/// near-full-screen help overlay) because it is consulted while flying.
+/// P639 — draws the LEADERBOARD screen (the upgraded in-mission scoreboard): a
+/// translucent panel listing every real-side player's in-side position, name,
+/// side, rank name, overall rating, combat rating, kills, deaths, base kills
+/// and base captures — from the periodic owner-only <c>ScoreRosterUpdate(209)</c>
+/// snapshot in <c>ClientWorld.ScoreRoster</c> + the <c>RANK_INFO(13)</c> rank
+/// table (<c>ClientWorld.RankTable</c>). See <see cref="ScoreboardLayout"/> for
+/// the ordering (side asc, score desc), the in-side position numbering and the
+/// native (leaderboardscreen.cpp:54-67) column mapping; the career-ladder
+/// columns native drew from its stats DB are an era/infra constraint (see the
+/// layout docs) and are marked in the report, not faked.
 ///
 /// <para>Conventions mirror <see cref="HelpOverlayRenderer"/>: it begins/ends
 /// its own <see cref="SpriteBatch"/> session, draws a translucent panel with a
@@ -27,12 +31,13 @@ public sealed class ScoreboardOverlayRenderer
     private readonly SpriteFont _small;
     private readonly SpriteFont _big;
 
-    private static readonly Color PanelBg = new(0.020f, 0.028f, 0.038f, 0.90f);
+    private static readonly Color PanelBg = new(0.018f, 0.026f, 0.036f, 0.92f);
     private static readonly Color PanelBorder = new(0.90f, 0.62f, 0.22f);
     private static readonly Color HeaderColor = new(1.00f, 0.85f, 0.45f);
     private static readonly Color NameColor = new(0.95f, 0.97f, 0.98f);
     private static readonly Color StatColor = new(0.88f, 0.93f, 0.92f);
     private static readonly Color SelfColor = new(0.62f, 1.00f, 0.80f);
+    private static readonly Color RankColor = new(0.75f, 0.80f, 0.95f);
 
     public ScoreboardOverlayRenderer(SpriteBatch spriteBatch, Texture2D whitePixel,
         SpriteFont small, SpriteFont big)
@@ -43,7 +48,7 @@ public sealed class ScoreboardOverlayRenderer
         _big = big;
     }
 
-    /// <summary>Draw the scoreboard for the given roster snapshot. <paramref name="rows"/>
+    /// <summary>Draw the leaderboard for the given roster snapshot. <paramref name="rows"/>
     /// is the already-ordered/ASCII-safe output of <see cref="ScoreboardLayout.Build"/>;
     /// <paramref name="selfName"/> (when provided) highlights the local player's row.</summary>
     public void Draw(Viewport viewport, IReadOnlyList<ScoreboardLayout.Row> rows,
@@ -52,14 +57,18 @@ public sealed class ScoreboardOverlayRenderer
         float w = viewport.Width;
         float h = viewport.Height;
 
-        var (cwName, cwSide, cwKills, cwDeaths, cwEj, cwRs, cwBk, cwBc, cwAr, cwFl) =
+        var (cwPos, cwName, cwSide, cwRank, cwScore, cwCombat, cwKills, cwDeaths, cwBk, cwBc) =
             ScoreboardLayout.ColumnWidths(rows, s => _small.MeasureString(s).X);
 
         // Panel width = header/row extent + side margins; height fits header +
         // rows (cap so many players never overflow past the screen).
-        float[] cw = { cwName, cwSide, cwKills, cwDeaths, cwEj, cwRs, cwBk, cwBc, cwAr, cwFl };
-        float contentW = cw.Sum();
-        for (int c = 1; c < cw.Length; c++) contentW += ScoreboardLayout.ColumnGap;
+        float[] cw = { cwPos, cwName, cwSide, cwRank, cwScore, cwCombat, cwKills, cwDeaths, cwBk, cwBc };
+        float contentW = 0f;
+        for (int c = 0; c < cw.Length; c++)
+        {
+            contentW += cw[c];
+            if (c < cw.Length - 1) contentW += ScoreboardLayout.ColumnGap;
+        }
         float panelW = contentW + 2f * ScoreboardLayout.Padding;
         float panelH = ScoreboardLayout.RowHeight /* header */
                      + ScoreboardLayout.HeaderGap
@@ -67,14 +76,14 @@ public sealed class ScoreboardOverlayRenderer
                      + 2f * ScoreboardLayout.Padding;
         panelH = MathF.Min(panelH, h * 0.92f);
 
-        // Anchored upper-right so it never covers the centre reticle / bottom bars.
-        float panelX = w - panelW - 24f;
-        float panelY = 18f;
+        // Centred horizontally so the wider leaderboard stays on screen; slightly
+        // inset from the top so it never covers the centre reticle / bottom bars.
+        float panelX = MathF.Max(12f, (w - panelW) / 2f);
+        float panelY = 40f;
 
-        float colX = panelX + ScoreboardLayout.Padding;
         // Running column origins, aligned with the header array above.
         float[] xs = new float[cw.Length];
-        xs[0] = colX;
+        xs[0] = panelX + ScoreboardLayout.Padding;
         for (int c = 1; c < cw.Length; c++) xs[c] = xs[c - 1] + cw[c - 1] + ScoreboardLayout.ColumnGap;
 
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
@@ -85,15 +94,15 @@ public sealed class ScoreboardOverlayRenderer
             FillRect(panelX, panelY, panelW, 2f, PanelBorder);   // top accent edge
 
             // Header.
-            Draw("SCOREBOARD  (B TOGGLE)", new Vector2(xs[0], panelY + ScoreboardLayout.Padding - 14f), HeaderColor);
+            Draw("LEADERBOARD  (B TOGGLE)", new Vector2(xs[0], panelY + ScoreboardLayout.Padding - 14f), HeaderColor);
             float headY = panelY + ScoreboardLayout.Padding + ScoreboardLayout.HeaderGap - 4f;
             string[] headers =
             {
-                ScoreboardLayout.Row.HeaderName, ScoreboardLayout.Row.HeaderSide,
+                ScoreboardLayout.Row.HeaderPosition, ScoreboardLayout.Row.HeaderName,
+                ScoreboardLayout.Row.HeaderSide, ScoreboardLayout.Row.HeaderRank,
+                ScoreboardLayout.Row.HeaderScore, ScoreboardLayout.Row.HeaderCombat,
                 ScoreboardLayout.Row.HeaderKills, ScoreboardLayout.Row.HeaderDeaths,
-                ScoreboardLayout.Row.HeaderEjections, ScoreboardLayout.Row.HeaderRescues,
                 ScoreboardLayout.Row.HeaderBaseKills, ScoreboardLayout.Row.HeaderBaseCaptures,
-                ScoreboardLayout.Row.HeaderArtifacts, ScoreboardLayout.Row.HeaderFlags,
             };
             for (int c = 0; c < headers.Length; c++)
                 Draw(headers[c], new Vector2(xs[c], headY), HeaderColor);
@@ -106,11 +115,19 @@ public sealed class ScoreboardOverlayRenderer
                 Color nc = self ? SelfColor : NameColor;
                 string[] cells =
                 {
-                    r.Name, r.SideLabel, r.Kills, r.Deaths, r.Ejections, r.Rescues,
-                    r.BaseKills, r.BaseCaptures, r.Artifacts, r.Flags,
+                    r.Position, r.Name, r.SideLabel, r.RankName, r.Score, r.CombatRating,
+                    r.Kills, r.Deaths, r.BaseKills, r.BaseCaptures,
                 };
                 for (int c = 0; c < cells.Length; c++)
-                    Draw(cells[c], new Vector2(xs[c], rowY), c == 0 ? nc : StatColor);
+                {
+                    Color cc = c switch
+                    {
+                        1 => nc,      // name — self highlighted
+                        3 => RankColor, // rank name
+                        _ => StatColor,
+                    };
+                    Draw(cells[c], new Vector2(xs[c], rowY), cc);
+                }
                 rowY += ScoreboardLayout.RowHeight;
             }
         }

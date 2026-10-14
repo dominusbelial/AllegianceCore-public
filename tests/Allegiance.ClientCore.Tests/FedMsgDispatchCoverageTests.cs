@@ -55,7 +55,7 @@ public class FedMsgDispatchCoverageTests
     private static readonly (ushort Fmid, string Type)[] ExpectedConsumedServerSent =
     {
         (2, "LogonAck"), (5, "BuyLoadoutAck"), (7, "SetCluster"), (8, "DevCompleted"),
-        (9, "SetBriefingText"), (10, "PlayerInfo"), (12, "ProjectileInstance"), (14, "SetStartTime"),
+        (9, "SetBriefingText"), (10, "PlayerInfo"), (12, "ProjectileInstance"), (13, "RankInfo"), (14, "SetStartTime"),
         (16, "PlayerRescued"), (17, "Ballot"), (20, "ShipDelete"), (23, "ChatMessage"),
         (26, "ExportShip"), (28, "TreasureSpawn"), (30, "DestroyTreasure"), (35, "Ping"),
         (37, "MissionStageMessage"), (38, "MissionDef"), (45, "PlayerReady"), (46, "TeamReady"),
@@ -92,7 +92,6 @@ public class FedMsgDispatchCoverageTests
     {
         (3, "LOGOFF", "server echo of client LOGOFF; quit handled client-side, echo benign"),
         (6, "OBJECT_SPOTTED", "native spy-cam spotting relay; no spotter mechanic in this port"),
-        (13, "RANK_INFO", "rank/rating display (appmsg.cpp:3372); career rank UI absent"),
         (18, "CANCEL_BALLOT", "ballot withdrawn; VOTE/ballot state handled via BALLOT(17)+ActiveBallot"),
         (31, "NEW_SHIP_INSTANCE", "codec only; neither side wired (no sender, no handler)"),
         (33, "DROP_PART", "broadcast echo; dropped-part visibility realized via TREASURE(28) P293"),
@@ -290,8 +289,8 @@ public class FedMsgDispatchCoverageTests
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(82, ExpectedConsumedServerSent.Length);
-        Assert.Equal(36, KnownUnconsumedServerSent.Length);
+        Assert.Equal(83, ExpectedConsumedServerSent.Length);
+        Assert.Equal(35, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

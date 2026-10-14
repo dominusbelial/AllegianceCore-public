@@ -485,6 +485,13 @@ public sealed class ClientWorld
     // per real-side player) streamed by the periodic owner-only
     // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
     private ScoreRosterEntry[] _scoreRoster = [];
+    // P639 — the rank-name table from RANK_INFO(13), the server's per-player
+    // rank-name sync sent once right after LOGONACK on the valid-connect path
+    // (Server.Lobby.cs:3344; native appmsg.cpp:3372-3382). Each receive replaces
+    // the whole table. Used by the character sheet / scoreboard / team pane to
+    // turn a ScoreRosterEntry.Rank id into its display name via
+    // Wire.RankNameLookup (a faithful port of BaseClient::LookupRankName).
+    private RankInfoEntry[] _rankTable = [];
     // P583 — the latest endgame per-player roster streamed by GameOverPlayers
     // (63), so the game-over screen can render each player's score breakdown.
     private GameOverPlayerEntry[] _gameOverPlayers = [];
@@ -1261,6 +1268,11 @@ public sealed class ClientWorld
     /// the first snapshot lands.</summary>
     public IReadOnlyList<ScoreRosterEntry> ScoreRoster => _scoreRoster;
 
+    /// <summary>P639 — the rank-name table from RANK_INFO(13). Empty until the
+    /// server's post-logon rank sync arrives; see <see cref="RankNameLookup"/>
+    /// for resolving a rank id to a name.</summary>
+    public IReadOnlyList<RankInfoEntry> RankTable => _rankTable;
+
     /// <summary>P583 — the latest endgame per-player roster streamed by
     /// GameOverPlayers(63): each connected player's score + counter breakdown
     /// at game over. Replaced wholesale on each receive; empty until the
@@ -1555,6 +1567,9 @@ public sealed class ClientWorld
                 break;
             case Reload reload:
                 Apply(reload);
+                break;
+            case Allegiance.Core.Wire.RankInfo rankInfo:
+                Apply(rankInfo);
                 break;
             case PlayerInfo playerInfo:
                 Apply(playerInfo);
@@ -2407,6 +2422,18 @@ public sealed class ClientWorld
     {
         if (_ships.TryGetValue(reload.ShipID, out var ent))
             ent.ReloadCount++;
+    }
+
+    /// <summary>P639 — <c>FM_S_RANK_INFO(13)</c>: the server's rank-name table
+    /// sync (sent once right after LOGONACK, Server.Lobby.cs:3344; native
+    /// appmsg.cpp:3372-3382). Replaces the whole table each receive (the same
+    /// replace-wholesale semantics native's handler uses with a fresh
+    /// <c>new RankInfo[cRanks]</c> + memcpy). Stored so the character sheet,
+    /// scoreboard and team pane can resolve a <c>ScoreRosterEntry.Rank</c> id
+    /// to its display name via <see cref="RankNameLookup"/>.</summary>
+    private void Apply(Allegiance.Core.Wire.RankInfo rankInfo)
+    {
+        _rankTable = rankInfo.Ranks;
     }
 
     /// <summary>P260 — <c>FM_S_EXPORT(26)/OT_probe</c>: a freshly-deployed probe

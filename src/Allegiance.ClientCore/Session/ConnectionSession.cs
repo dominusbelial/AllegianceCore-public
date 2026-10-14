@@ -730,6 +730,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case LogonAck.Fmid:
                         _ack = LogonAck.Decode(m);
                         break;
+                    case RankInfo.Fmid:
+                        // P639 — FM_S_RANK_INFO(13): the server's rank-name table,
+                        // sent once right after LOGONACK (Server.Lobby.cs:3344;
+                        // native appmsg.cpp:3372-3382). Store it on the world so
+                        // the char sheet / scoreboard / team pane can resolve a
+                        // roster Rank id to its display name.
+                        try { _world.Apply(RankInfo.Decode(m)); }
+                        catch { /* ignore a malformed rank sync */ }
+                        break;
                     case Ping.Fmid:
                         // P508 — the server's echo of our FM_CS_PING(35): record its
                         // sim-time stamp (timeServer, ms) + the local receive time for

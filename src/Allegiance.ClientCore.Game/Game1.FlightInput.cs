@@ -440,6 +440,17 @@ public sealed partial class Game1
         }
         _pilotInfoKeyWasDown = pilotKey;
 
+        // P639 — Ctrl+T Team Pane toggle (rebindable via F6; native TK_ConModeTeam
+        // default F6 conflicts with the P625 Controls screen). Edge-triggered and
+        // composing-gated like the B/P toggles, independent of them.
+        bool teamKey = ActionDown(ks, "TeamPane");
+        if (teamKey && !_teamPaneKeyWasDown && !_chatActive && !_qcMenuOpen)
+        {
+            _teamPaneVisible = !_teamPaneVisible;
+            Console.WriteLine($"[monogame] teampane {( _teamPaneVisible ? "ON" : "OFF" )}");
+        }
+        _teamPaneKeyWasDown = teamKey;
+
         // P572 — live-proof automation: feed world observations + drain the
         // machine's due actions into the pending slots the handlers below
         // consume, BEFORE any state logic runs this frame.

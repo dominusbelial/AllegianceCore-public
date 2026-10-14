@@ -213,7 +213,7 @@ fedmsg,9 SET_BRIEFING_TEXT,Inc/Messages.h:93,done,Wire/SetBriefingText.cs,4
 fedmsg,10 PLAYERINFO,Inc/Messages.h:98,done,Wire/PlayerInfo.cs,4
 fedmsg,11 STATIC_MAP_INFO,Inc/Messages.h:127,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),2
 fedmsg,12 PROJECTILE_INSTANCE,Inc/Messages.h:131,done,Wire/ProjectileInstance.cs,5
-fedmsg,13 RANK_INFO,Inc/Messages.h:148,partial,Wire/RankInfo.cs (server emits; no client handler found),4
+fedmsg,13 RANK_INFO,Inc/Messages.h:148,done,"Wire/RankInfo.cs + Session/ConnectionSession.cs + State/ClientWorld.cs (P639: client consumes; rank table shown on leaderboard/char sheet/team pane via Wire/RankNameLookup.cs)",4
 fedmsg,14 SET_START_TIME,Inc/Messages.h:153,done,Wire/SetStartTime.cs,4
 fedmsg,15 SET_TEAM_INFO,Inc/Messages.h:157,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,16 PLAYER_RESCUED,Inc/Messages.h:163,done,Wire/PlayerRescued.cs; dispatched in ConnectionSession (P627; world Apply already existed),4
@@ -341,18 +341,18 @@ screens,Main game screen / HUD,WinTrek/gamescreen.cpp,done,src/Allegiance.Client
 screens,Chat pane,WinTrek/chatpane.cpp,done,src/Allegiance.ClientCore.Game/Rendering/ChatRenderer.cs,5
 screens,Hangar / loadout screen,WinTrek/hangarscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/DockedScreenRenderer.cs + Shop (P519),5
 screens,Game-over screen,WinTrek/gameoverscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs (P262),5
-screens,Scoreboard / leaderboard screen,WinTrek/leaderboardscreen.cpp,partial,src/Allegiance.ClientCore.Game/Rendering/ScoreboardOverlayRenderer.cs in-mission scoreboard (P265); career leaderboard absent,4
+screens,Scoreboard / leaderboard screen,WinTrek/leaderboardscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs + ScoreboardOverlayRenderer.cs full leaderboard (P639: position/side/rank-name/score/combat/k/d/bk/bc, sort by score, RANK_INFO rank names); career-ladder DB columns = infra constraint,4
 screens,Game-starting (countdown) screen,WinTrek/gamestartingscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + ReadyCheckOverlayRenderer (P188/P180),4
 screens,Intro screen,WinTrek/introscreen.cpp,partial,boots to connect screen; no animated intro sequence,2
 screens,Splash / loading screen,WinTrek/splashscreen.cpp,partial,connect/loading states exist,2
 screens,Training screen,WinTrek/trainingscreen.cpp,partial,docs/NATIVE_TRAINING_SCRIPT.md; no full training-mission UI,3
 screens,Video screen (cinematic),WinTrek/videoscreen.cpp,missing,no cinematic playback,2
-screens,Character-info screen,WinTrek/CharInfoScreen.cpp,partial,src/Allegiance.ClientCore.Game/Rendering/PilotInfoOverlayRenderer.cs pilot info (P275); no full char sheet,4
+screens,Character-info screen,WinTrek/CharInfoScreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/PilotInfoLayout.cs + PilotInfoOverlayRenderer.cs full character sheet (P639: identity, rank banner via RANK_INFO, full live stat breakdown); career medals/squads/civ = infra constraint,4
 screens,Squads screen,WinTrek/SquadsScreen.cpp,na,no squad/clan system in this port,2
 screens,Zone Club screen (online account),WinTrek/ZoneClubScreen.cpp,na,Internet Zone/account system not applicable (TCP+local server),1
 screens,Zone events screen,WinTrek/zoneeventsscreen.cpp,na,Zone event feed not applicable,1
 screens,Selection pane,WinTrek/selpane.cpp,partial,targeting/selection via RadarBracketRenderer + Game1.Targeting,3
-screens,Team pane / screen,"WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",partial,team display + side select (SideSelectOverlayRenderer); no full team console,4
+screens,Team pane / screen,"WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",done,src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs + TeamPaneRenderer.cs full roster (P639: per-side pilots/rank/status/kills/deaths + money/active-ballot footer, Ctrl+T); wing roster (SET_WINGID 106) = infra constraint,4
 screens,Teleport pane,WinTrek/teleportpane.cpp,done,src/Allegiance.ClientCore.Game/Rendering/TeleportPaneModel.cs (P273),3
 screens,Loadout panel (shop),WinTrek hangar loadout,done,src/Allegiance.ClientCore.Game/Shop + DockedScreenRenderer (P519),5
 screens,Investment screen,WinTrek investment,done,src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs + InvestmentBuildGates.cs (P487/P495),4

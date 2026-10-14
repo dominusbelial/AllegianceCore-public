@@ -17,6 +17,17 @@ public enum AutoTargetKind
     Aleph,
 }
 
+/// <summary>P639 — which of the three screen overlays a real-window autoshot
+/// should have open (forced by <c>--auto-screen</c>). Mirrors the leaderboard
+/// (B), character sheet (P) and team pane (Ctrl+T) toggles.</summary>
+public enum AutoScreenKind
+{
+    None = 0,
+    Leaderboard,
+    CharSheet,
+    TeamPane,
+}
+
 /// <summary>
 /// P572 — the parsed live-proof automation plan for a NORMAL WINDOWED client.
 /// Every flag defaults off; the client does nothing a player wouldn't. Purely
@@ -48,6 +59,14 @@ public sealed class AutoProofPlan
     /// so a real-window autoshot captures the updated credit text
     /// (<c>--auto-credits</c>). Off by default.</summary>
     public bool AutoCredits;
+
+    /// <summary>P639 — force one of the three screen overlays open for a
+    /// real-window autoshot (<c>--auto-screen leaderboard|charsheet|teampane|none</c>):
+    /// the leaderboard (B), the character sheet (P) or the team pane (Ctrl+T).
+    /// Client-only automation, off by default (None) — mirrors the P572
+    /// <c>--hide-hud</c>/P577b <c>--auto-credits</c> philosophy of scripting the
+    /// client to produce honest real-backbuffer proof frames.</summary>
+    public AutoScreenKind AutoScreen = AutoScreenKind.None;
 
     /// <summary>Sector (numeric id or case-insensitive name) to engage the P541
     /// starmap goto toward after launch (<c>--auto-goto</c>). Null = don't.</summary>
@@ -173,6 +192,12 @@ public sealed class AutoProofPlan
                 plan.AutoCredits = true;
             else if (a == "--auto-credits=false")
                 plan.AutoCredits = false;
+            else if (a == "--auto-screen" && i + 1 < args.Count)
+                plan.AutoScreen = ParseScreen(args[++i]);
+            else if (a.StartsWith("--auto-screen="))
+                plan.AutoScreen = ParseScreen(a.Substring("--auto-screen=".Length));
+            else if (a == "--auto-screen")
+                plan.AutoScreen = AutoScreenKind.None;
             else if (a == "--auto-goto")
             {
                 if (i + 1 < args.Count && !args[i + 1].StartsWith('-'))
@@ -318,6 +343,17 @@ public sealed class AutoProofPlan
         return AutoTargetKind.None;
     }
 
+    /// <summary>P639 — parse <c>--auto-screen</c> into the overlay to force open
+    /// for a real-window autoshot (leaderboard|charsheet|teampane|none).</summary>
+    public static AutoScreenKind ParseScreen(string s) => s.Trim().ToLowerInvariant() switch
+    {
+        "leaderboard" or "lb" or "b" => AutoScreenKind.Leaderboard,
+        "charsheet" or "character" or "pilot" or "p" => AutoScreenKind.CharSheet,
+        "teampane" or "team" or "t" => AutoScreenKind.TeamPane,
+        "none" or "" => AutoScreenKind.None,
+        _ => AutoScreenKind.None,
+    };
+
     /// <summary>Parse a fractional-seconds value (comma-less, culture-invariant).</summary>
     public static bool TryParseSeconds(string s, out double v)
         => double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v) && v >= 0;
@@ -339,7 +375,7 @@ public sealed class AutoProofPlan
     /// inert and the client behaves exactly as a normal session). Pure.</summary>
     public bool AnyActive =>
         AutoSide.HasValue || AutoReady || AutoLaunchRequested ||
-        AutoCredits ||
+        AutoCredits || AutoScreen != AutoScreenKind.None ||
         GotoSector.Length > 0 || Target != AutoTargetKind.None || AutoTargetClass.Length > 0 ||
         HideHud || AutoshotSeconds.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
