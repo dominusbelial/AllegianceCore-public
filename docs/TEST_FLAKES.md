@@ -68,6 +68,7 @@ timing-sensitive at the margins.
 | `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` | load-flake | pickup-acquire touch/physics receipt |
 | `LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it` | 1/3 under load | pickup-acquire cash receipt (same family); passes in clean isolation |
 | `ShipDeleteGoneLiveTests.SameSide_WarperLeavesSector_WatcherLatchesGone_OwnPeerNotHidden` | 2/3 under load | ship-delete watch-latch live receipt (same timing-sensitive class as the documented `DockOut`) |
+| `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction` | load-flake | mine cross-side visibility live receipt (passes 3/3 isolated) |
 | `ConquestTerritoryLiveTests.Conquest_win_in_one_mission_does_not_leak_to_another` | 2/10 | live-wire GAME_STATE/GAME_OVER receipt after stage flip |
 | `GameOverPlayersWireTests.Conquest_win_lists_every_connected_player_including_losing_side` | 2/10 | live-wire game-over roster receipt |
 | `GameOverPlayersWireTests.Conquest_win_in_one_mission_does_not_leak_game_over_players_to_another` | 2/10 | live-wire game-over scope receipt |

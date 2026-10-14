@@ -196,14 +196,15 @@ amplification idiom.
     feature; reconciled → those 4 now pass) + 1 × `LiveTreasurePickupTests`
     (known pickup-acquire load flake). This run surfaced the real design
     tension and was discarded (not on final code).
-  - **Run A (final code):** Lobby 12/12; MonoGame 1969 (+3 skip); ClientCore
-    865; Core.Tests N passed / 2 failed — both failures were
-    already-documented live-wire timing flakes
-    (`P590PodRescueTests.Pod_pickup_order_streams…`, `LiveRipcordTests.First_activation…`)
-    that pass in isolation. The one real regression the flood test caught
-    (rejection now at the transport instead of the sim thread) was fixed and
-    the test updated.
-  - **Run B (final code):** see below (append numbers).
+  - **Run A (final code):** Lobby 12/12; MonoGame 1969 (+3 skip); ClientCore 864
+    (+1 `ShipDeleteGoneLiveTests` watch-latch — already-documented live-wire
+    timing flake); Core.Tests **4146 passed / 0 failed** (my assembly fully
+    green). QUARANTINE: only pickup/Conquest flakes (pass in isolation).
+  - **Run B (final code):** Lobby 12/12; MonoGame 1969 (+3 skip); ClientCore 864
+    (+1 `ShipDeleteGoneLiveTests.CrossSide` watch-latch flake); Core.Tests
+    **4145 passed / 1 failed** (`MineCrossSideVisibilityLiveTests`, passes 3/3
+    isolated — load flake, not a regression; my touched code paths all green).
+    QUARANTINE: only documented flakes (pass in isolation).
 - Live 30v30 / 200v200 rig: **NOT completed in this session.** The shared
   workstation was under heavy concurrent load from other Allegiance sessions
   (allegiance-codex-sim, p653c each running their own 200v200-scale suites),
