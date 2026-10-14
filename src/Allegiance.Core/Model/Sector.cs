@@ -400,6 +400,12 @@ public sealed class Sector : IClusterIgc
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(target);
 
+        // One constructor and one asteroid per in-progress build. This entry
+        // point also protects autonomous builders from duplicate commitments.
+        if (builder.Dead || builder.IsBuilding || builder.StationId is not null
+            || _buildingEffects.Any(effect => ReferenceEquals(effect.Target, target)))
+            throw new InvalidOperationException("builder or target asteroid is unavailable for construction");
+
         if (!_models.Contains(builder))
             throw new InvalidOperationException(
                 $"builder '{builder.Id}' is not in this sector; a building effect can only be started in the builder's own sector");
@@ -4268,7 +4274,8 @@ public sealed class Sector : IClusterIgc
             // the host broadcasts BUILDINGEFFECT_DESTROYED(181) whole-mission
             // (the port of native KillBuildingEffectEvent, FedSrv.CPP:12484-12492 —
             // drained via DrainBuildingEffectInterruptions).
-            if (effect.Builder.Dead)
+            if (effect.Builder.Dead || !_models.Contains(effect.Builder)
+                || effect.Builder.Sector != this || !_mineable.Contains(effect.Target))
             {
                 _pendingBuildingEffectInterruptions.Add(effect.Target.Data.AsteroidId);
                 _buildingEffects.RemoveAt(i);
