@@ -86,6 +86,15 @@ public sealed partial class Server
             Console.WriteLine($"[boot] *** sim.timeDilation config '{ls.TimeDilation}' UNKNOWN — expected off|auto; defaulting to off ***");
             mode = "off";
         }
+        // An explicitly configured fixed timeScale is a MANUAL setting, and manual wins
+        // over auto (the same rule as the admin timescale cheat). Matters since auto
+        // became the default (2026-10-14): a config asking for a fixed slow-motion
+        // scale must not be pulled back to 1.0 by the load controller.
+        if (mode == "auto" && ls.TimeScale is not null)
+        {
+            Console.WriteLine($"[boot] sim.timeDilation = auto disabled: a fixed sim.timeScale ({ls.TimeScale:R}) is configured, and manual wins");
+            mode = "off";
+        }
 
         TickProfiler.WindowReported += EmitTidiWindow;
         // P634 — per-window per-peer send-backlog sample (scope 1 measurement):
