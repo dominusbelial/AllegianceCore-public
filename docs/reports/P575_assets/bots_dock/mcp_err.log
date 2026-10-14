@@ -1,0 +1,42 @@
+[p485] probe ready-up for ship 8098 on side 0 — enables the normal-map lobby auto-start (PLAYER_READY)
+allegiance-mcp: connected to live server 127.0.0.1:6113 (probe seated); serving stdio MCP tools...
+[p554] arena: sent relocate cheat 'relocate 8099 1052 -1809.339 -1395.252 435.792 -0 -0 -1' via the probe connection — waiting for SET_CLUSTER on ship 8099
+[p554] arena: ship 8099 confirmed in sector 1052 (SET_CLUSTER applied to its ClientWorld)
+[p539d] arena: bot mcp-b001-2290 (ship 8099 side 0) relocated to mirrored spot in sector 1052
+[p554] arena: sent relocate cheat 'relocate 8100 1052 -1369.339 -1659.252 -864.208 0 0 1' via the probe connection — waiting for SET_CLUSTER on ship 8100
+[p554] arena: ship 8100 confirmed in sector 1052 (SET_CLUSTER applied to its ClientWorld)
+[p539d] arena: bot mcp-b002-1046 (ship 8100 side 1) relocated to mirrored spot in sector 1052
+[p554] arena: sent relocate cheat 'relocate 8101 1052 -1369.339 -1395.252 435.792 -0 -0 -1' via the probe connection — waiting for SET_CLUSTER on ship 8101
+[p554] arena: ship 8101 confirmed in sector 1052 (SET_CLUSTER applied to its ClientWorld)
+[p539d] arena: bot mcp-b003-3248 (ship 8101 side 0) relocated to mirrored spot in sector 1052
+[p554] arena: sent relocate cheat 'relocate 8102 1052 -1809.339 -1659.252 -864.208 0 0 1' via the probe connection — waiting for SET_CLUSTER on ship 8102
+[p554] arena: ship 8102 confirmed in sector 1052 (SET_CLUSTER applied to its ClientWorld)
+[p539d] arena: bot mcp-b004-9404 (ship 8102 side 1) relocated to mirrored spot in sector 1052
+[p554] arena: sent relocate cheat 'relocate 8103 1052 -2029.339 -1659.252 435.792 -0 -0 -1' via the probe connection — waiting for SET_CLUSTER on ship 8103
+[p554] arena: ship 8103 confirmed in sector 1052 (SET_CLUSTER applied to its ClientWorld)
+[p539d] arena: bot mcp-b005-9990 (ship 8103 side 0) relocated to mirrored spot in sector 1052
+[p554] arena: sent relocate cheat 'relocate 8104 1052 -1149.339 -1395.252 -864.208 0 0 1' via the probe connection — waiting for SET_CLUSTER on ship 8104
+[p554] arena: ship 8104 confirmed in sector 1052 (SET_CLUSTER applied to its ClientWorld)
+[p539d] arena: bot mcp-b006-2549 (ship 8104 side 1) relocated to mirrored spot in sector 1052
+[p539d] DEATH bot mcp-b003-3248 ship 8101 side 0 cause=collision deaths=1 gunfire=0 collision=1
+[p539] bot mcp-b003-3248 (ship 8101) is now a LIFEPOD (hull 33) — stopping combat, flying home to dock
+[p539] pod bot mcp-b003-3248 (ship 8101) flying home to friendly station 24465 in sector 1053
+[p539d] DEATH bot mcp-b004-9404 ship 8102 side 1 cause=collision deaths=1 gunfire=0 collision=1
+[p539] bot mcp-b004-9404 (ship 8102) is now a LIFEPOD (hull 113) — stopping combat, flying home to dock
+[p539] pod bot mcp-b004-9404 (ship 8102) flying home to friendly station 4329 in sector 1051
+[p539] pod bot mcp-b003-3248 (ship 8101) DOCKED at station 24465 — pod reached home
+[p539] pod bot mcp-b004-9404 (ship 8102) DOCKED at station 24466 — pod reached home
+[p539d] DEATH bot mcp-b001-2290 ship 8099 side 0 cause=collision deaths=1 gunfire=0 collision=1
+[p539] bot mcp-b001-2290 (ship 8099) is now a LIFEPOD (hull 33) — stopping combat, flying home to dock
+[p539] pod bot mcp-b001-2290 (ship 8099) flying home to friendly station 24465 in sector 1053
+[p539d] DEATH bot mcp-b006-2549 ship 8104 side 1 cause=collision deaths=1 gunfire=0 collision=1
+[p539] bot mcp-b006-2549 (ship 8104) is now a LIFEPOD (hull 113) — stopping combat, flying home to dock
+[p539] pod bot mcp-b006-2549 (ship 8104) flying home to friendly station 4329 in sector 1051
+[p539d] DEATH bot mcp-b005-9990 ship 8103 side 0 cause=collision deaths=1 gunfire=0 collision=1
+[p539] bot mcp-b005-9990 (ship 8103) is now a LIFEPOD (hull 33) — stopping combat, flying home to dock
+[p539] pod bot mcp-b005-9990 (ship 8103) flying home to friendly station 24465 in sector 1053
+[p539] pod bot mcp-b005-9990 (ship 8103) DOCKED at station 24465 — pod reached home
+[p539] pod bot mcp-b001-2290 (ship 8099) DOCKED at station 24465 — pod reached home
+[p539d] DEATH bot mcp-b002-1046 ship 8100 side 1 cause=collision deaths=1 gunfire=0 collision=1
+[p539] bot mcp-b002-1046 (ship 8100) is now a LIFEPOD (hull 113) — stopping combat, flying home to dock
+[p539] pod bot mcp-b002-1046 (ship 8100) flying home to friendly station 24466 in sector 1060

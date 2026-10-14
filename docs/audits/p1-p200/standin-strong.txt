@@ -1,0 +1,43 @@
+src/Allegiance.ClientCore.Game/Rendering/DamageDebrisParticles.cs:151:    /// stand-in for native <c>m_radius</c>).</param>
+src/Allegiance.ClientCore.Game/Rendering/DamageDebrisParticles.cs:166:            // Deterministic local-space placement for this vent (stand-in for
+src/Allegiance.ClientCore.Game/Rendering/MissileTrailParticles.cs:114:    /// <summary>Port stand-in for the missile's radius in the smoke-size formula
+src/Allegiance.ClientCore.Game/Rendering/MissileTrailParticles.cs:119:    /// −Forward, in world units — the port's stand-in for the real (unported)
+src/Allegiance.ClientCore.Game/Rendering/WarpTransitParticles.cs:146:    /// stand-in for native <c>m_radius</c>).</param>
+src/Allegiance.Server/Server.Economy.cs:703:    /// the completed station type, the port's stand-in for native
+src/Allegiance.Server/Server.Economy.cs:882:        // station-type buckets (P458). Log and ignore, the port's stand-in for
+src/Allegiance.ClientCore.Game/Rendering/TreasureMeshFactory.cs:51:/// is a procedural stand-in for a model we cannot load — deliberately not
+src/Allegiance.Server/Server.Docking.cs:673:    /// (<c>Server.cs:4177</c>), the port's established stand-in for the native
+src/Allegiance.Server/Server.Docking.cs:1763:    /// <summary>The port's stand-in for native <c>ImodelIGC::SeenBySide(side)</c> —
+src/Allegiance.Server/Server.Combat.cs:1532:        //      stand-in for native's nearest-search + GetBase fallback);
+src/Allegiance.Server/Server.Combat.cs:1828:    /// P105's deliberately simplified stand-in for the native
+src/Allegiance.Server/Server.Combat.cs:1952:        // port's faithful stand-in for native's behaviour: native keeps an ejected
+src/Allegiance.Core/Model/Mission.cs:388:    /// payday to the first Started tick is the faithful stand-in for
+src/Allegiance.Core/Model/Mission.cs:916:    /// stand-in for native's iteration over every mission station with a
+src/Allegiance.Server/Server.Lobby.cs:647:    /// stand-in for native's per-player <c>GAME_OVER_PLAYERS</c> list inside
+src/Allegiance.Server/Server.Lobby.cs:964:    /// a deliberate stand-in for native's full <c>FAllReady</c> (whose
+src/Allegiance.Server/Server.Lobby.cs:3050:                // P105's FindFriendlyStation stand-in for the native
+src/Allegiance.Core/Model/Sector.cs:451:    /// honest stand-in for native's then-qsort'd array until the budget task
+src/Allegiance.Core/Model/Sector.cs:851:    /// alongside the other per-tick passes. The port's stand-in for the native
+src/Allegiance.Core/Model/Sector.cs:949:    /// stand-in for the native station-rescue branch of
+src/Allegiance.Core/Model/Sector.cs:1035:    /// alongside the other per-tick passes. The port's stand-in for the carrier
+src/Allegiance.Core/Model/Sector.cs:1149:    /// stand-in for <c>CtreasureIGC::HandleCollision</c>'s ship branch
+src/Allegiance.Core/Model/Sector.cs:1487:    /// stands in for it. It is chosen large enough to comfortably encompass a
+src/Allegiance.Core/Model/Sector.cs:3471:                // stand-in for native's collision bounce — so it neither captures
+src/Allegiance.Core/Model/Sector.cs:3490:                    // non-board hull — no capture, no dock (the port's stand-in for
+src/Allegiance.Core/Data/DataBuoyIGC.cs:46:    /// <summary><c>c_buoyCluster = 1</c> — a stand-in for "go to this OTHER sector",
+src/Allegiance.Core/Wire/LoadoutChange.cs:80:    /// mount order — the ship's <b>current whole</b> loadout (the port's stand-in for
+src/Allegiance.ClientCore.Game/Rendering/RockTextureSource.cs:14:/// the old procedural stand-in for the types that have a real asset.
+src/Allegiance.Core/Wire/RelaunchShip.cs:93:    /// ship-level stand-in for the native's <c>ExportShipLoadout</c>). May be
+src/Allegiance.Core/MapGen/MissionMapGenerator.cs:1341:    /// starbase sits at the origin) — the simplified stand-in for native's
+src/Allegiance.ClientCore/State/ClientWorld.cs:299:    /// client-side stand-in for native's <c>GetSide()-&gt;GetShips()</c> player
+src/Allegiance.Server/Server.ShipCommands.cs:49:    /// same-side is the faithful stand-in for native <c>SeenBySide</c>.</item>
+src/Allegiance.Server/Server.ShipCommands.cs:1961:    /// faithful stand-in for "Builder-role" is the Constructor hull capability
+src/Allegiance.Server/Server.ShipCommands.cs:2033:    /// (P285), so the faithful stand-in for "Builder-role" is the Constructor
+src/Allegiance.Server/Server.ShipCommands.cs:2050:    /// the port's stand-in for native "the builder reaches the asteroid's
+src/Allegiance.Server/Server.ShipCommands.cs:2072:        // P285/P422 stand-in for a player's Builder-class hull, since player
+src/Allegiance.Server/Server.ShipCommands.cs:2119:        // otherwise — the port's stand-in for native "the builder is in the
+src/Allegiance.Core/Sim/Ship.cs:1100:    /// is the port's stand-in for the C++ <c>m_pmodelRipcord</c> pointer
+src/Allegiance.Core/Sim/Ship.cs:1558:    /// configured to construct. This port's honest stand-in for native's
+src/Allegiance.Core/Sim/Ship.cs:1859:    /// first-found precedent P159 uses, and the port's honest stand-in for
+src/Allegiance.Core/Sim/Ship.cs:5835:    /// consistent stand-in for native's <c>bDocked</c> gate (this port's NPCs
+src/Allegiance.Core/Sim/Ship.cs:5910:    /// deliberate, consistent stand-in for native's <c>bDocked</c> gate (this

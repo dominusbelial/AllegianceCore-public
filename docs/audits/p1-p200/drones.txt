@@ -1,0 +1,28 @@
+1104bd3a 2026-08-30 P19: wire combat into the live server/bot loop
+1d311486 2026-08-30 P22: two-bot combat on the real Bot class
+43509782 2026-08-30 P24: scale live combat demo to N independent 1v1 bot lanes (4 pairs, 8 bots)
+6e6192bc 2026-08-31 P35: export warps + stations so bots have something to navigate to
+7f143edf 2026-08-31 P37: send FM_S_MISSION_STAGE -- real WOPR bot flight confirmed, first time ever
+63ffbb6f 2026-09-01 P46: single-sector-focused renderer for real WOPR AI exploration
+bf2ba30a 2026-09-08 P109: TURRET_GUNNER_BINDING — a boarded turret gunner actually crews the carrier's weapon: FM_C_ACTIVE/INACTIVE_TURRET_UPDATE(99/100) wire codecs + server handl
+b8a03ee6 2026-09-10 P140: PROMOTE(189/190) — swap a boarded gunner into the pilot's seat
+92c20033 2026-09-10 P147: NPC ship existence + visibility (ORDER_CHANGE Stage 1) — ownerless Ship in sector flows into peers' HEAVY_SHIPS_UPDATE with zero new broadcast code
+e73fe688 2026-09-10 P148: ORDER_CHANGE(93) Stage 2 — command a docked NPC to stay docked
+8e136052 2026-09-10 P149: FIND_TARGET (ORDER_CHANGE Stage 3) — nearest friendly station with an ability, same cluster
+6b8f3340 2026-09-10 P150: ORDER_CHANGE(93) Stage 4 — command a flying NPC to return to base
+59ec0d8f 2026-09-10 P151: ORDER_CHANGE Stage 5 — NPC takes cover at a local station when damaged
+54d6e29d 2026-09-10 P152: ORDER_CHANGE(93) Stage 6 — command a docked NPC to launch
+09105982 2026-09-10 P153: ORDER_CHANGE(93) generic non-NPC path — a real player locks a target
+b63fbb74 2026-09-10 P154: ORDER_CHANGE(93) real-player c_cmdAccepted generic path — accept an order
+d394680f 2026-09-10 P155: NPC autopilot foundation — same-cluster 'face and thrust' primitive
+93cdf47a 2026-09-10 P156: miner decision cycle — an NPC autonomously mines and sells
+72c6b81b 2026-09-11 P157: NPC cross-cluster movement — FindPath + autopilot extension
+346213c4 2026-09-11 P159: fair-share asteroid contention among same-side NPC miners
+b1500133 2026-09-11 P160: Ship.PilotType foundation — stop forcing every NPC into mining
+675c5b76 2026-09-11 P161: Layer pilot-type default order — least-targeted asteroid positioning
+f5e71f79 2026-09-11 P162: Wingman combat AI foundation — attack-nearest-enemy default order + firing
+4965d8d8 2026-09-11 P165: Builder AI decision layer (Stage 3) — idle Builder autonomously starts a real build
+e2b578b5 2026-09-11 P166: Wingman combat AI Stage 2 — c_cidDefend defend-an-ally decision layer
+bee2f77a 2026-09-11 P168: NPC collision avoidance Stage 1 — dodge primitive
+f20b27ca 2026-09-11 P170: NPC collision avoidance Stage 2 — include stations in the dodge scan
+be549be1 2026-09-12 P172: NPC ripcord-as-travel Stage 1 — safety gate + station-anchor search
