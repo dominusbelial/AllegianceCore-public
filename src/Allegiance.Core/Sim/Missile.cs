@@ -151,6 +151,48 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// it removes itself from on expiry.</summary>
     public Sector OwnerSector => _sector;
 
+    /// <summary>Native missileigc.h:134-145 damageable health fraction.</summary>
+    public float Fraction { get; private set; } = 1;
+    public bool Dead => Fraction <= 0;
+
+    /// <summary>Native missileigc.h:79-132: friendly immunity, matrix and
+    /// experience scaling, capped repairs, and first-crossing destruction.</summary>
+    public DamageResult ReceiveDamage(byte type, float amount, double now,
+        Vector3 position1, Vector3 position2, Model? launcher)
+    {
+        var mission = _sector.Mission ?? (Launcher as Ship)?.Mission;
+        if (BlastDamage.Suppressed(mission, BlastDamage.SideOf(Launcher), launcher, amount))
+            return DamageResult.NoDamage;
+        int row = type & BlastDamage.Mask, defense = MissileType.DefenseType;
+        if (mission is not null && row < DataConstantsIGC.DmgidMax && defense < DataConstantsIGC.DefidMax)
+            amount *= MathF.Max(0, mission.Core.Constants.DamageConstants[row][defense]);
+        if (launcher is Ship source) amount *= source.ExperienceMultiplier;
+        float maxHP = MissileType.HitPoints;
+        if (amount < 0)
+        {
+            if (maxHP > 0) Fraction = MathF.Min(1, Fraction - amount / maxHP);
+        }
+        else if (amount != 0)
+        {
+            float previous = Fraction;
+            Fraction = maxHP > 0 ? MathF.Max(0, Fraction - amount / maxHP) : 0;
+            if (Dead && previous > 0)
+            {
+                _sector.Remove(this);
+                mission?.Site.MissileDestroyedEvent(this);
+                // FedSrv.CPP:12524-12529: killed missiles also explode, except
+                // the zero-position resonator sentinel. Remove first so the
+                // queued secondary explosion cannot kill this missile again.
+                if (position1 != Vector3.Zero && MissileType.BlastPower != 0)
+                    _sector.ResolveExplosion(new Explosion(MissileType.DamageType,
+                        MissileType.BlastPower * GaFactor(GlobalAttributeSet.DamageMissiles),
+                        MissileType.BlastRadius, now, position1, Launcher), now);
+                return DamageResult.Killed;
+            }
+        }
+        return DamageResult.HullDamage;
+    }
+
     /// <inheritdoc/>
     float IOrdnance.Radius => MissileType.Radius;
     /// <inheritdoc/>
@@ -271,6 +313,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         Position += Velocity * (float)dt;
         if (now >= _timeExpire)
         {
+            _sector.Remove(this); // expiry blast must not hit its own spent missile
             if (MissileType.BlastPower != 0f)
             {
                 // Native projects the blast to the exact expiry instant
@@ -288,13 +331,8 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                     Launcher);
                 _sector.ResolveExplosion(blast, _timeExpire);
             }
-            _sector.Remove(this);
-            // The destruction-event broadcast: same shape as Ship.ReceiveDamage
-            // raising KillShipEvent on a real death (Ship.cs:494), applied to the
-            // missile's own expiry. Site derived from the launcher (a Ship's
-            // mission host); a launcher-less missile has no site and raises nothing.
-            if (Launcher is Ship launcherShip)
-                launcherShip.Mission?.Site.MissileDestroyedEvent(this);
+            // A sector-bound missile reaches the host even without a launcher.
+            (_sector.Mission ?? (Launcher as Ship)?.Mission)?.Site.MissileDestroyedEvent(this);
         }
     }
 

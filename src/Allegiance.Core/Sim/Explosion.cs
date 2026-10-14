@@ -30,13 +30,10 @@ namespace Allegiance.Core.Sim;
 /// <c>m_explosions</c> ring, <c>clusterIGC.cpp:406</c>), never written to the
 /// wire — so this port's representation is just a plain C# type with no
 /// byte-layout concern, no packing/alignment constraint, and no codec.</para>
-/// <para><b>Immediate resolution.</b> The native queues an explosion and
-/// resolves it <em>next tick</em> with a position projection
-/// <c>dt = (e.time − m_lastUpdate) − m_tOffset</c> (<c>clusterIGC.cpp:409,
-/// 419</c>). This port resolves <b>immediately/synchronously</b> at the moment
-/// the explosion is created, against each target's <em>current</em> position —
-/// an honest simplification of the same category as P95's "no swept
-/// dwell-time math" (see <see cref="Sector.ResolveExplosion"/>).</para>
+/// <para>Resolution remains synchronous, with secondary missile blasts queued
+/// during the damage walk. Targets are projected from their stored-position
+/// timestamp to <see cref="Time"/> (clusterIGC.cpp:409,419), including models
+/// that have already integrated past a blast in the current tick.</para>
 /// </remarks>
 public readonly record struct Explosion(
     byte DamageType,

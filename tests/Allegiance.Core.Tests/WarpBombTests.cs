@@ -15,7 +15,7 @@ namespace Allegiance.Core.Tests;
 /// <summary>
 /// P101 — warp bombing. A real <see cref="Missile"/> that reaches a warp (instead
 /// of a ship) triggers <c>FM_S_WARP_BOMB(188)</c>, is consumed at trigger time,
-/// and schedules a <see cref="Sector.WarpBombDelaySeconds"/>(15 s)-delayed real
+/// and schedules a loaded-core-delay real
 /// <see cref="Explosion"/> at the warp's position (native
 /// <c>FedSrvSiteBase::WarpBombEvent</c>, <c>FedSrv.CPP:12543-12562</c>, and the
 /// warp's own <c>Update</c> bomb-pop, <c>warpIGC.h:54-90</c>). The one genuine
@@ -77,7 +77,7 @@ public sealed class WarpBombTests
                 if (dtm <= 0f) continue;
                 float fullDrop = m.Power * dtm / hull.HitPoints;   // d ≤ 0 → full Amount
                 if (fullDrop >= 0.080f && fullDrop <= 0.900f)
-                    return (m, hull);
+                    return (m with { EabmCapabilities = (short)(m.EabmCapabilities | 0x02) }, hull);
             }
         }
         throw new InvalidOperationException("no warp-bomb-capable (missile, hull) combo in representative core");
@@ -128,23 +128,28 @@ public sealed class WarpBombTests
     /// <summary>Attach a real <see cref="ResolvedWarp"/> to a sector's private
     /// <c>_warps</c> via the established reflection seam (same technique
     /// <see cref="MissileCombatTests"/> uses for <c>Ship._shieldFraction</c>).
-    /// The warp has <c>Destination = null</c> (dangling) so
-    /// <see cref="Sector"/>'s ship-transit pass skips it — but the warp-bomb
-    /// trigger has no destination gate (native bombards whatever it hits).</summary>
+    /// P649 uses a valid pair in the same sector; its partner sits 10,000 units
+    /// away. Source-side blast proofs explicitly use the dual capability.</summary>
     private static ResolvedWarp AttachWarp(Sector sector, short warpId, Vector3 pos, short radius)
     {
         var warp = new ResolvedWarp(
             new DataWarpIGC(
-                WarpId: warpId, DestinationId: -1, Radius: radius,
+                WarpId: warpId, DestinationId: (short)(warpId + 1), Radius: radius,
                 TextureName: "", IconName: "", Name: "",
                 Position: [pos.X, pos.Y, pos.Z],
                 Forward: [0f, 0f, -1f],
                 Rotation: [0f, 0f, 0f, 1f],
                 Signature: 0f, ClusterId: -1),
-            destination: null);
+            destination: sector);
+        var partner = new ResolvedWarp(warp.Warp with
+        {
+            WarpId = (short)(warpId + 1), DestinationId = warpId,
+            Position = [pos.X, pos.Y, pos.Z + 10000f]
+        }, sector);
         var field = typeof(Sector).GetField("_warps", BindingFlags.Instance | BindingFlags.NonPublic)
             ?? throw new MissingFieldException(nameof(Sector), "_warps");
         ((List<ResolvedWarp>)field.GetValue(sector)!).Add(warp);
+        ((List<ResolvedWarp>)field.GetValue(sector)!).Add(partner);
         return warp;
     }
 
@@ -194,7 +199,7 @@ public sealed class WarpBombTests
 
         // Sim clock advances in <= 0.25 s chunks; step monotonically up to just
         // BELOW timeExplosion, asserting nothing detonates early the whole way.
-        double te = trigger + Sector.WarpBombDelaySeconds;
+        double te = trigger + sector.EffectiveWarpBombDelay;
         double t = trigger;
         while (t < te - 0.055)
         {
@@ -428,8 +433,8 @@ public sealed class WarpBombTests
         var mission = shooter.Mission!;
         var sector = mission.Sectors[0];
 
-        // Warp parked well away from the three spawn points, dangling destination
-        // (so no ship transits — but the warp-bomb trigger ignores the gate).
+        // Valid warp pair parked away from spawn points; the victim remains
+        // outside the transit volume. This source-blast proof uses a dual bomb.
         short warpId = 953;
         short warpRad = 20;
         var warpPos = new Vector3(700f, 0f, 700f);

@@ -82,6 +82,16 @@ public sealed class Mission
     /// </summary>
     public MissionStage Stage { get; set; } = MissionStage.NotStarted;
 
+    /// <summary>Native bAllowFriendlyFire (shipIGC.cpp:1222-1228). Defaults off.</summary>
+    public bool AllowFriendlyFire { get; set; }
+
+    /// <summary>Allied side pairs for native AlliedSides damage immunity
+    /// (shipIGC.cpp:1224). Either ordering represents the same alliance.</summary>
+    public HashSet<(short, short)> AlliedSidePairs { get; } = [];
+
+    internal bool AreSidesFriendly(short? a, short? b) => a is { } x && b is { } y
+        && (x == y || AlliedSidePairs.Contains((x, y)) || AlliedSidePairs.Contains((y, x)));
+
     /// <summary>
     /// The <see cref="Side.Id"/> of the side that currently owns the mission —
     /// the port of native <c>m_misdef.iSideMissionOwner</c>
@@ -549,6 +559,11 @@ public sealed class Mission
         // one with no presence in the sector — to its correct SeenBySide value.
         foreach (var s in sectors) s.MissionSides = sideList;
         var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site);
+        foreach (var sector in sectors)
+        {
+            sector.Mission = mission;
+            foreach (var asteroid in sector.Mineable) asteroid.Mission = mission;
+        }
         // P259 — wire the sides back to the mission (the analogue of the Sector
         // back-link just above) and seed each side's cluster visibility range
         // from the mission constant, so Side.CanSeeCluster can query live state.
@@ -837,6 +852,7 @@ public sealed class Mission
         if (!Sectors.Contains(sector))
             throw new InvalidOperationException(
                 $"sector '{sector.Name}' is not part of this mission; an asteroid can only be placed in a sector the mission owns");
+        asteroid.Mission = this;
         sector.AttachAsteroid(asteroid);
     }
 

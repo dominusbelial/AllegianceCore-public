@@ -195,6 +195,9 @@ public sealed class ProbeCombatTests
                 float direct = pt.Power * cell;
                 if (direct >= probe.HitPoints) continue;       // probe must survive the direct hit
                 float pDelta = direct / probe.HitPoints;
+                float selfFalloff = 1f - pt.Radius / pt.BlastRadius;
+                float selfSplashDelta = pt.BlastPower * selfFalloff * selfFalloff * cell / probe.HitPoints;
+                if (pDelta + selfSplashDelta >= .9f) continue; // P649: probe must survive direct AND splash
                 if (pDelta < 0.042f) continue;                  // clearly measurable (upper bound unnecessary — the test asserts the exact decoded value either way)
                 foreach (var hull in core.HullTypes.Values
                              .Where(h => h.MaxEnergy >= wp.EnergyPerShot && h.Hardpoints.Length > 0 && h.Hardpoints[0].Fixed)
@@ -203,7 +206,7 @@ public sealed class ProbeCombatTests
                     float hCell = Dtm(core, pt.DamageType, hull.DefenseType);
                     if (hCell <= 0f) continue;
                     if (pt.BlastPower * hCell >= hull.HitPoints) continue;   // splash ship must survive full blast
-                    return (wp, pt, probe, hull, pDelta);
+                    return (wp, pt, probe with { ProjectileTypeId = -1 }, hull, pDelta); // sensor: native friendly-fire exception
                 }
             }
         }
@@ -214,9 +217,8 @@ public sealed class ProbeCombatTests
     /// creates a real <see cref="Explosion"/> at the impact position (the P97
     /// trigger is unconditional, projectileIGC.cpp:206), exactly as when it hits
     /// a ship — proven by the splash: a nearby cross-side ship takes the
-    /// squared-falloff blast damage, while the probe takes ONLY its direct hit
-    /// (<c>ResolveExplosion</c> targets Ship+Mine, not probes — out of scope,
-    /// the named next follow-up) and the launcher takes nothing.</summary>
+    /// squared-falloff blast damage. P649: the sensor probe takes both its
+    /// direct hit and the blast; the launcher is protected by FF-off immunity.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Blast_capable_round_directly_hitting_a_probe_creates_a_real_explosion_splashing_nearby_ships()
@@ -277,16 +279,19 @@ public sealed class ProbeCombatTests
         }
         Assert.True(landed, $"the round must hit the probe (probe fraction still {probe.Fraction:F4})");
 
-        // The probe took ONLY its direct hit, and survived (stays in the sector).
-        Assert.Equal(1f - directDelta, probe.Fraction, 3);
+        // Native clusterIGC.cpp:378-435 includes the probe in its own impact blast.
+        float selfFalloff = 1f - pt.Radius / pt.BlastRadius;
+        float selfSplashDrop = pt.BlastPower * selfFalloff * selfFalloff
+                            * Dtm(core, pt.DamageType, probeType.DefenseType) / probeType.HitPoints;
+        Assert.Equal(1f - directDelta - selfSplashDrop, probe.Fraction, 3);
         Assert.Contains(probe, sector.Models);
         // The blast (real Explosion at the impact position) splashed the nearby
         // cross-side ship with the exact falloff — proving the P97 mechanism ran
         // through the probe path, not silently skipped.
         Assert.Equal(1f - splashDrop, splash.Fraction, 3);
-        // The launcher is excluded from its own blast.
+        // Friendly fire is off, so the launcher is immune to its own damage.
         Assert.Equal(1f, shooter.Fraction, 3);
-        Console.WriteLine($"P100-BLAST: probe {pFrac0:F2}→{probe.Fraction:F4} (direct-only {1f - directDelta:F4}); splash ship " +
+        Console.WriteLine($"P100-BLAST: probe {pFrac0:F2}→{probe.Fraction:F4} (direct+splash {1f - directDelta - selfSplashDrop:F4}); splash ship " +
                           $"{sFrac0:F2}→{splash.Fraction:F4} = 1 − {splashDrop:F4} (d={d:F1}); shooter {shoot0:F1}");
     }
 }

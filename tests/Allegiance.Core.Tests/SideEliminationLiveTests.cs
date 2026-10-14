@@ -576,7 +576,12 @@ public sealed class SideEliminationLiveTests
         // P450: capture requires shields DOWN — drain the shield to 0 (real damage path).
         // P475: the station's shield capacity is GA-scaled (side B = civ 3 Ga'Taraan,
         // MaxShieldStation base 1.1), so drain the EFFECTIVE max to guarantee depletion.
-        bas.ReceiveDamage(0, bas.EffectiveMaxShield(), 0.0, Vector3.Zero, Vector3.Zero, launcher: null);
+        // P649b: NULL launchers still use the loaded matrix (stationIGC.cpp:160-171).
+        // Type 0's shield cell is zero here; use Combo's positive cell and scale
+        // the amount so absorbed = amount * dtmShield / effectiveMaxShield = 1.
+        var (missile, _, _, dtmShield, _) = Combo.Value;
+        bas.ReceiveDamage(missile.DamageType, bas.EffectiveMaxShield() / dtmShield,
+            0.0, Vector3.Zero, Vector3.Zero, launcher: null);
         Assert.Equal(0f, bas.ShieldFraction, 3);
 
         // Fly the hostile boardable capturer into the dock radius → real capture.
