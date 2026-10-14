@@ -64,7 +64,7 @@ public class FedMsgDispatchCoverageTests
         (65, "BucketStatus"), (68, "SideInactive"), (70, "FireMissile"), (75, "SideTechChange"),
         (76, "SideAttributeChange"), (77, "Eject"), (78, "SingleShipUpdate"), (83, "MissileDestroyed"),
         (84, "MineDestroyed"), (85, "ProbeDestroyed"), (90, "ShipStatusMessage"),
-        (94, "LeaveShip"), (102, "TeleportAck"), (105, "KillShip"),
+        (94, "LeaveShip"), (96, "LoadoutChange"), (102, "TeleportAck"), (105, "KillShip"),
         (108, "ChatBuoy"), (109, "CreateChaff"), (110, "MissileSpoofed"), (111, "EndSpoofing"),
         (114, "Payday"), (115, "SetMoney"),
         (116, "AutoDonateUpdate"), (121, "SetTeamLeader"), (123, "SetMissionOwner"), (125, "JoinSide"),
@@ -108,7 +108,6 @@ public class FedMsgDispatchCoverageTests
         (92, "PROBES_UPDATE", "per-cluster probe list sync; probe sensor model partial (P98-P100)"),
         (93, "ORDER_CHANGE", "relay echo; order state surfaced via QueuedCommandUpdate(215)"),
         (95, "JOINED_MISSION", "joined-mission announce; side-select flow uses SIDE_ROSTER(211)"),
-        (96, "LOADOUT_CHANGE", "loadout refresh broadcast; re-docked state via DockedNotify(61)+BUY_LOADOUT_ACK(5)"),
         (106, "SET_WINGID", "wing-assignment broadcast; wing UI not surfaced"),
         (124, "QUIT_MISSION", "quit-mission broadcast; game-over/leave path local"),
         (126, "QUIT_SIDE", "side-quit broadcast; side-select roster via SIDE_ROSTER(211)"),
@@ -289,8 +288,8 @@ public class FedMsgDispatchCoverageTests
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(83, ExpectedConsumedServerSent.Length);
-        Assert.Equal(35, KnownUnconsumedServerSent.Length);
+        Assert.Equal(84, ExpectedConsumedServerSent.Length);
+        Assert.Equal(34, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

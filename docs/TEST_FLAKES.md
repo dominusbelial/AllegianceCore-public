@@ -35,6 +35,27 @@ quarantine pass, not the parallel CI run).
 | Before (4 measurement runs, master 22d024b8) | **0/4** (no clean run; 3/7/7/6 Core fails + 0/2/2/0 ClientCore) | n/a (no lane existed) | ~20 unique failing tests |
 | After (verification on final tree) | **3/3 clean MAIN runs** (V4, V7, V11; V11 EXIT 0) | not expected 4/4 (residual isolation-flaky live-timing tests) | 21 quarantined; each of V5–V10 surfaced 1–2 new load-flakes, quarantined on the spot |
 
+## P648 observation (2026-10-14)
+
+Two `scripts/run-tests.sh` runs on the P648 final tree (dead-latch / relaunch-visibility
+work). Run A (V1) had 11 failures, Run B (V2) was **fully clean (EXIT 0)**. Every
+Run-A failure was re-run 3× in its class in isolation and confirmed flake (all pass
+in isolation except the one noted):
+
+| test (Run A, final tree) | isolation | verdict |
+|---|---|---|
+| `BotFixRegressionTests.Defense{Alert,AfterArrival,Detour,DisableSwitch,Relaunch,TravellingFighter x2}` (7) | 3/3 pass | load/parallelism flake (fast unit tests, fail only in the assembly-parallel MAIN burst; not touched by P648) |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | 3/3 pass | load flake (logon-drain ordering vs connection order) |
+| `ClientReadyUpUnfreezesNormalMapLiveTests.Harness_ready_up_starts_normal_map_mission_and_opposing_combat_bot_moves` | 3/3 pass | load flake (live) |
+| `BotAcceptsAndEngagesOrderLiveTests.ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget` | 3/3 pass | load flake (live) |
+| `LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown` | **2/3** | isolation-flaky live-timing sibling of the already-quarantined `Multi_mission_countdown_scopes_per_mission` — **recommend moving to the QUARANTINE lane (Lane=LiveTiming)** in a follow-up |
+
+Run A (V1) also surfaced the **P648 regression** (`DeadLatchRespawnLiveTests` x2,
+`SuicideLiveTests` x1): the initial LOADOUT_CHANGE revive un-latched the death's
+lifepod hull-change. Fixed by gating the revive on a confirmed NON-lifepod hull;
+after the fix all three pass in isolation AND in the clean Run B.
+
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition

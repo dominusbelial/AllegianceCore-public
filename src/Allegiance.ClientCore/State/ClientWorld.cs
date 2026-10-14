@@ -610,6 +610,13 @@ public sealed class ClientWorld
         public long DroppedOwn, DroppedTeammate, DroppedEnemy;
         public long RadiusCulled, CameraCulled;
         public long DrawnOwn, DrawnTeammate, DrawnEnemy;
+        // P648 — incoming rounds from a shooter this viewer cannot place on the
+        // live world: latched dead (ship saw SDR_KILLED and not yet revived),
+        // never posed (no entity/pose for the shooter yet), or stale (pose
+        // older than the dead-reckoner's 1.5 s hold window). This is the
+        // client-side "shots from ships I can't place" measurement that isolates
+        // the invisible/frozen-shooter symptom per category (see Apply(ProjectileInstance)).
+        public long FromLatchedDead, FromNeverPosed, FromStale;
 
         public long TotalReceived => ReceivedOwn + ReceivedTeammate + ReceivedEnemy;
         public long TotalDropped => DroppedOwn + DroppedTeammate + DroppedEnemy;
@@ -650,7 +657,8 @@ public sealed class ClientWorld
             $"received own={ReceivedOwn} tm={ReceivedTeammate} en={ReceivedEnemy} " +
             $"dropped-as-own own={DroppedOwn} tm={DroppedTeammate} en={DroppedEnemy} " +
             $"radius-culled={RadiusCulled} camera-culled={CameraCulled} " +
-            $"drawn own={DrawnOwn} tm={DrawnTeammate} en={DrawnEnemy}";
+            $"drawn own={DrawnOwn} tm={DrawnTeammate} en={DrawnEnemy} " +
+            $"unplaceable dead={FromLatchedDead} neverposed={FromNeverPosed} stale={FromStale}";
 
         public void Clear()
         {
@@ -658,6 +666,7 @@ public sealed class ClientWorld
             DroppedOwn = DroppedTeammate = DroppedEnemy = 0;
             RadiusCulled = CameraCulled = 0;
             DrawnOwn = DrawnTeammate = DrawnEnemy = 0;
+            FromLatchedDead = FromNeverPosed = FromStale = 0;
         }
     }
 
@@ -674,6 +683,43 @@ public sealed class ClientWorld
         if (MySideId is { } mySide && _ships.TryGetValue(launcherId, out var ent) && ent.SideId == mySide)
             return ProjectileRelation.Teammate;
         return ProjectileRelation.Enemy;
+    }
+
+    /// <summary>P648 — how "placeable" an actor ship (e.g. a round's shooter) is
+    /// for this viewer. Feeds the "shots from a ship I can't place" diagnostic
+    /// and the per-ship pose-age report; also the client half of the invisible/
+    /// frozen-shooter symptom classification (latched dead / never posed /
+    /// stale pose). <see cref="Live"/> = a current, non-dead pose.</summary>
+    public enum ShipPlaceability { Live = 0, LatchedDead = 1, NeverPosed = 2, Stale = 3 }
+
+    /// <summary>P648 — the dead-reckoner's smooth extrapolation horizon
+    /// (<see cref="ShipDeadReckoner"/>.ExtrapolationCap = 1.5 s). Beyond this a
+    /// remote pose is HELD, not extrapolated, so an actor with a pose this old
+    /// is "frozen" to the viewer while its shots still render.</summary>
+    public const double StalePoseSeconds = 1.5;
+
+    /// <summary>P648 — age (seconds) of the freshest pose this viewer holds for
+    /// <paramref name="shipId"/>; <see cref="double.PositiveInfinity"/> when the
+    /// ship is unknown or has never been posed.</summary>
+    public double PoseAgeSeconds(short shipId)
+    {
+        if (_ships.TryGetValue(shipId, out var e) && e.Latest is not null && e.LatestArrivalTime > 0)
+            return Math.Max(0.0, NowSeconds() - e.LatestArrivalTime);
+        return double.PositiveInfinity;
+    }
+
+    /// <summary>P648 — classify an actor ship for this viewer: own/local ship is
+    /// always <see cref="ShipPlaceability.Live"/>; otherwise latched-dead beats
+    /// never-posed beats stale-beats-live (a ship that was SDR_KILLED and not yet
+    /// revived by a re-presence signal is the "invisible shooter" case; a stale
+    /// pose is the "frozen but rendered" case).</summary>
+    public ShipPlaceability ClassifyShipPlaceability(short shipId)
+    {
+        if (MyShipId is { } me && shipId == me) return ShipPlaceability.Live;
+        if (!_ships.TryGetValue(shipId, out var e)) return ShipPlaceability.NeverPosed;
+        if (e.IsDead) return ShipPlaceability.LatchedDead;
+        if (e.Latest is null) return ShipPlaceability.NeverPosed;
+        return PoseAgeSeconds(shipId) > StalePoseSeconds ? ShipPlaceability.Stale : ShipPlaceability.Live;
     }
 
     /// <summary>
@@ -1581,6 +1627,13 @@ public sealed class ClientWorld
                 break;
             case BuyLoadoutAck buyLoadoutAck:
                 Apply(buyLoadoutAck);
+                break;
+            case Allegiance.Core.Wire.LoadoutChange loadoutChange:
+                // P648 — FM_S_LOADOUT_CHANGE(96): a ship's loadout/hull changed
+                // (same-side broadcast; a post-death relaunch sends this with the
+                // new hull). Adopts hull/parts, re-seats passengers, and revives
+                // a ship the viewer had latched dead.
+                Apply(loadoutChange);
                 break;
             case ChatMessage chatMessage:
                 Apply(chatMessage);
@@ -2777,6 +2830,17 @@ public sealed class ClientWorld
     {
         var rel = ClassifyLauncher(m.LauncherId);
         Diag.RecordReceived(rel);
+        // P648 — count incoming rounds from a shooter this viewer cannot place,
+        // split by category (latched dead / never posed / stale pose). A
+        // latched-dead shooter is the "invisible ship shooting" case; a stale
+        // one is the "frozen but still firing" case. This is the per-viewer
+        // measurement the task drives on (fixes prove out when these drop).
+        switch (ClassifyShipPlaceability(m.LauncherId))
+        {
+            case ShipPlaceability.LatchedDead: Diag.FromLatchedDead++; break;
+            case ShipPlaceability.NeverPosed: Diag.FromNeverPosed++; break;
+            case ShipPlaceability.Stale: Diag.FromStale++; break;
+        }
 
         // P542 — the own-echo de-dup is PER OUR OWN SHOT. An incoming round is
         // only ever dropped as our own echo when it was LAUNCHED BY US
@@ -3029,6 +3093,104 @@ public sealed class ClientWorld
         }
         e.Loadout = mounted;
         e.Cargo = cargo;
+    }
+
+    /// <summary>
+    /// P648 — <c>FM_S_LOADOUT_CHANGE(96)</c>: a ship's whole loadout (hull +
+    /// mounted parts + boarded children) changed, ported from native
+    /// <c>appmsg.cpp:1991-2084</c> (server half: <c>CFSShip::QueueLoadoutChange</c>
+    /// builds it fresh per event, <c>FedSrv/fsship.cpp:708-735</c>). The port's
+    /// server broadcasts it <b>same-side</b> (<see cref="Server.Combat.Server.BroadcastLoadoutChange"/>)
+    /// whenever a ship's hull/loadout changes — <b>including the post-death
+    /// relaunch</b>: a docked player buying a new ship runs <c>SetBaseHullType</c>,
+    /// which raises this with the new hull (the clash36 trace: "swapping base
+    /// hull 113 ('Lifepod') -&gt; 15 ('Adv Fighter') … LOADOUT_CHANGE(96) hull 15 -&gt;
+    /// 195 same-side peer(s)"). This was a documented <b>unconsumed</b> message
+    /// (P627 known-unconsumed); the client dropped it, so a same-side peer that
+    /// had latched the ship dead (KILL_SHIP / SHIP_DELETE SDR_KILLED) kept it
+    /// dead and kept its pre-relaunch hull until a later HEAVY_SHIPS_UPDATE.
+    ///
+    /// Native's handler is the canonical "alive again" revive: it detaches the
+    /// ship from any parent (<c>SetParentShip(NULL)</c>, :2007-2008), re-applies
+    /// the whole loadout including the hull (<c>ProcessShipLoadout</c>,
+    /// :2029-2031 — the <c>bFirstOrder</c> argument is literally
+    /// <c>pship-&gt;GetCluster() == NULL</c>, i.e. "was cached away by
+    /// SDR_KILLED", which is exactly the death-latch undo), and re-seats boarded
+    /// children (:2035-2079). This mirrors that for the port's pure-renderer
+    /// client: adopt the new hull + parts, clear the death latch and per-life
+    /// caches so the ship renders/is targetable again, and re-parent any
+    /// boarded children. (<c>sidShip</c> is a real id from this port's server,
+    /// but native also resolves <c>NA</c> to the local ship, :1998-2000.)
+    /// </summary>
+    private void Apply(Allegiance.Core.Wire.LoadoutChange m)
+    {
+        short? targetId = m.SidShip == Na ? MyShipId : m.SidShip;
+        if (targetId is not { } id) return;              // no ship to re-load
+        MarkSnapshotDirty();
+        var e = Upsert(id);
+
+        // Native: a passenger is no longer boarded (SetParentShip(NULL),
+        // appmsg.cpp:2007-2008).
+        e.ParentId = -1;
+
+        // Native re-applies the whole loadout incl. hull (ProcessShipLoadout,
+        // :2029-2031). Split mounted vs cargo like BuyLoadoutAck (P626).
+        e.HullId = m.HullId;
+        var mounted = new List<Allegiance.Core.Wire.ExpandedPartData>();
+        var cargo = new List<Allegiance.Core.Wire.ExpandedPartData>();
+        foreach (var p in m.Parts)
+        {
+            if (p.MountId >= 0x80) cargo.Add(p);
+            else mounted.Add(p);
+        }
+        e.Loadout = mounted;
+        e.Cargo = cargo;
+
+        // Native re-seats boarded children (passenger loop, :2035-2079).
+        foreach (var pd in m.Passengers)
+        {
+            if (pd.ShipId != id && _ships.TryGetValue(pd.ShipId, out var child))
+                child.ParentId = id;
+        }
+
+        // P648 — the relaunch revive, gated on the ship having actually been
+        // latched dead so a routine mid-flight part/hull change (mining mount,
+        // boarding) never disturbs a live ship's dead-reckoner or re-cues it,
+        // AND on the new hull being a genuine relaunch hull rather than the
+        // side's Lifepod. The death path itself fires a LOADOUT_CHANGE to a
+        // Lifepod hull (ChangeHull(lifepod) on the kill seam); that is NOT an
+        // "alive again" signal — it must leave the death latched (the pod stays
+        // dead until a real relaunch). Only a change to a confirmed NON-lifepod
+        // hull (the relaunch: Lifepod -> fighter, the clash36 "113 -> 15" case)
+        // is the revive.
+        bool wasDead = e.IsDead;
+        e.IsGone = false;
+        if (wasDead && !IsLifepodHullFor(m.HullId, e.SideId))
+        {
+            // A same-side LOADOUT_CHANGE with the new hull is the server's
+            // "this ship is alive again, with hull H" signal — the same-side
+            // counterpart of SET_CLUSTER/EXPORT/176 for remote ships. Clear the
+            // death latch and per-life caches (native's bFirstOrder re-seat,
+            // :2030): the dead-reckoner is dropped so the next pose/176 re-seeds
+            // fresh, and the first-sighting latch is reset so the return cues
+            // as a fresh sighting (P373 semantics).
+            e.IsDead = false;
+            e.NewContactSounded = false;
+            _remoteReckoners.Remove(id);
+        }
+    }
+
+    /// <summary>P648 — whether a LOADOUT_CHANGE hull is the side's Lifepod, i.e.
+    /// a death/pod swap rather than a relaunch. Resolves via
+    /// <see cref="LifepodHullResolver"/> (wired by the MonoGame client,
+    /// Game1.Lifecycle); when the side's lifepod is unknown (resolver absent —
+    /// e.g. the headless test harness) it is treated AS a lifepod so a
+    /// LOADOUT_CHANGE never spuriously un-latches a death it cannot positively
+    /// classify as a relaunch.</summary>
+    private bool IsLifepodHullFor(short hullId, short? sideId)
+    {
+        var lp = LifepodHullResolver(sideId ?? -1);
+        return lp is null || lp.Value == hullId;
     }
 
     // ── P442 money: SET_MONEY / MONEY_CHANGE / AUTODONATE / PAYDAY ─────────

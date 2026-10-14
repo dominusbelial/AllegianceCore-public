@@ -74,7 +74,7 @@ PROBES_UPDATE,92,S,Server.Broadcast,Bot only (harness),Real client does NOT cons
 ORDER_CHANGE,93,CS,"ServerHost, Server.Docking",Bot only (harness),Client sends ORDER_CHANGE (SendOrderChange); relay echo NOT consumed by real client,appmsg.cpp:1822,done
 LEAVE_SHIP,94,S,"Server.Docking, Server.ShipCommands",ConnectionSession (real client),own ship detaches; '<name> has left your ship.' / lifepod (appmsg.cpp:1914),appmsg.cpp:1914,done
 JOINED_MISSION,95,S,Server.Lobby,neither (codec only),Real client does NOT consume (candidate: JOINED_MISSION),appmsg.cpp:2150,partial
-LOADOUT_CHANGE,96,S,"ServerHost, Server.Lifecycle",neither (codec only),Real client does NOT consume (candidate: LOADOUT_CHANGE),appmsg.cpp:1991,partial
+LOADOUT_CHANGE,96,S,"ServerHost, Server.Lifecycle","ClientWorld.Apply(LoadoutChange) - same-side loadout/hull + relaunch revive (P648)",Consumed: hull/parts/passengers + clears IsDead on relaunch (P648),appmsg.cpp:1991,fixed
 ACTIVE_TURRET_UPDATE,99,C,"(C) server handler: Server.Broadcast, Server.Dispatch",client→server (sender),Client sends ACTIVE_TURRET_UPDATE (SendActiveTurret),appmsg.cpp:2087,done
 INACTIVE_TURRET_UPDATE,100,C,(C) server handler: Server.Dispatch,client→server (sender),Client sends INACTIVE_TURRET_UPDATE (SendInactiveTurret),appmsg.cpp:2110,done
 TELEPORT_ACK,102,S,Server.Docking,ConnectionSession (real client),accepted->jump sound (appmsg.cpp:1901); denied->'Teleport failed' line,appmsg.cpp:1856,done

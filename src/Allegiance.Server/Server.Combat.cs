@@ -517,6 +517,22 @@ public sealed partial class Server
             return;
         }
 
+        // P648 — a HULL change (SetBaseHullType, e.g. a post-death relaunch
+        // buying a new ship) means this ship's identity hull changed for
+        // CROSS-SIDE viewers too. Enemies never receive LOADOUT_CHANGE (this
+        // broadcast is same-side only), so the one-shot cross-side EXPORT latch
+        // is their ONLY prompt hull-freshness channel besides the slow P369
+        // self-heal (30 s). Drop the latch for this ship so the next
+        // SweepCrossSideExports re-sends the fresh hull/identity to every enemy
+        // peer that can see it — the task scope-2 rule "enemies learn a ship
+        // when it is visible to them, as native does" (native re-exports a ship
+        // when it becomes visible again; here we re-export promptly on the hull
+        // change that marks the relaunch). Safe: SweepCrossSideExports only
+        // sends to a side that has a seated peer IN the ship's current sector,
+        // so a re-export never reaches an enemy who isn't actually seeing it.
+        if (lc == LoadoutChange.HullChange)
+            _crossSideExportSent.RemoveWhere(e => e.ShipId == ship.Id);
+
         // The changed ship's CURRENT whole loadout (hull + every part), rebuilt
         // fresh at broadcast time (native ExportShipLoadout, FedSrv/fsship.cpp:710),
         // plus one PassengerData per boarded child (fsship.cpp:726-733). sidShip is

@@ -838,6 +838,14 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _buyLoadoutAcks.Add(bla);
                         _world.Apply(bla);
                         break;
+                    case Allegiance.Core.Wire.LoadoutChange.Fmid:
+                        // P648 — FM_S_LOADOUT_CHANGE(96): a ship's loadout/hull
+                        // changed (same-side broadcast; a post-death relaunch
+                        // sends this with the new hull). Previously dropped as
+                        // unknown; now applied so a same-side peer revives a
+                        // relaunched teammate and adopts its new hull.
+                        _world.Apply(Allegiance.Core.Wire.LoadoutChange.Decode(m));
+                        break;
                     case Reload.Fmid:
                         // P362 — a successful reload relay (P361 auto-reload, or
                         // the manual RELOAD path): the world counts it per ship so
