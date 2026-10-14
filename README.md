@@ -46,11 +46,15 @@ export DOTNET_ROOT="$HOME/.dotnet"
 export PATH="$DOTNET_ROOT:$PATH"
 dotnet --version        # must print 10.0.400
 
-# 2. Get the original art (not included in this repo)
+# 2. Get the original art (not included in this repo), plus the optional sky pack
 git clone https://github.com/FreeAllegiance/Artwork ../Artwork
+git clone https://github.com/dominusbelial/AllegianceCore-sky ../AllegianceCore-sky   # HD stars, nebulae, galaxies
 
-# 3. Copy the local config template (points at your art checkout)
-cp local.env.example local.env      # then edit ALLEGIANCE_ARTWORK_PATH
+# 3. Copy the local config template and point it at both (absolute paths;
+#    UNCOMMENT the lines — remove the leading '#')
+cp local.env.example local.env
+#    ALLEGIANCE_ARTWORK_PATH=/absolute/path/to/Artwork
+#    ALLEGIANCE_SKY_PACK_PATH=/absolute/path/to/AllegianceCore-sky
 
 # 4. Build
 dotnet build AllegianceCore.slnx
@@ -67,8 +71,10 @@ dotnet run --project src/Allegiance.ClientCore.MonoGame -- 127.0.0.1 6073 "My Pi
 ```
 
 The client and server need the art to render/run; `local.env` keys mirror the
-`ALLEGIANCE_ARTWORK_PATH` / `ALLEGIANCE_NATIVE_SRC_PATH` environment variables
-(`local.env` is gitignored — never commit machine paths).
+`ALLEGIANCE_ARTWORK_PATH` / `ALLEGIANCE_SKY_PACK_PATH` / `ALLEGIANCE_NATIVE_SRC_PATH`
+environment variables (`local.env` is gitignored — never commit machine paths). The sky
+pack is optional: without it the client runs with a plainer sky and logs
+`HD sky asset '…' unavailable` once per missing layer.
 
 ## Recommended settings (what we run for 200v200 tests)
 

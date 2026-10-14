@@ -1,6 +1,6 @@
 {
   "task": "P577b — HD sky corrections (keeps native planets; swaps globe1/globe3 backgrounds); supersedes the P577 planet/background picks",
-  "description": "Mapping of each native sky library entry to its HD counterpart asset, with source, licence and credit. HD assets live under the artwork root (ALLEGIANCE_ARTWORK_PATH, normally /home/domingo/Development/Artwork) in hdsky/. Paths are relative to that root.",
+  "description": "Mapping of each native sky library entry to its HD counterpart asset, with source, licence and credit. HD assets live in the optional sky pack (ALLEGIANCE_SKY_PACK_PATH, https://github.com/dominusbelial/AllegianceCore-sky) under hdsky/. Paths are relative to that root.",
   "credits_note": "ESA/Hubble and ESA/Webb images are CC BY 4.0 (visible credit required, no implied endorsement; see https://esahubble.org/copyright/). NASA images are public domain (US Government works). Full licence texts and credits archived under licenses/. HD planets use the NATIVE alien planet art (P577b) — no external imagery, so no external credit applies to them.",
   "settings": {
     "sky_intensity_default": 1.0,

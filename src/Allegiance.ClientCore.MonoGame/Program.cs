@@ -470,7 +470,7 @@ bool haveDirect = positional.Count >= 2;
 // a recorder and have Game1 read through it, then dump the opened-file list on
 // exit. Defaults to null (no recording), preserving today's behaviour.
 RecordingAssetSource? recorder = assetManifestPath is not null
-    ? new RecordingAssetSource(AssetSources.Artwork)
+    ? new RecordingAssetSource(AssetSources.Game)
     : null;
 
 var opts = new Game1.LaunchOptions

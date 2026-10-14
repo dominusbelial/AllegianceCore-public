@@ -1290,7 +1290,7 @@ public sealed partial class Game1 : Game
         // the catalogue/GA data; this body owns it.
         _session.World.RemoteShipHullResolver = ResolveRemoteHullStats;
         _playerName = opts.PlayerName;
-        _assets = opts.AssetSource ?? Assets.AssetSources.Artwork;
+        _assets = opts.AssetSource ?? Assets.AssetSources.Game;   // sky pack (if configured) layered over the artwork
         _captureSpec = opts.Capture;
         // P572 — live-proof automation. Null in a normal session (no --auto-*
         // flag passed → every automation off, exactly like a player). When

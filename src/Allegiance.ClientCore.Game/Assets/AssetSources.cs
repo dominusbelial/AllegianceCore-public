@@ -27,6 +27,20 @@ public static class AssetSources
     public static DirectoryAssetSource Artwork { get; } =
         new(ResolveRoot());
 
+    /// <summary>The optional sky-pack root (<c>ALLEGIANCE_SKY_PACK_PATH</c> or the
+    /// <c>local.env</c> key of the same name), or null when not configured/present.
+    /// The pack is a separate public repo:
+    /// https://github.com/dominusbelial/AllegianceCore-sky.</summary>
+    public static string? SkyPackRoot =>
+        ExternalPaths.IsAvailable(ExternalResourceKind.SkyPack) ? ExternalPaths.Resolve(ExternalResourceKind.SkyPack) : null;
+
+    /// <summary>The source the game reads through: the sky pack layered over the
+    /// artwork (sky-pack files win; everything else falls through to the artwork),
+    /// or just the artwork when no sky pack is configured — the sky renderers then
+    /// skip their layers exactly as before.</summary>
+    public static IAssetSource Game { get; } =
+        SkyPackRoot is { } sky ? new LayeredAssetSource(new DirectoryAssetSource(sky), Artwork) : Artwork;
+
     /// <summary>Reads a whole file's bytes through an <see cref="IAssetSource"/>,
     /// disposing the stream. Helper for the <c>.mdl</c>/<c>.igc</c> binary
     /// loaders.</summary>

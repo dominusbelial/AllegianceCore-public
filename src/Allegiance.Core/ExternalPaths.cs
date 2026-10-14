@@ -11,6 +11,11 @@ public enum ExternalResourceKind
 {
     Artwork,
     NativeSource,
+    /// <summary>The optional AllegianceCore sky pack (HD star field, nebula backdrops,
+    /// deep-field galaxies, distant/giant sky objects) — a separate public repo,
+    /// https://github.com/dominusbelial/AllegianceCore-sky. Optional: when absent the
+    /// client simply skips those sky layers.</summary>
+    SkyPack,
 }
 
 /// <summary>
@@ -33,6 +38,7 @@ public static class ExternalPaths
 {
     public const string ArtworkEnvVar = "ALLEGIANCE_ARTWORK_PATH";
     public const string NativeSourceEnvVar = "ALLEGIANCE_NATIVE_SRC_PATH";
+    public const string SkyPackEnvVar = "ALLEGIANCE_SKY_PACK_PATH";
 
     /// <summary>Gitignored per-machine override file at the repo root
     /// (committed template: <c>local.env.example</c>). Keys are the same as the
@@ -43,8 +49,12 @@ public static class ExternalPaths
     /// the runtime base directory or the current working directory.</summary>
     public const string RepoMarkerFile = "AllegianceCore.slnx";
 
-    public static string EnvVar(ExternalResourceKind kind) =>
-        kind == ExternalResourceKind.Artwork ? ArtworkEnvVar : NativeSourceEnvVar;
+    public static string EnvVar(ExternalResourceKind kind) => kind switch
+    {
+        ExternalResourceKind.Artwork => ArtworkEnvVar,
+        ExternalResourceKind.SkyPack => SkyPackEnvVar,
+        _ => NativeSourceEnvVar,
+    };
 
     /// <summary>Resolves the path for <paramref name="kind"/>, or the empty
     /// string when it is neither configured nor present on disk.</summary>
@@ -85,7 +95,7 @@ public static class ExternalPaths
     /// it. Shared by <see cref="Require"/> (thrown) and the test skip helper
     /// (passed as the skip reason).</summary>
     public static string DescribeMissing(ExternalResourceKind kind) =>
-        $"Allegiance {(kind == ExternalResourceKind.Artwork ? "artwork corpus" : "native source")} was not found. " +
+        $"Allegiance {(kind switch { ExternalResourceKind.Artwork => "artwork corpus", ExternalResourceKind.SkyPack => "sky pack", _ => "native source" })} was not found. " +
         $"Set the {EnvVar(kind)} environment variable — or, for a local checkout, add " +
         $"'{EnvVar(kind)}=&lt;path&gt;' to the gitignored {LocalConfigFile} at the repo root " +
         $"(see {LocalConfigFile}.example) — to the directory containing it. " +
