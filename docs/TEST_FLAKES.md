@@ -444,6 +444,32 @@ seated peer within a fixed receipt window; fails only under full-suite load
 (changes touch ship-status/identity/cross-side sweep timing, not mine exports).
 Status: load-flake.
 
+## P645 observation (2026-10-14, `scripts/run-tests.sh` on the final P645 tree)
+
+Two consecutive runs on the final P645 tree (transport send-side hardening:
+partial-write-safe inflight send, hard queued-byte cap `QueueHardCap`, PING reply
+throttle). Transport/suite changes live in `Allegiance.Core`/`Allegiance.Server`;
+`Allegiance.Core.Tests` passed 4018/4018 in run 1. The only failure is an
+established live-wire session-loss receipt load-flake that passes in isolation
+(verified 3/3), unrelated to P645 (the client-half send path is unchanged for
+the client: still a blocking `_stream.Write`; P645 only adds inflight promotion
+and close-on-timeout, which do not affect read-loop session-loss detection).
+
+| run | Lobby | MonoGame | ClientCore | Core | failures |
+|---|---|---|---|---|---|
+| 1 | 12/12 | 1968/1971 (3 skipped) | 748/749 | 4018/4018 | ClientCore: `SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent` |
+| 2 | 12/12 | 1967/1971 (3 skipped) | 749/749 | 4015/4018 | MonoGame: `ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy` (**new**, added below); Core: `SideEliminationLiveTests.Eliminating_side2_…` (line 39), `P591dMinefieldExportAudienceTests.Npc_layer_drone_minefield_…` (line 440), `GameOverPlayersWireTests.Win_by_elimination_…` (line 432) |
+
+**Newly-observed flake (P645, documented for future runs):**
+`ClientCore…SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent` —
+live-wire session-lost receipt timing when the server is killed under full-suite
+load; passes 3/3 in isolation (verified 2026-10-14). Status: load-flake.
+
+**Newly-observed flake (P645, documented for future runs):**
+`ClientCore.MonoGame…ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy` —
+live-wire chat target-compose receipt timing under full-suite load; passes 3/3 in
+isolation (verified 2026-10-14). Status: load-flake.
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

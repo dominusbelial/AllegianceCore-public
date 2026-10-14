@@ -225,6 +225,50 @@ public abstract class TcpTransportLivenessPolicyTestsBase
         return ((TcpClient)tcpField.GetValue(ps)!).Client;
     }
 
+    /// <summary>P645 — MODE-AWARE deterministic write control. Thread-per-peer
+    /// writers transmit via <c>_stream</c>, so the fake
+    /// <see cref="ControlledStream"/> is swapped into <c>_stream</c> (unchanged
+    /// P611 behaviour). POOL workers transmit via the non-blocking
+    /// <c>Socket.Send</c> path, so the same behaviour is instead installed as a
+    /// <c>SendOverride</c> fake send-sink on the peer's sender. Both return an
+    /// <c>Action</c> that releases a BlockForever write (safe to call on either
+    /// path, e.g. teardown).</summary>
+    protected Action InstallWriteControl(object ps, ControlledStream.Behavior behavior, int delayMs = 0)
+    {
+        if (_mode == TransportMode.Pool)
+        {
+            var gate = new ManualResetEventSlim(false);
+            var field = ps.GetType().GetField("SendOverride", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            Func<byte[], int, int, TcpTransport.SendOutcome> fn = (_, _, count) =>
+            {
+                switch (behavior)
+                {
+                    case ControlledStream.Behavior.AcceptFast:
+                        return TcpTransport.SendOutcome.Sent(count);
+                    case ControlledStream.Behavior.ThrottleMs:
+                        Thread.Sleep(delayMs);
+                        return TcpTransport.SendOutcome.Sent(count);
+                    case ControlledStream.Behavior.BlockForever:
+                        gate.Wait();
+                        return TcpTransport.SendOutcome.Sent(count);
+                    case ControlledStream.Behavior.TimeoutAfterMs:
+                        Thread.Sleep(delayMs);
+                        return TcpTransport.SendOutcome.TimedOut();
+                    default:
+                        return TcpTransport.SendOutcome.Sent(count);
+                }
+            };
+            field.SetValue(ps, fn);
+            return gate.Set;
+        }
+        else
+        {
+            var ctrl = new ControlledStream(PeerSocket(ps), behavior, delayMs);
+            SwapStream(ps, ctrl);
+            return ctrl.Release;
+        }
+    }
+
     private static void ReadExactly(Stream s, Span<byte> dst)
     {
         int off = 0;
@@ -289,8 +333,7 @@ public abstract class TcpTransportLivenessPolicyTestsBase
                 // the 2026-10-11 case: a healthy peer whose queue never drains
                 // under sustained load but whose socket keeps accepting bytes.
                 var ps = PeerSenderFor(host, id);
-                var ctrl = new ControlledStream(PeerSocket(ps), ControlledStream.Behavior.ThrottleMs, delayMs: 10);
-                SwapStream(ps, ctrl);
+                var release = InstallWriteControl(ps, ControlledStream.Behavior.ThrottleMs, delayMs: 10);
 
                 // Producer: outpacing the ~100/s drain keeps the queue non-empty,
                 // but far under the (large) byte cap — only liveness can judge it.
@@ -310,7 +353,7 @@ public abstract class TcpTransportLivenessPolicyTestsBase
                 // bytes throughout, so a healthy peer must NEVER be disconnected.
                 Thread.Sleep(TimeSpan.FromMilliseconds(2500));
                 producerStop.Set();
-                ctrl.Release();
+                release();
 
                 Assert.False(site.HasLeft(id, 0),
                     "a peer whose socket keeps accepting bytes must NOT be disconnected, even though its queue never empties (P606's never-drained rule falsely dropped these)");
@@ -340,8 +383,7 @@ public abstract class TcpTransportLivenessPolicyTestsBase
             // the socket provably makes no write progress. Deterministic, and
             // avoids the loopback RST that otherwise obscures the reason.
             var ps = PeerSenderFor(host, id);
-            var ctrl = new ControlledStream(PeerSocket(ps), ControlledStream.Behavior.BlockForever);
-            SwapStream(ps, ctrl);
+            var release = InstallWriteControl(ps, ControlledStream.Behavior.BlockForever);
 
             // Keep the queue non-empty with coalescable frames (bounded, small
             // backlog so the byte-cap rule never engages — only liveness can
@@ -353,7 +395,7 @@ public abstract class TcpTransportLivenessPolicyTestsBase
                 host.Send(id, frame, guaranteed: false, coalesceKey: 99);
                 Thread.Sleep(10);
             }
-            ctrl.Release();
+            release();
             Assert.True(site.HasLeft(id, 0), "a peer accepting nothing must eventually be disconnected");
 
             var counts = host.DrainDisconnectCounts();
@@ -386,8 +428,7 @@ public abstract class TcpTransportLivenessPolicyTestsBase
             // and stays there, so QueueOverCapacity (400 ms) is the only signal
             // that can fire. No loopback RST to obscure the reason.
             var ps = PeerSenderFor(host, id);
-            var ctrl = new ControlledStream(PeerSocket(ps), ControlledStream.Behavior.ThrottleMs, delayMs: 50);
-            SwapStream(ps, ctrl);
+            var release = InstallWriteControl(ps, ControlledStream.Behavior.ThrottleMs, delayMs: 50);
 
             var frame = new byte[8192];
             var deadline = DateTime.UtcNow.AddSeconds(8);
@@ -396,7 +437,7 @@ public abstract class TcpTransportLivenessPolicyTestsBase
                 host.Send(id, frame, guaranteed: true, coalesceKey: 0);   // guaranteed: never shed/coalesce -> over capacity
                 Thread.Sleep(2);
             }
-            ctrl.Release();
+            release();
             Assert.True(site.HasLeft(id, 0), "a guaranteed-only over-capacity peer must be disconnected (bounded memory)");
 
             var counts = host.DrainDisconnectCounts();

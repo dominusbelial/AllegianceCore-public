@@ -57,6 +57,44 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     private readonly ConcurrentDictionary<uint, long> _bufferedPerPeer = new();
     private readonly PerPeerRateLimiter _dropLog = new();
 
+    // P645 — per-peer PING reply throttle. The native client sends at most one
+    // PING per ~6 s (clintlib.cpp CheckServerLag, maxLagCheck=6.0f), so a 1 s
+    // minimum reply interval is ~6× headroom for legitimate traffic while
+    // stopping a guaranteed-reply amplification flood: excess pings are DROPPED
+    // (counted) and never answered, and the [ping] console line is sampled
+    // (see PingLogTicket) so a flood cannot spam the log either. Internal so
+    // tests can tighten the interval.
+    internal static long MinPingReplyIntervalMs { get; set; } = 1000;
+    private readonly ConcurrentDictionary<uint, long> _pingLastReplyUtcTicks = new();
+    private readonly PerPeerRateLimiter _pingLog = new() { WindowMs = 5_000, MaxPerWindow = 5 };
+    private long _pingsAnswered;
+    private long _pingsThrottled;
+
+    /// <summary>P645 — decide whether to ANSWER a PING from <paramref name="from"/>.
+    /// True = within the reply interval, send the echo (counts as answered);
+    /// False = the peer is pinging faster than <see cref="MinPingReplyIntervalMs"/>
+    /// — drop and count, do not answer.</summary>
+    internal bool ShouldAnswerPing(ConnectionId from)
+    {
+        long now = DateTime.UtcNow.Ticks;
+        long stored = _pingLastReplyUtcTicks.AddOrUpdate(
+            from.Value, now,
+            (_, old) => (now - old) >= MinPingReplyIntervalMs * TimeSpan.TicksPerMillisecond ? now : old);
+        if (stored == now) { Interlocked.Increment(ref _pingsAnswered); return true; }
+        Interlocked.Increment(ref _pingsThrottled);
+        return false;
+    }
+
+    /// <summary>P645 — gate the per-request <c>[ping]</c> console line so a
+    /// PING flood cannot force unbounded console I/O (mirrors <see cref="_dropLog"/>).</summary>
+    internal (bool Emit, long Suppressed, bool Summarize) PingLogTicket(ConnectionId from)
+        => _pingLog.Ticket(from.Value);
+
+    /// <summary>P645 — cumulative answered/throttled PING counts (test seam /
+    /// report).</summary>
+    internal long PingsAnswered => Interlocked.Read(ref _pingsAnswered);
+    internal long PingsThrottled => Interlocked.Read(ref _pingsThrottled);
+
     /// <summary>The transport this host is bound to; assigned once the pair exists.</summary>
     public TcpTransport? Transport { get; set; }
 
@@ -1063,6 +1101,10 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // be able to grow them either).
         _bufferedPerPeer.TryRemove(id.Value, out _);
         _dropLog.Remove(id.Value);
+        // P645 — release the departed peer's PING throttle state so these tables
+        // stay bounded by the LIVE peer set (same rationale as _bufferedPerPeer).
+        _pingLastReplyUtcTicks.TryRemove(id.Value, out _);
+        _pingLog.Remove(id.Value);
         _events.Enqueue(new PeerLeftEvt(id));
     }
     void ITransportSite.OnSessionLost() => _events.Enqueue(new SessionLostEvt());

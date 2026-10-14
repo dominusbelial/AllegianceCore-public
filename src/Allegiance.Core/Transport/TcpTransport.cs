@@ -45,6 +45,13 @@ public enum DisconnectReason
     /// <summary>A blocking socket write hit the socket's SendTimeout (a single
     /// write stalled for the full per-write budget).</summary>
     SendTimeout,
+    /// <summary>P645 — the peer's queued bytes exceeded the ABSOLUTE hard cap
+    /// (<see cref="TcpTransport.HardCapBytes"/>), humans included. Where
+    /// <see cref="QueueOverCapacity"/> is the timed soft rule (and exempt for
+    /// humans), this is an unconditional memory ceiling applied to EVERY peer —
+    /// a guaranteed-traffic flood (e.g. PING replies) can never grow a peer's
+    /// queue without limit, human or not.</summary>
+    QueueHardCap,
     /// <summary>A blocking socket write failed outright (connection reset /
     /// broken pipe / disposal — not a timeout).</summary>
     SendError,
@@ -140,7 +147,9 @@ public sealed class TcpTransport : ITransport
     // writer thread's blocking Write gives up rather than hanging forever) and
     // a modest send buffer so a stalled peer's backlog surfaces quickly. The
     // OS-default SendTimeout of 0 (infinite) is precisely the bug this fixes.
-    private const int SendTimeoutMs = 10_000;
+    // Internal/settable (P645) so the suite can shrink it for a fast,
+    // deterministic send-timeout test on the dedicated (blocking) writer.
+    internal static int SendTimeoutMs { get; set; } = 10_000;
     private const int SendBufferSize = 8 * 1024;
 
     // P605 — pool mode: a much tighter per-write socket timeout than the 10 s
@@ -193,6 +202,18 @@ public sealed class TcpTransport : ITransport
     /// deterministically on loopback, where OS socket buffers otherwise swallow
     /// a burst.</summary>
     internal static long CapacityBytes { get; set; } = 8L * 1024 * 1024;
+
+    /// <summary>P645 — the ABSOLUTE per-peer queued-byte ceiling, humans
+    /// included. Where <see cref="CapacityBytes"/> is the soft cap (it triggers
+    /// stream-frame shedding and the timed <see cref="DisconnectReason.QueueOverCapacity"/>
+    /// rule, which is exempt for humans), this is a hard memory bound: a peer
+    /// whose queued bytes exceed it is disconnected outright
+    /// (<see cref="DisconnectReason.QueueHardCap"/>) with no exemption, so a
+    /// guaranteed-traffic flood (e.g. PING reply amplification) can never grow a
+    /// peer's queue without limit. A few × <see cref="CapacityBytes"/> so a
+    /// legitimate join/world/export burst (measured at 200v200, P645) never
+    /// trips it. Internal so tests can shrink it for a fast, deterministic test.</summary>
+    internal static long HardCapBytes { get; set; } = 4L * 1024 * 1024 * 8; // 32 MiB = 4 × CapacityBytes
 
     /// <summary>P312 test seam: how long an accepted peer may connect and send
     /// nothing (or a partial frame) before its greeting read gives up and the
@@ -759,10 +780,39 @@ public sealed class TcpTransport : ITransport
         int off = 0;
         while (off < dst.Length)
         {
-            int n = s.Read(dst.Slice(off, dst.Length - off));
+            int n;
+            try
+            {
+                n = s.Read(dst.Slice(off, dst.Length - off));
+            }
+            catch (Exception ex) when (IsWouldBlock(ex))
+            {
+                // P645 — a POOL-mode peer's socket is non-blocking (so the
+                // shared worker's sends never block), which makes reads throw
+                // would-block when no data is pending instead of blocking.
+                // Retry rather than treating "no data right now" as a fatal
+                // error. Harmless for blocking sockets (would-block never fires).
+                Thread.Sleep(1);
+                continue;
+            }
             if (n <= 0) throw new EndOfStreamException("peer closed mid-frame");
             off += n;
         }
+    }
+
+    /// <summary>P645 — does <paramref name="ex"/> (or its inner exception)
+    /// indicate a socket "would block" (a non-blocking socket with nothing to
+    /// send/receive right now)? .NET surfaces this as an <c>IOException</c>
+    /// wrapping a <see cref="SocketException"/> whose
+    /// <see cref="SocketException.SocketErrorCode"/> is WouldBlock (EAGAIN/
+    /// EWOULDBLOCK) — distinct from a hard error or a timeout.</summary>
+    private static bool IsWouldBlock(Exception ex)
+    {
+        for (Exception? e = ex; e is not null; e = e.InnerException)
+            if (e is SocketException se
+                && (se.SocketErrorCode == SocketError.WouldBlock || se.SocketErrorCode == SocketError.TryAgain))
+                return true;
+        return false;
     }
 
     private static void CloseQuiet(Stream s) { try { s.Close(); } catch { } }
@@ -870,6 +920,16 @@ public sealed class TcpTransport : ITransport
         private readonly Dictionary<int, LinkedListNode<QueuedFrame>> _coalesceNodes = new();
         private long _queuedBytes;
         private DateTime? _overflowSinceUtc;
+        // P645 — partial-write-safe sending: the head frame is promoted OUT of
+        // the queue into _inflight (with _inflightOffset bytes already accepted
+        // by the OS) and stays there until FULLY sent. A frame is never
+        // destroyed before it is wholly on the wire, so a wedged socket can
+        // never corrupt TCP framing by resuming mid-frame on a fresh enqueue —
+        // a partially-sent frame is either completed (bytes keep flowing) or the
+        // connection is closed (unknown progress on a timed-out write), never
+        // abandoned-and-continued on the same socket.
+        private byte[]? _inflight;
+        private int _inflightOffset;
         // P611 — the peer's liveness clock, in ticks: the last time the socket
         // accepted ANY bytes (a send completed partially or fully). Updated by
         // the writer/pool worker on every successful write. A peer whose socket
@@ -895,6 +955,18 @@ public sealed class TcpTransport : ITransport
         // P605 — pool mode: the worker this peer is partitioned to (used to
         // unassign on leave). Null in thread-per-peer mode.
         internal SendWorkerPool.Worker? OwnerWorker;
+        // P645 — true when this peer's socket is non-blocking (POOL mode; set in
+        // AttachWorker). The pool worker then sends via Socket.Send (partial
+        // bytes / would-block) so the shared worker never blocks and a slow
+        // human is never cut by a write timeout. The dedicated writer / client
+        // half keep a blocking socket and send via _stream.Write (close on
+        // timeout with unknown progress).
+        private bool _nonBlocking;
+        // P645 test seam (InternalsVisibleTo): inject a deterministic fake send
+        // sink — the "fake socket/stream" the suite uses to unit-test partial
+        // writes, would-block, and timeout behaviour without OS socket timing.
+        // When set, SendInflight consults it instead of the real socket/stream.
+        internal Func<byte[], int, int, SendOutcome>? SendOverride = null; // set by tests via InternalsVisibleTo/reflection
 
         public PeerSender(NetworkStream stream, TcpClient tcpClient, Action<DisconnectReason> onDead)
         {
@@ -929,7 +1001,11 @@ public sealed class TcpTransport : ITransport
                 // gets a fresh liveness window rather than being judged stale
                 // from an old baseline (an idle-then-active peer must never be
                 // dropped for sitting quiet before its next frame arrived).
-                bool wasEmpty = _orderedQueue.First is null && _streamQueue.First is null;
+                // P645 — a peer with a partially-sent INFLIGHT frame is NOT
+                // drained, so it is not treated as freshly-idle.
+                bool wasEmpty = _orderedQueue.First is null
+                                && _streamQueue.First is null
+                                && _inflight is null;
 
                 if (coalesceKey != 0)
                 {
@@ -996,7 +1072,7 @@ public sealed class TcpTransport : ITransport
                     Interlocked.Exchange(ref _lastWriteProgressUtcTicks, now.Ticks);
                     _overflowSinceUtc = null;
                 }
-                else if (_orderedQueue.First is not null || _streamQueue.First is not null)
+                else if (_orderedQueue.First is not null || _streamQueue.First is not null || _inflight is not null)
                 {
                     _overflowSinceUtc = _queuedBytes > CapacityBytes ? (_overflowSinceUtc ?? now) : null;
                     long lastProg = Interlocked.Read(ref _lastWriteProgressUtcTicks);
@@ -1023,6 +1099,19 @@ public sealed class TcpTransport : ITransport
                         fireDisconnect = true;
                     }
                 }
+                // P645 — the ABSOLUTE queued-byte cap, applied to EVERY peer
+                // (humans included), independent of the timed soft rules above.
+                // The human exemption above covers only the timed
+                // QueueOverCapacity rule; this hard memory ceiling has no
+                // exemption, so a guaranteed-only flood (e.g. PING reply
+                // amplification) that nothing can shed must never be allowed to
+                // grow a peer's queue past a bounded size.
+                if (_queuedBytes > HardCapBytes)
+                {
+                    _disconnected = true;
+                    _reason = DisconnectReason.QueueHardCap;
+                    fireDisconnect = true;
+                }
             }
 
             if (fireDisconnect)
@@ -1041,12 +1130,19 @@ public sealed class TcpTransport : ITransport
 
         /// <summary>P605 — register this peer's queue with a pool worker: from
         /// now on the worker drains it (via <see cref="TryWriteHead"/>) and is
-        /// woken on every enqueue. No dedicated writer thread is spawned. Also
-        /// tightens the socket write timeout so a stalled peer can't tie up the
-        /// shared worker for the thread-per-peer 10 s default.</summary>
+        /// woken on every enqueue. No dedicated writer thread is spawned. P645 —
+        /// pool peers also flip their socket NON-BLOCKING so the shared worker's
+        /// sends report partial progress and "would block" instead of ever
+        /// blocking the worker (the non-blocking state only affects sends; the
+        /// read loop tolerates WouldBlock — see <see cref="ReadExactly"/>).
+        /// The socket must already have had GetStream() called (it has: the
+        /// greeting ran before this), else constructing a NetworkStream over a
+        /// non-blocking socket throws.</summary>
         public void AttachWorker(Action wake)
         {
             _wake = wake;
+            _nonBlocking = true;
+            try { _tcpClient.Client.Blocking = false; } catch { /* already gone */ }
             try { _tcpClient.SendTimeout = PoolSendTimeoutMs; } catch { }
         }
 
@@ -1063,51 +1159,26 @@ public sealed class TcpTransport : ITransport
         /// assigned worker) and only ever drains the head frame.</summary>
         public DrainResult TryWriteHead()
         {
-            byte[] frame;
             lock (_sync)
             {
                 if (_disconnected) return DrainResult.Dead;
-                if (_orderedQueue.First is null && _streamQueue.First is null) return DrainResult.Idle;
-                if (!SocketReady()) return DrainResult.Blocked;   // skip — not writable now
-                if (!PopHeadLocked(out frame!)) return DrainResult.Idle;
+                if (!PromoteHeadLocked()) return DrainResult.Idle;   // nothing queued/in-flight
+                // Skip — not writable now (keeps in-flight). When a deterministic
+                // SendOverride fake sink is installed (P645 test seam), the test
+                // controls writability through the sink, so don't gate on the
+                // real socket.
+                if (SendOverride is null && !SocketReady()) return DrainResult.Blocked;
             }
-            // Outside the lock, like WriterLoop: the only blocking socket write.
-            // SendTimeout on the socket bounds it even against a black-holed
-            // path; because we only write when SocketReady said writable, a
-            // healthy (consuming) peer never blocks here for long.
-            try
-            {
-                _stream.Write(frame, 0, frame.Length);
-                // P611 — the socket accepted bytes: real write progress. Stamp
-                // the liveness clock so the no-progress rule can never drop a
-                // peer whose socket is actually consuming, no matter how full
-                // (or never-empty) its queue is.
-                Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
-                return DrainResult.Wrote;
-            }
-            catch (Exception ex)
-            {
-                bool timeout = IsSocketTimeout(ex);
-                // P619c — a HUMAN write TIMEOUT (workstation hiccup wedging the
-                // socket mid-frame) must not cut a real player in pool mode:
-                // drop the stalled frame, stop pumping this pass, and let the
-                // (longer) Enqueue-path no-progress grace be the disconnect
-                // authority. A hard SendError (reset/disposal) still disconnects
-                // anyone — that is a dead socket, not a hiccup.
-                if (IsHuman && timeout)
-                    return DrainResult.Dead;   // resumed on the next enqueue's wake
-                if (!_disconnected)
-                {
-                    _disconnected = true;
-                    // P611 — split the reason: a write that stalled for the
-                    // socket's SendTimeout is a distinct, diagnosable cause,
-                    // separable from an outright connection error.
-                    _reason = timeout ? DisconnectReason.SendTimeout : DisconnectReason.SendError;
-                    _cts.Cancel();
-                    _onDead(_reason);
-                }
-                return DrainResult.Dead;
-            }
+            // Outside the lock: one non-blocking socket send of the in-flight
+            // frame's remaining bytes. Reports partial progress / would-block,
+            // so a slow peer never ties up the shared worker. Returns:
+            //   Wrote   — some or all of the in-flight frame was accepted by the
+            //              OS (fully sent => in-flight cleared for the next frame);
+            //   Blocked — the OS send buffer is full; the in-flight frame is
+            //              PRESERVED and retried on a later pass;
+            //   Dead    — socket error / disposal / timed-out-with-unknown-
+            //              progress: the connection is closed (see SendInflight).
+            return SendInflight();
         }
 
         /// <summary>P605 — can this peer's socket take a write right now without
@@ -1147,29 +1218,155 @@ public sealed class TcpTransport : ITransport
             return false;
         }
 
-        /// <summary>P634 — pop the next frame to drain, in priority order:
-        /// the ORDERED lane (join/world/guaranteed) head first, then the STREAM
-        /// lane head — so ordered/world data always precedes latest-wins
-        /// position frames on the wire and can never be starved behind them.
-        /// Caller must hold <c>_sync</c>. Releases the coalesce-map entry for a
-        /// popped stream frame and maintains the byte + overflow accounting.
-        /// Returns false when both lanes are empty.</summary>
-        private bool PopHeadLocked(out byte[] frame)
+        /// <summary>P645 — promote the next frame to drain into the in-flight
+        /// buffer (if none is already in flight): the ORDERED lane head first,
+        /// then the STREAM lane head — so ordered/world data always precedes
+        /// latest-wins position frames on the wire and can never be starved
+        /// behind them. Caller must hold <c>_sync</c>. Releases the coalesce-map
+        /// entry for a promoted stream frame and maintains the byte + overflow
+        /// accounting. A promoted frame is removed from the queue and its bytes
+        /// deducted from the accounting up front, but it is NOT discarded — it
+        /// lives in <see cref="_inflight"/> until fully sent (see
+        /// <see cref="SendInflight"/>). Returns true when there is now an
+        /// in-flight frame (just promoted, or already there); false when both
+        /// lanes are empty.</summary>
+        private bool PromoteHeadLocked()
         {
+            if (_inflight != null) return true;
             LinkedListNode<QueuedFrame> node;
             if (_orderedQueue.First is not null) node = _orderedQueue.First!;
             else if (_streamQueue.First is not null) node = _streamQueue.First!;
-            else { frame = null!; return false; }
+            else return false;
             node.List!.RemoveFirst();
             // P606 — a coalescable stream frame leaving the queue releases its
             // key so the NEXT enqueue for that key appends fresh instead of
             // pointing at this (now-consumed) node.
             if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
-            frame = node.Value.Frame;
-            _queuedBytes -= frame.Length;
+            _inflight = node.Value.Frame;
+            _inflightOffset = 0;
+            _queuedBytes -= _inflight.Length;
             if (_orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
             else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
             return true;
+        }
+
+        /// <summary>P645 — one send attempt of the in-flight frame's remaining
+        /// bytes, advancing <see cref="_inflightOffset"/> by however many the
+        /// socket/stream accepted. The in-flight frame is PRESERVED until fully
+        /// sent, so a partial write is never abandoned (abandoning one would
+        /// corrupt TCP framing when the next frame's bytes complete its declared
+        /// body). Returns:
+        ///  <c>Blocked</c> — the transport can't take more right now: nothing
+        ///      sent, the in-flight frame is kept and retried on a later pass;
+        ///  <c>Wrote</c> — some or all bytes went out (in-flight cleared when
+        ///      the whole frame is now on the wire);
+        ///  <c>Dead</c> — a hard error, or a write that TIMED OUT with unknowable
+        ///      progress: in that case the connection is CLOSED (reason
+        ///      <see cref="DisconnectReason.SendTimeout"/>) rather than continued
+        ///      on a possibly-corrupt stream.
+        /// Transmit selection (P645): the POOL worker sends via a NON-BLOCKING
+        /// <c>Socket.Send</c> (reports partial bytes / would-block), so a shared
+        /// worker is never blocked by a wedged peer and a slow-but-alive HUMAN is
+        /// never cut by a write timeout — would-block just waits and the no-
+        /// progress grace remains the authority. The DEDICATED writer uses its
+        /// blocking <c>_stream.Write</c> (all-or-nothing per call, bounded by the
+        /// socket's SendTimeout): on timeout the connection is CLOSED (P645) —
+        /// a slow-but-alive human's blocking write simply completes (bytes flow),
+        /// so P619c's intent is preserved, and only a genuinely stalled write
+        /// (unknown progress) closes the socket. <see cref="SendOverride"/> is a
+        /// P645 test seam that injects a deterministic fake send sink (the
+        /// "fake socket/stream" the suite uses to unit-test partial writes).
+        /// Caller must NOT hold <c>_sync</c>.</summary>
+        private DrainResult SendInflight()
+        {
+            if (SendOverride is { } ov)
+            {
+                var o = ov(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset);
+                if (o.Timeout) { FailAndClose(DisconnectReason.SendTimeout); return DrainResult.Dead; }
+                if (o.Error) { FailAndClose(DisconnectReason.SendError); return DrainResult.Dead; }
+                if (o.WouldBlock) return DrainResult.Blocked;
+                return AdvanceInflight(o.Bytes);
+            }
+            if (_nonBlocking)
+            {
+                var sock = _tcpClient.Client;
+                int n;
+                try
+                {
+                    n = sock.Send(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset, SocketFlags.None);
+                }
+                catch (SocketException se)
+                {
+                    if (se.SocketErrorCode == SocketError.WouldBlock || se.SocketErrorCode == SocketError.TryAgain)
+                        return DrainResult.Blocked;   // OS buffer full — keep in-flight, retry later
+                    bool timeout = se.SocketErrorCode == SocketError.TimedOut;
+                    FailAndClose(timeout ? DisconnectReason.SendTimeout : DisconnectReason.SendError);
+                    return DrainResult.Dead;
+                }
+                catch (Exception)
+                {
+                    FailAndClose(DisconnectReason.SendError);
+                    return DrainResult.Dead;
+                }
+                return AdvanceInflight(n);
+            }
+            // Dedicated (blocking) writer: _stream.Write transmits the whole
+            // remaining frame or throws. Routed through _stream so the existing
+            // controlled-stream test seam can drive the write behaviour.
+            try
+            {
+                _stream.Write(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset);
+                return AdvanceInflight(_inflight.Length - _inflightOffset);
+            }
+            catch (Exception ex) when (IsSocketTimeout(ex))
+            {
+                FailAndClose(DisconnectReason.SendTimeout);
+                return DrainResult.Dead;
+            }
+            catch (Exception)
+            {
+                FailAndClose(DisconnectReason.SendError);
+                return DrainResult.Dead;
+            }
+        }
+
+        /// <summary>P645 — fold <paramref name="n"/> accepted bytes into the
+        /// in-flight offset, refreshing the liveness clock. Clears the in-flight
+        /// frame once the whole frame is on the wire. <c>n &lt;= 0</c> means
+        /// nothing was accepted (would-block surfaced as a 0-length result) —
+        /// keep the frame, treat as <c>Blocked</c>, never a dead peer.</summary>
+        private DrainResult AdvanceInflight(int n)
+        {
+            if (n <= 0)
+            {
+                // Nothing accepted this call (some stacks surface would-block as
+                // a 0-length result). Keep the in-flight frame; not a dead peer.
+                return DrainResult.Blocked;
+            }
+            // Real write progress: the OS accepted these bytes — refresh the
+            // no-progress liveness clock so a slow-but-flowing peer is never cut.
+            Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
+            _inflightOffset += n;
+            if (_inflightOffset >= _inflight!.Length)
+            {
+                _inflight = null;
+                _inflightOffset = 0;
+                return DrainResult.Wrote;   // frame fully on the wire
+            }
+            return DrainResult.Wrote;       // partial progress — still in flight, next call continues
+        }
+
+        /// <summary>P645 — stamp the disconnect reason and tear the peer down
+        /// via the owner callback (which closes the stream, unblocking the read
+        /// loop so <c>OnPeerLeft</c> fires with this reason). Exactly-once
+        /// guarded by <c>_disconnected</c>.</summary>
+        private void FailAndClose(DisconnectReason reason)
+        {
+            if (_disconnected) return;
+            _disconnected = true;
+            _reason = reason;
+            _cts.Cancel();
+            _onDead(reason);
         }
 
         // P634 — instrumentation + test seams (InternalsVisibleTo). Lets the
@@ -1209,50 +1406,35 @@ public sealed class TcpTransport : ITransport
         {
             while (true)
             {
-                byte[] frame;
                 lock (_sync)
                 {
-                    while (_orderedQueue.First is null && _streamQueue.First is null
+                    while (!PromoteHeadLocked()
                            && !_disconnected && !_cts.IsCancellationRequested)
                         Monitor.Wait(_sync);
                     if (_disconnected || _cts.IsCancellationRequested) return;
-                    if (!PopHeadLocked(out frame!)) continue;
                 }
-                // The only blocking socket write, on this dedicated thread.
-                // SendTimeout on the socket bounds it even against a
-                // black-holed path.
-                try
+                // One send of the in-flight frame's remaining bytes. On this
+                // dedicated writer's BLOCKING socket, _stream.Write transmits the
+                // whole remaining frame (or blocks up to SendTimeout then
+                // throws); the P645 in-flight/offset design guarantees a partial
+                // send is RESUMED on the next iteration, never abandoned — and a
+                // timed-out write whose progress is unknowable CLOSES the
+                // connection (reason SendTimeout) rather than continuing on a
+                // possibly-corrupt stream. P619c's intent is preserved: a
+                // laggy-but-alive human's blocking write simply completes (bytes
+                // flow), so it is never cut — only a write that genuinely stalls
+                // for the full SendTimeout closes the socket, which is the only
+                // safe thing to do once framing may be corrupt.
+                var r = SendInflight();
+                if (r == DrainResult.Dead) return;
+                if (r == DrainResult.Blocked)
                 {
-                    _stream.Write(frame, 0, frame.Length);
-                    // P611 — real write progress: the socket accepted these
-                    // bytes, so the no-progress liveness rule has fresh ground.
-                    Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
+                    // Socket full on a blocking writer is unusual (Send blocks
+                    // rather than returning would-block); brief backoff, keep
+                    // the in-flight frame for the next iteration.
+                    Thread.Sleep(1);
                 }
-                catch (Exception ex)
-                {
-                    bool timeout = IsSocketTimeout(ex);
-                    // P619c — a HUMAN write TIMEOUT (a workstation hiccup wedging
-                    // the socket mid-frame) must not cut a real player: drop the
-                    // stalled frame and let the (longer) Enqueue-path no-progress
-                    // grace be the disconnect authority for a truly-dead human.
-                    // A hard SendError (socket reset/disposal) still disconnects
-                    // anyone — that is a dead socket, not a hiccup.
-                    if (!(IsHuman && timeout))
-                    {
-                        // Socket error / SendTimeout / disposal -> this peer is dead.
-                        if (!_disconnected)
-                        {
-                            _disconnected = true;
-                            // P611 — split the reason: a write that stalled for
-                            // the socket's SendTimeout is a distinct, diagnosable
-                            // cause, separable from an outright connection error.
-                            _reason = timeout ? DisconnectReason.SendTimeout : DisconnectReason.SendError;
-                            _cts.Cancel();
-                            _onDead(_reason);
-                        }
-                        return;
-                    }
-                }
+                // Wrote: loop to finish the in-flight frame or promote the next.
             }
         }
 
@@ -1287,6 +1469,32 @@ public sealed class TcpTransport : ITransport
                 EnqueuedUtcTicks = enqueuedUtcTicks;
             }
         }
+    }
+
+    /// <summary>P645 — the result of one send-sink (<c>PeerSender.SendOverride</c>)
+    /// attempt: how many bytes were accepted (<see cref="Bytes"/>), or a
+    /// would-block / timeout / hard-error condition. Mirrors what a real
+    /// non-blocking <c>Socket.Send</c> can report, so the suite can unit-test
+    /// the drain's partial-write / timeout logic with a deterministic fake.
+    /// Top-level (not nested in the private PeerSender) so the test assembly
+    /// can name it and build <c>SendOverride</c> funcs.</summary>
+    public readonly struct SendOutcome
+    {
+        public readonly bool WouldBlock;
+        public readonly bool Timeout;
+        public readonly bool Error;
+        public readonly int Bytes;
+        public SendOutcome(bool wouldBlock, bool timeout, bool error, int bytes)
+        {
+            WouldBlock = wouldBlock;
+            Timeout = timeout;
+            Error = error;
+            Bytes = bytes;
+        }
+        public static SendOutcome Sent(int bytes) => new(false, false, false, bytes);
+        public static SendOutcome Blocked() => new(true, false, false, 0);
+        public static SendOutcome TimedOut() => new(false, true, false, 0);
+        public static SendOutcome Faulted() => new(false, false, true, 0);
     }
 
     /// <summary>

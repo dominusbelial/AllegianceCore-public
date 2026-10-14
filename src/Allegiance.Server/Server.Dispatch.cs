@@ -48,9 +48,23 @@ public sealed partial class Server
                 try
                 {
                     var ping = Ping.Decode(m);
+                    // P645 — rate-limit client-triggered replies: the native
+                    // client pings at most once per ~6 s (clintlib.cpp:2052-2085
+                    // CheckServerLag, maxLagCheck=6.0f), so a peer exceeding the
+                    // (much laxer) reply interval is a flood — its excess PINGs
+                    // are DROPPED and counted, not answered, so a PING storm
+                    // cannot amplify into an unbounded guaranteed-reply queue.
+                    if (!_host.ShouldAnswerPing(from))
+                        continue;
                     ping.TimeServer = (uint)(_simNow * 1000.0);
                     SendPeer(from, FedPacket.Pack(new[] { ping.Encode() }));
-                    Console.WriteLine($"[ping] {from} <- echo (client {ping.TimeClient}, server {ping.TimeServer})");
+                    // P645 — gate the [ping] per-request line (sampled per peer)
+                    // so a flood cannot force unbounded console I/O.
+                    var pt = _host.PingLogTicket(from);
+                    if (pt.Emit)
+                        Console.WriteLine($"[ping] {from} <- echo (client {ping.TimeClient}, server {ping.TimeServer})");
+                    else if (pt.Summarize)
+                        Console.WriteLine($"[ping] {from}: {pt.Suppressed} more pings echoed (rate-limited log)");
                 }
                 catch (Exception e)
                 {
