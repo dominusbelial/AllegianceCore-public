@@ -95,22 +95,30 @@ public class CargoBayReloadTests
             PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(bots.All(b => b.ShipAssignment is not null), "all three bots must be assigned a ship");
 
-            // Round-robin: pick the subject + a same-side observer sharing its sector.
-            short subjectId = bots[0].ShipAssignment!.Ship.ShipId;
-            var subject = server.Ships.Single(s => s.Ship.Id == subjectId).Ship;
-            var observer = bots.Skip(1).First(b =>
-                server.Ships.Single(s => s.Ship.Id == b.ShipAssignment!.Ship.ShipId).Ship.SideId == subject.SideId);
-            var third = bots.First(b => b != observer && b.ShipAssignment!.Ship.ShipId != subjectId);
-            // P368: the same-side observer shares the subject's home sector (the
-            // invariant the cargo-bay broadcast tests need); the opposite-side
-            // third bot is now legitimately in a DIFFERENT sector (per-side
-            // spawn). The old assertion forced everyone into one sector — that
-            // was the very bug P368 fixes, so it asserted the wrong thing.
-            var observerShip = server.Ships.Single(s => s.Ship.Id == observer.ShipAssignment!.Ship.ShipId).Ship;
-            var thirdShip = server.Ships.Single(s => s.Ship.Id == third.ShipAssignment!.Ship.ShipId).Ship;
+            // P647 — robust to async seat ORDER. The old code assumed bots seat
+            // strictly in connect order (round-robin sides A,B,A), so bots[0]
+            // ("subject") always had a same-side sibling among bots[1..2] (the
+            // "observer"). Under full-suite load the three logons seat in a
+            // shuffled order, so the subject occasionally lands ALONE on its
+            // side and `First(...)` over the siblings throws "Sequence contains
+            // no matching element". With 3 bots over 2 sides, some side always
+            // holds >= 2 — so select subject+observer from the majority side
+            // (same side => same home sector, the P368 invariant these tests
+            // need) and the opposite-side bot as the unused third.
+            var ships = bots
+                .Select(b => (bot: b, ship: server.Ships.Single(s => s.Ship.Id == b.ShipAssignment!.Ship.ShipId).Ship))
+                .ToList();
+            var pairSide = ships.GroupBy(x => x.ship.SideId).OrderByDescending(g => g.Count()).First();
+            Assert.True(pairSide.Count() >= 2, "3 bots over 2 sides must put >= 2 on one side");
+            var pair = pairSide.ToList();
+            var subject = pair[0].ship;
+            var subjectBot = pair[0].bot;
+            var observerShip = pair[1].ship;
+            var observerBot = pair[1].bot;
+            var thirdShip = ships.First(x => x.ship.SideId != subject.SideId).ship;
             Assert.Equal(subject.Sector!.Id, observerShip.Sector!.Id);
             Assert.NotEqual(subject.Sector.Id, thirdShip.Sector!.Id);
-            return new Seat(server, bots, subject, bots[0], observer);
+            return new Seat(server, bots, subject, subjectBot, observerBot);
         }
         catch
         {

@@ -376,6 +376,7 @@ public class LiveCountdownStartPingTests
     /// neither, and mission B's stage is untouched (the P180/P178 must-not-
     /// regress per-mission-scoping class).</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-wire countdown scope receipt is load-sensitive
     [SkippableFact]
     public void Multi_mission_countdown_scopes_per_mission()
     {

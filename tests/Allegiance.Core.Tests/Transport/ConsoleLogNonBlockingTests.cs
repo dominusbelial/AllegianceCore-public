@@ -176,13 +176,20 @@ public sealed class ConsoleLogNonBlockingTests
         {
             ConsoleLog.Install();
             ConsoleLog.PointSinkForTest(sink);
-            Console.Out.Write("a\nb\nc");          // two complete + one partial
-            Console.Out.Flush();                    // pushes the partial "c"
+            // P647 — tag the payload so the assertions ignore unrelated lines that
+            // OTHER parallel tests write to the process-global Console.Out (which
+            // Install redirects into this same sink). The gated behaviour under test
+            // — multiline splitting + trailing-partial flush — is proven on the
+            // uniquely-marked lines alone.
+            Console.Out.Write("QWM:one\nQWM:two\nQWM:three");   // two complete + one partial
+            Console.Out.Flush();                                 // pushes the partial "QWM:three"
             ConsoleLog.Shutdown();
             var text = sink.ToString();
-            // Three complete lines delivered ("a\nb\nc\n").
-            Assert.Equal(3, text.Split('\n').Length - 1);
-            Assert.StartsWith("a\nb\nc", text);
+            // The three MARKED lines arrive as distinct complete lines, in order,
+            // including the trailing unterminated one (flush proves itself).
+            var marked = text.Split('\n').Where(l => l.StartsWith("QWM:")).ToArray();
+            Assert.Equal(3, marked.Length);
+            Assert.Equal(new[] { "QWM:one", "QWM:two", "QWM:three" }, marked);
         }
         finally
         {
@@ -216,7 +223,13 @@ public sealed class ConsoleLogNonBlockingTests
             ConsoleLog.Flush();
             Assert.Equal(100, ConsoleLog.TotalWrites - totBefore);   // still measured
             Assert.Equal(0, ConsoleLog.EmittedWrites - emBefore);    // nothing emitted
-            Assert.Equal(0, sink.ToString().Length);                 // nothing on the wire
+            // P647 — previously asserted the global sink is empty (Length == 0). That is
+            // wrong under full-suite load: OTHER tests running in parallel write to the
+            // process-global Console.Out, which PointSinkForTest has pointed at this
+            // sink, so unrelated lines appear. The gated lines are identified by the
+            // [p433-diag] marker — assert none of THOSE reached the wire (the actual
+            // behaviour under test), ignoring unrelated parallel console noise.
+            Assert.Equal(0, sink.ToString().Split('\n').Count(l => l.Contains("[p433-diag]")));
 
             // ON: the same routed lines ARE emitted.
             ConsoleLog.Verbose = true;

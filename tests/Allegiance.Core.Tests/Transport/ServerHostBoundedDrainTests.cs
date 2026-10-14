@@ -20,6 +20,10 @@ namespace Allegiance.Core.Tests.Transport;
 ///       removed when the ordered PeerLeftEvt drains (ReleasePeer →
 ///       RemovePeerAccounting).
 /// </summary>
+// P647 — mutates shared ServerHost statics (DrainBudgetEvents,
+// DrainFairShareEvents, MaxBufferedBytesPerPeer); serialize against the other
+// users of those statics (InboundFlowControlTests + LiveNetwork live tests).
+[Collection("LiveNetwork")]
 public sealed class ServerHostBoundedDrainTests
 {
     [Fact]

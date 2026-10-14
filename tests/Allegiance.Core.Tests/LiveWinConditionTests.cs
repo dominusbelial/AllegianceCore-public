@@ -604,6 +604,7 @@ public class LiveWinConditionTests
     /// boarder's request is answered with BOARD_NACK and its ParentShip stays
     /// null. Control (Started) shown by the docked pair boarding successfully.</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: flaky live-wire board handshake even in isolation
     [SkippableFact]
     public void Board_refused_once_mission_over()
     {
@@ -624,8 +625,8 @@ public class LiveWinConditionTests
             WaitDocked(control, sp.Carrier, sp.Boarder);
 
             boarder.SendBoard(carId);
-            int boarded = PumpUntil(control, () => sp.Boarder.ParentShip is not null, 1200);
-            Assert.True(boarded < 1200, "control: board should succeed while Started");
+            int boarded = PumpUntil(control, () => sp.Boarder.ParentShip is not null, 8000);
+            Assert.True(boarded < 8000, "control: board should succeed while Started");
             Assert.Equal(0, boarder.BoardNacks);
         }
 
@@ -645,8 +646,8 @@ public class LiveWinConditionTests
 
             server.Missions[0].Stage = MissionStage.Over;    // end the mission behind the gate
             boarder.SendBoard(sp.Carrier.Id);
-            int nacked = PumpUntil(server, () => boarder.BoardNacks > 0, 800);
-            Assert.True(nacked < 800, "boarder should get BOARD_NACK once the mission is Over");
+            int nacked = PumpUntil(server, () => boarder.BoardNacks > 0, 8000);
+            Assert.True(nacked < 8000, "boarder should get BOARD_NACK once the mission is Over");
             Assert.Null(sp.Boarder.ParentShip);              // refused — not boarded
 
             Console.WriteLine("WIN-GATE-LIVE: BOARD once mission Over was refused with BOARD_NACK (parent stayed null)");

@@ -284,6 +284,7 @@ public class RetriedConnectLiveTests
     /// repopulate from the fresh connection.
     /// </summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-wire reconnect/reseat receipt is load-sensitive (documented load-flake)
     [SkippableFact]
     public void RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment()
     {

@@ -13,6 +13,11 @@ namespace Allegiance.Core.Tests.Transport;
 /// (2) <see cref="Limiter"/> bounds per-peer diagnostic console output so a
 /// flood of messages cannot force unbounded synchronous console I/O in a tick.
 /// </summary>
+// P647 — this class mutates the shared static SrvHost.MaxBufferedBytesPerPeer;
+// it must not race ServerHostBoundedDrainTests (same static) or any other test
+// that boots a ServerHost. Serialize it in the LiveNetwork collection so the
+// set/restore in each test is atomic w.r.t. the other users of that static.
+[Collection("LiveNetwork")]
 public sealed class InboundFlowControlTests
 {
     private sealed class FakeSite : ITransportSite

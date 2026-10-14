@@ -141,11 +141,19 @@ public class ReadyCheckLiveTests
         using var owner = new ConnectionSession();   // first on side0 → leader + mission owner
         using var nonLeader = new ConnectionSession();
         ConnectSeat(server, owner, "rdy_own", side0);
+        // P647 — the leader is whoever SEATS first on the side. Under full-suite
+        // load the two logons seat in a shuffled order, so the "nonLeader" can
+        // beat the owner to seating and BECOME the leader — its FORCE_TEAM_READY
+        // then legitimately starts the mission and the negative assertion below
+        // (Stage stays NotStarted) spuriously fails. Guarantee owner seats first
+        // so it is deterministically the leader before the non-leader connects.
+        Assert.True(PumpUntil(server, () => owner.World.MyShipId is not null, 4000) < 4000,
+            "owner must seat before the non-leader connects");
         ConnectSeat(server, nonLeader, "rdy_nl", side0);
 
         int seated = PumpUntil(server,
-            () => owner.World.MyShipId is not null && nonLeader.World.MyShipId is not null, 2000);
-        Assert.True(seated < 2000, "both peers must be seated");
+            () => owner.World.MyShipId is not null && nonLeader.World.MyShipId is not null, 4000);
+        Assert.True(seated < 4000, "both peers must be seated");
         short ownerId = owner.World.MyShipId!.Value;
 
         // Non-leader tries to force side 0 ready — refused (server leader-gates

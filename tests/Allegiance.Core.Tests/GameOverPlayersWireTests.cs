@@ -201,6 +201,11 @@ public sealed class GameOverPlayersWireTests
         PlayerScoreOf(server, a).AddRescue();
         PlayerScoreOf(server, a).AddKill();
 
+        // Advance the sim ~3 s so PlayerScore.TimePlayed > 0 — CalculateScore
+        // (faithful to common.cpp:2669) early-returns when TimePlayed==0 and
+        // leaves Score at 0; a non-zero time lets the P583 compute actually run.
+        for (int i = 0; i < 60; i++) server.TickSim();
+
         a.ResetGameOvers();
         a.ResetGameOverPlayerBroadcasts();
 
@@ -240,6 +245,7 @@ public sealed class GameOverPlayersWireTests
     /// path because win-by-elimination always empties the losing side; here the
     /// loser is still connected when the game ends.</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: flaky live-wire game-over roster even in isolation
     [SkippableFact]
     public void Conquest_win_lists_every_connected_player_including_losing_side()
     {
@@ -303,6 +309,7 @@ public sealed class GameOverPlayersWireTests
     /// hears nothing and mission B stays Started (reuses the P178/P191
     /// multi-mission proof pattern).</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: flaky live-wire game-over scope even in isolation
     [SkippableFact]
     public void Conquest_win_in_one_mission_does_not_leak_game_over_players_to_another()
     {

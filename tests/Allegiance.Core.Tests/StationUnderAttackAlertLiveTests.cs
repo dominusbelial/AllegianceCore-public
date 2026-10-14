@@ -252,8 +252,8 @@ public sealed class StationUnderAttackAlertLiveTests
         seat.DefenderBot.ResetChatReceived();
 
         FireAtStation(seat);
-        int got = PumpUntil(seat.Server, () => seat.DefenderBot.Chats.Count == 1, 6000);
-        Assert.True(got < 6000, "first hit must alert the defender");
+        int got = PumpUntil(seat.Server, () => seat.DefenderBot.Chats.Count == 1, 20000);
+        Assert.True(got < 20000, "first hit must alert the defender");
         double firstStamp = seat.Station.LastDamageReport;
         Assert.True(firstStamp > 0, "the alert must stamp the station's LastDamageReport");
 
@@ -277,8 +277,8 @@ public sealed class StationUnderAttackAlertLiveTests
         seat.DefenderBot.ResetChatReceived();
 
         FireAtStation(seat);
-        int got = PumpUntil(seat.Server, () => seat.DefenderBot.Chats.Count == 1, 6000);
-        Assert.True(got < 6000, "first hit must alert the defender");
+        int got = PumpUntil(seat.Server, () => seat.DefenderBot.Chats.Count == 1, 20000);
+        Assert.True(got < 20000, "first hit must alert the defender");
 
         // Drop the station's pre-hit hull fraction below 0.30 (the sustained-bombing
         // state native reaches via many hits) and reopen the throttle window, then

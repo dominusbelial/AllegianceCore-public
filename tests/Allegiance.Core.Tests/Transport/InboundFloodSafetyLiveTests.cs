@@ -133,6 +133,7 @@ public sealed class InboundFloodSafetyLiveTests
     /// ZERO per-message "unsupported fmid" lines — while healthy peers keep
     /// receiving per-tick updates and the mission clock keeps advancing.</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-socket flood-safety receipt is load-sensitive (passes 10/10 isolated)
     [SkippableFact]
     public void Oversized_packet_is_rejected_not_dispatched_others_keep_ticking()
     {

@@ -381,8 +381,10 @@ public class LiveInSpaceEjectTests
 
         victimShip.ReceiveDamage(0, victimShip.HitPoints * 2f, mission.LastUpdate, victimShip.Position, Vector3.Zero, null);
 
-        int ticks = PumpUntil(server, () => victim.Kills.Any(k => k.ShipId == victimId), 4000);
-        Assert.True(ticks < 4000, "second lethal hit did not truly kill the lifepod");
+        int ticks = PumpUntil(server,
+            () => victim.Kills.Any(k => k.ShipId == victimId) && observer.Kills.Any(k => k.ShipId == victimId),
+            20000);
+        Assert.True(ticks < 20000, "second lethal hit did not truly kill the lifepod");
 
         // No second EJECT anywhere.
         Assert.DoesNotContain(victim.Ejects, e => e.ShipId == victimId);

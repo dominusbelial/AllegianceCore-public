@@ -153,6 +153,11 @@ public sealed class P591dMinefieldExportAudienceTests
         }
         Assert.True(layer.Dead, $"layer must lay and be consumed (sector {layer.Sector?.Id}, steps {steps})");
 
+        // The layer-death loop above stops as soon as layer.Dead goes true, but
+        // the peer's mine EXPORT packet may still be in flight; condition-wait
+        // until the peer has actually ingested a mine export carrying OUR mine.
+        Pump(server, () => peer.MineExports.Any(e => e.Mine.MinetypeId == mine.ExpendableTypeId), 20000);
+
         var mineExports = peer.MineExports;
         Assert.NotEmpty(mineExports);   // FAILS-FIRST on pre-P591d code (audience 0)
         Assert.Contains(mineExports, e => e.Mine.MinetypeId == mine.ExpendableTypeId);

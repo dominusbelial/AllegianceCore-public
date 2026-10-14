@@ -269,6 +269,7 @@ public class LiveTeamLobbyTests
     /// their side — the aggregate flip true→false is reported, and the mission
     /// still has not started (the other side's player never readied).</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-wire team-ready receipt is load-sensitive (documented load-flake)
     [SkippableFact]
     public void Unready_broadcasts_team_ready_false()
     {

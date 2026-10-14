@@ -275,7 +275,7 @@ public class AutoReloadOnEmptyTests
 
         // The relay travels to the observer over the wire asynchronously — poll
         // for its arrival (the same PumpUntil the CargoBayReloadTests use).
-        PumpUntil(seat.Server, () => seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id), 4000);
+        PumpUntil(seat.Server, () => seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id), 20000);
         var relay = seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id);
         var entry = Assert.Single(relay.Entries);
         Assert.Equal(new ReloadData(-1, -1), entry);   // whole pack (NA) from cargo slot 0

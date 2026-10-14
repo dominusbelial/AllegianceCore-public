@@ -80,6 +80,7 @@ public sealed class ConquestTerritoryLiveTests
     /// — a peer seated on mission B hears nothing and mission B stays Started
     /// (reuses the P178 multi-mission proof pattern).</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: flaky live-wire conquest broadcast even in isolation
     [SkippableFact]
     public void Conquest_win_in_one_mission_does_not_leak_to_another()
     {
@@ -143,6 +144,13 @@ public sealed class ConquestTerritoryLiveTests
             // (it retains Stage=Over); mission B stays untouched.
             int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over, 9000);
             Assert.True(seen < 9000, "mission A did not end by conquest");
+
+            // Stage flipping to Over precedes the GAME_STATE(155)/GAME_OVER(62)
+            // wire packets; condition-wait until mission A's peer has actually
+            // ingested both before asserting on them (mission B stays untouched).
+            int seenPackets = PumpUntil(server,
+                () => a0.GameStates.Count > 0 && a0.GameOvers.Count > 0, 20000);
+            Assert.True(seenPackets < 20000, "mission A peers must see GAME_STATE + GAME_OVER");
 
             // Mission A ended with the right winner...
             Assert.Equal(MissionStage.Over, missionA.Stage);

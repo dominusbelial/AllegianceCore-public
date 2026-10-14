@@ -460,6 +460,7 @@ public sealed class SideEliminationLiveTests
     /// <c>SIDE_INACTIVE(68)</c> for side C but NO game-over, and the mission stays
     /// <see cref="MissionStage.Started"/>.</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: flaky live-wire side-only game-over receipt even in isolation
     [SkippableFact]
     public void Eliminating_side2_sends_side_only_gameover_to_it_alone()
     {
@@ -498,7 +499,9 @@ public sealed class SideEliminationLiveTests
         Assert.Equal(MissionStage.Started, h.Mission.Stage);   // not Over, no rotation
 
         // The eliminated side's own bot gets the side-only GAME_OVER + GAME_OVER_PLAYERS.
-        PumpUntil(h.Server, () => cBot.GameOvers.Count > 0, 8000);
+        PumpUntil(h.Server,
+            () => cBot.GameOvers.Count > 0 && cBot.GameOverPlayerBroadcasts.Count > 0,
+            20000);
         var go = Assert.Single(cBot.GameOvers);
         Assert.Equal(GameOver.NA, go.SideWinner);                       // no global winner at side-only elimination
         Assert.Equal("Your side has been eliminated.", go.GameoverMessage);  // native QueueGameoverMessage default

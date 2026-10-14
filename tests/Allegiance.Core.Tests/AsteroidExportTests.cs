@@ -111,9 +111,9 @@ public class AsteroidExportTests
             // pump until the bot is assigned a ship (post join-burst), then let
             // it drain the exports that arrived with SET_CLUSTER.
             int waited;
-            for (waited = 0; waited < 3000 && bot.ShipAssignment is null; waited++)
+            for (waited = 0; waited < 20000 && bot.ShipAssignment is null; waited++)
             { server.TickSim(); Thread.Sleep(1); }
-            Assert.True(waited < 3000, "bot never got a ship assignment");
+            Assert.True(waited < 20000, "bot never got a ship assignment");
             Thread.Sleep(300);
 
             var received = bot.AsteroidExports;

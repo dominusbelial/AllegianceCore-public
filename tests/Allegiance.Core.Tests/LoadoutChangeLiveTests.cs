@@ -209,8 +209,10 @@ public class LoadoutChangeLiveTests
             PumpUntil(server, () =>
                 boarderBot.LoadoutChanges.Any(m =>
                     m.SidShip == subjectId
-                    && m.Passengers.Any(p => p.ShipId == boarderId && p.TurretId == turret)),
-                6000);
+                    && m.Passengers.Any(p => p.ShipId == boarderId && p.TurretId == turret))
+                && subBot.LoadoutChanges.Any(m =>
+                    m.SidShip == subjectId && m.Passengers.Any(p => p.ShipId == boarderId)),
+                20000);
             Assert.Contains(boarderBot.LoadoutChanges, m =>
                 m.SidShip == subjectId && m.Passengers.Any(p => p.ShipId == boarderId && p.TurretId == turret));
             Assert.Contains(subBot.LoadoutChanges, m =>

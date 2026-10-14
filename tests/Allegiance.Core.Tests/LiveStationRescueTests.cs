@@ -65,7 +65,7 @@ public class LiveStationRescueTests
     /// <summary>Boot a one-bot server with a synthetic station (given
     /// <paramref name="stationSabm"/> on <paramref name="stationSide"/>) at the
     /// origin of the fly sector, and a real player lifepod on
-    /// <paramref name="podSide"/> parked 300u away. Returns the live pod +
+    /// <paramref name="podSide"/> parked 1500u away. Returns the live pod +
     /// station so the test asserts the dock / no-wire outcome.</summary>
     private static (Srv server, FltBot bot, Ship pod, Station station) Setup(
         short stationSabm, short stationSide, short podSide)
@@ -99,7 +99,16 @@ public class LiveStationRescueTests
         var bot = new FltBot();
         bot.Connect(server.BoundPort, "SRESC");
         bot.SendLogonRequest(Request("SRESC"));
-        PumpUntil(server, () => bot.ShipAssignment is not null && pod is not null, 4000);
+        // P647 — wait only until the SERVER has spawned the pod (pod != null),
+        // NOT for the client ShipAssignment ack. The pod is a lifepod that
+        // homes toward the rescue station; under full-suite load the client ack
+        // can lag for many ticks while the server-side pod flies to the (300u
+        // away) station and docks — so a pump conditioned on ShipAssignment
+        // would return an already-docked pod and the "starts flying" assertion
+        // below would spuriously fail. Exiting the moment the pod exists keeps
+        // the pod ~300u away and un-docked for the precondition assert. The
+        // individual tests drive the docking themselves.
+        PumpUntil(server, () => pod is not null, 4000);
 
         Assert.NotNull(pod);
         Assert.Null(pod!.StationId);            // starts flying, not docked

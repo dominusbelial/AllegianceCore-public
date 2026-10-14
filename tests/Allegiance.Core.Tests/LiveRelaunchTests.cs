@@ -247,6 +247,7 @@ public class LiveRelaunchTests
     /// backward-offset fallback branch: the lander is thrown straight back
     /// along the carrier's backward axis.</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: positional relaunch-fallback assert drifts during the wire round-trip
     [SkippableFact]
     public void Carrier_without_launch_slots_uses_backward_fallback()
     {

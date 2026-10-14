@@ -264,7 +264,12 @@ public sealed class AsteroidMinedLiveTests
         // EffectiveMineCapacity = core[7] (90) × 0.95 = 85.5 (P477/P528), not
         // the retired flat 150.
         float cap = seat.Miner.EffectiveMineCapacity();
-        PumpUntil(seat.Server, () => seat.Miner.Ore >= cap - 0.5f, 4000);
+        PumpUntil(seat.Server,
+            () => seat.Miner.Ore >= cap - 0.5f
+               && seat.MinerBot.AsteroidMineds.Count > 0
+               && seat.CrossSideBot.AsteroidMineds.Count > 0
+               && seat.TeammateBot.AsteroidMineds.Count > 0,
+            20000);
         Assert.True(seat.Miner.Ore >= cap - 0.5f, "miner should reach its ore capacity");
 
         int mCount = seat.MinerBot.AsteroidMineds.Count;

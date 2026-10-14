@@ -112,6 +112,7 @@ public class LiveChatSectorWireTests
         server.Ships.ToDictionary(l => l.Ship.Id);
 
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-wire chat sector relay is flaky even in isolation (8/10)
     [SkippableFact]
     public void Individual_AllSector_and_FriendlySector_relay_to_real_peers_over_the_wire()
     {

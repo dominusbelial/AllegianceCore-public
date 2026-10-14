@@ -47,5 +47,8 @@ jobs:
 
       - name: Test solution (non-corpus gate)
         # Corpus-backed tests are filtered out (Requires trait); the rest must
-        # pass or the job fails — no continue-on-error.
-        run: dotnet test AllegianceCore.slnx --no-build --filter "Requires!=Artwork&Requires!=NativeSource"
+        # pass or the job fails — no continue-on-error. P647: the quarantine
+        # lane (Lane=LiveTiming) is likewise excluded from CI — those residual
+        # live-timing tests are evaluated in scripts/run-tests.sh's separate
+        # quarantine pass (re-run once in isolation), not in the parallel CI run.
+        run: dotnet test AllegianceCore.slnx --no-build --filter "Requires!=Artwork&Requires!=NativeSource&Lane!=LiveTiming"

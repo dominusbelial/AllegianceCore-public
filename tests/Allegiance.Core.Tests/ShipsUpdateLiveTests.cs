@@ -218,10 +218,24 @@ public sealed class ShipsUpdateLiveTests
         seat.B.CommandTarget = seat.A;   // SetCommandTarget: B locks A
         seat.BBot.ResetHeavyShipsUpdates();
 
-        PumpUntil(seat.Server, () => seat.BBot.HeavyShipsUpdates.Count > 0, 1000);
-        Assert.True(seat.BBot.HeavyShipsUpdates.Count > 0, "B must receive HEAVY_SHIPS_UPDATE after locking a target");
+        // The first update after locking can be an in-flight one generated
+        // BEFORE the command target was set (the server had sent 255 'no
+        // target'); condition-wait for an update that actually CARRIES the
+        // locked target (ship A in the first heavy slot, with A's real
+        // hull/shield fractions) instead of blindly grabbing index 0.
+        bool HasTargetUpdate() =>
+            seat.BBot.HeavyShipsUpdates.Any(u => u.HeavyShipEntries.Length >= 1
+                && u.HeavyShipEntries[0].ShipId == seat.A.Id
+                && u.BpTargetHull == Percent(seat.A.Fraction)
+                && u.BpTargetShield == Percent(seat.A.ShieldFraction));
 
-        var up = seat.BBot.HeavyShipsUpdates[0];
+        PumpUntil(seat.Server, HasTargetUpdate, 20000);
+        Assert.True(HasTargetUpdate(), "B must receive a TARGET-carrying HEAVY_SHIPS_UPDATE after locking a target");
+
+        var up = seat.BBot.HeavyShipsUpdates.First(u => u.HeavyShipEntries.Length >= 1
+            && u.HeavyShipEntries[0].ShipId == seat.A.Id
+            && u.BpTargetHull == Percent(seat.A.Fraction)
+            && u.BpTargetShield == Percent(seat.A.ShieldFraction));
         Assert.True(up.HeavyShipEntries.Length >= 1, "B's update must contain the locked target in slot 0");
         Assert.Equal(seat.A.Id, up.HeavyShipEntries[0].ShipId);   // first heavy slot = target
 

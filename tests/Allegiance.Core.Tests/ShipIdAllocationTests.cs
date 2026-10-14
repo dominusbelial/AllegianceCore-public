@@ -97,7 +97,7 @@ public class ShipIdAllocationLiveTests
 
         // Pump until at least one invalid logon round-tripped, then keep pumping
         // so the whole queued flood is drained (we intentionally overshoot).
-        PumpUntil(server, () => bot.Ack is { FValidated: false }, 3000);
+        PumpUntil(server, () => bot.Ack is { FValidated: false }, 20000);
         for (int i = 0; i < 500; i++) server.TickSim();
 
         Assert.Equal(baseline, GetNextShipId(server));   // no ids burned by the flood
@@ -120,7 +120,16 @@ public class ShipIdAllocationLiveTests
         bot.Connect(server.BoundPort, "VALD");
         bot.SendLogonRequest(ValidRequest("VALD"));
 
-        PumpUntil(server, () => bot.Ack is { FValidated: true }, 1000);
+        // P647 — pump deadline was 1000 iterations; under full-suite load the
+        // connect → logon → dispatch → ack round-trip can exceed ~1 s (the
+        // transport/drain threads are starved by the parallel unit tests), so
+        // the pump gave up before the ack arrived and the assertion failed
+        // because _nextShipId had not yet advanced. No product race: Boot()
+        // assembles missions synchronously (Server.Lifecycle.cs:167-168), so a
+        // validated logon ALWAYS calls AllocateShipId() before its ack. Widened
+        // to a generous 20000-iteration (~20 s) deadline; the assertion is
+        // unchanged.
+        PumpUntil(server, () => bot.Ack is { FValidated: true }, 20000);
 
         Assert.True(baseline < GetNextShipId(server));   // a valid logon consumed an id
     }
@@ -150,7 +159,7 @@ public class ShipIdAllocationLiveTests
         botA.AutoSelectSideAfterLogon = false;
         botA.Connect(server.BoundPort, "RESVA");
         botA.SendLogonRequest(ValidRequest("RESVA"));
-        PumpUntil(server, () => botA.Ack is { FValidated: true }, 3000);
+        PumpUntil(server, () => botA.Ack is { FValidated: true }, 20000);
         Assert.NotNull(botA.Ack);
         short x = botA.Ack!.ShipID;
         Assert.NotEqual((short)0, x);
@@ -163,7 +172,7 @@ public class ShipIdAllocationLiveTests
         botB.AutoSelectSideAfterLogon = false;
         botB.Connect(server.BoundPort, "RESVB");
         botB.SendLogonRequest(ValidRequest("RESVB"));
-        PumpUntil(server, () => botB.Ack is { FValidated: true }, 3000);
+        PumpUntil(server, () => botB.Ack is { FValidated: true }, 20000);
 
         short y = botB.Ack!.ShipID;
         Assert.NotEqual(x, y);                       // never collides with the reserved id

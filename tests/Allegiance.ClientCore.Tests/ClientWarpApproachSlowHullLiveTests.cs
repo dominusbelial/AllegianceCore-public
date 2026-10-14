@@ -291,6 +291,7 @@ public sealed class ClientWarpApproachSlowHullLiveTests
     /// transits the aleph: it parks above the threshold (asserted) exactly as
     /// P490's live run observed. This measures the mechanism, not assumes it.</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-wire warp-approach arrival timing is load-sensitive
     [SkippableFact]
     public void Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume()
     {

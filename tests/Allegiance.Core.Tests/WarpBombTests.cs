@@ -458,7 +458,11 @@ public sealed class WarpBombTests
         sector.Add(missile);
 
         // (1) The bomb arms on the first tick and reaches EVERY peer, cross-side included.
-        PumpUntil(seat.Server, () => seat.EnemyBot.WarpBombs.Count >= 1, 2000);
+        PumpUntil(seat.Server,
+            () => seat.ShooterBot.WarpBombs.Count >= 1
+               && seat.EnemyBot.WarpBombs.Count >= 1
+               && seat.ObserverBot.WarpBombs.Count >= 1,
+            20000);
         Assert.NotEmpty(seat.ShooterBot.WarpBombs);
         Assert.NotEmpty(seat.EnemyBot.WarpBombs);
         Assert.NotEmpty(seat.ObserverBot.WarpBombs);

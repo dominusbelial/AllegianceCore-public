@@ -204,7 +204,7 @@ public class MineCrossSideVisibilityLiveTests
         //     scanner hull's detection radius at the clean base, clear LOS).
         seat.B.Velocity = Vector3.Zero;
         seat.B.Position = seat.Base + new Vector3(300f, 0f, 0f);
-        PumpUntil(seat.Server, () => seat.BBot.MineExports.Any(e => e.Mine.MineId == mineId), 2000);
+        PumpUntil(seat.Server, () => seat.BBot.MineExports.Any(e => e.Mine.MineId == mineId), 20000);
         var inRange = seat.BBot.MineExports.Where(e => e.Mine.MineId == mineId).ToList();
         Assert.True(inRange.Count >= 1, "B must receive the mine's EXPORT once its scanner net spots it");
 

@@ -104,6 +104,7 @@ public abstract class TcpTransportPriorityLaneTestsBase
     /// sender (no ordered lane exists).
     /// </summary>
     [Fact]
+    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-socket priority-lane ordering is load-sensitive (passes 10/10 isolated)
     public void Ordered_world_data_is_next_drained_even_after_a_stream_backlog()
     {
         var site = new Site();
