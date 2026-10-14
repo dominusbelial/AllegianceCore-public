@@ -377,7 +377,10 @@ public sealed class Ship : Model, IShipIgc
             };
             max = Math.Max(1, capacity / Math.Max(1, size));
         }
-        else max = 1;
+        else max = short.MaxValue;   // weapons & other single-item equipment: no per-unit
+                                     // capacity — native clamps only pack/launcher quantities
+                                     // (packigc.h:102-123, launchertypeigc.h:130-145); only the
+                                     // non-negative bound below applies.
         return (short)Math.Clamp(amount, 0, Math.Clamp(max, 0, short.MaxValue));
     }
 
