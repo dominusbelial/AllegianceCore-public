@@ -482,6 +482,13 @@ public sealed partial class Server
             SendExplosionEvent(targets, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
     }
 
+    // Explicit PROMOTE/SWAP_PART echoes apply their own mutations on clients.
+    // Publishing intermediate snapshots first would erase PROMOTE's parent or
+    // make SWAP_PART undo an already-applied swap. Sim-thread scoped, with finally
+    // restoration at the command handlers. Native FedSrv.CPP:13530-13555 does
+    // not queue LOADOUT_CHANGE from these low-level site events.
+    private int _loadoutCommandDepth;
+
     /// <summary>
     /// Handle a ship loadout mutation (<see cref="ServerHost.LoadoutChange"/>,
     /// raised from <c>Sim/Ship.cs</c> <c>ChangeHull</c>/<c>MountPart</c>/
@@ -532,6 +539,8 @@ public sealed partial class Server
         // so a re-export never reaches an enemy who isn't actually seeing it.
         if (lc == LoadoutChange.HullChange)
             _crossSideExportSent.RemoveWhere(e => e.ShipId == ship.Id);
+
+        if (_loadoutCommandDepth > 0) return;
 
         // The changed ship's CURRENT whole loadout (hull + every part), rebuilt
         // fresh at broadcast time (native ExportShipLoadout, FedSrv/fsship.cpp:710),

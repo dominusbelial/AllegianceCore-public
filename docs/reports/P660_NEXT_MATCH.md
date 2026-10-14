@@ -113,3 +113,76 @@ dotnet build AllegianceCore.slnx --no-restore -m:1
 **Build succeeded: 0 warnings, 0 errors** (4.00 seconds). `git diff --check` is clean. Branch and HEAD remain `codex/p660` / `32ceeccd`; changes and this report are uncommitted.
 
 The measurements and suite summaries are also retained in [verification excerpt](P660_assets/verification.txt).
+
+## P660b
+
+Implemented on 2026-10-14 in `integ/rig-next-match`, HEAD `535b56b3` (the merge of P660 and wave 2). All changes remain in the working tree; no commits or pushes.
+
+### Root cause and native decision
+
+Both failures reproduced on the unmodified integration branch: promotion completed on the server but neither role notice arrived; P641 timed out at replacement. The proposed flight-hold cause was ruled out. Both fixtures explicitly set their server missions to Started and invoke `ConnectionSession` senders directly; they do not run `Game1.Update` or its ReadyCheck transition. Their existing mission setup is valid. The strengthened tests additionally wait for both clients to observe the authoritative Started stage.
+
+The actual integration is wave 2's new PROMOTE/SWAP_PART receive handlers with master's P648 LOADOUT_CHANGE receive support (`f01ac595`). Wave 2 alone predates P648 and ignores those full snapshots. Combining them makes the intermediate site-event broadcasts visible to the client:
+
+- **Promotion:** `Ship.Promote` raises RemovePassenger, HullChange, Mounted, AddPassenger and Removed events before the command's PROMOTE echo. LOADOUT_CHANGE detaches the promoted child while adopting each partial hull/passenger snapshot. When PROMOTE arrives, its client handler can no longer find the old parent, so it returns without either role notice. Subsequent status snapshots can repair seats without proving the command was consumed.
+- **Replacement:** `TrySwapPartWithCargo` removes both parts, mounts the spare (raising a Mounted snapshot), then places the displaced weapon in cargo. The observed Mounted snapshot contains only two parts, instead of the complete three-part inventory. It has already removed the spare from the source cargo slot but has not restored the old weapon to cargo. SWAP_PART subsequently finds no source and cannot complete the client inventory. Merely increasing the timeout cannot repair this guaranteed message order.
+
+Native evidence, relative to the reference checkout's `src/`:
+
+| Concern | Native evidence and decision |
+| --- | --- |
+| Stage authority | `clintlib/appmsg.cpp:2314-2356` sets lifecycle flags from NotStarted/Starting/Started. Retain P660's flight hold and existing Started release. |
+| Key eligibility before launch | `WinTrek/WinTrek.cpp:8740-8763` dispatches flight keys only in game, outside override/lockdown; `:9027-9058` excludes hangar/loadout weapon selection; `:9075-9149` requires an unboarded, flying ship for part swaps. Promotion `:9583-9601` requires a real hull/turret; the server's Started gate remains authoritative. |
+| Command stage gates | `FedSrv/FedSrv.CPP:6354-6377,6459-6501` permits PROMOTE/SWAP_PART only in Started and broadcasts the dedicated command mutation. Keep both existing server gates. |
+| Intermediate loadout events | `FedSrv/FedSrv.CPP:13530-13555` does not enqueue LOADOUT_CHANGE on every low-level loadout event (that forwarding block is commented out). Suppress the port's additional full snapshots during the two commands rather than changing client lifecycle or inventing acknowledgements. |
+| Promotion receive | `clintlib/appmsg.cpp:824-849` resolves the old parent before applying promotion and posting the two notices. Preserve that precondition. |
+| Inventory receive/export | `clintlib/appmsg.cpp:1430-1456` applies a swap delta; the port continues to apply its own guaranteed echo once instead of native's optimistic local mutation. `Igc/shipIGC.h:804-824` exports every inventory part with its signed mount. |
+
+### Changes and regression coverage
+
+`Server.ShipCommands` scopes loadout-broadcast suppression around the synchronous Promote and cargo-aware swap mutations, with `finally` restoration. `Server.Combat` retains cross-side hull-export invalidation even inside that scope, and ordinary loadout/boarding/relaunch broadcasts remain enabled. The existing command echoes still reach the sector audience. No wire format, flight-hold rule, next-match timer or ready-up behavior changed.
+
+The expanded P641 proof adds a same-side production client and checks both clients through purchase/launch, unmount, mount, replacement and drop. It also checks that an ordinary direct mount still broadcasts after all commands, exercising scope restoration. This exposed a related export omission: `Server.Broadcast.SnapshotParts` exported only equipped parts, so its refresh erased cargo learned from LOADOUT_CHANGE. It now uses the complete inventory export and preserves signed cargo mounts. With the suppression fix alone the expanded proof failed at buy/launch; with the complete export it passes.
+
+The promotion proof retains the actual role-swap, hull, turret-seat wrap and highlight assertions, and waits under the session gates for both exact notices. A status-only seat repair can no longer satisfy the proof. The P641 weapon selection, booster fuel/release and authoritative server cargo/equipment assertions remain intact.
+
+### Verification
+
+External artwork and native source were available through the existing `local.env`. Restore used `NUGET_HTTP_CACHE_PATH=/tmp/p660b-nuget-http dotnet restore AllegianceCore.slnx` and succeeded without changing dependencies.
+
+Both original tests failed before the production fix and passed after it. Each strengthened test then passed **3/3 individually** with no other suite running.
+
+Full suites ran once each, concurrently in separate processes, with **no test filters**, against the final build:
+
+| Suite | Passed | Failed | Skipped | Total | Duration |
+| --- | ---: | ---: | ---: | ---: | --- |
+| ClientCore | 892 | 1 | 1 | 894 | 4m05s |
+| MonoGame | 2120 | 0 | 3 | 2123 | 4m22s |
+| Core | 4169 | 1 | 0 | 4170 | 4m28s |
+
+The original two failing live tests pass in the full MonoGame run. All nine enabled P660 ClientCore tests and both late-clock Core rows pass. Ordinary LOADOUT_CHANGE live tests (2/2), cross-side export/respawn tests (5/5), P598 restart tests (3/3) and repeated mission rotation tests (2/2) also pass. The skips are ClientCore's opt-in full showcase and the three optional MonoGame Meshy pack tests; no artwork-backed test was skipped.
+
+Both full-run failures were rerun **three times individually**, after all full suites completed:
+
+| Existing test | Full-run failure | Isolated reruns |
+| --- | --- | --- |
+| `Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking` | Healthy bot had no heavy update at receipt assertion (`had 0, now 0`) | pass / pass / pass |
+| `ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume` | `minWarpDist=131.5`, below the test's 150-unit assertion | pass / pass / pass |
+
+The inbound-flood test is the same receipt failure recorded in the original P660 verification above. The warp-arrival test is already listed in [TEST_FLAKES](../TEST_FLAKES.md) and marked `Lane=LiveTiming`. Neither fixture exercises PROMOTE or SWAP_PART. No timing assertions or quarantine filters were relaxed. The full Core and ClientCore runs are **not claimed clean**.
+
+The opt-in full MCP showcase then passed separately (`ALLEGIANCE_LIVE_P660_SHOWCASE=1`). Both human clients observed a **12-second simulation intermission**; **30/30 bots migrated, 2/2 humans remained connected, all 30 bots reset and resolved fresh objectives, no bots were pending, and a fresh finale armed**. Rotation took **27.250 sim seconds**; the test measured **21.295 wall seconds** for the complete scenario; `SimPassStageFailures` was **0**. As in the original proof, game-over is forced through the shared declaration path; this is not a natural conquest/load benchmark.
+
+Reproduction commands (run from the repository root):
+
+```bash
+NUGET_HTTP_CACHE_PATH=/tmp/p660b-nuget-http dotnet restore AllegianceCore.slnx
+dotnet build AllegianceCore.slnx --no-restore -m:1
+dotnet test tests/Allegiance.ClientCore.MonoGame.Tests --no-build --no-restore --filter 'FullyQualifiedName~PromoteTurretKeyLiveTests|FullyQualifiedName~P641FlightPartsLiveTests'
+dotnet test tests/Allegiance.ClientCore.Tests --no-build --no-restore
+dotnet test tests/Allegiance.ClientCore.MonoGame.Tests --no-build --no-restore
+dotnet test tests/Allegiance.Core.Tests --no-build --no-restore
+ALLEGIANCE_LIVE_P660_SHOWCASE=1 dotnet test tests/Allegiance.ClientCore.Tests --no-build --no-restore --filter 'FullyQualifiedName~P660ShowcaseLiveTests'
+```
+
+Final build: **0 warnings, 0 errors**. `git diff --check` is clean. The branch and HEAD remain `integ/rig-next-match` / `535b56b3`. Verification summaries and the baseline message-order excerpt are retained in [P660b verification](P660_assets/p660b-verification.txt).

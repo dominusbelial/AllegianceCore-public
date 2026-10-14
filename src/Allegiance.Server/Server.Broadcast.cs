@@ -1648,9 +1648,11 @@ public sealed partial class Server
     /// <summary>The teammate ExportShip PartData[] tail as it is right now,
     /// mount order — see <see cref="PartData"/>'s own doc comment for why this
     /// drops <c>MountedPart.FractionMounted</c> (a requester-only, BUY_LOADOUT-
-    /// specific concern; an already-mounted part observed via EXPORT has none).</summary>
+    /// specific concern; an already-mounted part observed via EXPORT has none).
+    /// Include signed cargo mounts too, so a refreshed EXPORT cannot erase the
+    /// cargo learned from LOADOUT_CHANGE or needed by a later SWAP_PART.</summary>
     private static IReadOnlyList<PartData> SnapshotParts(Ship ship) =>
-        ship.Parts.Select(p => new PartData(p.PartId, p.Amount, p.MountId)).ToArray();
+        ship.ExportInventoryForAck().Select(p => new PartData(p.PartId, p.Amount, p.MountId)).ToArray();
 
     /// <summary>P366 — build a same-side NPC's FM_S_SHIP_STATUS(90) so a team
     /// leader's client learns the drone's real docked state (drives the

@@ -126,6 +126,12 @@ public sealed class PromoteTurretKeyLiveTests
         int seated = PumpUntil(server,
             () => a.World.MyShipId is { } && b.World.MyShipId is { }, 4000);
         Assert.True(seated < 4000, "both peers seated");
+        Assert.True(PumpUntil(server, () =>
+        {
+            lock (a.Gate) lock (b.Gate)
+                return a.World.Mission?.Stage == MissionStageMessage.StageStarted
+                    && b.World.Mission?.Stage == MissionStageMessage.StageStarted;
+        }, 4000) < 4000, "both clients observed Started before flight commands");
 
         // Match each peer to its role by spawned id (robust to socket order).
         ConnectionSession commander, gunner;
@@ -184,6 +190,14 @@ public sealed class PromoteTurretKeyLiveTests
             "PROMOTE receive must swap both client command seats");
         Assert.Equal(CarrierHullId, gunner.World.Ships[gunnerId].HullId);
         Assert.Equal(gunnerId, gunner.World.MyShipId);
+        // Seats can also be refreshed by status snapshots. Require the actual
+        // PROMOTE receive path to post both notices before inspecting the lists.
+        Assert.True(PumpUntil(server, () =>
+        {
+            lock (gunner.Gate) lock (commander.Gate)
+                return gunner.World.Events.Chats.Any(c => c.Message == "You have been promoted to pilot")
+                    && commander.World.Events.Chats.Any(c => c.Message == "You have been demoted to a turret gunner");
+        }, 4000) < 4000, "PROMOTE posts both client role notices");
         Assert.Contains(gunner.World.Events.Chats, c => c.Message == "You have been promoted to pilot");
         Assert.Contains(commander.World.Events.Chats, c => c.Message == "You have been demoted to a turret gunner");
         short highlightedSector = gunnerShip.Sector!.Id;

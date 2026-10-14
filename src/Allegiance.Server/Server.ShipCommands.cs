@@ -307,7 +307,9 @@ public sealed partial class Server
         {
             if (child.TurretId == req.MountidPromoted)
             {
-                child.Promote();
+                _loadoutCommandDepth++;
+                try { child.Promote(); }
+                finally { _loadoutCommandDepth--; }
                 promoted = child;
                 break;
             }
@@ -388,7 +390,11 @@ public sealed partial class Server
         // ship's cargo hold rather than the equipped-mount list
         // (Ship.TrySwapPartWithCargo), native's mechanism for moving a part
         // into/out of cargo.
-        if (!ship.TrySwapPartWithCargo(req.EtOld, req.MountOld, req.MountNew))
+        bool swapped;
+        _loadoutCommandDepth++;
+        try { swapped = ship.TrySwapPartWithCargo(req.EtOld, req.MountOld, req.MountNew); }
+        finally { _loadoutCommandDepth--; }
+        if (!swapped)
         {
             Console.WriteLine($"[swappart] {from} ship {ship.Id}: no mounted {req.EtOld} part at mount {req.MountOld} — silent no-op (native, FedSrv.CPP:6485)");
             return;

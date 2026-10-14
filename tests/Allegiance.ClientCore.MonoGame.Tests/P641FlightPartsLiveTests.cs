@@ -37,9 +37,10 @@ public class P641FlightPartsLiveTests
                 foreach (var p in core.PartTypes) coreTypes[p.Key] = p.Value;
                 var station = P550MonoTestDockHome.CapLandHome(mission, mission.Sides[0].Id);
                 var sector = mission.Sectors.First(s => s.Stations.Contains(station));
-                own = new Ship(id, hull, new Vector3(station.Position[0] + 25, station.Position[1], station.Position[2]), default, Orientation.Identity) { SideId = station.SideId };
-                mission.PlaceShip(own, sector);
-                return (own, sector);
+                var ship = new Ship(id, hull, new Vector3(station.Position[0] + 25, station.Position[1], station.Position[2]), default, Orientation.Identity) { SideId = station.SideId };
+                own ??= ship;
+                mission.PlaceShip(ship, sector);
+                return (ship, sector);
             });
         server.Boot(new Allegiance.Server.ServerConfig { ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork),
             StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
@@ -58,9 +59,26 @@ public class P641FlightPartsLiveTests
             for (int i = 0; i < 6000; i++) { server.TickSim(); if (condition()) return; Thread.Sleep(1); }
             Assert.True(condition(), $"P641 live condition timed out: {phase}");
         }
-        bool ClientHas(short part, bool cargo) { lock (session.Gate) return session.World.MyShipId is { } id
-            && session.World.Ships.TryGetValue(id, out var ship) && (cargo ? ship.Cargo : ship.Loadout)?.Any(p => p.PartId == part) == true; }
+        bool Has(ConnectionSession client, short part, bool cargo) { lock (client.Gate) return client.World.Ships.TryGetValue(own.Id, out var ship)
+            && (cargo ? ship.Cargo : ship.Loadout)?.Any(p => p.PartId == part) == true; }
         Wait("seat and dock", () => session.World.MyShipId is not null && own.StationId is not null);
+        using var observer = new ConnectionSession();
+        observer.World.PartTypeResolver = session.World.PartTypeResolver;
+        observer.Connect(server.BoundPort, "p660b-observer");
+        observer.SendLogonRequest(new LogonRequest { CharacterName = "p660b-observer", ZoneTicket = [1, 2, 3, 4],
+            CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer,
+            Time = 641, DwCookie = 641, CrcFileList = -1, SteamAuthTicket = new byte[16],
+            SteamAuthTicketLength = 0, SteamID = 97700000000000642ul, DrmHash = "p660b" });
+        Wait("observer side selection", () => { lock (observer.Gate) return observer.World.SideRoster is not null; });
+        observer.SendPositionReq(own.SideId!.Value);
+        Wait("Started mission and observer export", () =>
+        {
+            lock (session.Gate) lock (observer.Gate)
+                return session.World.Mission?.Stage == MissionStageMessage.StageStarted
+                    && observer.World.Mission?.Stage == MissionStageMessage.StageStarted
+                    && observer.World.Ships.ContainsKey(own.Id);
+        });
+        bool ClientHas(short part, bool cargo) => Has(session, part, cargo) && Has(observer, part, cargo);
         ExpandedPartData[] loadout = [new(weapon.PartId, 1, 0, 240), new(spare.PartId, 1, 255, 240), new(booster.PartId, 1, 0, 240)];
         session.SendBuyLoadout(own.HullType.HullId, true, loadout);
         Wait("buy and launch", () => own.StationId is null && ClientHas(weapon.PartId, false) && ClientHas(spare.PartId, true));
@@ -87,6 +105,10 @@ public class P641FlightPartsLiveTests
         session.CommandControls(ControlData.Neutral);
         Wait("booster release", () => (own.StateM & ShipControlState.AfterburnerButton) == 0);
         session.SendDropPart(EquipmentType.Weapon, 0); // DropPart
-        Wait("drop", () => !ClientHas(spare.PartId, false) && !own.Parts.Any(p => p.EquipmentType == EquipmentType.Weapon));
+        Wait("drop", () => !Has(session, spare.PartId, false) && !Has(observer, spare.PartId, false)
+            && !own.Parts.Any(p => p.EquipmentType == EquipmentType.Weapon));
+        // The command scope must leave ordinary site-event broadcasts enabled.
+        own.MountPart(spare, 1, 1, 240);
+        Wait("ordinary loadout change after commands", () => ClientHas(spare.PartId, false));
     }
 }
