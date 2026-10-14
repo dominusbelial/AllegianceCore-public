@@ -23,7 +23,7 @@ namespace Allegiance.ClientCore.State;
 /// <c>Add</c>-fresh anywhere, so every branch preserves the one-entity-per-id
 /// invariant.
 /// </summary>
-public sealed class ClientWorld
+public sealed partial class ClientWorld
 {
     private readonly Dictionary<short, ShipEntity> _ships = new();
 
@@ -1508,6 +1508,11 @@ public sealed class ClientWorld
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
         _soundEvents.Clear();
         _newContactCues.Clear();   // P373 — drop any pending first-sighting cues on disconnect
+        _highlightedClusters.Clear();
+        Array.Fill(_allianceGroups, (sbyte)-1);
+        ViewedClusterId = null;
+        ViewedClusterPosition = null;
+        ViewClusterVersion = 0;
         _clusterWarningBySectorId.Clear();   // P374 — drop per-sector threat state on disconnect
         _clusterWarningCues.Clear();         // P374 — drop any pending threat cues on disconnect
         _events.Clear();
@@ -1522,6 +1527,15 @@ public sealed class ClientWorld
     {
         switch (msg)
         {
+            case Promote promote:
+                Apply(promote);
+                break;
+            case HighlightCluster highlight:
+                Apply(highlight);
+                break;
+            case ViewClusterReply viewCluster:
+                Apply(viewCluster);
+                break;
             case SetCluster setCluster:
                 Apply(setCluster);
                 break;
@@ -1566,6 +1580,12 @@ public sealed class ClientWorld
                 break;
             case Reload reload:
                 Apply(reload);
+                break;
+            case SwapPart swapPart:
+                Apply(swapPart);
+                break;
+            case DropPart dropPart:
+                Apply(dropPart);
                 break;
             case Allegiance.Core.Wire.RankInfo rankInfo:
                 Apply(rankInfo);
@@ -1684,6 +1704,9 @@ public sealed class ClientWorld
             case CreateChaff createChaff:
                 // P292 — the server's deploy broadcast for a fresh chaff decoy.
                 Apply(createChaff);
+                break;
+            case ChangeAlliances alliances:
+                ApplyAlliances(alliances);
                 break;
             case TreasureSpawn treasureSpawn:
                 // P293 — the server's "a treasure is here" broadcast.
@@ -2306,9 +2329,9 @@ public sealed class ClientWorld
         // FractionMounted has no wire representation here (PartData is the
         // smaller, requester-agnostic observer struct, see its own doc
         // comment); an already-mounted part is definitionally fully mounted.
-        e.Loadout = export.Parts
-            .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted))
-            .ToArray();
+        var exportedInventory = export.Parts
+            .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted)).ToList();
+        StoreInventory(e, exportedInventory);
         // P370 — an identity EXPORT re-establishes this ship in our view (e.g. a
         // cross-side ship we'd marked gone warped back into our sector, or we
         // re-gained visibility after the server re-sent it); clear the transient
@@ -3499,6 +3522,11 @@ public sealed class ClientWorld
         _autoDonateTargetByShipId.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();
+        _highlightedClusters.Clear();
+        Array.Fill(_allianceGroups, (sbyte)-1);
+        ViewedClusterId = null;
+        ViewedClusterPosition = null;
+        ViewClusterVersion = 0;
         _clusterWarningBySectorId.Clear();
         _clusterWarningCues.Clear();
         _events.Clear();

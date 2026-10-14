@@ -90,6 +90,14 @@ public readonly record struct FlightCommand(ControlData Controls, int StateM);
 /// </summary>
 public static class FlightInput
 {
+    /// <summary>WinTrek/WinTrek.cpp:9027-9058, 9650-9671: occupied fixed
+    /// weapon selects single fire; pressing that selection again groups.</summary>
+    public static (bool GroupFire, int SelectedMount) ToggleWeapon(bool groupFire,
+        int selected, int requested, int fixedCount, bool occupied)
+        => !occupied || requested < 0 || requested >= fixedCount
+            ? (groupFire, selected)
+            : (!groupFire && requested == selected, requested);
+
     /// <summary>
     /// Translate one sampled keyboard state into a <see cref="FlightCommand"/>.
     /// Opposing presses on the same axis cancel (both up and down held → 0),
@@ -132,7 +140,7 @@ public static class FlightInput
         // P220 — afterburner (TK_FireBooster → ShipControlState.AfterburnerButton,
         // the 128·coastButtonIGC bit, igc.h:817). Continuous while Shift is held
         // (native's IsTrekKeyDown semantics), composed with any movement bits —
-        // NOT a toggle (TK_ToggleBooster is deliberately left unwired here).
+        // P641 folds the booster latch into this same boolean in the host.
         if (input.Afterburner) stateM |= ShipControlState.AfterburnerButton;
 
         // P221 — fire weapon (TK_FireWeapon → ShipControlState.AllWeapons, the

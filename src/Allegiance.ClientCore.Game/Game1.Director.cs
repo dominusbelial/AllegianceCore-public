@@ -106,6 +106,23 @@ public sealed partial class Game1
 
         switch (_cameraMode)
         {
+            case CameraMode.Command:
+                UpdateCommandFraming(myPos);
+                return _commandCamera.Matrices(aspect);
+            case CameraMode.DroneFollow:
+            case CameraMode.DroneCockpit:
+                if (TryCommandedPose(out var dronePos, out var droneRot, out var droneRadius))
+                {
+                    if (_cameraMode == CameraMode.DroneCockpit)
+                    {
+                        var (dv, dp) = _cockpitCamera.Matrices(dronePos, droneRot, aspect, out var de);
+                        return (dv, dp, de);
+                    }
+                    var (dv2, dp2) = _chaseCamera.Matrices(dronePos, droneRot, aspect, dt, out var de2, droneRadius);
+                    return (dv2, dp2, de2);
+                }
+                _cameraMode = CameraMode.Chase;
+                return ChaseFallback(myPos, myRot, aspect, dt);
             case CameraMode.Cockpit:
             {
                 Matrix v, p; Vector3 e;
@@ -145,12 +162,15 @@ public sealed partial class Game1
                 var ev = ExternalCameras.Orbit(myPos, ExternalBackwardXna(), MyHullLength());
                 return ViewFor(ev, aspect);
             }
+            case CameraMode.External:
+                EnsureExternalCamAligned(CameraMode.External, myOrientation);
+                return ViewFor(ExternalCameras.GenericExternal(myPos, ExternalBackwardXna(), _flightZoom.ExternalDistance, _myRenderRadius), aspect);
             case CameraMode.ExternalTarget:
             {
                 EnsureExternalCamAligned(CameraMode.ExternalTarget, myOrientation);
                 if (TryCurrentTargetPos(out var tgt))
                     return ViewFor(ExternalCameras.Target(PoseConverter.ToXna(tgt), ExternalBackwardXna(),
-                        TargetRadiusHint(), 0f), aspect);
+                        TargetRadiusHint(), _flightZoom.ExternalDistance), aspect);
                 return ChaseFallback(myPos, myRot, aspect, dt);
             }
             case CameraMode.ExternalFlyBy:
@@ -158,7 +178,7 @@ public sealed partial class Game1
                 EnsureExternalCamAligned(CameraMode.ExternalFlyBy, myOrientation);
                 if (TryCurrentTargetPos(out var fbTgt))
                     return ViewFor(ExternalCameras.FlyBy(PoseConverter.ToXna(fbTgt), myPos,
-                        ExternalBackwardXna(), _myRenderRadius, 0f), aspect);
+                        ExternalBackwardXna(), _myRenderRadius, _flightZoom.ExternalDistance), aspect);
                 return ChaseFallback(myPos, myRot, aspect, dt);
             }
             case CameraMode.ExternalFlyByTarget:
@@ -166,7 +186,7 @@ public sealed partial class Game1
                 EnsureExternalCamAligned(CameraMode.ExternalFlyByTarget, myOrientation);
                 if (TryCurrentTargetPos(out var fbt))
                     return ViewFor(ExternalCameras.Target(PoseConverter.ToXna(fbt), ExternalBackwardXna(),
-                        TargetRadiusHint(), 0f), aspect);
+                        TargetRadiusHint(), _flightZoom.ExternalDistance), aspect);
                 return ChaseFallback(myPos, myRot, aspect, dt);
             }
             case CameraMode.ExternalBase:
@@ -174,7 +194,7 @@ public sealed partial class Game1
                 EnsureExternalCamAligned(CameraMode.ExternalBase, myOrientation);
                 if (TryNearestStationPos(out var basePos, out var baseRadius))
                     return ViewFor(ExternalCameras.Target(PoseConverter.ToXna(basePos), ExternalBackwardXna(),
-                        baseRadius, 0f), aspect);
+                        baseRadius, _flightZoom.ExternalDistance), aspect);
                 return ChaseFallback(myPos, myRot, aspect, dt);
             }
             case CameraMode.ExternalStation:
@@ -438,9 +458,9 @@ public sealed partial class Game1
     /// from the live action map so rebinding a camera works (native wins the
     /// F-row as the default: F4 orbit, F5 flyby, F7 target, F10 base, F11
     /// station).</summary>
-    private void ToggleCameraKey(KeyboardState ks, bool composing, Rendering.KeyBinding chord, CameraMode mode, ref bool wasDown)
+    private void ToggleCameraKey(KeyboardState ks, bool composing, string action, CameraMode mode, ref bool wasDown)
     {
-        bool down = chord.Matches(ks);
+        bool down = ActionDown(ks, action);
         if (SpectatorCameraActive) { wasDown = down; return; }   // P612 — don't kick a spectator camera
         if (!composing && down && !wasDown)
         {
@@ -462,7 +482,7 @@ public sealed partial class Game1
     /// <see cref="ActionMap.IsDown"/> so an action's ALTERNATE chords (the
     /// hardware-layout alias on ThrottleFull) match too.</summary>
     private bool ActionDown(KeyboardState ks, string action)
-        => Rendering.KeyBindingStore.Instance.Map.IsDown(ks, action);
+        => Rendering.KeyBindingStore.Instance.Map.IsDownMostSpecific(ks, action);
 
     /// <summary>Edge-triggered director + spectator toggles (P580). Bound to
     /// F2 (director) and F3 (spectator follow). Also disables the director the
@@ -549,6 +569,9 @@ public sealed partial class Game1
     /// Null for an unrecognized token (caller keeps the default).</summary>
     private static CameraMode? CameraModeFromToken(string token) => token.ToLowerInvariant() switch
     {
+        "command" or "commandtd" => CameraMode.Command,
+        "dronefollow" => CameraMode.DroneFollow,
+        "dronecockpit" => CameraMode.DroneCockpit,
         "cockpit" => CameraMode.Cockpit,
         "chase" => CameraMode.Chase,
         "flyby" => CameraMode.ExternalFlyBy,

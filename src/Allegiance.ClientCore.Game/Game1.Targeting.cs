@@ -41,7 +41,7 @@ public sealed partial class Game1
         => MiningOrientation.Facing(original, shipPos, rockPos, dtSeconds);
 
     /// <summary>The kind of object an autopilot target can be.</summary>
-    internal enum TargetKind { Ship, Station, Asteroid, Warp, Probe, Cluster }
+    internal enum TargetKind { Ship, Station, Asteroid, Warp, Probe, Cluster, Treasure }
 
     /// <summary>A selected autopilot target: enough to re-resolve its live
     /// position each frame from <see cref="ClientWorld"/> (ships may move),
@@ -424,7 +424,8 @@ public sealed partial class Game1
         in CandidateObject o,
         short? mySideId,
         short selfId,
-        in TargetFilterSpec spec)
+        in TargetFilterSpec spec,
+        Func<short, short, bool>? allied = null)
     {
         // Kind gate — relation filters pick either ships or stations, never both
         // (native picks a single model LIST by type mask, common.cpp:498-506).
@@ -440,7 +441,8 @@ public sealed partial class Game1
         {
             case TargetRelation.Enemy:
                 // A sided candidate whose side differs from ours; never self.
-                if (o.Id == selfId || o.SideId is not { } es || es == mySideId) return false;
+                if ((o.Kind == TargetKind.Ship && o.Id == selfId) || o.SideId is not { } es || es == mySideId
+                    || (mySideId is { } mine && (allied?.Invoke(mine, es) ?? false))) return false;
                 break;
             case TargetRelation.Friendly:
             case TargetRelation.AlliedBase:
@@ -451,7 +453,8 @@ public sealed partial class Game1
                 if (o.Kind == TargetKind.Probe &&
                     (o.RoleBits & DataStationTypeIGC.SabmRescueAny) != 0)
                     break;
-                if (o.Id == selfId || o.SideId != mySideId) return false;
+                if ((o.Kind == TargetKind.Ship && o.Id == selfId) || o.SideId is not { } friend
+                    || (friend != mySideId && !(mySideId is { } own && (allied?.Invoke(own, friend) ?? false)))) return false;
                 break;
             case TargetRelation.Self:
                 if (o.Id != selfId) return false;
@@ -780,13 +783,19 @@ public sealed partial class Game1
     {
         var world = _session.World;
         if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return null;
-        List<CandidateObject> objs;
         lock (_session.Gate)
-            objs = GatherSectorCandidates(world.Ships, world.Warps, world.Stations, world.Asteroids,
-                                          me, own.SectorId, ShipRoleBits, StationRoleBits);
-        var filtered = FilterCandidates(objs, world.MySideId, me, simPos, spec);
-        if (filtered.Count == 0) return null;
-        return StepCycle(filtered, _autoTarget, dir);
+        {
+            var objs = spec.StationOnly
+                ? GatherBaseCandidates(world.Stations, spec.IncludeProbes ? world.Probes : null, StationRoleBits, ProbeRoleBits)
+                : GatherSectorCandidates(world.Ships, world.Warps, world.Stations, world.Asteroids,
+                    me, RenderSector(own.SectorId), ShipRoleBits, StationRoleBits);
+            AnchorCommandCandidates(objs);
+            var filter = spec;
+            var matching = objs.Where(x => MatchesFilter(x, world.MySideId, me, filter, world.AreAllied)).ToList();
+            return spec.StationOnly
+                ? ChooseAcrossClusters(matching, CandidateSector, world.Warps, RenderSector(own.SectorId), simPos, _autoTarget, dir)
+                : ChooseTarget(matching, simPos, _autoTarget, dir);
+        }
     }
 
     /// <summary>P415/P623 — convenience used by the filtered-target keys (friend/foe
@@ -846,16 +855,13 @@ public sealed partial class Game1
 
     /// <summary>Per-action press edge latches for the P623 targeting keys (a
     /// single was-down bit per command so a held key never re-fires).</summary>
-    private readonly Dictionary<string, bool> _p623TargetEdge = new();
+    private readonly ActionPressEdges _targetPressEdges = new();
 
     /// <summary>Edge-press predicate for one P623 targeting action: true only on
     /// the rising edge of the chord being down.</summary>
     private bool TargetEdgeDown(KeyboardState ks, string action)
     {
-        bool down = ActionDown(ks, action);
-        bool was = _p623TargetEdge.TryGetValue(action, out var w) && w;
-        _p623TargetEdge[action] = down;
-        return down && !was;
+        return _targetPressEdges.Observe(action, ActionDown(ks, action));
     }
 
     /// <summary>Dispatch one class-filtered command TRIAD (next/nearest/prev
@@ -864,14 +870,11 @@ public sealed partial class Game1
     private void HandleClassTriad(KeyboardState ks, TargetRelation rel, TargetClass cls, string noun,
         string actNext, string actNearest, string actPrev)
     {
-        bool any = ActionDown(ks, actNext) || ActionDown(ks, actNearest) || ActionDown(ks, actPrev);
-        if (!any) { _p623TargetEdge[actNext] = false; return; }
-        bool was = _p623TargetEdge.TryGetValue(actNext, out var w) && w;
-        _p623TargetEdge[actNext] = true;
-        if (was) return;
-        var dir = ActionDown(ks, actPrev) ? StepDirection.Previous
-                : ActionDown(ks, actNearest) ? StepDirection.Nearest
-                : StepDirection.Next;
+        bool next = TargetEdgeDown(ks, actNext);
+        bool nearest = TargetEdgeDown(ks, actNearest);
+        bool previous = TargetEdgeDown(ks, actPrev);
+        if (_targetKeysSuppressed || !(next || nearest || previous)) return;
+        var dir = previous ? StepDirection.Previous : nearest ? StepDirection.Nearest : StepDirection.Next;
         SelectClassForKey(rel, cls, noun, dir);
     }
 
@@ -880,14 +883,11 @@ public sealed partial class Game1
     private void HandleMajorBaseTriad(KeyboardState ks, TargetRelation rel, string noun,
         string actNext, string actNearest, string actPrev)
     {
-        bool any = ActionDown(ks, actNext) || ActionDown(ks, actNearest) || ActionDown(ks, actPrev);
-        if (!any) { _p623TargetEdge[actNext] = false; return; }
-        bool was = _p623TargetEdge.TryGetValue(actNext, out var w) && w;
-        _p623TargetEdge[actNext] = true;
-        if (was) return;
-        var dir = ActionDown(ks, actPrev) ? StepDirection.Previous
-                : ActionDown(ks, actNearest) ? StepDirection.Nearest
-                : StepDirection.Next;
+        bool next = TargetEdgeDown(ks, actNext);
+        bool nearest = TargetEdgeDown(ks, actNearest);
+        bool previous = TargetEdgeDown(ks, actPrev);
+        if (_targetKeysSuppressed || !(next || nearest || previous)) return;
+        var dir = previous ? StepDirection.Previous : nearest ? StepDirection.Nearest : StepDirection.Next;
         SelectMajorBaseForKey(rel, noun, dir);
     }
 
@@ -895,8 +895,10 @@ public sealed partial class Game1
     /// flight frame beside the U/Z/T/G handlers. Every triad is edge-dispatched;
     /// unbound commands (fighter/constructor/majorbase, hostile) simply never
     /// match until the user binds them via F6.</summary>
-    private void HandleP623TargetingKeys(KeyboardState ks)
+    private bool _targetKeysSuppressed;
+    private void HandleP623TargetingKeys(KeyboardState ks, bool composing)
     {
+        _targetKeysSuppressed = composing;
         // Enemy ship classes (native defaults: O bomber, I miner).
         HandleClassTriad(ks, TargetRelation.Enemy, TargetClass.Bomber, "enemy bomber",
             "TargetEnemyBomber", "TargetEnemyBomberNearest", "TargetEnemyBomberPrev");
@@ -926,7 +928,7 @@ public sealed partial class Game1
             "TargetFriendlyMajorBase", "TargetFriendlyMajorBaseNearest", "TargetFriendlyMajorBasePrev");
 
         // TK_TargetHostile — native has NO default key; wired so a user bind works.
-        if (TargetEdgeDown(ks, "TargetHostile"))
+        if (TargetEdgeDown(ks, "TargetHostile") && !composing)
             SelectHostileTarget();
     }
 
@@ -1029,11 +1031,13 @@ public sealed partial class Game1
                                         new TargetFilterSpec(TargetRelation.Friendly));
         if (filtered.Count == 0)
         {
+            _commandGroup.Clear();
             _commandee = null;
             Console.WriteLine("[monogame] commandee: no friendly ship to command in sector");
             return;
         }
         var picked = cycle ? StepCycle(filtered, _commandee) : filtered[0];
+        _commandGroup.Clear();
         _commandee = picked;
         Console.WriteLine($"[monogame] commandee: {picked.Name} (ship #{picked.Id})");
     }
@@ -1049,7 +1053,7 @@ public sealed partial class Game1
     /// is never silently swallowed. Console feedback on what was sent, or why
     /// nothing was sent (no commandee / no target / no applicable order).
     /// </summary>
-    private void TryIssueOrderToCommandee()
+    private void TryIssueOrderToSingleCommandee()
     {
         var world = _session.World;
         if (_commandee is not { } cmd)

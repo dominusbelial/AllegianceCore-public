@@ -468,6 +468,7 @@ public sealed class Probe : Model
                 _ => (cand.Position, Vector3.Zero, 0f, null),
             };
             if (side == SideId) return;                            // hostile = different side (probeigc.cpp:268)
+            if ((Launcher as Ship)?.Mission?.AreSidesFriendly(SideId, side) == true) return; // native AlliedSides
             var dp = pos - myPosition + vel * (float)dtUpdate;     // probeigc.cpp:277-280
             float d2 = dp.LengthSquared();
             if (d2 >= distance2Min) return;                        // probeigc.cpp:283
@@ -496,8 +497,15 @@ public sealed class Probe : Model
         {
             // Fire only at the persisted target, and only while it stays in this
             // sector (probeigc.cpp:390-399).
-            if (_target is { } t && SameSector(t))
-                ConsiderModel(t);
+            if (_target is { } t)
+            {
+                // Native probeigc.cpp:395 resolves a boarded target to its
+                // source carrier. Never acquire another enemy if it is gone.
+                if (t is Ship passenger && passenger.ParentShip is { } carrier) t = carrier;
+                if (SameSector(t) && _sector.Models.Contains(t)
+                    && t is not Ship { Dead: true } && t is not Probe { Dead: true })
+                    ConsiderModel(t);
+            }
         }
         else
         {

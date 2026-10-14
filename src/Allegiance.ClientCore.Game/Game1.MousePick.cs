@@ -58,6 +58,7 @@ public sealed partial class Game1
     private bool _ptrLeftWasDown;
     private bool _ptrRightWasDown;
     private bool _ptrLeftDown;
+    private bool _ptrRightDown;
     private NumericsVec2 _ptrDragStart;
 
     /// <summary>
@@ -79,7 +80,7 @@ public sealed partial class Game1
         bool right = ms.RightButton == ButtonState.Pressed;
         bool middle = ms.MiddleButton == ButtonState.Pressed;
 
-        if (_mouseFlightEnabled)
+        if (_mouseFlightEnabled && !CommandCameraActive)
         {
             int fire = 0;
             // Left = TK_FireWeapon (55): held, continuous like Space.
@@ -123,6 +124,12 @@ public sealed partial class Game1
     /// </summary>
     private void HandlePointerPickClick(MouseState ms, bool left, bool right)
     {
+        if (PointerOverStarmap(ms))
+        {
+            _ptrLeftDown = _ptrRightDown = false;
+            _ptrLeftWasDown = left; _ptrRightWasDown = right;
+            return;
+        }
         var world = _session.World;
         if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own))
         {
@@ -148,18 +155,24 @@ public sealed partial class Game1
             _ptrDragStart = new NumericsVec2(ms.X, ms.Y);
         }
         if (rightEdge)
+        {
+            _ptrRightDown = true;
             _ptrDragStart = new NumericsVec2(ms.X, ms.Y);
+        }
 
         // Release: act only if the pointer barely moved (a click, not a drag).
         if (leftReleased)
         {
             bool wasClick = _ptrLeftDown && SquaredDrag(ms.X, ms.Y, _ptrDragStart) <= PointerDragCancelSq;
+            bool wasDrag = _ptrLeftDown && (MathF.Abs(_ptrDragStart.X - ms.X) > 5 || MathF.Abs(_ptrDragStart.Y - ms.Y) > 5);
             _ptrLeftDown = false;
-            if (wasClick) ActOnLeftPick(me, own, pos, orient, ms);
+            if (wasDrag && _cameraMode == CameraMode.Command) SelectCommandRectangle(me, own, pos, orient, ms);
+            else if (wasClick) ActOnLeftPick(me, own, pos, orient, ms);
         }
         if (rightReleased)
         {
-            bool wasClick = SquaredDrag(ms.X, ms.Y, _ptrDragStart) <= PointerDragCancelSq;
+            bool wasClick = _ptrRightDown && SquaredDrag(ms.X, ms.Y, _ptrDragStart) <= PointerDragCancelSq;
+            _ptrRightDown = false;
             if (wasClick) ActOnRightPick(me, own, pos, orient, ms);
         }
 
@@ -182,18 +195,27 @@ public sealed partial class Game1
         List<CandidateObject> objs;
         lock (_session.Gate)
             objs = GatherSectorCandidates(world.Ships, world.Warps, world.Stations, world.Asteroids,
-                                          me, own.SectorId, ShipRoleBits, StationRoleBits);
+                                          me, RenderSector(own.SectorId), ShipRoleBits, StationRoleBits);
+        AnchorCommandCandidates(objs);
         if (!TryPointerProjection(pos, orient, out var proj)) return;
         var cursor = NormalizedCursor(ms);
         var picked = ResolvePointerPick(objs, proj, cursor.X, cursor.Y, PointerPickRadius,
                                         world.MySideId, me, leftButton: true);
         if (picked is { } p)
         {
-            _commandee = p;
+            if (_cameraMode == CameraMode.Command && ActionDown(Keyboard.GetState(), "CommandSelectionAdd"))
+            {
+                if (_commandGroup.Count == 0 && _commandee is { } previous) _commandGroup.Add(previous);
+                if (_commandGroup.Any(t => t.Id == p.Id)) _commandGroup.RemoveAll(t => t.Id == p.Id);
+                else _commandGroup.Add(p);
+                _commandee = _commandGroup.Count > 0 ? _commandGroup[0] : null;
+            }
+            else { _commandGroup.Clear(); _commandee = p; }
             Console.WriteLine($"[monogame] pointer: commandee {p.Name} (ship #{p.Id})");
         }
         else
         {
+            if (_cameraMode == CameraMode.Command) { _commandGroup.Clear(); _commandee = null; }
             Console.WriteLine("[monogame] pointer: no own-side ship under the cursor");
         }
     }
@@ -208,15 +230,21 @@ public sealed partial class Game1
         List<CandidateObject> objs;
         lock (_session.Gate)
             objs = GatherSectorCandidates(world.Ships, world.Warps, world.Stations, world.Asteroids,
-                                          me, own.SectorId, ShipRoleBits, StationRoleBits);
+                                          me, RenderSector(own.SectorId), ShipRoleBits, StationRoleBits);
+        AnchorCommandCandidates(objs);
         if (!TryPointerProjection(pos, orient, out var proj)) return;
         var cursor = NormalizedCursor(ms);
         var picked = ResolvePointerPick(objs, proj, cursor.X, cursor.Y, PointerPickRadius,
                                         world.MySideId, me, leftButton: false);
         if (picked is { } p)
         {
-            EngageAutopilotToward(p, "pointer:");
-            Console.WriteLine($"[monogame] pointer: target {p.Name} ({p.Kind}#{p.Id}) — autopilot engaged");
+            if (_cameraMode == CameraMode.Command && _commandee is not null)
+            {
+                _autoTarget = p;
+                TryIssueOrderToCommandee();
+            }
+            else EngageAutopilotToward(p, "pointer:");
+            Console.WriteLine($"[monogame] pointer: target {p.Name} ({p.Kind}#{p.Id})");
         }
         else
         {
@@ -239,7 +267,14 @@ public sealed partial class Game1
 
         Matrix view, projection;
         Vector3 eye;
-        if (_cameraMode == CameraMode.Cockpit)
+        if (_camSmoothInit)
+        {
+            eye = _camDisplay.Eye;
+            view = Matrix.CreateLookAt(Vector3.Zero, _camDisplay.Forward,
+                Vector3.Transform(Vector3.Up, _camDisplay.Orient));
+            projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(_camDisplay.FovDeg), aspect, 10, 80000);
+        }
+        else if (_cameraMode == CameraMode.Cockpit)
             (view, projection) = _cockpitCamera.Matrices(xnaPos, rot, aspect, out eye);
         else if (_directorActive)
             (view, projection) = _chaseCamera.Matrices(xnaPos, rot, aspect, 0f, out eye, _myRenderRadius);

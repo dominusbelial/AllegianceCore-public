@@ -3097,6 +3097,11 @@ private void CompleteStartCountdown(Mission mission, double now)
             }.Encode(),
         }));
         Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
+        // P642: native seeds groups through MISSIONDEF.rgfAllies
+        // (appmsg.cpp:2424; fsmission.cpp:5288-5291). The port uses its
+        // existing CHANGE_ALLIANCES codec for the same initial state.
+        SendPeer(from, FedPacket.Pack([CreateAllianceSnapshot(mdSides).Encode()]));
+
 
         // FM_S_EXPORT(26) first: this is the real object-creation
         // message the C++ client's dispatcher handles
@@ -3712,4 +3717,13 @@ private void CompleteStartCountdown(Mission mission, double now)
             }
         }
     }
+    // Initial alliance state for joins; native MISSIONDEF.rgfAllies, appmsg.cpp:2424.
+    internal static ChangeAlliances CreateAllianceSnapshot(IReadOnlyList<Side> sides)
+    {
+        var message = new ChangeAlliances { Allies = Enumerable.Repeat((sbyte)-1, ChangeAlliances.SideAlliesMax).ToArray() };
+        foreach (var side in sides)
+            if (side.Id >= 0 && side.Id < message.Allies.Length) message.Allies[side.Id] = side.AllyGroup ?? -1;
+        return message;
+    }
+
 }

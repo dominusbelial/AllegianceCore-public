@@ -65,6 +65,7 @@ public sealed partial class Game1
             if (!_dockedActive)
             {
                 _dockedActive = true;
+                _hangarOnly = false;
                 // P571 — entering the docked hangar tears down the P540 eject/pod
                 // autopilot (and any autopilot goto/target), so a freshly launched
                 // hull never resumes steering to the garrison after death. Native
@@ -112,6 +113,8 @@ public sealed partial class Game1
                 _investDefs ??= BuildInvestDefs();
                 Console.WriteLine($"[monogame] docked: hangar/loadout screen ({offerCat.Hulls.Count} hulls, {offerCat.Parts.Count} parts, {offerCat.Launchers?.Count ?? 0} launchers offered)");
             }
+
+            if (_cameraMode == CameraMode.Command) return false;
 
             // P273 — T toggles the docked sub-view between the hangar loadout
             // shop and the teleport pane (edge-triggered like every toggle).
@@ -249,11 +252,11 @@ public sealed partial class Game1
                 bool qKey = ActionDown(ks, "ShopCycleHullPrev") || nav.Left;
                 bool eKey = ActionDown(ks, "ShopCycleHullNext") || nav.Right;
 
-                if (up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
-                if (down && !_dockDownWasDown) { shop.MoveCursor(+1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
+                if (!_hangarOnly && up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
+                if (!_hangarOnly && down && !_dockDownWasDown) { shop.MoveCursor(+1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
 
                 // P519 — switch the HULLS/PARTS tab (Tab key or pad shoulders).
-                if ((tabKey || nav.LeftShoulder || nav.RightShoulder) && !_dockTabWasDown)
+                if (!_hangarOnly && (tabKey || nav.LeftShoulder || nav.RightShoulder) && !_dockTabWasDown)
                 {
                     shop.ToggleTab();
                     Console.WriteLine($"[monogame] docked tab -> {shop.Tab}");
@@ -263,7 +266,7 @@ public sealed partial class Game1
                 if (qKey && !_dockQWasDown) { shop.CycleHull(false); Console.WriteLine($"[monogame] hull cycle prev -> {shop.EffectiveHullId}"); }
                 if (eKey && !_dockEWasDown) { shop.CycleHull(true); Console.WriteLine($"[monogame] hull cycle next -> {shop.EffectiveHullId}"); }
 
-                if ((space || enter) && !_dockSpaceWasDown)
+                if (!_hangarOnly && (space || enter) && !_dockSpaceWasDown)
                 {
                     shop.Activate();
                     Console.WriteLine($"[monogame] shop select: page={shop.Page} hull={shop.EffectiveHullId} parts={shop.ChosenParts.Count}");

@@ -57,7 +57,7 @@ public class FedMsgDispatchCoverageTests
         (2, "LogonAck"), (5, "BuyLoadoutAck"), (7, "SetCluster"), (8, "DevCompleted"),
         (9, "SetBriefingText"), (10, "PlayerInfo"), (12, "ProjectileInstance"), (13, "RankInfo"), (14, "SetStartTime"),
         (16, "PlayerRescued"), (17, "Ballot"), (20, "ShipDelete"), (23, "ChatMessage"),
-        (26, "ExportShip"), (28, "TreasureSpawn"), (30, "DestroyTreasure"), (35, "Ping"),
+        (26, "ExportShip"), (28, "TreasureSpawn"), (30, "DestroyTreasure"), (33, "DropPart"), (34, "SwapPart"), (35, "Ping"),
         (37, "MissionStageMessage"), (38, "MissionDef"), (45, "PlayerReady"), (46, "TeamReady"),
         (47, "ForceTeamReady"), (57, "StationsUpdate"), (58, "StationCapture"), (59, "StationDestroyed"),
         (60, "MoneyChange"), (61, "DockedNotify"), (62, "GameOver"), (63, "GameOverPlayers"),
@@ -69,7 +69,7 @@ public class FedMsgDispatchCoverageTests
         (114, "Payday"), (115, "SetMoney"),
         (116, "AutoDonateUpdate"), (121, "SetTeamLeader"), (123, "SetMissionOwner"), (125, "JoinSide"),
         (129, "Reload"), (166, "EnterLifepod"), (175, "LightShipsUpdate"), (176, "HeavyShipsUpdate"),
-        (178, "BoardNack"), (179, "AsteroidsUpdate"),
+        (177, "ViewClusterReply"), (178, "BoardNack"), (189, "Promote"), (199, "HighlightCluster"), (197, "ChangeAlliances"), (179, "AsteroidsUpdate"),
         (181, "BuildingEffectDestroyed"), (183, "ShipReset"), (185, "RipcordActivate"), (186, "RipcordDenied"),
         (187, "RipcordAborted"), (191, "CreateBuckets"), (198, "AsteroidMined"), (200, "ClusterInfo"),
         // port-added server-sent messages the real client also dispatches:
@@ -94,8 +94,6 @@ public class FedMsgDispatchCoverageTests
         (6, "OBJECT_SPOTTED", "native spy-cam spotting relay; no spotter mechanic in this port"),
         (18, "CANCEL_BALLOT", "ballot withdrawn; VOTE/ballot state handled via BALLOT(17)+ActiveBallot"),
         (31, "NEW_SHIP_INSTANCE", "codec only; neither side wired (no sender, no handler)"),
-        (33, "DROP_PART", "broadcast echo; dropped-part visibility realized via TREASURE(28) P293"),
-        (34, "SWAP_PART", "client sends SWAP_PART; server echo not consumed by real client (Bot-only)"),
         (40, "POSITIONREQ", "team-leader seat-request forward; leader acceptance path not surfaced"),
         (42, "DELPOSITIONREQ", "cancel/reject seat request; same partial seat-request feature"),
         (43, "LOCK_LOBBY", "lobby lock broadcast; pre-game lobby not surfaced in MonoGame client"),
@@ -117,14 +115,10 @@ public class FedMsgDispatchCoverageTests
         (156, "GAIN_FLAG", "flag gain broadcast; conquest flag mechanic not implemented"),
         (162, "ACQUIRE_TREASURE", "treasure acquired notice; treasure pickup via DESTROY_TREASURE(30)"),
         (164, "ADD_PART", "part-added broadcast; loadout state via BUY_LOADOUT_ACK(5)"),
-        (177, "VIEW_CLUSTER", "sector-view streaming reply; spectator cam uses VIEW_CLUSTER(104) request only"),
         (182, "REQUEST_MONEY", "request-money broadcast; donation feature partial (P197-P199)"),
         (188, "WARP_BOMB", "warp-bomb explosion; no warp-bomb mechanic"),
-        (189, "PROMOTE", "turret-seat promotion broadcast; send path (SendPromote) done, receive unconsumed"),
         (192, "RELAUNCH_SHIP", "server relaunch notice; launch handled via BUY_LOADOUT_ACK(5) fLaunch"),
         (194, "PINGDATA", "bandwidth ping stats; connectivity via PING(35) echoes P508"),
-        (197, "CHANGE_ALLIANCES", "alliance-set broadcast; alliances only via game-owner chat (P190)"),
-        (199, "HIGHLIGHT_CLUSTER", "sector-highlight broadcast; commander-map highlight partial"),
     };
 
     // ── helpers ────────────────────────────────────────────────────────────
@@ -205,6 +199,8 @@ public class FedMsgDispatchCoverageTests
                 Set(obj, "OidTarget", (short)5); Set(obj, "Ship", MakeShip(5)); break;
             case 183: // SHIP_RESET — carry a real ship
                 Set(obj, "Ship", MakeShip(5)); Set(obj, "Cookie", (byte)1); break;
+            case 197: // CHANGE_ALLIANCES — full signed six-side group vector
+                Set(obj, "Allies", Enumerable.Repeat((sbyte)-1, ChangeAlliances.SideAlliesMax).ToArray()); break;
             case 191: // CREATE_BUCKETS — both masks exactly MaskBytes
                 Set(obj, "TtbmDevelopments", new byte[CreateBuckets.MaskBytes]);
                 Set(obj, "TtbmInitial", new byte[CreateBuckets.MaskBytes]); break;
@@ -289,8 +285,8 @@ public class FedMsgDispatchCoverageTests
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(83, ExpectedConsumedServerSent.Length);
-        Assert.Equal(35, KnownUnconsumedServerSent.Length);
+        Assert.Equal(89, ExpectedConsumedServerSent.Length);
+        Assert.Equal(29, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

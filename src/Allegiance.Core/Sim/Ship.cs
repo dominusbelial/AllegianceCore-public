@@ -2717,6 +2717,7 @@ public sealed class Ship : Model, IShipIgc
 
         var src = ResolvePart(etOld, mountOld);
         if (src is null) return false;                       // source empty → silent no-op
+        if (mountOld == mountNew) return true;
 
         var dst = ResolvePart(etOld, mountNew);              // GetMountedPart(etOld, mountNew)
         MountedPart? dstSwap = dst is not null && !ReferenceEquals(dst, src) ? dst : null;
@@ -2739,6 +2740,7 @@ public sealed class Ship : Model, IShipIgc
     /// weapon, or the cargo slot), mirroring the detach half of a mount move.</summary>
     private void RemoveFromHome(MountedPart part, int mount)
     {
+        _flightMountProgress.Remove((part.PartId, part.MountId));
         if (mount < 0)
         {
             _cargo[CargoSlotForMount(mount)] = null;
@@ -2758,11 +2760,41 @@ public sealed class Ship : Model, IShipIgc
     {
         if (mount < 0)
         {
-            _cargo[CargoSlotForMount(mount)] = AsCargoPart(part);
+            _cargo[CargoSlotForMount(mount)] = AsCargoPart(WithFraction(part, 0));
             return;
         }
-        MountPart(part.Type, part.Amount, (byte)mount, part.FractionMounted);
+        // Native shipIGC.cpp:1567 resets readiness on EVERY mount change.
+        MountPart(part.Type, part.Amount, (byte)mount, 0);
+        if (part.EquipmentType == EquipmentType.Shield) _shieldFraction = 0;
+        if (part.EquipmentType == EquipmentType.Afterburner) DeactivateAfterburner();
     }
+
+    /// <summary>P641 — weaponIGC.h:30-63, cloakigc.cpp:70-81,
+    /// shieldIGC.cpp:66-88: equipment is inert while mounting. Afterburner has
+    /// its own existing ramp. Cargo never advances. Keep a fractional remainder
+    /// so sub-byte frame intervals cannot stall a mounting part indefinitely.</summary>
+    private readonly Dictionary<(short PartId, byte Mount), float> _flightMountProgress = new();
+    private void AdvanceFlightMounts(float dt)
+    {
+        for (int i = 0; i < _parts.Count; i++)
+        {
+            var part = _parts[i];
+            if (part.EquipmentType == EquipmentType.Afterburner || part.FractionMounted >= ExpandedPartData.FullyMounted) continue;
+            var key = (part.PartId, part.MountId);
+            float fraction = part.FractionMounted / (float)ExpandedPartData.FullyMounted;
+            if (_flightMountProgress.TryGetValue(key, out var previous) && (byte)(previous * ExpandedPartData.FullyMounted) == part.FractionMounted)
+                fraction = previous;
+            fraction = Math.Min(1f, fraction + dt * MountRate());
+            _flightMountProgress[key] = fraction;
+            _parts[i] = WithFraction(part, (byte)(fraction * ExpandedPartData.FullyMounted));
+        }
+        foreach (var key in _flightMountProgress.Keys.ToArray())
+            if (!_parts.Any(p => p.PartId == key.PartId && p.MountId == key.Mount && p.FractionMounted < ExpandedPartData.FullyMounted))
+                _flightMountProgress.Remove(key);
+    }
+
+    internal bool IsWeaponMountReady(Weapon weapon) =>
+        _parts.FirstOrDefault(p => ReferenceEquals(p.FunctionalWeapon, weapon))?.FractionMounted is null or >= ExpandedPartData.FullyMounted;
 
     /// <summary>A <see cref="MountedPart"/> as a cargo-hold entry: same wire
     /// quantities, <c>MountId</c> forced to the placeholder 0 (slot implicit in
@@ -3756,7 +3788,7 @@ public sealed class Ship : Model, IShipIgc
         if (Mission is not { } mission) return;
         var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
         if (launcher is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) return;
-        if (launcher.Amount <= 0) return;
+        if (launcher.Amount <= 0 || launcher.FractionMounted < ExpandedPartData.FullyMounted) return;
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return;
         UpdateMissileLock(missileType, dt);
     }
@@ -3785,7 +3817,7 @@ public sealed class Ship : Model, IShipIgc
         if (Mission is not { } mission) return false;
         var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
         if (launcher is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) return false;
-        if (launcher.Amount <= 0) return false;
+        if (launcher.Amount <= 0 || launcher.FractionMounted < ExpandedPartData.FullyMounted) return false;
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return false;
 
         bool lockReady = missileType.MaxLock == 0f || MissileLock >= 1f;
@@ -4421,7 +4453,7 @@ public sealed class Ship : Model, IShipIgc
     private DataPartTypeIGC.Shield? MountedShieldType()
     {
         var shieldPart = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield);
-        return shieldPart?.Type.Type as DataPartTypeIGC.Shield;
+        return shieldPart is { FractionMounted: >= ExpandedPartData.FullyMounted } ? shieldPart.Type.Type as DataPartTypeIGC.Shield : null;
     }
 
     /// <summary>P389 — the mounted shield's per-tick regeneration, the port of
@@ -6947,12 +6979,10 @@ public sealed class Ship : Model, IShipIgc
 
         // bActive = the cloak-active control bit AND fit-to-cloak (native
         // cloakigc.cpp:80-81: (stateM & cloakActiveIGC) && mountedFraction >= 1).
-        // The mountedFraction>=1 term collapses to "the part is present" (the
-        // loadout buys parts mounted-ready; the native mounting ramp is a
-        // separate notification-only concern not ported here). The docked/parent/
+        // P641 advances readiness for an in-flight remount. The docked/parent/
         // ripcord gates mirror SetStateM (shipIGC.cpp:1595-1601) refusing the bit
         // while docked/boarded/ripped.
-        bool bActive = (StateM & ShipControlState.CloakActive) != 0
+        bool bActive = cloak.FractionMounted >= ExpandedPartData.FullyMounted && (StateM & ShipControlState.CloakActive) != 0
                        && StationId is null
                        && ParentShip is null
                        && !IsRipcordActive;
@@ -7128,21 +7158,23 @@ public sealed class Ship : Model, IShipIgc
         }
 
         // Mount-ramp gate (afterburnerIGC.cpp:111-125): while the part is not
-        // fully mounted (wire FractionMounted < 255), ramp it toward 1.0 at
+        // fully mounted (wire FractionMounted < FullyMounted), ramp it toward 1.0 at
         // mountRate and stay inert until fully mounted (the early return).
-        float frac = ab.FractionMounted / 255f;
+        float frac = ab.FractionMounted / (float)ExpandedPartData.FullyMounted;
         if (frac < 1.0f)
         {
             frac += dt * MountRate();
             if (frac >= 1.0f)
             {
                 frac = 1.0f;
+                int mountedIndex = _parts.FindIndex(p => ReferenceEquals(p, ab));
+                if (mountedIndex >= 0) _parts[mountedIndex] = WithFraction(ab, ExpandedPartData.FullyMounted);
                 // native posts "%s ready." + mountsound here (afterburnerIGC.cpp:119-121);
                 // this port has no PostNotificationText wiring (same stance as cloak).
             }
             else
             {
-                byte advanced = (byte)(frac * 255f);
+                byte advanced = (byte)(frac * ExpandedPartData.FullyMounted);
                 if (advanced != ab.FractionMounted)
                 {
                     int i = _parts.FindIndex(p => ReferenceEquals(p, ab));
@@ -7290,6 +7322,7 @@ public sealed class Ship : Model, IShipIgc
         // settled. Derives activation from the CloakActive StateM bit, drains
         // energy, and ramps Cloaking (feeding EffectiveSignature → the sector's
         // cross-side detection sweep). No-op on a ship with no ET_Cloak@0 part.
+        AdvanceFlightMounts((float)dt);
         UpdateCloak((float)dt);
 
         // P389 — the mounted shield's per-tick regeneration (CshieldIGC::Update,
