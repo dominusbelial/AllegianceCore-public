@@ -188,5 +188,28 @@ amplification idiom.
 - Whole-solution Release build: 0 warnings / 0 errors.
 - New regression tests: 13 (transport + dispatch + decoder/log), all passing;
   artwork-gated tests run with `ALLEGIANCE_ARTWORK_PATH`.
-- Full suite (`scripts/run-tests.sh`): see the two runs below.
-- (Live 30v30 / 200v200 rig: see the live-proof section / follow-up.)
+- Full suite (`scripts/run-tests.sh`), each run as it happened:
+  - **Run 1 (interim H-32 — before reconciling with the P200 pingdata feature):**
+    Lobby 12/12; MonoGame 1969 (+3 skip); ClientCore 865; Core.Tests 4141 passed,
+    5 failed — 4 × `PingDataReqPingDataLiveTests` (caused by the interim
+    "deny pre-logon" H-32, which contradicted the native/P200 bare-requester
+    feature; reconciled → those 4 now pass) + 1 × `LiveTreasurePickupTests`
+    (known pickup-acquire load flake). This run surfaced the real design
+    tension and was discarded (not on final code).
+  - **Run A (final code):** Lobby 12/12; MonoGame 1969 (+3 skip); ClientCore
+    865; Core.Tests N passed / 2 failed — both failures were
+    already-documented live-wire timing flakes
+    (`P590PodRescueTests.Pod_pickup_order_streams…`, `LiveRipcordTests.First_activation…`)
+    that pass in isolation. The one real regression the flood test caught
+    (rejection now at the transport instead of the sim thread) was fixed and
+    the test updated.
+  - **Run B (final code):** see below (append numbers).
+- Live 30v30 / 200v200 rig: **NOT completed in this session.** The shared
+  workstation was under heavy concurrent load from other Allegiance sessions
+  (allegiance-codex-sim, p653c each running their own 200v200-scale suites),
+  and the transport/server change class requires a dedicated, uncontended live
+  bot run. The connection-caps change is unit/loopback-tested (H-15 refuses
+  over-limit peers; the README recommended settings raise the per-IP cap to
+  1024 so the rig's ~391 same-Mac-host bots connect), but the mandated live
+  30v30 combat and 200v200 tick-p95 measurement remain to be run on an
+  uncontended box and are flagged as the outstanding verification step.
