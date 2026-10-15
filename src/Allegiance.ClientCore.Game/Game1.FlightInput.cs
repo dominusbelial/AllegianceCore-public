@@ -2400,10 +2400,6 @@ public sealed partial class Game1
     /// <c>StationTypeId</c>; null = no bays.</summary>
     private readonly Dictionary<short, Allegiance.Core.Collision.HullLandingBayGeometry?> _dockBaysByStationType = new();
 
-    /// <summary>P575 — fallback braking deceleration when the own hull's
-    /// Thrust/Mass is unavailable (matches AutopilotBrakeDeceleration).</summary>
-    private const float DockApproachFallbackDecel = 55f;
-
     /// <summary>P575 — cached station landing-bay geometry from the type's real
     /// <c>.cvh</c> under the artwork root via the SHARED reconstructor (the same
     /// source the server's dock gate consumes), keyed by <c>StationTypeId</c>.
@@ -2504,15 +2500,10 @@ public sealed partial class Game1
                 hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.CapLandSlots);
 
             float speed = vel.Length();
-            float decel = hull.Mass > 0f ? hull.Thrust / hull.Mass : DockApproachFallbackDecel;
-            float distanceRest;
-            SimVec positionRest;
-            if (speed > 0.1f && decel > 0f)
-            {
-                distanceRest = (speed * speed) / (2f * decel);
-                positionRest = pos + vel * (distanceRest / speed);
-            }
-            else { distanceRest = 0f; positionRest = pos; }
+            var attributes = _session.World.GlobalAttributesFor(_session.World.MySideId ?? -1);
+            float distanceRest = DockApproach.StoppingDistance(speed, hull.Thrust * attributes.Get(GlobalAttributeSet.Thrust),
+                hull.Mass, hull.Speed * attributes.Get(GlobalAttributeSet.MaxSpeed), hull.BackMultiplier);
+            SimVec positionRest = speed > .1f ? pos + vel * (distanceRest / speed) : pos;
 
             float shipRadius = 0.5f * hull.Length;
             float totalRadius = shipRadius + stype.Radius + 10f;
@@ -2523,7 +2514,8 @@ public sealed partial class Game1
             // client-side simplification of native's rate gate (common.cpp:1301).
             var step = DockApproach.DockStation(
                 pos, vel, orient, center, bays, nLand, distanceRest, positionRest,
-                totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false);
+                totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false,
+                bayPreference: hull.HasCapability(DataHullTypeIGC.HabmLifepod) ? mine.ShipId : 0);
 
             controls = DockApproach.Steer(step, pos, orient, vel, distanceRest);
             return true;
@@ -2730,6 +2722,17 @@ public sealed partial class Game1
         if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return false;
         short cur = own.SectorId;
         if (cur == targetCluster) return false;              // arrived
+
+        if (_shopCatalog?.Hulls.FirstOrDefault(h => h.HullId == own.HullId)
+            is { } podHull && podHull.HasCapability(DataHullTypeIGC.HabmLifepod) && own.Latest is { } pose)
+        {
+            SimVec? destination = _autoTarget is { Kind: TargetKind.Station } target
+                && world.Stations.TryGetValue(target.Id, out var station) ? Vec(station.Position) : null;
+            if (PodReturnNavigation.NextWarp(world.Warps, cur, targetCluster, pose.Position, destination) is not { } mouth)
+                return false;
+            pos = Vec(mouth.Position);
+            return true;
+        }
 
         var warps = AllWarps(world);
 

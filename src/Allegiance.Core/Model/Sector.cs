@@ -1152,7 +1152,10 @@ public sealed class Sector : IClusterIgc
     /// point-in-sphere proximity-sweep convention the dock/rescue passes
     /// establish (<c>objectRadius + shipRadius</c>, cf.
     /// <c>ResolveDockCollisions</c> at <c>Sector.cs:1269</c>).</para>
-    /// <para><b>Rescue bit only</b> — the station gate tests
+    /// <para>The native rescue branch is an else-if after the hull-class
+    /// landing-capability branch (shipIGC.cpp:727-729,861-866). A station that
+    /// offers the ship's landing class requires ordinary bay entry instead.</para>
+    /// <para><b>Rescue bit only</b> — the remaining station gate tests
     /// <c>c_sabmRescue</c> (0x2000) alone, faithful to native: the shipIGC.cpp:862
     /// branch never tests <c>c_sabmRescueAny</c> (0x4000), which native reserves
     /// &quot;for pods&quot; and only the client-side target classifiers and the
@@ -1197,6 +1200,11 @@ public sealed class Sector : IClusterIgc
                 if (s.Mission is null || s.SideId is null || s.Dead || s.StationId is not null) continue;
                 // Lifepod hull (the rescued side of the pair).
                 if (!s.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)) continue;
+                // Rescue is the ELSE of the hull-class landing capability gate
+                // (Igc/shipIGC.cpp:727-729,861-866), not a radius shortcut past InGarage.
+                short landing = s.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+                    ? DataStationTypeIGC.SabmLand : DataStationTypeIGC.SabmCapLand;
+                if (station.Type.HasCapability(landing)) continue;
                 // Friendly gate (shipIGC.cpp:865): same side only (allied leg
                 // collapses unconditionally — no alliance concept in this port).
                 if (s.SideId != station.SideId) continue;

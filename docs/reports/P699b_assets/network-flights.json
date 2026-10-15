@@ -1,0 +1,68 @@
+[
+  {
+    "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+    "trx": "final-focused-108-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-1.trx.gz",
+    "summary": [
+      "MCP route=1051 -> 1052 -> 1053 elapsed=242.10 endurance=300.00 landed=True relaunchTraffic=12"
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+    "trx": "final-focused-109-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-2.trx.gz",
+    "summary": [
+      "MCP route=1051 -> 1052 -> 1053 elapsed=241.50 endurance=300.00 landed=True relaunchTraffic=12"
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+    "trx": "final-focused-110-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-3.trx.gz",
+    "summary": [
+      "MCP route=1051 -> 1052 -> 1053 elapsed=241.90 endurance=300.00 landed=True relaunchTraffic=12"
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "trx": "final-focused-135-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-1.trx.gz",
+    "summary": [
+      "POSE accepted=1436 rejected=0",
+      "HUMAN route=1051 -> 1052 -> 1053 elapsed=239.25 oxygen=300.00 station=1051"
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "trx": "final-focused-136-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-2.trx.gz",
+    "summary": [
+      "POSE accepted=1441 rejected=1",
+      "HUMAN route=1051 -> 1052 -> 1053 elapsed=240.15 oxygen=300.00 station=1051"
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "trx": "final-focused-137-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-3.trx.gz",
+    "summary": [
+      "POSE accepted=1436 rejected=2",
+      "HUMAN route=1051 -> 1052 -> 1053 elapsed=239.65 oxygen=300.00 station=1051"
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P540bPodAutopilotCrossSectorLiveTests.EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets",
+    "trx": "final-focused-138-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-1.trx.gz",
+    "summary": [
+      "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4883/11000"
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P540bPodAutopilotCrossSectorLiveTests.EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets",
+    "trx": "final-focused-139-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-2.trx.gz",
+    "summary": [
+      "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4883/11000"
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P540bPodAutopilotCrossSectorLiveTests.EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets",
+    "trx": "final-focused-140-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-3.trx.gz",
+    "summary": [
+      "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4883/11000"
+    ]
+  }
+]

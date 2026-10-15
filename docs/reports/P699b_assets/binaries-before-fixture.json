@@ -1,0 +1,90 @@
+[
+  {
+    "file": "src/Allegiance.Bot/bin/Debug/net10.0/Allegiance.Bot.dll",
+    "sha256": "231767607f0b178a98a5ab6fa9e8d5752f1fc20004e8ec3013ab64fd753d018d"
+  },
+  {
+    "file": "src/Allegiance.Bot/bin/Debug/net10.0/Allegiance.Core.dll",
+    "sha256": "12b29e3871601e561d708ca318d5e5f7cb7044f8e5ba72890604c6be861615d1"
+  },
+  {
+    "file": "src/Allegiance.ClientCore/bin/Debug/net10.0/Allegiance.ClientCore.dll",
+    "sha256": "1f6b877a3352a8495e1686e2a35412a0bc6f21bf9396fb594ab91ab54036ba9e"
+  },
+  {
+    "file": "src/Allegiance.ClientCore/bin/Debug/net10.0/Allegiance.Core.dll",
+    "sha256": "12b29e3871601e561d708ca318d5e5f7cb7044f8e5ba72890604c6be861615d1"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.Explorer/bin/Debug/net10.0/Allegiance.ClientCore.Explorer.dll",
+    "sha256": "0d382378fdaf5e685731ffd24f39c12cc67d557956702782caeba3773835e5a5"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.Explorer/bin/Debug/net10.0/Allegiance.ClientCore.dll",
+    "sha256": "1f6b877a3352a8495e1686e2a35412a0bc6f21bf9396fb594ab91ab54036ba9e"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.Explorer/bin/Debug/net10.0/Allegiance.Core.dll",
+    "sha256": "12b29e3871601e561d708ca318d5e5f7cb7044f8e5ba72890604c6be861615d1"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.Explorer/bin/Debug/net10.0/Allegiance.Server.dll",
+    "sha256": "55ede79e5245affd77da25c9e031e0aa6c3ab2f018fda16849c88795bdebf6cb"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.ClientCore.Game.dll",
+    "sha256": "52914d31126294452ce290a467a5b7022fc30018470f68ac88275c995c77720e"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.ClientCore.dll",
+    "sha256": "1f6b877a3352a8495e1686e2a35412a0bc6f21bf9396fb594ab91ab54036ba9e"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.Core.dll",
+    "sha256": "12b29e3871601e561d708ca318d5e5f7cb7044f8e5ba72890604c6be861615d1"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.ClientCore.Game.dll",
+    "sha256": "52914d31126294452ce290a467a5b7022fc30018470f68ac88275c995c77720e"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.dll",
+    "sha256": "3a4e592aba494e692ea26db337b5acef2b6bf436ccb7edacf7354807df2ebc75"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.ClientCore.dll",
+    "sha256": "1f6b877a3352a8495e1686e2a35412a0bc6f21bf9396fb594ab91ab54036ba9e"
+  },
+  {
+    "file": "src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.Core.dll",
+    "sha256": "12b29e3871601e561d708ca318d5e5f7cb7044f8e5ba72890604c6be861615d1"
+  },
+  {
+    "file": "src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll",
+    "sha256": "12b29e3871601e561d708ca318d5e5f7cb7044f8e5ba72890604c6be861615d1"
+  },
+  {
+    "file": "src/Allegiance.Lobby/bin/Debug/net10.0/Allegiance.Lobby.dll",
+    "sha256": "1ecfb908d083edd2784f12766b1818c6e3e070fa30b8f9a2c5511c29a7daa13f"
+  },
+  {
+    "file": "src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Core.dll",
+    "sha256": "12b29e3871601e561d708ca318d5e5f7cb7044f8e5ba72890604c6be861615d1"
+  },
+  {
+    "file": "src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Server.dll",
+    "sha256": "55ede79e5245affd77da25c9e031e0aa6c3ab2f018fda16849c88795bdebf6cb"
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll",
+    "sha256": "1b9eec7b2827222183c3d43847e73c7e246d322a1b3b9a3dc72a8f2adff36cfe"
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll",
+    "sha256": "2a69a72073cd1fbdb094da01c61139fb85352cf0cd1498ad90910ef3a4256fd7"
+  },
+  {
+    "file": "tools/allegiance-mcp/bin/Debug/net10.0/allegiance-mcp.dll",
+    "sha256": "45de6e4bf3c22acd3c34c247127fa97652454ffe65691eff90366dcc5b63707b"
+  }
+]

@@ -1,0 +1,143 @@
+[
+  {
+    "trx": "final-focused-000-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-1.trx.gz",
+    "sha256": "85694686a5e1a636cc81fda2076b63fb7ba9f416918cf32d97ab829d7363ef48",
+    "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+    "trips": 200,
+    "outcomes": {
+      "docked": 200
+    },
+    "home_arrivals": 200,
+    "bay_entries": 200,
+    "routes": {
+      "1052 -> 1059 -> 1050": 50,
+      "1052 -> 1060 -> 1050": 50,
+      "1052 -> 1061 -> 1051": 50,
+      "1052 -> 1062 -> 1051": 50
+    },
+    "median_seconds": 215.70000000002506,
+    "p95_seconds": 281.35000000006164,
+    "max_seconds": 287.20000000004023,
+    "p95_waited_at_bay": 8.450000000001921,
+    "summary": "baseline=False rescueTraffic=False docked=200 rescued=0 total=200/200 oxygen=0 other=0 homeReached=200 launchTraffic=136 median=215.70 p95=281.60 bays=1:2491,0:2216"
+  },
+  {
+    "trx": "final-focused-001-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-2.trx.gz",
+    "sha256": "d72f650c77cdecc95e1d67c57d3a63e670c8d3c0046741562fcd0d7ca82a0362",
+    "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+    "trips": 200,
+    "outcomes": {
+      "docked": 200
+    },
+    "home_arrivals": 200,
+    "bay_entries": 200,
+    "routes": {
+      "1052 -> 1059 -> 1050": 50,
+      "1052 -> 1060 -> 1050": 50,
+      "1052 -> 1061 -> 1051": 50,
+      "1052 -> 1062 -> 1051": 50
+    },
+    "median_seconds": 215.60000000003072,
+    "p95_seconds": 281.45000000006166,
+    "max_seconds": 286.30000000006277,
+    "p95_waited_at_bay": 8.05000000000183,
+    "summary": "baseline=False rescueTraffic=False docked=200 rescued=0 total=200/200 oxygen=0 other=0 homeReached=200 launchTraffic=136 median=215.65 p95=281.60 bays=1:2267,0:2312"
+  },
+  {
+    "trx": "final-focused-002-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-3.trx.gz",
+    "sha256": "741bb67f3e2ea76869e4c6733e28ed32c7791454ea0d0b99ecf180fec97460c4",
+    "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+    "trips": 200,
+    "outcomes": {
+      "docked": 200
+    },
+    "home_arrivals": 200,
+    "bay_entries": 200,
+    "routes": {
+      "1052 -> 1059 -> 1050": 50,
+      "1052 -> 1060 -> 1050": 50,
+      "1052 -> 1061 -> 1051": 50,
+      "1052 -> 1062 -> 1051": 50
+    },
+    "median_seconds": 215.57500000002506,
+    "p95_seconds": 281.4000000000389,
+    "max_seconds": 283.6000000000394,
+    "p95_waited_at_bay": 7.950000000001808,
+    "summary": "baseline=False rescueTraffic=False docked=200 rescued=0 total=200/200 oxygen=0 other=0 homeReached=200 launchTraffic=136 median=215.60 p95=281.45 bays=1:2015,0:2172"
+  },
+  {
+    "trx": "final-focused-003-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-1.trx.gz",
+    "sha256": "107407f91af7ce3394bb421b3bcbffb7363d3c81ebb2344d7707e96220c3d117",
+    "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+    "trips": 200,
+    "outcomes": {
+      "rescued": 35,
+      "docked": 165
+    },
+    "home_arrivals": 165,
+    "bay_entries": 165,
+    "routes": {
+      "1052 -> 1059": 6,
+      "1052 -> 1062": 29,
+      "1052 -> 1059 -> 1050": 44,
+      "1052 -> 1060 -> 1050": 50,
+      "1052 -> 1061 -> 1051": 50,
+      "1052 -> 1062 -> 1051": 21
+    },
+    "median_seconds": 214.52500000003508,
+    "p95_seconds": 279.80000000003855,
+    "max_seconds": 283.85000000003026,
+    "p95_waited_at_bay": 8.100000000001842,
+    "summary": "baseline=False rescueTraffic=True docked=165 rescued=35 total=200/200 oxygen=0 other=0 homeReached=165 launchTraffic=112 median=214.55 p95=279.85 bays=1:2276,0:1424"
+  },
+  {
+    "trx": "final-focused-004-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-2.trx.gz",
+    "sha256": "a20383589b365c410177d4ed659735240dbea99ae7ddc4257a9be1135ff04a69",
+    "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+    "trips": 200,
+    "outcomes": {
+      "rescued": 38,
+      "docked": 162
+    },
+    "home_arrivals": 162,
+    "bay_entries": 162,
+    "routes": {
+      "1052 -> 1059": 6,
+      "1052 -> 1062": 32,
+      "1052 -> 1059 -> 1050": 44,
+      "1052 -> 1061 -> 1051": 50,
+      "1052 -> 1060 -> 1050": 50,
+      "1052 -> 1062 -> 1051": 18
+    },
+    "median_seconds": 214.32500000003503,
+    "p95_seconds": 280.20000000002943,
+    "max_seconds": 283.80000000003946,
+    "p95_waited_at_bay": 7.8000000000017735,
+    "summary": "baseline=False rescueTraffic=True docked=162 rescued=38 total=200/200 oxygen=0 other=0 homeReached=162 launchTraffic=114 median=214.35 p95=280.20 bays=1:2202,0:1517"
+  },
+  {
+    "trx": "final-focused-005-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-3.trx.gz",
+    "sha256": "2c9b54711aba3ce90e19c467a8670f930d8cadf1c2442677f20d9c56c3d35b5f",
+    "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+    "trips": 200,
+    "outcomes": {
+      "rescued": 40,
+      "docked": 160
+    },
+    "home_arrivals": 160,
+    "bay_entries": 160,
+    "routes": {
+      "1052 -> 1059": 9,
+      "1052 -> 1062": 31,
+      "1052 -> 1059 -> 1050": 41,
+      "1052 -> 1060 -> 1050": 50,
+      "1052 -> 1061 -> 1051": 50,
+      "1052 -> 1062 -> 1051": 19
+    },
+    "median_seconds": 214.55000000001917,
+    "p95_seconds": 280.6000000000295,
+    "max_seconds": 285.05000000003974,
+    "p95_waited_at_bay": 7.750000000001762,
+    "summary": "baseline=False rescueTraffic=True docked=160 rescued=40 total=200/200 oxygen=0 other=0 homeReached=160 launchTraffic=114 median=214.55 p95=280.60 bays=1:2133,0:1534"
+  }
+]

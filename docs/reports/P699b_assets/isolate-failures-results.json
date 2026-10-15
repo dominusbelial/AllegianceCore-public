@@ -1,0 +1,128 @@
+[
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792107212.039027,
+    "finished": 1792107216.5597897,
+    "seconds": 4.52,
+    "log": "/tmp/p699b-validation/isolate-failures-000-isolate-1.log",
+    "trx": "isolate-failures-000-isolate-1.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+        "error": "ejected pod never docked at the rescue station (pumped 2000 ticks)"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792107216.5599413,
+    "finished": 1792107220.909424,
+    "seconds": 4.35,
+    "log": "/tmp/p699b-validation/isolate-failures-001-isolate-2.log",
+    "trx": "isolate-failures-001-isolate-2.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+        "error": "ejected pod never docked at the rescue station (pumped 2000 ticks)"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792107220.909631,
+    "finished": 1792107225.3637667,
+    "seconds": 4.45,
+    "log": "/tmp/p699b-validation/isolate-failures-002-isolate-3.log",
+    "trx": "isolate-failures-002-isolate-3.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+        "error": "ejected pod never docked at the rescue station (pumped 2000 ticks)"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792107225.3639593,
+    "finished": 1792107230.0096834,
+    "seconds": 4.65,
+    "log": "/tmp/p699b-validation/isolate-failures-003-isolate-1.log",
+    "trx": "isolate-failures-003-isolate-1.trx.gz",
+    "passed": 2,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback(scenario: \"teammate-pod-dock\")",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+        "error": "departed ship excluded from actual gather gate"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792107230.0098946,
+    "finished": 1792107234.6928136,
+    "seconds": 4.68,
+    "log": "/tmp/p699b-validation/isolate-failures-004-isolate-2.log",
+    "trx": "isolate-failures-004-isolate-2.trx.gz",
+    "passed": 2,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback(scenario: \"teammate-pod-dock\")",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+        "error": "departed ship excluded from actual gather gate"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792107234.6930285,
+    "finished": 1792107239.379848,
+    "seconds": 4.69,
+    "log": "/tmp/p699b-validation/isolate-failures-005-isolate-3.log",
+    "trx": "isolate-failures-005-isolate-3.trx.gz",
+    "passed": 2,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback(scenario: \"teammate-pod-dock\")",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+        "error": "departed ship excluded from actual gather gate"
+      }
+    ],
+    "skipped": []
+  }
+]

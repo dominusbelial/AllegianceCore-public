@@ -142,7 +142,8 @@ public class P698StaleShipsLoopbackTests
             subject.Mission!.Site.KillShipEvent(0, subject, null, -1, subject.Position, Vector3.Zero);
         }
         else if (dock)
-            subject.Position = stationPos + new Vector3(20, 0, 0);
+            subject.Position = DockTestPlacement.Inside(subject.Mission!,
+                origin!.Stations.First(s => s.SideId == subject.SideId), subject.HullType);
         else
             subject.Position = new(-6000, 0, 0);
 

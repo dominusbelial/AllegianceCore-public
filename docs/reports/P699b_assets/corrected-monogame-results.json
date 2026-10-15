@@ -1,0 +1,20 @@
+[
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792107442.9647543,
+    "finished": 1792108375.7260714,
+    "seconds": 932.76,
+    "log": "/tmp/p699b-validation/corrected-monogame-000-MonoGame.log",
+    "trx": "corrected-monogame-000-MonoGame.trx.gz",
+    "passed": 2208,
+    "failed": [],
+    "skipped": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+    ]
+  }
+]

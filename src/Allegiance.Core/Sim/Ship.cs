@@ -5612,18 +5612,10 @@ public sealed class Ship : Model, IShipIgc
         int nLand = DockApproach.StationBaysForClass(
             HullType.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.CapLandSlots);
 
-        // Kill-throttle rest position (native computes this from the drag solve,
-        // common.cpp:1890-1905; the port uses its braking capability Thrust/Mass).
         float speed = Velocity.Length();
-        float decel = Mass > 0f ? HullType.Thrust / Mass : 0f;
-        float distanceRest;
-        Vector3 positionRest;
-        if (speed > 0.1f && decel > 0f)
-        {
-            distanceRest = (speed * speed) / (2f * decel);
-            positionRest = Position + Velocity * (distanceRest / speed);
-        }
-        else { distanceRest = 0f; positionRest = Position; }
+        float distanceRest = DockApproach.StoppingDistance(speed, EffectiveThrust(), Mass,
+            EffectiveMaxSpeed(), HullType.BackMultiplier);
+        Vector3 positionRest = speed > .1f ? Position + Velocity * (distanceRest / speed) : Position;
 
         float shipRadius = 0.5f * HullType.Length;
         float totalRadius = shipRadius + rt.Radius + 10f;    // native myRadius, common.cpp:1170
@@ -5632,7 +5624,7 @@ public sealed class Ship : Model, IShipIgc
             Position, Velocity, Orientation, rt.Center, bays, nLand,
             distanceRest, positionRest, totalRadius,
             TurnRates[ControlData.AxisYaw], TurnRates[ControlData.AxisPitch],
-            experimental: false);
+            experimental: false, bayPreference: HullType.HasCapability(DataHullTypeIGC.HabmLifepod) ? Id : 0);
 
         Controls = DockApproach.Steer(
             step, Position, Orientation, Velocity, distanceRest,

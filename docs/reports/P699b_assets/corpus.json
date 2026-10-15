@@ -1,0 +1,54 @@
+[
+  {
+    "file": "/home/domingo/Development/Artwork/PCore001.igc",
+    "sha256": "f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/m2xspiderw.igc",
+    "sha256": "2e0011f7f23e3a05d6e2e323c80aba8b2eacfaee92aa64c796f631dda740111c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/XXV_simple.igc",
+    "sha256": "84c06bc649682f8fd4a96aa7efa6ba49bcd408b75442e352a49c2922802c7b71"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss24a.cvh",
+    "sha256": "26e7159f7d14dc470b5170febdf9d40c77f993fdd7c9249e9f118bd984c18122"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/common.cpp",
+    "sha256": "853757a6c9f981d56f1d6c0c3544035c58e77bfdbf25b8bd1764adb10d69b955"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/shipIGC.cpp",
+    "sha256": "2f5d1cd1dde51bafdf6d1a71e5ff375bd44c1f633f8a167f202620dce7cb12d3"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/stationIGC.cpp",
+    "sha256": "44da2296ce77df42e34a7af1e152ef7217a1ae6ecdc8beb4c3073efbeeaa1784"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/stationtypeigc.cpp",
+    "sha256": "176f961c09261adde1a3da6c7b94b487e6eedede8b27972fc2c66aa8524c60b3"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/missionigc.cpp",
+    "sha256": "cfedbec93ef07586e4564f26026405930efac779c1d10e13dca9335ed9eaf471"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/clusterIGC.cpp",
+    "sha256": "a9d33695eaa609619979eeb4a8d300aa3c7a6f2143608e4f36a4501b9724adc8"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/igc.h",
+    "sha256": "9e151addcbed45df98ff78fc9352aca8a796f69a5cfbb947425d52e9ab649a66"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/FedSrv/FedSrv.CPP",
+    "sha256": "7b8938f2fdfcfe09a299ac642b79ca54991a4222dce79e93b2ba5d356199a014"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/FedSrv/fsship.cpp",
+    "sha256": "ed7565edcb9d4cd552b370967dff236544562f688b489a87d97b78431cb40e0e"
+  }
+]

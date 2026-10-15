@@ -27,8 +27,8 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// We then run the PRODUCTION rescue-target pick
 /// (<see cref="Game1.ChooseEjectRescueTarget"/>) against the victim's real
 /// world + the real client ShopCatalog, log the chosen station (name + sector),
-/// and finally relocate the ejected pod to a friendly rescue-capable station
-/// and confirm the server's P301 station rescue DOCKs it.
+/// and finally relocate the ejected pod into a real friendly station bay
+/// and confirm the server's normal station landing path DOCKs it.
 /// </summary>
 [Collection("LiveNetwork")]
 public sealed class P540EjectLiveProofTests
@@ -136,8 +136,9 @@ public sealed class P540EjectLiveProofTests
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
 
         // Inject a friendly rescue-capable station into the victim's sector, at
-        // the eject origin, so it is provably the nearest rescue target and the
-        // ejected pod is instantly within its rescue range (P301 proximity).
+        // the eject origin, so it is provably the nearest rescue target.
+        // This type offers Land as well as Rescue; native requires bay entry
+        // for fighter pods (Igc/shipIGC.cpp:727-729,843,861).
         var rescueStation = InjectRescueStation(mission, SpawnSector, side: 0, id: 9001, pos: new SimVec(0f, 0f, 0f));
 
         using var sessA = new ConnectionSession();
@@ -212,7 +213,7 @@ public sealed class P540EjectLiveProofTests
         // rescue-capable station; confirm the server docks (lands) the pod there.
         var pod = ServerShip(server, victimId);
         Assert.True(pod.HullType.HasCapability(DataHullTypeIGC.HabmLifepod));
-        pod.Position = new SimVec(rescueStation.Data.Position[0], rescueStation.Data.Position[1], rescueStation.Data.Position[2]);
+        pod.Position = DockTestPlacement.Inside(mission, rescueStation.Data, pod.HullType);
         pod.Velocity = SimVec.Zero;
 
         int docked = PumpUntil(server, () => ServerShip(server, victimId).StationId is not null, 2000);

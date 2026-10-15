@@ -1268,6 +1268,9 @@ public sealed partial class Server
             Console.WriteLine("[combat] KillShipEvent with a non-Ship victim — ignored");
             return;
         }
+        if (victim.HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
+            _podTrips.End(victim, now, victim.LifepodTimeToDie is { } deadline && now > deadline
+                && launcher is null ? "oxygen" : "death");
         short killerId = -1;                       // NA
         IgcObjectType killerType = IgcObjectType.Ship;
         if (launcher is Ship attacker) killerId = attacker.Id;
@@ -2035,6 +2038,8 @@ public sealed partial class Server
         victim.Orientation.Set(orientationForward); // SetOrientation(o), FedSrv.CPP:12006
         victim.SetTurnRate(ControlData.AxisRoll, 2f * MathF.PI); // SetCurrentTurnRate(c_axisRoll, pi*2), FedSrv.CPP:12008
 
+        _podTrips.Begin(victim, mission.LastUpdate);
+
         // EJECT(77) to everyone flying in this sector — cross-side, sector-scoped.
         var targets = _peerShips
             .Where(kv => kv.Value.Ship.Sector == pcluster)
@@ -2265,6 +2270,7 @@ public sealed partial class Server
     /// </summary>
     private void OnShipDocked(Ship ship, short? stationSide)
     {
+        _podTrips.End(ship, ship.Mission?.LastUpdate ?? SimNow, "docked");
         // P201 — flag-secure leg (native FedSrv.CPP:13111-13159): a ship
         // docking at ITS OWN side's station while carrying a flag secures it.
         // The gate is the native `pside == psideOld` — pside = the ship's side
