@@ -196,6 +196,10 @@ public sealed class P661EgressLiveTests(ITestOutputHelper output)
             var window = Assert.IsType<EgressWindow>(server.LastEgressWindow);
             Assert.Contains(window.Rows, r => r.Fmid == 2 && r.PeerKind == "harness" && r.Lane == "ordered" && r.OfferedMessages == 1);
             Assert.Equal(1, log.ToString().Split('\n').Count(l => l.StartsWith("[egress-by-type] ")));
+            string sendLine = Assert.Single(log.ToString().Split('\n'), l => l.StartsWith("[send-pool] "));
+            Assert.Contains("enqueuedBytes=", sendLine);
+            Assert.Contains("writtenBytes=", sendLine);
+            Assert.Contains("[send-peer] peer=", log.ToString());
             // Invoke the real authorization/dispatch hook, with the logged-on ship.
             var entry = ((System.Collections.IEnumerable)ships).Cast<object>().Single();
             var from = (ConnectionId)entry.GetType().GetProperty("Key")!.GetValue(entry)!;

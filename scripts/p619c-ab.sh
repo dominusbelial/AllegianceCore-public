@@ -125,7 +125,7 @@ for line in open(raw, errors="replace"):
     for t in tags:
         if t in line: counts[t]+=1
     total += 1
-    m = re.search(r"\[egress\] window: bytes=\d+ peers=(\d+).*logDrops=(\d+)", line)
+    m = re.search(r"\[egress\] window: .*?\bpeers=(\d+).*logDrops=(\d+)", line)
     if m:
         egress_peers.append(int(m.group(1))); logdrops.append(int(m.group(2)))
     m = re.search(r"\[tickprof\] window (\S+)s ticks=(\d+).*tick-wall mean=([\d.]+)ms p95=([\d.]+)ms max=([\d.]+)ms", line)

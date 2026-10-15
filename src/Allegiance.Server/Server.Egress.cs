@@ -12,10 +12,39 @@ public sealed partial class Server
 
     private void EmitEgressWindow()
     {
+        EmitSendWindow();
         if (_host?.Transport?.Egress is not { } accounting) return;
         var window = accounting.DrainWindow();
         LastEgressWindow = window;
         Console.WriteLine(FormatEgressSummary(window));
+    }
+
+    private PeerSendWindow[] _sendPeerWindows = [];
+    private SendWorkerWindow[] _sendWorkerWindows = [];
+
+    private void EmitSendWindow()
+    {
+        if (_host?.Transport is not { } tcp) return;
+        // Reused after the first profiler callback; no diagnostic storage on the hot path.
+        int peerCapacity = Math.Max(1024, TcpTransport.MaxConnections);
+        int workerCapacity = Math.Max(_transportPoolWorkers, Environment.ProcessorCount);
+        if (_sendPeerWindows.Length < peerCapacity) _sendPeerWindows = new PeerSendWindow[peerCapacity];
+        if (_sendWorkerWindows.Length < workerCapacity) _sendWorkerWindows = new SendWorkerWindow[workerCapacity];
+        var window = tcp.DrainSendWindow(_sendPeerWindows, _sendWorkerWindows);
+        Console.WriteLine(FormattableString.Invariant($"[send-pool] windowSecs={window.Seconds:0.000} workers={window.Workers} peers={window.Peers} enqueuedBytes={window.EnqueuedBytes} writtenBytes={window.WrittenBytes} queuedBytes={window.QueuedBytes} queueGrowthBytes={window.QueueGrowthBytes}"));
+        for (int i = 0; i < window.Workers; i++)
+        {
+            var w = _sendWorkerWindows[i];
+            Console.WriteLine(FormattableString.Invariant($"[send-worker] worker={w.Worker} state={w.State} writeCalls={w.WriteCalls} busyWriteMs={w.BusyWriteMs:0.###} longestWriteMs={w.LongestWriteMs:0.###} currentWriteMs={w.CurrentWriteMs:0.###}"));
+        }
+        for (int i = 0; i < window.Peers; i++)
+        {
+            var p = _sendPeerWindows[i];
+            if (p.EnqueuedBytes == 0 && p.WrittenBytes == 0 && p.QueuedBytes == 0) continue;
+            Console.WriteLine($"[send-peer] peer={p.Peer} enqueuedBytes={p.EnqueuedBytes} writtenBytes={p.WrittenBytes} queuedBytes={p.QueuedBytes} noProgressMs={p.NoProgressMs}");
+        }
+        if (window.DrainCollapsed)
+            Console.WriteLine(FormattableString.Invariant($"[send-stall] windowSecs={window.Seconds:0.000} enqueuedBytes={window.EnqueuedBytes} writtenBytes={window.WrittenBytes} queuedBytes={window.QueuedBytes} queueGrowthBytes={window.QueueGrowthBytes} workers={window.Workers} peers={window.Peers}"));
     }
 
     internal static string FormatEgressSummary(EgressWindow window)
@@ -41,7 +70,7 @@ public sealed partial class Server
             .ThenBy(t => t.Fmid).Take(10).Select(t => FormattableString.Invariant(
                 $"{t.Fmid} bytes={t.Offered} pct={(offered > 0 ? 100d * t.Offered / offered : 0):0.0} msgs/s={t.OfferedMessages / seconds:0.0} avg={(t.OfferedMessages > 0 ? t.Offered / (double)t.OfferedMessages : 0):0.0}")));
         return string.Create(CultureInfo.InvariantCulture,
-            $"[egress-by-type] windowSecs={window.WindowSeconds:0.000} offeredBytes={offered} sentBytes={sent} coalescedBytes={coalesced} droppedBytes={dropped} overheadSentBytes={rows.Where(r => r.Fmid == EgressAccounting.OverheadFmid).Sum(r => r.SentBytes)} sentSplit=[{splits}] topSent=[{topSent}] topOffered=[{topOffered}]");
+            $"[egress-by-type] windowSecs={window.WindowSeconds:0.000} offeredBytes={offered} sentBytes={sent} coalescedBytes={coalesced} droppedBytes={dropped} overheadSentBytes={rows.Where(r => r.Fmid == EgressAccounting.OverheadFmid).Sum(r => r.SentBytes)} sentScope=socket-accepted-including-framing offeredScope=enqueued-including-framing sentSplit=[{splits}] topSent=[{topSent}] topOffered=[{topOffered}]");
     }
 
     // Names for the principal egress types. Numeric fmid remains authoritative
