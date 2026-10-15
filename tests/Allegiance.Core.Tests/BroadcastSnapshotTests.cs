@@ -186,9 +186,10 @@ public sealed class BroadcastSnapshotTests
             new(i * 13 + tick * (i % 3 + 1), (i % 7) * 100, tick * 2),
             new(i % 3, 0, 2), (float)random.NextDouble(), (tick % 20) / 20f,
             i % 31 == 0 && tick < 12)).ToArray()).ToArray();
-        List<Frame> Replay(bool snapshot)
+        List<Frame> Replay(bool snapshot, bool encodeOnce = false)
         {
             server.TestResetSnapshotReplay();
+            server._broadcastEncodeOnceEnabled = encodeOnce;
             server.TestSeedPeers(peers);
             server._broadcastParallelBuild = parallel;
             var frames = new List<Frame>();
@@ -226,7 +227,14 @@ public sealed class BroadcastSnapshotTests
             return frames;
         }
         var off = Replay(false);
+        long before = server.ShipEncodingCounters.HeavyRecords;
         var on = Replay(true);
+        long unsharedHeavyEncodes = server.ShipEncodingCounters.HeavyRecords - before;
+        before = server.ShipEncodingCounters.HeavyRecords;
+        var shared = Replay(true, encodeOnce: true);
+        long sharedHeavyEncodes = server.ShipEncodingCounters.HeavyRecords - before;
+        Assert.True(sharedHeavyEncodes <= (peers.Count + 1L) * tape.Length);
+        Assert.True(sharedHeavyEncodes < unsharedHeavyEncodes);
         Assert.Equal(off.Count, on.Count);
         foreach (var peer in peers)
         {
@@ -234,6 +242,9 @@ public sealed class BroadcastSnapshotTests
             var right = on.Where(f => f.Peer == peer.Conn.Value).ToArray();
             Assert.Equal(left.Select(f => (f.Tick, f.Key, f.Guaranteed)), right.Select(f => (f.Tick, f.Key, f.Guaranteed)));
             Assert.Equal(left.Select(f => f.Bytes), right.Select(f => f.Bytes));
+            var once = shared.Where(f => f.Peer == peer.Conn.Value).ToArray();
+            Assert.Equal(right.Select(f => (f.Tick, f.Key, f.Guaranteed)), once.Select(f => (f.Tick, f.Key, f.Guaranteed)));
+            Assert.Equal(right.Select(f => f.Bytes), once.Select(f => f.Bytes));
         }
         Assert.Contains(on, f => f.Key == 12 && f.Guaranteed);
         Assert.Contains(on, f => f.Key == 2 && !f.Guaranteed);
@@ -254,8 +265,9 @@ public sealed class BroadcastSnapshotTests
             return Convert.ToHexString(hash.GetHashAndReset());
         }
         var result = new { native, parallel, floor, ticks = tape.Length, peers = peers.Count,
-            packets = off.Count, bytes = off.Sum(f => (long)f.Bytes.Length), offHash = Hash(off), onHash = Hash(on) };
+            packets = off.Count, bytes = off.Sum(f => (long)f.Bytes.Length), offHash = Hash(off), onHash = Hash(on), sharedHash = Hash(shared), unsharedHeavyEncodes, sharedHeavyEncodes };
         Assert.Equal(result.offHash, result.onHash);
-        File.WriteAllText($"/tmp/p668-identity-{native}-{parallel}-{floor}.json", JsonSerializer.Serialize(result));
+        Assert.Equal(result.onHash, result.sharedHash);
+        File.WriteAllText($"/tmp/p669-identity-{native}-{parallel}-{floor}.json", JsonSerializer.Serialize(result));
     }
 }

@@ -34,6 +34,7 @@ public sealed class ServerShipUpdate
 
     private byte[]? _bytes;
     private ShipWireSnapshot? _snapshot;
+    private ShipUpdateEncodingCounters? _counters;
     private byte[] Bytes => _bytes ??= Materialize();
 
     private ServerShipUpdate(bool captured = false) { if (!captured) _bytes = new byte[Width]; }
@@ -232,14 +233,16 @@ public sealed class ServerShipUpdate
 
     /// <summary>Copy encoder inputs without quantizing or retaining the live ship.</summary>
     public static ServerShipUpdate CaptureModel(short shipId, Ship ship, uint time,
-        int extraStateBits = 0, bool carryEndurance = false) => new(captured: true)
+        int extraStateBits = 0, bool carryEndurance = false, ShipUpdateEncodingCounters? counters = null) => new(captured: true)
     {
         _bytes = null,
         _snapshot = ShipWireSnapshot.Capture(shipId, ship, time, extraStateBits, carryEndurance),
+        _counters = counters,
     };
 
     private byte[] Materialize()
     {
+        if (_counters is not null) Interlocked.Increment(ref _counters.SingleRecords);
         var s = _snapshot!;
         return FromValues(s.Id, s.State, s.Controls, s.Time, s.Position, s.Orientation,
             s.Velocity, [s.Yaw, s.Pitch, s.Roll], s.Hull, s.Shield, s.Ammo,

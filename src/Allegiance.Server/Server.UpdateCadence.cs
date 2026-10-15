@@ -154,7 +154,8 @@ internal sealed class ViewerPoseCadence
     }
 
     internal void AppendFloor(List<HeavyShipUpdateEntry> entries, uint tick,
-        Vector3 posRef, double now, double hz, int tickHz, bool snapshot = false)
+        Vector3 posRef, double now, double hz, int tickHz, bool snapshot = false,
+        Func<uint, Vector3, Ship, uint, HeavyShipUpdateEntry>? capture = null)
     {
         if (hz <= 0 || _visible.Count == 0) return;
         // A whole sweep within floor(tickHz/hz) ticks. Never let ranked serves
@@ -173,7 +174,8 @@ internal sealed class ViewerPoseCadence
             bool due = now - stamp.LastPose >= 1 / hz;
             if ((n < quota || due) && (!stamp.HasPose || stamp.LastPose != now))
             {
-                entries.Add(snapshot ? HeavyShipUpdateEntry.Capture(tick, posRef, ship, tick)
+                entries.Add(capture is not null ? capture(tick, posRef, ship, tick)
+                    : snapshot ? HeavyShipUpdateEntry.Capture(tick, posRef, ship, tick)
                     : HeavyShipUpdateEntry.From(tick, posRef, ship, tick));
                 MarkPose(ship.Id, now);
                 ExtraBytes += HeavyShipUpdateEntry.Width;

@@ -458,6 +458,10 @@ public sealed class BroadcastConfig
     /// off-thread. Default off. ALLEGIANCE_BROADCAST_SNAPSHOT overrides this.</summary>
     public bool ImmutableSnapshot { get; set; }
 
+    /// <summary>Share ship record encodings within a snapshot. Default off;
+    /// requires ImmutableSnapshot. ALLEGIANCE_BROADCAST_ENCODE_ONCE overrides.</summary>
+    public bool EncodeOnce { get; set; }
+
     /// <summary>P659 — minimum remote visible-ship pose frequency per viewer.
     /// Default 2 Hz; 0 preserves the existing ranked budget. Rounded up to a
     /// whole broadcast tick, capped by UpdatesPerSecond. LIGHT records carry

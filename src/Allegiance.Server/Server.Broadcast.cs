@@ -2798,7 +2798,7 @@ public sealed partial class Server
                             // native light tier: presence-only LIGHT(175) record; bump
                             // +0.70 so it rises back to heavy sooner than a skipped ship
                             // (FedSrv.CPP:3943-3948; deterministic, no live RNG jitter).
-                            (lightEntries ??= new()).Add(LightShipUpdateEntry.From(c.Id, c.StateM, c.Controls));
+                            (lightEntries ??= new()).Add(CaptureLightUpdate(c));
                             c.Deviation += 0.70f;
                         }
                         else
@@ -2825,7 +2825,7 @@ public sealed partial class Server
             {
                 foreach (var entry in entries) cadence.MarkPose(entry.ShipId, poseNow);
                 cadence.AppendFloor(entries, tickIndex, posRef, poseNow, _minUpdateHz,
-                    Math.Max(1, _config.UpdatesPerSecond), _broadcastSnapshotEnabled);
+                    Math.Max(1, _config.UpdatesPerSecond), _broadcastSnapshotEnabled, CaptureHeavyUpdate);
             }
 
             var heavy = new HeavyShipsUpdate

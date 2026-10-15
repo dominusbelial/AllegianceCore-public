@@ -54,6 +54,8 @@ public sealed class HeavyShipUpdateEntry
 
     private byte[]? _bytes;
     private ShipWireSnapshot? _snapshot;
+    private HeavyShipUpdateEntry? _shared;
+    private ShipUpdateEncodingCounters? _counters;
     private uint _snapshotTimeRef;
     private Vector3 _snapshotPosRef;
     private byte[] Bytes => _bytes ??= Materialize();
@@ -61,7 +63,7 @@ public sealed class HeavyShipUpdateEntry
     private HeavyShipUpdateEntry(bool captured = false) { if (!captured) _bytes = new byte[Width]; }
 
     /// <summary>The embedded ship id (short).</summary>
-    public short ShipId => _snapshot?.Id ?? BinaryPrimitives.ReadInt16LittleEndian(Bytes);
+    public short ShipId => _shared?.ShipId ?? _snapshot?.Id ?? BinaryPrimitives.ReadInt16LittleEndian(Bytes);
 
     /// <summary>stateM bitmask; stored unsigned (igc.h:2266).</summary>
     public int StateM => (int)BinaryPrimitives.ReadUInt16LittleEndian(Bytes.AsSpan(2));
@@ -168,7 +170,37 @@ public sealed class HeavyShipUpdateEntry
             ship.Fraction, ship.ShieldFraction, ship.Ore / ship.EffectiveMineCapacity());
 
     /// <summary>Encode the 39 canonical bytes at the writer's current position.</summary>
-    public void EncodeBody(ref WireWriter w) => w.WriteBytes(Bytes);
+    public void EncodeBody(ref WireWriter w)
+    {
+        if (_shared is null) { w.WriteBytes(Bytes); return; }
+        byte[] common;
+        lock (_shared) common = _shared.Bytes; // one materialization across encode workers
+        w.WriteBytes(common.AsSpan(0, 8));
+        Span<byte> relative = stackalloc byte[8];
+        BinaryPrimitives.WriteInt16LittleEndian(relative,
+            CompactQuant.EncodeTimeOffset(_snapshotTimeRef, _shared._snapshot!.Time));
+        CompactQuant.EncodePositionDelta(_snapshotPosRef, _shared._snapshot.Position, relative.Slice(2));
+        for (int i = 0; i < relative.Length; i++) w.WriteByte(relative[i]);
+        w.WriteBytes(common.AsSpan(16));
+        if (_counters is not null) Interlocked.Increment(ref _counters.RelativePositions);
+    }
+
+    /// <summary>Reference a detached shared record, retaining this viewer's exact
+    /// delta references. Only time/position are encoded per viewer (igc.h:2178-2255,
+    /// 2431-2442); the common fields are copied from one lazily encoded buffer.</summary>
+    public HeavyShipUpdateEntry RelativeTo(uint timeReference, Vector3 positionReference)
+    {
+        var shared = _shared ?? this;
+        if (shared._snapshot is null)
+            throw new InvalidOperationException("RelativeTo requires a captured ship record");
+        return new(captured: true)
+        {
+            _shared = shared,
+            _snapshotTimeRef = timeReference,
+            _snapshotPosRef = positionReference,
+            _counters = shared._counters,
+        };
+    }
 
     /// <summary>Read a 39-byte body from the reader's current position.</summary>
     public static HeavyShipUpdateEntry DecodeBody(ref WireReader r)
@@ -181,16 +213,26 @@ public sealed class HeavyShipUpdateEntry
     }
 
     /// <summary>Copy encoder inputs without quantizing or retaining the live ship.</summary>
-    public static HeavyShipUpdateEntry Capture(uint timeRef, Vector3 posRef, Ship ship, uint time) => new(captured: true)
+    public static HeavyShipUpdateEntry Capture(uint timeRef, Vector3 posRef, Ship ship, uint time,
+        ShipUpdateEncodingCounters? counters = null) => new(captured: true)
     {
         _bytes = null,
         _snapshot = ShipWireSnapshot.Capture(ship.Id, ship, time),
         _snapshotTimeRef = timeRef,
         _snapshotPosRef = posRef,
+        _counters = counters,
     };
 
     private byte[] Materialize()
     {
+        if (_shared is not null)
+        {
+            var bytes = new byte[Width];
+            WireWriter writer = new(bytes);
+            EncodeBody(ref writer);
+            return bytes;
+        }
+        if (_counters is not null) Interlocked.Increment(ref _counters.HeavyRecords);
         var s = _snapshot!;
         return From(_snapshotTimeRef, _snapshotPosRef, s.Id, s.State, s.Controls, s.Time,
             s.Position, s.Orientation, s.Velocity, [s.Yaw, s.Pitch, s.Roll],

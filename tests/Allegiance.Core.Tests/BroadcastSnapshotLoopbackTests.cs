@@ -52,6 +52,11 @@ public sealed class BroadcastSnapshotLoopbackTests
             _reader = Read(stream);
         }
 
+        // Raw benchmark peers otherwise send nothing after joining. Keep the
+        // existing 30 s inbound-frame deadline alive during long loaded runs.
+        internal void KeepAlive() => Write(_client.GetStream(), 2,
+            FedPacket.Pack(new Ping { TimeClient = unchecked((uint)Environment.TickCount64) }.Encode()));
+
         private static void Write(NetworkStream stream, byte kind, byte[] bytes)
         {
             byte[] header = new byte[5];
@@ -146,9 +151,10 @@ public sealed class BroadcastSnapshotLoopbackTests
                     $"TCP delivery barrier {marker} timed out");
             }
             Barrier(9999);
-            byte[][][] Replay(bool snapshot)
+            byte[][][] Replay(bool snapshot, bool encodeOnce = false)
             {
                 server.TestResetSnapshotReplay();
+                server._broadcastEncodeOnceEnabled = encodeOnce;
                 server.TestSeedPeers(peers);
                 foreach (var client in clients) client.StartRecording();
                 for (uint tick = 0; tick < tape.Length; tick++)
@@ -169,6 +175,7 @@ public sealed class BroadcastSnapshotLoopbackTests
             }
             var off = Replay(false);
             var on = Replay(true);
+            var shared = Replay(true, encodeOnce: true);
             for (int i = 0; i < clients.Count; i++)
             {
                 Assert.NotEmpty(off[i]);
@@ -186,11 +193,13 @@ public sealed class BroadcastSnapshotLoopbackTests
                 }
                 Assert.Equal(off[i].Where(Stream), on[i].Where(Stream));
                 Assert.Equal(off[i].Where(p => !Stream(p)), on[i].Where(p => !Stream(p)));
+                Assert.Equal(on[i].Where(Stream), shared[i].Where(Stream));
+                Assert.Equal(on[i].Where(p => !Stream(p)), shared[i].Where(p => !Stream(p)));
                 Assert.Null(clients[i].Error);
             }
             Assert.Equal(0, server.TestPublisher!.CoalescedSnapshots);
             Assert.Equal(0, server.TestPublisher.EncodeFailures);
-            File.WriteAllText("/tmp/p668-tcp-identity.json", JsonSerializer.Serialize(new
+            File.WriteAllText("/tmp/p669-tcp-identity.json", JsonSerializer.Serialize(new
             {
                 peers = clients.Count, subjects = subjects.Count, ticks = tape.Length,
                 packets = off.Sum(p => p.Length), bytes = off.Sum(p => p.Sum(b => (long)b.Length)),
@@ -205,6 +214,7 @@ public sealed class BroadcastSnapshotLoopbackTests
     public void Crowded_real_TCP_session_measures_sim_projection_and_publish_pool()
     {
         Require.Artwork();
+        bool phase2 = Environment.GetEnvironmentVariable("P669_MEASURE") == "1";
         int count = int.TryParse(Environment.GetEnvironmentVariable("P668_PEERS"), out int requested) ? requested : 256;
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         int placed = 0;
@@ -243,30 +253,66 @@ public sealed class BroadcastSnapshotLoopbackTests
                 server.Tick();
             Assert.Equal(count, server.Ships.Count());
             Assert.All(peers, p => Assert.True(p.OwnId >= 0, $"peer failed to seat: {p.Error}"));
+            var recordedPeers = server.TestSnapshotPeers();
+            var initialPositions = recordedPeers.Select(p => p.Ship.Position).ToArray();
             var result = new List<object>();
+            long? expectedEgress = null, expectedPackets = null;
             foreach (bool snapshot in new[] { false, true })
             {
                 server.FlushBroadcastSnapshots();
-                server._broadcastSnapshotEnabled = snapshot;
+                server._broadcastSnapshotEnabled = phase2 || snapshot;
+                server._broadcastEncodeOnceEnabled = phase2 && snapshot;
+                uint recordedTick = 0;
+                if (phase2)
+                {
+                    server.TestResetSnapshotReplay();
+                    for (int i = 0; i < recordedPeers.Count; i++) recordedPeers[i].Ship.Position = initialPositions[i];
+                    server.TestSeedPeers(recordedPeers);
+                    server.TestUpdateCadenceClock = () => recordedTick / 20d;
+                }
+                var heartbeat = Stopwatch.StartNew();
                 // Refresh own-ship dirty poses on every tick in BOTH modes.
                 void Advance()
                 {
+                    if (phase2 && heartbeat.Elapsed.TotalSeconds >= 5)
+                    {
+                        foreach (var peer in peers) peer.KeepAlive();
+                        heartbeat.Restart();
+                    }
                     foreach (var live in server.Ships)
                         live.Ship.Position += new Vector3(1, 0, 0);
-                    server.TickSim();
+                    if (phase2) server.TestProjectRecordedTick(recordedTick++, snapshot: true, measure: true);
+                    else server.TickSim();
                 }
                 for (int tick = 0; tick < 20; tick++) { Advance(); Thread.Sleep(50); }
                 server.FlushBroadcastSnapshots();
                 void DrainTransport(uint marker)
                 {
+                    if (phase2) foreach (var peer in peers) peer.KeepAlive();
                     server.TestSendSnapshotBarrier(marker);
                     Assert.True(SpinWait.SpinUntil(() => peers.All(p => p.LastMarker == marker), TimeSpan.FromSeconds(30)),
-                        "Transport queues must drain before recording steady-state measurements");
+                        $"Transport barrier {marker}: {peers.Count(p => p.LastMarker == marker)}/{count} drained; "
+                        + string.Join("; ", peers.Where(p => p.LastMarker != marker).Take(4)
+                            .Select(p => $"last={p.LastMarker} frames={p.Frames} error={p.Error}")));
                 }
                 DrainTransport(snapshot ? 668001u : 668000u);
-                string csv = $"/tmp/p668-loopback-{count}-{snapshot}.csv";
+                string prefix = phase2 ? "p669" : "p668";
+                string csv = $"/tmp/{prefix}-loopback-{count}-{snapshot}.csv";
+                File.Delete(csv);
                 TickProfiler.Configure(true, 3600, csv);
-                TickProfiler.SetLabel($"P668 peers={count} snapshot={snapshot}");
+                TickProfiler.SetLabel($"{prefix} peers={count} snapshot={phase2 || snapshot} encodeOnce={phase2 && snapshot}");
+                long startHeavy = server.ShipEncodingCounters.HeavyRecords;
+                long startSingle = server.ShipEncodingCounters.SingleRecords;
+                long startLight = server.ShipEncodingCounters.LightRecords;
+                long startRelative = server.ShipEncodingCounters.RelativePositions;
+                long startPoolAlloc = server.TestPublisher!.PublishAllocatedBytes;
+                long startEgress = 0;
+                long startPackets = 0;
+                server.TestPublicationCapture = (_, bytes, _, _) =>
+                {
+                    Interlocked.Add(ref startEgress, bytes.Length);
+                    Interlocked.Increment(ref startPackets);
+                };
                 long startBuild = server.SnapshotBuildTimestampTicks;
                 long startAlloc = server.SnapshotBuildAllocatedBytes;
                 long startPublish = server.TestPublisher!.PublishTimestampTicks;
@@ -285,13 +331,27 @@ public sealed class BroadcastSnapshotLoopbackTests
                 }
                 long producerAllocated = GC.GetAllocatedBytesForCurrentThread() - producerAllocationStart;
                 server.FlushBroadcastSnapshots();
+                server.TestPublicationCapture = null;
+                if (phase2)
+                {
+                    if (expectedEgress is { } egress) Assert.Equal(egress, startEgress);
+                    if (expectedPackets is { } packets) Assert.Equal(packets, startPackets);
+                    expectedEgress = startEgress;
+                    expectedPackets = startPackets;
+                }
                 DrainTransport(snapshot ? 668003u : 668002u);
                 TickProfiler.ForceReport();
                 TickProfiler.Shutdown();
                 long published = server.TestPublisher.PublishedSnapshots - startPublished;
                 result.Add(new
                 {
-                    peers = count, snapshot, ticks = times.Count,
+                    peers = count, recordedProjection = phase2, snapshot = phase2 || snapshot, encodeOnce = phase2 && snapshot, ticks = times.Count,
+                    heavyEncodesPerTick = (server.ShipEncodingCounters.HeavyRecords - startHeavy) / (double)times.Count,
+                    singleEncodesPerTick = (server.ShipEncodingCounters.SingleRecords - startSingle) / (double)times.Count,
+                    lightEncodesPerTick = (server.ShipEncodingCounters.LightRecords - startLight) / (double)times.Count,
+                    relativePositionsPerTick = (server.ShipEncodingCounters.RelativePositions - startRelative) / (double)times.Count,
+                    poolAllocatedBytesPerTick = (server.TestPublisher.PublishAllocatedBytes - startPoolAlloc) / times.Count,
+                    egressBytesPerTick = startEgress / (double)times.Count, packetsPerTick = startPackets / (double)times.Count,
                     tickMeanMs = times.Average(), tickP95Ms = times.Order().ElementAt((int)Math.Ceiling(times.Count * .95) - 1),
                     projectionMeanMs = (server.SnapshotBuildTimestampTicks - startBuild) * 1000d / Stopwatch.Frequency / times.Count,
                     projectionBytesPerTick = (server.SnapshotBuildAllocatedBytes - startAlloc) / times.Count,
@@ -308,7 +368,7 @@ public sealed class BroadcastSnapshotLoopbackTests
                 Assert.Equal(0, server.TestPublisher.EncodeFailures);
                 Assert.True(peers.Sum(p => p.Frames) > startFrames + count);
             }
-            File.WriteAllText($"/tmp/p668-loopback-{count}.json", JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText($"/tmp/{(phase2 ? "p669" : "p668")}-loopback-{count}.json", JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
         }
         finally { foreach (var peer in peers) peer.Dispose(); }
     }

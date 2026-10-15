@@ -175,33 +175,39 @@ public sealed partial class Server
 
     // Replays the complete broadcast suffix against a recorded tick's world.
     // No Mission.Update or socket timing changes the supplied inputs.
-    internal void TestProjectRecordedTick(uint tick, bool snapshot)
+    internal void TestProjectRecordedTick(uint tick, bool snapshot, bool measure = false)
     {
         _broadcastSnapshotEnabled = snapshot;
         lock (_statsLock) _loopIterations = tick;
+        if (measure) Allegiance.Core.Profiling.TickProfiler.EnterTick();
         BeginBroadcastSnapshot();
+        if (measure) StartBroadcastProjectionMeasurement();
         try
         {
             SweepCrossSideExports();
             SweepCrossSideMineExports();
             SweepCrossSideShipStatuses();
-            BroadcastShipStates(tick);
-            BroadcastStationsUpdate();
-            BroadcastAsteroidsUpdate();
-            BroadcastProbesUpdate();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastShipStates")) BroadcastShipStates(tick);
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastStationsUpdate")) BroadcastStationsUpdate();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastAsteroidsUpdate")) BroadcastAsteroidsUpdate();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastProbesUpdate")) BroadcastProbesUpdate();
             _objectSyncDirtySides.Clear();
-            BroadcastShipsUpdate(tick);
-            BroadcastSectorThreats();
-            BroadcastShipWarnings();
-            BroadcastMissileLock();
-            BroadcastMissilesUpdate();
-            BroadcastOwnShipMining();
-            BroadcastOwnShipKillBonus();
-            BroadcastMissileTrackWarning();
-            BroadcastScoreRoster();
-            BroadcastLeadIndicator();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastShipsUpdate")) BroadcastShipsUpdate(tick);
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastSectorThreats")) BroadcastSectorThreats();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastShipWarnings")) BroadcastShipWarnings();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissileLock")) BroadcastMissileLock();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissilesUpdate")) BroadcastMissilesUpdate();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastOwnShipMining")) BroadcastOwnShipMining();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastOwnShipKillBonus")) BroadcastOwnShipKillBonus();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissileTrackWarning")) BroadcastMissileTrackWarning();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastScoreRoster")) BroadcastScoreRoster();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastLeadIndicator")) BroadcastLeadIndicator();
         }
-        finally { CompleteBroadcastSnapshot(); }
+        finally
+        {
+            CompleteBroadcastSnapshot();
+            if (measure) Allegiance.Core.Profiling.TickProfiler.EndTick();
+        }
     }
 
     internal void TestResetSnapshotReplay()

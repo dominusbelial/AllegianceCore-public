@@ -70,7 +70,7 @@ internal sealed class BroadcastPublisher : IDisposable
     private BroadcastSnapshot? _pending;
     private bool _active, _stopping;
     internal long CoalescedSnapshots, DroppedStreamFrames, PublishedSnapshots, PublishTimestampTicks;
-    internal long SnapshotContainersCreated, EncodeFailures;
+    internal long SnapshotContainersCreated, EncodeFailures, PublishAllocatedBytes;
     internal Action? BeforeEncode; // deterministic stalled-worker test seam
     internal Action<Exception>? OnError;
 
@@ -161,14 +161,23 @@ internal sealed class BroadcastPublisher : IDisposable
                 _active = true;
             }
             long start = Stopwatch.GetTimestamp();
+            long allocated = GC.GetAllocatedBytesForCurrentThread();
             try
             {
                 BeforeEncode?.Invoke();
                 // Each packet is immutable; duplicate references encode once.
                 Parallel.For(0, snapshot.Deliveries.Count, _options, i =>
                 {
+                    long before = GC.GetAllocatedBytesForCurrentThread();
                     try { snapshot.Deliveries[i].Packet.Encode(); }
                     catch (Exception e) { Failed(e); }
+                    finally
+                    {
+                        // The coordinator can participate in Parallel.For. Its
+                        // allocations are already included in the outer delta.
+                        if (Thread.CurrentThread != _thread)
+                            Interlocked.Add(ref PublishAllocatedBytes, GC.GetAllocatedBytesForCurrentThread() - before);
+                    }
                 });
                 foreach (var delivery in snapshot.Deliveries)
                 {
@@ -196,6 +205,7 @@ internal sealed class BroadcastPublisher : IDisposable
             {
                 Interlocked.Add(ref PublishTimestampTicks, Stopwatch.GetTimestamp() - start);
                 Return(snapshot);
+                Interlocked.Add(ref PublishAllocatedBytes, GC.GetAllocatedBytesForCurrentThread() - allocated);
                 lock (_gate) { _active = false; Monitor.PulseAll(_gate); }
             }
         }
