@@ -454,6 +454,10 @@ public sealed class ProfilerConfig
 /// </summary>
 public sealed class BroadcastConfig
 {
+    /// <summary>Capture owned wire data on the sim thread and encode/publish it
+    /// off-thread. Default off. ALLEGIANCE_BROADCAST_SNAPSHOT overrides this.</summary>
+    public bool ImmutableSnapshot { get; set; }
+
     /// <summary>P659 — minimum remote visible-ship pose frequency per viewer.
     /// Default 2 Hz; 0 preserves the existing ranked budget. Rounded up to a
     /// whole broadcast tick, capped by UpdatesPerSecond. LIGHT records carry

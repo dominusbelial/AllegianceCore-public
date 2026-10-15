@@ -35,6 +35,16 @@ quarantine pass, not the parallel CI run).
 | Before (4 measurement runs, master 22d024b8) | **0/4** (no clean run; 3/7/7/6 Core fails + 0/2/2/0 ClientCore) | n/a (no lane existed) | ~20 unique failing tests |
 | After (verification on final tree) | **3/3 clean MAIN runs** (V4, V7, V11; V11 EXIT 0) | not expected 4/4 (residual isolation-flaky live-timing tests) | 21 quarantined; each of V5–V10 surfaced 1–2 new load-flakes, quarantined on the spot |
 
+## P668 observation (2026-10-14)
+
+`MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction`
+missed the enemy mine EXPORT on the third initial isolated run (the first two
+passed). It then passed **3/3 fresh individual runs**, and passed the complete
+Core suite. Under P668's lane rule this is recorded as a load/timing flake;
+no assertion, product visibility rule, skip, or quarantine was changed.
+See [P668's report](reports/P668_BROADCAST_SNAPSHOT.md) and
+[per-run evidence](reports/P668_RESULTS.json).
+
 ## P659 observation (2026-10-14)
 
 The initial Core suite pass during the cadence work hit three existing wire-timing

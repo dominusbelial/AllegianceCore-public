@@ -107,9 +107,9 @@ public sealed partial class Server : IDisposable
     private int _nextShipId = 8096;
 
     /// <summary>
-    /// P604 — rolling count of bytes the sim thread enqueued for send this
-    /// window (incremented in <c>SendPeer</c>/<c>SendPeerCoalescing</c>, both
-    /// sim-thread only). Reported every <c>DisconnectSummaryTicks</c> by the
+    /// P604/P668 — atomic rolling count of bytes enqueued for send this
+    /// window (incremented in the central publishing sink,
+    /// safe on either the sim or publish thread). Reported every <c>DisconnectSummaryTicks</c> by the
     /// disconnectSummary step as a <c>[egress] window: bytes=… peers=…
     /// per-peer-bps=…</c> line, so the A/B can measure real egress per player
     /// (and compare against native's ~1.6 KB/s heavy/light budget,

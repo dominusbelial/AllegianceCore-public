@@ -82,6 +82,7 @@ public sealed partial class Server
         // bad tick degrades gracefully (log + skip that stage) instead of
         // propagating to the top-level catch and killing the server. Stages are
         // independent; one failure never cascades into its siblings.
+        BeginBroadcastSnapshot();
         Step("drain", () => _host.Drain(HandleTransportEvent));
         lock (_statsLock) _simNow += EffectiveSimPeriod;   // P612 — period × sim.timeScale for slow motion
         double now;
@@ -283,6 +284,7 @@ public sealed partial class Server
         // vizfight `roster` failure (all 72 bots became mutually visible before
         // the human spectator connected). Runs after Mission.Update so the
         // latched SeenBySide flags reflect this tick's sweep.
+        StartBroadcastProjectionMeasurement();
         Step("crossSideExportSweep", SweepCrossSideExports);
         // P453 — cross-side MINE EXPORT(26)/OT_mine delivery, the mine analogue
         // of the ship sweep just above. Mines joined the P132 visibility sweep
@@ -416,6 +418,7 @@ public sealed partial class Server
         // common.cpp:121-149); this renderer-only client has no static core, so
         // the server computes and streams it (see BroadcastLeadIndicator).
         Step("broadcastLeadIndicator", () => BroadcastLeadIndicator());
+        CompleteBroadcastSnapshot();
         // P606 — per-window disconnect-reason summary. Drains the transport's
         // disconnect counters (throttled to ~the profiler report cadence) so the
         // log carries a rolling "disconnects by reason" count. Every disconnect
@@ -435,8 +438,8 @@ public sealed partial class Server
             }
             // P604 — egress per player for the window just elapsed (bytes enqueued
             // by the sim thread / window-seconds / seated peers). Diagnostic only.
-            long bytes = _egressBytesSent;
-            _egressBytesSent = 0;
+            EmitBroadcastSnapshotMetrics();
+            long bytes = Interlocked.Exchange(ref _egressBytesSent, 0);
             double windowSecs = DisconnectSummaryTicks / (double)Math.Max(1, _config.UpdatesPerSecond);
             int peers = _peerShips.Count;
             double perPeerBps = peers > 0 ? bytes / windowSecs / peers : 0d;
@@ -643,7 +646,7 @@ public sealed partial class Server
         // position are identical for all of A's teammates, so re-encoding per
         // (recipient, subject) pair was pure waste — O(P²) allocations down to
         // O(P)). Lazily created; freed next tick.
-        Dictionary<short, byte[]>? positionEncode = null;
+        Dictionary<short, BroadcastMessage>? positionEncode = null;
         // P366 — same-side NPC ships grouped by (mission, side), built once per
         // tick so the per-recipient pass below doesn't re-scan the whole model
         // list for each peer (the same one-per-tick costing as the P346 cross-side
@@ -710,7 +713,7 @@ public sealed partial class Server
                 {
                     OtTarget = 0,                          // OT_ship
                     OidTarget = ship.Id,
-                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
+                    Ship = CaptureShipUpdate(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
                     BIsRipcording = false,
                 };
                 // P606 — the own-ship position stream is latest-wins traffic:
@@ -723,7 +726,7 @@ public sealed partial class Server
                 // own pose in place and bots flew on a stale pose), and the own
                 // pose must never be shed under load. Still latest-wins against
                 // itself, so the backlog stays bounded (P606 intact).
-                SendPeerCoalescing(kv.Key, FedPacket.Pack(msg.Encode()), CoalesceOwnShip, guaranteed: true);
+                SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceOwnShip, guaranteed: true);
                 _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up, LastBroadcastShieldFraction = ship.ShieldFraction, LastBroadcastMining = miningNow, PositionEverBroadcast = true };
             }
 
@@ -739,7 +742,7 @@ public sealed partial class Server
             bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
             if (sectorChanged || refreshDue)
             {
-                SendPeer(kv.Key, FedPacket.Pack(MakeOwnShipStatus(ship.Id, live).Encode()));
+                SendPeer(kv.Key, PackBroadcast(Message(MakeOwnShipStatus(ship.Id, live))));
                 ConsoleLog.Write($"[shipstatus] peer {kv.Key} " +
                     (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
                 _lastStatusSector[kv.Key] = live.Sector.Id;
@@ -765,7 +768,7 @@ public sealed partial class Server
             {
                 if (_clusterInfoBytes is { } bytes)
                 {
-                    SendPeer(kv.Key, FedPacket.Pack(bytes));
+                    SendPeer(kv.Key, PackBroadcast(bytes));
                     _lastClusterInfoTick[kv.Key] = tickIndex;
                 }
             }
@@ -814,7 +817,7 @@ public sealed partial class Server
                 // of one packet per (recipient, subject) pair per tick, which
                 // at 150 same-side ships is ~22k packets/tick). Lazily created
                 // so a recipient with no dirty mates allocates nothing.
-                List<byte[]>? posBatch = null;
+                List<BroadcastMessage>? posBatch = null;
                 using (TickProfiler.Enter("bss.mates"))
                 foreach (var tv in mates)
                 {
@@ -859,7 +862,7 @@ public sealed partial class Server
                             PilotType = ExportShip.PilotTypePlayer,
                             Parts = initialParts,
                         };
-                        SendPeer(kv.Key, FedPacket.Pack(teamExport.Encode()));
+                        SendPeer(kv.Key, PackBroadcast(Message(teamExport)));
                         if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");   // P619c: per-pair one-shot, gated (join-burst volume)
                         _teammateExportSent.Add((kv.Key, teammateId));
                         _teammateLoadoutVersionSent[(kv.Key, teammateId)] = tv.Value.Ship.LoadoutVersion;
@@ -913,7 +916,7 @@ public sealed partial class Server
                             ShipId = teammateId,             // REAL id — the ship the EXPORT created
                             PilotType = PlayerInfo.PilotTypePlayer,
                         };
-                        SendPeer(kv.Key, FedPacket.Pack(teamInfo.Encode()));
+                        SendPeer(kv.Key, PackBroadcast(Message(teamInfo)));
                         if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamplayerinfo] peer {kv.Key} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: per-pair one-shot, gated (join-burst volume)
                         _teammatePlayerInfoSent.Add((kv.Key, teammateId));
                     }
@@ -934,7 +937,7 @@ public sealed partial class Server
                         long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((kv.Key, teammateId), out var tt0) ? tt0 : -1;
                         if (lastTeammateTick < 0 || recipientRefreshDue)
                         {
-                            SendPeer(kv.Key, FedPacket.Pack(MakeOwnShipStatus(teammateId, tv.Value).Encode()));
+                            SendPeer(kv.Key, PackBroadcast(Message(MakeOwnShipStatus(teammateId, tv.Value))));
                             ConsoleLog.Write($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
                                 (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
                             _lastTeammateStatusTick[(kv.Key, teammateId)] = tickIndex;
@@ -997,10 +1000,10 @@ public sealed partial class Server
                                     {
                                         OtTarget = 0,                          // OT_ship
                                         OidTarget = teammateId,
-                                        Ship = ServerShipUpdate.FromModel(teammateId, tv.Value.Ship, tickIndex),
+                                        Ship = CaptureShipUpdate(teammateId, tv.Value.Ship, tickIndex),
                                         BIsRipcording = false,
                                     };
-                                    enc = teamMove.Encode();
+                                    enc = Message(teamMove);
                                     (positionEncode ??= new())[teammateId] = enc;
                                 }
                                 (posBatch ??= new()).Add(enc);
@@ -1042,7 +1045,7 @@ public sealed partial class Server
                                 PilotType = ExportShip.PilotTypePlayer,
                                 Parts = currentParts,
                             };
-                            SendPeer(kv.Key, FedPacket.Pack(loadoutExport.Encode()));
+                            SendPeer(kv.Key, PackBroadcast(Message(loadoutExport)));
                             if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamloadout] peer {kv.Key} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");   // P619c: one aggregate line per change, gated
                             _teammateLoadoutVersionSent[(kv.Key, teammateId)] = currentVersion;
                         }
@@ -1051,10 +1054,10 @@ public sealed partial class Server
                 if (posBatch is { Count: > 0 })
                 {
                     if (posBatch.Count <= FedPacket.MaxMessagesPerPacket)
-                        SendPeerCoalescing(kv.Key, FedPacket.Pack(CollectionsMarshal.AsSpan(posBatch)), CoalesceShipStates);
+                        SendPeerCoalescing(kv.Key, PackBroadcast(CollectionsMarshal.AsSpan(posBatch)), CoalesceShipStates);
                     else // defensive: a >256-message packet would be rejected by this port's Unpack cap
                         foreach (var chunk in posBatch.Chunk(FedPacket.MaxMessagesPerPacket))
-                            SendPeerCoalescing(kv.Key, FedPacket.Pack(chunk), CoalesceShipStates);
+                            SendPeerCoalescing(kv.Key, PackBroadcast(chunk), CoalesceShipStates);
                 }
 
                 // P366 — same-side NPC (AI bot teammate) identity + status, so a
@@ -1084,7 +1087,7 @@ public sealed partial class Server
                                 PilotType = ExportShip.PilotTypePlayer,
                                 Parts = EnsureLoadoutSnapshot(npc),
                             };
-                            SendPeer(kv.Key, FedPacket.Pack(npcExport.Encode()));
+                            SendPeer(kv.Key, PackBroadcast(Message(npcExport)));
                             if (ConsoleLog.Verbose) ConsoleLog.Write($"[samestidenpc] peer {kv.Key} <- NPC ship {npc.Id} side {npcSide}");   // P619c: per-pair one-shot, gated
                         }
 
@@ -1096,7 +1099,7 @@ public sealed partial class Server
                         // immediate via lastNpcTick<0).
                         if (lastNpcTick < 0 || recipientRefreshDue)
                         {
-                            SendPeer(kv.Key, FedPacket.Pack(MakeNpcShipStatus(npc).Encode()));
+                            SendPeer(kv.Key, PackBroadcast(Message(MakeNpcShipStatus(npc))));
                             ConsoleLog.Write($"[samestidenpcstatus] peer {kv.Key} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
                                 (npc.StationId is not null ? $" DOCKED@{npc.StationId}" : " flying"));
                             _lastSameSideNpcStatusTick[(kv.Key, npc.Id)] = tickIndex;
@@ -1164,7 +1167,7 @@ public sealed partial class Server
         KeyValuePair<ConnectionId, LiveShip>[] peers;
         Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>> sameSide;
         Dictionary<(Mission, short), List<Ship>>? sameSideNpcBySide;
-        Dictionary<short, byte[]> positionEncode;
+        Dictionary<short, BroadcastMessage> positionEncode;
         using (TickProfiler.Enter("bss.snapshot"))
         {
         peers = _peerShips.ToArray();
@@ -1221,19 +1224,19 @@ public sealed partial class Server
         // stream is suppressed, so this O(P) per-tick encode cache is pure waste
         // and is skipped (an empty dict is passed; the parallel build never
         // indexes it because its posBatch block is gated on !_nativeShipUpdates).
-        positionEncode = new Dictionary<short, byte[]>(peers.Length);
+        positionEncode = new Dictionary<short, BroadcastMessage>(peers.Length);
         if (!_nativeShipUpdates)
         {
             foreach (var kv in peers)
             {
                 var ship = kv.Value.Ship;
-                positionEncode[ship.Id] = new SingleShipUpdate
+                positionEncode[ship.Id] = Message(new SingleShipUpdate
                 {
                     OtTarget = 0,                                // OT_ship
                     OidTarget = ship.Id,
-                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
+                    Ship = CaptureShipUpdate(ship.Id, ship, tickIndex),
                     BIsRipcording = false,
-                }.Encode();
+                });
             }
         }
         }
@@ -1293,7 +1296,7 @@ public sealed partial class Server
         // parallel path stays byte-identical to serial even while routing the
         // position stream through coalescing; the owner's own-ship frame is
         // marked guaranteed so it is never shed under capacity.
-        public List<(byte[] Packet, int Key, bool Guaranteed)> Packets = new();
+        public List<(BroadcastPacket Packet, int Key, bool Guaranteed)> Packets = new();
         public List<string> Logs = new();             // unconditional log lines, ordered
         // P619b — the high-frequency per-pair diagnostics ([shipstatus],
         // [teamshipstatus], [samestidenpcstatus]) the serial builder routes through
@@ -1350,7 +1353,7 @@ public sealed partial class Server
         KeyValuePair<ConnectionId, LiveShip>[] peers,
         Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>> sameSide,
         Dictionary<(Mission, short), List<Ship>>? sameSideNpcBySide,
-        Dictionary<short, byte[]> positionEncode,
+        Dictionary<short, BroadcastMessage> positionEncode,
         uint tickIndex, int idx)
     {
         var kv = peers[idx];
@@ -1379,10 +1382,10 @@ public sealed partial class Server
             {
                 OtTarget = 0,
                 OidTarget = ship.Id,
-                Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
+                Ship = CaptureShipUpdate(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
                 BIsRipcording = false,
             };
-            r.Packets.Add((FedPacket.Pack(msg.Encode()), CoalesceOwnShip, true));
+            r.Packets.Add((PackBroadcast(Message(msg)), CoalesceOwnShip, true));
             r.NewLiveShip = live with
             {
                 LastBroadcastPos = ship.Position,
@@ -1400,7 +1403,7 @@ public sealed partial class Server
         bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
         if (sectorChanged || refreshDue)
         {
-            r.Packets.Add((FedPacket.Pack(MakeOwnShipStatus(ship.Id, live).Encode()), 0, false));
+            r.Packets.Add((PackBroadcast(Message(MakeOwnShipStatus(ship.Id, live))), 0, false));
             if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[shipstatus] peer {conn} " +
                 (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
             r.SetStatus = true; r.StatusSector = live.Sector.Id; r.StatusTick = tickIndex;
@@ -1411,7 +1414,7 @@ public sealed partial class Server
         {
             if (_clusterInfoBytes is { } bytes)
             {
-                r.Packets.Add((FedPacket.Pack(bytes), 0, false));
+                r.Packets.Add((PackBroadcast(bytes), 0, false));
                 r.SetClusterInfo = true; r.ClusterInfoTick = tickIndex;
             }
         }
@@ -1427,7 +1430,7 @@ public sealed partial class Server
             bool recipientRefreshDue = (long)tickIndex >= rt;
             if (recipientRefreshDue) r.NextTeammateRefreshTick = (long)tickIndex + TeammateStatusRefreshTicks;
 
-            List<byte[]>? posBatch = null;
+            List<BroadcastMessage>? posBatch = null;
             foreach (var tv in mates)
             {
                 if (ReferenceEquals(tv.Value.Ship, ship)) continue;   // own ship, handled above
@@ -1449,7 +1452,7 @@ public sealed partial class Server
                         PilotType = ExportShip.PilotTypePlayer,
                         Parts = initialParts,
                     };
-                    r.Packets.Add((FedPacket.Pack(teamExport.Encode()), 0, false));
+                    r.Packets.Add((PackBroadcast(Message(teamExport)), 0, false));
                     if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamexport] peer {conn} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");   // P619c: gated
                     localExportSent.Add(teammateId);
                     r.ExportSent.Add(teammateId);
@@ -1470,7 +1473,7 @@ public sealed partial class Server
                         ShipId = teammateId,
                         PilotType = PlayerInfo.PilotTypePlayer,
                     };
-                    r.Packets.Add((FedPacket.Pack(teamInfo.Encode()), 0, false));
+                    r.Packets.Add((PackBroadcast(Message(teamInfo)), 0, false));
                     if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamplayerinfo] peer {conn} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: gated
                     localPlayerInfoSent.Add(teammateId);
                     r.PlayerInfoSent.Add(teammateId);
@@ -1481,7 +1484,7 @@ public sealed partial class Server
                     long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((conn, teammateId), out var tt0) ? tt0 : -1;
                     if (lastTeammateTick < 0 || recipientRefreshDue)
                     {
-                        r.Packets.Add((FedPacket.Pack(MakeOwnShipStatus(teammateId, tv.Value).Encode()), 0, false));
+                        r.Packets.Add((PackBroadcast(Message(MakeOwnShipStatus(teammateId, tv.Value))), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
                             (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
                         r.TeammateStatusTick[teammateId] = tickIndex;
@@ -1529,7 +1532,7 @@ public sealed partial class Server
                             PilotType = ExportShip.PilotTypePlayer,
                             Parts = currentParts,
                         };
-                        r.Packets.Add((FedPacket.Pack(loadoutExport.Encode()), 0, false));
+                        r.Packets.Add((PackBroadcast(Message(loadoutExport)), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamloadout] peer {conn} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");   // P619c: gated, aggregate per change
                         r.LoadoutVersionSet[teammateId] = currentVersion;
                     }
@@ -1538,10 +1541,10 @@ public sealed partial class Server
             if (posBatch is { Count: > 0 })
             {
                 if (posBatch.Count <= FedPacket.MaxMessagesPerPacket)
-                    r.Packets.Add((FedPacket.Pack(CollectionsMarshal.AsSpan(posBatch)), CoalesceShipStates, false));
+                    r.Packets.Add((PackBroadcast(CollectionsMarshal.AsSpan(posBatch)), CoalesceShipStates, false));
                 else
                     foreach (var chunk in posBatch.Chunk(FedPacket.MaxMessagesPerPacket))
-                        r.Packets.Add((FedPacket.Pack(chunk), CoalesceShipStates, false));
+                        r.Packets.Add((PackBroadcast(chunk), CoalesceShipStates, false));
             }
 
             // P366 same-side NPC identity + status
@@ -1567,7 +1570,7 @@ public sealed partial class Server
                             PilotType = ExportShip.PilotTypePlayer,
                             Parts = ReadLoadoutSnapshotOrCompute(npc),
                         };
-                        r.Packets.Add((FedPacket.Pack(npcExport.Encode()), 0, false));
+                        r.Packets.Add((PackBroadcast(Message(npcExport)), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpc] peer {conn} <- NPC ship {npc.Id} side {npcSide}");   // P619c: gated
                         localNpcExportSent.Add(npc.Id);
                         r.NpcExportSent.Add(npc.Id);
@@ -1577,7 +1580,7 @@ public sealed partial class Server
                     // P604b — gate on the recipient's phase (mirror of serial).
                     if (lastNpcTick < 0 || recipientRefreshDue)
                     {
-                        r.Packets.Add((FedPacket.Pack(MakeNpcShipStatus(npc).Encode()), 0, false));
+                        r.Packets.Add((PackBroadcast(Message(MakeNpcShipStatus(npc))), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
                             (npc.StationId is not null ? $" DOCKED@{npc.StationId}" : " flying"));
                         r.NpcStatusTick[npc.Id] = tickIndex;
@@ -1834,7 +1837,7 @@ public sealed partial class Server
             PilotType = ExportShip.PilotTypePlayer,
             Parts = EnsureLoadoutSnapshot(ship),
         };
-        SendPeer(conn, FedPacket.Pack(new[] { exp.Encode() }));
+        SendPeer(conn, PackBroadcast(new[] { Message(exp) }));
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} ship {ship.Id} '{name}' hull {exp.HullId}");   // P619c: gated (hot in combat)
     }
 
@@ -1920,7 +1923,7 @@ public sealed partial class Server
             (uint)TickIndex,
             launcherId: launcherId,
             sideId: mine.SideId ?? seeingSide);
-        SendPeer(conn, FedPacket.Pack(new[] { exp.Encode() }));
+        SendPeer(conn, PackBroadcast(new[] { Message(exp) }));
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} mine {mine.Id} (type {mine.MineType.ExpendableTypeId}) @ {mine.Position}");   // P619c: gated
     }
 
@@ -2001,7 +2004,7 @@ public sealed partial class Server
                             _crossSideShipStatusSeen[key] = nowSeen;
                             bool spotted = nowSeen;
                             var status = MakeCrossSideShipStatus(ship, shipSector, spotted);
-                            byte[] packet = FedPacket.Pack(new[] { status.Encode() });
+                            var packet = PackBroadcast(new[] { Message(status) });
                             foreach (var conn in conns)
                             {
                                 SendPeer(conn, packet);
@@ -2015,7 +2018,7 @@ public sealed partial class Server
                             // refresh re-sends (late-joiner / lost-packet heal),
                             // never per-tick.
                             var status = MakeCrossSideShipStatus(ship, shipSector, spotted: true);
-                            byte[] packet = FedPacket.Pack(new[] { status.Encode() });
+                            var packet = PackBroadcast(new[] { Message(status) });
                             foreach (var conn in conns)
                             {
                                 long last = _crossSideShipStatusTick.TryGetValue((conn, ship.Id), out var l) ? l : -1;
@@ -2211,7 +2214,7 @@ public sealed partial class Server
                 continue;
 
             var roster = new ScoreRosterUpdate { Entries = entries.ToArray() };
-            byte[] packet = FedPacket.Pack(new[] { roster.Encode() });
+            var packet = PackBroadcast(new[] { Message(roster) });
             Console.WriteLine($"[scoreroster] mission #{_missions.IndexOf(mission)} -> {entries.Count} player(s) to {targets.Length} peer(s)");
             foreach (var t in targets)
                 SendPeer(t, packet);
@@ -2296,7 +2299,7 @@ public sealed partial class Server
             var visible = allStations.Where(st => st.SeenBySide(sideId)).ToArray();
             if (visible.Length == 0) continue;              // native: `if (nStations != 0)`
             var msg = StationsUpdate.FromStations(visible);
-            byte[] packet = FedPacket.Pack(msg.Encode());
+            var packet = PackBroadcast(Message(msg));
             foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceStations);
 
             Console.WriteLine($"[stations] side {sideId} sees {visible.Length} station(s) " +
@@ -2383,7 +2386,7 @@ public sealed partial class Server
             var visible = allAsteroids.Where(a => a.SeenBySide(sideId)).ToArray();
             if (visible.Length == 0) continue;              // native: if (nAsteroids != 0)
             var msg = AsteroidsUpdate.FromAsteroids(visible);
-            byte[] packet = FedPacket.Pack(msg.Encode());
+            var packet = PackBroadcast(Message(msg));
             foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceAsteroids);
 
             Console.WriteLine($"[asteroids] side {sideId} sees {visible.Length} asteroid(s) " +
@@ -2474,7 +2477,7 @@ public sealed partial class Server
             var visible = allProbes.Where(p => p.SeenBySide(sideId)).ToArray();
             if (visible.Length == 0) continue;              // native: if (nProbes != 0)
             var msg = ProbesUpdate.FromProbes(visible);
-            byte[] packet = FedPacket.Pack(msg.Encode());
+            var packet = PackBroadcast(Message(msg));
             foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceProbes);
 
             Console.WriteLine($"[probes] side {sideId} sees {visible.Length} probe(s) " +
@@ -2676,7 +2679,7 @@ public sealed partial class Server
             // this (P219 folds the light tier into heavy).
             List<LightShipUpdateEntry>? lightEntries = null;
             if (targetShip is not null && peerSees(targetShip))
-                entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, targetShip, tickIndex));
+                entries.Add(CaptureHeavyUpdate(tickIndex, posRef, targetShip, tickIndex));
 
             // P219 — deviation/staleness-based ship-update budget
             // (FedSrv.CPP:3844-3950). The candidate list is exactly the
@@ -2708,7 +2711,7 @@ public sealed partial class Server
                     if (ReferenceEquals(c, self)) continue;
                     if (!peerSees(c)) continue;   // P270 — invisible enemy: no data
                     if (targetShip is not null && ReferenceEquals(c, targetShip)) continue;
-                    entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
+                    entries.Add(CaptureHeavyUpdate(tickIndex, posRef, c, tickIndex));
                     c.Deviation = 0f;   // served → reset
                 }
             }
@@ -2785,7 +2788,7 @@ public sealed partial class Server
                 {
                     if (i < othersHeavy)
                     {
-                        entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
+                        entries.Add(CaptureHeavyUpdate(tickIndex, posRef, c, tickIndex));
                         c.Deviation = 0f;      // heavy-served → reset (FedSrv.CPP:3939-3940)
                     }
                     else if (i < servedLimit)
@@ -2802,7 +2805,7 @@ public sealed partial class Server
                         {
                             // port mode: the light tier is folded into heavy (P219),
                             // so every served ship gets a full pose and a reset.
-                            entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
+                            entries.Add(CaptureHeavyUpdate(tickIndex, posRef, c, tickIndex));
                             c.Deviation = 0f;
                         }
                     }
@@ -2822,7 +2825,7 @@ public sealed partial class Server
             {
                 foreach (var entry in entries) cadence.MarkPose(entry.ShipId, poseNow);
                 cadence.AppendFloor(entries, tickIndex, posRef, poseNow, _minUpdateHz,
-                    Math.Max(1, _config.UpdatesPerSecond));
+                    Math.Max(1, _config.UpdatesPerSecond), _broadcastSnapshotEnabled);
             }
 
             var heavy = new HeavyShipsUpdate
@@ -2851,12 +2854,15 @@ public sealed partial class Server
             // P606 — the per-peer HEAVY/LIGHT_SHIPS_UPDATE stream is the biggest
             // N² traffic; coalesce per peer (latest-wins), matching native's
             // FM_NOT_GUARANTEED send (FedSrv.CPP:4189-4196).
-            byte[][] frames = lightEntries is { Count: > 0 }
-                ? new[] { heavy.Encode(), new LightShipsUpdate { LightShipEntries = lightEntries.ToArray() }.Encode() }
-                : new[] { heavy.Encode() };
-            byte[] packet = FedPacket.Pack(frames);
+            BroadcastMessage[] frames = lightEntries is { Count: > 0 }
+                ? new[] { Message(heavy), Message(new LightShipsUpdate { LightShipEntries = lightEntries.ToArray() }) }
+                : new[] { Message(heavy) };
+            var packet = PackBroadcast(frames);
             SendPeerCoalescing(kv.Key, packet, CoalesceShipsUpdate);
-            if (cadence is not null) cadence.PacketBytes += packet.Length;
+            if (cadence is not null) cadence.PacketBytes += HeavyShipsUpdate.FixedSize
+                + entries.Count * HeavyShipUpdateEntry.Width + FedPacket.CrcWidth
+                + (lightEntries is { Count: > 0 }
+                    ? LightShipsUpdate.FixedSize + lightEntries.Count * LightShipUpdateEntry.Size : 0);
             ConsoleLog.Write($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
                               $"target={(targetShip?.Id.ToString() ?? "none")} " +
                               $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count}" +
@@ -2933,7 +2939,7 @@ public sealed partial class Server
             bool ready = part.Amount > 0 && part.MountedFraction >= 1f && mission.LastUpdate > part.TimeLoaded;
             var msg = MissileLockUpdate.From(ship.Id, targetShipId, ship.MissileLock, targetPos,
                 missileType.ModelName, target is null ? IgcObjectType.Ship : EquipmentTarget.TypeOf(target), ready);
-            SendPeerCoalescing(kv.Key, FedPacket.Pack(msg.Encode()), CoalesceMissileLock);
+            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceMissileLock);
             ConsoleLog.Write($"[missilelock] peer {kv.Key} ship {ship.Id} target {(targetShipId == -1 ? "none" : targetShipId.ToString())} lock {ship.MissileLock:F3} \"{missileType.ModelName}\" -> MISSILE_LOCK_UPDATE(204)");
         }
     }
@@ -2987,7 +2993,7 @@ public sealed partial class Server
             }
 
             var msg = MissileTrackWarningUpdate.From(tracked, bestLock);
-            SendPeerCoalescing(kv.Key, FedPacket.Pack(msg.Encode()), CoalesceMissileTrack);
+            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceMissileTrack);
             if (tracked)
                 ConsoleLog.Write($"[missiletrack] peer {kv.Key} ship {ship.Id} TRACKED by in-sector missile(s) bestLock {bestLock:F3} -> MISSILE_TRACK_WARNING(208)");
         }
@@ -3012,7 +3018,7 @@ public sealed partial class Server
         {
             var ship = kv.Value.Ship;
             var msg = OwnShipMiningUpdate.FromMining(ship.MiningAsteroid);
-            SendPeerCoalescing(kv.Key, FedPacket.Pack(msg.Encode()), CoalesceOwnMining);
+            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceOwnMining);
         }
     }
 
@@ -3032,7 +3038,7 @@ public sealed partial class Server
         foreach (var kv in _peerShips)
         {
             var msg = OwnShipKillBonusUpdate.FromShip(kv.Value.Ship);
-            SendPeerCoalescing(kv.Key, FedPacket.Pack(msg.Encode()), CoalesceOwnKillBonus);
+            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceOwnKillBonus);
         }
     }
 
@@ -3117,7 +3123,7 @@ public sealed partial class Server
             }
 
             var msg = LeadIndicatorUpdate.From(ship.Id, targetShipId, inRange, green, leadWorld, targetPos);
-            SendPeerCoalescing(kv.Key, FedPacket.Pack(msg.Encode()), CoalesceLeadIndicator);
+            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceLeadIndicator);
 
             if (targetShipId != -1 && ConsoleLog.Verbose)
                 ConsoleLog.Write($"[lead] peer {kv.Key} ship {ship.Id} target {targetShipId} " +
@@ -3260,7 +3266,7 @@ public sealed partial class Server
             if (visible.Length == 0) continue;              // no missiles this side can see this tick
 
             var msg = new MissileUpdate { Records = visible };
-            byte[] packet = FedPacket.Pack(msg.Encode());
+            var packet = PackBroadcast(Message(msg));
             foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceMissiles);
 
             ConsoleLog.Write($"[missile-update] side {sideId} sees {visible.Length} missile(s) " +
@@ -3326,7 +3332,7 @@ public sealed partial class Server
                         sector.Id,
                         ClusterWarnings.GetWarning(am, bInvulnerableStations: false),
                         secured, lost);
-                    byte[] packet = FedPacket.Pack(msg.Encode());
+                    var packet = PackBroadcast(Message(msg));
                     foreach (var t in conns) SendPeer(t, packet);
 
                     ConsoleLog.Write($"[clusterWarn] side {sideId} '{sector.Name}' -> {ClusterWarnings.GetWarningText(msg.Warning)}" +

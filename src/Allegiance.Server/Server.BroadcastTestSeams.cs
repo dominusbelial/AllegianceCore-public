@@ -161,3 +161,59 @@ public sealed partial class Server
         return outp;
     }
 }
+
+public sealed partial class Server
+{
+    internal Action<ConnectionId, byte[], int, bool>? TestPublicationCapture;
+    internal List<(ConnectionId Conn, Ship Ship, Sector Sector)> TestSnapshotPeers()
+        => _peerShips.Select(p => (p.Key, p.Value.Ship, p.Value.Sector)).ToList();
+    internal void TestSendSnapshotBarrier(uint marker)
+    {
+        var packet = Allegiance.Core.Wire.FedPacket.Pack(new Allegiance.Core.Wire.Ping { TimeServer = marker }.Encode());
+        foreach (var peer in _peerShips.Keys) SendPeerCoalescing(peer, packet, int.MaxValue, guaranteed: true);
+    }
+
+    // Replays the complete broadcast suffix against a recorded tick's world.
+    // No Mission.Update or socket timing changes the supplied inputs.
+    internal void TestProjectRecordedTick(uint tick, bool snapshot)
+    {
+        _broadcastSnapshotEnabled = snapshot;
+        lock (_statsLock) _loopIterations = tick;
+        BeginBroadcastSnapshot();
+        try
+        {
+            SweepCrossSideExports();
+            SweepCrossSideMineExports();
+            SweepCrossSideShipStatuses();
+            BroadcastShipStates(tick);
+            BroadcastStationsUpdate();
+            BroadcastAsteroidsUpdate();
+            BroadcastProbesUpdate();
+            _objectSyncDirtySides.Clear();
+            BroadcastShipsUpdate(tick);
+            BroadcastSectorThreats();
+            BroadcastShipWarnings();
+            BroadcastMissileLock();
+            BroadcastMissilesUpdate();
+            BroadcastOwnShipMining();
+            BroadcastOwnShipKillBonus();
+            BroadcastMissileTrackWarning();
+            BroadcastScoreRoster();
+            BroadcastLeadIndicator();
+        }
+        finally { CompleteBroadcastSnapshot(); }
+    }
+
+    internal void TestResetSnapshotReplay()
+    {
+        FlushBroadcastSnapshots();
+        TestResetBroadcastState();
+        _crossSideExportSent.Clear();
+        _crossSideMineExportSent.Clear();
+        _crossSideShipStatusSeen.Clear();
+        _crossSideShipStatusTick.Clear();
+        _lastSectorAssetMaskBySide.Clear();
+        _lastScoreRosterTick.Clear();
+        _objectSyncDirtySides.Clear();
+    }
+}
