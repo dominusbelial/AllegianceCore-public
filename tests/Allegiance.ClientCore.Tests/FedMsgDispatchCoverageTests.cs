@@ -74,7 +74,7 @@ public class FedMsgDispatchCoverageTests
         (187, "RipcordAborted"), (191, "CreateBuckets"), (198, "AsteroidMined"), (200, "ClusterInfo"),
         // port-added server-sent messages the real client also dispatches:
         (204, "MissileLockUpdate"), (205, "MissileUpdate"), (206, "OwnShipMiningUpdate"),
-        (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"), (209, "ScoreRosterUpdate"),
+        (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"), (209, "ScoreRosterUpdate"), (219, "ScoreRosterDelta"),
         (210, "LeadIndicatorUpdate"), (211, "SideRoster"), (212, "OwnShipKillBonusUpdate"),
         (213, "ProjectileHullHit"), (214, "ClusterWarningUpdate"), (215, "QueuedCommandUpdate"),
         (216, "CollisionEvent"), (217, "VictimDamaged"), (853, "MineStrength"), (991, "TimescaleUpdate"),
@@ -284,7 +284,7 @@ public class FedMsgDispatchCoverageTests
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(90, ExpectedConsumedServerSent.Length);
+        Assert.Equal(91, ExpectedConsumedServerSent.Length);
         Assert.Equal(28, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }

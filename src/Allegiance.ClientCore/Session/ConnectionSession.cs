@@ -1054,6 +1054,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // records it so Game1 can drive the warning loop.
                         _world.Apply(MissileTrackWarningUpdate.Decode(m));
                         break;
+                    case ScoreRosterDelta.Fmid:
+                        _world.Apply(ScoreRosterDelta.Decode(m));
+                        break;
                     case ScoreRosterUpdate.Fmid:
                         // P265 — periodic owner-only in-mission scoreboard
                         // snapshot (name/side/kills/deaths); the world keeps the

@@ -135,3 +135,4 @@ CHANGE_ALLIANCES,197,S,Server.Lobby,ConnectionSession (real client),P642: six al
 ASTEROID_MINED,198,S,Server.Combat,ConnectionSession (real client),updates asteroid live ore fraction (appmsg.cpp:1733),appmsg.cpp:1733,done
 HIGHLIGHT_CLUSTER,199,CS,Server.Dispatch,ConnectionSession (real client),Per-sector commander mark on full map/mini-map/HUD; receivedobjective on activation (P640),appmsg.cpp:1749,done
 CLUSTERINFO,200,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),ClusterInfo map graph applied (P225),—,done
+ScoreRosterDelta,219,S,Server.Broadcast,ConnectionSession (real client),Sparse ordered scoreboard patch; full 209 heals gaps,port-specific (P672),done
