@@ -48,6 +48,9 @@ public sealed partial class Server
         _teammateLoadoutCache.Clear();
         RetireBroadcastProjectionCaches();
         _viewerPoseCadence.Clear();
+        _emissionViewers.Clear();
+        _missileViewers.Clear();
+        _probeViewers.Clear();
         _retiredPoseAges.Clear();
         _retiredTierAges.Clear();
         _clusterInfoBytes = null;

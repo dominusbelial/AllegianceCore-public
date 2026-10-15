@@ -1,0 +1,4 @@
+Starting HEAD b43ebbfb; unchanged baseline implementation, new crowded-fight client assertions.
+Native model, 2 Hz floor, 32 idle subjects + 32 fresh shooters + one viewer.
+BASELINE received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=232 stale=0
+Expected neverposed=0; assertion failed with actual=232.

@@ -1,0 +1,27 @@
+complete-ClientCore-019-1 — four configurations
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+complete-ClientCore-019-2 — four configurations
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+complete-ClientCore-019-3 — four configurations
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0
+received own=0 tm=0 en=640 dropped-as-own own=0 tm=0 en=0 radius-culled=0 camera-culled=0 drawn own=0 tm=0 en=0 unplaceable dead=0 neverposed=0 stale=0
+[fire-audience] sent=640 neverposed=0 initialPoses=32 refreshPoses=96 hidden=0

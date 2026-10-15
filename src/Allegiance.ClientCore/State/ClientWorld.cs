@@ -700,8 +700,12 @@ public sealed partial class ClientWorld
     /// <summary>Classify a round's launcher against the local ship. Own = our own
     /// ship id; Teammate = a same-side visible ship; anything else (enemy or
     /// unknown/not-yet-known shooter) = Enemy.</summary>
-    public ProjectileRelation ClassifyLauncher(short launcherId)
+    public ProjectileRelation ClassifyLauncher(short launcherId, IgcObjectType launcherType = IgcObjectType.Ship)
     {
+        if (launcherType == IgcObjectType.Probe)
+            return MySideId is { } side && _probes.TryGetValue(launcherId, out var probe) && probe.SideId == side
+                ? ProjectileRelation.Teammate : ProjectileRelation.Enemy;
+        if (launcherType != IgcObjectType.Ship) return ProjectileRelation.Enemy;
         if (MyShipId is { } me && launcherId == me) return ProjectileRelation.Own;
         if (MySideId is { } mySide && _ships.TryGetValue(launcherId, out var ent) && ent.SideId == mySide)
             return ProjectileRelation.Teammate;
@@ -2995,14 +2999,16 @@ public sealed partial class ClientWorld
     /// local/server disagreement fallback).</para></summary>
     private void Apply(ProjectileInstance m)
     {
-        var rel = ClassifyLauncher(m.LauncherId);
+        var rel = ClassifyLauncher(m.LauncherId, m.LauncherType);
         Diag.RecordReceived(rel);
         // P648 — count incoming rounds from a shooter this viewer cannot place,
         // split by category (latched dead / never posed / stale pose). A
         // latched-dead shooter is the "invisible ship shooting" case; a stale
         // one is the "frozen but still firing" case. This is the per-viewer
         // measurement the task drives on (fixes prove out when these drop).
-        switch (ClassifyShipPlaceability(m.LauncherId))
+        switch (m.LauncherType == IgcObjectType.Probe
+            ? (_probes.ContainsKey(m.LauncherId) ? ShipPlaceability.Live : ShipPlaceability.NeverPosed)
+            : m.LauncherType == IgcObjectType.Ship ? ClassifyShipPlaceability(m.LauncherId) : ShipPlaceability.NeverPosed)
         {
             case ShipPlaceability.LatchedDead: Diag.FromLatchedDead++; break;
             case ShipPlaceability.NeverPosed: Diag.FromNeverPosed++; break;
@@ -3032,12 +3038,13 @@ public sealed partial class ClientWorld
 
         if (CountOnlyProjectiles)
         {
-            if (m.LauncherId == MyShipId) _ownProjectileCount++;
+            if (own) _ownProjectileCount++;
             return;
         }
         _projectiles.Add(new ProjectileEntity
         {
             LauncherId = m.LauncherId,
+            LauncherType = m.LauncherType,
             ProjectileTypeId = m.ProjectileTypeId,
             Position = m.Position,
             Forward = m.Forward,
@@ -3111,7 +3118,7 @@ public sealed partial class ClientWorld
                 // survives the radius + camera culls), so the drawn counters are
                 // comparable to the per-broadcast received counters.
                 pj.EverDrawn = true;
-                Diag.RecordDrawn(ClassifyLauncher(pj.LauncherId));
+                Diag.RecordDrawn(ClassifyLauncher(pj.LauncherId, pj.LauncherType));
                 drawn++;
             }
         }

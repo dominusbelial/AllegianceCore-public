@@ -62,7 +62,7 @@ public sealed class ProjectileInstance : IFedMessage
     public float Lifespan;
     public Vector3 Position;
 
-    /// <summary>P542 — the SHIP id that launched the round (the shooter's
+    /// <summary>P542 — the object id that launched the round (the shooter's
     /// <c>Ship.Id</c>, stamped from <c>Projectile.Launcher</c> server-side). Added
     /// so the client can de-duplicate its own-shot echo per-shooter: an incoming
     /// <c>PROJECTILE_INSTANCE</c> whose <see cref="LauncherId"/> is NOT our own
@@ -75,6 +75,12 @@ public sealed class ProjectileInstance : IFedMessage
     /// <see cref="FromProjectile"/>) denotes an unknown/absent launcher.</summary>
     public short LauncherId;
 
+    /// <summary>P697: object IDs are type-scoped. Ordinary ship packets retain
+    /// their 54 bytes; non-ship emitters append a two-byte object-type trailer.
+    /// Probe rounds originate at the stationary probe; native retains optional
+    /// deployer kill credit (probeigc.cpp:491-505).</summary>
+    public IgcObjectType LauncherType = IgcObjectType.Ship;
+
     /// <summary>Build the message from a live <see cref="Projectile"/> (the
     /// model <c>Weapon.FireWeapon</c> just created) at the given uint creation
     /// time (the server tick index, this project's uint-Time convention). The
@@ -85,7 +91,7 @@ public sealed class ProjectileInstance : IFedMessage
     /// heading; <c>lifespan</c> is the decoded type lifespan (creation-time-only,
     /// never re-exported — projectileIGC.cpp:156 does not write it back);
     /// <c>launcherId</c> is the launching <see cref="Ship"/>'s id (<c>-1</c> when
-    /// the launcher is not a ship).</summary>
+    /// the launcher is not a ship). Probe rounds instead carry their actual probe id/type.</summary>
     public static ProjectileInstance FromProjectile(Projectile p, uint timeCreate) => new()
     {
         TimeCreate = timeCreate,
@@ -94,14 +100,16 @@ public sealed class ProjectileInstance : IFedMessage
         Velocity = p.Velocity,
         Lifespan = p.ProjectileType.Lifespan,
         Position = p.Position,
-        LauncherId = p.Launcher is Ship sh ? sh.Id : (short)-1,
+        LauncherId = p.OriginProbe is Probe probe ? probe.Id : p.Launcher is Ship sh ? sh.Id : (short)-1,
+        LauncherType = p.OriginProbe is Probe ? IgcObjectType.Probe : IgcObjectType.Ship,
     };
 
     public ushort GetFmid() => Fmid;
 
     public byte[] Encode()
     {
-        var buf = new byte[FixedSize];
+        int size = FixedSize + (LauncherType == IgcObjectType.Ship ? 0 : 2);
+        var buf = new byte[size];
         WireWriter w = new(buf);
         w.WriteU16(0);              // cbmsg placeholder
         w.WriteU16(Fmid);
@@ -113,8 +121,9 @@ public sealed class ProjectileInstance : IFedMessage
         w.WriteU32(BitConverter.SingleToUInt32Bits(Lifespan));   // raw 4-byte float (wire byte-for-byte)
         WriteVec(ref w, Position);
         w.WriteI16(LauncherId);
+        if (LauncherType != IgcObjectType.Ship) w.WriteI16((short)LauncherType);
         w.WriteU16At(0, (ushort)w.Position);
-        if (w.Position != FixedSize) throw new InvalidOperationException($"PROJECTILE_INSTANCE internal layout drift: {w.Position} != {FixedSize}");
+        if (w.Position != size) throw new InvalidOperationException($"PROJECTILE_INSTANCE internal layout drift: {w.Position} != {size}");
         return buf;
     }
 
@@ -139,6 +148,7 @@ public sealed class ProjectileInstance : IFedMessage
         m.Lifespan = BitConverter.UInt32BitsToSingle(r.ReadU32());
         m.Position = ReadVec(ref r);
         m.LauncherId = r.ReadI16();
+        if (buf.Length >= FixedSize + 2) m.LauncherType = (IgcObjectType)r.ReadI16();
         return m;
     }
 

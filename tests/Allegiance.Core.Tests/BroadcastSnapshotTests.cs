@@ -266,14 +266,15 @@ public sealed class BroadcastSnapshotTests
         }
         var result = new { native, parallel, floor, ticks = tape.Length, peers = peers.Count,
             packets = off.Count, bytes = off.Sum(f => (long)f.Bytes.Length), offHash = Hash(off), onHash = Hash(on), sharedHash = Hash(shared), unsharedHeavyEncodes, sharedHeavyEncodes };
-        // P684: pin the integrated P672 roster-delta transcript. The four
+        // P697: pin the source-pose-before-missile and sector-local tracking transcript.
+        // P672 roster deltas remain included. The four
         // off/on/encode-once comparisons above still check every byte and lane.
         string golden = (native, parallel) switch
         {
-            (false, false) => "9A95276291774A05",
-            (false, true) => "FD3DE52F372942BB",
-            (true, false) => "C1445DF5B28184AF",
-            _ => "1B2A3BDE22A30AC1",
+            (false, false) => "541A35CDD063BD74",
+            (false, true) => "6187E7BD1C430DC4",
+            (true, false) => "A598B9A9AF615A44",
+            _ => "C40329E83294FBD0",
         };
         Assert.StartsWith(golden, result.offHash);
         Assert.Equal(result.offHash, result.onHash);

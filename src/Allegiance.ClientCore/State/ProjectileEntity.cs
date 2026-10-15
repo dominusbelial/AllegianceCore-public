@@ -32,6 +32,7 @@ public sealed class ProjectileEntity
     /// enemy and, crucially, lets the own-shot-echo de-dup drop only our OWN
     /// server echo rather than any same-type round near us.</summary>
     public short LauncherId;
+    public Allegiance.Core.IgcObjectType LauncherType = Allegiance.Core.IgcObjectType.Ship;
 
     /// <summary>The spawn (muzzle) position carried by the broadcast.</summary>
     public Vector3 Position;

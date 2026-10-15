@@ -767,7 +767,7 @@ public sealed partial class Server
         // (OT_chaffType / OT_mineType / OT_probeType, FedSrv.CPP:5696); the port's
         // mounted-part subtype (DataPartTypeIGC.ChaffLauncher / MineLauncher /
         // ProbeLauncher, DataPartTypeIGC.cs) is that resolution's stand-in.
-        bool sectorWide;          // chaff: whole cluster; mine/probe: same-side only
+        bool sectorWide;          // chaff: sector source audience; mine/probe: also same-side
         List<byte[]> enc;
         string deployed;          // human-readable description for the log line
         switch (part.Type.Type)
@@ -854,33 +854,17 @@ public sealed partial class Server
         int n = 0;
         if (sectorWide)
         {
-            // Chaff: whole cluster, all sides — GetGroupSectorFlying(pcluster), the
-            // exact SendSectorWide audience. Native's single flush (FedSrv.CPP:5783)
-            // technically also covers mine/probe, but this port broadcasts mine/probe
-            // OBJECT creation same-side only (no cross-side EXPORT exists), so a
-            // cross-side FE(87) without the object would be incoherent.
-            foreach (var kv in _peerShips)
-                if (ReferenceEquals(kv.Value.Ship.Sector, ship.Sector)) { SendPeer(kv.Key, packet); n++; }
+            // Native's cluster batch (FedSrv.CPP:5781), filtered for the port's
+            // cloak-hidden ships and ordered behind a reliable source pose.
+            n = BroadcastShipEmission(ship, live.Sector, packet);
         }
-        else
+        else if (ship.SideId is { } sideId)
         {
-            // Mine/probe: SAME-SIDE only, matching this port's established mine/probe
-            // broadcast audience — BroadcastExportMine / BroadcastExportProbe
-            // (Server.cs:9739-9743 / 9793-9797: the layer's own peer always, plus
-            // same-side teammates who hold its ExportShip via the _teammateExportSent
-            // gate) and BroadcastFireMissile (Server.cs:9538-9546). Every FE(87)
-            // recipient therefore also receives the mine/probe EXPORT.
-            if (ship.SideId is { } sideId)
-            {
-                foreach (var kv in _peerShips)
-                {
-                    bool isLayer = ReferenceEquals(kv.Value.Ship, ship);
-                    bool isVisibleTeammate = !isLayer
-                                             && kv.Value.Ship.SideId == sideId
-                                             && _teammateExportSent.Contains((kv.Key, ship.Id));
-                    if (isLayer || isVisibleTeammate) { SendPeer(kv.Key, packet); n++; }
-                }
-            }
+            // Object knowledge remains side-wide; the deployment animation is
+            // local to the emitter's sector and uses the same pose dependency.
+            foreach (var peer in _peerShips)
+                if (peer.Value.Ship.SideId == sideId && PeerInSector(peer.Key, live.Sector)
+                    && SendShipEmission(peer.Key, ship, live.Sector, packet)) n++;
         }
 
         Console.WriteLine($"[fireexpendable] {from} ship {ship.Id} fired {deployed} to {n} {(sectorWide ? "cluster" : "same-side")} peer(s); " +

@@ -19,11 +19,10 @@ public sealed partial class Server
         var candidates = sector.GetShipUpdateCandidates();
         var cadence = _viewerPoseCadence[peer];
         cadence.Begin(candidates, self, sector, admin, now, TickProfiler.Instance is not null,
-            _interestClassifier ??= ClassifyInterest, cloakOnly: true, tierServer: this);
+            _interestClassifier ??= ClassifyInterest, tierServer: this);
         var selected = cadence.SelectTierCandidates(self, target, now, _tier1Hz, _tier2Hz,
             _config.UpdatesPerSecond, tick);
-        bool seesTarget = target is not null && (admin || !target.IsCloaked
-            || self.SideId is not { } side || target.SeenBySide(side));
+        bool seesTarget = target is not null && ShipPoseVisible(self, target, admin);
         int count = selected.Length + (seesTarget ? 1 : 0);
         int length = HeavyShipsUpdate.FixedSize + count * HeavyShipUpdateEntry.Width;
         if (length > ushort.MaxValue) throw new InvalidOperationException("Heavy pose message exceeds wire length");
