@@ -67,7 +67,7 @@ public readonly record struct DataHullTypeIGC(
     short MainThrusterExteriorSound,
     short ManuveringThrusterInteriorSound,
     short ManuveringThrusterExteriorSound,
-    DataHullTypeIGC.Hardpoint[] Hardpoints)
+    DataHullTypeIGC.Hardpoint[] Hardpoints) : Sim.IHullTypeIgc
 {
     /// <summary>Fixed base payload size in bytes, before the hardpoint array.</summary>
     public const int Size = 540;

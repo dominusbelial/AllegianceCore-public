@@ -4,6 +4,26 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P691 observation (2026-10-15)
+
+Final complete unfiltered sequential runs: Core **4,581 passed / 0 failed**,
+ClientCore **1,006 passed / 0 failed** (local P660 next-match showcase enabled),
+and MonoGame **2,186 passed / 0 failed / 3 existing optional Meshy-pack skips**.
+All 62 affected methods passed three individual invocations each; the local
+15v15 battle recorded **10 kills** with **30/30 bots reached**, both real MCP
+relaunch cases passed 3/3, and mining/ore sale passed 3/3.
+
+The first MonoGame attempt exited 1 after 25.294 seconds without a TRX file,
+final counters, or a named assertion failure. Its detailed console log contains
+2,162 pass entries and ends during the P540 eject fixture. The exact
+`P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks`
+method then passed **3/3 alone**; a subsequent unfiltered assembly run with the
+standard console logger completed cleanly. The interruption's cause was not
+established. These observations do **not** attribute a failed assertion or a
+load-flake cause to P540. No product code, assertions, deadlines, or quarantine
+traits changed for this observation. See the [P691 report](reports/P691_PARITY_WAVE9.md)
+and [invocation ledger](reports/P691_RESULTS.json), including the incomplete run.
+
 ## P685 observation (2026-10-15)
 
 The merged unfiltered sequential suites passed cleanly: Lobby **19/19**, Core

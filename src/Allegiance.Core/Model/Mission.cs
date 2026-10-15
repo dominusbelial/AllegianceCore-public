@@ -511,8 +511,8 @@ public sealed partial class Mission
             sectorsById.Add(cluster.ClusterId, new Sector(cluster, initialTime));
 
         // 3. Attribute stations and asteroids by ClusterId.
-        foreach (var g in map.Stations.GroupBy(s => RequireSector(s.ClusterId, "station", s.Name)))
-            sectorsById[g.Key].AttachStations(g, core);
+        foreach (var station in map.Stations)
+            RequireSector(station.ClusterId, "station", station.Name);
         foreach (var g in map.Asteroids.GroupBy(a => RequireSector(a.ClusterId, "asteroid", a.Name)))
             sectorsById[g.Key].AttachAsteroids(g);
 
@@ -565,13 +565,17 @@ public sealed partial class Mission
             side.Mission = mission;
             side.VisibilityRange = VisibilityRangeDefault;
         }
-        // P475 — wire every production runtime station back to its mission so
-        // Station.SideGlobalAttributes can resolve the owning side's GA set (the
-        // station parallel of the side/ship back-refs just above). Stations
-        // placed via PlaceStation (the synthetic/test seam) get theirs there.
-        foreach (var s in sectors)
-            foreach (var st in s.StationRuntimes)
-                st.Mission = mission;
+        // Register runtime stations after their mission/side links exist. Native
+        // stationIGC.cpp:65-75 notifies after each addition, so distinct tech
+        // gains during initial construction must not collapse into one event.
+        foreach (var station in map.Stations)
+        {
+            var sector = sectorsById[station.ClusterId];
+            if (core.StationTypes.TryGetValue(station.StationTypeId, out var type))
+                mission.PlaceStation(new Station(station, type), sector);
+            else
+                sector.AttachStations([station], core); // retain the static-only fallback
+        }
         return mission;
     }
 
@@ -877,6 +881,8 @@ public sealed partial class Mission
                 $"sector '{sector.Name}' is not part of this mission; a station can only be placed in a sector the mission owns");
         station.Mission = this;   // P475 — the synthetic/test station's back-ref (mirrors PlaceShip)
         sector.AttachStation(station);
+        Sides.FirstOrDefault(s => s.Id == station.SideId)?.NotifyBuildingTechsChanged();
+        Site.StationTypeChange(station); // Igc/stationIGC.cpp:72-75, after registration
     }
 
     /// <summary>

@@ -769,6 +769,7 @@ public sealed partial class Server
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
         _host.BucketCompletedHook = OnBucketCompleted;  // P119: wire the site's BucketCompleted to the completion recorder (detection only)
+        _host.BucketChanged += OnBucketChanged;
         _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
         _host.ProjectileCreated = BroadcastProjectileInstance;   // P88: wire the site's ProjectileCreatedEvent to the wire broadcast

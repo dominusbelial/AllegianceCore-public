@@ -66,7 +66,43 @@ public sealed class Side : ISideIgc
     /// real-hull-backed) <see cref="BucketCatalog"/>; advanced for build time in
     /// <see cref="Update"/>. The port of the native per-side
     /// <c>BucketListIGC m_buckets</c> (sideigc.h:329).</summary>
+    private readonly List<Bucket> _buckets;
     public IReadOnlyList<Bucket> Buckets { get; }
+
+    internal void RemoveBucket(Bucket bucket) => _buckets.Remove(bucket);
+
+    private readonly Dictionary<(IgcObjectType Type, short Id), int> _stockpile = [];
+
+    // Native identity is the canonical buyable pointer; catalog type/id is its
+    // stable managed equivalent. Igc/sideigc.h:384-450.
+    public int GetStockpile(IgcObjectType type, short id) => _stockpile.GetValueOrDefault((type, id));
+
+    public void AddToStockpile(IgcObjectType type, short id, int count = 1)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        _stockpile[(type, id)] = checked(GetStockpile(type, id) + count);
+    }
+
+    public int RemoveFromStockpile(IgcObjectType type, short id, int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        int available = GetStockpile(type, id);
+        int removed = Math.Min(count, available);
+        if (removed == available) _stockpile.Remove((type, id));
+        else _stockpile[(type, id)] = available - removed;
+        return removed;
+    }
+
+    private TechTreeBitMask _notifiedBuildingTechs = TechTreeBitMask.Empty;
+
+    /// <summary>Igc/sideigc.h:142-168: notify only after an actual mask change.</summary>
+    internal void NotifyBuildingTechsChanged()
+    {
+        var current = BuildingTechs;
+        if (current == _notifiedBuildingTechs) return;
+        _notifiedBuildingTechs = current;
+        Mission?.Site.SideBuildingTechChange(this);
+    }
 
     /// <summary>
     /// The side's persistent <b>development</b> tech tree (P189) — the port of
@@ -180,6 +216,10 @@ public sealed class Side : ISideIgc
                 if (bucket.DroneType is not { } dt) return false;
                 return AnyStationBuilds(dt.TtbmRequired, ttbmSide);   // sideigc.h:265-280
             }
+            case BucketItemType.BitHullType:
+                return bucket.HullType is { } h && AnyStationBuilds(h.TtbmRequired, ttbmSide);
+            case BucketItemType.BitPartType:
+                return bucket.PartType is { } p && AnyStationBuilds(p.TtbmRequired, ttbmSide);
             case BucketItemType.BitShipType:
             {
                 // The ship-type bucket wraps a drone hull as its buyable, so the
@@ -453,7 +493,7 @@ public sealed class Side : ISideIgc
     /// side built outside a mission (isolated tests), in which case
     /// <see cref="CanSeeCluster"/> falls back to the cached
     /// <see cref="VisibleClusters"/> set.</summary>
-    internal Mission? Mission { get; set; }
+    public Mission? Mission { get; internal set; }
 
     /// <summary>
     /// P259 — this side's <b>cluster visibility range</b>: how far from one of
@@ -492,7 +532,9 @@ public sealed class Side : ISideIgc
         Id = id;
         Name = name;
         Civilization = civilization;
-        Buckets = buckets ?? Array.Empty<Bucket>();
+        _buckets = buckets?.ToList() ?? [];
+        Buckets = _buckets.AsReadOnly();
+        foreach (var bucket in _buckets) bucket.Side = this;
         // P189: seed the side's development tech tree and global attribute set
         // from the civilization's base data — the port of native
         // `m_data.ttbmDevelopmentTechs = GetCivilization()->GetBaseTechs()`
@@ -514,7 +556,11 @@ public sealed class Side : ISideIgc
     {
         UpdateCount++;
         LastUpdate = now;
-        foreach (var bucket in Buckets)
+        for (int i = 0; i < _buckets.Count;)
+        {
+            var bucket = _buckets[i];
             bucket.Update(now);
+            if (i < _buckets.Count && ReferenceEquals(bucket, _buckets[i])) i++;
+        }
     }
 }

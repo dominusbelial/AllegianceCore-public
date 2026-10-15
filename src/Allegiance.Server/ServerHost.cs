@@ -297,6 +297,51 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public void BucketCompleted(IBucketIgc bucket, double now) =>
         BucketCompletedHook?.Invoke(bucket, now);
+
+    // FedSrv/FedSrv.CPP:11327-11340. Native intentionally sends no wire message
+    // here; these callbacks deposit stock, not a flying ship or mounted part.
+    public void HullTypeCompleted(ISideIgc side, IHullTypeIgc hull)
+    {
+        if (side is Side owner && hull is DataHullTypeIGC type)
+            owner.AddToStockpile(IgcObjectType.HullType, type.HullId);
+    }
+
+    public void PartTypeCompleted(ISideIgc side, IPartTypeIgc part)
+    {
+        if (side is not Side owner) return;
+        if (part is DataLauncherTypeIGC launcher)
+            owner.AddToStockpile(IgcObjectType.PartType, launcher.PartId, launcher.Amount);
+        else if (part is DataPartTypeIGC type)
+        {
+            bool isLauncher = type.Type.EquipmentType is EquipmentType.ChaffLauncher
+                or EquipmentType.Magazine or EquipmentType.Dispenser;
+            int amount = isLauncher && owner.Mission?.Core.Launchers.TryGetValue(type.PartId, out var data) == true
+                ? data.Amount : 1;
+            owner.AddToStockpile(IgcObjectType.PartType, type.PartId, amount);
+        }
+    }
+
+    // Igc producers also serve host observers. Native FedSrv leaves these
+    // notification-only callbacks at their defaults; clintlib.cpp:2859-2880
+    // forwards them to the client event source. Keep state changes before events.
+    public event Action<BucketChange, Bucket>? BucketChanged;
+    public event Action<Side>? BuildingTechChanged;
+    public event Action<Station>? StationTypeChanged;
+
+    public void BucketChangeEvent(BucketChange change, IBucketIgc bucket)
+    {
+        if (bucket is Bucket concrete) BucketChanged?.Invoke(change, concrete);
+    }
+
+    public void SideBuildingTechChange(ISideIgc side)
+    {
+        if (side is Side concrete) BuildingTechChanged?.Invoke(concrete);
+    }
+
+    public void StationTypeChange(IStationIgc station)
+    {
+        if (station is Station concrete) StationTypeChanged?.Invoke(concrete);
+    }
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="ProjectileCreatedEvent"/> the world missions raise when
