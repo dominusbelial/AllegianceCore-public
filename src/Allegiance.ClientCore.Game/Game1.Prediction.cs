@@ -192,13 +192,16 @@ public sealed partial class Game1
     /// </summary>
     private void PumpServerClock()
     {
+        // P508 — feed the own-ship server clock from received FM_CS_PING echoes.
+        // P671 — the SESSION's native keep-alive now sends the CS_PING (every
+        // 6 s, every state — see ConnectionSession), so this pump no longer sends
+        // its own ~1 Hz ping; sending both would double-ping. It only CONSUMES
+        // the echoes, which arrive for whichever of the session's pings the
+        // server answered. The clock extrapolates at ~1:1 (OwnShipServerClock),
+        // so a 6 s sample cadence stays well inside the server's ±1.5 s gate —
+        // exactly the cadence the native client's CheckServerLag runs at.
         foreach (var (serverMs, localMs) in _session.TakePingEchoes())
             _ownServerClock.AddSample(serverMs, localMs);
-        if (_session.Connected && _nowSeconds - _lastPingSentAt >= 1.0)
-        {
-            _session.SendPing();
-            _lastPingSentAt = _nowSeconds;
-        }
     }
 
     /// <summary>

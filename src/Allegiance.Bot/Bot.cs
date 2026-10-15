@@ -28,6 +28,48 @@ public sealed class Bot : ITransportSite, IDisposable
     private TcpTransport? _transport;
     private readonly object _gate = new();
 
+    // P671 — native keep-alive, ported from BaseClient::CheckServerLag
+    // (clintlib.cpp:2050-2087). The Bot is a real client (used for idle/weave
+    // bots in the MCP harness, and the console bot), so — like ConnectionSession —
+    // it must send CS_PING every 6 s while connected in EVERY state (lobby,
+    // hangar, docked, flying, pod, dead) or the server's DataLinkIdleTimeout
+    // would drop a silently-idle bot at ~30 s (the P654-aftermath mass
+    // disconnect). The server echoes each ping (Server.Dispatch.cs:38-67).
+    // The unanswered-ping session-loss rule mirrors native: >5 unanswered pings
+    // AND >= 30 s since any server message => the link is considered dead
+    // (clintlib.cpp:2063-2068) and pinging stops.
+    private const int KeepAliveIntervalMs = 6000;   // maxLagCheck = 6.0f
+    private const int PingsTimeout = 5;             // g_cPingsTimeout
+    private const int DeadTimeMs = 30000;           // g_sDeadTime (s -> ms)
+    private Thread? _keepAliveThread;
+    private readonly ManualResetEventSlim _keepAliveGate = new(false); // set = wake/stop
+    private int _keepAliveStop;
+    private int _unansweredPings;        // guarded by _gate
+    private long _lastServerMessageTick; // Environment.TickCount64, guarded by _gate
+    private long _keepAlivePingsSent;    // guarded by _gate
+    private volatile bool _lost;
+
+    /// <summary>P671 test seam — total CS_PING keep-alive frames sent by this
+    /// bot's keep-alive thread since connect.</summary>
+    public long KeepAlivePingsSent { get { lock (_gate) return _keepAlivePingsSent; } }
+
+    /// <summary>
+    /// P671 — start the native keep-alive thread up-front, in the constructor,
+    /// NOT in <see cref="Connect"/>. The MCP harness (ObservedSession /
+    /// StallWatchdog) injects a <c>TcpTransport</c> directly into this bot's
+    /// private <c>_transport</c> and calls <c>Transport.Join(...)</c> — never
+    /// this class's <see cref="Connect"/>. Tying the keep-alive to
+    /// <see cref="Connect"/> left every MCP-seated idle/weave bot without a
+    /// keep-alive, so a silently-docked bot was dropped by the server's
+    /// <c>DataLinkIdleTimeout</c> at ~30 s. The thread is started here, uses the
+    /// current <c>_transport</c> lazily each tick, and is persistent (survives a
+    /// reconnect; skips ticks while disconnected), so it covers every path.
+    /// </summary>
+    public Bot()
+    {
+        StartKeepAlive();
+    }
+
     private LogonAck? _ack;
     private byte _poseCookie;   // P590 — see PoseCookie
     private SetCluster? _setCluster;
@@ -1628,6 +1670,82 @@ public sealed class Bot : ITransportSite, IDisposable
     {
         _transport = new TcpTransport(this);
         _transport.Join(host, port, playerName);
+        StartKeepAlive();
+    }
+
+    /// <summary>P671 — (re)arm the native keep-alive thread for this bot.
+    /// Idempotent: resets the ping bookkeeping and starts the thread if it is
+    /// not already running (it may have exited after a detected loss). The
+    /// thread is first started from the constructor, so this is a no-op on the
+    /// common path.</summary>
+    private void StartKeepAlive()
+    {
+        lock (_gate)
+        {
+            _unansweredPings = 0;
+            _lastServerMessageTick = Environment.TickCount64;
+            _keepAlivePingsSent = 0;
+        }
+        if (_keepAliveThread != null) return;          // already running
+        Volatile.Write(ref _keepAliveStop, 0);
+        _keepAliveGate.Reset();
+        var t = new Thread(KeepAliveLoop) { IsBackground = true, Name = "bot-keepalive" };
+        _keepAliveThread = t;
+        t.Start();
+    }
+
+    /// <summary>P671 — send CS_PING every 6 s while connected (native
+    /// CheckServerLag, clintlib.cpp:2050-2087) and stop when the link is judged
+    /// dead (>5 unanswered pings AND >= 30 s since any server message). PERSISTENT:
+    /// it survives a not-yet-connected window and a reconnect (skipping ticks
+    /// while disconnected), so it works for every connection path, including the
+    /// MCP harness's direct <c>Transport.Join</c>. Exits only on dispose or a
+    /// detected loss; on exit it clears <c>_keepAliveThread</c> for re-arm.</summary>
+    private void KeepAliveLoop()
+    {
+        try
+        {
+            while (true)
+            {
+                if (_keepAliveGate.Wait(KeepAliveIntervalMs)) return;   // stop requested
+                if (Volatile.Read(ref _keepAliveStop) != 0) return;
+                bool lostNow = false;
+                lock (_gate)
+                {
+                    if (_lost) return;
+                    if (_transport is { IsConnected: true })
+                    {
+                        SendPing(0u);          // FM_CS_PING keepalive
+                        _unansweredPings++;
+                        _keepAlivePingsSent++;
+                        if (_unansweredPings > PingsTimeout
+                            && Environment.TickCount64 - _lastServerMessageTick >= DeadTimeMs)
+                            lostNow = true;
+                    }
+                }
+                if (lostNow)
+                {
+                    // Link judged dead (native rule) — stop pinging; the transport's
+                    // own read loop will surface the eventual EOF.
+                    _lost = true;
+                    return;
+                }
+            }
+        }
+        finally
+        {
+            _keepAliveThread = null;   // allow re-arm after loss / dispose
+        }
+    }
+
+    /// <summary>P671 — stop the keep-alive thread on shutdown/reconnect.</summary>
+    private void StopKeepAlive()
+    {
+        Volatile.Write(ref _keepAliveStop, 1);
+        _keepAliveGate.Set();
+        var t = _keepAliveThread;
+        _keepAliveThread = null;
+        try { t?.Join(1000); } catch { /* best effort */ }
     }
 
     /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>
@@ -1704,6 +1822,12 @@ public sealed class Bot : ITransportSite, IDisposable
 
         lock (_gate)
         {
+            // P671 — any inbound server traffic proves the link is alive: refresh
+            // the last-server-message timestamp and clear the unanswered-ping
+            // count (native appmsg.cpp:25-46 / clintlib.cpp:405).
+            _lastServerMessageTick = Environment.TickCount64;
+            _unansweredPings = 0;
+
             foreach (var m in messages)
             {
                 ushort fmid;
@@ -2084,5 +2208,9 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <summary>Close the client socket. The server sees EOF / a dropped peer.</summary>
     public void Shutdown() => _transport?.Shutdown();
 
-    public void Dispose() => Shutdown();
+    public void Dispose()
+    {
+        StopKeepAlive();
+        Shutdown();
+    }
 }

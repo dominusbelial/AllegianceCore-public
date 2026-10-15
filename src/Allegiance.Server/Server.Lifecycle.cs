@@ -1276,6 +1276,10 @@ public sealed partial class Server
         int pendHs = tc?.MaxPendingHandshake is { } ph && ph > 0 ? ph : 256;
         uint maxFrame = tc?.MaxFrameBytes is { } mf && mf > 0 ? (uint)mf : 64u * 1024;
         int dataFrameTo = tc?.DataFrameReadTimeoutSeconds is { } dt && dt > 0 ? dt : 30;
+        // P671 — the separate IDLE timeout (silence between frames), default 30 s
+        // (native g_sDeadTime, clintlib.cpp:2047). A healthy client never hits it
+        // because the shared client session keep-alive pings every 6 s.
+        int idleTo = tc?.DataLinkIdleTimeoutSeconds is { } il && il > 0 ? il : 30;
         env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MAX_CONNECTIONS");
         if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var emc) && emc > 0) maxConn = emc;
         env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MAX_PER_IP");
@@ -1286,11 +1290,14 @@ public sealed partial class Server
         if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var emf) && emf > 0) maxFrame = (uint)emf;
         env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_DATA_FRAME_TIMEOUT_SECONDS");
         if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var edt) && edt > 0) dataFrameTo = edt;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_IDLE_TIMEOUT_SECONDS");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var eil) && eil > 0) idleTo = eil;
         TcpTransport.MaxConnections = maxConn;
         TcpTransport.MaxConnectionsPerIp = perIp;
         TcpTransport.MaxPendingHandshake = pendHs;
         TcpTransport.ServerInboundMaxFrame = maxFrame;
         TcpTransport.DataFrameReadTimeout = TimeSpan.FromSeconds(dataFrameTo);
+        TcpTransport.DataLinkIdleTimeout = TimeSpan.FromSeconds(idleTo);
 
         // P654 (H-24) — bind the per-peer message/chat token-bucket (native's
         // chat budget) from config (env wins). Cited: c_chatBudgetMax=100 /

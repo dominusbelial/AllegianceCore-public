@@ -66,8 +66,50 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     // session to the server is lost; read safely from the render thread every frame.
     private volatile bool _lost;
 
+    // P671 — native keep-alive, ported from BaseClient::CheckServerLag
+    // (clintlib.cpp:2050-2087). Every connected client (bot OR MonoGame human)
+    // sends a CS_PING every <c>maxLagCheck = 6.0f</c> seconds, in EVERY state
+    // (lobby, hangar, docked, flying, pod, dead) — the server echoes each one
+    // (Server.Dispatch.cs:38-67). The UNANSWERED-ping session-loss rule mirrors
+    // native: when more than <c>g_cPingsTimeout(5)</c> pings have gone unanswered
+    // AND at least <c>g_sDeadTime(30)</c> has elapsed since any server message,
+    // the session is declared lost (clintlib.cpp:2063-2068).
+    private const int KeepAliveIntervalMs = 6000;   // maxLagCheck = 6.0f
+    private const int PingsTimeout = 5;             // g_cPingsTimeout
+    private const int DeadTimeMs = 30000;           // g_sDeadTime (s -> ms)
+    private Thread? _keepAliveThread;
+    private readonly ManualResetEventSlim _keepAliveGate = new(false); // set = wake/stop
+    private int _keepAliveStop;
+    private int _unansweredPings;        // guarded by _gate
+    private long _lastServerMessageTick; // Environment.TickCount64, guarded by _gate
+    private long _keepAlivePingsSent;    // guarded by _gate
+
     /// <summary>True while the underlying transport is connected.</summary>
     public bool Connected => _transport?.IsConnected ?? false;
+
+    /// <summary>P671 test seam — total CS_PING keep-alive frames sent by this
+    /// session's keep-alive thread since connect. Proves a bot/client session
+    /// actually pings at the 6 s cadence without having to sniff the wire.</summary>
+    public long KeepAlivePingsSent { get { lock (_gate) return _keepAlivePingsSent; } }
+
+    /// <summary>
+    /// P671 — start the native keep-alive thread up-front, in the constructor,
+    /// NOT in <see cref="Connect"/>. The MCP harness (ObservedSession /
+    /// StallWatchdog) injects a <c>TcpTransport</c> directly into this session's
+    /// private <c>_transport</c> and calls <c>Transport.Join(...)</c> — never
+    /// this class's <see cref="Connect"/>. Tying the keep-alive to
+    /// <see cref="Connect"/> therefore left every MCP-seated bot (idle/weave
+    /// BotClass and combat ConnectionSession alike) without a keep-alive, so a
+    /// silently-docked bot was dropped by the server's <c>DataLinkIdleTimeout</c>
+    /// at ~30 s. The thread is started here, references the current
+    /// <c>_transport</c> lazily each tick, and is persistent (it survives a
+    /// reconnect and skips ticks while disconnected), so it covers every
+    /// connection path.
+    /// </summary>
+    public ConnectionSession()
+    {
+        StartKeepAlive();
+    }
 
     /// <summary>
     /// P320 — true once the established TCP session to the server has been lost
@@ -166,6 +208,76 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
         _transport = new TcpTransport(this);
         _transport.Join(host, port, playerName);
+        StartKeepAlive();
+    }
+
+    /// <summary>P671 — (re)arm the native keep-alive thread for this session.
+    /// Idempotent: resets the unanswered-ping / last-server-message bookkeeping
+    /// (so a reconnect starts clean) and starts the thread if it is not already
+    /// running (it may have exited after a detected loss). The thread is first
+    /// started from the constructor, so this is a no-op on the common path.</summary>
+    private void StartKeepAlive()
+    {
+        lock (_gate)
+        {
+            _unansweredPings = 0;
+            _lastServerMessageTick = Environment.TickCount64;
+            _keepAlivePingsSent = 0;
+        }
+        if (_keepAliveThread != null) return;          // already running
+        Volatile.Write(ref _keepAliveStop, 0);
+        _keepAliveGate.Reset();
+        var t = new Thread(KeepAliveLoop) { IsBackground = true, Name = "session-keepalive" };
+        _keepAliveThread = t;
+        t.Start();
+    }
+
+    /// <summary>
+    /// P671 — the native keep-alive + session-loss rule loop, ported from
+    /// <c>BaseClient::CheckServerLag</c> (clintlib.cpp:2050-2087): while
+    /// connected, send a <c>CS_PING</c> every 6 s in every state, and when more
+    /// than 5 pings have gone unanswered for at least 30 s since any server
+    /// message, declare the session lost (native <c>g_cPingsTimeout(5)</c> +
+    /// <c>g_sDeadTime(30)</c>, clintlib.cpp:2063-2068). The server echoes each
+    /// ping (Server.Dispatch.cs:38-67) and any inbound resets the counters, so a
+    /// healthy link is never lost. PERSISTENT: it survives a not-yet-connected
+    /// window and a reconnect (skipping ticks while disconnected) so it works for
+    /// every connection path, including the MCP harness's direct
+    /// <c>Transport.Join</c>. Exits only on <see cref="StopKeepAlive"/> (dispose)
+    /// or a detected loss; on exit it clears <c>_keepAliveThread</c> so a later
+    /// reconnect can re-arm it.
+    /// </summary>
+    private void KeepAliveLoop()
+    {
+        try
+        {
+            while (true)
+            {
+                if (_keepAliveGate.Wait(KeepAliveIntervalMs)) return;   // stop requested
+                if (Volatile.Read(ref _keepAliveStop) != 0) return;
+                bool lostNow = false;
+                lock (_gate)
+                {
+                    if (_lost) return;
+                    // Skip this tick while not connected (pre-connect window,
+                    // between transports during a reconnect, etc.); never exit.
+                    if (_transport is { IsConnected: true })
+                    {
+                        SendPing();
+                        _unansweredPings++;
+                        _keepAlivePingsSent++;
+                        if (_unansweredPings > PingsTimeout
+                            && Environment.TickCount64 - _lastServerMessageTick >= DeadTimeMs)
+                            lostNow = true;
+                    }
+                }
+                if (lostNow) { RaiseLost(); return; }
+            }
+        }
+        finally
+        {
+            _keepAliveThread = null;   // allow re-arm after loss / dispose
+        }
     }
 
     /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>
@@ -700,6 +812,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// </summary>
     void ITransportSite.OnSessionLost()
     {
+        RaiseLost();
+    }
+
+    /// <summary>P671 — latch <see cref="Lost"/> and raise <see cref="SessionLost"/>
+    /// exactly once. Shared by the transport's <see cref="ITransportSite.OnSessionLost"/>
+    /// (server death / EOF) and the keep-alive thread's native unanswered-ping
+    /// rule (<c>CheckServerLag</c>, clintlib.cpp:2063-2068). Safe to call from
+    /// either the transport receive thread or the keep-alive thread; the first
+    /// caller wins and subsequent calls are no-ops.</summary>
+    private void RaiseLost()
+    {
         if (_lost) return;
         _lost = true;
         SessionLost?.Invoke();
@@ -719,6 +842,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
         lock (_gate)
         {
+            // P671 — any inbound server traffic proves the link is alive: refresh
+            // the last-server-message timestamp and clear the unanswered-ping
+            // count (native updates m_timeLastServerMessage / resets
+            // m_cUnansweredPings on receipt, appmsg.cpp:25-46, clintlib.cpp:405).
+            _lastServerMessageTick = Environment.TickCount64;
+            _unansweredPings = 0;
+
             foreach (var m in messages)
             {
                 ushort fmid;
@@ -1230,8 +1360,27 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         _world.PublishDecisionSnapshot();
     }
 
+    /// <summary>P671 — stop the keep-alive thread (on dispose). Sets the stop
+    /// flag and wakes the gate so the loop exits within its 6 s wait; joins
+    /// briefly. Does not acquire <c>_gate</c>, so it cannot deadlock against the
+    /// loop's own locked iteration. Called ONLY from <see cref=\"Dispose\"/>: the
+    /// thread is persistent, so a <see cref=\"Shutdown\"/> (used by a reconnect's
+    /// old-transport teardown) must NOT stop it.</summary>
+    private void StopKeepAlive()
+    {
+        Volatile.Write(ref _keepAliveStop, 1);
+        _keepAliveGate.Set();
+        var t = _keepAliveThread;
+        _keepAliveThread = null;
+        try { t?.Join(1000); } catch { /* best effort */ }
+    }
+
     /// <summary>Close the client socket. The server sees EOF / a dropped peer.</summary>
     public void Shutdown() => _transport?.Shutdown();
 
-    public void Dispose() => Shutdown();
+    public void Dispose()
+    {
+        StopKeepAlive();
+        Shutdown();
+    }
 }
