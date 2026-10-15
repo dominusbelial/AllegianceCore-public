@@ -1681,10 +1681,19 @@ public sealed class Sector : IClusterIgc
         return s.Hull;
     }
 
+    // P689: reject only type combinations this pass unconditionally discards.
+    // Damage/FF/death/launcher gates stay in dispatch: earlier events can mutate
+    // that state. Native resolves the shared collision list once (clusterIGC.cpp:
+    // 289-321); this port has separate combat and physical-collision passes.
+    internal static bool CombatPair(Collider a, Collider b) =>
+        (a.Data is IOrdnance && b.Data is Ship or Probe or Asteroid or Station)
+        || (b.Data is IOrdnance && a.Data is Ship or Probe or Asteroid or Station);
+
     private void ResolveCombatCollisions(double now, float dt)
     {
         if (!_models.Any(m => m is Projectile || m is Missile)) return;   // nothing can deal damage
 
+        var buildScope = TickProfiler.Enter("combat.build");
         var detector = new CollisionDetector();
         foreach (var model in _models)
         {
@@ -1734,7 +1743,10 @@ public sealed class Sector : IClusterIgc
                 hull: CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt);
+        buildScope.Dispose();
+        IReadOnlyList<CollisionEvent> events;
+        using (TickProfiler.Enter("combat.detect")) events = detector.Detect(dt, CombatPair);
+        using var dispatchScope = TickProfiler.Enter("combat.dispatch");
         var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
         {
@@ -2268,7 +2280,8 @@ public sealed class Sector : IClusterIgc
                 Orientation.Identity, CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt);
+        var events = detector.Detect(dt, static (a, b) =>
+            (a.Data is Ship && b.Data is Asteroid) || (b.Data is Ship && a.Data is Asteroid));
         foreach (var ev in events)
         {
             var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;
@@ -2720,7 +2733,8 @@ public sealed class Sector : IClusterIgc
                 Orientation.Identity, CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt);
+        var events = detector.Detect(dt, static (a, b) =>
+            (a.Data is Ship && b.Data is Station) || (b.Data is Ship && a.Data is Station));
         foreach (var ev in events)
         {
             var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;
@@ -3233,18 +3247,26 @@ public sealed class Sector : IClusterIgc
         // A missile killed by splash can create another blast (FedSrv.CPP:12524-12529).
         // Drain those after the current blast, like native's explosion list, to
         // avoid recursive damage walks and process each death exactly once.
+        using var scope = TickProfiler.Enter("blast.resolve");
         _pendingExplosions.Enqueue(e);
         if (_resolvingExplosions) return;
         _resolvingExplosions = true;
         try
         {
-            while (_pendingExplosions.TryDequeue(out var blast)) ApplyExplosion(blast);
+            bool secondary = false;
+            while (_pendingExplosions.TryDequeue(out var blast))
+            {
+                using var chained = secondary ? TickProfiler.Enter("blast.secondary") : default;
+                ApplyExplosion(blast);
+                secondary = true;
+            }
         }
         finally { _resolvingExplosions = false; }
     }
 
     private void ApplyExplosion(Explosion e)
     {
+        using var scope = TickProfiler.Enter("blast.apply");
         byte type = (byte)(e.DamageType | BlastDamage.NoWarn | BlastDamage.NoDebris); // clusterIGC.cpp:431
         var models = _models.ToArray();
         var stations = _stationRuntimes.ToArray();
@@ -3266,6 +3288,7 @@ public sealed class Sector : IClusterIgc
             double stateTime = ReferenceEquals(target, _updatingModel) ? _modelStateTime : target.LastUpdate;
             Vector3 p = target.Position + target.CollisionVelocity * (float)(e.Time - stateTime);
             if (!ExplosionAmount(e, p, radius, out float amount)) continue;
+            using (TickProfiler.Enter("blast.damage"))
             switch (target)
             {
                 case Ship ship:
@@ -3285,7 +3308,10 @@ public sealed class Sector : IClusterIgc
         {
             if (station.Dead || !_stationRuntimes.Contains(station)
                 || !ExplosionAmount(e, station.Center, station.Radius, out float amount)) continue;
-            if (station.ReceiveDamage(type, amount, e.Time, station.Center, e.Position, e.Launcher) == DamageResult.Killed)
+            DamageResult stationResult;
+            using (TickProfiler.Enter("blast.damage"))
+                stationResult = station.ReceiveDamage(type, amount, e.Time, station.Center, e.Position, e.Launcher);
+            if (stationResult == DamageResult.Killed)
             {
                 RemoveStation(station);
                 var mission = Mission ?? station.Mission ?? (e.Launcher as Ship)?.Mission;
@@ -3304,7 +3330,10 @@ public sealed class Sector : IClusterIgc
             var p = new Vector3(asteroid.Data.Position[0], asteroid.Data.Position[1], asteroid.Data.Position[2]);
             if (asteroid.Dead || !_mineable.Contains(asteroid)
                 || !ExplosionAmount(e, p, asteroid.Radius, out float amount)) continue;
-            if (asteroid.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher) == DamageResult.Killed)
+            DamageResult asteroidResult;
+            using (TickProfiler.Enter("blast.damage"))
+                asteroidResult = asteroid.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher);
+            if (asteroidResult == DamageResult.Killed)
             {
                 RemoveAsteroid(asteroid);
                 (Mission ?? (e.Launcher as Ship)?.Mission)?.Site.KillAsteroidEvent(asteroid, true);
@@ -3321,6 +3350,7 @@ public sealed class Sector : IClusterIgc
 
     private static bool ExplosionAmount(Explosion e, Vector3 p, float radius, out float amount)
     {
+        using var scope = TickProfiler.Enter("blast.evaluate");
         float d = (e.Position - p).Length() - radius; // clusterIGC.cpp:420
         amount = e.Amount;
         if (!(d < e.Radius)) return false;          // strict boundary (clusterIGC.cpp:422)

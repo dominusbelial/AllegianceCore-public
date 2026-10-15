@@ -28,9 +28,11 @@ public sealed class CollisionDetector
     /// Detect all collisions over a step of <paramref name="dt"/> seconds
     /// (from the colliders' current positions). Returns the events sorted
     /// ascending by collision time. Calling again with the same colliders and dt
-    /// yields the same list (determinism).
+    /// yields the same list (determinism). A pure pair filter may exclude
+    /// categories the caller does not handle; retained events keep their original
+    /// ordinals, collision times, sub-shapes, and tie order.
     /// </summary>
-    public IReadOnlyList<CollisionEvent> Detect(float dt)
+    public IReadOnlyList<CollisionEvent> Detect(float dt, Func<Collider, Collider, bool>? pairFilter = null)
     {
         _queue.Clear();
         if (_colliders.Count < 2) return _queue.Ordered();
@@ -38,7 +40,7 @@ public sealed class CollisionDetector
         foreach (var c in _colliders)
             c.SetStep(0f, dt);              // swept AABB for the step (SetBB)
 
-        foreach (var (i, j) in BroadPhase.OverlappingPairs(_colliders))
+        foreach (var (i, j) in BroadPhase.OverlappingPairs(_colliders, pairFilter))
         {
             var ev = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
             if (ev.Found)

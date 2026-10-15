@@ -31,8 +31,11 @@ public static class BroadPhase
     /// All unordered pairs of <paramref name="colliders"/> whose swept AABBs
     /// overlap, in deterministic (index-ordered) order — identical to the
     /// O(n²) sweep, computed with a sweep-and-prune spatial broad phase.
+    /// An optional pure pair filter rejects categories the caller never handles
+    /// before candidate storage, sorting, and narrow-phase hull work.
     /// </summary>
-    public static IEnumerable<(int I, int J)> OverlappingPairs(IReadOnlyList<Collider> colliders)
+    public static IEnumerable<(int I, int J)> OverlappingPairs(IReadOnlyList<Collider> colliders,
+        Func<Collider, Collider, bool>? pairFilter = null)
     {
         int n = colliders.Count;
         if (n < 2) yield break;
@@ -78,7 +81,10 @@ public static class BroadPhase
             foreach (var (aj, _) in active)
             {
                 var b = colliders[aj];
-                if (OverlapRemaining(cur, b, axis))
+                // Filter only immutable pair categories. Preserve registration order
+                // for asymmetric predicates and avoid storing/sorting rejected pairs.
+                if (OverlapRemaining(cur, b, axis)
+                    && (pairFilter is null || (curIdx < aj ? pairFilter(cur, b) : pairFilter(b, cur))))
                     pairs.Add(curIdx < aj ? (curIdx, aj) : (aj, curIdx));
             }
 
