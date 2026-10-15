@@ -1,0 +1,101 @@
+[
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+    "exit": 0,
+    "seconds": 1.61,
+    "log": "/tmp/p699-validation/post-final-000-isolation-1.log",
+    "trx": "/tmp/p699-validation/post-final-000-isolation-1.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+    "exit": 0,
+    "seconds": 1.62,
+    "log": "/tmp/p699-validation/post-final-001-isolation-2.log",
+    "trx": "/tmp/p699-validation/post-final-001-isolation-2.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+    "exit": 0,
+    "seconds": 1.6,
+    "log": "/tmp/p699-validation/post-final-002-isolation-3.log",
+    "trx": "/tmp/p699-validation/post-final-002-isolation-3.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy",
+    "exit": 0,
+    "seconds": 1.61,
+    "log": "/tmp/p699-validation/post-final-003-isolation-1.log",
+    "trx": "/tmp/p699-validation/post-final-003-isolation-1.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy",
+    "exit": 0,
+    "seconds": 1.62,
+    "log": "/tmp/p699-validation/post-final-004-isolation-2.log",
+    "trx": "/tmp/p699-validation/post-final-004-isolation-2.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy",
+    "exit": 0,
+    "seconds": 1.62,
+    "log": "/tmp/p699-validation/post-final-005-isolation-3.log",
+    "trx": "/tmp/p699-validation/post-final-005-isolation-3.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exit": 0,
+    "seconds": 1.64,
+    "log": "/tmp/p699-validation/post-final-006-isolation-1.log",
+    "trx": "/tmp/p699-validation/post-final-006-isolation-1.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exit": 0,
+    "seconds": 1.64,
+    "log": "/tmp/p699-validation/post-final-007-isolation-2.log",
+    "trx": "/tmp/p699-validation/post-final-007-isolation-2.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exit": 0,
+    "seconds": 1.67,
+    "log": "/tmp/p699-validation/post-final-008-isolation-3.log",
+    "trx": "/tmp/p699-validation/post-final-008-isolation-3.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  }
+]

@@ -836,3 +836,26 @@ After all four full suites completed, every failed Core method passed **3/3 exac
 | `Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup` | Cleanup hit `ThreadStateException: Thread has not been started` in `TcpTransport.Shutdown`, line 533. The allocation assertion did not fail. | 3/3 pass |
 
 These match previously recorded receipt/shutdown flake symptoms; the isolated passes do not establish a fix for the underlying races. No assertions, deadlines, quarantine traits, or transport behavior were changed for these observations. See the [P688 report](reports/P688_MERGE_P655D.md) and [invocation ledger](reports/P688_RESULTS.json) for raw full-suite counts, filters, stack traces and individual rerun results.
+
+
+## P699 observation (2026-10-15)
+
+The initial unfiltered P699 diagnostic suites exposed two unchanged receipt tests that passed **3/3 exact-method isolated invocations** after all three suites completed. The other initial failures were docking-fixture incompatibilities and were corrected; they are not classified as flakes. See the [P699 report](reports/P699_POD_DOCKING.md) and [isolated invocation ledger](reports/P699_assets/affected-results.json).
+
+| Test | Initial full-suite symptom | Isolation |
+| --- | --- | --- |
+| `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | Bystander abort receipt collection was empty at `Assert.Single`. | 3/3 pass |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | The driver still had a queued `0.100` countdown update immediately after manual docking. | 3/3 pass |
+
+No assertions, receipt deadlines, quarantine traits, or product code were changed for these two observations. The isolated passes do not establish a fix for the underlying receipt races.
+
+
+P699's final rebuilt sequential suites reported Core **4562 pass / 2 fail / 0 skip**, ClientCore **1019 pass / 0 fail / 0 skip** (local P660 showcase enabled), MonoGame **2200 pass / 0 fail / 3 existing private-pack skips**, and Lobby **19 pass / 0 fail / 0 skip**. After all four finished, every method below passed **3/3 exact-method isolated invocations**:
+
+| Test | Full-run symptom | Final isolation |
+| --- | --- | --- |
+| `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | Same empty abort receipt collection as the initial diagnostic run. | 3/3 pass |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Expected loadout-change receipt collection was empty. | 3/3 pass |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | An additional earlier suite attempt timed out waiting for `OnPeerJoined` for a raw peer. | 3/3 pass |
+
+The [final isolated ledger](reports/P699_assets/post-final-results.json) preserves all nine passes; [validation-summary.json](reports/P699_assets/validation-summary.json) records final suite timestamps and portable TRX hashes. No source, assertion, timeout or quarantine changes were made for these failures. These observations classify intermittent receipt/join failures; they do not claim an underlying transport fix.

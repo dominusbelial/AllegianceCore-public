@@ -1,0 +1,6 @@
+[
+  [
+    "Core",
+    "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+  ]
+]

@@ -152,7 +152,7 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
                 {
                     // Place the ejected pod home; let the real sector pass dock it.
                     var station = f.Sector!.Stations.First(st => st.SideId == f.SideId);
-                    f.Position = new Vector3(station.Position[0], station.Position[1], station.Position[2]);
+                    f.Position = DockTestPlacement.Inside(mission, station, f.HullType);
                     f.Velocity = Vector3.Zero;
                 }
                 Volatile.Write(ref killHandled, 1);

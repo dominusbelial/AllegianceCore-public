@@ -331,9 +331,9 @@ public class MiningSellTests
         float oreBeforeDock = live().Ore;
         bot.ResetPaydays();
 
-        // (2) Move to the friendly station's radius → the dock pass fires and
+        // (2) Move into the friendly station's bay → the dock pass fires and
         // the sell runs on that transition.
-        live().Position = StationPos(friendly) + new Vector3(30f, 0f, 0f);
+        live().Position = DockTestPlacement.Inside(live().Mission!, friendly, live().HullType);
         PumpUntil(server, () => live().StationId is not null, 400);
 
         // Cargo zeroed; the value went to money.
@@ -388,7 +388,7 @@ public class MiningSellTests
         PumpUntil(server, () => live().Ore >= 20f, 400);
         float oreTrip1 = live().Ore;
         bot.ResetPaydays();
-        live().Position = StationPos(friendly) + new Vector3(30f, 0f, 0f);
+        live().Position = DockTestPlacement.Inside(live().Mission!, friendly, live().HullType);
         PumpUntil(server, () => live().StationId is not null, 400);
         Assert.Equal(0f, live().Ore);
         PumpUntil(server, () => bot.Paydays.Count >= 1, 400);
@@ -413,7 +413,7 @@ public class MiningSellTests
         PumpUntil(server, () => live().Ore >= 20f, 400);
         float oreTrip2 = live().Ore;
 
-        live().Position = StationPos(friendly) + new Vector3(30f, 0f, 0f);
+        live().Position = DockTestPlacement.Inside(live().Mission!, friendly, live().HullType);
         PumpUntil(server, () => live().StationId is not null, 400);
         Assert.Equal(0f, live().Ore);
         PumpUntil(server, () => bot.Paydays.Count >= 2, 400);
@@ -436,7 +436,7 @@ public class MiningSellTests
             friendly = ChooseFriendly(mission);
             var sector = mission.Sectors.First(s => s.Stations.Contains(friendly));
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var ship = new Ship(shipId, hull, StationPos(friendly) + new Vector3(30f, 0f, 0f),
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, friendly, hull),
                                 Vector3.Zero, Orientation.Identity) { SideId = friendly.SideId };
             ship.MiningRateOverridePerSecond = 100f;   // P528 seam: fast native-scale fill so the wire proof stays quick
             mission.PlaceShip(ship, sector);

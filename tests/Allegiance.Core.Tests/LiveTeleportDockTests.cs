@@ -114,7 +114,7 @@ public class LiveTeleportDockTests
             var hull = friendlyHullId is { } fid && core.HullTypes.TryGetValue(fid, out var h)
                 ? h
                 : core.HullTypes.Values.OrderBy(x => x.HullId).First();
-            var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
             {
                 SideId = station.SideId,
             };
@@ -200,7 +200,7 @@ public class LiveTeleportDockTests
             // buyable one so bNewHull is provably false on real data.
             var hull = core.HullTypes.Values.Where(h => SellsHull(core, station.StationTypeId, side.Civilization.CivilizationId, h))
                                             .OrderBy(h => h.Price).First();
-            var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
             { SideId = station.SideId };
             mission.PlaceShip(ship, sector);
             r = new SpawnResult { Station = station, Sector = sector, Ship = ship, Hull = hull };
@@ -256,7 +256,7 @@ public class LiveTeleportDockTests
             // so the refund is real money (not a 0-credit no-op).
             var hull = core.HullTypes.Values.Where(h => !SellsHull(core, station.StationTypeId, side.Civilization.CivilizationId, h) && h.Price > 0 && h.Hardpoints.Length > 0)
                                             .OrderBy(h => h.Price).First();
-            var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
             { SideId = station.SideId };
             mission.PlaceShip(ship, sector);
             // Equip a real part so the strip has something to clear and the
@@ -421,7 +421,7 @@ public class LiveTeleportDockTests
             AddStationToSector(sector, fake);
 
             var hull = core.HullTypes.Values.OrderBy(x => x.HullId).First();
-            var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
             { SideId = station.SideId };
             mission.PlaceShip(ship, sector);
             r = new SpawnResult { Station = station, Sector = sector, Ship = ship, Hull = hull };

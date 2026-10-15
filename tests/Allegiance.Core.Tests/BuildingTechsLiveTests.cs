@@ -171,7 +171,7 @@ public sealed class BuildingTechsLiveTests
             garrison = g;
             var sector = mission.Sectors.First(x => x.Stations.Contains(g));
             var ship = new Ship(shipId, hH, StationPos(g) + new Vector3(25f, 0f, seq++ == 0 ? 0f : -25f),
-                Vector3.Zero, Orientation.Identity) { SideId = side.Id };
+                Vector3.Zero, Orientation.Identity) { SideId = side.Id, StationId = g.StationId };
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };
@@ -293,7 +293,7 @@ public sealed class BuildingTechsLiveTests
                 .OrderBy(h => h.HullId).First();
             spawnHullId = starter.HullId;
             var ship = new Ship(shipId, starter, StationPos(g) + new Vector3(25f, 0f, 0f),
-                Vector3.Zero, Orientation.Identity) { SideId = g.SideId };
+                Vector3.Zero, Orientation.Identity) { SideId = g.SideId, StationId = g.StationId };
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };

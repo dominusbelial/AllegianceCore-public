@@ -78,7 +78,7 @@ public sealed class P653DPodPurchaseLiveTests
             var homeSector = mission.Sectors.Single(s => s.StationRuntimes.Contains(home));
             ship.Sector!.Remove(ship);
             mission.PlaceShip(ship, homeSector);
-            ship.Position = new Vector3(home.Data.Position[0], home.Data.Position[1], home.Data.Position[2]);
+            ship.Position = DockTestPlacement.Inside(mission, home.Data, ship.HullType);
             ship.Velocity = Vector3.Zero;
         }
         Wait("pod dock", () => ship.StationId is not null);

@@ -306,9 +306,10 @@ public class LiveGainFlagTests
         Assert.Equal(enemySide, sh.Flag!.Value);   // starts carrying the enemy flag, still flying
         Assert.Null(sh.StationId);
 
-        // Drive it into the friendly station's dock radius → the dock pass trips,
+        // Drive it into the friendly station's landing bay → the dock pass trips,
         // the ship docks, and the secure leg fires.
-        sh.Position = dockPos + new Vector3(20f, 0f, 0f);
+        var dock = sh.Sector!.Stations.Single(st => st.SideId == ownSide);
+        sh.Position = DockTestPlacement.Inside(sh.Mission!, dock, sh.HullType);
 
         int n = PumpUntil(server, () => bot.GainFlags.Count >= 1, 4000);
         Assert.True(n < 4000, "GAIN_FLAG(NA) secure announce never reached the docking peer");

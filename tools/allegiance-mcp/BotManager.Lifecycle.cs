@@ -50,7 +50,7 @@ internal sealed partial class BotManager
             if (bot.FinaleBomberActive && bot.FinaleGrantVerified && bot.Finale is { } finale)
                 lock (finale.Sync) finale.StrikeStartedAt ??= now;
         }
-        bot.IsPod = bot.PodDocked = false;
+        bot.IsPod = bot.PodDocked = bot.PodRestarted = false;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
         bot.PodStationCenter = Vector3.Zero;
         bot.RelaunchAttempts = 0;
@@ -162,7 +162,7 @@ internal sealed partial class BotManager
                     bot.ObjectivesPending = true;
                 }
                 bot.ReadyShipId = -1;
-                if (bot.LifeSession != cs) bot.KillCursor = 0;
+                if (bot.LifeSession != cs) bot.KillCursor = bot.PodOutcomeCursor = 0;
             }
             bot.ShipId = ship;
             bot.Side = world.MySideId ?? bot.Side;

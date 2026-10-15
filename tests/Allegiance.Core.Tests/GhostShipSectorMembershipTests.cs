@@ -275,7 +275,7 @@ public class GhostShipSectorMembershipTests
             var side = mission.Sides.First(s => s.Id == realStation.SideId);
             var hull = core.HullTypes.Values.Where(h => SellsHull(core, realStation.StationTypeId, side.Civilization.CivilizationId, h))
                                              .OrderBy(h => h.Price).First();
-            ship = new Ship(shipId, hull, StationPos(realStation) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, realStation, hull), Vector3.Zero, Orientation.Identity)
             { SideId = realStation.SideId };
             mission.PlaceShip(ship, realSector);
             return (ship, realSector);

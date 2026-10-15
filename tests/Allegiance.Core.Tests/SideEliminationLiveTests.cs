@@ -181,6 +181,8 @@ public sealed class SideEliminationLiveTests
         var baseType = h.Core.StationTypes.Values.First();
         var type = baseType with
         {
+            ModelName = "P699_SYNTHETIC_ELIMINATION", // synthetic 40-unit base, no artwork bay
+
             MaxArmorHitPoints = maxArmor,
             MaxShieldHitPoints = maxShield,
             DefenseTypeArmor = defArmor,
@@ -314,6 +316,8 @@ public sealed class SideEliminationLiveTests
         var baseType = h.Core.StationTypes.Values.First();
         var type = baseType with
         {
+            ModelName = "P699_SYNTHETIC_ELIMINATION", // synthetic 40-unit base, no artwork bay
+
             MaxArmorHitPoints = maxArmor,
             MaxShieldHitPoints = maxShield,
             DefenseTypeArmor = defArmor,

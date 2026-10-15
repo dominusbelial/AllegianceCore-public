@@ -267,8 +267,8 @@ public sealed class PlayerBuildCommandLiveTests
             // ResolveDockCollisions iterates sector.Stations (the built station
             // IS in it) and docks a same-side ship within DockRadius (200).
             var dockShip = srv.SpawnNpcShip(mission, sector, peerSide, new Vector3(rp.X, rp.Y, rp.Z + 2f), null);
-            // Park it inside the station's 200 u dock footprint (same side → friendly).
-            dockShip.Position = new Vector3(rp.X, rp.Y, rp.Z + 2f);
+            // Park it inside the new station's landing bay (same side → friendly).
+            dockShip.Position = DockTestPlacement.Inside(mission, builtStation.Data, dockShip.HullType);
             Assert.Null(dockShip.StationId);
             Pump(srv, () => dockShip.StationId == builtStation.Data.StationId, 2000);
             Assert.Equal(builtStation.Data.StationId, dockShip.StationId);   // ★ docked at the freshly-built station

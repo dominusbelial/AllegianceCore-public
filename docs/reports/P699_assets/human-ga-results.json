@@ -1,0 +1,53 @@
+[
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "exit": 1,
+    "seconds": 8.88,
+    "log": "/tmp/p699-validation/human-ga-000-isolation-1.log",
+    "trx": "/tmp/p699-validation/human-ga-000-isolation-1.trx",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+        "outcome": "Failed",
+        "error": "human pod flight must not need a server pose correction"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "exit": 1,
+    "seconds": 8.8,
+    "log": "/tmp/p699-validation/human-ga-001-isolation-2.log",
+    "trx": "/tmp/p699-validation/human-ga-001-isolation-2.trx",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+        "outcome": "Failed",
+        "error": "human pod flight must not need a server pose correction"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "exit": 1,
+    "seconds": 8.98,
+    "log": "/tmp/p699-validation/human-ga-002-isolation-3.log",
+    "trx": "/tmp/p699-validation/human-ga-002-isolation-3.trx",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+        "outcome": "Failed",
+        "error": "human pod flight must not need a server pose correction"
+      }
+    ],
+    "skipped": []
+  }
+]

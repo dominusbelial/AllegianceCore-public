@@ -102,7 +102,7 @@ public class LiveBuyGateDevelopmentTests
             var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
             var sector = mission.Sectors.First(s => s.Stations.Contains(station));
             var hull = core.HullTypes[BombHullId];
-            var pos = StationPos(station) + new Vector3(25f, 0f, seq == 0 ? 0f : -25f);
+            var pos = DockTestPlacement.Inside(mission, station, hull) + new Vector3(5f * seq, 0f, 0f);
             var ship = new Ship(shipId, hull, pos, Vector3.Zero, Orientation.Identity)
             { SideId = station.SideId };
             mission.PlaceShip(ship, sector);

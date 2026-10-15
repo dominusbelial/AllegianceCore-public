@@ -126,15 +126,8 @@ public static class DockApproach
     /// Resolve how many of <paramref name="bays"/> a hull of the given class may
     /// use. Faithful to native's selector (<c>common.cpp:1513-1515</c>):
     /// a fighter uses <c>GetLandSlots()</c>, a non-fighter (capital) uses
-    /// <c>GetCapLandSlots()</c>. In this port a station's geometry is
-    /// reconstructed as a single <c>capgarage</c> slot set
-    /// (<see cref="Collision.HullLandingBay.ReconstructStation"/>,
-    /// <c>stationtypeigc.cpp:71-107</c>: native loads <c>capgarageNA..</c> and
-    /// sets <c>m_nCapLandSlots = m_nLandSlots</c> — and 221's station models carry
-    /// no separate <c>garage</c> fighter bays, so both selectors collapse to the
-    /// same set). <paramref name="bays"/> is expected to already BE the class's
-    /// set; this returns its count and stays a faithful hook for a future core
-    /// whose stations carry distinct fighter/capital bays.
+    /// <c>GetCapLandSlots()</c>. The list contains the capital prefix followed
+    /// by ordinary fighter bays (Igc/stationtypeigc.cpp:71-144).
     /// </summary>
     public static int StationBaysForClass(bool isFighter, IReadOnlyList<DockBay> bays, int capLandSlots)
         => isFighter ? bays.Count : Math.Min(bays.Count, capLandSlots);

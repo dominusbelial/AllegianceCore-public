@@ -1,0 +1,50 @@
+[
+  {
+    "project": "Core",
+    "filter": "(unfiltered)",
+    "exit": 1,
+    "seconds": 552.74,
+    "log": "/tmp/p699-validation/final-000-Core.log",
+    "trx": "/tmp/p699-validation/final-000-Core.trx",
+    "passed": 4562,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+        "outcome": "Failed",
+        "error": "Assert.Single() Failure: The collection was empty"
+      },
+      {
+        "name": "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy",
+        "outcome": "Failed",
+        "error": "Assert.Contains() Failure: Filter not matched in collection\nCollection: []"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "seconds": 522.9,
+    "log": "/tmp/p699-validation/final-001-ClientCore.log",
+    "trx": "/tmp/p699-validation/final-001-ClientCore.trx",
+    "passed": 1019,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "seconds": 327.05,
+    "log": "/tmp/p699-validation/final-002-ClientCore.MonoGame.log",
+    "trx": "/tmp/p699-validation/final-002-ClientCore.MonoGame.trx",
+    "passed": 2200,
+    "failed": [],
+    "skipped": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+    ]
+  }
+]
