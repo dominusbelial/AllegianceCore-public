@@ -235,6 +235,26 @@ pass** batch. This repeats the existing isolation-flaky receipt observation;
 there was no assertion, timeout, production countdown or quarantine change.
 See [P672_SCOREBOARD_TRAFFIC](reports/P672_SCOREBOARD_TRAFFIC.md) and the
 [durable results](reports/P672_RESULTS.json) for both isolation batches.
+## P673 receive-decouple observation (2026-10-14)
+
+All three unfiltered assemblies ran sequentially with
+`ALLEGIANCE_RECEIVE_DECOUPLE=1`; the opt-in local 15v15 showcase was also enabled
+and passed. Core **4312 pass / 0 fail**, ClientCore **932 pass / 2 fail**,
+MonoGame **2125 pass / 0 fail / 3 existing optional-pack skips**. After all
+assemblies finished, both ClientCore failures passed **3/3 exact-method isolated
+reruns**, qualifying as load flakes under the task lane rule:
+
+| Test | Full-run symptom | Isolation |
+| --- | --- | --- |
+| `SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent` | The test observed `Lost` before its subsequent `SessionLost` callback flag was set. This method is already in the historical ledger. | 3/3 pass |
+| `RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment` | `Assert.Contains` enumerated the client world's dictionary keys while the receive thread modified the dictionary. The reconnect/reseat method is already quarantined; its actual class is `RetriedConnectLiveTests` in `RetryCleanupTests.cs`. | 3/3 pass |
+
+No product changes, assertions, deadlines or quarantine tags were added for
+these two cases. P673's new and affected focused cases passed **183/183 case
+runs**, each method run three times alone, including real sockets in both
+transport modes and hostile-input regressions. See the
+[P673 report](reports/P673_RECEIVE_DECOUPLE.md) and
+[verification ledger](reports/P673_RESULTS.json).
 
 ## Quarantined tests (Lane = LiveTiming), with root cause
 

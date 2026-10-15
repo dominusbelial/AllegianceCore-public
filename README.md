@@ -126,6 +126,15 @@ dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance
   tests it kept every tick under 150 ms with no disconnects, at about 0.92× speed on
   average (0.73× at the heaviest moment). Set `"off"` to disable.
 
+Inbound decoding can also run on the existing receive workers with
+`"receive": { "decouple": true }` or `ALLEGIANCE_RECEIVE_DECOUPLE=1` (default off;
+the environment overrides config). Commands still apply at tick boundaries in
+peer-id/arrival order, with bounded fair carry-over. For diagnosis, add
+`"measure": true` to that section: `[inbound]` reports each tick's message
+counts/bytes by fmid and peer, and `[inbound-window]` retains a 100-tick histogram
+including drain time. These detailed logs are opt-in. See the
+[P673 report](docs/reports/P673_RECEIVE_DECOUPLE.md) for local A/B evidence.
+
 **Client** — always a Release build; join *before* bots spawn so you see the whole battle:
 
 ```bash
