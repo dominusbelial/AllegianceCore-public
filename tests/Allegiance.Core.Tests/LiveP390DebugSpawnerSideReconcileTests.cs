@@ -53,7 +53,7 @@ public class LiveP390DebugSpawnerSideReconcileTests
         LiveSettings = new Ls { DebugMode = true },
         Games =
         [
-            new Gm { Name = "P390 Debug Topology", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { MaxTeamImbalance = 32767, Name = "P390 Debug Topology", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

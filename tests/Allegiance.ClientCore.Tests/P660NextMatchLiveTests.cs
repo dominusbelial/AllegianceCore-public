@@ -178,4 +178,43 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
         Pump(server, () => server.Missions[0].Stage == MissionStage.Started);
         Assert.True(a.Connected && b.Connected);
     }
+
+    [SkippableFact]
+    public void Two_consecutive_matches_deliver_both_players_results_and_reseat_every_peer()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.SpawnInitialMinersAtBoot = false;
+        server.Boot(Config(true));
+        using var a = Connect(server, "P660-two-A", 66031);
+        using var b = Connect(server, "P660-two-B", 66032);
+        var peers = new[] { a, b };
+        var sides = peers.Select(p => p.World.MySideId).ToArray();
+        server.Missions[0].Stage = MissionStage.Started;
+        for (int round = 0; round < 2; round++)
+        {
+            var old = server.Missions[0];
+            var oldIds = peers.Select(p => p.World.MyShipId).ToArray();
+            foreach (var live in server.Ships) live.PlayerScore.AddRescue();
+            End(server);
+            Pump(server, () => peers.All(p => Read(p, () => p.World.IsIntermission
+                && p.World.GameOverResult is not null && p.World.GameOverPlayersList.Count == 2
+                && p.World.GameOverPlayersList.All(e => e.Rescues == 1))));
+            foreach (var peer in peers)
+                Assert.True(Read(peer, () => peer.World.GameOverPlayersList.Select(e => e.CharacterName).Order()
+                    .SequenceEqual(new[] { "P660-two-A", "P660-two-B" })));
+            Pump(server, () => server.Missions[0].Stage == MissionStage.Started
+                && peers.All(p => Read(p, () => p.World.Mission?.Stage == (int)MissionStage.Started
+                    && p.World.GameOverResult is null)));
+            Assert.NotSame(old, server.Missions[0]);
+            for (int i = 0; i < peers.Length; i++)
+            {
+                Assert.True(peers[i].Connected);
+                Assert.NotEqual(oldIds[i], peers[i].World.MyShipId);
+                Assert.Equal(sides[i], peers[i].World.MySideId);
+                Assert.Same(server.Missions[0], server.Ships.Single(l => l.Ship.Id == peers[i].World.MyShipId).Ship.Mission);
+            }
+        }
+        Assert.Equal(0, server.SimPassStageFailures);
+    }
 }

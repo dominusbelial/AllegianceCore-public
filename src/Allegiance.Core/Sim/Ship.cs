@@ -3943,6 +3943,7 @@ public sealed class Ship : Model, IShipIgc
         // magazineigc.cpp:127-132: hostile, visible, same cluster, damageable
         // (warp bombs require a warp instead). Static objects use model views.
         if (CommandTarget is not { } target || Sector is not { } sector
+            || SideId is null || target is Ship { StationId: not null }
             || !EquipmentTarget.IsPresent(target, sector)
             || Mission?.AreSidesFriendly(SideId, EquipmentTarget.SideOf(target)) == true
             || (missileType.HasWarpBombCapability ? target is not EquipmentTarget { ObjectType: IgcObjectType.Warp }
@@ -4027,12 +4028,24 @@ public sealed class Ship : Model, IShipIgc
         // Native local/NPC update waits for strict load readiness; the server
         // accepts an early player request as a disarmed dud with 0.5s tolerance
         // (magazineigc.cpp:103,118; FedSrv.CPP:5433-5434,5468).
-        if (Sector is null || IsRipcordActive) return false;
+        if (Sector is null || StationId is not null || ParentShip is not null || IsRipcordActive) return false;
         if (!clientRequest && (launcher.MountedFraction < 1f || launcher.TimeLoaded >= now)) return false;
         bool dud = clientRequest && now + 0.5 < launcher.TimeLoaded;
         Model? target = CommandTarget;
+        // Recheck the selected target at fire time: selection may predate
+        // detection, or visibility may have disappeared after lock acquisition.
+        // Preserve native zero/partial-lock and untargeted dumbfire behavior.
         if (target is not null && (!EquipmentTarget.IsPresent(target, Sector)
-            || SideId is { } sid && !EquipmentTarget.CanSee(target, sid, Sector))) target = null;
+            || SideId is not { } sid || !EquipmentTarget.CanSee(target, sid, Sector)
+            || mission.AreSidesFriendly(SideId, EquipmentTarget.SideOf(target))
+            || target is Ship { StationId: not null }
+            || (missileType.HasWarpBombCapability ? target is not EquipmentTarget { ObjectType: IgcObjectType.Warp }
+                : !EquipmentTarget.IsDamageable(target))))
+        {
+            MissileLock = 0f;
+            if (missileType.MaxLock != 0f) return false;
+            target = null;
+        }
         launcher.TimeLoaded = now + missileType.LoadTime;
         float launchLock = (requestedLock is { } l && float.IsFinite(l)
             ? Math.Clamp(l, 0f, 1f) : MissileLock) * missileType.MaxLock;
@@ -4798,15 +4811,24 @@ public sealed class Ship : Model, IShipIgc
         Velocity = velocity;
     }
 
+    /// <summary>P655 movement envelope. Cruise drag/thrust and afterburner boost
+    /// use the same effective inputs as ExecuteMove (Igc/shipIGC.cpp:2922-2957).
+    /// The 10% margin covers discrete integration and wire quantisation. Server
+    /// collision/launch impulses are accounted for separately by the caller.</summary>
+    public float MovementSpeedLimit()
+    {
+        float thrust = EffectiveThrust();
+        float boost = _mountedAfterburner is { FractionMounted: >= ExpandedPartData.FullyMounted, Type.Type: DataPartTypeIGC.Afterburner ab }
+            && (((StateM & ShipControlState.AfterburnerButton) != 0 && Fuel > 0f)
+                || _afterburnerPower > 0f) ? ab.MaxThrust : 0f;
+        float ratio = thrust > 0 ? boost / thrust : 0;
+        return MathF.Max(0, EffectiveMaxSpeed()) * (1 + MathF.Max(0, ratio)) * 1.1f + 1f;
+    }
+
     /// <summary>
-    /// Build the <see cref="ShipKinematics.Inputs"/> this ship's flight step
-    /// consumes from its current controls/stateM, effective (GA-scaled) hull
-    /// stats, mounted afterburner and ripcord state — the shared input-holder
-    /// used by <see cref="ExecuteMove"/> (the server tick) and
-    /// <see cref="CalculateShipPose"/> (the P507 client-pose replay). Behaviour-
-    /// identical to the inline construction ExecuteMove previously performed
-    /// (same field-for-field source); the golden ShipKinematics equivalence
-    /// tests pin that identity.
+    /// Build the shared effective flight inputs used by ExecuteMove and
+    /// CalculateShipPose. The golden ShipKinematics equivalence tests pin
+    /// identity with the original inline construction.
     /// </summary>
     private ShipKinematics.Inputs BuildKinematicsInputs()
     {
@@ -7637,6 +7659,19 @@ public sealed class Ship : Model, IShipIgc
     protected override void OnUpdate(double now, double dt)
     {
         WarningMask = ShipWarningMask.None; // shipIGC.cpp:271-273
+        // P655 / H-12: native docked ships have no cluster and never run flight
+        // or weapons (FedSrv/FedSrv.CPP:4857,5428,5634). The port retains Sector
+        // for hangar/launch lookup, so enforce the equivalent invariant here.
+        // Keep docked NPC management: stay/launch orders run in server handlers;
+        // automatic drone launch remains in the host's docked-NPC pass.
+        if (StationId is not null || ParentShip?.StationId is not null)
+        {
+            Controls = ControlData.Neutral;
+            StateM = 0;
+            Velocity = Vector3.Zero;
+            return;
+        }
+
         // P279 — the drifting Lifepod's oxygen timer. Direct port of native
         // shipIGC.cpp:361-363: `if (lifepod hull && (now > m_timeToDie))
         // KillShipEvent(now, this, NULL, 1.0f, GetPosition(), Vector::GetZero())`.

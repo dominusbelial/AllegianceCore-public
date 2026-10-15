@@ -1,4 +1,6 @@
 using Allegiance.Lobby;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 // Program.cs — written by hand (no `dotnet new web` scaffold). The repo's root
 // Directory.Build.props forces TreatWarningsAsErrors=true for every project, and the
@@ -16,11 +18,20 @@ builder.Configuration.GetSection("Lobby").Bind(settings);
 
 // TimeProvider is registered as a singleton so tests can swap in a fake clock; the
 // ServerRegistry depends on it rather than sampling DateTime.UtcNow itself.
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 16 * 1024);
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = settings.KnownProxies.Count > 0 ? ForwardedHeaders.XForwardedFor : ForwardedHeaders.None;
+    options.ForwardLimit = 1;
+    options.KnownProxies.Clear();
+    options.KnownIPNetworks.Clear();
+    foreach (var proxy in settings.KnownProxies) options.KnownProxies.Add(IPAddress.Parse(proxy));
+});
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(sp => new ServerRegistry(
     sp.GetRequiredService<TimeProvider>(),
     settings.MaxEntries,
-    TimeSpan.FromSeconds(settings.MaxAgeSeconds)));
+    TimeSpan.FromSeconds(settings.MaxAgeSeconds), settings.MaxEntriesPerAddress));
 
 builder.Services.AddLobbyRateLimiting();
 builder.Services.AddHostedService(sp => new ExpirySweepService(
@@ -31,6 +42,16 @@ builder.Services.AddHostedService(sp => new ExpirySweepService(
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+app.Use(async (context, next) =>
+{
+    if (context.Request.ContentLength > 16 * 1024)
+    {
+        context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+        return;
+    }
+    await next(context);
+});
 app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();

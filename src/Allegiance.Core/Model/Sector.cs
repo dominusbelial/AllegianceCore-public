@@ -3655,6 +3655,10 @@ public sealed class Sector : IClusterIgc
         {
             if (model is not Ship ship) continue;
             if (ship.Dead) continue;                      // the dead cannot dock
+            // Boarded children dock with their parent, never from an independent
+            // collision at their old position (native Igc/shipIGC.cpp:271;
+            // FedSrv/FedSrv.CPP:13165-13173 ChangeStation).
+            if (ship.ParentShip is not null) continue;
             if (ship.Mission is null) continue;          // unplaced ship has no host
             if (ship.StationId is not null) continue;    // already docked (latch)
             if (ship.SideId is not { } side) continue;   // no side ⇒ nothing is friendly (native pside == psideOld impossible)

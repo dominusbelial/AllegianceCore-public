@@ -277,7 +277,78 @@ transport modes and hostile-input regressions. See the
 [P673 report](reports/P673_RECEIVE_DECOUPLE.md) and
 [verification ledger](reports/P673_RESULTS.json).
 
+## P655 observation (2026-10-14)
+
+During movement/state integrity verification, these existing receipt tests
+failed in an earlier integration/isolation attempt and then passed **3/3
+individually**:
+
+| Test | Observation |
+| --- | --- |
+| `LiveRipcordTests.Re_target_activates_to_requester_only` | First isolated run missed the requester receipt; two subsequent passes, then a fresh 3/3. |
+| `LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown` | Earlier full-run countdown receipt failure; fresh 3/3. |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | Earlier full-run roster receipt failure; fresh 3/3. |
+| `ConquestTerritoryLiveTests.Conquest_win_in_one_mission_does_not_leak_to_another` | Earlier integration receipt failure; fresh 3/3. |
+
+The final sequential Core/ClientCore/MonoGame/lobby pass reported five failures.
+After **all four suites finished**, each passed a fresh **3/3 individual runs**:
+
+| Test | Full-run failure |
+| --- | --- |
+| `Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies` | Shutdown called Thread.Join before the thread started (ThreadStateException). |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Owner's loadout-change receipt was still empty after the teammate's receipt arrived. |
+| `LiveWinConditionTests.Board_refused_once_mission_over` | Existing LiveTiming control-leg board handshake timed out. |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | Logon drain order differed from connection order, yielding sides 0/1/0. |
+| `BotAcceptsAndEngagesOrderLiveTests.ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget` | Bot's accepted-target slot was not observed before the deadline, despite the visible commanded target. |
+
+Classification follows P655's explicit full-failure/3-clean-isolations lane rule;
+it does not establish a product-level root cause for the shutdown race.
+
+**P655b correction:** the bot-order entry above is a confirmed P655 regression,
+not a load flake. Claude reproduced it 3/3 on P655 and observed 2/2 passes on
+the base. P655 applied current visibility to ORDER_CHANGE acceptance; the MCP
+bot sends that acceptance once, so detection arriving later could not recover
+the accepted slot. A deterministic packet regression reproduces the failure
+before the fix, independent of load. P655b restores native command-slot writes
+without that visibility gate and retains ownership and missile-visibility
+checks. See the report's [P655b section](reports/P655_GAME_STATE_INTEGRITY.md#p655b).
+The earlier three successful isolations did not establish that this path was
+correct, and the prior classification is withdrawn.
+
+No assertion was relaxed and no quarantine trait was added for these observations.
+Deterministic failures caused by fixtures flying while docked, joining a baseless
+third side after Started, or assuming unauthenticated harness grants were corrected
+and verified 3/3; those are fixture changes, not load flakes. Flood fixtures now
+start and launch their healthy peers, and wait for the asserted wire receipt.
+See [P655_GAME_STATE_INTEGRITY.md](reports/P655_GAME_STATE_INTEGRITY.md) and
+[P655_RESULTS.json](reports/P655_RESULTS.json) for verification evidence.
+
+## P655b observation (2026-10-14)
+
+The commanded-bot regression is corrected as described above; its previous
+load-flake classification is withdrawn. It passed 3/3 alone and in all three
+full ClientCore runs after the fix.
+
+The unfiltered Core run reported two other failures. After all complete suites
+finished, both passed **3/3 individually**, meeting the brief's load-flake rule:
+
+| Test | Full-run observation |
+| --- | --- |
+| `AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide` | `SeatThree` could not find a same-side observer for the first connection's assigned ship; setup failed before reload. |
+| `StationBucketSpawnsConstructorLiveTests.Completing_station_type_bucket_spawns_waiting_constructor_and_build_order_builds` | Timed out waiting for the Build order to start construction. |
+
+No assertion, deadline, fixture or quarantine trait was changed for these two
+observations. No additional test failed 3/3 alone. See the
+[P655b report](reports/P655_GAME_STATE_INTEGRITY.md#p655b) and
+[per-run evidence](reports/P655B_RESULTS.json).
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
+
+**P655c update:** the game-over roster, conquest scope and side-only elimination
+rows below have concrete peer-role/receipt fixture fixes. Their earlier
+"inherently timing-sensitive" diagnosis is superseded by the
+[P655c measurements and controls](reports/P655_GAME_STATE_INTEGRITY.md#p655c).
+The existing traits remain for this change.
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition
 wait makes it deterministic — the wire receipt it waits on is inherently
@@ -484,3 +555,24 @@ by restricting Poll to `Blocking:false` sockets.
 3. **(closed P472)** Surviving live tests' waits converted where flaky (`Board_refund`
    dock-precondition; `Multi_mission` seating-order hardened).
 4. Residual load-flakes ranked in the After table; swept by P647.
+
+## P655c correction (2026-10-15)
+
+Repeated game-over/conquest failures are not dismissed on the basis of three
+clean isolations. The starting P655 branch's roster class passed 11/15 here,
+versus 14/15 on `integ3`; its immediate pre-P655 parent also passed 11/15.
+`integ3` has different cross-mission fixtures: it resolves recipients from
+actual mission assignments and waits for roster receipt. The P655 branch
+lacked those changes. Its named spawn-slot assumptions also affected the
+single-mission winner/loser assertion and three-side elimination fixture.
+These are concrete fixture defects, not proof of dropped game-over messages
+or evidence that a P655 authority check should be removed.
+
+P655c binds named roles to completed joins and waits for all asserted peer
+notifications. A separate native-parity change batches GAME_OVER and roster
+chunks before reset; the client now accumulates native 50-player chunks.
+The original server passes the corrected roster/conquest fixtures 15/15 each;
+the batching change alone still passes the original roster fixture only 11/15.
+See the [P655c report](reports/P655_GAME_STATE_INTEGRITY.md#p655c) and its
+per-run evidence for final-tree rates, side elimination, P660 repetitions,
+and complete suite results. Existing quarantine traits are unchanged.

@@ -170,7 +170,7 @@ public sealed partial class Server
                 foreach (var sector in m.Sectors)
                     foreach (var rip in sector.DrainRipcordAborts())
                         if (rip.Sector is { } ripSec)
-                            SendRipcordSectorWide(ripSec.Id,
+                            SendRipcordSectorWide(ripSec,
                                 new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
         });
         // P113 — perform the ripcord teleports whose countdowns reached zero
@@ -483,7 +483,7 @@ public sealed partial class Server
                     + pu.DroppedCookie + pu.DroppedNoShip + pu.DroppedPreGame
                     + pu.DroppedBoarded + pu.DroppedNotInCluster == 0) continue;
                 string mean = pu.RejectCount > 0 ? (pu.RejectDistanceSum / pu.RejectCount).ToString("0.##") : "n/a";
-                Console.WriteLine($"[ctrlak] peer {kv.Key} ship-update summary: accepted={pu.Accepted} rejected={pu.Rejected} out-of-date={pu.OutOfDate} invalid={pu.Invalid} mean-reject-dist={mean}m (cookie 0x{pu.Cookie:X2})"
+                Console.WriteLine($"[ctrlak] peer {kv.Key} ship-update summary: corrections-total={pu.TotalCorrections} replay={pu.DroppedReplay} same-tick={pu.DroppedSameTick} accepted={pu.Accepted} rejected={pu.Rejected} out-of-date={pu.OutOfDate} invalid={pu.Invalid} mean-reject-dist={mean}m (cookie 0x{pu.Cookie:X2})"
                     + (pu.DroppedCookie + pu.DroppedNoShip + pu.DroppedPreGame + pu.DroppedBoarded + pu.DroppedNotInCluster > 0
                         ? $" dropped[cookie={pu.DroppedCookie} noship={pu.DroppedNoShip} pregame={pu.DroppedPreGame} boarded={pu.DroppedBoarded} notincluster={pu.DroppedNotInCluster}]"
                         : ""));

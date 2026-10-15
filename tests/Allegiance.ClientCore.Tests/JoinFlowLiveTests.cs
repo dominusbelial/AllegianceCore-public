@@ -117,6 +117,9 @@ public class JoinFlowLiveTests
         Assert.True(started < 2000, $"mission never reached Started after single-peer ready-up (stage={server.Missions[0].Stage})");
 
         // Command nonzero forward thrust, then pump several real server ticks.
+        session.SendDocked();
+        Assert.True(PumpUntil(server, () => server.Ships.Single(l => l.Ship.Id == id).Ship.StationId is null, 4000) < 4000,
+            "the ship must launch before commanded movement");
         session.CommandControls(new ControlData(0f, 0f, 0f, 1f), ShipControlState.ForwardButton);
 
         int moveTicks = PumpUntil(server,

@@ -1565,6 +1565,7 @@ public sealed partial class ClientWorld
         _countdownClockLocalMs = null;
         _mission = null;
         _gameOver = null;
+        _gameOverPlayers = [];
         _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
@@ -3822,16 +3823,19 @@ public sealed partial class ClientWorld
         // for the on-screen result panel. The stage is NOT touched here; see
         // the class remark above (P481).
         _gameOver = gameOver;
+        // A GAME_OVER begins a new result; following native 50-player chunks
+        // update the same roster (clintlib/appmsg.cpp:3048-3111).
+        _gameOverPlayers = [];
     }
 
     /// <summary>FM_S_GAME_OVER_PLAYERS(63) — the per-player endgame roster the
     /// server sends alongside GAME_OVER (P583): each connected player's score
     /// and counter breakdown (kills/deaths/ejections/rescues/baseKills/
-    /// baseCaptures/artifacts/flags). Replace-on-arrival; the game-over screen
-    /// reads <see cref="GameOverPlayersList"/>.</summary>
+    /// baseCaptures/artifacts/flags). Accumulate native's 50-player chunks
+    /// until the next GAME_OVER; the game-over screen reads <see cref="GameOverPlayersList"/>.</summary>
     private void Apply(GameOverPlayers players)
     {
-        _gameOverPlayers = players.Entries;
+        _gameOverPlayers = [.. _gameOverPlayers, .. players.Entries];
     }
 
     /// <summary>P481 — dismiss the game-over result panel (the Back action's

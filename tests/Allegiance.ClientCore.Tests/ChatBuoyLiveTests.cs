@@ -77,6 +77,7 @@ public class ChatBuoyLiveTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var mission in server.Missions) mission.Stage = Allegiance.Core.Sim.MissionStage.Started;
 
         using var sender = new ConnectionSession();
         using var receiver = new ConnectionSession();
@@ -148,6 +149,7 @@ public class ChatBuoyLiveTests
             return (ship, sector);
         });
         server.Boot(Config("ChatBuoy Individual"));
+        foreach (var mission in server.Missions) mission.Stage = Allegiance.Core.Sim.MissionStage.Started;
 
         using var sender = new ConnectionSession();
         using var receiver = new ConnectionSession();

@@ -64,7 +64,14 @@ public sealed class P651EquipmentLiveTests
         Until(server, () => session.World.MyShipId is not null && session.World.MissileLock.MissileName.Length > 0);
         Assert.False(session.World.MissileLock.IsReady);
         session.SendOrderChange(ship!.Id, OrderChange.CidAttack, OrderChange.CmdCurrent, type, targetId);
-        Until(server, () => session.World.MissileLock.TargetId == targetId && session.World.MissileLock.TargetType == type);
+        // Command selection may precede detection (P655b), while firing
+        // rechecks CanSee (H-25). Wait for the real scanner sweep as well as
+        // the command echo before sending this one-shot early-fire request.
+        Until(server, () => session.World.MissileLock.TargetId == targetId && session.World.MissileLock.TargetType == type
+            && EquipmentTarget.CanSee(ship.CommandTarget!, ship.SideId!.Value, ship.Sector!));
+        Assert.False(session.World.MissileLock.IsReady);
+        Assert.True(ship.Parts.Single().TimeLoaded > ship.Mission!.LastUpdate + 0.5,
+            "the request must still be early enough to create a dud");
         session.SendFireMissile();
         Until(server, () => ship.Sector!.Models.OfType<Missile>().Any());
         Assert.True(ship.Sector!.Models.OfType<Missile>().First().IsDud);

@@ -23,6 +23,13 @@ public sealed class GameConfig
     /// <summary>Number of sides. Sides are built for ids 0..Teams-1.</summary>
     public int Teams { get; init; }
 
+    /// <summary>P655: native nMaxPlayersPerTeam; supports the 200v200 lane.</summary>
+    public int MaxPlayersPerTeam { get; init; } = 256;
+
+    /// <summary>Native iMaxImbalance; 32767 disables balance; default 1 matches native.
+    /// Applied after NotStarted (FedSrv/fsmission.cpp:4614-4626).</summary>
+    public int MaxTeamImbalance { get; init; } = 1;
+
     /// <summary>Per-team <c>rgCivID[]</c> — indexes <see cref="ServerConfig.StaticCore"/>
     /// civilizations. Length must be &gt;= Teams.</summary>
     public int[] CivIds { get; init; } = [];
@@ -173,7 +180,7 @@ public sealed class LiveSettingsConfig
 
     /// <summary>Clamp a proposed scale into [<see cref="MinTimeScale"/>, <see cref="MaxTimeScale"/>].</summary>
     public static double ClampTimeScale(double v) =>
-        Math.Clamp(v, MinTimeScale, MaxTimeScale);
+        double.IsFinite(v) ? Math.Clamp(v, MinTimeScale, MaxTimeScale) : MaxTimeScale;
 
     /// <summary>
     /// P618 — the load-driven time-dilation mode (<c>sim.timeDilation</c>):
@@ -242,7 +249,7 @@ public sealed class LiveSettingsConfig
     /// enabled it is a PORT EXTENSION (native has no money/tech cheat —
     /// <c>fCanCheat</c> only relaxes rank limits and win checks,
     /// FedSrv/fsship.h:337-339, fsmission.cpp:1877,3810): it applies ONLY to a
-    /// connection whose character name starts with <see cref="TestHarnessConfig.CharacterNamePrefix"/>
+    /// authenticated connection whose name starts with <see cref="TestHarnessConfig.CharacterNamePrefix"/>
     /// (so a real player can never receive it), grants that wallet at seat, and
     /// can skip the BUY_LOADOUT tech gate while still charging real prices
     /// through the real debit path. Loudly logged at boot and once per granted
@@ -287,17 +294,18 @@ public sealed class LiveSettingsConfig
 /// </summary>
 public sealed class TestHarnessConfig
 {
+    /// <summary>P655: bearer presented in LOGONREQ.CDKey. Without a configured
+    /// secret, grants require an actual loopback socket. Never trust names alone.</summary>
+    public string? Secret { get; set; }
+
     /// <summary>Master switch. <c>false</c> (the default, and the meaning of an
     /// absent <c>testHarness</c> section) leaves behaviour byte-identical to
     /// P441 — no money grant, no tech-gate bypass, for anyone.</summary>
     public bool Enabled { get; set; }
 
     /// <summary>The character-name prefix that marks a connection as a test
-    /// harness. Only a connection whose <c>LogonRequest.CharacterName</c>
-    /// starts with this (ordinal, case-sensitive) is eligible for the grant —
-    /// the guarantees that a human's random character name never matches and
-    /// the grant never touches real players. Defaults to <c>"mcp-"</c>, the
-    /// prefix the MCP and vizfight bot character names now use.</summary>
+    /// harness. A matching prefix is an eligibility filter; the configured
+    /// secret or a verified loopback socket is also required. Defaults to mcp-.</summary>
     public string CharacterNamePrefix { get; set; } = "mcp-";
 
     /// <summary>The wallet granted to a harness connection on seat, in credits.
@@ -391,15 +399,9 @@ public sealed class AdminCheatsConfig
     /// ship only (see the token docs) — never on an arbitrary ship.</summary>
     public List<string> AllowNames { get; set; } = [];
 
-    /// <summary>P602 — optional shared secret. When set (non-empty), an
-    /// allow-listed connection is trusted ONLY if its cheat line presents this
-    /// secret as the leading whitespace-delimited token
-    /// (<c>"&lt;secret&gt; relocate …"</c>); a line without it is treated as
-    /// ordinary chat and never as a cheat. When unset (the default), the
-    /// LAN/demo behaviour is unchanged: name-only matching. The 221 test server
-    /// and allegiance-mcp rely on the unset (name-only) default; leave it unset
-    /// unless you need defence-in-depth against a spoofed name on a shared
-    /// network.</summary>
+    /// <summary>P655: bearer sent in LOGONREQ.CDKey, or as the first token of
+    /// an admin command. Required for remote cheats and spectator access. With
+    /// no secret, only server-verified loopback sockets are eligible.</summary>
     public string? Secret { get; set; }
 }
 

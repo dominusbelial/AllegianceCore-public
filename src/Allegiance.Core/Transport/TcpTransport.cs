@@ -482,6 +482,12 @@ public sealed class TcpTransport : ITransport
     public void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
         => Send(target, data, guaranteed: true, coalesceKey);
 
+    /// <summary>Server-observed socket provenance; never uses greeting/name data.</summary>
+    public bool IsPeerLoopback(ConnectionId id)
+    {
+        lock (_gate) return _peers.TryGetValue(id, out var peer) && peer.IsLoopback;
+    }
+
     /// <summary>
     /// P619c — mark a connection as a connected HUMAN client (the server calls
     /// this when a non-harness character name — anything not under the MCP
@@ -1275,6 +1281,7 @@ public sealed class TcpTransport : ITransport
 
         private readonly NetworkStream _stream;
         private readonly TcpClient _tcpClient;
+        public bool IsLoopback { get; }
         private readonly Action<DisconnectReason> _onDead;
         private readonly CancellationTokenSource _cts = new();
         // P634 — TWO per-peer send lanes instead of one shared FIFO. Join and
@@ -1363,6 +1370,7 @@ public sealed class TcpTransport : ITransport
 
         public PeerSender(NetworkStream stream, TcpClient tcpClient, Action<DisconnectReason> onDead)
         {
+            IsLoopback = tcpClient.Client.RemoteEndPoint is IPEndPoint ep && IPAddress.IsLoopback(ep.Address);
             _stream = stream;
             _tcpClient = tcpClient;
             _onDead = onDead;

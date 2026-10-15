@@ -100,6 +100,7 @@ public class MissileFireTests
         target.SideId = 1;
 
         shooter.Orientation.Set((tpos - shooter.Position).Normalize());   // face the target (angle-off-bow 0)
+        target.SideVisibility.SetSideVisibility(0, true); // lock fixture has a detected target
         shooter.CommandTarget = target;
         return (shooter, target);
     }

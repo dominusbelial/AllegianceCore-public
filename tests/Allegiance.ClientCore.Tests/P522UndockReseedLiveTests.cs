@@ -147,6 +147,14 @@ public sealed class P522UndockReseedLiveTests
     /// </summary>
     private static (long Rejects, long Resets) RunArc(Srv server, ConnectionSession session, bool reseedOnResume)
     {
+        bool verbose = ConsoleLog.Verbose;
+        ConsoleLog.Verbose = true;
+        try { return RunArcCore(server, session, reseedOnResume); }
+        finally { ConsoleLog.Verbose = verbose; }
+    }
+
+    private static (long Rejects, long Resets) RunArcCore(Srv server, ConnectionSession session, bool reseedOnResume)
+    {
         var sim = new OwnShipSimulator();
         var clock = new OwnShipServerClock();
         byte cookie = 0;
@@ -222,7 +230,7 @@ public sealed class P522UndockReseedLiveTests
         // ── Baseline: park at open space, sim glued — accepted climbs. Any
         //    initial clock-settle rejects are excluded by summing only the
         //    undock+settle deltas below.
-        serverShip.Position = openSpace;
+        Assert.True(server.RelocateShipToSector(serverShip, serverShip.Sector!, openSpace, serverShip.Orientation.GetForward()));
         long acc0 = Pu(server, "Accepted");
         for (int i = 0; i < 100 && Pu(server, "Accepted") < acc0 + 6; i++) Fly(glue: true, n: 1);
         if (Pu(server, "Accepted") < acc0 + 6)
@@ -233,7 +241,7 @@ public sealed class P522UndockReseedLiveTests
         {
             // ── Park at open space + drain in-flight sends (so the teleport-dock
             //    cannot race an in-flight update into a spurious reject).
-            serverShip.Position = openSpace;
+            Assert.True(server.RelocateShipToSector(serverShip, serverShip.Sector!, openSpace, serverShip.Orientation.GetForward()));
             Fly(glue: true, n: 10);
             RawPace(15);
             double staleDistance = (sim.Position - stationCenter).Length();

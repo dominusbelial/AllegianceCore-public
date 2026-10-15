@@ -286,7 +286,7 @@ internal sealed partial class BotManager : IDisposable
     private static LogonRequest Request(string name) => new()
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
-        CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
+        CDKey = Environment.GetEnvironmentVariable("ALLEGIANCE_PRIVILEGE_SECRET") ?? "ABCDEFGHIJKL", MissionPassword = "pw",
         FedsrvVer = LogonRequest.MsgVer, Time = 911u, DwCookie = 0xC0FFEEu,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 76000000000000000ul, DrmHash = "allegiance-mcp",

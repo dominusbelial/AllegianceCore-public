@@ -3,6 +3,8 @@ using System.Reflection;
 using System.Text.Json;
 using Allegiance.Lobby;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
@@ -22,6 +24,22 @@ namespace Allegiance.Core.Tests;
 /// </summary>
 internal sealed class LobbyHarness : WebApplicationFactory<Allegiance.Lobby.ServerRegistry>
 {
+    protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+        => builder.ConfigureServices(services => services.AddSingleton<IStartupFilter, SourceAddress>());
+
+    private sealed class SourceAddress : Microsoft.AspNetCore.Hosting.IStartupFilter
+    {
+        public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
+            => app =>
+            {
+                Microsoft.AspNetCore.Builder.UseExtensions.Use(app, async (context, continuation) =>
+                {
+                    context.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+                    await continuation();
+                });
+                next(app);
+            };
+    }
 }
 
 /// <summary>
