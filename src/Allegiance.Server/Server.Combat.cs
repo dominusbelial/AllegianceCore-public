@@ -511,6 +511,22 @@ public sealed partial class Server
     /// direct caller of a Ship mutation method), reaching the sim-thread-owned
     /// <c>_peerShips</c> map the same way the other broadcasts do.
     /// </summary>
+    private void BroadcastWeaponReady(Ship ship, string partName)
+    {
+        // Native weaponIGC.h:44-46 is local IGC audio/text; reuse this port's
+        // owner-directed chat transport to carry both without a new FMID.
+        var message = new ChatMessage
+        {
+            SidSender = -1, ChatTarget = (int)ChatTarget.Individual,
+            OidRecipient = ship.Id, VoiceOver = WeaponReadyCue.SoundId,
+            CommandID = OrderChange.CidNone, OidTarget = -1, OtTarget = -1,
+            Message = $"{partName} ready."
+        };
+        var packet = FedPacket.Pack(new[] { message.Encode() });
+        foreach (var (connection, peer) in _peerShips)
+            if (ReferenceEquals(peer.Ship, ship)) _host.Send(connection, packet);
+    }
+
     private void BroadcastLoadoutChange(IShipIgc pship, IPartIgc ppart, LoadoutChange lc)
     {
         if (pship is not Ship ship)

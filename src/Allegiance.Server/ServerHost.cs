@@ -425,6 +425,9 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <see cref="ProjectileCreated"/>/<see cref="MissileDestroyed"/> hooks bridge;
     /// everything else keeps the interface default.</summary>
     public Action<IShipIgc, IPartIgc, LoadoutChange>? LoadoutChange;
+    public bool QueueRipcordUse => true;
+    public Action<Ship, string>? WeaponReadyNotification;
+    public void WeaponReady(Ship ship, string partName) => WeaponReadyNotification?.Invoke(ship, partName);
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.LoadoutChangeEvent"/>: raise the
     /// <see cref="LoadoutChange"/> hook so the owning <see cref="Server"/> can

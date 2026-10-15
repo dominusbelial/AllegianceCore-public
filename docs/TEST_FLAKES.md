@@ -351,3 +351,21 @@ by restricting Poll to `Blocking:false` sockets.
 3. **(closed P472)** Surviving live tests' waits converted where flaky (`Board_refund`
    dock-precondition; `Multi_mission` seating-order hardened).
 4. Residual load-flakes ranked in the After table; swept by P647.
+
+
+## P676 observation (2026-10-15)
+
+Final unfiltered sequential suites: Core **4352 pass / 2 fail / 0 skip**, ClientCore **945 pass / 1 fail / 0 skip**, MonoGame **2151 pass / 0 fail / 3 skip**. The opt-in local 15v15 next-match showcase passed. The final local 15v15 battle recorded 5 kills; the real MCP purchase/death/pod/relaunch/refire check passed 3/3 alone.
+
+All observed receipt failures passed 3/3 exact-method isolated retries after all three final suites. These are load/receipt flakes under the task lane rule. No timing-only product changes, assertion relaxations, or quarantine changes were made.
+
+| Test | Symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | System.InvalidOperationException : logon drain order diverged from connection order — peer2 side 0 not cross-side (0, 1, 0); determinism broken | 3/3 pass |
+| `Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+
+See [P676 report](reports/P676_PARITY_WAVE4B.md) and [invocation ledger](reports/P676_RESULTS.json). The report separately explains the native-law fixture corrections; those are not classified as load flakes.

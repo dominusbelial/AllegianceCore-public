@@ -86,6 +86,12 @@ public sealed class Mission
     /// <summary>Native bAllowFriendlyFire (shipIGC.cpp:1222-1228). Defaults off.</summary>
     public bool AllowFriendlyFire { get; set; }
 
+    /// <summary>FedSrv/fsmission.cpp:2520: periodic income requires developments.</summary>
+    public bool AllowDevelopments { get; set; } = true;
+
+    /// <summary>FedSrv/FedSrv.CPP:13387-13417: permit allied ripcord anchors.</summary>
+    public bool AllowAlliedRip { get; set; }
+
     /// <summary>Allied side pairs for native AlliedSides damage immunity
     /// (shipIGC.cpp:1224). Either ordering represents the same alliance.</summary>
     public HashSet<(short, short)> AlliedSidePairs { get; } = [];
@@ -645,16 +651,19 @@ public sealed class Mission
         // Distribution to players (delta split + FM_S_PAYDAY send + deduction)
         // lives in the host's PaydayEvent handler, mirroring the split between
         // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
-        if (NextPaydayTime == 0)
+        if (Stage == MissionStage.Started && NextPaydayTime == 0)
             NextPaydayTime = now + SecondsBetweenPaydays;     // fsmission.cpp:2253 (seeded at start + 60)
-        if (now >= NextPaydayTime)
+        if (Stage == MissionStage.Started && now >= NextPaydayTime)
         {
-            foreach (var side in Sides)
+            if (AllowDevelopments) // fsmission.cpp:2520
             {
-                long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
-                            + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
-                side.Money += income;                          // fsmission.cpp:2536
-                Site.PaydayEvent(side, income);                // site seam → host payout
+                foreach (var side in Sides)
+                {
+                    long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
+                                + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
+                    side.Money += income;                          // fsmission.cpp:2536
+                    Site.PaydayEvent(side, income);                // site seam → host payout
+                }
             }
             NextPaydayTime += SecondsBetweenPaydays;           // keep phase (fsmission.cpp:2519)
         }

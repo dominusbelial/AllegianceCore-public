@@ -1057,6 +1057,11 @@ public sealed partial class Game1
 
         foreach (var m in toVoice)
         {
+            if (Allegiance.Core.Sim.WeaponReadyCue.Resolve(m.VoiceOver) is { } readyStem)
+            {
+                _sound.PlayVoice(readyStem);
+                continue;
+            }
             // P451 — a chat whose VoiceOver is one of the real station types'
             // under-attack / critical ids (sent by the defending-team alert in
             // FedSrvSiteBase::DamageStationEvent) plays the matching clip. Unlike

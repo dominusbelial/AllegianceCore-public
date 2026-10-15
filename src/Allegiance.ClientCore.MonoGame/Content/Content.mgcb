@@ -2563,3 +2563,9 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_sectorcrowded.ogg
+
+#begin Sounds/unmount.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/unmount.ogg
