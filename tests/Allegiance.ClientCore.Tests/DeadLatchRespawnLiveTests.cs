@@ -235,7 +235,8 @@ public sealed class DeadLatchRespawnLiveTests
     /// station, ENTER_LIFEPOD). Picks a projectile damage type whose armor factor
     /// against this hull's defense type is &gt; 0 (a zero-factor type would deal no
     /// damage and never kill) and a huge amount so the armor factor cannot save the
-    /// hull. Returns whether the ship actually died (the bLifepod real-death path).</summary>
+    /// hull. Returns whether lethal damage took the bLifepod real-death path,
+    /// with the replacement pod already alive and docked.</summary>
     private static bool KillShipForReal(Srv server, Ship ship)
     {
         var mission = ship.Mission!;
@@ -251,9 +252,17 @@ public sealed class DeadLatchRespawnLiveTests
         // scales the leaked damage — cannot save the hull; 2× survives any factor
         // < 0.5. fraction -= amount·dtm/maxHP = multiplier·fraction·dtm, so a big
         // multiplier kills for any dtm > 0 without overflowing the float.
-        ship.ReceiveDamage(dmgType, ship.HitPoints * 1e6f, mission.LastUpdate, ship.Position, ship.Position, launcher: null);
+        Assert.True(ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod),
+            "a pod's lethal hit must take true death, not in-space ejection");
+        var result = ship.ReceiveDamage(dmgType, ship.HitPoints * 1e6f, mission.LastUpdate, ship.Position, ship.Position, launcher: null);
+        // Native restart synchronously assigns a full-health pod before returning
+        // (FedSrv.CPP:12052-12065; shipIGC.cpp:1435). Dead after this call was
+        // P653d's bug, not evidence that lethal damage ran the death branch.
+        Assert.False(ship.Dead);
+        Assert.Equal(1.0f, ship.Fraction);
+        Assert.NotNull(ship.StationId);
         Console.WriteLine($"[P521-LIVE] dealt lethal damage type {dmgType} to ship {ship.Id} (hull {ship.HullType.Name}, dead={ship.Dead})");
-        return ship.Dead;
+        return result == DamageResult.Killed;
     }
 
     [Trait("Requires", "Artwork")]

@@ -2603,12 +2603,22 @@ public sealed partial class Server
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: {why} — REFUSED (ship unchanged; ack fbought=false fLaunch=false)");
         }
 
-        // Native FedSrv.CPP:6153-6172: docked, alive/non-ghost, side, unboarded.
-        if (ship.StationId is null || ship.Dead || ship.ParentShip is not null
-            || ship.SideId is not >= 0 || stationType is null || side is null
-            || buy.Parts.Count > BuyLoadoutRequest.MaxParts || buy.Parts.Any(p => p.Amount < 0))
+        // Native FedSrv.CPP:6153-6172 requires a dock, a real side and no
+        // parent. IsGhost means exhausted lives (shipIGC.h:2465-2469), NOT
+        // zero hull fraction. Dead is an additional port integrity guard: both
+        // eject and restart must restore the pod before it can reach this point.
+        var failures = new List<string>();
+        if (ship.StationId is null) failures.Add("not_docked");
+        if (ship.Dead) failures.Add("dead_fraction");
+        if (ship.ParentShip is not null) failures.Add($"boarded_parent={ship.ParentShip.Id}");
+        if (ship.SideId is not >= 0) failures.Add($"invalid_side={ship.SideId}");
+        if (stationType is null) failures.Add($"unresolved_station={ship.StationId}");
+        if (side is null) failures.Add("unresolved_side");
+        if (buy.Parts.Count > BuyLoadoutRequest.MaxParts) failures.Add($"too_many_parts={buy.Parts.Count}");
+        if (buy.Parts.Any(p => p.Amount < 0)) failures.Add("negative_part_amount");
+        if (failures.Count != 0)
         {
-            Refuse("purchase requires a live unboarded ship docked at a valid station and a bounded nonnegative loadout");
+            Refuse($"purchase preconditions: {string.Join(", ", failures)} (hull={ship.HullType.HullId}, fraction={ship.Fraction})");
             return;
         }
 

@@ -287,6 +287,9 @@ public sealed class P653EconomyLoadoutIntegrityTests
     [InlineData("dead")]
     [InlineData("boarded")]
     [InlineData("missing_station")]
+    [InlineData("lobby_side")]
+    [InlineData("unknown_side")]
+    [InlineData("missing_station_type")]
     public void H06_Invalid_purchase_state_fails_and_docked_purchase_launches(string state)
     {
         using var w = new World();
@@ -297,10 +300,18 @@ public sealed class P653EconomyLoadoutIntegrityTests
         if (state == "dead") w.Buyer.SetFraction(0);
         if (state == "boarded") w.Buyer.ParentShip = w.Mate;
         if (state == "missing_station") w.Buyer.StationId = short.MaxValue;
+        if (state == "lobby_side") w.Buyer.SideId = -1;
+        if (state == "unknown_side") w.Buyer.SideId = short.MaxValue;
+        var stationData = w.Sector.Stations.First(st => st.StationId == station);
+        var stationTypes = (Dictionary<short, DataStationTypeIGC>)w.Mission.Core.StationTypes;
+        var stationType = stationTypes[stationData.StationTypeId];
+        if (state == "missing_station_type") stationTypes.Remove(stationType.StationTypeId);
         w.Buy(new ExpandedPartData(gun.PartId, 1, 0, 255));
         Assert.Empty(w.Buyer.Parts);
         Assert.Equal(100, w.Wallet.Money);
         w.Buyer.StationId = station;
+        w.Buyer.SideId = 0;
+        stationTypes[stationType.StationTypeId] = stationType;
         w.Buyer.SetFraction(1);
         w.Buyer.ParentShip = null;
         w.Send(new BuyLoadoutRequest { HullId = w.Buyer.HullType.HullId, FLaunch = true, Parts = [new(gun.PartId, 1, 0, 255)] });

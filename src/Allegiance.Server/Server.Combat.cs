@@ -1783,6 +1783,12 @@ public sealed partial class Server
 
         MoveShipToSector(victim, destSector);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067), not just the back-ref
         victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
+        // P653d: native SetBaseHullType restores m_fraction to 1 even when
+        // assigning the same pod hull (shipIGC.cpp:1352-1359,1435). ChangeHull
+        // is a hull-only primitive in this port, so restore the restart here,
+        // just as EjectSurvivor does. Otherwise lethal damage leaves a docked
+        // pod Dead and every subsequent purchase/boarding/teleport is refused.
+        victim.SetFraction(1.0f);
         victim.StationId = dest.StationId; // SetStation + ShipStatusDocked (FedSrv.CPP:12064-12065)
         victim.LastDockTime = _simNow;     // P381: dock clock (lifepod respawn is a dock latch)
 
@@ -2191,21 +2197,10 @@ public sealed partial class Server
 
         victim.ChangeHull(pht);                 // SetBaseHullType(pht), FedSrv.CPP:11942
 
-        // P308 — an ejected lifepod must be born ALIVE, not dead. Ship.ReceiveDamage
-        // zeroes _fraction BEFORE raising KillShipEvent (Ship.cs:3131-3132), and
-        // ChangeHull/SetBaseHullType is documented NOT to reset it ("a lifepod is
-        // still the dead ship", Ship.cs:194-196), so without this the pod is born
-        // with Dead == true and stays that way forever — silently disabling every
-        // downstream gate the eject mechanic exists for (Sector.ResolveRescueEvents
-        // requires !s.Dead, Sector.cs:772; GetShipUpdateCandidates skips dead ships,
-        // Sector.cs:410; the combat/mine/explosion passes all skip dead ships). The
-        // port's faithful stand-in for native's behaviour: native keeps an ejected
-        // pod operational (its rescue is collision-based with NO Dead gate,
-        // shipIGC.cpp:1033-1036, and GetShipUpdateCandidates/combat don't filter by
-        // fraction-death) without ever naming an eject fraction — so restoring the
-        // pod to FULL hull is the natural "fresh intact pod" value, and it is
-        // native's own canonical "make a ship whole" number (SetFraction(1.0f),
-        // FedSrv.CPP:12759/12950, 12954; shipIGC.h:311-318).
+        // P308/P653d: native SetBaseHullType restores hull fraction to 1
+        // (shipIGC.cpp:1435). This port's ChangeHull leaves fraction to its
+        // caller, so restore the operational pod explicitly on ejection as
+        // well as on the true-death restart above (FedSrv.CPP:11942,12052).
         victim.SetFraction(1.0f);
 
         // ── position / orientation / velocity math (FedSrv.CPP:11944-12006) ──

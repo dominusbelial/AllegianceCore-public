@@ -245,11 +245,9 @@ public sealed class Ship : Model, IShipIgc
     /// <c>CshipIGC::SetBaseHullType</c> (<c>shipIGC.cpp:1352</c>) used by the
     /// death-respawn slice (P105) to turn a dead player's ship into their
     /// side's Lifepod hull (<c>FedSrv.CPP:12052</c> <c>pship-&gt;SetBaseHullType(pht)</c>).
-    /// Matches the subset of the native function that matters here: it
-    /// <b>does not</b> reset the hull fraction (a lifepod is still the dead
-    /// ship; native <c>SetBaseHullType</c> never touches <c>m_fraction</c>),
-    /// and this port has no damage-track / turreted-child / garaged-parts
-    /// machinery to clear. Zeroes <c>StateM</c> like the native
+    /// This hull-only primitive preserves hull fraction; lifecycle and purchase
+    /// callers supply native's <c>m_fraction = 1.0f</c> reset
+    /// (<c>shipIGC.cpp:1435</c>). Zeroes <c>StateM</c> like native
     /// <c>SetStateM(0)</c> (<c>shipIGC.cpp:1356</c>). Writing
     /// <see cref="_hull"/> in place flows <see cref="HullType"/>, <see cref="Mass"/>
     /// and the downstream damage / status readers automatically.
