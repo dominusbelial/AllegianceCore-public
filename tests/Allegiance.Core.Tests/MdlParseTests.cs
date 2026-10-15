@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using Allegiance.Core;
 using Allegiance.TestInfra;
 
@@ -152,5 +153,34 @@ public class MdlParseTests
 
         var garbage = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         Assert.Throws<InvalidDataException>(() => MdlFile.Parse(garbage));
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Fig05_retains_lodgeo_levels_for_native_lod()
+    {
+        // P628 — the loader must RETAIN the native LODGeo distance-detail levels
+        // (previously discarded) so the renderer can pick detail by screen size.
+        // fig05.mdl (an IC fighter) ships with a LODGeo carrying 3 levels.
+        Require.Artwork();
+        var f = MdlFile.Parse(Mdl("fig05.mdl"));
+        Assert.NotEmpty(f.LodLevels);
+
+        // Each level carries a baked pixel-radius threshold (the LODGeo
+        // (pixels, geo) pair; modeler.cpp:1676-1683, binary encoded geo-first)
+        // and resolvable meshes that are no heavier than the base mesh.
+        int baseTriangles = f.Meshes.Sum(m => m.TriangleCount);
+        foreach (var lev in f.LodLevels)
+        {
+            Assert.True(lev.PixelRadius > 0f, "LOD threshold must be a positive pixel radius");
+            Assert.NotEmpty(lev.Meshes);
+            Assert.True(lev.Meshes.Sum(m => m.TriangleCount) <= baseTriangles,
+                "a LOD level must not have MORE triangles than the base mesh");
+        }
+        // Native re-sorts the levels into descending threshold order internally
+        // (LODGeoImpl::AddGeo, geometry.cpp:1667-1713) regardless of file order,
+        // so the set of thresholds here spans the expected detail ladder.
+        Assert.Contains(f.LodLevels, l => l.PixelRadius >= 32f);
+        Assert.Contains(f.LodLevels, l => l.PixelRadius <= 8f);
     }
 }

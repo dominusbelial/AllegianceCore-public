@@ -161,6 +161,21 @@ public sealed class TcpTransport : ITransport
     // is unaffected. Internal/settable for the suite.
     public static TimeSpan DataFrameReadTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
+    /// <summary>
+    /// P671 — the IDLE timeout for a host-side peer's inbound data session: a
+    /// peer that sends NO bytes at all for this long (silent link) is dropped
+    /// as link-dead. This is the counterpart to <see cref="DataFrameReadTimeout"/>:
+    /// that bounds a frame once it has STARTED (header byte seen), while this
+    /// bounds the silence BETWEEN frames. Aligned with the native client's
+    /// link-dead tolerance <c>g_sDeadTime = 30</c> (clintlib.cpp:2047). A healthy
+    /// client never trips it, because the shared client session keep-alive sends
+    /// a <c>CS_PING</c> every 6 s (<c>clintlib.cpp:2050-2087 CheckServerLag</c>),
+    /// so a well-behaved peer always has traffic well inside this window.
+    /// Internal/settable so the server binds it from config and the suite can
+    /// shrink it for a fast, deterministic test.
+    /// </summary>
+    public static TimeSpan DataLinkIdleTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
     // P654 (H-15) — resource caps on the accept path. Without them a hostile
     // or runaway peer can open unbounded connections (one thread per
     // connection) and consume the process. All internal/settable so the server
@@ -963,9 +978,24 @@ public sealed class TcpTransport : ITransport
                 // buffer + thread. The CLIENT half keeps the larger MaximumFrame
                 // (server -> client world/export bursts) and no deadline (it is
                 // the trusted server speaking).
+                //
+                // P671 — split the HOST's read bounds into two distinct
+                // timeouts, because the old single deadline (computed here,
+                // BEFORE ReadFrame) measured IDLE time, not a stalled in-progress
+                // frame — so a client that simply sent nothing for 30 s (a docked
+                // or staged bot that never sends CS_PING) was wrongly dropped as
+                // ReadErrorOrEof. Now:
+                //   * DataLinkIdleTimeout  bounds the SILENCE between frames (no
+                //     byte at all) — the link-dead case; a healthy client never
+                //     hits it because it pings every 6 s;
+                //   * DataFrameReadTimeout  bounds a frame once it has STARTED
+                //     (first header byte seen), preserving P654's protection
+                //     against header-then-stall attackers.
                 uint cap = _isHost ? ServerInboundMaxFrame : MaximumFrame;
-                long deadline = _isHost ? Environment.TickCount64 + (long)DataFrameReadTimeout.TotalMilliseconds : 0;
-                (byte type, byte[] body) = ReadFrame(s, cap, deadline);
+                long idleDeadline = _isHost
+                    ? Environment.TickCount64 + (long)DataLinkIdleTimeout.TotalMilliseconds : 0;
+                long frameTimeoutMs = _isHost ? (long)DataFrameReadTimeout.TotalMilliseconds : 0;
+                (byte type, byte[] body) = ReadFrame(s, cap, idleDeadline, frameTimeoutMs);
                 if (type != (byte)FrameType.Data) { CloseQuiet(s); return; }
                 _site.OnReceive(from, body);
             }
@@ -992,20 +1022,35 @@ public sealed class TcpTransport : ITransport
         return frame;
     }
 
-    /// <summary>P654 (H-02) — assemble one complete data frame. The body buffer
-    /// is grown as bytes actually arrive (starting small, doubling up to the
-    /// declared length capped at <paramref name="maxBodyLen"/>), instead of the
-    /// old code's `new byte[lenRaw]` up front — so a hostile peer that claims a
-    /// large body but never sends it never forces the allocation. When
-    /// <paramref name="deadlineMs"/> is non-zero, a body whose bytes do not
-    /// complete within that wall-clock budget throws (the header-then-stall
-    /// slowloris is dropped rather than parking a buffer + thread forever). The
-    /// deadline only applies once a frame is IN PROGRESS (header read), never to
-    /// an idle-but-healthy data session.</summary>
-    private static (byte Type, byte[] Body) ReadFrame(NetworkStream s, uint maxBodyLen = MaximumFrame, long deadlineMs = 0)
+    /// <summary>P654 (H-02) + P671 — assemble one complete data frame. The body
+    /// buffer is grown as bytes actually arrive (starting small, doubling up to
+    /// the declared length capped at <paramref name="maxBodyLen"/>), instead of
+    /// the old code's `new byte[lenRaw]` up front — so a hostile peer that claims
+    /// a large body but never sends it never forces the allocation. The read is
+    /// bounded by TWO separate deadlines:
+    ///   * <paramref name="idleDeadlineMs"/> (may be 0 = none) bounds waiting for
+    ///     the frame's FIRST byte — the SILENT/idle link case. It is anchored at
+    ///     entry, before the header is read.
+    ///   * <paramref name="frameTimeoutMs"/> (may be 0 = none) bounds the rest of
+    ///     the frame once it has STARTED (first header byte seen) — the
+    ///     header-then-stall slowloris case, preserving P654 (H-02). It is
+    ///     anchored AFTER the first byte arrives, so it bounds a STALLED
+    ///     in-progress frame, never an idle-but-healthy data session.</summary>
+    private static (byte Type, byte[] Body) ReadFrame(NetworkStream s, uint maxBodyLen = MaximumFrame,
+                                                      long idleDeadlineMs = 0, long frameTimeoutMs = 0)
     {
         Span<byte> hdr = stackalloc byte[HeaderWidth];
-        ReadExactly(s, hdr, deadlineMs);
+        // P671 — the IDLE deadline bounds only the frame's first byte: a link
+        // that sends nothing at all is link-dead. Once a byte has arrived the
+        // frame is in progress and the (separate) FRAME deadline takes over.
+        int first = ReadSome(s, hdr.Slice(0, 1), idleDeadlineMs);
+        if (first <= 0) throw new EndOfStreamException("peer closed before frame");
+        // P671 — anchor the frame deadline NOW that the frame has started. A
+        // header that stalls, or a body that dribbles, must complete within
+        // frameTimeoutMs of the header's first byte.
+        long frameDeadline = frameTimeoutMs > 0
+            ? Environment.TickCount64 + frameTimeoutMs : 0;
+        ReadExactly(s, hdr.Slice(1), frameDeadline);
         byte type = hdr[0];
         uint lenRaw = BinaryPrimitives.ReadUInt32LittleEndian(hdr.Slice(1));
         if (lenRaw > maxBodyLen)
@@ -1022,7 +1067,7 @@ public sealed class TcpTransport : ITransport
                 int grow = (int)Math.Min(lenRaw, (long)body.Length * 2);
                 Array.Resize(ref body, grow);
             }
-            int n = ReadSome(s, body.AsSpan(filled, body.Length - filled), deadlineMs);
+            int n = ReadSome(s, body.AsSpan(filled, body.Length - filled), frameDeadline);
             if (n <= 0) throw new EndOfStreamException("peer closed mid-frame");
             filled += n;
         }
@@ -1057,20 +1102,30 @@ public sealed class TcpTransport : ITransport
         }
     }
 
-    /// <summary>P654 (H-02) — one read of up to <paramref name="dst"/>.Length
+    /// <summary>P654 (H-02) + P671 — one read of up to <paramref name="dst"/>
     /// bytes with P646's efficient-blocking (Poll-based) handling for
-    /// non-blocking pool sockets, plus the in-progress frame deadline. Returns
-    /// the bytes read; throws on EOF / socket error. A blocking Read parks the
-    /// thread with no exception, so it needs no Poll. Sends stay non-blocking
-    /// (P645's partial-write safety is untouched). When <paramref name="deadlineMs"/>
-    /// is non-zero and elapses while a frame is in progress, throws an
-    /// <see cref="IOException\"/> so the stalled connection is dropped.</summary>
+    /// non-blocking pool sockets, plus the data-session read bound. Returns the
+    /// bytes read; throws on EOF / socket error. When <paramref name="deadlineMs"/>
+    /// is non-zero and elapses, throws an <see cref="IOException"/> so the
+    /// stalled/idle connection is dropped. The bound is honored on BOTH socket
+    /// kinds:
+    ///   * NON-BLOCKING (pool) — P646 parks in <c>Socket.Poll</c> (250 ms) and
+    ///     re-checks the deadline each wake, so no CPU is burned and no
+    ///     would-block exception is thrown per idle peer per ms;
+    ///   * BLOCKING (thread-per-peer) — a plain blocking <c>Read</c> parks the
+    ///     thread forever and cannot be interrupted by a wall-clock check, so the
+    ///     socket is given a receive timeout equal to the remaining budget and a
+    ///     timed-out read is translated into the bound-exceeded error. Only set
+    ///     when a deadline is active: the greet handshake (deadline 0) keeps its
+    ///     P312 socket <c>ReceiveTimeout</c> undisturbed, and the client half
+    ///     (deadline 0) keeps the infinite read it relies on to detect EOF.
+    ///     Sends stay non-blocking (P645's partial-write safety is untouched).</summary>
     private static int ReadSome(Stream s, Span<byte> dst, long deadlineMs)
     {
         while (true)
         {
             if (deadlineMs != 0 && Environment.TickCount64 > deadlineMs)
-                throw new IOException($"frame read deadline exceeded ({DataFrameReadTimeout.TotalSeconds:0}s)");
+                throw new IOException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
             // P646 — block efficiently on a NON-BLOCKING pool socket instead of
             // throwing+catching a would-block IOException every ~1 ms (P645's
             // Thread.Sleep(1) retry burned CPU and allocated an exception object
@@ -1083,8 +1138,7 @@ public sealed class TcpTransport : ITransport
             // thread-per-peer data reads) must keep using the plain blocking
             // Read, because Socket.Poll bypasses the socket's ReceiveTimeout and
             // would defeat the greeting timeout (a silent connection would never
-            // be dropped). A blocking Read parks the thread with no exception, so
-            // it needs no Poll.
+            // be dropped).
             if (s is NetworkStream ns && ns.Socket is { Blocking: false } sock
                 && !sock.Poll(ReadPollTimeoutMicros, SelectMode.SelectRead))
             {
@@ -1092,6 +1146,15 @@ public sealed class TcpTransport : ITransport
                 if (sock.Poll(0, SelectMode.SelectError))
                     throw new IOException("socket error");
                 continue;
+            }
+            // P671 — a BLOCKING (thread-per-peer) data socket honors the bound by
+            // bounding the blocking Read itself. Only applied when a deadline is
+            // active; greeting (deadline 0) keeps its P312 socket ReceiveTimeout
+            // and the client half (deadline 0) keeps its infinite read.
+            if (s is NetworkStream bn && bn.Socket is { Blocking: true } && deadlineMs != 0)
+            {
+                long remain = deadlineMs - Environment.TickCount64;
+                bn.ReadTimeout = remain > 0 ? (int)remain : 1;
             }
             int n;
             try
@@ -1107,6 +1170,16 @@ public sealed class TcpTransport : ITransport
                 // error. Harmless for blocking sockets (would-block never fires).
                 Interlocked.Increment(ref _wouldBlockCatches);
                 Thread.Sleep(1);
+                continue;
+            }
+            catch (IOException ioex) when (IsSocketTimeout(ioex) && deadlineMs != 0)
+            {
+                // P671 — a BLOCKING socket's receive timeout fired. Re-check the
+                // wall clock: if the bound truly passed, the top of the loop
+                // throws the real bound-exceeded error; otherwise (spurious early
+                // timeout) retry with a fresh remaining budget.
+                if (Environment.TickCount64 > deadlineMs)
+                    throw new IOException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
                 continue;
             }
             return n;

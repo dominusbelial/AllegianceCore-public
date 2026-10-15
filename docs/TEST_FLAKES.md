@@ -303,7 +303,8 @@ no product code changed. Classes of fix:
    `LiveWinConditionTests`, `MineCrossSideVisibilityLiveTests`, `AddPartTests`,
    `StationUnderAttackAlertLiveTests`, `AutoReloadOnEmptyTests`, `SideEliminationLiveTests`,
    `AsteroidExportTests`, `CrossSideCombatVisibilityLiveTests`, `ShipIdAllocationLiveTests.
-   Valid_logon_advances_nextShipId`.
+   Valid_logon_advances_nextShipId`, `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self`
+   (12 ms fail = the pump did not reach the cross-side HEAVY_SHIPS_UPDATE before asserting; passes 3/3 isolated).
 3. **Structural seating / leader / premise assumptions** → made deterministic:
    `CargoBayReloadTests.SeatThree` (select subject+observer from the majority side —
    robust to async seat order), `ReadyCheckLiveTests.Only_mission_owner` (seat the leader
@@ -377,6 +378,21 @@ regressions from unsolicited clock samples during empty/static treasure
 snapshots. P663 fixed those sends and verified both tests 3/3; they are not
 classified as flakes. See `docs/reports/P663_TREASURE_PARITY.md` for final
 full-suite results and the long pod traversal checks.
+## P628 run A/B load flakes (confirmed in isolation, not P628 code)
+
+`scripts/run-tests.sh` runs A and B on the P628 final tree (client render LOD). Every
+failure was a live-wire load flake in test code P628 did not touch; each was re-run 3×
+in isolation (specific method):
+
+| test (main-pass flake) | isolation | verdict |
+|---|---|---|
+| `LiveShipDeathFinalizeTests.Oxygen_dead_lifepod_with_no_friendly_station_is_finalized_server_side` | 3/3 pass | load flake (live-wire lifepod finalize receipt) |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | 3/3 pass | load flake (live-wire game-over surviving-peer receipt) |
+| `P590PodRescueTests.Pod_pickup_order_streams_queued_order_to_real_player_rescuer` | 2/3 (one intermittent) | load flake (live-wire pod-pickup queued-order receipt) — already listed below in history |
+| `RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads` | 3/3 pass | load flake (live-wire socket-cleanup count, expected 10/actual 9 race) |
+
+The MonoGame suite (which contains the P628 LOD tests) was **fully clean** in both runs
+(A: 1977 passed / 0 failed; B: no failures).
 
 ---
 

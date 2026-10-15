@@ -556,11 +556,23 @@ public sealed class TransportConfig
     /// <c>ALLEGIANCE_TRANSPORT_MAX_FRAME_BYTES</c>.</summary>
     public int? MaxFrameBytes { get; set; }
 
-    /// <summary>P654 (H-02) — read deadline (seconds) for an in-progress
-    /// server-inbound frame (and the data-phase idle grace, matching native's
-    /// 30 s link-dead tolerance, clintlib.cpp:2047). Absent → 30. Overridable by
-    /// <c>ALLEGIANCE_TRANSPORT_DATA_FRAME_TIMEOUT_SECONDS</c>.</summary>
+    /// <summary>P654 (H-02) — read deadline (seconds) for a server-inbound frame
+    /// once it has STARTED (first header byte seen): a header-then-stall or
+    /// dribbling-body peer is dropped rather than parking a buffer + thread
+    /// (slowloris protection). Absent → 30. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_DATA_FRAME_TIMEOUT_SECONDS</c>. Distinct from
+    /// <see cref="DataLinkIdleTimeoutSeconds"/>, which bounds the silence
+    /// BETWEEN frames (P671).</summary>
     public int? DataFrameReadTimeoutSeconds { get; set; }
+
+    /// <summary>P671 — the IDLE timeout (seconds) for a server-inbound data
+    /// session: a connected peer that sends NO bytes for this long is dropped
+    /// as link-dead (native's 30 s g_sDeadTime, clintlib.cpp:2047). A healthy
+    /// client never hits it because the shared client session keep-alive sends
+    /// a CS_PING every 6 s (clintlib.cpp:2050-2087). Absent → 30. Overridable
+    /// by <c>ALLEGIANCE_TRANSPORT_IDLE_TIMEOUT_SECONDS</c>. Before P671 the
+    /// frame deadline doubled as this idle grace; the two are now separate.</summary>
+    public int? DataLinkIdleTimeoutSeconds { get; set; }
 
     // ---- P654 (H-24) per-peer message/chat budget (native's chat budget) ----
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 using Allegiance.Core.Rendering;
@@ -49,6 +50,8 @@ public sealed class NativeShipRenderer : IDisposable
     private readonly Assets.IAssetSource _assets;
     private readonly Dictionary<string, NativeShipGeometry> _models = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MdlFile> _parsed = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<NativeShipGeometry>> _lodLevels = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, int[]> _lodDesc = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
@@ -128,6 +131,73 @@ public sealed class NativeShipRenderer : IDisposable
     /// <c>m_radiusMesh</c>), or 0 when unknown → caller leaves scale at native default.</summary>
     public float MeshRadius(string modelStem)
         => MeshFor(modelStem) is { } g ? g.MeshRadius : 0f;
+
+    /// <summary>P628 — the number of native <c>LODGeo</c> detail levels a model
+    /// carries (0 when the .mdl has no LODGeo or is undecodable). Each is a
+    /// lower-triangle-count detail variant chosen by projected screen size —
+    /// see <see cref="ShipLod.NativeLodLevelFor"/>.</summary>
+    public int LodLevelCount(string modelStem)
+    {
+        if (MeshFor(modelStem) is null) return 0;
+        return _parsed.TryGetValue(modelStem, out var mdl) ? mdl.LodLevels.Count : 0;
+    }
+
+    /// <summary>P628 — the baked LODGeo pixel-radius thresholds for a model in
+    /// the order <see cref="ShipLod.NativeLodLevelFor"/> expects: <b>descending</b>
+    /// (finest level's threshold first), i.e. the same order native's
+    /// <c>LODGeoImpl::AddGeo</c> sorts its <c>m_radii</c> (geometry.cpp:1667-1713)
+    /// before <c>Render</c> walks them. Empty when the model has none.</summary>
+    public IReadOnlyList<float> LodPixelRadii(string modelStem)
+    {
+        var o = DescendingOrder(modelStem);
+        if (o.Length == 0) return Array.Empty<float>();
+        var f = _parsed[modelStem];
+        var r = new float[o.Length];
+        for (int i = 0; i < o.Length; i++) r[i] = f.LodLevels[o[i]].PixelRadius;
+        return r;
+    }
+
+    /// <summary>P628 — the compiled geometry for the LODGeo level at index
+    /// <paramref name="index"/> in descending-pixel-radius order (0 = the first
+    /// reduced-detail level, i.e. used first as the ship shrinks). Returns null
+    /// when the model has no such level or is undecodable. Built+cached on first
+    /// access so models without LOD never allocate level buffers.</summary>
+    public NativeShipGeometry? LodLevel(string modelStem, int index)
+    {
+        var o = DescendingOrder(modelStem);
+        if (index < 0 || index >= o.Length) return null;
+        if (MeshFor(modelStem) is null) return null;
+        var levels = BuildLevels(modelStem);
+        return levels[o[index]];
+    }
+
+    /// <summary>P628 — file indexes of a model's LODGeo levels in descending
+    /// pixel-radius order (native's m_radii sort order).</summary>
+    private int[] DescendingOrder(string modelStem)
+    {
+        if (_lodDesc.TryGetValue(modelStem, out var o)) return o;
+        if (!_parsed.TryGetValue(modelStem, out var mdl)) return Array.Empty<int>();
+        var idx = Enumerable.Range(0, mdl.LodLevels.Count).ToArray();
+        Array.Sort(idx, (a, b) => mdl.LodLevels[b].PixelRadius.CompareTo(mdl.LodLevels[a].PixelRadius));
+        _lodDesc[modelStem] = idx;
+        return idx;
+    }
+
+    /// <summary>P628 — the compiled per-file-order level geometries, built once
+    /// (a broken level becomes null → caller falls back to the base mesh).</summary>
+    private List<NativeShipGeometry> BuildLevels(string modelStem)
+    {
+        if (_lodLevels.TryGetValue(modelStem, out var list)) return list;
+        var mdl = _parsed[modelStem];
+        list = new List<NativeShipGeometry>(mdl.LodLevels.Count);
+        foreach (var lev in mdl.LodLevels)
+        {
+            try { list.Add(NativeShipGeometry.Build(_gd, lev.Meshes)); }
+            catch { list.Add(null!); }
+        }
+        _lodLevels[modelStem] = list;
+        return list;
+    }
 
     /// <summary>
     /// P569 — the per-axis half-extents (the shield-ellipse proxy) of a model's
@@ -323,6 +393,8 @@ public sealed class NativeShipRenderer : IDisposable
     public void Dispose()
     {
         foreach (var g in _models.Values) g.Dispose();
+        foreach (var list in _lodLevels.Values)
+            foreach (var g in list) g?.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
         _effect.Dispose();
         _cullCcw.Dispose();

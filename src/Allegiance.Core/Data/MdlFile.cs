@@ -35,6 +35,22 @@ public sealed class MdlMesh
 }
 
 /// <summary>
+/// P628 — one native LODGeo distance-detail level: its baked pixel-radius
+/// threshold (<c>LODGeoImpl::m_radii</c>, geometry.cpp:1634) and the resolved
+/// lower-detail mesh list for that level. See <see cref="MdlFile.LodLevels"/>.
+/// </summary>
+public sealed class MdlLodLevel
+{
+    /// <summary>The baked pixel-radius threshold (screen pixels) at/above which
+    /// this coarser level kicks in — the artist-authored <c>(pixels, geo)</c>
+    /// value (modeler.cpp:1676-1683).</summary>
+    public required float PixelRadius { get; init; }
+
+    /// <summary>This level's meshes (a reduced-detail variant of the base).</summary>
+    public required IReadOnlyList<MdlMesh> Meshes { get; init; }
+}
+
+/// <summary>
 /// A named hardpoint / attach-point record (from <c>FrameData</c>) — weapon
 /// mounts, engine nozzles, etc. Carried as named position/orientation metadata;
 /// not mesh geometry. Useful later for engine-nozzle-positioned smoke-trail
@@ -88,6 +104,19 @@ public sealed class MdlFile
     /// </summary>
     public required IReadOnlyList<MdlFrame> Frames { get; init; }
 
+    /// <summary>
+    /// P628 — the LODGeo's distance-detail levels retained for native LOD
+    /// (<c>engine/geometry.cpp</c> <c>LODGeoImpl</c>; modelled in
+    /// <c>engine/modeler.cpp:1666-1686</c> <c>LODGeoFactory::Apply</c> as
+    /// <c>LODGeo(baseGeo, [(pixels, geo), ...])</c>). Each entry carries the
+    /// baked <b>pixel radius</b> threshold (the <c>m_radii</c> member,
+    /// geometry.cpp:1634, used in <c>LODGeoImpl::Render</c> geometry.cpp:1760-1773)
+    /// and that level's resolved meshes (a lower-triangle-count detail variant).
+    /// Ordered descending by pixel radius (finest→coarsest), matching the
+    /// artist-authored list order. Empty when the model has no LODGeo.
+    /// </summary>
+    public required IReadOnlyList<MdlLodLevel> LodLevels { get; init; }
+
     /// <summary>Parse a <c>.mdl</c> model file from disk.</summary>
     public static MdlFile Parse(string path) => Parse(File.ReadAllBytes(path));
 
@@ -130,6 +159,7 @@ internal sealed class MdlParser
     private readonly List<MdlFrame> _frames = [];
     private readonly Dictionary<uint, MdlNode> _objects = [];
     private readonly List<MdlMesh> _meshes = [];
+    private readonly List<MdlLodLevel> _lodLevels = [];
 
     internal MdlParser(byte[] data) => _data = data;
 
@@ -186,6 +216,7 @@ internal sealed class MdlParser
             Exports = exports,
             Meshes = _meshes,
             Frames = _frames,
+            LodLevels = _lodLevels,
         };
     }
 
@@ -288,10 +319,13 @@ internal sealed class MdlParser
                 // engine/modeler.cpp LODGeoFactory::Apply pops (geo, lodList) in
                 // push/pop order -- geo is the base/default (highest-detail)
                 // geometry; lodList holds the lower-detail variants for
-                // distance-based swapping. Keep only the base mesh.
+                // distance-based swapping. Keep the base mesh AND retain the
+                // levels so the renderer can select detail by screen size
+                // (P628 native LOD; geometry.cpp LODGeoImpl::Render).
             {
                 var geo = stack.Pop();
-                stack.Pop(); // lodList (discarded entirely)
+                var lodList = stack.Pop();
+                CaptureLodLevels(lodList);
                 return geo;
             }
             default:
@@ -360,28 +394,53 @@ internal sealed class MdlParser
 
     // -- mesh collection (walk the resolved "object" export) --------------
 
-    private void CollectMeshes(MdlNode? node)
+    private void CollectMeshes(MdlNode? node) => CollectMeshes(node, _meshes);
+
+    private void CollectMeshes(MdlNode? node, List<MdlMesh> sink)
     {
         switch (node)
         {
             case null:
                 return;
             case MdlMeshGeo m:
-                _meshes.Add(BuildMesh(m));
+                sink.Add(BuildMesh(m));
                 break;
             case MdlGroupGeo g:
-                CollectMeshes(g.Children);
+                CollectMeshes(g.Children, sink);
                 break;
             case MdlTextureGeo t:
-                CollectMeshes(t.Geo);
+                CollectMeshes(t.Geo, sink);
                 break;
             case MdlList l:
-                foreach (var item in l.Items) CollectMeshes(item);
+                foreach (var item in l.Items) CollectMeshes(item, sink);
                 break;
             default:
                 // ModifiableNumber / LightsGeo / FrameData / Apply<...>: no mesh
                 // content.
                 break;
+        }
+    }
+
+    /// <summary>P628 — capture the LODGeo lod-list into <see cref="_lodLevels"/>.
+    /// The list is <c>[(pixels, geo), (pixels, geo), ...]</c> (modeler.cpp:1676-1683);
+    /// in the binary each pair is encoded <b>(geo, pixels)</b> — observed on
+    /// fig05/utl18a/bgrnd05 — so <c>pair.A</c> is the reduced-detail geo node
+    /// and <c>pair.B</c> the baked pixel-radius <c>MdlFloat</c> threshold. The
+    /// geo is resolved to meshes here so the renderer can build a GPU level per
+    /// LOD. Malformed entries are skipped defensively.</summary>
+    private void CaptureLodLevels(MdlNode? lodList)
+    {
+        if (lodList is not MdlList list) return;
+        foreach (var item in list.Items)
+        {
+            if (item is not MdlPair pair
+                || pair.B is not MdlFloat px
+                || pair.A is not { } geoNode)
+                continue;
+            var levelMeshes = new List<MdlMesh>();
+            CollectMeshes(geoNode, levelMeshes);
+            if (levelMeshes.Count == 0) continue;
+            _lodLevels.Add(new MdlLodLevel { PixelRadius = px.Value, Meshes = levelMeshes });
         }
     }
 

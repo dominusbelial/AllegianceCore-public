@@ -2054,6 +2054,14 @@ public sealed partial class Game1
                 // fixed 50-unit stand-in.
                 float tl = HullLength(ship.HullId);
                 float radius = tl > 0f ? 0.5f * tl : 0f;
+                // P628 — capture the per-ship LOD inputs under the Gate so the
+                // Draw loop reads them lock-free: the rendered radius (the
+                // ProjectedPixelRadius metric) and the real side colour (the
+                // far-tier sprite tint; native pside->GetColor(),
+                // radarimage.cpp:682-685).
+                _shipRadiusById[id] = radius;
+                if (world.TryGetSideColor(ship.SideId, out float sr, out float sg, out float sb))
+                    _shipSideRgbById[id] = (sr, sg, sb);
                 // P448b — every effect attached to the hull (damage debris, engine
                 // trail, nozzle glow, nav strobes, motion trail) is fed the SAME
                 // RENDER pose so nothing detaches from the drawn hull. Wire-driven

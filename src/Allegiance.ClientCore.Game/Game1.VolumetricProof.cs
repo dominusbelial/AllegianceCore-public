@@ -171,6 +171,6 @@ public sealed partial class Game1
         var sorted = _volPerfRing.Take(n).OrderBy(v => v).ToArray();
         double avg = sorted.Average();
         double p1 = sorted[(int)(n * 0.01)];
-        Console.WriteLine($"[volperf] {n} frames  avg {avg:0.00} ms ({1000.0 / Math.Max(avg, 1e-4):0.0} fps)  p1(1% low) {p1:0.00} ms ({1000.0 / Math.Max(p1, 1e-4):0.0} fps)");
+        Console.WriteLine($"[volperf] {n} frames  avg {avg:0.00} ms ({1000.0 / Math.Max(avg, 1e-4):0.0} fps)  p1(1% low) {p1:0.00} ms ({1000.0 / Math.Max(p1, 1e-4):0.0} fps)  shipsDrawCalls={_lodDrawCalls} lodFull={_lodFullCount} lodFar={_lodFarCount}");
     }
 }

@@ -59,6 +59,7 @@ public class RendererDisposalGuardTests
         "_post",
         "_shaders",
         "_nativeEffects",
+        "_shipLodSpriteRenderer",   // P628 — far-tier sprite batcher
     };
 
     [Fact]
