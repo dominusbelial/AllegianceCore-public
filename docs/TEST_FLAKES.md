@@ -222,7 +222,10 @@ Defending_side…`, `P590PodRescueTests.Pod_pickup_order_streams…`,
 `ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy`,
 `LiveCountdownStartPingTests.StartGame_owner_all_ready…`,
 `ConsoleLogNonBlockingTests.Verbose_gate…` + `…Queued_writer_splits_multiline…`,
-`ShipIdAllocationLiveTests.Valid_logon_advances_nextShipId`.
+`ShipIdAllocationLiveTests.Valid_logon_advances_nextShipId`,
+`Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` (P687 full-suite run 1; 3/3 in isolation = live-wire pool-churn load flake),
+`ClientCore…ShipDeleteGoneLiveTests.DockOut_WatcherLatchesGone_UndockReturnsAndClears` (P687 run 2; 3/3 in isolation — the fixed-P482 dock latch, live-wire),
+`Core…LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector` (P687 run 2; 3/3 in isolation — live-wire ripcord receipt).
 
 **Regression caught by the suite (P646, FIXED):** `TcpTransportGreetTimeoutPoolTests.
 Silent_connection_is_eventually_dropped` / `…ThreadPerPeer…` failed because the first P646
