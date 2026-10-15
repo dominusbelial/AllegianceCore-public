@@ -1854,6 +1854,11 @@ public sealed partial class Game1
         _damageEmitters.Clear();
         _engineTrailEmitters.Clear();
         _nozzleGlowEmitters.Clear();
+        // Nav strobes are re-gathered per visible ship below like every other
+        // hull effect. Without this clear, a ship that died, docked, warped out or
+        // left view kept its last strobes forever — frozen lights piling up at
+        // battle spots and alephs (2026-10-15, Domingo in clash48/49).
+        _navStrobeEmitters.Clear();
         _cloakedShips.Clear();
         _shipModelById.Clear();
         _shipTextureById.Clear();   // P337 — parallel per-ship texture cache
