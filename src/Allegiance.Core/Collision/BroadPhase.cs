@@ -62,6 +62,30 @@ public static class BroadPhase
             return c != 0 ? c : a.Index.CompareTo(b.Index);
         });
 
+        // A crowded launch point defeats pruning: most intervals are active
+        // together, so storing and sorting their pairs costs more than testing
+        // the boxes directly in registration order. Select the streaming path
+        // when at least three quarters cover this sweep coordinate. This only
+        // selects an algorithm; both paths apply the exact same predicates.
+        float probe = sweep[n * 3 / 4].Min;
+        int covering = 0;
+        foreach (var entry in sweep)
+            if (entry.Min <= probe && entry.Max > probe) covering++;
+        if (covering >= Math.Max(2, (n * 3 + 3) / 4))
+        {
+            for (int i = 0; i < n; i++)
+            {
+                var a = colliders[i];
+                for (int j = i + 1; j < n; j++)
+                {
+                    var b = colliders[j];
+                    if ((pairFilter is null || pairFilter(a, b)) && Overlap(a, b))
+                        yield return (i, j);
+                }
+            }
+            yield break;
+        }
+
         // Active set: colliders whose [min,max] still overlaps the sweep
         // position on the sweep axis (their max > current min). Every active
         // interval already overlaps the current one on the sweep axis, so only

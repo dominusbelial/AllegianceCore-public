@@ -85,15 +85,37 @@ public sealed class CollisionDetector
         {
             // The serial path can solve/expand in candidate order without
             // materialising a pair array or a per-pair expansion map.
-            Dictionary<long, CollisionTest>? solved = groups.Count < _colliders.Count ? [] : null;
+            // Small repeated-geometry sets need no hash lookup for every
+            // expanded identity pair. Bound the direct table to 65,536 cells;
+            // larger worlds retain the sparse dictionary and unique geometry
+            // still needs no result cache at all.
+            bool direct = groups.Count * 2 <= _colliders.Count && groups.Count <= 256;
+            var resultsByGroup = direct ? new CollisionTest[groups.Count * groups.Count] : null;
+            var tested = direct ? new bool[resultsByGroup!.Length] : null;
+            Dictionary<long, CollisionTest>? solved = !direct && groups.Count < _colliders.Count ? [] : null;
             foreach (var (i, j) in BroadPhase.OverlappingPairs(_colliders, pairFilter))
             {
-                long key = ((long)groupIds[i] << 32) | (uint)groupIds[j];
-                if (solved is null || !solved.TryGetValue(key, out var ev))
+                CollisionTest ev;
+                if (direct)
                 {
-                    ev = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
-                    GeometricPairTests++;
-                    solved?.Add(key, ev);
+                    int index = groupIds[i] * groups.Count + groupIds[j];
+                    if (!tested![index])
+                    {
+                        resultsByGroup![index] = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
+                        tested[index] = true;
+                        GeometricPairTests++;
+                    }
+                    ev = resultsByGroup![index];
+                }
+                else
+                {
+                    long key = ((long)groupIds[i] << 32) | (uint)groupIds[j];
+                    if (solved is null || !solved.TryGetValue(key, out ev))
+                    {
+                        ev = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
+                        GeometricPairTests++;
+                        solved?.Add(key, ev);
+                    }
                 }
                 if (ev.Found)
                     _queue.Add(new CollisionEvent(_colliders[i], _colliders[j], ev.TCollision, ev.HtsA, ev.HtsB));

@@ -1,0 +1,11 @@
+  Allegiance.Core -> /home/domingo/allegiance-codex-p694/src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll
+  Allegiance.Bot -> /home/domingo/allegiance-codex-p694/src/Allegiance.Bot/bin/Debug/net10.0/Allegiance.Bot.dll
+  Allegiance.Server -> /home/domingo/allegiance-codex-p694/src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Server.dll
+  Allegiance.Lobby -> /home/domingo/allegiance-codex-p694/src/Allegiance.Lobby/bin/Debug/net10.0/Allegiance.Lobby.dll
+  Allegiance.Core.Tests -> /home/domingo/allegiance-codex-p694/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.93

@@ -46,6 +46,12 @@ public sealed class CollisionQueue
     /// </summary>
     internal void SortOrdinalEvents()
     {
+        // Dense stationary overlaps often already have one common time. Keep
+        // the ordinal stream as-is whenever it is also ordered by time, rather
+        // than copying every event through a bucket and back.
+        int i = 1;
+        while (i < _events.Count && _events[i - 1].TCollision.CompareTo(_events[i].TCollision) <= 0) i++;
+        if (i == _events.Count || _events.Count == 0) return;
         if (_events.Count < 256) { Sort(); return; }
         var buckets = new Dictionary<float, List<CollisionEvent>>();
         foreach (var ev in _events)

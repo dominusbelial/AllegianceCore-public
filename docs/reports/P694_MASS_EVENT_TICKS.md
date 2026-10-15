@@ -351,3 +351,185 @@ set +a
 NUGET_HTTP_CACHE_PATH=/tmp/p694-nuget-http dotnet build -c Release -m:8
 NUGET_HTTP_CACHE_PATH=/tmp/p694-nuget-http dotnet test tests/Allegiance.Core.Tests -c Release --no-build --filter 'FullyQualifiedName~P694' --logger 'console;verbosity=detailed'
 ```
+
+## P694b — loaded-machine cost and a repeatable performance guard
+
+The corrected-fixture Release cohorts have a **47.780 ms worst measured
+update across both sectors**, including fresh-process invocations of the exact
+150/195 serial review rows. The median guard is **100 ms in Release / 200 ms in
+Debug**, with fixed preparation for the already-running-server scenario.
+
+Date: 2026-10-15. All changes are left in the working tree. No commits, pushes or
+staging were performed. This section supersedes the earlier claim that each
+individual sample must meet the same 100 ms ceiling in every build configuration.
+
+### Diagnosis and fixes
+
+The original test reproduced the review failure in **Debug**: the serial jittered
+station-death case took **132.249 ms at 150 ships/side** and **121.358 ms at 195**,
+with zero in-tick collections or GC pause. At 150 the ship-detection / combat-
+detection / ship-dispatch buckets were 86.611 / 20.789 / 17.573 ms; at 195 they
+were 53.036 / 31.699 / 24.811 ms. These are substantial numerical-work costs,
+not evidence that the review's three consistent failures were scheduler flakes.
+The earlier report's approximately 50 ms result was **Release**. The initial
+original-source Debug and Release matrices overlapped on the busy host, so they
+are configuration diagnosis, not a matched speedup claim.
+[Baseline output](P694b_assets/baseline.json) and
+[environment](P694b_assets/environment.json) preserve the evidence.
+
+The remaining algorithmic changes are:
+
+- Stream dense broad-phase candidates directly in registration order instead of
+  storing and sorting every second-index bucket. Coverage by at least three
+  quarters of the intervals at a sweep coordinate selects this algorithm; sparse
+  populations retain sweep-and-prune. Both apply the same strict three-axis
+  overlap predicate and original-order pure pair filter.
+- Use a directly indexed serial geometry-result table for at most 256 groups
+  with at least two colliders/group on average. Its maximum is 65,536 cells;
+  tested misses are separate from untested cells. Larger or weakly repeated
+  sets retain the sparse dictionary; unique geometry needs no result cache.
+  Ordered A/B keys, original identities and per-call cache lifetime are retained.
+- Leave already time-ordered event streams in place, avoiding the extra time-
+  bucket copies. Unordered streams retain the existing deterministic sort.
+- Load support-walk direction components once and read immutable coordinate
+  arrays, keeping float arithmetic order, adjacency order, strict improvement
+  and tied-vertex selection. Native's strict `dot > dotMax` and walk are at
+  `~/Development/Allegiance/src/_Utility/HitTest.cpp:526-546`; its float dot
+  arithmetic is `~/Development/Allegiance/src/zlib/vector.h:164-167`.
+
+No gameplay rule was introduced. Shapes, hull-solving convergence criteria,
+collision times, damage, launch geometry, population density and dispatch gates
+remain unchanged. Temporary fine-grained profiling scopes were removed.
+
+### Fixture correction and assertion
+
+A final check matching the review's **single theory row in a fresh process**
+exposed a second problem: the initial one-second preparation still left the
+Release workload slow, despite the whole matrix appearing warm. One 195-ship
+run had a **108.741 ms median**, and 150-ship medians were 86–93 ms. This
+intermediate failure was investigated and fixed, rather than classified as a
+load flake. The one-second interval included cold core/map/server imports and
+was insufficient preparation for the long-running-server scenario.
+
+Preparation now always runs fresh worlds for **at least five seconds and at
+least ten worlds** before measuring. This is a fixed time/count policy, never a
+"warm until fast" condition or a failure-triggered retry. Default tiered JIT/PGO
+settings are retained. Every warmup world still runs the gameplay assertions.
+
+Each row measures **five more fresh worlds** and asserts their **median**.
+All samples, allocations, GC deltas and profiler buckets are logged. The
+stopwatch still includes **both sector updates together**, synchronous callbacks
+and in-tick GC. Fixture import and the existing pre-measurement collection remain
+outside it. No samples are discarded or retried.
+
+The regression bound is **100 ms in Release** and **200 ms in Debug**. Debug's
+unoptimized numerical code has materially higher cost; its guard detects sustained
+large regressions. Release is the production performance acceptance configuration
+and must be run explicitly with `-c Release`. Five-sample medians tolerate up to
+two isolated scheduling/GC tails while still rejecting sustained overruns. This
+does not claim to make Debug run below 60 ms or to bound a cold server's first tick.
+
+### Final measurements
+
+Both review rows passed **three individual fresh-process invocations per row,
+per configuration**, with the corrected preparation. Each table row has 15 timed
+worlds. Times are milliseconds:
+
+| Build | Ships/side, serial station death | Range of invocation medians | Worst sample |
+| --- | ---: | ---: | ---: |
+| Release | 150 | 25.897–38.678 | 47.780 |
+| Release | 195 | 23.717–24.136 | 28.476 |
+| Debug | 150 | 104.539–107.125 | 108.902 |
+| Debug | 195 | 95.447–97.885 | 99.816 |
+
+The complete 14-scenario Release matrix also passed **three fresh exact-method
+invocations**, totaling **210 timed two-sector updates**. It retains flag off/on,
+150/195/200 populations, jitter, coincidence and actual native launch slots.
+Serial station-death rows have these results across 15 worlds each:
+
+| Scenario | Median | Worst sample |
+| --- | ---: | ---: |
+| 150/side, jittered launch point | 26.884 | 31.616 |
+| 195/side, jittered launch point | 24.912 | 29.287 |
+| 195/side, coincident | 13.255 | 14.073 |
+| 200/side, native slots | 19.634 | 20.149 |
+
+The worst individual Release sample across the corrected-fixture single-row and
+matrix cohorts was **47.780 ms**. The requested serial production cases
+therefore meet the comfortably-under-100-ms target on this loaded machine.
+Invocation loads, sample timings and sub-step profiles are retained in
+[verification.json](P694b_assets/verification.json), with separate single-row,
+matrix and full-suite cohorts in [timings-summary.json](P694b_assets/timings-summary.json).
+Earlier one-second-preparation results remain explicitly tagged as superseded.
+
+### Correctness and checks
+
+The six new theory cases compare dense/sparse filtered candidates against the
+brute-force stream, direct/sparse geometry caches against uncached narrow-phase
+events with flag off and 1/2/4/8 workers, and common/mixed-time queue ordering
+against the full comparator, including signed zero, NaN and infinity. Existing
+P689 filters, P694 geometry/separation checks and P667's 140-tick whole-world
+byte digest remain enabled.
+
+A separate harness compiles the original committed Collider/NarrowPhase/Separate
+under different type names and compares against the working-tree Core binary.
+**Three Release and three Debug runs each passed 168,000 support comparisons,
+12,000 narrow-phase results and 2,501 deterministic separations**, checking every
+result float bit. Coincident random perturbations are excluded from that
+comparison; the real coincident mass-event cases still run, and the perturbation
+code is unchanged. Reproduce after both builds with
+`python3 docs/reports/P694b_assets/solver-oracle.py`;
+[results and baseline commit](P694b_assets/solver-oracle.json) and
+[harness](P694b_assets/solver-oracle.cs) are retained.
+
+Both solution builds passed with **zero warnings and zero errors**:
+[Release](P694b_assets/build-release.log), [Debug](P694b_assets/build-debug.log).
+After the final Core-only fixture correction, both Core test builds also passed
+cleanly: [Release](P694b_assets/build-fixture-release.log),
+[Debug](P694b_assets/build-fixture-debug.log). Commands use
+`NUGET_HTTP_CACHE_PATH=/tmp/p694b-nuget-http` and `-p:UseSharedCompilation=false`.
+
+**169 Core methods and 5 ClientCore methods each passed three
+exact-method isolated invocations**. The changed mass-event method's current
+fixture was rechecked three times as a full Release matrix, and both critical
+rows were individually checked three times in both builds. The local 15v15
+showcase and real MCP two-match/three-match combat checks passed three times each.
+[Coverage](P694b_assets/coverage.json), [invocation ledger](P694b_assets/verification.json)
+and [source fingerprints](P694b_assets/source-hashes.json) make the selected runs
+reviewable.
+
+The final unfiltered suite results are:
+
+| Suite | Passed | Failed in full suite | Existing skips |
+| --- | ---: | ---: | ---: |
+| Core | 4590 | 0 | 0 |
+| ClientCore | 1010 | 0 | 0 |
+| MonoGame | 2195 | 0 | 3 |
+
+The Core suite was rerun after the fixture correction. ClientCore and MonoGame
+results remain applicable: only the Core test preparation changed, and the shared
+Core DLL and those test assemblies remained byte-identical, verified by
+[SHA-256 fingerprints](P694b_assets/unchanged-product-binaries.json). Both full
+four-minute P539 combat recordings and the opt-in P660 showcase were enabled.
+The three MonoGame skips require the existing unavailable private built Meshy
+pack. Rig / 221 / 200v200 acceptance remains in Claude's lane and was not run here.
+
+The first MonoGame attempt exited with code 1 after 2,175 logged passes and three
+skips, without a TRX, terminal summary or reported failing assertion. Its cause
+was not established. The complete unfiltered Debug retry with crash/hang
+diagnostics passed all 2,195 runnable cases, including the two-warp pod flight
+with zero rejected updates and zero resets. Both attempts remain in the ledger;
+the table uses the completed retry, not the partial count.
+
+Every method that failed during an unfiltered suite passed three fresh isolated
+Debug reruns after the final suite completed:
+
+| Full-suite failure | Symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Assert.Equal() Failure: Values differ; Expected: 11; Actual:   26 | 3/3 pass |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | System.TimeoutException : no OnPeerJoined for raw peer | 3/3 pass |
+
+These satisfy the brief's load-flake rule and are recorded in
+[TEST_FLAKES.md](../TEST_FLAKES.md). No transport/mining behavior, receipt deadlines,
+quarantine traits or assertions were changed for those observations. Raw logs and
+TRX files are under `/tmp/p694b/verification/`. No commits or pushes were made.

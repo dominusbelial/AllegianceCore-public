@@ -804,3 +804,36 @@ After all four full suites completed, every failed Core method passed **3/3 exac
 | `Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup` | Cleanup hit `ThreadStateException: Thread has not been started` in `TcpTransport.Shutdown`, line 533. The allocation assertion did not fail. | 3/3 pass |
 
 These match previously recorded receipt/shutdown flake symptoms; the isolated passes do not establish a fix for the underlying races. No assertions, deadlines, quarantine traits, or transport behavior were changed for these observations. See the [P688 report](reports/P688_MERGE_P655D.md) and [invocation ledger](reports/P688_RESULTS.json) for raw full-suite counts, filters, stack traces and individual rerun results.
+
+## P694b observation (2026-10-15)
+
+Full unfiltered Debug suite counters (every completed attempt):
+
+- `suite-Allegiance.Core.Tests`: 4588 pass / 2 fail / 0 skip.
+- `suite-Allegiance.ClientCore.Tests`: 1010 pass / 0 fail / 0 skip.
+- `suite-Allegiance.ClientCore.MonoGame.Tests-retry`: 2195 pass / 0 fail / 3 skip.
+- `suite-Allegiance.Core.Tests-final`: 4590 pass / 0 fail / 0 skip.
+
+The initial MonoGame attempt ended without a summary/TRX; its complete diagnostic
+retry passed. No method failure or cause was established for the interrupted
+attempt. All 169 affected Core methods and five ClientCore methods passed three
+isolated Release runs each; the corrected mass-event fixture also passed both
+critical single rows three times in each configuration. The full P539 recordings
+and opt-in P660 local showcase were enabled.
+
+After the final suite, every full-suite failure passed **3/3 fresh exact-method
+isolated Debug reruns**:
+
+| Test | Full-suite symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Assert.Equal() Failure: Values differ; Expected: 11; Actual:   26 | 3/3 pass |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | System.TimeoutException : no OnPeerJoined for raw peer | 3/3 pass |
+
+These are load/receipt flakes under the P694b brief's explicit rule. The isolated
+passes do not establish a fix for the delayed mining receipts or raw-peer join
+timeout. No assertions, receipt deadlines, quarantine traits, or transport/mining
+behavior were changed for them. The intermediate single-row P694 timing failure
+was a fixture warmup defect and was corrected separately; it is not classified as
+a load flake. See the [report](reports/P694_MASS_EVENT_TICKS.md) and
+[ledger](reports/P694b_assets/verification.json) for raw counters, errors, stack
+traces, timing profiles and all isolated attempts.

@@ -1,0 +1,2186 @@
+[
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 150,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 105.186,
+        "maxMs": 105.404,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      105.186,
+      104.005,
+      105.354,
+      105.404,
+      104.056
+    ],
+    "buckets": {
+      "sim.collision": 83.1195,
+      "collision.ship.detect": 67.1912,
+      "sim.combat": 18.6057,
+      "collision.ship.dispatch": 15.3027,
+      "combat.detect": 14.947,
+      "combat.dispatch": 3.5367,
+      "sim.rescue": 1.8487,
+      "combat.killEject": 0.3484,
+      "combat.shipEvents": 0.337,
+      "combat.treasure": 0.3013,
+      "sim.economy": 0.2242,
+      "sim.visibility": 0.1934,
+      "combat.build": 0.1396,
+      "sim.warp": 0.0503,
+      "combat.stationEvents": 0.0234,
+      "sim.mining": 0.0102,
+      "sim.mines": 0.0044,
+      "sim.navigation": 0.0027,
+      "sim.station": 0.0012,
+      "sim.docking": 0.0014
+    },
+    "medianMs": 105.186,
+    "maxMs": 105.404,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 19275464
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 150,
+    "parallel": true,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 54.526,
+        "maxMs": 54.891,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      54.526,
+      54.548,
+      54.412,
+      54.891,
+      52.94
+    ],
+    "buckets": {
+      "sim.collision": 35.0184,
+      "collision.ship.detect": 19.573,
+      "sim.combat": 16.7748,
+      "collision.ship.dispatch": 15.1157,
+      "combat.detect": 13.1852,
+      "combat.dispatch": 3.4091,
+      "sim.rescue": 1.5863,
+      "combat.killEject": 0.3063,
+      "combat.shipEvents": 0.2966,
+      "combat.treasure": 0.2644,
+      "sim.visibility": 0.1965,
+      "combat.build": 0.1476,
+      "sim.economy": 0.1605,
+      "sim.warp": 0.0466,
+      "combat.stationEvents": 0.0196,
+      "sim.mining": 0.0118,
+      "sim.mines": 0.0048,
+      "sim.navigation": 0.0025,
+      "sim.docking": 0.0013,
+      "sim.station": 0.0009
+    },
+    "medianMs": 54.526,
+    "maxMs": 54.891,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 21761720
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": false,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 6.244,
+        "maxMs": 6.315,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      6.315,
+      6.261,
+      6.244,
+      6.226,
+      6.214
+    ],
+    "buckets": {
+      "sim.rescue": 3.4124,
+      "sim.collision": 1.6721,
+      "collision.station.detect": 1.53,
+      "sim.docking": 0.1723,
+      "sim.visibility": 0.1266,
+      "sim.warp": 0.0469,
+      "sim.mining": 0.0062,
+      "sim.combat": 0.0055,
+      "sim.economy": 0.0028,
+      "collision.station.dispatch": 0.0023,
+      "sim.mines": 0.002,
+      "sim.navigation": 0.0018,
+      "sim.station": 0.0008
+    },
+    "medianMs": 6.244,
+    "maxMs": 6.315,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 1102600
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": false,
+    "coincident": true,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 5.316,
+        "maxMs": 5.396,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      5.389,
+      5.316,
+      5.396,
+      5.311,
+      5.214
+    ],
+    "buckets": {
+      "sim.rescue": 3.4492,
+      "sim.collision": 0.641,
+      "collision.station.detect": 0.4849,
+      "sim.docking": 0.186,
+      "sim.visibility": 0.1358,
+      "sim.warp": 0.0495,
+      "sim.mining": 0.0067,
+      "sim.combat": 0.0053,
+      "sim.navigation": 0.0026,
+      "sim.economy": 0.0027,
+      "collision.station.dispatch": 0.002,
+      "sim.mines": 0.0021,
+      "sim.station": 0.0008
+    },
+    "medianMs": 5.316,
+    "maxMs": 5.396,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 1008640
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 94.304,
+        "maxMs": 94.956,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      93.681,
+      94.304,
+      94.278,
+      94.639,
+      94.956
+    ],
+    "buckets": {
+      "sim.collision": 61.5267,
+      "collision.ship.detect": 40.5901,
+      "sim.combat": 28.6826,
+      "combat.detect": 22.7593,
+      "collision.ship.dispatch": 20.6822,
+      "combat.dispatch": 5.6775,
+      "sim.rescue": 2.5643,
+      "combat.killEject": 0.5882,
+      "combat.shipEvents": 0.5727,
+      "combat.treasure": 0.5128,
+      "sim.economy": 0.3769,
+      "sim.visibility": 0.1768,
+      "combat.build": 0.1617,
+      "sim.warp": 0.0515,
+      "combat.stationEvents": 0.02,
+      "sim.mining": 0.0104,
+      "sim.mines": 0.0053,
+      "sim.navigation": 0.0026,
+      "sim.docking": 0.0014,
+      "sim.station": 0.0011
+    },
+    "medianMs": 94.304,
+    "maxMs": 94.956,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 24407232
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": true,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 37.063,
+        "maxMs": 37.674,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      37.674,
+      37.063,
+      36.916,
+      37.15,
+      36.863
+    ],
+    "buckets": {
+      "sim.combat": 32.043,
+      "combat.detect": 22.9811,
+      "combat.dispatch": 8.921,
+      "sim.rescue": 2.7278,
+      "sim.economy": 0.6824,
+      "combat.killEject": 0.6467,
+      "combat.shipEvents": 0.6296,
+      "combat.treasure": 0.5614,
+      "combat.build": 0.155,
+      "sim.visibility": 0.1562,
+      "sim.collision": 0.1124,
+      "sim.warp": 0.0486,
+      "combat.stationEvents": 0.0221,
+      "sim.mining": 0.0081,
+      "sim.mines": 0.0032,
+      "sim.navigation": 0.0026,
+      "sim.docking": 0.0014,
+      "sim.station": 0.0003
+    },
+    "medianMs": 37.063,
+    "maxMs": 37.674,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 35019832
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": true,
+    "stationDeath": false,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 5.842,
+        "maxMs": 5.968,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      5.842,
+      5.968,
+      5.149,
+      5.888,
+      4.782
+    ],
+    "buckets": {
+      "sim.rescue": 2.5189,
+      "sim.collision": 1.6567,
+      "collision.station.detect": 1.4942,
+      "sim.docking": 0.1811,
+      "sim.visibility": 0.141,
+      "sim.warp": 0.0515,
+      "sim.mining": 0.0072,
+      "sim.combat": 0.0059,
+      "sim.mines": 0.003,
+      "sim.economy": 0.0028,
+      "collision.station.dispatch": 0.0025,
+      "sim.navigation": 0.0023,
+      "sim.station": 0.0013
+    },
+    "medianMs": 5.842,
+    "maxMs": 5.968,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 1138632
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": true,
+    "stationDeath": false,
+    "coincident": true,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 5.599,
+        "maxMs": 5.836,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      5.836,
+      5.72,
+      5.599,
+      5.595,
+      4.405
+    ],
+    "buckets": {
+      "sim.rescue": 2.8659,
+      "sim.collision": 1.5235,
+      "collision.station.detect": 1.3694,
+      "sim.docking": 0.1903,
+      "sim.visibility": 0.143,
+      "sim.warp": 0.0553,
+      "sim.mining": 0.007,
+      "sim.combat": 0.0061,
+      "sim.mines": 0.0033,
+      "collision.station.dispatch": 0.0026,
+      "sim.economy": 0.0028,
+      "sim.navigation": 0.002,
+      "sim.station": 0.0014
+    },
+    "medianMs": 5.599,
+    "maxMs": 5.836,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 1046240
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": true,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 63.031,
+        "maxMs": 63.84,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      63.031,
+      63.84,
+      61.829,
+      61.881,
+      63.111
+    ],
+    "buckets": {
+      "sim.collision": 32.0324,
+      "sim.combat": 26.3107,
+      "collision.ship.dispatch": 20.4604,
+      "combat.detect": 20.4606,
+      "collision.ship.detect": 11.4764,
+      "combat.dispatch": 5.6954,
+      "sim.rescue": 2.2319,
+      "combat.killEject": 0.6226,
+      "combat.shipEvents": 0.6036,
+      "combat.treasure": 0.5354,
+      "sim.economy": 0.3942,
+      "sim.visibility": 0.1765,
+      "combat.build": 0.1634,
+      "sim.warp": 0.0524,
+      "combat.stationEvents": 0.0226,
+      "sim.mining": 0.0117,
+      "sim.mines": 0.0054,
+      "sim.navigation": 0.0027,
+      "sim.docking": 0.0013,
+      "sim.station": 0.0008
+    },
+    "medianMs": 63.031,
+    "maxMs": 63.84,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 28304992
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": true,
+    "stationDeath": true,
+    "coincident": true,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 38.145,
+        "maxMs": 38.22,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      38.207,
+      38.22,
+      38.145,
+      37.76,
+      37.064
+    ],
+    "buckets": {
+      "sim.combat": 33.3015,
+      "combat.detect": 24.1424,
+      "combat.dispatch": 8.9718,
+      "sim.rescue": 2.3907,
+      "sim.economy": 0.6529,
+      "combat.killEject": 0.6148,
+      "combat.shipEvents": 0.598,
+      "combat.treasure": 0.5258,
+      "sim.visibility": 0.1586,
+      "combat.build": 0.1612,
+      "sim.collision": 0.1137,
+      "sim.warp": 0.0506,
+      "combat.stationEvents": 0.0221,
+      "sim.mining": 0.0094,
+      "sim.mines": 0.0038,
+      "sim.navigation": 0.0031,
+      "sim.docking": 0.0013,
+      "sim.station": 0.0003
+    },
+    "medianMs": 38.145,
+    "maxMs": 38.22,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 39894296
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 200,
+    "parallel": false,
+    "stationDeath": false,
+    "coincident": false,
+    "nativeLaunch": true,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 69.415,
+        "maxMs": 72.864,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      72.864,
+      69.415,
+      69.319,
+      69.204,
+      69.719
+    ],
+    "buckets": {
+      "sim.collision": 64.65,
+      "collision.ship.detect": 61.8418,
+      "sim.rescue": 3.7306,
+      "collision.station.detect": 2.0291,
+      "collision.ship.dispatch": 0.6026,
+      "sim.visibility": 0.1635,
+      "sim.warp": 0.0552,
+      "sim.mining": 0.0093,
+      "sim.combat": 0.0064,
+      "sim.docking": 0.0066,
+      "sim.economy": 0.0035,
+      "sim.navigation": 0.0033,
+      "sim.mines": 0.0024,
+      "collision.station.dispatch": 0.0019,
+      "sim.station": 0.0016
+    },
+    "medianMs": 69.415,
+    "maxMs": 72.864,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 3653680
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 200,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": true,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 73.154,
+        "maxMs": 76.168,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      72.905,
+      74.73,
+      73.154,
+      76.168,
+      72.211
+    ],
+    "buckets": {
+      "sim.collision": 48.3044,
+      "collision.ship.detect": 47.6677,
+      "sim.combat": 20.3089,
+      "combat.detect": 15.9666,
+      "combat.dispatch": 4.1553,
+      "sim.rescue": 2.6796,
+      "combat.killEject": 0.6869,
+      "combat.shipEvents": 0.6691,
+      "combat.treasure": 0.5989,
+      "collision.ship.dispatch": 0.5489,
+      "sim.economy": 0.496,
+      "sim.visibility": 0.2254,
+      "combat.build": 0.1904,
+      "sim.warp": 0.0772,
+      "combat.stationEvents": 0.0223,
+      "sim.mining": 0.0112,
+      "sim.mines": 0.0041,
+      "sim.navigation": 0.0034,
+      "sim.docking": 0.0012,
+      "sim.station": 0.0006
+    },
+    "medianMs": 73.154,
+    "maxMs": 76.168,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 14458568
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 200,
+    "parallel": true,
+    "stationDeath": false,
+    "coincident": false,
+    "nativeLaunch": true,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 25.979,
+        "maxMs": 27.013,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      24.999,
+      24.072,
+      26.817,
+      27.013,
+      25.979
+    ],
+    "buckets": {
+      "sim.collision": 21.731,
+      "collision.ship.detect": 18.7666,
+      "sim.rescue": 2.9175,
+      "collision.station.detect": 1.8492,
+      "collision.ship.dispatch": 0.6269,
+      "sim.visibility": 0.1942,
+      "sim.warp": 0.0663,
+      "sim.mining": 0.0108,
+      "sim.navigation": 0.0024,
+      "sim.combat": 0.0071,
+      "sim.docking": 0.008,
+      "sim.economy": 0.0037,
+      "sim.mines": 0.0037,
+      "collision.station.dispatch": 0.0017,
+      "sim.station": 0.0016
+    },
+    "medianMs": 25.979,
+    "maxMs": 27.013,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 4540768
+  },
+  {
+    "scope": "full-suite",
+    "configuration": "Debug",
+    "count": 200,
+    "parallel": true,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": true,
+    "runs": [
+      {
+        "label": "suite-Allegiance.Core.Tests-final",
+        "medianMs": 37.12,
+        "maxMs": 37.658,
+        "load": [
+          5.5732421875,
+          4.86376953125,
+          4.73583984375
+        ]
+      }
+    ],
+    "samples": [
+      37.524,
+      37.075,
+      37.12,
+      37.658,
+      36.697
+    ],
+    "buckets": {
+      "sim.combat": 18.3079,
+      "sim.collision": 14.8165,
+      "collision.ship.detect": 14.2297,
+      "combat.detect": 14.3681,
+      "combat.dispatch": 3.8951,
+      "sim.rescue": 2.1466,
+      "combat.killEject": 0.6426,
+      "combat.shipEvents": 0.6231,
+      "combat.treasure": 0.5558,
+      "collision.ship.dispatch": 0.509,
+      "sim.economy": 0.4105,
+      "combat.build": 0.1673,
+      "sim.visibility": 0.1749,
+      "sim.warp": 0.051,
+      "combat.stationEvents": 0.0196,
+      "sim.mining": 0.0094,
+      "sim.mines": 0.0035,
+      "sim.navigation": 0.0024,
+      "sim.docking": 0.0012,
+      "sim.station": 0.0003
+    },
+    "medianMs": 37.12,
+    "maxMs": 37.658,
+    "sampleCount": 5,
+    "medianAllocatedBytes": 15913960
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 150,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 27.034,
+        "maxMs": 31.616,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 26.884,
+        "maxMs": 31.231,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 25.857,
+        "maxMs": 31.051,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      31.616,
+      27.034,
+      26.755,
+      27.652,
+      26.944,
+      31.231,
+      26.884,
+      26.863,
+      26.651,
+      27.112,
+      31.051,
+      25.796,
+      26.078,
+      25.857,
+      25.843
+    ],
+    "buckets": {
+      "sim.collision": 20.0805,
+      "collision.ship.detect": 16.9226,
+      "collision.ship.dispatch": 3.1434,
+      "sim.combat": 6.2782,
+      "combat.detect": 5.0936,
+      "combat.dispatch": 1.1279,
+      "combat.killEject": 0.1502,
+      "combat.shipEvents": 0.1454,
+      "sim.economy": 0.022,
+      "combat.treasure": 0.1163,
+      "sim.visibility": 0.0642,
+      "sim.rescue": 0.0488,
+      "combat.build": 0.0552,
+      "sim.warp": 0.008,
+      "combat.stationEvents": 0.009,
+      "sim.mining": 0.0021,
+      "sim.mines": 0.0015,
+      "sim.navigation": 0.001,
+      "sim.station": 0.0002,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 26.884,
+    "maxMs": 31.616,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 18492016
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 150,
+    "parallel": true,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 14.72,
+        "maxMs": 15.381,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 14.36,
+        "maxMs": 14.732,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 14.602,
+        "maxMs": 14.992,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      15.28,
+      15.381,
+      14.72,
+      14.486,
+      14.62,
+      14.426,
+      14.36,
+      14.251,
+      14.732,
+      14.227,
+      14.602,
+      14.992,
+      14.502,
+      14.726,
+      14.335
+    ],
+    "buckets": {
+      "sim.collision": 8.4795,
+      "sim.combat": 5.6222,
+      "collision.ship.detect": 5.3058,
+      "combat.detect": 4.4294,
+      "collision.ship.dispatch": 3.1893,
+      "combat.dispatch": 1.1363,
+      "combat.killEject": 0.1463,
+      "combat.shipEvents": 0.1412,
+      "combat.treasure": 0.1128,
+      "sim.economy": 0.0227,
+      "sim.visibility": 0.0643,
+      "combat.build": 0.0553,
+      "sim.rescue": 0.0565,
+      "combat.stationEvents": 0.0089,
+      "sim.warp": 0.0068,
+      "sim.mining": 0.0023,
+      "sim.mines": 0.0011,
+      "sim.navigation": 0.0008,
+      "sim.station": 0.0004,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 14.602,
+    "maxMs": 15.381,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 20988008
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": false,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 0.898,
+        "maxMs": 0.928,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 0.848,
+        "maxMs": 0.916,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 0.851,
+        "maxMs": 0.965,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      0.928,
+      0.898,
+      0.877,
+      0.911,
+      0.874,
+      0.878,
+      0.835,
+      0.848,
+      0.836,
+      0.916,
+      0.965,
+      0.96,
+      0.851,
+      0.85,
+      0.832
+    ],
+    "buckets": {
+      "sim.collision": 0.4794,
+      "collision.station.detect": 0.4261,
+      "sim.docking": 0.1377,
+      "sim.rescue": 0.0749,
+      "sim.visibility": 0.0515,
+      "sim.warp": 0.0053,
+      "sim.combat": 0.0026,
+      "sim.mining": 0.0019,
+      "sim.economy": 0.0006,
+      "sim.navigation": 0.0005,
+      "collision.station.dispatch": 0.0002,
+      "sim.mines": 0.0005,
+      "sim.station": 0.0001
+    },
+    "medianMs": 0.877,
+    "maxMs": 0.965,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 1077776
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": false,
+    "coincident": true,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 0.604,
+        "maxMs": 0.646,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 0.569,
+        "maxMs": 0.583,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 0.568,
+        "maxMs": 0.588,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      0.618,
+      0.646,
+      0.581,
+      0.572,
+      0.604,
+      0.583,
+      0.563,
+      0.562,
+      0.569,
+      0.572,
+      0.564,
+      0.588,
+      0.568,
+      0.556,
+      0.568
+    ],
+    "buckets": {
+      "sim.collision": 0.1779,
+      "sim.docking": 0.1455,
+      "collision.station.detect": 0.1185,
+      "sim.rescue": 0.0746,
+      "sim.visibility": 0.053,
+      "sim.warp": 0.0054,
+      "sim.combat": 0.0026,
+      "sim.mining": 0.0019,
+      "sim.economy": 0.0006,
+      "collision.station.dispatch": 0.0003,
+      "sim.navigation": 0.0005,
+      "sim.mines": 0.0003,
+      "sim.station": 0.0001
+    },
+    "medianMs": 0.572,
+    "maxMs": 0.646,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 988160
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 27.924,
+        "maxMs": 29.287,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 24.9,
+        "maxMs": 25.126,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 23.746,
+        "maxMs": 24.912,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      25.488,
+      25.583,
+      27.924,
+      29.287,
+      28.091,
+      24.849,
+      24.9,
+      25.024,
+      25.126,
+      24.789,
+      24.009,
+      24.912,
+      23.74,
+      23.746,
+      23.61
+    ],
+    "buckets": {
+      "sim.collision": 14.8272,
+      "collision.ship.detect": 10.4085,
+      "sim.combat": 9.6991,
+      "combat.detect": 7.7654,
+      "collision.ship.dispatch": 4.2839,
+      "combat.dispatch": 1.8895,
+      "combat.killEject": 0.296,
+      "combat.shipEvents": 0.2874,
+      "combat.treasure": 0.2331,
+      "sim.economy": 0.0439,
+      "sim.rescue": 0.0605,
+      "combat.build": 0.0624,
+      "sim.visibility": 0.0671,
+      "combat.stationEvents": 0.0105,
+      "sim.warp": 0.0088,
+      "sim.mining": 0.0024,
+      "sim.navigation": 0.001,
+      "sim.mines": 0.0022,
+      "sim.station": 0.0002,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 24.912,
+    "maxMs": 29.287,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 23278824
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": true,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 13.824,
+        "maxMs": 14.073,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 13.378,
+        "maxMs": 13.611,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 12.187,
+        "maxMs": 12.742,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      14.073,
+      13.964,
+      12.992,
+      13.594,
+      13.824,
+      13.577,
+      13.611,
+      13.228,
+      13.255,
+      13.378,
+      12.742,
+      12.569,
+      12.02,
+      11.96,
+      12.187
+    ],
+    "buckets": {
+      "sim.combat": 12.6495,
+      "combat.detect": 9.7594,
+      "combat.dispatch": 2.8387,
+      "sim.economy": 0.0207,
+      "combat.killEject": 0.304,
+      "combat.shipEvents": 0.2953,
+      "combat.treasure": 0.2393,
+      "sim.rescue": 0.0636,
+      "combat.build": 0.0675,
+      "sim.visibility": 0.0681,
+      "sim.collision": 0.0362,
+      "combat.stationEvents": 0.0107,
+      "sim.warp": 0.0097,
+      "sim.mining": 0.0025,
+      "sim.mines": 0.0011,
+      "sim.navigation": 0.0016,
+      "sim.station": 0.0002,
+      "sim.docking": 0.0002
+    },
+    "medianMs": 13.255,
+    "maxMs": 14.073,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 34849816
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": true,
+    "stationDeath": false,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 0.822,
+        "maxMs": 1.064,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 0.781,
+        "maxMs": 0.852,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 0.818,
+        "maxMs": 0.963,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      0.876,
+      0.822,
+      0.795,
+      0.813,
+      1.064,
+      0.781,
+      0.852,
+      0.769,
+      0.836,
+      0.772,
+      0.818,
+      0.963,
+      0.818,
+      0.824,
+      0.799
+    ],
+    "buckets": {
+      "sim.collision": 0.4251,
+      "collision.station.detect": 0.368,
+      "sim.docking": 0.1358,
+      "sim.rescue": 0.0749,
+      "sim.visibility": 0.0546,
+      "sim.warp": 0.0053,
+      "sim.combat": 0.0027,
+      "sim.mining": 0.0021,
+      "sim.economy": 0.0006,
+      "sim.navigation": 0.0006,
+      "sim.mines": 0.0008,
+      "collision.station.dispatch": 0.0002,
+      "sim.station": 0.0001
+    },
+    "medianMs": 0.818,
+    "maxMs": 1.064,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 1110736
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": true,
+    "stationDeath": false,
+    "coincident": true,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 0.612,
+        "maxMs": 0.718,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 0.585,
+        "maxMs": 0.673,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 0.591,
+        "maxMs": 0.621,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      0.718,
+      0.612,
+      0.616,
+      0.595,
+      0.585,
+      0.575,
+      0.673,
+      0.589,
+      0.575,
+      0.585,
+      0.587,
+      0.621,
+      0.57,
+      0.593,
+      0.591
+    ],
+    "buckets": {
+      "sim.collision": 0.1981,
+      "sim.docking": 0.1388,
+      "collision.station.detect": 0.1395,
+      "sim.rescue": 0.0821,
+      "sim.visibility": 0.0577,
+      "sim.warp": 0.0046,
+      "sim.combat": 0.003,
+      "sim.mining": 0.0019,
+      "sim.economy": 0.0006,
+      "sim.navigation": 0.0005,
+      "collision.station.dispatch": 0.0003,
+      "sim.mines": 0.0004,
+      "sim.station": 0.0001
+    },
+    "medianMs": 0.591,
+    "maxMs": 0.718,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 1013064
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": true,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 18.055,
+        "maxMs": 22.197,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 16.832,
+        "maxMs": 21.476,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 16.779,
+        "maxMs": 25.486,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      22.197,
+      17.553,
+      17.053,
+      18.055,
+      18.197,
+      21.476,
+      16.832,
+      17.072,
+      16.788,
+      16.764,
+      25.486,
+      16.904,
+      16.54,
+      16.779,
+      16.43
+    ],
+    "buckets": {
+      "sim.collision": 7.6584,
+      "collision.ship.dispatch": 4.4244,
+      "sim.combat": 8.8317,
+      "combat.detect": 6.7943,
+      "collision.ship.detect": 3.1292,
+      "combat.dispatch": 1.9125,
+      "combat.killEject": 0.3031,
+      "combat.shipEvents": 0.295,
+      "sim.economy": 0.0442,
+      "combat.treasure": 0.2375,
+      "sim.rescue": 0.0758,
+      "combat.build": 0.072,
+      "sim.visibility": 0.0695,
+      "sim.warp": 0.0094,
+      "combat.stationEvents": 0.0093,
+      "sim.mining": 0.0027,
+      "sim.navigation": 0.0011,
+      "sim.mines": 0.0017,
+      "sim.station": 0.0003,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 17.053,
+    "maxMs": 25.486,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 27182840
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": true,
+    "stationDeath": true,
+    "coincident": true,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 13.455,
+        "maxMs": 13.798,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 12.984,
+        "maxMs": 13.984,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 12.805,
+        "maxMs": 13.223,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      13.363,
+      13.143,
+      13.798,
+      13.535,
+      13.455,
+      13.984,
+      12.876,
+      13.017,
+      12.984,
+      12.628,
+      13.031,
+      13.223,
+      12.684,
+      12.061,
+      12.805
+    ],
+    "buckets": {
+      "sim.combat": 12.4034,
+      "combat.detect": 9.5161,
+      "combat.dispatch": 2.8226,
+      "sim.economy": 0.0201,
+      "combat.killEject": 0.3036,
+      "combat.shipEvents": 0.2945,
+      "combat.treasure": 0.2361,
+      "sim.rescue": 0.0789,
+      "combat.build": 0.0636,
+      "sim.visibility": 0.0671,
+      "sim.collision": 0.0339,
+      "combat.stationEvents": 0.0109,
+      "sim.warp": 0.0089,
+      "sim.mining": 0.0023,
+      "sim.navigation": 0.0011,
+      "sim.mines": 0.001,
+      "sim.station": 0.0002,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 13.031,
+    "maxMs": 13.984,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 39705616
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 200,
+    "parallel": false,
+    "stationDeath": false,
+    "coincident": false,
+    "nativeLaunch": true,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 17.051,
+        "maxMs": 17.573,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 16.826,
+        "maxMs": 17.187,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 16.645,
+        "maxMs": 17.05,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      16.819,
+      17.051,
+      17.438,
+      16.936,
+      17.573,
+      16.929,
+      16.784,
+      16.826,
+      17.187,
+      16.675,
+      17.05,
+      16.607,
+      16.639,
+      16.665,
+      16.645
+    ],
+    "buckets": {
+      "sim.collision": 16.5789,
+      "collision.ship.detect": 15.92,
+      "collision.station.detect": 0.4706,
+      "collision.ship.dispatch": 0.1376,
+      "sim.rescue": 0.0807,
+      "sim.visibility": 0.0644,
+      "sim.warp": 0.0075,
+      "sim.combat": 0.0028,
+      "sim.mining": 0.0021,
+      "sim.docking": 0.002,
+      "sim.navigation": 0.0013,
+      "sim.economy": 0.0007,
+      "sim.mines": 0.0005,
+      "collision.station.dispatch": 0.0001,
+      "sim.station": 0.0001
+    },
+    "medianMs": 16.826,
+    "maxMs": 17.573,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 3628504
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 200,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": true,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 19.767,
+        "maxMs": 20.149,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 19.634,
+        "maxMs": 19.901,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 19.021,
+        "maxMs": 19.434,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      19.935,
+      20.149,
+      19.682,
+      19.637,
+      19.767,
+      19.655,
+      19.901,
+      19.455,
+      19.634,
+      19.311,
+      18.891,
+      19.066,
+      19.021,
+      19.434,
+      18.709
+    ],
+    "buckets": {
+      "sim.collision": 12.2294,
+      "collision.ship.detect": 12.0566,
+      "sim.combat": 6.6968,
+      "combat.detect": 5.2415,
+      "combat.dispatch": 1.393,
+      "combat.killEject": 0.3281,
+      "combat.shipEvents": 0.3188,
+      "sim.economy": 0.0518,
+      "combat.treasure": 0.2538,
+      "collision.ship.dispatch": 0.1144,
+      "sim.rescue": 0.0617,
+      "sim.visibility": 0.0697,
+      "combat.build": 0.0689,
+      "combat.stationEvents": 0.0095,
+      "sim.warp": 0.0105,
+      "sim.mining": 0.0022,
+      "sim.mines": 0.0011,
+      "sim.navigation": 0.0012,
+      "sim.station": 0.0002,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 19.634,
+    "maxMs": 20.149,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 14279312
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 200,
+    "parallel": true,
+    "stationDeath": false,
+    "coincident": false,
+    "nativeLaunch": true,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 6.07,
+        "maxMs": 6.373,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 6.169,
+        "maxMs": 6.413,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 6.383,
+        "maxMs": 6.744,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      6.135,
+      6.07,
+      6.046,
+      5.975,
+      6.373,
+      6.157,
+      6.413,
+      6.169,
+      6.369,
+      5.779,
+      6.744,
+      6.635,
+      6.383,
+      6.309,
+      6.37
+    ],
+    "buckets": {
+      "sim.collision": 5.8774,
+      "collision.ship.detect": 5.1292,
+      "collision.station.detect": 0.375,
+      "collision.ship.dispatch": 0.1686,
+      "sim.rescue": 0.1331,
+      "sim.visibility": 0.1228,
+      "sim.warp": 0.0361,
+      "sim.mining": 0.0114,
+      "sim.combat": 0.0047,
+      "sim.navigation": 0.0032,
+      "sim.economy": 0.003,
+      "sim.docking": 0.0057,
+      "collision.station.dispatch": 0.0005,
+      "sim.mines": 0.0007,
+      "sim.station": 0.0005
+    },
+    "medianMs": 6.309,
+    "maxMs": 6.744,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 4492152
+  },
+  {
+    "scope": "matrix",
+    "configuration": "Release",
+    "count": 200,
+    "parallel": true,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": true,
+    "runs": [
+      {
+        "label": "warm5-matrix-Release-1",
+        "medianMs": 11.556,
+        "maxMs": 12.128,
+        "load": [
+          4.412109375,
+          4.7587890625,
+          5.56591796875
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-2",
+        "medianMs": 10.963,
+        "maxMs": 11.196,
+        "load": [
+          4.525390625,
+          4.43994140625,
+          5.2734375
+        ]
+      },
+      {
+        "label": "warm5-matrix-Release-3",
+        "medianMs": 10.854,
+        "maxMs": 12.164,
+        "load": [
+          3.546875,
+          3.86767578125,
+          4.87939453125
+        ]
+      }
+    ],
+    "samples": [
+      12.128,
+      11.697,
+      11.556,
+      11.323,
+      11.016,
+      11.16,
+      10.884,
+      10.963,
+      11.196,
+      10.924,
+      10.858,
+      10.708,
+      10.854,
+      12.164,
+      10.812
+    ],
+    "buckets": {
+      "sim.combat": 6.237,
+      "combat.detect": 4.749,
+      "sim.collision": 4.2088,
+      "collision.ship.detect": 4.0618,
+      "combat.dispatch": 1.3783,
+      "combat.killEject": 0.318,
+      "combat.shipEvents": 0.3085,
+      "sim.economy": 0.0515,
+      "combat.treasure": 0.25,
+      "collision.ship.dispatch": 0.1201,
+      "combat.build": 0.0749,
+      "sim.visibility": 0.0766,
+      "sim.rescue": 0.0699,
+      "sim.warp": 0.0094,
+      "combat.stationEvents": 0.0102,
+      "sim.mining": 0.0032,
+      "sim.navigation": 0.0008,
+      "sim.mines": 0.001,
+      "sim.station": 0.0002,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 11.016,
+    "maxMs": 12.164,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 15725704
+  },
+  {
+    "scope": "single-row",
+    "configuration": "Debug",
+    "count": 150,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-case-Debug-150-1",
+        "medianMs": 107.125,
+        "maxMs": 108.902,
+        "load": [
+          5.75634765625,
+          5.22900390625,
+          5.94091796875
+        ]
+      },
+      {
+        "label": "warm5-case-Debug-150-2",
+        "medianMs": 104.999,
+        "maxMs": 105.229,
+        "load": [
+          5.33837890625,
+          5.15576171875,
+          5.90869140625
+        ]
+      },
+      {
+        "label": "warm5-case-Debug-150-3",
+        "medianMs": 104.539,
+        "maxMs": 104.832,
+        "load": [
+          5.15087890625,
+          5.11962890625,
+          5.89306640625
+        ]
+      }
+    ],
+    "samples": [
+      107.534,
+      104.828,
+      108.902,
+      105.622,
+      107.125,
+      105.229,
+      105.11,
+      104.431,
+      104.999,
+      104.493,
+      104.456,
+      104.14,
+      104.832,
+      104.539,
+      104.748
+    ],
+    "buckets": {
+      "sim.collision": 83.6109,
+      "collision.ship.detect": 67.1509,
+      "sim.combat": 18.2379,
+      "collision.ship.dispatch": 16.3454,
+      "combat.detect": 14.7229,
+      "combat.dispatch": 3.2888,
+      "sim.rescue": 1.863,
+      "combat.killEject": 0.3702,
+      "combat.shipEvents": 0.362,
+      "combat.treasure": 0.3188,
+      "sim.economy": 0.2049,
+      "sim.visibility": 0.1859,
+      "combat.build": 0.1245,
+      "sim.warp": 0.0526,
+      "combat.stationEvents": 0.016,
+      "sim.mining": 0.0077,
+      "sim.mines": 0.0041,
+      "sim.navigation": 0.0022,
+      "sim.docking": 0.0013,
+      "sim.station": 0.0011
+    },
+    "medianMs": 104.832,
+    "maxMs": 108.902,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 18856936
+  },
+  {
+    "scope": "single-row",
+    "configuration": "Debug",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-case-Debug-195-1",
+        "medianMs": 97.885,
+        "maxMs": 99.816,
+        "load": [
+          5.060546875,
+          5.099609375,
+          5.87841796875
+        ]
+      },
+      {
+        "label": "warm5-case-Debug-195-2",
+        "medianMs": 95.447,
+        "maxMs": 97.508,
+        "load": [
+          5.0556640625,
+          5.09765625,
+          5.87353515625
+        ]
+      },
+      {
+        "label": "warm5-case-Debug-195-3",
+        "medianMs": 96.098,
+        "maxMs": 96.854,
+        "load": [
+          4.826171875,
+          5.044921875,
+          5.84765625
+        ]
+      }
+    ],
+    "samples": [
+      97.885,
+      99.816,
+      96.829,
+      95.383,
+      98.657,
+      95.572,
+      95.184,
+      95.447,
+      95.306,
+      97.508,
+      95.835,
+      96.133,
+      96.098,
+      95.642,
+      96.854
+    ],
+    "buckets": {
+      "sim.collision": 63.3073,
+      "collision.ship.detect": 40.8046,
+      "sim.combat": 28.3453,
+      "combat.detect": 22.5607,
+      "collision.ship.dispatch": 22.3721,
+      "combat.dispatch": 5.5906,
+      "sim.rescue": 2.5847,
+      "combat.killEject": 0.6662,
+      "combat.shipEvents": 0.6509,
+      "combat.treasure": 0.5793,
+      "sim.economy": 0.421,
+      "sim.visibility": 0.1753,
+      "combat.build": 0.148,
+      "sim.warp": 0.0529,
+      "combat.stationEvents": 0.0153,
+      "sim.mining": 0.0075,
+      "sim.mines": 0.0048,
+      "sim.navigation": 0.0025,
+      "sim.docking": 0.0013,
+      "sim.station": 0.0007
+    },
+    "medianMs": 96.098,
+    "maxMs": 99.816,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 23794528
+  },
+  {
+    "scope": "single-row",
+    "configuration": "Release",
+    "count": 150,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-case-Release-150-1",
+        "medianMs": 25.946,
+        "maxMs": 26.7,
+        "load": [
+          3.10546875,
+          4.88232421875,
+          5.9345703125
+        ]
+      },
+      {
+        "label": "warm5-case-Release-150-2",
+        "medianMs": 38.678,
+        "maxMs": 47.78,
+        "load": [
+          3.97802734375,
+          5.0341796875,
+          5.97802734375
+        ]
+      },
+      {
+        "label": "warm5-case-Release-150-3",
+        "medianMs": 25.897,
+        "maxMs": 26.422,
+        "load": [
+          3.75341796875,
+          4.9501953125,
+          5.9404296875
+        ]
+      }
+    ],
+    "samples": [
+      26.7,
+      26.665,
+      25.862,
+      25.946,
+      25.4,
+      27.863,
+      32.471,
+      38.678,
+      47.78,
+      46.224,
+      25.908,
+      25.897,
+      25.856,
+      25.594,
+      26.422
+    ],
+    "buckets": {
+      "sim.collision": 20.0035,
+      "collision.ship.detect": 17.1725,
+      "sim.combat": 5.802,
+      "combat.detect": 4.439,
+      "collision.ship.dispatch": 2.7836,
+      "combat.dispatch": 1.2725,
+      "combat.killEject": 0.2037,
+      "combat.shipEvents": 0.1986,
+      "combat.treasure": 0.1571,
+      "combat.build": 0.0631,
+      "sim.visibility": 0.069,
+      "sim.rescue": 0.0498,
+      "sim.economy": 0.023,
+      "combat.stationEvents": 0.0109,
+      "sim.warp": 0.011,
+      "sim.mining": 0.0022,
+      "sim.mines": 0.0021,
+      "sim.navigation": 0.0013,
+      "sim.station": 0.0004,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 26.422,
+    "maxMs": 47.78,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 18493464
+  },
+  {
+    "scope": "single-row",
+    "configuration": "Release",
+    "count": 195,
+    "parallel": false,
+    "stationDeath": true,
+    "coincident": false,
+    "nativeLaunch": false,
+    "runs": [
+      {
+        "label": "warm5-case-Release-195-1",
+        "medianMs": 23.717,
+        "maxMs": 28.476,
+        "load": [
+          3.61279296875,
+          4.90087890625,
+          5.9189453125
+        ]
+      },
+      {
+        "label": "warm5-case-Release-195-2",
+        "medianMs": 24.019,
+        "maxMs": 25.125,
+        "load": [
+          3.5634765625,
+          4.869140625,
+          5.90283203125
+        ]
+      },
+      {
+        "label": "warm5-case-Release-195-3",
+        "medianMs": 24.136,
+        "maxMs": 27.015,
+        "load": [
+          4.3671875,
+          5.00390625,
+          5.93603515625
+        ]
+      }
+    ],
+    "samples": [
+      23.717,
+      23.299,
+      23.835,
+      23.382,
+      28.476,
+      24.019,
+      23.115,
+      25.125,
+      24.542,
+      23.154,
+      24.136,
+      24.003,
+      24.148,
+      23.508,
+      27.015
+    ],
+    "buckets": {
+      "sim.collision": 14.2681,
+      "collision.ship.detect": 10.4248,
+      "sim.combat": 8.7218,
+      "combat.detect": 6.6924,
+      "collision.ship.dispatch": 3.7699,
+      "combat.dispatch": 1.9613,
+      "combat.killEject": 0.3067,
+      "combat.shipEvents": 0.2977,
+      "combat.treasure": 0.2366,
+      "sim.visibility": 0.0706,
+      "combat.build": 0.069,
+      "sim.rescue": 0.0616,
+      "sim.economy": 0.0406,
+      "sim.warp": 0.0102,
+      "combat.stationEvents": 0.0101,
+      "sim.mining": 0.0026,
+      "sim.mines": 0.0017,
+      "sim.navigation": 0.0011,
+      "sim.station": 0.0003,
+      "sim.docking": 0.0001
+    },
+    "medianMs": 24.003,
+    "maxMs": 28.476,
+    "sampleCount": 15,
+    "medianAllocatedBytes": 23277224
+  }
+]
