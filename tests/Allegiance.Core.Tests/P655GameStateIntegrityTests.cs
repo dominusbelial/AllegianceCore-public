@@ -109,6 +109,65 @@ public sealed class P655GameStateIntegrityTests
     }
 
     [SkippableFact]
+    public void H11_Corrected_client_converges_after_server_moves_beyond_old_travel_anchor()
+    {
+        using var w = new World();
+        w.Send(w.Pose(10000, w.Ship.Position));
+        // While poses are rejected/lost, the authoritative ship keeps flying.
+        // Its reset pose can be farther from the last accepted pose than the
+        // bounded idle credit. A client applying that reset must recover.
+        w.Ship.Position += new Vector3(1000, 0, 0);
+        w.Now(20);
+        w.Send(w.Pose(20000, w.Ship.Position + new Vector3(500, 0, 0)));
+        Assert.Single(w.Output, o => FedMessageHeader.Read(o.Message).Fmid == ShipReset.Fmid);
+        w.Output.Clear();
+        w.Now(20.15);
+        w.Send(w.Pose(20150, w.Ship.Position + new Vector3(1.8f, 0, 0), new Vector3(10, 0, 0)));
+        Assert.Empty(w.Output);
+        Assert.InRange(w.Ship.Velocity.Length(), 9, 11);
+    }
+
+    [SkippableFact]
+    public void H11_Repeated_corrections_do_not_refill_client_travel_credit()
+    {
+        using var w = new World();
+        var start = w.Ship.Position;
+        for (int i = 0; i < 200; i++)
+        {
+            w.Now(10 + i * .01);
+            // Alternate an accepted small step and a rejected teleport. Cookie
+            // renewal must not mint another native 20m of distance each time.
+            w.Send(w.Pose((uint)(10000 + i * 10), w.Ship.Position + new Vector3(i % 2 == 0 ? 19.5f : 500, 0, 0)));
+        }
+        Assert.InRange((w.Ship.Position - start).Length(), 0, w.Ship.MovementSpeedLimit() * 1.99f + 20);
+        Assert.Contains(w.Output, o => FedMessageHeader.Read(o.Message).Fmid == ShipReset.Fmid);
+    }
+
+    [SkippableFact]
+    public void H11_Afterburner_speed_limit_matches_side_scaled_flight_thrust()
+    {
+        using var w = new World();
+        var factors = Enumerable.Repeat(1f, GlobalAttributeSet.Count).ToArray();
+        factors[GlobalAttributeSet.Thrust] = 2;
+        w.Mission.Sides[0].GlobalAttributes = new GlobalAttributeSet(factors);
+        w.Ship.ChangeHull(w.Ship.HullType with { MaxFuel = 100 });
+        w.Ship.SetFuel(100);
+        var part = w.Mission.Core.PartTypes.Values.First(p => p.Type is DataPartTypeIGC.Afterburner) with
+        {
+            PartMask = 0,
+            Type = new DataPartTypeIGC.Afterburner(0, w.Ship.HullType.Thrust, 100, 100, 0, 0),
+        };
+        Assert.NotNull(w.Ship.MountPart(part, 1, 0, 255));
+        w.Ship.StateM = ShipControlState.AfterburnerButton;
+        // Native scales both booster and main-engine thrust by c_gaThrust;
+        // their ratio stays one, so this legal boost is near twice cruise.
+        float speed = w.Ship.EffectiveMaxSpeed() * 1.9f;
+        w.Send(w.Pose(10000, w.Ship.Position, new Vector3(speed, 0, 0), ShipControlState.AfterburnerButton));
+        Assert.Empty(w.Output);
+        Assert.InRange(w.Ship.Velocity.Length(), speed - 1, speed + 1);
+    }
+
+    [SkippableFact]
     public void H11_First_pose_after_reposition_tolerates_the_native_clock_window()
     {
         using var w = new World();

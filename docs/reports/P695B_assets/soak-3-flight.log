@@ -1,0 +1,61 @@
+wall=60.0s sim=60.1s scale=1 accepted=342 rejected=1 resets=1
+wall=120.0s sim=120.1s scale=1 accepted=642 rejected=1 resets=1
+wall=180.0s sim=180.1s scale=1 accepted=1029 rejected=1 resets=1
+wall=240.0s sim=234.1s scale=0.85 accepted=1429 rejected=1 resets=1
+wall=300.0s sim=285.1s scale=0.85 accepted=1829 rejected=1 resets=1
+wall=360.0s sim=336.1s scale=0.85 accepted=2229 rejected=1 resets=1
+wall=420.0s sim=380.1s scale=0.5 accepted=2629 rejected=1 resets=1
+wall=480.0s sim=410.1s scale=0.5 accepted=3029 rejected=1 resets=1
+wall=540.0s sim=440.1s scale=0.5 accepted=3382 rejected=1 resets=1
+wall=600.0s sim=470.1s scale=0.5 accepted=3682 rejected=1 resets=1
+P695b soak: real-wall=605.0s flight-wall=611.4s accepted=3739 rejected=1 resets=1 boost-frames=406
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=56 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x01) reject-reasons[speed=0 envelope=0 travel=0]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=122 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x01) reject-reasons[speed=0 envelope=0 travel=0]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=189 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x01) reject-reasons[speed=0 envelope=0 travel=0]
+[sim] SHIP_RESET #1 — snapped to server pose, cookie 0x02
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=242 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=292 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=342 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=393 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=443 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=493 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=543 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=594 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=644 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=698 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=764 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=831 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=898 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=964 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1031 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1098 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[timescale] sim.timeScale -> 0.85
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1165 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1244 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1322 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1401 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1480 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1558 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1637 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1716 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1794 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1873 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1952 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2030 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2109 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2188 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2266 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2345 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2424 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[timescale] sim.timeScale -> 0.5
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2507 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2641 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2774 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=2908 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=3042 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=3175 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=3292 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=3392 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=3493 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=3593 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=3693 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=499.36m (cookie 0x02) reject-reasons[speed=0 envelope=1 travel=1]

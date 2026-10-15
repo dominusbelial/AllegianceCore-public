@@ -219,3 +219,193 @@ the corrected layout.
 
 Commands use `local.env` for the installed artwork/native corpus. Rig/221/200v200
 runs are reserved for the other lane and were not run here.
+
+
+## P695b — persistent small-error corrections
+
+Base: `master 5b046d80`, working branch `codex/p695b`. Changes remain in the
+working tree; no commits or pushes. No rig / 221 / 200v200 run was attempted.
+
+### Rejection check and native comparison
+
+`Server.Dispatch.ProcessPeerShipUpdate` checks three independent movement
+conditions after replaying the reported pose to `SimNow`: speed, distance from
+the current authoritative pose, and travel credit measured from the previous
+accepted pose. The spatial envelope starts at **20m**, with the existing bounded
+latency allowance. A **1.8m mean rejection distance is not a 1.8m threshold**:
+that diagnostic describes distance from the server, even when speed or travel
+credit caused the rejection.
+
+Native source was read locally under `~/Development/Allegiance/src/`:
+
+| Native rule | Source |
+| --- | --- |
+| Match the current cookie; require a ship in a cluster without a parent | `FedSrv/FedSrv.CPP:4851-4864` |
+| Require increasing embedded timestamps; remember a timestamp only after acceptance | `FedSrv/fsship.cpp:1173-1183` |
+| Compare the embedded server timestamp with the ship clock, within 1.5s in either direction | `Igc/shipIGC.cpp:3139-3148` |
+| Replay to server time, always accept orientation, then accept position/velocity when squared position error is below 400 (distance below 20m) | `Igc/shipIGC.cpp:3175-3192` |
+| On rejection export the authoritative pose and send a new-cookie SHIP_RESET | `FedSrv/fsship.cpp:1192-1201` |
+| The client applies the reset pose and adopts its cookie | `clintlib/appmsg.cpp:1179-1190` |
+| Integrate velocity using seconds and thrust × dt / mass; ramp turns before computing thrust/drag | `Igc/shipIGC.cpp:2852-2917` |
+| Use GA-scaled engine thrust and booster thrust in the boost ratio | `Igc/shipIGC.cpp:2863,2942-2956`; `Igc/afterburnerIGC.h:113-115` |
+| Replay a future pose linearly backward; replay a past pose in bounded steps with velocity updated before position | `Igc/shipIGC.cpp:3244-3287` |
+
+The cumulative travel budget and speed guard are port hostile-client additions;
+native's acceptance path does not impose this cumulative budget. This change
+retains those guards and their existing margins rather than claiming native has
+a matching anti-teleport algorithm.
+
+### Why corrections could continue forever
+
+Two independently reproduced defects were found:
+
+1. **A correction left the server's travel anchor behind.** Game1 already
+   consumes `HasPendingReset`, seeds position/velocity/orientation/turn rates
+   from the reset and echoes the new cookie. The server, however, retained
+   `LastPosePosition` from the last accepted client update. Its ship continues
+   flying during rejected updates. Once that authoritative ship travels farther
+   from the old anchor than the bounded credit cap, even a perfectly corrected
+   client cannot pass. A 1.8m error against the current server pose can coexist
+   with an arbitrarily large distance from that old anchor. Resetting only the
+   client cannot remove this bias.
+2. **The boost speed guard used inconsistent thrust units.** Movement physics
+   scales both engine thrust and afterburner thrust by the side's thrust GA.
+   `MovementSpeedLimit` scaled only engine thrust. For a thrust GA above one,
+   its legal boost ceiling was too low. At GA=2 with booster thrust equal to
+   raw engine thrust, physics targets twice cruise, while the old guard allowed
+   only 1.5 × cruise before its existing margin. The regression's legitimate
+   1.9 × cruise update was rejected on the starting code.
+
+The supplied clash54 client log contains 1,107 reset messages (the brief
+quoted an earlier 960-reset snapshot). It shows hull 15; the server log shows
+frozen accepted=1138 and no out-of-date/invalid updates during the rejection
+storm.
+They contain summaries rather than per-packet speed/travel data, so they do
+not prove which condition initiated that session's first rejection. The stale
+anchor explains a reproducible persistent rejection state; the GA mismatch is
+a separate reproducible legitimate-flight trigger. New non-exclusive
+`reject-reasons[speed=… envelope=… travel=…]` summary counters make future
+sessions distinguish these cases without verbose packet logging.
+
+P695's time-scale multiplication was audited: Game1 steps by wall seconds ×
+advertised TimeScale, and the server advances SimNow by its period × TimeScale.
+Both use `ShipKinematics.Step`, effective hull/side stats, turn-rate integration
+before thrust/drag, and updated velocity before position. Own-ship frames are
+subdivided to at most 0.05s; server replay uses the existing mission quantum.
+Their discretization/control-arrival differences can create bounded pose
+errors, which the native tolerance accommodates. The wire clock uses
+milliseconds and the integrators use seconds. This task makes no further clock
+or integration-order change.
+
+### Changes and protection checks
+
+On rejection the travel anchor now becomes the same **authoritative server
+position** sent in SHIP_RESET. Remaining travel credit and its refill clock are
+retained. Neither the rejected client position nor a fresh 20m allowance is
+adopted. The boost bound now applies the same thrust GA as the real flight
+model. Native spatial tolerance, bounded latency envelope, time/cookie/replay
+checks, same-tick gate, speed margin, coasting cap and total travel budget are
+retained.
+
+Two failing-first regressions demonstrate acceptance of a corrected pose after
+a stale anchor and acceptance of legal GA-scaled boost. The hostile regression
+alternates small moves with rejected teleports at 10ms intervals and verifies
+that repeated new cookies cannot refill the travel allowance. Existing P655
+teleport, speed, replay, packet-loss, coasting-rounding and reposition tests are
+included in focused verification.
+
+The new loopback soak runs an actual ConnectionSession, real production Game1
+clock/step/send/reset methods, and a real server at 20Hz for at least **605 wall
+seconds**. It uses clash54's hull 15 and a real mounted booster, delivered by the
+owner loadout wire message, with thrust GA=2. Continuous turns, throttle cuts,
+boost/fuel depletion, scales 1 / 0.85 / 0.5, and an injected 500m divergence
+exercise acceptance and actual Game1 correction recovery. It checks that
+acceptance never stalls for five seconds, corrections stay below 20, accepted
+exceeds 3000 and rejected × 100, clocks remain in window, and no invalid pose or
+simulation-stage failure occurs. The full suite retains the same ten-minute
+duration.
+
+### Verification
+
+The final solution build succeeds with **0 warnings and 0 errors**. NuGet's
+HTTP cache was redirected to `/tmp/p695b/nuget-http-cache` because the default
+cache is outside this sandbox's writable roots; audit/restore remained enabled.
+
+Short focused verification passed **81 exact-method invocations / 90 case
+executions**, each selected method three times in a separate process invocation:
+
+| Assembly | Invocations | Passed cases |
+| --- | ---: | ---: |
+| Core (all H-11 methods and P507 acceptance/wire tests) | 57 | 60 |
+| ClientCore (native flight/reset and own-ship simulator) | 21 | 21 |
+| MonoGame (all P695 rotation/scale cases) | 3 | 9 |
+
+The first two soak fixture attempts exposed fixture defects: reflection selected
+an overloaded SendPeer ambiguously, then an outside-universe spawn caused real
+boundary damage/ejection. The final fixture selects the byte-array overload and
+flies a horizontal circle near the sector centre in hull 15. Neither attempt
+was a product regression or classified as a load flake. The initial compile
+also caught an unavailable server TimeScale accessor; the fixture now tracks
+its requested rate changes. The failing-first product regressions are separate
+from these setup failures.
+
+All **three exact-method soak invocations passed**. Each flew **605.0 real wall
+seconds**, with **3,739 accepted / 1 rejected / 0 out-of-date / 0 invalid**, one
+received/applied reset, and 406 frames of actual booster power. The only
+rejection in each run was the injected 500m divergence (envelope and travel
+reasons); there were **zero spontaneous corrections**. Acceptance continued for
+more than nine minutes after recovery, including both slower time scales.
+The three isolated invocations used separate test processes and ran concurrently
+on the same machine; no other test method ran within any soak invocation.
+
+Together with the short checks: **84 focused invocations / 93 passing case
+executions**, with no final focused failure or skip. Flight counters and regular
+server summaries are retained in [run 1](P695B_assets/soak-3-flight.log),
+[run 2](P695B_assets/soak-4-flight.log), and
+[run 3](P695B_assets/soak-5-flight.log). The two failing-first product regressions
+are in [baseline output](P695B_assets/baseline.log). The
+[invocation ledger](P695B_assets/results.json) records commands and counters;
+raw TRX files and all scratch logs remain under `/tmp/p695b/`.
+
+The **unfiltered full suites ran sequentially after focused verification**:
+
+| Suite | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| Core | 4,561 | 0 | 0 |
+| ClientCore | 1,026 | 0 | 0 |
+| MonoGame | 2,207 | 0 | 3 |
+
+ClientCore enabled `ALLEGIANCE_LIVE_P660_SHOWCASE=1`, so the local 15v15 showcase
+ran and passed. MonoGame's three skips are the existing optional private Meshy
+pack tests; that pack is not configured on this workstation. No skip condition
+was changed. There were **no full-suite failures**, so no load-flake
+classification or full-failure rerun was needed, and `docs/TEST_FLAKES.md` is
+unchanged.
+
+The fourth ten-minute flight, inside the full MonoGame suite, also passed:
+**605.0 real wall seconds, 3,740 accepted / 1 intentionally rejected / 0
+out-of-date / 0 invalid**, one applied reset and 406 booster-power frames. Its
+[flight output](P695B_assets/full-Allegiance.ClientCore.MonoGame.Tests-flight.log)
+shows continued acceptance across all three scales. Across all four long runs
+there were **zero spontaneous corrections**.
+
+The [ledger](P695B_assets/results.json) includes the exact commands, full-suite
+counters, skipped case names, baseline failures, fixture-development attempts,
+and isolated results. Raw full-suite output is retained for
+[Core](P695B_assets/full-Allegiance.Core.Tests.log),
+[ClientCore](P695B_assets/full-Allegiance.ClientCore.Tests.log), and
+[MonoGame](P695B_assets/full-Allegiance.ClientCore.MonoGame.Tests.log).
+[Build output](P695B_assets/build.log) confirms the clean final build. Raw TRX
+files remain in `/tmp/p695b/`.
+
+Build and suite commands (logger/result-path arguments are in the ledger):
+
+```sh
+set -a
+. ./local.env
+set +a
+NUGET_HTTP_CACHE_PATH=/tmp/p695b/nuget-http-cache dotnet build AllegianceCore.slnx -m:8 -p:UseSharedCompilation=false
+dotnet test tests/Allegiance.Core.Tests --no-build
+ALLEGIANCE_LIVE_P660_SHOWCASE=1 dotnet test tests/Allegiance.ClientCore.Tests --no-build
+dotnet test tests/Allegiance.ClientCore.MonoGame.Tests --no-build
+```

@@ -487,6 +487,7 @@ public sealed partial class Server
                     + pu.DroppedBoarded + pu.DroppedNotInCluster == 0) continue;
                 string mean = pu.RejectCount > 0 ? (pu.RejectDistanceSum / pu.RejectCount).ToString("0.##") : "n/a";
                 Console.WriteLine($"[ctrlak] peer {kv.Key} ship-update summary: corrections-total={pu.TotalCorrections} replay={pu.DroppedReplay} same-tick={pu.DroppedSameTick} accepted={pu.Accepted} rejected={pu.Rejected} out-of-date={pu.OutOfDate} invalid={pu.Invalid} mean-reject-dist={mean}m (cookie 0x{pu.Cookie:X2})"
+                    + $" reject-reasons[speed={pu.RejectedSpeed} envelope={pu.RejectedEnvelope} travel={pu.RejectedTravel}]"
                     + (pu.DroppedCookie + pu.DroppedNoShip + pu.DroppedPreGame + pu.DroppedBoarded + pu.DroppedNotInCluster > 0
                         ? $" dropped[cookie={pu.DroppedCookie} noship={pu.DroppedNoShip} pregame={pu.DroppedPreGame} boarded={pu.DroppedBoarded} notincluster={pu.DroppedNotInCluster}]"
                         : ""));

@@ -1,0 +1,5 @@
+Test run for /home/domingo/allegiance-codex-p695b/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+Results File: /tmp/p695b/full-Allegiance.ClientCore.Tests.trx
+
+Passed!  - Failed:     0, Passed:  1026, Skipped:     0, Total:  1026, Duration: 7 m 48 s - Allegiance.ClientCore.Tests.dll (net10.0)
