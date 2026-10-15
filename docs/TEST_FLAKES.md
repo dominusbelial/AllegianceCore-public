@@ -369,3 +369,16 @@ All observed receipt failures passed 3/3 exact-method isolated retries after all
 | `Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone` | Assert.Single() Failure: The collection was empty | 3/3 pass |
 
 See [P676 report](reports/P676_PARITY_WAVE4B.md) and [invocation ledger](reports/P676_RESULTS.json). The report separately explains the native-law fixture corrections; those are not classified as load flakes.
+
+## P678 observation (2026-10-15)
+
+The final build completed with zero warnings/errors; 71 affected methods (86 cases) passed three exact-method isolated invocations each. Final full-suite raw counts and the additional overlapping verification pass are preserved in [P678 report](reports/P678_PARITY_WAVE5.md) and [invocation ledger](reports/P678_RESULTS.json). Every failure below passed 3/3 alone after all full-suite activity finished. Per the P678 Codex lane rule these are load/receipt flakes. No assertion, timeout, quarantine, or product change was made for them.
+
+| Test | Symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer` | Assert.DoesNotContain() Failure: Filter matched in collection | 3/3 pass |
+| `Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking` | healthy bot 0 must keep receiving per-tick updates during the flood (had 0, now 0) | 3/3 pass |
+
+The treasure-pickup check initially passed 2/3 alone and then passed 3/3 in the final triplet; both triplets are recorded.

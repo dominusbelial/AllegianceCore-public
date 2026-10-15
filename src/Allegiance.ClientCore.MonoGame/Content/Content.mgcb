@@ -2569,3 +2569,9 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/unmount.ogg
+
+#begin Sounds/vo_sal_playerwaiting.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_playerwaiting.ogg

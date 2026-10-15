@@ -1001,21 +1001,30 @@ public sealed partial class ClientWorld
     /// <see cref="Apply(QueuedCommandUpdate)"/>).</summary>
     public QueuedCommandState? MyQueuedCommand => _myQueuedCommand;
 
-    /// <summary>P626 — the most recently announced in-flight ballot, or
-    /// <c>null</c> when none. Populated from the server's BALLOT(17) broadcast
-    /// (P187); the VoteYes/VoteNo keys read it and send a VOTE(19) naming this
-    /// ballot id. A new ballot replaces the previous one; the server resolves
-    /// ballots on expiry/all-votes-in, at which point no further clear message
-    /// arrives, so this is a "latest announced" latch (mirroring how the native
-    /// client surfaces the current ballot, WinTrek.cpp:10377-10387).</summary>
-    public PendingBallotView? ActiveBallot => _activeBallot;
-    private PendingBallotView? _activeBallot;
+    /// <summary>Oldest pending ballot, native clintlib.cpp:2497-2507.
+    /// CANCEL_BALLOT removes every matching id without disturbing other votes.</summary>
+    public PendingBallotView? ActiveBallot => GetActiveBallot();
+    private readonly List<PendingBallotView> _pendingBallots = new();
+
+    public void DismissBallot(short ballotId) => _pendingBallots.RemoveAll(b => b.BallotId == ballotId);
+
+    public PendingBallotView? GetActiveBallot(long? localMs = null)
+    {
+        // clintlib.cpp:2497-2507: strict expiration < now, oldest first.
+        if (_countdownClockLocalMs is { } anchor)
+        {
+            double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+            while (_pendingBallots.Count > 0 && _pendingBallots[0].TimeExpiration < now)
+                _pendingBallots.RemoveAt(0);
+        }
+        return _pendingBallots.FirstOrDefault();
+    }
 
     /// <summary>P626 — a lightweight, client-safe view of an active ballot (the
     /// ballot text + id the server announced), kept deliberately small so the
     /// whole wire object isn't cached client-side. Consumed by the vote keys and
     /// a small HUD hint.</summary>
-    public sealed record PendingBallotView(short BallotId, string BallotText);
+    public sealed record PendingBallotView(short BallotId, string BallotText, uint TimeExpiration = uint.MaxValue);
 
     /// <summary>Transient projectile instances, in arrival order, pruned by
     /// expiry via <see cref="PruneExpiredProjectiles"/>. A projectile carries no
@@ -1608,6 +1617,7 @@ public sealed partial class ClientWorld
         _clusterWarningCues.Clear();         // P374 — drop any pending threat cues on disconnect
         _events.Clear();
         _roster.Clear();
+        ResetLobby();
     }
 
     /// <summary>Upsert the world state from a decoded message. Switch on the
@@ -1719,6 +1729,25 @@ public sealed partial class ClientWorld
                 // P626 — a new in-flight ballot was announced (P187); latch it
                 // as ActiveBallot + surface a system chat line.
                 Apply(ballot);
+                break;
+            case CancelBallot cancelBallot:
+                // clintlib/appmsg.cpp:377-392: remove all queued matches.
+                DismissBallot(cancelBallot.BallotId);
+                break;
+            case PositionReqBroadcast positionRequest:
+                Apply(positionRequest);
+                break;
+            case DelPositionReq removeRequest:
+                Apply(removeRequest);
+                break;
+            case LockLobby lockLobby:
+                Apply(lockLobby);
+                break;
+            case LockSides lockSides:
+                Apply(lockSides);
+                break;
+            case AutoAccept autoAccept:
+                Apply(autoAccept);
                 break;
             case ChatBuoy chatBuoy:
                 Apply(chatBuoy);
@@ -3387,7 +3416,7 @@ public sealed partial class ClientWorld
     /// are voting on (the port has no native-style ballot popup).</summary>
     private void Apply(Ballot m)
     {
-        _activeBallot = new PendingBallotView(m.BallotId, m.BallotText);
+        _pendingBallots.Add(new PendingBallotView(m.BallotId, m.BallotText, m.TimeExpiration));
         _events.Record(new ChatMessage
         {
             Message = "[VOTE] " + m.BallotText,
@@ -3791,6 +3820,7 @@ public sealed partial class ClientWorld
         _clusterWarningCues.Clear();
         _events.Clear();
         _roster.Clear();
+        ResetLobby();
     }
 
     /// <summary>Native SET_START_TIME can be reset for the briefing after the
@@ -3976,6 +4006,9 @@ public sealed partial class ClientWorld
     /// </summary>
     private void Apply(JoinSide join)
     {
+        // clintlib/clintlib.cpp:4133-4135: joining satisfies this side's request.
+        _positionRequests.Remove(new(join.SideId, join.ShipId));
+        if (join.ShipId == (JoinedShipId ?? MyShipId)) MyPositionRequestResult = null;
         // Known ship: update its side. Unknown ship: do not mint a phantom
         // entity (see the doc comment) — its EXPORT will carry the side.
         if (_ships.TryGetValue(join.ShipId, out var e))

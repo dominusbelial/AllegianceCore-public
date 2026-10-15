@@ -456,6 +456,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Native lobby controls. Settings change only on the server echo;
+    /// the server checks mission ownership / team leadership.</summary>
+    public void SendLockLobby(bool locked) => Send(FedPacket.Pack([new LockLobby { FLock = locked }.Encode()]));
+    public void SendLockSides(bool locked) => Send(FedPacket.Pack([new LockSides { FLock = locked }.Encode()]));
+    public void SendAutoAccept(short sideId, bool enabled) =>
+        Send(FedPacket.Pack([new AutoAccept { SideId = sideId, FAutoAccept = enabled }.Encode()]));
+    public void SendPositionAck(short shipId, short sideId, bool accepted) =>
+        Send(FedPacket.Pack([new PositionAck { ShipId = shipId, SideId = sideId, FAccepted = accepted }.Encode()]));
+    public void SendDelPositionReq(short shipId, short sideId, DelPositionReqReason reason) =>
+        Send(FedPacket.Pack([new DelPositionReq { ShipId = shipId, SideId = sideId, Reason = reason }.Encode()]));
+
     /// <summary>Send a real <c>FM_C_BOARD_SHIP(103)</c> — the client's
     /// dual-purpose board/leave request, the mirror of <c>Bot.SendBoard</c>.
     /// A non-NA <paramref name="sidParent"/> boards that same-side docked ship
@@ -618,6 +629,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     {
         var msg = new Vote { BallotId = ballotId, Agree = agree };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
+        // Native Vote() pops the answered ballot (clintlib.cpp:2510-2522).
+        lock (_gate) _world.DismissBallot(ballotId);
     }
 
     /// <summary>
@@ -894,6 +907,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P626 — a new in-flight ballot was announced (P187); the
                         // world latches it as the ActiveBallot for the vote keys.
                         _world.Apply(Ballot.Decode(m));
+                        break;
+                    case CancelBallot.Fmid:
+                        _world.Apply(CancelBallot.Decode(m));
+                        break;
+                    case PositionReqBroadcast.Fmid:
+                        _world.Apply(PositionReqBroadcast.Decode(m));
+                        break;
+                    case DelPositionReq.Fmid:
+                        _world.Apply(DelPositionReq.Decode(m));
+                        break;
+                    case LockLobby.Fmid:
+                        _world.Apply(LockLobby.Decode(m));
+                        break;
+                    case LockSides.Fmid:
+                        _world.Apply(LockSides.Decode(m));
+                        break;
+                    case AutoAccept.Fmid:
+                        _world.Apply(AutoAccept.Decode(m));
                         break;
                     case ChatBuoy.Fmid:
                         _world.Apply(ChatBuoy.Decode(m));

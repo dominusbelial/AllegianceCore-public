@@ -1006,9 +1006,12 @@ public sealed partial class Game1
     /// SIDE_ROSTER snapshot and the highlighted roster index.</summary>
     private void DrawSideSelect()
     {
-        var rows = Rendering.SideSelectLayout.Build(
-            _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner,
-            _session.World.IsSideActive);
+        IReadOnlyList<Rendering.SideSelectLayout.Row> rows;
+        lock (_session.Gate)
+            rows = Rendering.SideSelectLayout.Build(
+                _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner,
+                _session.World.IsSideActive).Concat(Rendering.LobbyStatusLayout.Build(_session.World)
+                .Select(text => new Rendering.SideSelectLayout.Row(Rendering.SideSelectLayout.Kind.Info, text))).ToArray();
         _sideSelectRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 
@@ -1182,6 +1185,9 @@ public sealed partial class Game1
 
         var rows = Rendering.ReadyCheckLayout.Build(
             sideName, _ownReady, players, agg, forced, world.AmMissionOwner, launchCountdown);
+        lock (_session.Gate)
+            rows = rows.Concat(Rendering.LobbyStatusLayout.Build(world)
+                .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToArray();
         _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 

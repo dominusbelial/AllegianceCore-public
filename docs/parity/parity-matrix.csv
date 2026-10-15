@@ -218,7 +218,7 @@ fedmsg,14 SET_START_TIME,Inc/Messages.h:153,done,Wire/SetStartTime.cs,4
 fedmsg,15 SET_TEAM_INFO,Inc/Messages.h:157,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,16 PLAYER_RESCUED,Inc/Messages.h:163,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1167; src/Allegiance.ClientCore/State/ClientWorld.cs:3221,4
 fedmsg,17 BALLOT,Inc/Messages.h:170,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:873; src/Allegiance.ClientCore/State/ClientWorld.cs:3150,4
-fedmsg,18 CANCEL_BALLOT,Inc/Messages.h:179,partial,Wire/CancelBallot.cs (server emits; no client handler found),4
+fedmsg,18 CANCEL_BALLOT,Inc/Messages.h:179; clintlib/appmsg.cpp:377-392; clintlib/clintlib.cpp:2497-2522,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:911; src/Allegiance.ClientCore/State/ClientWorld.cs:1009; src/Allegiance.ClientCore/State/ClientWorld.cs:1011; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1680; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:100; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:115; P678: Remove all matching queued ballots; preserve unrelated ballots; native FIFO/strict expiry and vote dequeue. No native or port production sender found; real encoded receive replay covers cancellation.,4
 fedmsg,19 VOTE,Inc/Messages.h:183,done,Wire/Vote.cs,4
 fedmsg,20 SHIP_DELETE,Inc/Messages.h:196,done,Wire/ShipDelete.cs,5
 fedmsg,21 RANDOMIZE_TEAMS,Inc/Messages.h:201,done,Wire/RandomizeTeams.cs,4
@@ -236,17 +236,17 @@ fedmsg,36 URLROOT,Inc/Messages.h:286,na,dead/not-applicable registry (src/Allegi
 fedmsg,37 MISSION_STAGE,Inc/Messages.h:290,done,Wire/MissionStage.cs,5
 fedmsg,38 MISSIONDEF,Inc/Messages.h:294,done,Wire/MissionDef.cs,4
 fedmsg,39 POSITIONREQ,Inc/Messages.h:320,done,Wire/PositionReq.cs,4
-fedmsg,40 POSITIONREQ,Inc/Messages.h:325,partial,Wire/PositionReqBroadcast.cs (server emits; no client handler found),4
+fedmsg,40 POSITIONREQ,Inc/Messages.h:325; clintlib/appmsg.cpp:2470-2483; clintlib/clintlib.cpp:943-954,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:914; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:20; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:50; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Side/ship request membership, duplicate/member guard, own-leader critical notice and native player-waiting voice; live receipt on both peers.",4
 fedmsg,41 POSITIONACK,Inc/Messages.h:331,done,Wire/PositionAck.cs,4
-fedmsg,42 DELPOSITIONREQ,Inc/Messages.h:366,partial,Wire/DelPositionReq.cs (server handled; client consumer not found),3
-fedmsg,43 LOCK_LOBBY,Inc/Messages.h:372,partial,Wire/LockLobby.cs (server handled; client consumer not found),4
-fedmsg,44 LOCK_SIDES,Inc/Messages.h:376,partial,Wire/LockSides.cs (server handled; client consumer not found),4
+fedmsg,42 DELPOSITIONREQ,Inc/Messages.h:366; clintlib/appmsg.cpp:2486-2499; WinTrek/teamscreen.cpp:3545-3658; clintlib/clintlib.cpp:4133-4135,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:917; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:39; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:74; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Scoped removal plus bounded result events even for absent players/requests; own rejection UI, quiet cancellation; JOIN_SIDE satisfies membership.",3
+fedmsg,43 LOCK_LOBBY,Inc/Messages.h:372; clintlib/appmsg.cpp:2611-2617,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:920; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:49; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:27; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Authoritative mission lobby lock state, echo-only mutation, shown in side-select/ready-check; live on/off relay.",4
+fedmsg,44 LOCK_SIDES,Inc/Messages.h:376; clintlib/appmsg.cpp:2620-2627,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:923; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:50; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:27; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Authoritative side lock state independent of lobby lock, shown in lobby screens; live locked refusal/unlock receipt.",4
 fedmsg,45 PLAYER_READY,Inc/Messages.h:380,done,Wire/PlayerReady.cs,5
 fedmsg,46 TEAM_READY,Inc/Messages.h:386,done,Wire/TeamReady.cs,4
 fedmsg,47 FORCE_TEAM_READY,Inc/Messages.h:392,done,Wire/ForceTeamReady.cs,4
 fedmsg,48 DOCKED,Inc/Messages.h:399,done,Wire/Docked.cs,4
 fedmsg,51 CHANGE_TEAM_CIV,Inc/Messages.h:407,partial,Wire/ChangeTeamCiv.cs (server handled; client consumer not found),4
-fedmsg,52 AUTO_ACCEPT,Inc/Messages.h:413,partial,Wire/AutoAccept.cs (server handled; client consumer not found),4
+fedmsg,52 AUTO_ACCEPT,Inc/Messages.h:413; clintlib/appmsg.cpp:2602-2609,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:926; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:48; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:27; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Per-side authoritative auto-accept state and lobby display; live on/off relay and pending-request acceptance sweep.,4
 fedmsg,57 STATIONS_UPDATE,Inc/Messages.h:425,done,Wire/StationsUpdate.cs,4
 fedmsg,58 STATION_CAPTURE,Inc/Messages.h:429,done,Wire/StationCapture.cs,4
 fedmsg,59 STATION_DESTROYED,Inc/Messages.h:436,done,Wire/StationDestroyed.cs,4

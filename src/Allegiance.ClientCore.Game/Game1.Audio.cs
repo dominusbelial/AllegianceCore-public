@@ -431,6 +431,9 @@ public sealed partial class Game1
                 case ClientSoundEventKind.SectorHighlighted:
                     snd.PlayCommandMessage();
                     break;
+                case ClientSoundEventKind.PlayerWaiting:
+                    snd.PlayVoice(Rendering.LobbyStatusLayout.PlayerWaitingWave);
+                    break;
                 case ClientSoundEventKind.TeleportArrived:
                     // P638 — our teleport dock request was accepted; native
                     // plays the personalJumpSound (appmsg.cpp:1901), mapped to

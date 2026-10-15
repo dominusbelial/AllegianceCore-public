@@ -1675,6 +1675,9 @@ public sealed partial class Game1
         // while flying, independent of the scoreboard/pilot-info flags.
         if (_state == ClientState.Flying && _teamPaneVisible)
         {
+            string? activeBallotText;
+            // Reading the current ballot can prune expired queue entries.
+            lock (_session.Gate) activeBallotText = _session.World.ActiveBallot?.BallotText;
             var ships = _session.World.Ships;
             var briefs = new Dictionary<string, Rendering.TeamPaneLayout.ShipBrief>();
             foreach (var ent in ships.Values)
@@ -1684,7 +1687,7 @@ public sealed partial class Game1
                 _session.World.ScoreRoster, _session.World.RankTable, briefs,
                 _session.World.IsSideActive,
                 _session.World.MyMoney,
-                _session.World.ActiveBallot?.BallotText,
+                activeBallotText,
                 _session.World.IsTeamLeader,
                 ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null,
                 $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} CHARACTER SHEET");

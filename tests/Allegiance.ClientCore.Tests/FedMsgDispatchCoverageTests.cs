@@ -73,6 +73,8 @@ public class FedMsgDispatchCoverageTests
         (177, "ViewClusterReply"), (178, "BoardNack"), (189, "Promote"), (199, "HighlightCluster"), (197, "ChangeAlliances"), (179, "AsteroidsUpdate"),
         (181, "BuildingEffectDestroyed"), (183, "ShipReset"), (185, "RipcordActivate"), (186, "RipcordDenied"),
         (187, "RipcordAborted"), (191, "CreateBuckets"), (198, "AsteroidMined"), (200, "ClusterInfo"),
+        (18, "CancelBallot"), (40, "PositionReqBroadcast"), (42, "DelPositionReq"),
+        (43, "LockLobby"), (44, "LockSides"), (52, "AutoAccept"),
         // port-added server-sent messages the real client also dispatches:
         (204, "MissileLockUpdate"), (205, "MissileUpdate"), (206, "OwnShipMiningUpdate"),
         (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"), (209, "ScoreRosterUpdate"),
@@ -92,14 +94,8 @@ public class FedMsgDispatchCoverageTests
     private static readonly (ushort Fmid, string Name, string Why)[] KnownUnconsumedServerSent =
     {
         (3, "LOGOFF", "server echo of client LOGOFF; quit handled client-side, echo benign"),
-        (18, "CANCEL_BALLOT", "ballot withdrawn; VOTE/ballot state handled via BALLOT(17)+ActiveBallot"),
         (31, "NEW_SHIP_INSTANCE", "codec only; neither side wired (no sender, no handler)"),
-        (40, "POSITIONREQ", "team-leader seat-request forward; leader acceptance path not surfaced"),
-        (42, "DELPOSITIONREQ", "cancel/reject seat request; same partial seat-request feature"),
-        (43, "LOCK_LOBBY", "lobby lock broadcast; pre-game lobby not surfaced in MonoGame client"),
-        (44, "LOCK_SIDES", "side-lock broadcast; side-select lock UI not surfaced"),
         (51, "CHANGE_TEAM_CIV", "team civ change broadcast; civ-swap feature not implemented"),
-        (52, "AUTO_ACCEPT", "auto-accept toggle broadcast; partial lobby feature"),
         (86, "ASTEROID_DESTROYED", "asteroid destroy broadcast; rocks rendered from EXPORT/ASTEROIDS_UPDATE"),
         (87, "FIRE_EXPENDABLE", "FE broadcast; expendable deploy effect via CREATE_CHAFF(109)+chaff entities"),
         (89, "TREASURE_SETS", "treasure-sets broadcast; DROP_TREASURE sets not modelled"),
@@ -281,8 +277,8 @@ public class FedMsgDispatchCoverageTests
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(94, ExpectedConsumedServerSent.Length);
-        Assert.Equal(24, KnownUnconsumedServerSent.Length);
+        Assert.Equal(100, ExpectedConsumedServerSent.Length);
+        Assert.Equal(18, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }
