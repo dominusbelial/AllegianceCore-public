@@ -52,26 +52,32 @@ public sealed class HeavyShipUpdateEntry
     /// <summary>Wire width, bytes.</summary>
     public const int Width = 39;
 
-    private readonly byte[] _b = new byte[Width];
+    private byte[]? _bytes;
+    private ShipWireSnapshot? _snapshot;
+    private HeavyShipUpdateEntry? _shared;
+    private ShipUpdateEncodingCounters? _counters;
+    private uint _snapshotTimeRef;
+    private Vector3 _snapshotPosRef;
+    private byte[] Bytes => _bytes ??= Materialize();
 
-    private HeavyShipUpdateEntry() { }
+    private HeavyShipUpdateEntry(bool captured = false) { if (!captured) _bytes = new byte[Width]; }
 
     /// <summary>The embedded ship id (short).</summary>
-    public short ShipId => BinaryPrimitives.ReadInt16LittleEndian(_b);
+    public short ShipId => _shared?.ShipId ?? _snapshot?.Id ?? BinaryPrimitives.ReadInt16LittleEndian(Bytes);
 
     /// <summary>stateM bitmask; stored unsigned (igc.h:2266).</summary>
-    public int StateM => (int)BinaryPrimitives.ReadUInt16LittleEndian(_b.AsSpan(2));
+    public int StateM => (int)BinaryPrimitives.ReadUInt16LittleEndian(Bytes.AsSpan(2));
 
     /// <summary>Decoded controls — four axes each <c>char/127</c>.</summary>
     public ControlData Controls => new(
-        CompactQuant.DeControlAxis(_b[4]),
-        CompactQuant.DeControlAxis(_b[5]),
-        CompactQuant.DeControlAxis(_b[6]),
-        CompactQuant.DeControlAxis(_b[7]));
+        CompactQuant.DeControlAxis(Bytes[4]),
+        CompactQuant.DeControlAxis(Bytes[5]),
+        CompactQuant.DeControlAxis(Bytes[6]),
+        CompactQuant.DeControlAxis(Bytes[7]));
 
     /// <summary>The signed CompactTime offset (delta from the message's
     /// timeReference).</summary>
-    public short TimeOffset => BinaryPrimitives.ReadInt16LittleEndian(_b.AsSpan(8));
+    public short TimeOffset => BinaryPrimitives.ReadInt16LittleEndian(Bytes.AsSpan(8));
 
     /// <summary>Recover the update's absolute time from the message's
     /// timeReference (<c>CompactTime::Export</c>, igc.h:2192-2195).</summary>
@@ -80,37 +86,37 @@ public sealed class HeavyShipUpdateEntry
     /// <summary>Recover the update's world position from the message's
     /// positionReference (<c>CompactPosition::Export</c>, igc.h:2250-2255).</summary>
     public Vector3 Position(Vector3 positionReference) =>
-        CompactQuant.DecodePositionDelta(positionReference, _b.AsSpan(10, 6));
+        CompactQuant.DecodePositionDelta(positionReference, Bytes.AsSpan(10, 6));
 
     /// <summary>Attitude reconstructed from the compact quaternion.</summary>
-    public Orientation Orientation => CompactOrientationCodec.Decode(_b.AsSpan(16, 8));
+    public Orientation Orientation => CompactOrientationCodec.Decode(Bytes.AsSpan(16, 8));
 
     /// <summary>World velocity reconstructed from the compact form.</summary>
-    public Vector3 Velocity => CompactQuant.DecodeVelocity(_b.AsSpan(24, 5));
+    public Vector3 Velocity => CompactQuant.DecodeVelocity(Bytes.AsSpan(24, 5));
 
     /// <summary>Three turn rates, rad/s, in yaw/pitch/roll order.</summary>
     public float[] TurnRates => new[]
     {
-        CompactQuant.DeTurnRate(_b[29]),
-        CompactQuant.DeTurnRate(_b[30]),
-        CompactQuant.DeTurnRate(_b[31]),
+        CompactQuant.DeTurnRate(Bytes[29]),
+        CompactQuant.DeTurnRate(Bytes[30]),
+        CompactQuant.DeTurnRate(Bytes[31]),
     };
 
     /// <summary>Hull fraction (0..1), from the 6-byte <c>CompactShipFractions</c>.</summary>
-    public float HullFraction => CompactQuant.DePercent(_b[32]);
+    public float HullFraction => CompactQuant.DePercent(Bytes[32]);
     /// <summary>Shield fraction (0..1).</summary>
-    public float ShieldFraction => CompactQuant.DePercent(_b[33]);
+    public float ShieldFraction => CompactQuant.DePercent(Bytes[33]);
     /// <summary>Ammo fraction (0..1).</summary>
-    public float AmmoFraction => CompactQuant.DePercent(_b[34]);
+    public float AmmoFraction => CompactQuant.DePercent(Bytes[34]);
     /// <summary>Fuel fraction (0..1).</summary>
-    public float FuelFraction => CompactQuant.DePercent(_b[35]);
+    public float FuelFraction => CompactQuant.DePercent(Bytes[35]);
     /// <summary>Energy fraction (0..1).</summary>
-    public float EnergyFraction => CompactQuant.DePercent(_b[36]);
+    public float EnergyFraction => CompactQuant.DePercent(Bytes[36]);
     /// <summary>Ore fraction (0..1).</summary>
-    public float OreFraction => CompactQuant.DePercent(_b[37]);
+    public float OreFraction => CompactQuant.DePercent(Bytes[37]);
 
     /// <summary>Power (0..1).</summary>
-    public float Power => CompactQuant.DePercent(_b[38]);
+    public float Power => CompactQuant.DePercent(Bytes[38]);
 
     /// <summary>
     /// Quantize a live ship's state into the canonical 39 bytes against the
@@ -130,26 +136,26 @@ public sealed class HeavyShipUpdateEntry
         float hullFrac, float shieldFrac, float oreFrac)
     {
         var u = new HeavyShipUpdateEntry();
-        CompactQuant.WriteShort(u._b, 0, shipId);
-        BinaryPrimitives.WriteUInt16LittleEndian(u._b.AsSpan(2), unchecked((ushort)stateM));
-        u._b[4] = CompactQuant.ControlAxis(controls.Yaw);
-        u._b[5] = CompactQuant.ControlAxis(controls.Pitch);
-        u._b[6] = CompactQuant.ControlAxis(controls.Roll);
-        u._b[7] = CompactQuant.ControlAxis(controls.Throttle);
-        BinaryPrimitives.WriteInt16LittleEndian(u._b.AsSpan(8), CompactQuant.EncodeTimeOffset(timeRef, time));
-        CompactQuant.EncodePositionDelta(posRef, position, u._b.AsSpan(10, 6));
-        CompactOrientationCodec.Encode(orientation, u._b.AsSpan(16, 8));
-        CompactQuant.EncodeVelocity(velocity, u._b.AsSpan(24, 5));
-        u._b[29] = CompactQuant.TurnRate(turnRates[0]);
-        u._b[30] = CompactQuant.TurnRate(turnRates[1]);
-        u._b[31] = CompactQuant.TurnRate(turnRates[2]);
-        u._b[32] = CompactQuant.Percent(Math.Clamp(hullFrac, 0f, 1f));
-        u._b[33] = CompactQuant.Percent(Math.Clamp(shieldFrac, 0f, 1f));
-        u._b[34] = CompactQuant.Percent(1.0f);   // ammo
-        u._b[35] = CompactQuant.Percent(1.0f);   // fuel
-        u._b[36] = CompactQuant.Percent(1.0f);   // energy
-        u._b[37] = CompactQuant.Percent(Math.Clamp(oreFrac, 0f, 1f));
-        u._b[38] = CompactQuant.Percent(1.0f);   // power
+        CompactQuant.WriteShort(u.Bytes, 0, shipId);
+        BinaryPrimitives.WriteUInt16LittleEndian(u.Bytes.AsSpan(2), unchecked((ushort)stateM));
+        u.Bytes[4] = CompactQuant.ControlAxis(controls.Yaw);
+        u.Bytes[5] = CompactQuant.ControlAxis(controls.Pitch);
+        u.Bytes[6] = CompactQuant.ControlAxis(controls.Roll);
+        u.Bytes[7] = CompactQuant.ControlAxis(controls.Throttle);
+        BinaryPrimitives.WriteInt16LittleEndian(u.Bytes.AsSpan(8), CompactQuant.EncodeTimeOffset(timeRef, time));
+        CompactQuant.EncodePositionDelta(posRef, position, u.Bytes.AsSpan(10, 6));
+        CompactOrientationCodec.Encode(orientation, u.Bytes.AsSpan(16, 8));
+        CompactQuant.EncodeVelocity(velocity, u.Bytes.AsSpan(24, 5));
+        u.Bytes[29] = CompactQuant.TurnRate(turnRates[0]);
+        u.Bytes[30] = CompactQuant.TurnRate(turnRates[1]);
+        u.Bytes[31] = CompactQuant.TurnRate(turnRates[2]);
+        u.Bytes[32] = CompactQuant.Percent(Math.Clamp(hullFrac, 0f, 1f));
+        u.Bytes[33] = CompactQuant.Percent(Math.Clamp(shieldFrac, 0f, 1f));
+        u.Bytes[34] = CompactQuant.Percent(1.0f);   // ammo
+        u.Bytes[35] = CompactQuant.Percent(1.0f);   // fuel
+        u.Bytes[36] = CompactQuant.Percent(1.0f);   // energy
+        u.Bytes[37] = CompactQuant.Percent(Math.Clamp(oreFrac, 0f, 1f));
+        u.Bytes[38] = CompactQuant.Percent(1.0f);   // power
         return u;
     }
 
@@ -163,8 +169,55 @@ public sealed class HeavyShipUpdateEntry
             ship.Orientation, ship.Velocity, new[] { ship.TurnRates[0], ship.TurnRates[1], ship.TurnRates[2] },
             ship.Fraction, ship.ShieldFraction, ship.Ore / ship.EffectiveMineCapacity());
 
+    /// <summary>Write a live pose into caller-owned storage, preserving the heavy
+    /// codec's full ammo/fuel/energy slots and exact relative quantization.</summary>
+    public static void WriteModel(Span<byte> destination, uint timeRef, Vector3 posRef, Ship ship, uint time)
+    {
+        Span<byte> single = stackalloc byte[ServerShipUpdate.Width];
+        ServerShipUpdate.WriteModel(single, ship.Id, ship, time);
+        single.Slice(0, 8).CopyTo(destination);
+        BinaryPrimitives.WriteInt16LittleEndian(destination.Slice(8), CompactQuant.EncodeTimeOffset(timeRef, time));
+        CompactQuant.EncodePositionDelta(posRef, ship.Position, destination.Slice(10, 6));
+        single.Slice(24, 23).CopyTo(destination.Slice(16));
+        destination[34] = destination[35] = destination[36] = 240;
+    }
+
+    /// <summary>Write the exact six-byte relative position slot into caller storage.</summary>
+    public static void WriteRelativePosition(Span<byte> destination, Vector3 reference, Vector3 position)
+        => CompactQuant.EncodePositionDelta(reference, position, destination);
+
     /// <summary>Encode the 39 canonical bytes at the writer's current position.</summary>
-    public void EncodeBody(ref WireWriter w) => w.WriteBytes(_b);
+    public void EncodeBody(ref WireWriter w)
+    {
+        if (_shared is null) { w.WriteBytes(Bytes); return; }
+        byte[] common;
+        lock (_shared) common = _shared.Bytes; // one materialization across encode workers
+        w.WriteBytes(common.AsSpan(0, 8));
+        Span<byte> relative = stackalloc byte[8];
+        BinaryPrimitives.WriteInt16LittleEndian(relative,
+            CompactQuant.EncodeTimeOffset(_snapshotTimeRef, _shared._snapshot!.Time));
+        CompactQuant.EncodePositionDelta(_snapshotPosRef, _shared._snapshot.Position, relative.Slice(2));
+        for (int i = 0; i < relative.Length; i++) w.WriteByte(relative[i]);
+        w.WriteBytes(common.AsSpan(16));
+        if (_counters is not null) Interlocked.Increment(ref _counters.RelativePositions);
+    }
+
+    /// <summary>Reference a detached shared record, retaining this viewer's exact
+    /// delta references. Only time/position are encoded per viewer (igc.h:2178-2255,
+    /// 2431-2442); the common fields are copied from one lazily encoded buffer.</summary>
+    public HeavyShipUpdateEntry RelativeTo(uint timeReference, Vector3 positionReference)
+    {
+        var shared = _shared ?? this;
+        if (shared._snapshot is null)
+            throw new InvalidOperationException("RelativeTo requires a captured ship record");
+        return new(captured: true)
+        {
+            _shared = shared,
+            _snapshotTimeRef = timeReference,
+            _snapshotPosRef = positionReference,
+            _counters = shared._counters,
+        };
+    }
 
     /// <summary>Read a 39-byte body from the reader's current position.</summary>
     public static HeavyShipUpdateEntry DecodeBody(ref WireReader r)
@@ -172,8 +225,35 @@ public sealed class HeavyShipUpdateEntry
         if (r.HasRemaining && r.Length - r.Position < Width)
             throw new ArgumentException($"HeavyShipUpdateEntry needs {Width} bytes, got {r.Length - r.Position}");
         var u = new HeavyShipUpdateEntry();
-        r.ReadBytes(Width).CopyTo(u._b);
+        r.ReadBytes(Width).CopyTo(u.Bytes);
         return u;
+    }
+
+    /// <summary>Copy encoder inputs without quantizing or retaining the live ship.</summary>
+    public static HeavyShipUpdateEntry Capture(uint timeRef, Vector3 posRef, Ship ship, uint time,
+        ShipUpdateEncodingCounters? counters = null) => new(captured: true)
+    {
+        _bytes = null,
+        _snapshot = ShipWireSnapshot.Capture(ship.Id, ship, time),
+        _snapshotTimeRef = timeRef,
+        _snapshotPosRef = posRef,
+        _counters = counters,
+    };
+
+    private byte[] Materialize()
+    {
+        if (_shared is not null)
+        {
+            var bytes = new byte[Width];
+            WireWriter writer = new(bytes);
+            EncodeBody(ref writer);
+            return bytes;
+        }
+        if (_counters is not null) Interlocked.Increment(ref _counters.HeavyRecords);
+        var s = _snapshot!;
+        return From(_snapshotTimeRef, _snapshotPosRef, s.Id, s.State, s.Controls, s.Time,
+            s.Position, s.Orientation, s.Velocity, [s.Yaw, s.Pitch, s.Roll],
+            s.Hull, s.Shield, s.Ore).Bytes;
     }
 }
 

@@ -1,0 +1,92 @@
+[
+  {
+    "tag": "suite-Core",
+    "exitCode": 0,
+    "counts": {
+      "total": "4349",
+      "executed": "4349",
+      "passed": "4349",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": []
+  },
+  {
+    "tag": "suite-ClientCore",
+    "exitCode": 0,
+    "counts": {
+      "total": "940",
+      "executed": "939",
+      "passed": "939",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+        "testId": "5df573df-c38c-7a62-f3da-6cd3b430bf06"
+      }
+    ]
+  },
+  {
+    "tag": "suite-ClientCore.MonoGame",
+    "exitCode": 0,
+    "counts": {
+      "total": "2128",
+      "executed": "2125",
+      "passed": "2125",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "testId": "7d981139-de73-c861-851e-eec3d4ac8106"
+      },
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "testId": "0ef6f905-dc7e-f110-6bef-4ae97dc95bf8"
+      },
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "testId": "c25cdfdb-dceb-c525-29d8-d08238e33e09"
+      }
+    ]
+  }
+]

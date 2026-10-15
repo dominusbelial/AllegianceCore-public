@@ -108,10 +108,10 @@ public sealed partial class Server : IDisposable
     private int _nextShipId = 8096;
 
     /// <summary>
-    /// P604/P670 — simulation payload bytes offered to SendPeer, before framing,
+    /// P604/P670 — payload bytes offered by the publishing sink, before framing,
     /// coalescing or transport lookup. The [egress] line labels these separately
     /// from transport-enqueued and socket-written bytes (both include framing).
-    /// Diagnostic only; no behavioural effect.
+    /// Updated atomically by the sim or publisher thread. Diagnostic only.
     /// </summary>
     private long _egressPayloadOfferedBytes;
     private long _lastEgressWrittenBytes, _lastEgressEnqueuedBytes;

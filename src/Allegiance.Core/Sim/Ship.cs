@@ -831,7 +831,7 @@ public sealed class Ship : Model, IShipIgc
     /// side. This is the port of native <c>m_pship-&gt;GetSide()-&gt;GetGlobalAttributeSet()</c>
     /// (<c>shipIGC.cpp:4528-4546</c>); a native ship always has a side, but
     /// this port's sim permits sideless ships, so identity (all 1.0) is the
-    /// honest neutral. <b>Cheap:</b> a manual <c>foreach</c> over
+    /// honest neutral. <b>Cheap:</b> an indexed loop over
     /// <see cref="Mission.Sides"/> with no LINQ/delegate allocation, so it is
     /// safe to call from the per-tick flight path. The side id is looked up by
     /// identity against the mission's sides (side ids are not unique across
@@ -841,9 +841,9 @@ public sealed class Ship : Model, IShipIgc
     {
         if (SideId is not { } sideId || Mission is not { } mission)
             return GlobalAttributeSet.Identity;
-        foreach (var side in mission.Sides)
-            if (side.Id == sideId)
-                return side.GlobalAttributes;
+        for (int i = 0; i < mission.Sides.Count; i++)
+            if (mission.Sides[i].Id == sideId)
+                return mission.Sides[i].GlobalAttributes;
         return GlobalAttributeSet.Identity;
     }
 

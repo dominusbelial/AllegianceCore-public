@@ -35,6 +35,27 @@ quarantine pass, not the parallel CI run).
 | Before (4 measurement runs, master 22d024b8) | **0/4** (no clean run; 3/7/7/6 Core fails + 0/2/2/0 ClientCore) | n/a (no lane existed) | ~20 unique failing tests |
 | After (verification on final tree) | **3/3 clean MAIN runs** (V4, V7, V11; V11 EXIT 0) | not expected 4/4 (residual isolation-flaky live-timing tests) | 21 quarantined; each of V5–V10 surfaced 1–2 new load-flakes, quarantined on the spot |
 
+## P684 observation (2026-10-15)
+
+The unfiltered sequential suites reported Lobby **19/19**, Core **4445 pass /
+1 fail**, ClientCore **964/964**, and MonoGame **2143 pass / 0 fail / 3 existing
+optional Meshy-pack skips**. After all four assemblies completed,
+`Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events`
+passed **3/3 fresh exact-method isolated runs**. Its full-run failure measured
+6,672 allocated bytes against the zero-byte assertion. The accounting
+implementation, test, warmup, assertion and traits are unchanged from integ7's
+pre-merge side. This is a full-run-only allocation observation under the
+three-isolated-passes rule, not a relaxed allocation budget.
+
+All pipeline byte-identity/determinism, P677/P679 and roster integration cases
+passed **43/43 ×3**; the expanded P682 off/on rotation/combat group passed
+**8/8 ×3**, including both port/native modes. The separately enabled 15v15
+showcase also passed. The newly added telemetry check's initial undersized
+worker buffer was a concrete fixture error, fixed to use the configured worker
+count; it is not classified as a flake. See the
+[P684 report](reports/P684_MERGE_PIPELINE.md) and
+[per-run evidence](reports/P684_assets/final/results.json).
+
 ## P682 observation (2026-10-15)
 
 The unfiltered Core run reported **4355 pass / 1 fail**. The existing quarantined
@@ -68,6 +89,26 @@ assemblies finished, the exact method passed **3/3 isolated reruns**. No
 transport code, timing threshold, assertion or trait changed. See the
 [P656c report](reports/P656_SHOWCASE_FINALE.md#p656c--restore-the-servers-actual-buyability-at-join)
 for the six new allTech/finale regressions and focused verification record.
+
+## P679 observation (2026-10-15)
+
+An exploratory isolation batch hit one timing failure in
+`TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent`.
+The next two initial invocations passed, then **3/3 fresh method-isolated audits**
+passed. The final P679 validation also passed this method **3/3**. Per the lane
+rule this is a load/timing flake; no assertion, deadline, skip or quarantine was
+changed. See [the audit evidence](reports/P679_assets/exploratory-flake.json)
+and [the final report](reports/P679_PIPELINE_COST.md).
+
+## P668 observation (2026-10-14)
+
+`MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction`
+missed the enemy mine EXPORT on the third initial isolated run (the first two
+passed). It then passed **3/3 fresh individual runs**, and passed the complete
+Core suite. Under P668's lane rule this is recorded as a load/timing flake;
+no assertion, product visibility rule, skip, or quarantine was changed.
+See [P668's report](reports/P668_BROADCAST_SNAPSHOT.md) and
+[per-run evidence](reports/P668_RESULTS.json).
 
 ## P659 observation (2026-10-14)
 

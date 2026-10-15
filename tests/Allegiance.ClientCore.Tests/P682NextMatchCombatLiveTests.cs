@@ -16,9 +16,11 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
 {
     [SkippableTheory]
-    [InlineData("port")]
-    [InlineData("native")]
-    public void Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(string model)
+    [InlineData("port", false)]
+    [InlineData("native", false)]
+    [InlineData("port", true)]
+    [InlineData("native", true)]
+    public void Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(string model, bool pipeline)
     {
         Require.Artwork();
         using var server = new Srv();
@@ -32,7 +34,8 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
                 TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true },
             },
             Games = P660NextMatchLiveTests.Config(true).Games,
-            Broadcast = new() { ShipUpdateModel = model },
+            Broadcast = new() { ShipUpdateModel = model, ImmutableSnapshot = pipeline,
+                EncodeOnce = pipeline, InterestTiers = pipeline },
         };
         server.Boot(config);
         using var ticker = new Ticker(server);
@@ -94,7 +97,7 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
             var after = manager.GetCombatSummary();
             Assert.True(after.ShotsFired > before.ShotsFired);
             Assert.True(after.ShipHits > before.ShipHits);
-            output.WriteLine($"{model} match {match}: enemy live poses on both sides; shots +{after.ShotsFired - before.ShotsFired}, hits +{after.ShipHits - before.ShipHits}, kills +{after.Kills - before.Kills}");
+            output.WriteLine($"{model} pipeline={pipeline} match {match}: enemy live poses on both sides; shots +{after.ShotsFired - before.ShotsFired}, hits +{after.ShipHits - before.ShipHits}, kills +{after.Kills - before.Kills}");
             ticker.Invoke(() => ticker.Contact = null);
             if (match == 1)
                 ticker.Invoke(() => Conquer(server));

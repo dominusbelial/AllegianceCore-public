@@ -486,6 +486,7 @@ public sealed partial class Server
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
         _scoreRosterStates.Remove(mission);
+        RetireBroadcastProjectionCaches();
         // Clients discard the old warning state on Over. An unchanged station
         // layout must be announced again in the new world (trekigc.cpp:327-383
         // computes warnings from each fresh cluster's assets).

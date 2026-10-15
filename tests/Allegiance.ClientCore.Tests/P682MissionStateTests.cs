@@ -30,12 +30,20 @@ public sealed class P682MissionStateTests
         Assert.Equal(1f, world.GlobalAttributesFor(0).Get(GlobalAttributeSet.ScanRange));
     }
 
-    [SkippableFact]
-    public void Rotation_retires_viewer_references_preserves_accounting_and_invalidates_world_sync()
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Rotation_retires_viewer_references_preserves_accounting_and_invalidates_world_sync(bool pipeline)
     {
         Require.Artwork();
         using var server = new Srv(); server.SpawnInitialMinersAtBoot = false;
-        server.Boot(P660NextMatchLiveTests.Config(true));
+        var template = P660NextMatchLiveTests.Config(true);
+        var config = new Allegiance.Server.ServerConfig
+        {
+            Port = 0, LiveSettings = template.LiveSettings, Games = template.Games,
+            Broadcast = new() { ImmutableSnapshot = pipeline, EncodeOnce = pipeline, InterestTiers = pipeline },
+        };
+        server.Boot(config);
         using var a = P660NextMatchLiveTests.Connect(server, "P682-cache-A", 68201);
         using var b = P660NextMatchLiveTests.Connect(server, "P682-cache-B", 68202);
         var old = server.Missions[0]; old.Stage = MissionStage.Started;
@@ -48,11 +56,30 @@ public sealed class P682MissionStateTests
         var clusterInfo = typeof(Srv).GetField("_clusterInfoBytes", flags)!.GetValue(server);
         var oldStations = old.Sectors.SelectMany(s => s.StationRuntimes).ToArray();
         var oldRocks = old.Sectors.SelectMany(s => s.Mineable).ToArray();
+        if (pipeline)
+        {
+            Assert.True(server._broadcastSnapshotEnabled);
+            Assert.True(server._broadcastEncodeOnceEnabled);
+            Assert.True(server._broadcastInterestTiersEnabled);
+            var warmedPeers = (Array)typeof(Srv).GetField("_broadcastPeerBuffer", flags)!.GetValue(server)!;
+            Assert.NotEmpty(warmedPeers.Cast<object>());
+            Assert.All(warmedPeers.Cast<object>(), entry =>
+                Assert.NotNull(entry.GetType().GetProperty("Value")!.GetValue(entry)));
+        }
         P660NextMatchLiveTests.End(server);
         // No viewer cache can retain old ships/sectors after reseating, even
         // before the first fresh-world broadcast. Its byte window is retained.
         Assert.Empty(viewers.Keys.Cast<object>());
         Assert.Empty(warnings.Keys.Cast<object>());
+        foreach (string name in new[] { "_sharedHeavy", "_sharedLight", "_tierHeavy",
+            "_interestSnapshot", "_crossSideExportPackets", "_broadcastMates", "_sideConnections" })
+            Assert.Empty(((IDictionary)typeof(Srv).GetField(name, flags)!.GetValue(server)!).Keys.Cast<object>());
+        foreach (string name in new[] { "_broadcastMateBuffers", "_broadcastSideSectors", "_sideConnectionBuffers" })
+            foreach (IEnumerable values in ((IDictionary)typeof(Srv).GetField(name, flags)!.GetValue(server)!).Values)
+                Assert.Empty(values.Cast<object>());
+        var peerBuffer = (Array)typeof(Srv).GetField("_broadcastPeerBuffer", flags)!.GetValue(server)!;
+        foreach (var entry in peerBuffer)
+            Assert.Null(entry!.GetType().GetProperty("Value")!.GetValue(entry));
         Assert.NotSame(clusterInfo, typeof(Srv).GetField("_clusterInfoBytes", flags)!.GetValue(server));
         string accounting = server.TakeUpdateAgeReport(1);
         Assert.DoesNotContain("shipsBytes=0 ", accounting);

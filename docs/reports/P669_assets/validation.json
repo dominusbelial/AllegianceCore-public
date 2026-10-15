@@ -1,0 +1,723 @@
+{
+  "isolatedMethods": 64,
+  "isolatedCaseExecutions": {
+    "total": 258,
+    "passed": 258,
+    "failed": 0,
+    "skipped": 0
+  },
+  "isolated": [
+    {
+      "method": "Allegiance.Core.Tests.BroadcastEncodeOnceFlagTests.Flag_defaults_off_and_environment_wins",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastEncodeOnceFlagTests.Invalid_flag_or_missing_snapshot_is_rejected",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastEncodeOnceFlagTests.Json_binds_both_flags_and_defaults_off",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastEncodeOnceTests.Shared_record_is_detached_and_encodes_once_across_workers_and_viewer_references",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Flag_is_opt_in_and_environment_wins",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Json_setting_binds_and_default_is_off",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Invalid_environment_is_rejected",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Stalled_publisher_coalesces_to_one_pending_tick_preserving_reliable_events_and_own_pose",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Dispose_drains_the_final_snapshot_and_joins_workers",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotTests.Captured_pose_is_detached_and_byte_identical_after_live_ship_mutation",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Same_recorded_session_receives_identical_TCP_packets_in_each_lane",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateAgeMetricsTests.Crowded_histogram_reports_distance_percentiles_thresholds_and_overflow",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateAgeMetricsTests.Histogram_sampling_allocates_zero_bytes_after_warmup",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Every_visible_ship_meets_floor_even_when_ranking_repeatedly_favours_others",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Zero_floor_preserves_ranked_bytes_and_deviations_with_metrics_enabled",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Added_floor_bytes_are_exact_and_native_ranking_is_unchanged",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Tracking_forgets_hidden_departed_and_reused_ids_and_allocates_zero_when_warm",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Profiler_windows_emit_one_age_line_and_reset_sample_and_byte_counters",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Departing_viewers_keep_their_window_samples_and_bytes_without_retaining_ship_state",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Floor_configuration_defaults_to_two_and_rejects_invalid_values",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceLoopbackTests.Hundred_ship_loopback_reports_pose_ages_and_bandwidth",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NativeShipUpdateModelTests.Ship_update_model_defaults_to_port",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NativeShipUpdateModelTests.Native_mode_suppresses_posBatch_but_keeps_the_owner_own_ship_stream",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NativeShipUpdateModelTests.Native_mode_deviation_bands_match_native",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NativeShipUpdateModelTests.Native_mode_sends_at_most_the_budgeted_heavy_and_light_per_peer_per_tick",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NativeShipUpdateModelTests.Native_mode_heavy_budget_scales_with_density_for_dead_reckoner_horizon",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NativeShipUpdateModelTests.Port_mode_heavy_budget_scales_with_density_for_enemy_dead_reckoner_horizon",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Locked_target_is_always_included_regardless_of_its_deviation",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Locked_target_fills_first_heavy_slot_with_real_fractions",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Ship_leaving_cluster_disappears_from_next_update",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.LightShipsUpdate_codec_round_trips_entries_and_inactive_turrets",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.HeavyShipsUpdate_codec_round_trips_delta_payload",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.ServerActiveTurretUpdate_exact_layout_and_round_trip",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.HeavyShipsUpdate_FromShips_with_typed_active_turrets_round_trips",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.LightShipsUpdate_FromShips_with_inactive_turrets_round_trips",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Both_broadcasts_are_byte_identical_serial_vs_parallel_at_tick0",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Both_broadcasts_are_byte_identical_serial_vs_parallel_at_later_ticks",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.ShipStates_alone_is_byte_identical_serial_vs_parallel",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.ShipsUpdate_alone_is_byte_identical_serial_vs_parallel",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_flag_defaults_off_and_config_binds",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_broadcast_verbose_off_emits_zero_pair_diag_lines_and_bytes_unchanged",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_broadcast_survives_join_leave_churn_without_exceptions",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammatePositionBroadcastTests.Teammates_commanded_movement_is_broadcast_to_observers_but_enemy_movement_is_not",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammatePositionBroadcastTests.Stationary_teammate_is_still_broadcast_to_observer_once",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveShieldRegenBroadcastTests.Stationary_unshielded_ship_generates_no_spurious_shield_rebroadcasts",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LifepodEnduranceDisplayTests.LifepodEnduranceFraction_tracks_formula_and_clamps",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LifepodEnduranceDisplayTests.LifepodEnduranceFraction_is_full_while_docked",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LifepodEnduranceDisplayTests.LifepodEnduranceFraction_is_full_for_non_lifepod",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LifepodEnduranceDisplayTests.FromModel_endurance_rides_only_the_owner_payload",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.MiningStateWireTests.Codec_roundtrips_mining_and_not_mining",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.MiningStateWireTests.FromMining_null_is_not_mining_else_names_the_rock",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.MiningStateWireTests.ServerShipUpdate_extraStateBits_stamps_the_faithful_mining_bit",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.MiningStateWireTests.Loopback_own_mining_state_reaches_client_and_clears_on_departure",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.GameMessageRoundTripTests.ServerShipUpdate_FromModel_RoundTripsThroughWire",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.GameMessageRoundTripTests.ServerShipUpdate_PreservesFullPrecisionPosition",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.GameMessageRoundTripTests.ShipUpdate_RoundTrips_ControlsAndState",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.GameMessageRoundTripTests.ShipUpdate_ThrottleOne_QuantizesToOne",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.GameMessageRoundTripTests.SingleShipUpdate_RoundTrips",
+      "exitCodes": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "suites": {
+    "Core": {
+      "total": 4329,
+      "passed": 4329,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "ClientCore": {
+      "total": 934,
+      "passed": 933,
+      "failed": 0,
+      "skipped": 1,
+      "skips": [
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+      ],
+      "skipReasons": {
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms": "Set ALLEGIANCE_LIVE_P660_SHOWCASE=1 for the full 15v15 MCP proof"
+      },
+      "failures": []
+    },
+    "MonoGame": {
+      "total": 2128,
+      "passed": 2125,
+      "failed": 0,
+      "skipped": 3,
+      "skips": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before"
+      ],
+      "skipReasons": {
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+      },
+      "failures": []
+    }
+  },
+  "enabledLifecycle": {
+    "enabled-churn-1": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "enabled-churn-2": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "enabled-churn-3": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "enabled-showcase-1": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "enabled-showcase-2": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "enabled-showcase-3": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    }
+  },
+  "lifecycleEnvironment": {
+    "ALLEGIANCE_BROADCAST_SNAPSHOT": "1",
+    "ALLEGIANCE_BROADCAST_ENCODE_ONCE": "1",
+    "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+  },
+  "performanceCases": {
+    "perf-256-1": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "perf-256-2": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "perf-256-3": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "perf-512-1": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "perf-512-2": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    },
+    "perf-512-3": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "skips": [],
+      "skipReasons": {},
+      "failures": []
+    }
+  },
+  "runExitCodes": [
+    {
+      "name": "final-build",
+      "exitCode": 0
+    },
+    {
+      "name": "Core",
+      "exitCode": 0
+    },
+    {
+      "name": "ClientCore",
+      "exitCode": 0
+    },
+    {
+      "name": "MonoGame",
+      "exitCode": 0
+    },
+    {
+      "name": "enabled-churn-1",
+      "exitCode": 0
+    },
+    {
+      "name": "enabled-churn-2",
+      "exitCode": 0
+    },
+    {
+      "name": "enabled-churn-3",
+      "exitCode": 0
+    },
+    {
+      "name": "enabled-showcase-1",
+      "exitCode": 0
+    },
+    {
+      "name": "enabled-showcase-2",
+      "exitCode": 0
+    },
+    {
+      "name": "enabled-showcase-3",
+      "exitCode": 0
+    }
+  ]
+}

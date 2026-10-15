@@ -60,6 +60,7 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
+        ResolveBroadcastSnapshot();
         // Reject invalid cadence before any other subsystem registers profiler
         // callbacks: a failed boot must not leave a partially initialized host.
         InitUpdateCadence();
@@ -216,6 +217,7 @@ public sealed partial class Server
                 TryAutoStart(mission);
         }
         StartLobbyHeartbeat(core);                   // opt-in; no-op when config.Lobby is null
+        StartBroadcastPublisher();
         PrintReady();
     }
 
@@ -828,16 +830,8 @@ public sealed partial class Server
     /// packet the server emits flows through here so capture sees all of TX.</summary>
     private void SendPeer(ConnectionId target, byte[] packet)
     {
-        lock (_captureLock)
-            _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
-        // P604 — egress accounting (sim-thread only; see the field doc).
-        _egressPayloadOfferedBytes += packet.Length;
-        // P603 — internal test seam (InternalsVisibleTo): observe every outbound
-        // packet per recipient, in order, so the byte-identity harness can collect
-        // the exact per-peer payload stream both broadcast modes produce. Null in
-        // production, so this is a no-op check on the default path.
-        _testSendCapture?.Invoke(target, packet);
-        _host.Send(target, packet);   // ServerHost.Send forwards as guaranteed: true
+        if (_broadcastPublisher is null) PublishBytes(target, packet, 0, true);
+        else QueueBroadcast(target, new BroadcastPacket(packet), 0, true);
     }
 
     /// <summary>
@@ -855,14 +849,8 @@ public sealed partial class Server
     /// </summary>
     private void SendPeerCoalescing(ConnectionId target, byte[] packet, int coalesceKey, bool guaranteed = false)
     {
-        lock (_captureLock)
-            _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
-        // P604 — egress accounting (sim-thread only; see the field doc).
-        _egressPayloadOfferedBytes += packet.Length;
-        _testSendCapture?.Invoke(target, packet);
-        _testSendCoalescingCapture?.Invoke(target, packet, coalesceKey, guaranteed);
-        if (guaranteed) _host.SendGuaranteedCoalescing(target, packet, coalesceKey);
-        else _host.SendCoalescing(target, packet, coalesceKey);
+        if (_broadcastPublisher is null) PublishBytes(target, packet, coalesceKey, guaranteed);
+        else QueueBroadcast(target, new BroadcastPacket(packet), coalesceKey, guaranteed);
     }
 
     /// <summary>Capture one received packet before it is processed. Called from
@@ -1417,7 +1405,7 @@ public sealed partial class Server
         string trans = _transportMode == TransportMode.Pool
             ? $"transport=pool ({_transportPoolWorkers} workers)"
             : "transport=thread-per-peer";
-        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
+        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; broadcast.immutableSnapshot={_broadcastSnapshotEnabled}; broadcast.encodeOnce={_broadcastEncodeOnceEnabled}; broadcast.interestTiers={_broadcastInterestTiersEnabled}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
     }
 
     private static string ParseShipUpdateModel(string modelStr)
@@ -1792,6 +1780,9 @@ public sealed partial class Server
         // transport shutdown (either order is fine) — kept first for reverse-of-boot clarity.
         _heartbeat?.Dispose();
         _heartbeat = null;
+        CompleteBroadcastSnapshot();
+        _broadcastPublisher?.Dispose();
+        _broadcastPublisher = null;
         _host?.Transport?.Shutdown();
         lock (_captureLock)
         {

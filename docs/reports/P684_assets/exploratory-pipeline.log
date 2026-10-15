@@ -1,0 +1,56 @@
+Test run for /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:31.31]     Allegiance.Core.Tests.PipelineCostTests.Steady_512_peer_pipeline_allocation_budget [FAIL]
+  Failed Allegiance.Core.Tests.PipelineCostTests.Steady_512_peer_pipeline_allocation_budget [30 s]
+  Error Message:
+   Assert.InRange() Failure: Value not in range
+Range:  (0 - 104000)
+Actual: 126048
+  Stack Trace:
+     at Allegiance.Core.Tests.PipelineCostTests.Steady_512_peer_pipeline_allocation_budget() in /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/PipelineCostTests.cs:line 200
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:42.57]     Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(native: True, parallel: True, floor: 3) [FAIL]
+  Failed Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(native: True, parallel: True, floor: 3) [8 s]
+  Error Message:
+   Assert.StartsWith() Failure: String start does not match
+String:         "1B2A3BDE22A30AC12CC2F93D3407401B66DE7F5EF"···
+Expected start: "27B42CC5C6DE7E55"
+  Stack Trace:
+     at Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(Boolean native, Boolean parallel, Double floor) in /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/BroadcastSnapshotTests.cs:line 277
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+[xUnit.net 00:00:54.47]     Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(native: False, parallel: False, floor: 0) [FAIL]
+  Failed Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(native: False, parallel: False, floor: 0) [11 s]
+  Error Message:
+   Assert.StartsWith() Failure: String start does not match
+String:         "9A95276291774A0537AB8DCB424234AD06A305950"···
+Expected start: "E9818924260ED254"
+  Stack Trace:
+     at Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(Boolean native, Boolean parallel, Double floor) in /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/BroadcastSnapshotTests.cs:line 277
+   at InvokeStub_BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(Object, Span`1)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:01:07.72]     Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(native: False, parallel: True, floor: 2) [FAIL]
+  Failed Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(native: False, parallel: True, floor: 2) [13 s]
+  Error Message:
+   Assert.StartsWith() Failure: String start does not match
+String:         "FD3DE52F372942BBA2C61A452DBA322E79B08F2D4"···
+Expected start: "1C4519215B2B37DF"
+  Stack Trace:
+     at Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(Boolean native, Boolean parallel, Double floor) in /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/BroadcastSnapshotTests.cs:line 277
+   at InvokeStub_BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(Object, Span`1)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:01:15.81]     Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(native: True, parallel: False, floor: 2) [FAIL]
+  Failed Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(native: True, parallel: False, floor: 2) [8 s]
+  Error Message:
+   Assert.StartsWith() Failure: String start does not match
+String:         "C1445DF5B28184AF5C926C5F0310D9535E6F08873"···
+Expected start: "3C2919674F7E403C"
+  Stack Trace:
+     at Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(Boolean native, Boolean parallel, Double floor) in /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/BroadcastSnapshotTests.cs:line 277
+   at InvokeStub_BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(Object, Span`1)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+WARNING: Overwriting results file: /home/domingo/.claude/jobs/82c1509b/tmp/integ7/docs/reports/P684_assets/pipeline-1.trx
+Results File: /home/domingo/.claude/jobs/82c1509b/tmp/integ7/docs/reports/P684_assets/pipeline-1.trx
+
+Failed!  - Failed:     5, Passed:    36, Skipped:     0, Total:    41, Duration: 2 m 17 s - Allegiance.Core.Tests.dll (net10.0)

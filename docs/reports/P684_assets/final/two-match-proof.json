@@ -1,0 +1,110 @@
+[
+  {
+    "run": 1,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: True)",
+    "outcome": "Passed",
+    "matches": [
+      "native pipeline=True match 1: enemy live poses on both sides; shots +4, hits +3, kills +1",
+      "native pipeline=True match 2: enemy live poses on both sides; shots +12, hits +4, kills +2"
+    ]
+  },
+  {
+    "run": 1,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: True)",
+    "outcome": "Passed",
+    "matches": [
+      "port pipeline=True match 1: enemy live poses on both sides; shots +4, hits +4, kills +2",
+      "port pipeline=True match 2: enemy live poses on both sides; shots +12, hits +6, kills +1"
+    ]
+  },
+  {
+    "run": 1,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: False)",
+    "outcome": "Passed",
+    "matches": [
+      "port pipeline=False match 1: enemy live poses on both sides; shots +8, hits +4, kills +2",
+      "port pipeline=False match 2: enemy live poses on both sides; shots +8, hits +4, kills +2"
+    ]
+  },
+  {
+    "run": 1,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: False)",
+    "outcome": "Passed",
+    "matches": [
+      "native pipeline=False match 1: enemy live poses on both sides; shots +6, hits +6, kills +2",
+      "native pipeline=False match 2: enemy live poses on both sides; shots +12, hits +4, kills +1"
+    ]
+  },
+  {
+    "run": 2,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: True)",
+    "outcome": "Passed",
+    "matches": [
+      "native pipeline=True match 1: enemy live poses on both sides; shots +8, hits +4, kills +2",
+      "native pipeline=True match 2: enemy live poses on both sides; shots +11, hits +3, kills +1"
+    ]
+  },
+  {
+    "run": 2,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: True)",
+    "outcome": "Passed",
+    "matches": [
+      "port pipeline=True match 1: enemy live poses on both sides; shots +4, hits +4, kills +2",
+      "port pipeline=True match 2: enemy live poses on both sides; shots +12, hits +4, kills +1"
+    ]
+  },
+  {
+    "run": 2,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: False)",
+    "outcome": "Passed",
+    "matches": [
+      "native pipeline=False match 1: enemy live poses on both sides; shots +6, hits +4, kills +2",
+      "native pipeline=False match 2: enemy live poses on both sides; shots +12, hits +4, kills +2"
+    ]
+  },
+  {
+    "run": 2,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: False)",
+    "outcome": "Passed",
+    "matches": [
+      "port pipeline=False match 1: enemy live poses on both sides; shots +4, hits +4, kills +2",
+      "port pipeline=False match 2: enemy live poses on both sides; shots +10, hits +4, kills +2"
+    ]
+  },
+  {
+    "run": 3,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: False)",
+    "outcome": "Passed",
+    "matches": [
+      "port pipeline=False match 1: enemy live poses on both sides; shots +4, hits +4, kills +2",
+      "port pipeline=False match 2: enemy live poses on both sides; shots +12, hits +4, kills +2"
+    ]
+  },
+  {
+    "run": 3,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: False)",
+    "outcome": "Passed",
+    "matches": [
+      "native pipeline=False match 1: enemy live poses on both sides; shots +6, hits +5, kills +2",
+      "native pipeline=False match 2: enemy live poses on both sides; shots +10, hits +3, kills +1"
+    ]
+  },
+  {
+    "run": 3,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: True)",
+    "outcome": "Passed",
+    "matches": [
+      "native pipeline=True match 1: enemy live poses on both sides; shots +4, hits +4, kills +2",
+      "native pipeline=True match 2: enemy live poses on both sides; shots +12, hits +6, kills +1"
+    ]
+  },
+  {
+    "run": 3,
+    "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: True)",
+    "outcome": "Passed",
+    "matches": [
+      "port pipeline=True match 1: enemy live poses on both sides; shots +4, hits +4, kills +2",
+      "port pipeline=True match 2: enemy live poses on both sides; shots +12, hits +6, kills +1"
+    ]
+  }
+]
