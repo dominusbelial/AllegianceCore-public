@@ -490,10 +490,16 @@ public sealed partial class Server : IDisposable
     // enemy's last-known sector within one interval. Sim-thread only.
     private readonly Dictionary<(ConnectionId, short), long> _crossSideShipStatusTick = new();
 
-    // P265 — last ScoreRosterUpdate(209) send tick per mission, throttling the
-    // periodic in-mission scoreboard broadcast in BroadcastScoreRoster (see
-    // ScoreRosterRefreshTicks). Sim-thread only.
-    private readonly Dictionary<Mission, long> _lastScoreRosterTick = new();
+    // P672 — mission baseline, eligible recipients, and refresh deadlines. Sim-thread only.
+    private sealed class ScoreRosterState
+    {
+        public ScoreRosterEntry[] Entries = [];
+        public HashSet<ConnectionId> Recipients = [];
+        public long LastTick;
+        public double LastFullTime;
+        public MissionStage Stage;
+    }
+    private readonly Dictionary<Mission, ScoreRosterState> _scoreRosterStates = new();
 
     // P200 — last successful full-roster REQPINGDATA(195) request, in sim
     // seconds (_simNow), per requester connection. Implements native's
@@ -698,10 +704,9 @@ public sealed partial class Server : IDisposable
     /// fsship.cpp ShipStatusSpotted/ShipStatusHidden). 100 ticks @ 20 upd/s = 5 s.</summary>
     private const int CrossSideStatusRefreshTicks = 100;
 
-    /// <summary>Ticks between periodic in-mission SCORE_ROSTER_UPDATE(209)
-    /// broadcasts. 40 ticks @ 20 upd/s = 2 s — fast enough to feel live, slow
-    /// enough to be negligible alongside the per-tick syncs.</summary>
+    // Retain the existing maximum two-second score latency; full recovery every 30 sim seconds.
     private const int ScoreRosterRefreshTicks = 40;
+    private const double ScoreRosterFullRefreshSeconds = 30;
 
     /// <summary>P369 — cadence (ticks) of the slow periodic identity REFRESH for
     /// cross-side ships: re-send the one-shot <c>EXPORT(26)</c> of an already-

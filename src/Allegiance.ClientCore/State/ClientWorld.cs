@@ -483,7 +483,7 @@ public sealed partial class ClientWorld
     public ShipWarningState ShipWarnings { get; } = new();
     // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
     // per real-side player) streamed by the periodic owner-only
-    // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
+    // ScoreRosterUpdate(209) snapshots plus ordered ScoreRosterDelta(219) patches.
     private ScoreRosterEntry[] _scoreRoster = [];
     // P639 — the rank-name table from RANK_INFO(13), the server's per-player
     // rank-name sync sent once right after LOGONACK on the valid-connect path
@@ -1322,7 +1322,7 @@ public sealed partial class ClientWorld
 
     /// <summary>P265 — the latest in-mission scoreboard snapshot (name / side /
     /// kills / deaths per real-side player), streamed by the periodic owner-only
-    /// ScoreRosterUpdate(209). Replaced wholesale on each receive; empty until
+    /// ScoreRosterUpdate(209) plus ScoreRosterDelta(219); empty until
     /// the first snapshot lands.</summary>
     public IReadOnlyList<ScoreRosterEntry> ScoreRoster => _scoreRoster;
 
@@ -1815,6 +1815,9 @@ public sealed partial class ClientWorld
                 break;
             case MissileTrackWarningUpdate missileTrack:
                 Apply(missileTrack);
+                break;
+            case ScoreRosterDelta scoreDelta:
+                _scoreRoster = scoreDelta.ApplyTo(_scoreRoster);
                 break;
             case ScoreRosterUpdate scoreRoster:
                 Apply(scoreRoster);

@@ -189,6 +189,24 @@ their existing traits remain. Native readiness/prediction and legal-capacity
 fixture corrections are described in the [P666 report](reports/P666_MERGE_SIM.md),
 with [durable verification evidence](reports/P666_RESULTS.json).
 
+## P672 scoreboard traffic observation (2026-10-14)
+
+The unfiltered sequential assembly runs on P672 reported Core **4314 pass / 1
+fail**, ClientCore **937 pass / 0 fail / 0 skip**, and MonoGame **2125 pass / 0
+fail / 3 existing optional Meshy-pack skips**. The opt-in 15v15 MCP showcase and
+all new scoreboard tests ran and passed. Forty affected/new methods passed
+three separate method-filtered runs each (120 runs, 147 executed cases).
+
+The sole full-run failure was the already-documented
+`LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown`:
+line 212 asserted the second peer's SET_START_TIME immediately after a wait
+that observes only the first peer. After all suites completed, exact-method
+isolation returned **fail / pass / pass**, followed by a fresh **pass / pass /
+pass** batch. This repeats the existing isolation-flaky receipt observation;
+there was no assertion, timeout, production countdown or quarantine change.
+See [P672_SCOREBOARD_TRAFFIC](reports/P672_SCOREBOARD_TRAFFIC.md) and the
+[durable results](reports/P672_RESULTS.json) for both isolation batches.
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition

@@ -493,7 +493,7 @@ public sealed partial class Server
         _autoRestartDeadline.Remove(mission);
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
-        _lastScoreRosterTick.Remove(mission);
+        _scoreRosterStates.Remove(mission);
 
         // Rebuild the world from the SAME config that made the original (native
         // regenerates on the next start; this port assembles now). _config.Games

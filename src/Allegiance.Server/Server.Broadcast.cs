@@ -2147,37 +2147,29 @@ public sealed partial class Server
         }
     }
 
-    /// <summary>
-    /// P265 — periodically broadcast <see cref="Wire.ScoreRosterUpdate"/>(209)
-    /// to every connected peer, carrying the real in-mission roster
-    /// (name / side / kills / deaths) from each live player's P193
-    /// <c>PlayerScore</c>. This is the wire that lets the renderer-only
-    /// MonoGame client draw the scoreboard overlay with live numbers.
-    /// <para><b>Why this message and not PLAYERINFO(10).</b> FM_S_PLAYERINFO is
-    /// a same-side, one-shot join-time identity snapshot whose stats fields the
-    /// sender leaves at 0 (<see cref="PlayerInfo"/>) — it is never resent and
-    /// carries no score. The per-tick SHIP_UPDATE carries physics, not scores.
-    /// Neither can surface P215's real Kills/Deaths, so this is the smallest
-    /// dedicated addition: a periodic whole-mission roster snapshot.</para>
-    /// <para><b>Filters (mirror P194's endgame rules where applicable).</b>
-    /// Only peers whose ship is on a real side are included (SideId == null is
-    /// the port's team-lobby analogue, excluded exactly as native excludes
-    /// SIDE_TEAMLOBBY). Unlike P194's game-over list there is no
-    /// "played this mission" concern to approximate — every seated peer on a
-    /// real side is shown.</para>
-    /// <para><b>Audience.</b> Sent owner-only (each peer gets its own copy of
-    /// the same whole-mission roster). Contained to each peer's own mission, so
-    /// multi-world setups stay coherent.</para>
-    /// </summary>
+    /// <summary>P672 — reliable mission deltas at the old score cadence, full snapshots
+    /// on join/rejoin, stage transitions, and every 30 sim seconds. MCP harness
+    /// metrics/finale consume KILL_SHIP events, so those peers need no roster.</summary>
     private void BroadcastScoreRoster()
     {
-        uint tickIndex = (uint)TickIndex;
-        // Batch all peers into a per-mission roster map, then send each mission's
-        // list to its peers. This handles multi-mission worlds in one pass.
+        long tickIndex = TickIndex;
+        var activeMissions = new HashSet<Mission>();
         foreach (var missionGroup in _peerShips.GroupBy(kv => kv.Value.Ship.Mission))
         {
             var mission = missionGroup.Key;
             if (mission is null) continue;
+            activeMissions.Add(mission);
+            var targets = missionGroup.Where(kv => !_peerNames.TryGetValue(kv.Key, out var name)
+                || !name.StartsWith(HarnessPrefix, StringComparison.Ordinal)).Select(kv => kv.Key).ToHashSet();
+            if (targets.Count == 0) { _scoreRosterStates.Remove(mission); continue; }
+            bool first = !_scoreRosterStates.TryGetValue(mission, out var state);
+            state ??= new ScoreRosterState();
+            bool full = first || state.Stage != mission.Stage
+                || _simNow - state.LastFullTime >= ScoreRosterFullRefreshSeconds;
+            var newcomers = targets.Except(state.Recipients).ToHashSet();
+            state.Recipients.IntersectWith(targets);
+            if (!full && newcomers.Count == 0 && tickIndex - state.LastTick < ScoreRosterRefreshTicks)
+                continue;
 
             var entries = new List<ScoreRosterEntry>();
             foreach (var kv in missionGroup)
@@ -2202,21 +2194,32 @@ public sealed partial class Server
                     Flags: (short)Math.Clamp(live.PlayerScore.Flags, short.MinValue, short.MaxValue)));
             }
 
-            var targets = missionGroup.Select(kv => kv.Key).ToArray();
-
-            // Throttle: only send once per ScoreRosterRefreshTicks per mission,
-            // keyed on the mission so each mission's roster refreshes together.
-            long lastTick = _lastScoreRosterTick.TryGetValue(mission, out var lt0) ? lt0 : -1;
-            if (lastTick >= 0 && (long)tickIndex - lastTick < ScoreRosterRefreshTicks)
-                continue;
-
-            var roster = new ScoreRosterUpdate { Entries = entries.ToArray() };
-            byte[] packet = FedPacket.Pack(new[] { roster.Encode() });
-            Console.WriteLine($"[scoreroster] mission #{_missions.IndexOf(mission)} -> {entries.Count} player(s) to {targets.Length} peer(s)");
-            foreach (var t in targets)
-                SendPeer(t, packet);
-            _lastScoreRosterTick[mission] = tickIndex;
+            var current = entries.ToArray();
+            var delta = ScoreRosterDelta.Between(state.Entries, current);
+            bool changed = delta.Changes.Length != 0 || delta.BaseCount != delta.ResultCount;
+            byte[]? snapshot = full || newcomers.Count != 0
+                ? FedPacket.Pack(new ScoreRosterUpdate { Entries = current }.Encode()) : null;
+            // Dense churn is cheaper as a full snapshot. Both messages use the
+            // guaranteed ordered lane: patches must never be coalesced or shed.
+            bool dense = ScoreRosterDelta.FixedSize + delta.Changes.Length * ScoreRosterDelta.ChangeSize
+                >= ScoreRosterUpdate.FixedSize + current.Length * ScoreRosterEntry.Size;
+            byte[]? patch = !full && changed
+                ? (dense ? snapshot ?? FedPacket.Pack(new ScoreRosterUpdate { Entries = current }.Encode())
+                    : FedPacket.Pack(delta.Encode())) : null;
+            foreach (var target in targets)
+            {
+                if (full || newcomers.Contains(target)) SendPeer(target, snapshot!);
+                else if (patch is not null) SendPeer(target, patch);
+            }
+            state.Entries = current;
+            state.Recipients = targets;
+            state.Stage = mission.Stage;
+            state.LastTick = tickIndex;
+            if (full) state.LastFullTime = _simNow;
+            _scoreRosterStates[mission] = state;
         }
+        foreach (var mission in _scoreRosterStates.Keys.Where(m => !activeMissions.Contains(m)).ToArray())
+            _scoreRosterStates.Remove(mission);
     }
 
     /// <summary>

@@ -90,6 +90,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<GameOver> _gameOvers = new();
     private readonly List<GameOverPlayers> _gameOverPlayers = new();
     private readonly List<ScoreRosterUpdate> _scoreRosters = new();
+    private ScoreRosterEntry[] _scoreRoster = [];
     private readonly List<ClusterWarningUpdate> _clusterWarningUpdates = new();   // P374 — per-side sector-threat changes
     private readonly List<LeadIndicatorUpdate> _leadIndicatorUpdates = new();   // P266
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
@@ -830,7 +831,7 @@ public sealed class Bot : ITransportSite, IDisposable
     public void ResetGameOverPlayerBroadcasts() { lock (_gate) _gameOverPlayers.Clear(); }
 
     /// <summary>The <c>ScoreRosterUpdate(209)</c> broadcasts this bot has seen
-    /// (P265) — a <see cref="Wire.ScoreRosterUpdate"/> per received periodic
+    /// (P672) — a reconstructed full snapshot per received full or delta
     /// message, appended on the receiver thread under <see cref="_gate"/> like
     /// <see cref="GameOverPlayerBroadcasts"/>. Each carries the real in-mission
     /// roster (name/side/kills/deaths) for the bot's mission. Named differently
@@ -1626,6 +1627,7 @@ public sealed class Bot : ITransportSite, IDisposable
     /// the identical fix/rationale on ConnectionSession.Connect, 2026-09-15).</summary>
     public void Connect(ushort port, string playerName, string host = "127.0.0.1")
     {
+        lock (_gate) { _scoreRoster = []; _scoreRosters.Clear(); }
         _transport = new TcpTransport(this);
         _transport.Join(host, port, playerName);
     }
@@ -1873,8 +1875,14 @@ public sealed class Bot : ITransportSite, IDisposable
                     case GameOverPlayers.Fmid:
                         _gameOverPlayers.Add(GameOverPlayers.Decode(m));
                         break;
+                    case ScoreRosterDelta.Fmid:
+                        _scoreRoster = ScoreRosterDelta.Decode(m).ApplyTo(_scoreRoster);
+                        _scoreRosters.Add(new ScoreRosterUpdate { Entries = _scoreRoster });
+                        break;
                     case ScoreRosterUpdate.Fmid:
-                        _scoreRosters.Add(ScoreRosterUpdate.Decode(m));
+                        var roster = ScoreRosterUpdate.Decode(m);
+                        _scoreRoster = roster.Entries;
+                        _scoreRosters.Add(roster);
                         break;
                     case ClusterWarningUpdate.Fmid:
                         _clusterWarningUpdates.Add(ClusterWarningUpdate.Decode(m));
