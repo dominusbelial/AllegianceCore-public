@@ -462,6 +462,16 @@ public sealed class BroadcastConfig
     /// requires ImmutableSnapshot. ALLEGIANCE_BROADCAST_ENCODE_ONCE overrides.</summary>
     public bool EncodeOnce { get; set; }
 
+    /// <summary>P677 — per-viewer interest rates. Opt-in; also enables the
+    /// immutable snapshot and encode-once pipeline. ALLEGIANCE_BROADCAST_TIERS overrides.</summary>
+    public bool InterestTiers { get; set; }
+    public double Tier1Hz { get; set; } = 5;
+    public double Tier2Hz { get; set; } = 2;
+    /// <summary>World units. Minimum engagement radius; mounted gun reach can extend it.</summary>
+    public float EngagementRange { get; set; } = 1500;
+    /// <summary>Enemies outside this radius are T2; allies remain T1.</summary>
+    public float MidDistanceRange { get; set; } = 6000;
+
     /// <summary>P659 — minimum remote visible-ship pose frequency per viewer.
     /// Default 2 Hz; 0 preserves the existing ranked budget. Rounded up to a
     /// whole broadcast tick, capped by UpdatesPerSecond. LIGHT records carry

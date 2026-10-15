@@ -47,10 +47,13 @@ public sealed partial class Server
 
     private void ResolveBroadcastSnapshot()
     {
+        _broadcastInterestTiersEnabled = ResolveInterestTiersFlag(_config.Broadcast?.InterestTiers ?? false,
+            Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_TIERS"));
         _broadcastSnapshotEnabled = ResolveSnapshotFlag(_config.Broadcast?.ImmutableSnapshot ?? false,
-            Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_SNAPSHOT"));
+            Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_SNAPSHOT")) || _broadcastInterestTiersEnabled;
         _broadcastEncodeOnceEnabled = ResolveEncodeOnceFlag(_config.Broadcast?.EncodeOnce ?? false,
-            Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_ENCODE_ONCE"), _broadcastSnapshotEnabled);
+            Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_ENCODE_ONCE"), _broadcastSnapshotEnabled) || _broadcastInterestTiersEnabled;
+        Console.WriteLine($"[boot] broadcast.interestTiers = {_broadcastInterestTiersEnabled}");
         Console.WriteLine($"[boot] broadcast.immutableSnapshot = {_broadcastSnapshotEnabled}");
         Console.WriteLine($"[boot] broadcast.encodeOnce = {_broadcastEncodeOnceEnabled}");
     }

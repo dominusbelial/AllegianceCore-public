@@ -266,6 +266,15 @@ public sealed class BroadcastSnapshotTests
         }
         var result = new { native, parallel, floor, ticks = tape.Length, peers = peers.Count,
             packets = off.Count, bytes = off.Sum(f => (long)f.Bytes.Length), offHash = Hash(off), onHash = Hash(on), sharedHash = Hash(shared), unsharedHeavyEncodes, sharedHeavyEncodes };
+        // P677: pin the pre-tier P669 transcript, not merely two current paths.
+        string golden = (native, parallel) switch
+        {
+            (false, false) => "E9818924260ED254",
+            (false, true) => "1C4519215B2B37DF",
+            (true, false) => "3C2919674F7E403C",
+            _ => "27B42CC5C6DE7E55",
+        };
+        Assert.StartsWith(golden, result.offHash);
         Assert.Equal(result.offHash, result.onHash);
         Assert.Equal(result.onHash, result.sharedHash);
         File.WriteAllText($"/tmp/p669-identity-{native}-{parallel}-{floor}.json", JsonSerializer.Serialize(result));

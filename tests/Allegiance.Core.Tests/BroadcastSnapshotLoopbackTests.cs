@@ -214,7 +214,20 @@ public sealed class BroadcastSnapshotLoopbackTests
     public void Crowded_real_TCP_session_measures_sim_projection_and_publish_pool()
     {
         Require.Artwork();
-        bool phase2 = Environment.GetEnvironmentVariable("P669_MEASURE") == "1";
+        RunCrowded(Environment.GetEnvironmentVariable("P669_MEASURE") == "1", false);
+    }
+
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
+    public void Crowded_TCP_interest_tiers_reduce_bytes_and_report_ages()
+    {
+        Require.Artwork();
+        RunCrowded(false, true);
+    }
+
+    private static void RunCrowded(bool phase2, bool phase3)
+    {
+        bool controlled = phase2 || phase3;
         int count = int.TryParse(Environment.GetEnvironmentVariable("P668_PEERS"), out int requested) ? requested : 256;
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         int placed = 0;
@@ -260,10 +273,11 @@ public sealed class BroadcastSnapshotLoopbackTests
             foreach (bool snapshot in new[] { false, true })
             {
                 server.FlushBroadcastSnapshots();
-                server._broadcastSnapshotEnabled = phase2 || snapshot;
-                server._broadcastEncodeOnceEnabled = phase2 && snapshot;
+                server._broadcastSnapshotEnabled = controlled || snapshot;
+                server._broadcastEncodeOnceEnabled = phase3 || (phase2 && snapshot);
+                server._broadcastInterestTiersEnabled = phase3 && snapshot;
                 uint recordedTick = 0;
-                if (phase2)
+                if (controlled)
                 {
                     server.TestResetSnapshotReplay();
                     for (int i = 0; i < recordedPeers.Count; i++) recordedPeers[i].Ship.Position = initialPositions[i];
@@ -274,21 +288,21 @@ public sealed class BroadcastSnapshotLoopbackTests
                 // Refresh own-ship dirty poses on every tick in BOTH modes.
                 void Advance()
                 {
-                    if (phase2 && heartbeat.Elapsed.TotalSeconds >= 5)
+                    if (controlled && heartbeat.Elapsed.TotalSeconds >= 5)
                     {
                         foreach (var peer in peers) peer.KeepAlive();
                         heartbeat.Restart();
                     }
                     foreach (var live in server.Ships)
                         live.Ship.Position += new Vector3(1, 0, 0);
-                    if (phase2) server.TestProjectRecordedTick(recordedTick++, snapshot: true, measure: true);
+                    if (controlled) server.TestProjectRecordedTick(recordedTick++, snapshot: true, measure: true);
                     else server.TickSim();
                 }
                 for (int tick = 0; tick < 20; tick++) { Advance(); Thread.Sleep(50); }
                 server.FlushBroadcastSnapshots();
                 void DrainTransport(uint marker)
                 {
-                    if (phase2) foreach (var peer in peers) peer.KeepAlive();
+                    if (controlled) foreach (var peer in peers) peer.KeepAlive();
                     server.TestSendSnapshotBarrier(marker);
                     Assert.True(SpinWait.SpinUntil(() => peers.All(p => p.LastMarker == marker), TimeSpan.FromSeconds(30)),
                         $"Transport barrier {marker}: {peers.Count(p => p.LastMarker == marker)}/{count} drained; "
@@ -296,20 +310,23 @@ public sealed class BroadcastSnapshotLoopbackTests
                             .Select(p => $"last={p.LastMarker} frames={p.Frames} error={p.Error}")));
                 }
                 DrainTransport(snapshot ? 668001u : 668000u);
-                string prefix = phase2 ? "p669" : "p668";
+                string prefix = phase3 ? "p677" : phase2 ? "p669" : "p668";
                 string csv = $"/tmp/{prefix}-loopback-{count}-{snapshot}.csv";
                 File.Delete(csv);
                 TickProfiler.Configure(true, 3600, csv);
-                TickProfiler.SetLabel($"{prefix} peers={count} snapshot={phase2 || snapshot} encodeOnce={phase2 && snapshot}");
+                TickProfiler.SetLabel($"{prefix} peers={count} snapshot={controlled || snapshot} encodeOnce={phase3 || (phase2 && snapshot)} tiers={phase3 && snapshot}");
                 long startHeavy = server.ShipEncodingCounters.HeavyRecords;
                 long startSingle = server.ShipEncodingCounters.SingleRecords;
                 long startLight = server.ShipEncodingCounters.LightRecords;
                 long startRelative = server.ShipEncodingCounters.RelativePositions;
                 long startPoolAlloc = server.TestPublisher!.PublishAllocatedBytes;
+                server.TakeUpdateAgeReport(recordedTick / 20d); // discard warm-up ages
+                var perViewer = new System.Collections.Concurrent.ConcurrentDictionary<uint, long>();
                 long startEgress = 0;
                 long startPackets = 0;
-                server.TestPublicationCapture = (_, bytes, _, _) =>
+                server.TestPublicationCapture = (viewer, bytes, _, _) =>
                 {
+                    perViewer.AddOrUpdate(viewer.Value, bytes.Length, (_, prior) => prior + bytes.Length);
                     Interlocked.Add(ref startEgress, bytes.Length);
                     Interlocked.Increment(ref startPackets);
                 };
@@ -319,6 +336,7 @@ public sealed class BroadcastSnapshotLoopbackTests
                 long startPublished = server.TestPublisher.PublishedSnapshots;
                 long startCoalesced = server.TestPublisher.CoalescedSnapshots;
                 long startFrames = peers.Sum(p => Interlocked.Read(ref p.Frames));
+                var receivedBytesBefore = peers.Select(p => Interlocked.Read(ref p.Bytes)).ToArray();
                 long producerAllocationStart = GC.GetAllocatedBytesForCurrentThread();
                 var times = new List<double>();
                 for (int tick = 0; tick < 120; tick++)
@@ -332,10 +350,14 @@ public sealed class BroadcastSnapshotLoopbackTests
                 long producerAllocated = GC.GetAllocatedBytesForCurrentThread() - producerAllocationStart;
                 server.FlushBroadcastSnapshots();
                 server.TestPublicationCapture = null;
-                if (phase2)
+                if (controlled)
                 {
-                    if (expectedEgress is { } egress) Assert.Equal(egress, startEgress);
-                    if (expectedPackets is { } packets) Assert.Equal(packets, startPackets);
+                    if (expectedEgress is { } egress)
+                    {
+                        if (phase3) Assert.True(startEgress < egress * .8, $"tiers must reduce crowded egress: {egress} -> {startEgress}");
+                        else Assert.Equal(egress, startEgress);
+                    }
+                    if (!phase3 && expectedPackets is { } packets) Assert.Equal(packets, startPackets);
                     expectedEgress = startEgress;
                     expectedPackets = startPackets;
                 }
@@ -345,7 +367,14 @@ public sealed class BroadcastSnapshotLoopbackTests
                 long published = server.TestPublisher.PublishedSnapshots - startPublished;
                 result.Add(new
                 {
-                    peers = count, recordedProjection = phase2, snapshot = phase2 || snapshot, encodeOnce = phase2 && snapshot, ticks = times.Count,
+                    peers = count, recordedProjection = controlled, snapshot = controlled || snapshot,
+                    encodeOnce = phase3 || (phase2 && snapshot), interestTiers = phase3 && snapshot, ticks = times.Count,
+                    totalSocketPayloadBytes = peers.Select((p, i) => Interlocked.Read(ref p.Bytes) - receivedBytesBefore[i]
+                        - Ping.FixedSize - FedPacket.CrcWidth).Sum(),
+                    perViewerSocketPayloadBytes = peers.Select((p, i) => new { peer = i, bytes = Interlocked.Read(ref p.Bytes)
+                        - receivedBytesBefore[i] - Ping.FixedSize - FedPacket.CrcWidth }).ToArray(),
+                    totalBytes = startEgress, perViewerBytes = perViewer.OrderBy(p => p.Key).Select(p => new { peer = p.Key, bytes = p.Value }).ToArray(),
+                    updateAges = server.TakeUpdateAgeReport(recordedTick / 20d),
                     heavyEncodesPerTick = (server.ShipEncodingCounters.HeavyRecords - startHeavy) / (double)times.Count,
                     singleEncodesPerTick = (server.ShipEncodingCounters.SingleRecords - startSingle) / (double)times.Count,
                     lightEncodesPerTick = (server.ShipEncodingCounters.LightRecords - startLight) / (double)times.Count,
@@ -368,7 +397,7 @@ public sealed class BroadcastSnapshotLoopbackTests
                 Assert.Equal(0, server.TestPublisher.EncodeFailures);
                 Assert.True(peers.Sum(p => p.Frames) > startFrames + count);
             }
-            File.WriteAllText($"/tmp/{(phase2 ? "p669" : "p668")}-loopback-{count}.json", JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText($"/tmp/{(phase3 ? "p677" : phase2 ? "p669" : "p668")}-loopback-{count}.json", JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
         }
         finally { foreach (var peer in peers) peer.Dispose(); }
     }

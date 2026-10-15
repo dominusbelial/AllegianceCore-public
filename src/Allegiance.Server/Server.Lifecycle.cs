@@ -1375,7 +1375,7 @@ public sealed partial class Server
         string trans = _transportMode == TransportMode.Pool
             ? $"transport=pool ({_transportPoolWorkers} workers)"
             : "transport=thread-per-peer";
-        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; broadcast.immutableSnapshot={_broadcastSnapshotEnabled}; broadcast.encodeOnce={_broadcastEncodeOnceEnabled}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
+        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; broadcast.immutableSnapshot={_broadcastSnapshotEnabled}; broadcast.encodeOnce={_broadcastEncodeOnceEnabled}; broadcast.interestTiers={_broadcastInterestTiersEnabled}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
     }
 
     private static string ParseShipUpdateModel(string modelStr)

@@ -48,6 +48,7 @@ public sealed partial class Server
         _teammateLoadoutCache.Clear();
         _viewerPoseCadence.Clear();
         _retiredPoseAges.Clear();
+        _retiredTierAges.Clear();
         _clusterInfoBytes = null;
         foreach (var m in _missions)
             foreach (var s in m.Sectors)

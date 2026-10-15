@@ -1,0 +1,12 @@
+{
+  "isolatedMethods": 80,
+  "isolatedCaseExecutions": 348,
+  "socketReductionPercent": {
+    "256": 53.45970464895138,
+    "512": 59.62081610443689
+  },
+  "populations": [
+    256,
+    512
+  ]
+}

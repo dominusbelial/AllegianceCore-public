@@ -247,7 +247,8 @@ internal static class BroadcastSnapshotGuard
             if (type.Namespace != "Allegiance.Core.Wire"
                 && type != typeof(Allegiance.Core.Sim.Orientation)
                 && type != typeof(Allegiance.Core.Sim.ControlData)
-                && type != typeof(Allegiance.Core.Collision.Vector3))
+                && type != typeof(Allegiance.Core.Collision.Vector3)
+                && type != typeof(Server.InterestShipState))
                 throw new InvalidOperationException($"Broadcast snapshot retained live/unknown type {type.FullName}");
             foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 Visit(field.GetValue(value));

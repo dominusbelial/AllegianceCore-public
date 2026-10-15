@@ -982,7 +982,7 @@ public sealed partial class Server
                         // "port" mode (the default) this block is unchanged: every
                         // dirty same-side teammate's position is batched and sent
                         // per tick.
-                        if (!_nativeShipUpdates)
+                        if (!_nativeShipUpdates && !_broadcastInterestTiersEnabled)
                         {
                             bool firstPos = !_teammatePositionSent.Contains((kv.Key, teammateId));
                             if (firstPos
@@ -1225,7 +1225,7 @@ public sealed partial class Server
         // and is skipped (an empty dict is passed; the parallel build never
         // indexes it because its posBatch block is gated on !_nativeShipUpdates).
         positionEncode = new Dictionary<short, BroadcastMessage>(peers.Length);
-        if (!_nativeShipUpdates)
+        if (!_nativeShipUpdates && !_broadcastInterestTiersEnabled)
         {
             foreach (var kv in peers)
             {
@@ -1494,7 +1494,7 @@ public sealed partial class Server
                     // posBatch SingleShipUpdate(78) stream; remote positions flow
                     // only through the native HEAVY/LIGHT budget. "port" mode
                     // keeps this block unchanged.
-                    if (!_nativeShipUpdates)
+                    if (!_nativeShipUpdates && !_broadcastInterestTiersEnabled)
                     {
                         bool firstPos = !_teammatePositionSent.Contains((conn, teammateId)) && !localPositionSent.Contains(teammateId);
                         if (firstPos
@@ -2542,45 +2542,50 @@ public sealed partial class Server
     private void BroadcastShipsUpdate(uint tickIndex)
     {
         var peers = _peerShips.ToArray();
-        // Allocate viewer state on the sim thread before sector workers read it.
-        bool trackCadence = _minUpdateHz > 0 || TickProfiler.Instance is not null;
-        if (trackCadence)
+        if (_broadcastInterestTiersEnabled) CaptureInterestSnapshot(peers);
+        try
+        {
+            // Allocate viewer state on the sim thread before sector workers read it.
+            bool trackCadence = _broadcastInterestTiersEnabled || _minUpdateHz > 0 || TickProfiler.Instance is not null;
+            if (trackCadence)
+                foreach (var kv in peers)
+                    if (!_viewerPoseCadence.ContainsKey(kv.Key))
+                        _viewerPoseCadence.Add(kv.Key, new ViewerPoseCadence());
+            double poseNow = UpdateCadenceNow;
+
+            // P603 — default (broadcast.parallelBuild off): the original serial
+            // per-peer loop, byte-for-byte.
+            if (!_broadcastParallelBuild)
+            {
+                foreach (var kv in peers) BroadcastShipsUpdatePeer(kv, tickIndex, trackCadence, poseNow);
+                return;
+            }
+
+            // P603 — parallel across SECTORS, not across peers. The per-peer body
+            // mutates each candidate ship's `Deviation` staleness accumulator, and a
+            // later peer IN THE SAME SECTOR reads that mutated value back this same
+            // tick (it orders its own serve/bump by Deviation). That is cross-peer,
+            // order-dependent shared mutable state — not safely parallelisable across
+            // peers while staying byte-identical. Peers in DIFFERENT sectors touch
+            // disjoint candidate lists / Deviation sets, so they are fully independent:
+            // partition peers by sector (preserving `_peerShips` order within each)
+            // and run each sector's peers serially on one worker. For the single-
+            // sector (concentrated-fight) case this yields no speedup — documented in
+            // docs/reports/P603_PARALLEL_BROADCAST_BUILD.md; broadcastShipStates (the
+            // dominant O(N²) bucket) is the per-peer-parallel one.
+            var bySector = new Dictionary<Sector, List<KeyValuePair<ConnectionId, LiveShip>>>();
             foreach (var kv in peers)
-                if (!_viewerPoseCadence.ContainsKey(kv.Key))
-                    _viewerPoseCadence.Add(kv.Key, new ViewerPoseCadence());
-        double poseNow = UpdateCadenceNow;
-
-        // P603 — default (broadcast.parallelBuild off): the original serial
-        // per-peer loop, byte-for-byte.
-        if (!_broadcastParallelBuild)
-        {
-            foreach (var kv in peers) BroadcastShipsUpdatePeer(kv, tickIndex, trackCadence, poseNow);
-            return;
+            {
+                if (!bySector.TryGetValue(kv.Value.Sector, out var list)) { list = new(); bySector[kv.Value.Sector] = list; }
+                list.Add(kv);
+            }
+            var po = new ParallelOptions { MaxDegreeOfParallelism = _broadcastMaxParallelism };
+            Parallel.ForEach(bySector, po, grp =>
+            {
+                foreach (var kv in grp.Value) BroadcastShipsUpdatePeer(kv, tickIndex, trackCadence, poseNow);
+            });
         }
-
-        // P603 — parallel across SECTORS, not across peers. The per-peer body
-        // mutates each candidate ship's `Deviation` staleness accumulator, and a
-        // later peer IN THE SAME SECTOR reads that mutated value back this same
-        // tick (it orders its own serve/bump by Deviation). That is cross-peer,
-        // order-dependent shared mutable state — not safely parallelisable across
-        // peers while staying byte-identical. Peers in DIFFERENT sectors touch
-        // disjoint candidate lists / Deviation sets, so they are fully independent:
-        // partition peers by sector (preserving `_peerShips` order within each)
-        // and run each sector's peers serially on one worker. For the single-
-        // sector (concentrated-fight) case this yields no speedup — documented in
-        // docs/reports/P603_PARALLEL_BROADCAST_BUILD.md; broadcastShipStates (the
-        // dominant O(N²) bucket) is the per-peer-parallel one.
-        var bySector = new Dictionary<Sector, List<KeyValuePair<ConnectionId, LiveShip>>>();
-        foreach (var kv in peers)
-        {
-            if (!bySector.TryGetValue(kv.Value.Sector, out var list)) { list = new(); bySector[kv.Value.Sector] = list; }
-            list.Add(kv);
-        }
-        var po = new ParallelOptions { MaxDegreeOfParallelism = _broadcastMaxParallelism };
-        Parallel.ForEach(bySector, po, grp =>
-        {
-            foreach (var kv in grp.Value) BroadcastShipsUpdatePeer(kv, tickIndex, trackCadence, poseNow);
-        });
+        finally { _interestSnapshot.Clear(); }
     }
 
     /// <summary>
@@ -2688,7 +2693,9 @@ public sealed partial class Server
             // here as in native's assembly loop, FedSrv.CPP:4148-4154).
             var all = sector.GetShipUpdateCandidates().ToList();
             ViewerPoseCadence? cadence = trackCadence ? _viewerPoseCadence[kv.Key] : null;
-            cadence?.Begin(all, self, sector, adminSpectator, poseNow, TickProfiler.Instance is not null);
+            cadence?.Begin(_broadcastInterestTiersEnabled ? all.Where(peerSees).ToList() : all,
+                self, sector, adminSpectator || _broadcastInterestTiersEnabled, poseNow,
+                TickProfiler.Instance is not null, _broadcastInterestTiersEnabled ? ClassifyInterest : null);
 
             // Fixed quotas — native's REAL, shipped values (the "w0dk4 Bandwidth
             // Patch", FedSrv.CPP:3844-3845). The disabled bandwidth-adaptive
@@ -2698,7 +2705,27 @@ public sealed partial class Server
             const int cHeavyPerInterval = 2;   // FedSrv.CPP:3844
             const int cLightPerInterval = 2;   // FedSrv.CPP:3845
 
-            if (all.Count <= 2)
+            if (_broadcastInterestTiersEnabled)
+            {
+                // Classification uses this tick's copied interest snapshot.
+                // Only detached shared records leave this projection thread. Native
+                // intent: target first (FedSrv.CPP:4141-4146), deviation descending
+                // inside each tier (FedSrv.CPP:3614-3621,3923). Rate quotas replace
+                // the era's 2+2 cap; no presence-only record satisfies a pose rate.
+                foreach (var c in all.Where(c => c != self && c != targetShip && peerSees(c))
+                    .OrderBy(c => ClassifyInterest(self, c)).ThenByDescending(c => c.Deviation))
+                {
+                    int tier = ClassifyInterest(self, c);
+                    double hz = InterestRate(tier);
+                    if (tier == 0 || cadence!.TierDue(c.Id, poseNow, hz, _config.UpdatesPerSecond, tickIndex, self.Id))
+                    {
+                        entries.Add(CaptureHeavyUpdate(tickIndex, posRef, c, tickIndex));
+                        c.Deviation = 0;
+                    }
+                    else c.Deviation += 1;
+                }
+            }
+            else if (all.Count <= 2)
             {
                 // Small-candidate fast path (FedSrv.CPP:3860-3864): with <= 2
                 // candidates native sends every candidate as a heavy update with
@@ -2824,7 +2851,7 @@ public sealed partial class Server
             if (cadence is not null)
             {
                 foreach (var entry in entries) cadence.MarkPose(entry.ShipId, poseNow);
-                cadence.AppendFloor(entries, tickIndex, posRef, poseNow, _minUpdateHz,
+                if (!_broadcastInterestTiersEnabled) cadence.AppendFloor(entries, tickIndex, posRef, poseNow, _minUpdateHz,
                     Math.Max(1, _config.UpdatesPerSecond), _broadcastSnapshotEnabled, CaptureHeavyUpdate);
             }
 

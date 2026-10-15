@@ -28,6 +28,7 @@ public sealed partial class Server
         if (!double.IsFinite(hz) || hz < 0)
             throw new InvalidDataException("broadcast.minUpdateHz must be finite and non-negative (0 disables the floor)");
         _minUpdateHz = Math.Min(hz, Math.Max(1, _config.UpdatesPerSecond));
+        InitInterestTiers();
         _viewerPoseCadence.Clear();
         _retiredPoseAges.Clear();
         _updateAgeWindowStart = UpdateCadenceNow;
@@ -45,6 +46,7 @@ public sealed partial class Server
         TickProfiler.WindowReported -= RequestUpdateAgeWindow;
         _viewerPoseCadence.Clear();
         _retiredPoseAges.Clear();
+        _retiredTierAges.Clear();
     }
 
     internal void RetireViewerUpdateCadence(ConnectionId id)
@@ -53,12 +55,16 @@ public sealed partial class Server
         // Preserve this viewer's contribution to the current window while
         // releasing its identity/ship caches immediately on disconnect.
         _retiredPoseAges.Merge(state.Window);
+        _retiredTierAges.Merge(state.TierWindow);
         _retiredPoseAges.ExtraBytes += state.ExtraBytes;
         _retiredPoseAges.PacketBytes += state.PacketBytes;
     }
 
     internal string TakeUpdateAgeReport(double now)
     {
+        var tiers = new PoseAgeWindow();
+        tiers.Merge(_retiredTierAges);
+        _retiredTierAges.Clear();
         var total = _updateAgeAggregate;
         total.Clear();
         total.Merge(_retiredPoseAges);
@@ -71,6 +77,8 @@ public sealed partial class Server
             older1 += state.Older1;
             older3 += state.Older3;
             pairs += state.TrackedCount;
+            tiers.Merge(state.TierWindow);
+            state.TierWindow.Clear();
             total.Merge(state.Window);
             state.Window.Clear();
             total.ExtraBytes += state.ExtraBytes;
@@ -79,7 +87,7 @@ public sealed partial class Server
         }
         double seconds = Math.Max(0.000001, now - _updateAgeWindowStart);
         _updateAgeWindowStart = now;
-        return string.Create(CultureInfo.InvariantCulture, $"[update-age] window={seconds:0.###}s viewers={_viewerPoseCadence.Count} minHz={_minUpdateHz:0.###} {total.FormatBands()} visiblePairs={pairs} older1s={older1} older3s={older3} older1sSamples={total.Older1} older3sSamples={total.Older3} neverPose={total.NeverPose} shipsBytes={total.PacketBytes} shipsBps={total.PacketBytes / seconds:0.0} floorExtraBytes={total.ExtraBytes} floorExtraBps={total.ExtraBytes / seconds:0.0}");
+        return string.Create(CultureInfo.InvariantCulture, $"[update-age] window={seconds:0.###}s viewers={_viewerPoseCadence.Count} minHz={_minUpdateHz:0.###} {total.FormatBands()} visiblePairs={pairs} older1s={older1} older3s={older3} older1sSamples={total.Older1} older3sSamples={total.Older3} neverPose={total.NeverPose} shipsBytes={total.PacketBytes} shipsBps={total.PacketBytes / seconds:0.0} floorExtraBytes={total.ExtraBytes} floorExtraBps={total.ExtraBytes / seconds:0.0}{(_broadcastInterestTiersEnabled ? FormatTierAges(tiers) : "")}");
     }
 
     private void EmitUpdateAgeWindow() => Console.WriteLine(TakeUpdateAgeReport(UpdateCadenceNow));
@@ -105,12 +113,13 @@ internal sealed class ViewerPoseCadence
     private short? _side;
     private int _generation, _cursor;
     internal readonly PoseAgeWindow Window = new();
+    internal readonly PoseAgeWindow TierWindow = new();
     internal long ExtraBytes, PacketBytes;
     internal int Older1, Older3;
     internal int TrackedCount => _stamps.Count;
 
     internal void Begin(IReadOnlyList<Ship> candidates, Ship self, Sector sector,
-        bool adminSpectator, double now, bool sample)
+        bool adminSpectator, double now, bool sample, Func<Ship, Ship, int>? classify = null)
     {
         if (_sector != sector || _viewer != self || _side != self.SideId)
         {
@@ -137,12 +146,24 @@ internal sealed class ViewerPoseCadence
             double age = Math.Max(0, now - stamp.LastPose);
             if (age > 1) Older1++;
             if (age > 3) Older3++;
+            if (classify is not null) TierWindow.RecordBand(classify(self, ship), age, !stamp.HasPose);
             if (sample) Window.Record((ship.Position - self.Position).LengthSquared(), age, !stamp.HasPose);
         }
         // .NET Dictionary supports Remove during enumeration. Forget departed,
         // hidden, boarded and destroyed subjects; reused ids begin a new clock.
         foreach (var pair in _stamps)
             if (pair.Value.Generation != _generation) _stamps.Remove(pair.Key);
+    }
+
+    internal bool TierDue(short id, double now, double hz, int tickHz, uint tick, short viewerId)
+    {
+        if (!_stamps.TryGetValue(id, out var stamp) || !stamp.HasPose) return true;
+        int period = Math.Max(1, (int)Math.Min(int.MaxValue, Math.Floor(Math.Max(1, tickHz) / hz)));
+        // Spread recurring sends across ticks after the initial sighting.
+        // A wall-time deadline still catches up promptly after a stalled tick.
+        uint phase = unchecked((uint)(id * 397 ^ viewerId));
+        return tick % (uint)period == phase % (uint)period
+            || now - stamp.LastPose + 1e-9 >= period / (double)Math.Max(1, tickHz);
     }
 
     internal void MarkPose(short id, double now)
@@ -200,6 +221,11 @@ internal sealed class PoseAgeWindow
     {
         int band = distanceSquared < 1_000_000 ? 0 : distanceSquared < 9_000_000 ? 1
             : distanceSquared < 36_000_000 ? 2 : 3;
+        RecordBand(band, age, neverPose);
+    }
+
+    internal void RecordBand(int band, double age, bool neverPose = false)
+    {
         int bin = (int)Math.Min(Bins - 1, Math.Ceiling(age * 20));
         _hist[band * Bins + bin]++;
         _counts[band]++;
