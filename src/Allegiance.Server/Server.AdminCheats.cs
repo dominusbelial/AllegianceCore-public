@@ -164,6 +164,13 @@ public sealed partial class Server
             return true;
         }
 
+        // P661: read-only transport diagnostic, printed to the server log.
+        if (token.Equals("egress", StringComparison.OrdinalIgnoreCase))
+        {
+            DumpEgressWindow();
+            return true;
+        }
+
         // Privileged but an unrecognized/out-of-scope token → not a cheat
         // (native fIsCheat=false) → forwarded as ordinary chat.
         return false;

@@ -284,6 +284,10 @@ public sealed class TcpTransport : ITransport
     public ConnectionId LocalId { get; private set; } = ConnectionId.Me;
     public ushort BoundPort => _boundPort;
 
+    /// <summary>P661: optional host-only accounting. Set before Host; client
+    /// transports retain the null fast path. No send policy depends on it.</summary>
+    public EgressAccounting? Egress { get; init; }
+
     public void Host(ushort port = 0)
     {
         if (_running) throw new InvalidOperationException("transport already running");
@@ -528,7 +532,11 @@ public sealed class TcpTransport : ITransport
             // never produce the same id. (_nextPeerId starts at 0 and
             // Interlocked.Increment yields 1 for the first peer.)
             id = new ConnectionId(unchecked((uint)Interlocked.Increment(ref _nextPeerId)));
-            var sender = new PeerSender(stream, client, r => DropPeer(id, r));
+            var sender = new PeerSender(stream, client, r => DropPeer(id, r))
+            {
+                Egress = Egress,
+                EgressHarness = name.StartsWith("mcp-", StringComparison.Ordinal),
+            };
             lock (_gate) _peers[id] = sender;
             StartOrPool(id, sender);
             // Constraint: OnPeerJoined BEFORE the app sees any datagram. The
@@ -973,6 +981,11 @@ public sealed class TcpTransport : ITransport
         // abandoned-and-continued on the same socket.
         private byte[]? _inflight;
         private int _inflightOffset;
+        private bool _inflightStream;
+        internal EgressAccounting? Egress;
+        // Classification is diagnostic only, independent of IsHuman (which
+        // controls liveness policy). Greeting classification covers join traffic.
+        internal bool EgressHarness;
         // P611 — the peer's liveness clock, in ticks: the last time the socket
         // accepted ANY bytes (a send completed partially or fully). Updated by
         // the writer/pool worker on every successful write. A peer whose socket
@@ -1039,6 +1052,7 @@ public sealed class TcpTransport : ITransport
             lock (_sync)
             {
                 if (_disconnected) return;
+                Egress?.Record(frame, EgressHarness, coalesceKey != 0, EgressEvent.Offered);
                 // Was the peer's send path fully drained before this enqueue?
                 // If so the peer is current (idle or caught up); its writer
                 // gets a fresh liveness window rather than being judged stale
@@ -1061,6 +1075,7 @@ public sealed class TcpTransport : ITransport
                         // frame keeps its stream-lane position and the byte
                         // accounting stays exact.
                         _queuedBytes -= existing.Value.Frame.Length;
+                        Egress?.Record(existing.Value.Frame, EgressHarness, true, EgressEvent.Coalesced);
                         existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks);
                         _queuedBytes += frame.Length;
                     }
@@ -1252,6 +1267,7 @@ public sealed class TcpTransport : ITransport
             {
                 if (!node.Value.Guaranteed)
                 {
+                    Egress?.Record(node.Value.Frame, EgressHarness, true, EgressEvent.Dropped);
                     _queuedBytes -= node.Value.Frame.Length;
                     if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                     _streamQueue.Remove(node);
@@ -1287,6 +1303,7 @@ public sealed class TcpTransport : ITransport
             if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
             _inflight = node.Value.Frame;
             _inflightOffset = 0;
+            _inflightStream = node.Value.CoalesceKey != 0;
             _queuedBytes -= _inflight.Length;
             if (_orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
             else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
@@ -1389,6 +1406,7 @@ public sealed class TcpTransport : ITransport
             // Real write progress: the OS accepted these bytes — refresh the
             // no-progress liveness clock so a slow-but-flowing peer is never cut.
             Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
+            Egress?.Record(_inflight!, EgressHarness, _inflightStream, EgressEvent.Sent, _inflightOffset, n);
             _inflightOffset += n;
             if (_inflightOffset >= _inflight!.Length)
             {
