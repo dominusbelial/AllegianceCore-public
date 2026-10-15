@@ -116,6 +116,36 @@ public abstract class TcpTransportSendHardeningTestsBase
         }
     }
 
+    [Fact]
+    public void Pooled_data_frames_send_only_valid_bytes_and_own_their_copy()
+    {
+        var site = new Site();
+        var host = NewHost(site);
+        try
+        {
+            host.Host(0);
+            var (_, client) = ConnectRawPeer(host, site, "POOL-COPY");
+            using (client)
+            {
+                ConnectionId id;
+                lock (site.Joined) id = site.Joined[^1];
+                for (int round = 0; round < 4; round++)
+                {
+                    var expected = new List<byte[]>();
+                    foreach (int length in new[] { 1, 7, 37, 129, 7001, 5, 32769 })
+                    {
+                        var body = Enumerable.Range(0, length).Select(i => (byte)(i + round)).ToArray();
+                        expected.Add(body.ToArray());
+                        host.Send(id, body, guaranteed: true);
+                        Array.Fill(body, (byte)0xEE); // caller storage may change immediately
+                    }
+                    foreach (var body in expected) Assert.Equal(body, ReadDataFrame(client.GetStream()));
+                }
+            }
+        }
+        finally { host.Shutdown(); }
+    }
+
     /// <summary>⭐ A tiny-window, non-reading peer forces partial / would-block
     /// writes; the receiver must still reassemble every frame byte-exact, in
     /// order, with nothing lost. This pins the P645 in-flight/offset machinery:

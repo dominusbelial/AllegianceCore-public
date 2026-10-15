@@ -626,21 +626,13 @@ public sealed partial class Server
     {
         // One snapshot reused for both the own-ship walk and the (P58)
         // same-side teammate walk below, so neither mutates mid-iteration.
-        var peers = _peerShips.ToArray();
+        var peers = SnapshotBroadcastPeers();
         // P317 — group peers by side once per tick so each recipient's
         // same-side teammate walk scans only its own side instead of every
         // peer (the old `foreach tv in peers { if different side continue; }`
         // was an O(P²) filtering scan). Members of each list keep `peers`
         // order, so the effective per-side subject order is unchanged.
-        var sameSide = new Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>>();
-        foreach (var gkv in peers)
-        {
-            if (gkv.Value.Ship.SideId is { } s)
-            {
-                if (!sameSide.TryGetValue(s, out var list)) { list = new(); sameSide[s] = list; }
-                list.Add(gkv);
-            }
-        }
+        var sameSide = GatherBroadcastMates(peers);
         // P317 — one encoded SingleShipUpdate per MOVING subject per tick,
         // shared across every same-side recipient (the bytes for subject A's
         // position are identical for all of A's teammates, so re-encoding per
@@ -709,13 +701,6 @@ public sealed partial class Server
                 // so |0−0| never fires — a strict no-op for them.
                 || MathF.Abs(ship.ShieldFraction - live.LastBroadcastShieldFraction) >= ShieldFractionEpsilon)
             {
-                var msg = new SingleShipUpdate
-                {
-                    OtTarget = 0,                          // OT_ship
-                    OidTarget = ship.Id,
-                    Ship = CaptureShipUpdate(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
-                    BIsRipcording = false,
-                };
                 // P606 — the own-ship position stream is latest-wins traffic:
                 // coalesce per peer so a slow client keeps only the newest
                 // pending snapshot, never one stale copy per tick.
@@ -726,7 +711,7 @@ public sealed partial class Server
                 // own pose in place and bots flew on a stale pose), and the own
                 // pose must never be shed under load. Still latest-wins against
                 // itself, so the backlog stays bounded (P606 intact).
-                SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceOwnShip, guaranteed: true);
+                SendPeerCoalescing(kv.Key, PackOwnPose(ship, tickIndex, miningNow), CoalesceOwnShip, guaranteed: true);
                 _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up, LastBroadcastShieldFraction = ship.ShieldFraction, LastBroadcastMining = miningNow, PositionEverBroadcast = true };
             }
 
@@ -742,8 +727,8 @@ public sealed partial class Server
             bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
             if (sectorChanged || refreshDue)
             {
-                SendPeer(kv.Key, PackBroadcast(Message(MakeOwnShipStatus(ship.Id, live))));
-                ConsoleLog.Write($"[shipstatus] peer {kv.Key} " +
+                SendPeer(kv.Key, PackStatus(ship.Id, live));
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[shipstatus] peer {kv.Key} " +
                     (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
                 _lastStatusSector[kv.Key] = live.Sector.Id;
                 _lastStatusTick[kv.Key] = tickIndex;
@@ -937,8 +922,8 @@ public sealed partial class Server
                         long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((kv.Key, teammateId), out var tt0) ? tt0 : -1;
                         if (lastTeammateTick < 0 || recipientRefreshDue)
                         {
-                            SendPeer(kv.Key, PackBroadcast(Message(MakeOwnShipStatus(teammateId, tv.Value))));
-                            ConsoleLog.Write($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
+                            SendPeer(kv.Key, PackStatus(teammateId, tv.Value));
+                            if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
                                 (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
                             _lastTeammateStatusTick[(kv.Key, teammateId)] = tickIndex;
                         }
@@ -1403,7 +1388,7 @@ public sealed partial class Server
         bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
         if (sectorChanged || refreshDue)
         {
-            r.Packets.Add((PackBroadcast(Message(MakeOwnShipStatus(ship.Id, live))), 0, false));
+            r.Packets.Add((PackStatus(ship.Id, live), 0, false));
             if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[shipstatus] peer {conn} " +
                 (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
             r.SetStatus = true; r.StatusSector = live.Sector.Id; r.StatusTick = tickIndex;
@@ -1484,7 +1469,7 @@ public sealed partial class Server
                     long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((conn, teammateId), out var tt0) ? tt0 : -1;
                     if (lastTeammateTick < 0 || recipientRefreshDue)
                     {
-                        r.Packets.Add((PackBroadcast(Message(MakeOwnShipStatus(teammateId, tv.Value))), 0, false));
+                        r.Packets.Add((PackStatus(teammateId, tv.Value), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
                             (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
                         r.TeammateStatusTick[teammateId] = tickIndex;
@@ -1742,7 +1727,8 @@ public sealed partial class Server
         // Build the per-side audience once per tick: the side's seated connections
         // AND the sectors that side has a seated peer in (a peer only receives
         // ship telemetry for ships in its own cluster — see BroadcastShipsUpdate).
-        var peers = _peerShips.ToArray();
+        _crossSideExportGeneration++;
+        var peers = SnapshotBroadcastPeers();
         Dictionary<short, (List<ConnectionId> Conns, HashSet<Sector> Sectors)> bySide = new();
         foreach (var kv in peers)
         {
@@ -1773,6 +1759,8 @@ public sealed partial class Server
                 foreach (var model in sector.Models)
                 {
                     if (model is not Ship ship) continue;
+                    if (_crossSideExportPackets.TryGetValue(ship.Id, out var cached) && cached.Ship == ship)
+                        cached.Generation = _crossSideExportGeneration;
                     short? ownSide = ship.SideId;
                     foreach (var (sideId, e) in bySide)
                     {
@@ -1818,6 +1806,8 @@ public sealed partial class Server
                     }
                 }
         }
+        foreach (var cached in _crossSideExportPackets)
+            if (cached.Value.Generation != _crossSideExportGeneration) _crossSideExportPackets.Remove(cached.Key);
     }
 
     /// <summary>P349 — send ONE cross-side <c>EXPORT(26)</c> about
@@ -1826,19 +1816,8 @@ public sealed partial class Server
     /// <c>(conn, ship.Id)</c> in <c>_crossSideExportSent</c>.</summary>
     private void SendCrossSideExport(ConnectionId conn, Ship ship, short seeingSide)
     {
-        string name = PeerName(ship) ?? $"Ship {ship.Id}";
-        var exp = new ExportShip
-        {
-            ObjectType = ExportShip.OtShip,
-            CharacterName = name,
-            HullId = ship.HullType.HullId,
-            ShipId = ship.Id,
-            SideId = ship.SideId ?? seeingSide,   // the exported ship's real side (faction identity)
-            PilotType = ExportShip.PilotTypePlayer,
-            Parts = EnsureLoadoutSnapshot(ship),
-        };
-        SendPeer(conn, PackBroadcast(new[] { Message(exp) }));
-        if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} ship {ship.Id} '{name}' hull {exp.HullId}");   // P619c: gated (hot in combat)
+        SendPeer(conn, CrossSideExportPacket(ship, seeingSide));
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} ship {ship.Id} hull {ship.HullType.HullId}");
     }
 
     /// <summary>
@@ -1877,7 +1856,7 @@ public sealed partial class Server
     private void SweepCrossSideMineExports()
     {
         // Per-side seated audience, exactly the ship sweep builds.
-        var peers = _peerShips.ToArray();
+        var peers = SnapshotBroadcastPeers();
         Dictionary<short, List<ConnectionId>> bySide = new();
         foreach (var kv in peers)
         {
@@ -1964,14 +1943,7 @@ public sealed partial class Server
     private void SweepCrossSideShipStatuses()
     {
         // Audience: the seated peers grouped by their ship's side.
-        var peers = _peerShips.ToArray();
-        var connsBySide = new Dictionary<short, List<ConnectionId>>();
-        foreach (var kv in peers)
-        {
-            if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
-            if (!connsBySide.TryGetValue(s, out var list)) { list = []; connsBySide[s] = list; }
-            list.Add(kv.Key);
-        }
+        var connsBySide = GatherSideConnections();
         if (connsBySide.Count == 0) return;   // nobody seated on a real side
 
         foreach (var m in _missions)
@@ -2003,22 +1975,18 @@ public sealed partial class Server
                             // transition exactly once, native Show/Hide style.
                             _crossSideShipStatusSeen[key] = nowSeen;
                             bool spotted = nowSeen;
-                            var status = MakeCrossSideShipStatus(ship, shipSector, spotted);
-                            var packet = PackBroadcast(new[] { Message(status) });
                             foreach (var conn in conns)
                             {
-                                SendPeer(conn, packet);
+                                SendPeer(conn, PackCrossSideStatus(ship, shipSector, spotted));
                                 _crossSideShipStatusTick[(conn, ship.Id)] = TickIndex;
                             }
-                            ConsoleLog.Write($"[{ (spotted ? "xspot" : "xhidd") }] side {sideId} {(spotted ? "spots" : "loses")} enemy ship {ship.Id} sector {shipSector}");
+                            if (ConsoleLog.Verbose) ConsoleLog.Write($"[{ (spotted ? "xspot" : "xhidd") }] side {sideId} {(spotted ? "spots" : "loses")} enemy ship {ship.Id} sector {shipSector}");
                         }
                         else if (nowSeen)
                         {
                             // Still visible, no edge: only the slow catch-up
                             // refresh re-sends (late-joiner / lost-packet heal),
                             // never per-tick.
-                            var status = MakeCrossSideShipStatus(ship, shipSector, spotted: true);
-                            var packet = PackBroadcast(new[] { Message(status) });
                             foreach (var conn in conns)
                             {
                                 long last = _crossSideShipStatusTick.TryGetValue((conn, ship.Id), out var l) ? l : -1;
@@ -2037,7 +2005,7 @@ public sealed partial class Server
                                     (((long)TickIndex + phase) % CrossSideStatusRefreshTicks == 0);
                                 if (phasedDue)
                                 {
-                                    SendPeer(conn, packet);
+                                    SendPeer(conn, PackCrossSideStatus(ship, shipSector, spotted: true));
                                     _crossSideShipStatusTick[(conn, ship.Id)] = TickIndex;
                                 }
                             }
@@ -2175,12 +2143,23 @@ public sealed partial class Server
     private void BroadcastScoreRoster()
     {
         uint tickIndex = (uint)TickIndex;
+        bool anyDue = false;
+        foreach (var mission in _missions)
+            if (!_lastScoreRosterTick.TryGetValue(mission, out var last)
+                || (long)tickIndex - last >= ScoreRosterRefreshTicks) { anyDue = true; break; }
+        if (!anyDue) return;
         // Batch all peers into a per-mission roster map, then send each mission's
         // list to its peers. This handles multi-mission worlds in one pass.
         foreach (var missionGroup in _peerShips.GroupBy(kv => kv.Value.Ship.Mission))
         {
             var mission = missionGroup.Key;
             if (mission is null) continue;
+
+            // Throttle: only send once per ScoreRosterRefreshTicks per mission,
+            // keyed on the mission so each mission's roster refreshes together.
+            long lastTick = _lastScoreRosterTick.TryGetValue(mission, out var lt0) ? lt0 : -1;
+            if (lastTick >= 0 && (long)tickIndex - lastTick < ScoreRosterRefreshTicks)
+                continue;
 
             var entries = new List<ScoreRosterEntry>();
             foreach (var kv in missionGroup)
@@ -2206,12 +2185,6 @@ public sealed partial class Server
             }
 
             var targets = missionGroup.Select(kv => kv.Key).ToArray();
-
-            // Throttle: only send once per ScoreRosterRefreshTicks per mission,
-            // keyed on the mission so each mission's roster refreshes together.
-            long lastTick = _lastScoreRosterTick.TryGetValue(mission, out var lt0) ? lt0 : -1;
-            if (lastTick >= 0 && (long)tickIndex - lastTick < ScoreRosterRefreshTicks)
-                continue;
 
             var roster = new ScoreRosterUpdate { Entries = entries.ToArray() };
             var packet = PackBroadcast(new[] { Message(roster) });
@@ -2260,17 +2233,7 @@ public sealed partial class Server
         // Side universe = the sides with seated peers (the only sides that have
         // anyone to send to). Group the peer connections by their ship's side in
         // one pass over a stable snapshot.
-        var peers = _peerShips.ToArray();
-        var connsBySide = new Dictionary<short, List<ConnectionId>>();
-        foreach (var kv in peers)
-        {
-            if (kv.Value.Ship.SideId is { } sid)
-            {
-                if (!connsBySide.TryGetValue(sid, out var list))
-                    connsBySide[sid] = list = [];
-                list.Add(kv.Key);
-            }
-        }
+        var connsBySide = GatherSideConnections();
         if (connsBySide.Count == 0) return;
 
         // P324 (M4): cadence-throttled. The per-side batch is re-encoded and
@@ -2348,17 +2311,7 @@ public sealed partial class Server
         // Side universe = the sides with seated peers (the only sides that have
         // anyone to send to). Group the peer connections by their ship's side in
         // one pass over a stable snapshot.
-        var peers = _peerShips.ToArray();
-        var connsBySide = new Dictionary<short, List<ConnectionId>>();
-        foreach (var kv in peers)
-        {
-            if (kv.Value.Ship.SideId is { } sid)
-            {
-                if (!connsBySide.TryGetValue(sid, out var list))
-                    connsBySide[sid] = list = [];
-                list.Add(kv.Key);
-            }
-        }
+        var connsBySide = GatherSideConnections();
         if (connsBySide.Count == 0) return;
 
         // P324 (M4): cadence-throttled — see BroadcastStationsUpdate. The per-side
@@ -2436,17 +2389,7 @@ public sealed partial class Server
         // Side universe = the sides with seated peers (the only sides that have
         // anyone to send to). Group the peer connections by their ship's side in
         // one pass over a stable snapshot.
-        var peers = _peerShips.ToArray();
-        var connsBySide = new Dictionary<short, List<ConnectionId>>();
-        foreach (var kv in peers)
-        {
-            if (kv.Value.Ship.SideId is { } sid)
-            {
-                if (!connsBySide.TryGetValue(sid, out var list))
-                    connsBySide[sid] = list = [];
-                list.Add(kv.Key);
-            }
-        }
+        var connsBySide = GatherSideConnections();
         if (connsBySide.Count == 0) return;
 
         // P324 (M4): cadence-throttled — see BroadcastStationsUpdate. The per-side
@@ -2541,7 +2484,7 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastShipsUpdate(uint tickIndex)
     {
-        var peers = _peerShips.ToArray();
+        var peers = SnapshotBroadcastPeers();
         if (_broadcastInterestTiersEnabled) CaptureInterestSnapshot(peers);
         try
         {
@@ -2597,6 +2540,27 @@ public sealed partial class Server
     /// preserved exactly.
     /// </summary>
     private void BroadcastShipsUpdatePeer(KeyValuePair<ConnectionId, LiveShip> kv, uint tickIndex, bool trackCadence, double poseNow)
+    {
+        if (_broadcastInterestTiersEnabled && ReuseBroadcastBuffers)
+        {
+            var self = kv.Value.Ship;
+            var sector = BroadcastSectorFor(kv.Key, kv.Value.Sector);
+            bool admin = IsSpectatorAdmin(kv.Key) && _spectateSector.ContainsKey(kv.Key);
+            Ship? target = null;
+            byte hull = 255, shield = 255;
+            if (self.CommandTarget is { } command && TargetInCluster(command, sector))
+            {
+                if (command is Ship ship && ship != self && ship.ParentShip is null)
+                { target = ship; hull = Percent(ship.Fraction); shield = Percent(ship.ShieldFraction); }
+                else if (command is Probe probe) hull = Percent(probe.Fraction);
+            }
+            BroadcastTierPose(kv.Key, self, target, sector, admin, tickIndex, poseNow, hull, shield);
+            return;
+        }
+        BroadcastShipsUpdatePeerLegacy(kv, tickIndex, trackCadence, poseNow);
+    }
+
+    private void BroadcastShipsUpdatePeerLegacy(KeyValuePair<ConnectionId, LiveShip> kv, uint tickIndex, bool trackCadence, double poseNow)
     {
         var self = kv.Value.Ship;
         // P612 — an admin spectator's broadcast serves the sector its free camera
@@ -2691,7 +2655,7 @@ public sealed partial class Server
             // per-cluster selection P138 built (<c>Sector.GetShipUpdateCandidates</c>,
             // which includes the peer's own ship and any target — both excluded
             // here as in native's assembly loop, FedSrv.CPP:4148-4154).
-            var all = sector.GetShipUpdateCandidates().ToList();
+            var all = sector.GetShipUpdateCandidates();
             ViewerPoseCadence? cadence = trackCadence ? _viewerPoseCadence[kv.Key] : null;
             cadence?.Begin(_broadcastInterestTiersEnabled ? all.Where(peerSees).ToList() : all,
                 self, sector, adminSpectator || _broadcastInterestTiersEnabled, poseNow,
@@ -2890,7 +2854,7 @@ public sealed partial class Server
                 + entries.Count * HeavyShipUpdateEntry.Width + FedPacket.CrcWidth
                 + (lightEntries is { Count: > 0 }
                     ? LightShipsUpdate.FixedSize + lightEntries.Count * LightShipUpdateEntry.Size : 0);
-            ConsoleLog.Write($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
+            if (ConsoleLog.Verbose) ConsoleLog.Write($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
                               $"target={(targetShip?.Id.ToString() ?? "none")} " +
                               $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count}" +
                               (lightEntries is { Count: > 0 } ? $" + LIGHT_SHIPS_UPDATE(175) x{lightEntries.Count}" : "") +
@@ -3008,8 +2972,9 @@ public sealed partial class Server
             // construction in its sector.
             if (ship.Sector is { } sector)
             {
-                foreach (var model in sector.Models)
+                for (int i = 0; i < sector.Models.Count; i++)
                 {
+                    var model = sector.Models[i];
                     if (model is Missile mis && mis.Target == ship)
                     {
                         tracked = true;
@@ -3019,8 +2984,7 @@ public sealed partial class Server
                 }
             }
 
-            var msg = MissileTrackWarningUpdate.From(tracked, bestLock);
-            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceMissileTrack);
+            SendPeerCoalescing(kv.Key, PackMissileTrack(tracked, bestLock), CoalesceMissileTrack);
             if (tracked)
                 ConsoleLog.Write($"[missiletrack] peer {kv.Key} ship {ship.Id} TRACKED by in-sector missile(s) bestLock {bestLock:F3} -> MISSILE_TRACK_WARNING(208)");
         }
@@ -3044,8 +3008,7 @@ public sealed partial class Server
         foreach (var kv in _peerShips)
         {
             var ship = kv.Value.Ship;
-            var msg = OwnShipMiningUpdate.FromMining(ship.MiningAsteroid);
-            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceOwnMining);
+            SendPeerCoalescing(kv.Key, PackMining(ship.MiningAsteroid), CoalesceOwnMining);
         }
     }
 
@@ -3064,8 +3027,7 @@ public sealed partial class Server
     {
         foreach (var kv in _peerShips)
         {
-            var msg = OwnShipKillBonusUpdate.FromShip(kv.Value.Ship);
-            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceOwnKillBonus);
+            SendPeerCoalescing(kv.Key, PackKillBonus(kv.Value.Ship), CoalesceOwnKillBonus);
         }
     }
 
@@ -3149,8 +3111,7 @@ public sealed partial class Server
                 }
             }
 
-            var msg = LeadIndicatorUpdate.From(ship.Id, targetShipId, inRange, green, leadWorld, targetPos);
-            SendPeerCoalescing(kv.Key, PackBroadcast(Message(msg)), CoalesceLeadIndicator);
+            SendPeerCoalescing(kv.Key, PackLead(ship.Id, targetShipId, inRange, green, leadWorld, targetPos), CoalesceLeadIndicator);
 
             if (targetShipId != -1 && ConsoleLog.Verbose)
                 ConsoleLog.Write($"[lead] peer {kv.Key} ship {ship.Id} target {targetShipId} " +
@@ -3247,18 +3208,7 @@ public sealed partial class Server
         // anyone to send to). Group the peer connections by their ship's side —
         // and each side's seated sectors (needed below for the cross-side gate) —
         // in one pass over a stable snapshot.
-        var peers = _peerShips.ToArray();
-        var connsBySide = new Dictionary<short, List<ConnectionId>>();
-        var sectorsBySide = new Dictionary<short, HashSet<Sector>>();
-        foreach (var kv in peers)
-        {
-            if (kv.Value.Ship.SideId is { } sid)
-            {
-                if (!connsBySide.TryGetValue(sid, out var list)) { connsBySide[sid] = list = []; sectorsBySide[sid] = new(); }
-                list.Add(kv.Key);
-                sectorsBySide[sid].Add(kv.Value.Sector);
-            }
-        }
+        var connsBySide = GatherSideConnections();
         if (connsBySide.Count == 0) return;
 
         // All in-flight missiles across every mission, once — read off the live
@@ -3284,7 +3234,7 @@ public sealed partial class Server
                     // SweepCrossSideExports uses for identity and CrossSideViewers
                     // for the ordnance creation broadcasts. So a cross-side viewer
                     // tracks the enemy missile in real time (not a frozen spawn).
-                    if (!sectorsBySide.TryGetValue(sideId, out var ss) || !ss.Contains(m.OwnerSector)) return false;
+                    if (!_broadcastSideSectors.TryGetValue(sideId, out var ss) || !ss.Contains(m.OwnerSector)) return false;
                     if (launcher.IsCloaked && !launcher.SeenBySide(sideId)) return false;
                     return true;
                 })
@@ -3320,14 +3270,7 @@ public sealed partial class Server
         // Audience = the sides with seated peers (same as the per-side object
         // syncs). Group connections by their ship's side in one pass over a
         // stable snapshot.
-        var peers = _peerShips.ToArray();
-        var connsBySide = new Dictionary<short, List<ConnectionId>>();
-        foreach (var kv in peers)
-            if (kv.Value.Ship.SideId is { } sid)
-            {
-                if (!connsBySide.TryGetValue(sid, out var list)) connsBySide[sid] = list = [];
-                list.Add(kv.Key);
-            }
+        var connsBySide = GatherSideConnections();
         if (connsBySide.Count == 0) return;
 
         // Drop per-side state for sides that no longer have a seated peer, so a

@@ -62,7 +62,7 @@ public sealed partial class Server
     {
         if (!_broadcastSnapshotEnabled) return;
         _broadcastPublisher = new BroadcastPublisher((delivery, bytes) =>
-            PublishBytes(delivery.Peer, bytes, delivery.Key, delivery.Guaranteed), _broadcastMaxParallelism)
+            PublishMemory(delivery.Peer, bytes, delivery.Key, delivery.Guaranteed), _broadcastMaxParallelism, true)
         {
             OnError = e => Console.Error.WriteLine($"[broadcast-publish] {e}"),
         };
@@ -76,6 +76,24 @@ public sealed partial class Server
     {
         var packet = new BroadcastPacket(messages.ToArray());
         return _broadcastSnapshotEnabled ? packet : new BroadcastPacket(packet.Encode());
+    }
+
+    private BroadcastPacket PackOwnPose(Ship ship, uint tick, bool mining)
+    {
+        int extra = mining ? ShipControlState.MiningMask : 0;
+        if (!_broadcastEncodeOnceEnabled || _buildingBroadcastSnapshot is null)
+            return PackBroadcast(Message(new SingleShipUpdate { OidTarget = ship.Id,
+                Ship = CaptureShipUpdate(ship.Id, ship, tick, extra, carryEndurance: true) }));
+        var packet = PooledPosePacket.Rent(SingleShipUpdate.FixedSize + FedPacket.CrcWidth);
+        var bytes = packet.Buffer;
+        bytes.Slice(0, SingleShipUpdate.FixedSize).Clear();
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(bytes, SingleShipUpdate.FixedSize);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(2), SingleShipUpdate.Fmid);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(6), ship.Id);
+        ServerShipUpdate.WriteModel(bytes.Slice(8), ship.Id, ship, tick, extra, carryEndurance: true);
+        Interlocked.Increment(ref ShipEncodingCounters.SingleRecords);
+        packet.Seal(SingleShipUpdate.FixedSize);
+        return packet;
     }
 
     private ServerShipUpdate CaptureShipUpdate(short id, Ship ship, uint tick,
@@ -174,12 +192,30 @@ public sealed partial class Server
         PublishBytes(peer, packet.Encode(), key, guaranteed);
     }
 
+    private void PublishMemory(ConnectionId peer, ReadOnlyMemory<byte> memory, int key, bool guaranteed)
+    {
+        // Capture hooks retain arrays, so give them an owned copy. Production
+        // encoding and transport consume only the valid span of the lease.
+        if (_captureStream is not null || _testSendCapture is not null
+            || TestPublicationCapture is not null || _testSendCoalescingCapture is not null)
+        {
+            PublishBytes(peer, memory.ToArray(), key, guaranteed);
+            return;
+        }
+        TestPublicationSizeCapture?.Invoke(peer, memory.Length, key, guaranteed);
+        Interlocked.Add(ref _egressBytesSent, memory.Length);
+        if (key == 0) _host.Send(peer, memory.Span);
+        else if (guaranteed) _host.SendGuaranteedCoalescing(peer, memory.Span, key);
+        else _host.SendCoalescing(peer, memory.Span, key);
+    }
+
     // The sole publishing sink. No sim state, latches, visibility, ranking or
     // cadence objects are read here. Transport queues are already thread-safe.
     private void PublishBytes(ConnectionId peer, byte[] bytes, int key, bool guaranteed)
     {
         lock (_captureLock)
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, bytes));
+        TestPublicationSizeCapture?.Invoke(peer, bytes.Length, key, guaranteed);
         Interlocked.Add(ref _egressBytesSent, bytes.Length);
         _testSendCapture?.Invoke(peer, bytes);
         TestPublicationCapture?.Invoke(peer, bytes, key, guaranteed);

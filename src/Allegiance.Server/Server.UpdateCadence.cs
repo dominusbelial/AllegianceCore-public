@@ -104,6 +104,8 @@ internal sealed class ViewerPoseCadence
         public double LastPose;
         public bool HasPose;
         public int Generation;
+        public int Tier;
+        public Server.InterestMembership Interest;
     }
 
     private readonly Dictionary<short, Stamp> _stamps = new();
@@ -119,7 +121,7 @@ internal sealed class ViewerPoseCadence
     internal int TrackedCount => _stamps.Count;
 
     internal void Begin(IReadOnlyList<Ship> candidates, Ship self, Sector sector,
-        bool adminSpectator, double now, bool sample, Func<Ship, Ship, int>? classify = null)
+        bool adminSpectator, double now, bool sample, Func<Ship, Ship, int>? classify = null, bool cloakOnly = false, Server? tierServer = null)
     {
         if (_sector != sector || _viewer != self || _side != self.SideId)
         {
@@ -132,27 +134,104 @@ internal sealed class ViewerPoseCadence
         _visible.Clear();
         Older1 = Older3 = 0;
         _generation++;
+        int exact = 0, cells = 0, cached = 0;
+        var viewerInterest = tierServer is null ? default : tierServer.InterestStateFor(self);
         for (int i = 0; i < candidates.Count; i++)
         {
             var ship = candidates[i];
             if (ship == self || (!adminSpectator && self.SideId is { } side
-                && ship.SideId != side && !ship.SeenBySide(side))) continue;
+                && (cloakOnly ? ship.IsCloaked : ship.SideId != side) && !ship.SeenBySide(side))) continue;
             _visible.Add(ship);
             if (!_stamps.TryGetValue(ship.Id, out var stamp) || stamp.Ship != ship)
                 stamp = new Stamp { Ship = ship, LastPose = now };
             stamp.Generation = _generation;
+            if (tierServer is not null)
+            {
+                stamp.Tier = tierServer.ClassifyInterestCached(viewerInterest, ship, ref stamp.Interest);
+                if (stamp.Interest.LastEvaluation == 0) exact++;
+                else if (stamp.Interest.LastEvaluation == 1) cells++;
+                else if (stamp.Interest.LastEvaluation == 2) cached++;
+            }
+            else if (classify is not null) stamp.Tier = classify(self, ship);
             _stamps[ship.Id] = stamp;
             // Sample BEFORE this tick's sends, so a due update cannot hide its age.
             double age = Math.Max(0, now - stamp.LastPose);
             if (age > 1) Older1++;
             if (age > 3) Older3++;
-            if (classify is not null) TierWindow.RecordBand(classify(self, ship), age, !stamp.HasPose);
+            if (classify is not null) TierWindow.RecordBand(stamp.Tier, age, !stamp.HasPose);
             if (sample) Window.Record((ship.Position - self.Position).LengthSquared(), age, !stamp.HasPose);
+        }
+        if (tierServer is not null)
+        {
+            Interlocked.Add(ref tierServer.TierExactClassifications, exact);
+            Interlocked.Add(ref tierServer.TierCellClassifications, cells);
+            Interlocked.Add(ref tierServer.TierCachedClassifications, cached);
         }
         // .NET Dictionary supports Remove during enumeration. Forget departed,
         // hidden, boarded and destroyed subjects; reused ids begin a new clock.
         foreach (var pair in _stamps)
             if (pair.Value.Generation != _generation) _stamps.Remove(pair.Key);
+    }
+
+    internal struct TierCandidate
+    {
+        internal Ship Ship;
+        internal int Tier, Index;
+        internal float Deviation;
+    }
+    private readonly struct TierOrder : IComparer<TierCandidate>
+    {
+        public int Compare(TierCandidate a, TierCandidate b)
+        {
+            int order = a.Tier.CompareTo(b.Tier);
+            if (order == 0) order = b.Deviation.CompareTo(a.Deviation);
+            return order == 0 ? a.Index.CompareTo(b.Index) : order;
+        }
+    }
+    private TierCandidate[] _tierCandidates = [];
+    internal ReadOnlySpan<TierCandidate> SelectTierCandidates(Ship self, Ship? target, double now,
+        double tier1Hz, double tier2Hz, int tickHz, uint tick)
+    {
+        if (_tierCandidates.Length < _visible.Count) Array.Resize(ref _tierCandidates, _visible.Count);
+        int count = 0;
+        for (int i = 0; i < _visible.Count; i++)
+        {
+            var ship = _visible[i];
+            if (ship == target) continue;
+            int tier = _stamps[ship.Id].Tier;
+            if (tier == 0 || TierDue(ship.Id, now, tier == 1 ? tier1Hz : tier2Hz, tickHz, tick, self.Id))
+                _tierCandidates[count++] = new() { Ship = ship, Tier = tier, Index = i, Deviation = ship.Deviation };
+            else ship.Deviation += 1;
+        }
+        // Skipped records do not affect served order. Sorting only due records
+        // preserves the stable tier/deviation ordering with much less work.
+        SortTierCandidates(count);
+        return _tierCandidates.AsSpan(0, count);
+    }
+
+    private void SortTierCandidates(int count)
+    {
+        // The framework's comparer overload creates a Comparison delegate per
+        // sort. This heap sort uses a value comparer directly and a stable
+        // candidate-index tie break, with no delegates or scratch allocation.
+        for (int root = count / 2 - 1; root >= 0; root--) SiftTier(root, count);
+        for (int end = count - 1; end > 0; end--)
+        {
+            (_tierCandidates[0], _tierCandidates[end]) = (_tierCandidates[end], _tierCandidates[0]);
+            SiftTier(0, end);
+        }
+    }
+    private void SiftTier(int root, int count)
+    {
+        var order = new TierOrder();
+        while (root * 2 + 1 < count)
+        {
+            int child = root * 2 + 1;
+            if (child + 1 < count && order.Compare(_tierCandidates[child], _tierCandidates[child + 1]) < 0) child++;
+            if (order.Compare(_tierCandidates[root], _tierCandidates[child]) >= 0) return;
+            (_tierCandidates[root], _tierCandidates[child]) = (_tierCandidates[child], _tierCandidates[root]);
+            root = child;
+        }
     }
 
     internal bool TierDue(short id, double now, double hz, int tickHz, uint tick, short viewerId)

@@ -14,7 +14,7 @@ public sealed partial class Server
             var ship = live.Ship;
             var mask = ship.StationId is null && ship.ParentShip is null && !ship.Dead
                 ? ship.WarningMask : ShipWarningMask.None;
-            SendPeer(peer, PackBroadcast(Message(new ShipWarningUpdate { ShipId = ship.Id, Mask = mask })));
+            SendPeer(peer, PackWarning(ship.Id, mask));
         }
     }
 }

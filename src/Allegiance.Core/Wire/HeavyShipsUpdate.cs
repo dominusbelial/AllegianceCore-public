@@ -169,6 +169,23 @@ public sealed class HeavyShipUpdateEntry
             ship.Orientation, ship.Velocity, new[] { ship.TurnRates[0], ship.TurnRates[1], ship.TurnRates[2] },
             ship.Fraction, ship.ShieldFraction, ship.Ore / ship.EffectiveMineCapacity());
 
+    /// <summary>Write a live pose into caller-owned storage, preserving the heavy
+    /// codec's full ammo/fuel/energy slots and exact relative quantization.</summary>
+    public static void WriteModel(Span<byte> destination, uint timeRef, Vector3 posRef, Ship ship, uint time)
+    {
+        Span<byte> single = stackalloc byte[ServerShipUpdate.Width];
+        ServerShipUpdate.WriteModel(single, ship.Id, ship, time);
+        single.Slice(0, 8).CopyTo(destination);
+        BinaryPrimitives.WriteInt16LittleEndian(destination.Slice(8), CompactQuant.EncodeTimeOffset(timeRef, time));
+        CompactQuant.EncodePositionDelta(posRef, ship.Position, destination.Slice(10, 6));
+        single.Slice(24, 23).CopyTo(destination.Slice(16));
+        destination[34] = destination[35] = destination[36] = 240;
+    }
+
+    /// <summary>Write the exact six-byte relative position slot into caller storage.</summary>
+    public static void WriteRelativePosition(Span<byte> destination, Vector3 reference, Vector3 position)
+        => CompactQuant.EncodePositionDelta(reference, position, destination);
+
     /// <summary>Encode the 39 canonical bytes at the writer's current position.</summary>
     public void EncodeBody(ref WireWriter w)
     {

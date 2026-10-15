@@ -29,7 +29,7 @@ internal sealed class BroadcastMessage
     }
 }
 
-internal sealed class BroadcastPacket
+internal class BroadcastPacket
 {
     private readonly BroadcastMessage[]? _messages;
     private byte[]? _bytes;
@@ -45,6 +45,9 @@ internal sealed class BroadcastPacket
             return _bytes = FedPacket.Pack(frames.AsSpan());
         }
     }
+    internal virtual ReadOnlyMemory<byte> EncodeMemory() => Encode();
+    internal virtual void Release() { }
+
 }
 
 internal readonly record struct BroadcastDelivery(ConnectionId Peer, BroadcastPacket Packet,
@@ -64,7 +67,7 @@ internal sealed class BroadcastPublisher : IDisposable
 {
     private readonly object _gate = new();
     private readonly ConcurrentBag<BroadcastSnapshot> _pool = new();
-    private readonly Action<BroadcastDelivery, byte[]> _send;
+    private readonly Action<BroadcastDelivery, ReadOnlyMemory<byte>> _send;
     private readonly Thread _thread;
     private readonly ParallelOptions _options;
     private BroadcastSnapshot? _pending;
@@ -75,6 +78,9 @@ internal sealed class BroadcastPublisher : IDisposable
     internal Action<Exception>? OnError;
 
     internal BroadcastPublisher(Action<BroadcastDelivery, byte[]> send, int workers)
+        : this((delivery, bytes) => send(delivery, bytes.ToArray()), workers, true) { }
+
+    internal BroadcastPublisher(Action<BroadcastDelivery, ReadOnlyMemory<byte>> send, int workers, bool memorySink)
     {
         _send = send;
         _options = new() { MaxDegreeOfParallelism = Math.Max(1, workers) };
@@ -114,11 +120,16 @@ internal sealed class BroadcastPublisher : IDisposable
                     var delivery = previous.Deliveries[i];
                     if (delivery.Key == 0 || (delivery.Guaranteed && !replaced.Contains((delivery.Peer, delivery.Key))))
                         previous.Deliveries[keep++] = delivery;
-                    else Interlocked.Increment(ref DroppedStreamFrames);
+                    else
+                    {
+                        delivery.Packet.Release();
+                        Interlocked.Increment(ref DroppedStreamFrames);
+                    }
                 }
                 previous.Deliveries.RemoveRange(keep, previous.Deliveries.Count - keep);
                 previous.Deliveries.AddRange(snapshot.Deliveries);
                 previous.Tick = snapshot.Tick;
+                snapshot.Deliveries.Clear(); // ownership transferred to previous
                 Return(snapshot);
                 Interlocked.Increment(ref CoalescedSnapshots);
             }
@@ -129,6 +140,7 @@ internal sealed class BroadcastPublisher : IDisposable
 
     private void Return(BroadcastSnapshot snapshot)
     {
+        foreach (var delivery in snapshot.Deliveries) delivery.Packet.Release();
         snapshot.Deliveries.Clear();
         _pool.Add(snapshot);
     }
@@ -169,7 +181,7 @@ internal sealed class BroadcastPublisher : IDisposable
                 Parallel.For(0, snapshot.Deliveries.Count, _options, i =>
                 {
                     long before = GC.GetAllocatedBytesForCurrentThread();
-                    try { snapshot.Deliveries[i].Packet.Encode(); }
+                    try { snapshot.Deliveries[i].Packet.EncodeMemory(); }
                     catch (Exception e) { Failed(e); }
                     finally
                     {
@@ -195,7 +207,7 @@ internal sealed class BroadcastPublisher : IDisposable
                         Interlocked.Increment(ref DroppedStreamFrames);
                         continue;
                     }
-                    try { _send(delivery, delivery.Packet.Encode()); }
+                    try { _send(delivery, delivery.Packet.EncodeMemory()); }
                     catch (Exception e) { Failed(e); }
                 }
                 Interlocked.Increment(ref PublishedSnapshots);
@@ -248,7 +260,8 @@ internal static class BroadcastSnapshotGuard
                 && type != typeof(Allegiance.Core.Sim.Orientation)
                 && type != typeof(Allegiance.Core.Sim.ControlData)
                 && type != typeof(Allegiance.Core.Collision.Vector3)
-                && type != typeof(Server.InterestShipState))
+                && type != typeof(Server.InterestShipState)
+                && type != typeof(Server.InterestCell))
                 throw new InvalidOperationException($"Broadcast snapshot retained live/unknown type {type.FullName}");
             foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 Visit(field.GetValue(value));

@@ -35,6 +35,16 @@ quarantine pass, not the parallel CI run).
 | Before (4 measurement runs, master 22d024b8) | **0/4** (no clean run; 3/7/7/6 Core fails + 0/2/2/0 ClientCore) | n/a (no lane existed) | ~20 unique failing tests |
 | After (verification on final tree) | **3/3 clean MAIN runs** (V4, V7, V11; V11 EXIT 0) | not expected 4/4 (residual isolation-flaky live-timing tests) | 21 quarantined; each of V5–V10 surfaced 1–2 new load-flakes, quarantined on the spot |
 
+## P679 observation (2026-10-15)
+
+An exploratory isolation batch hit one timing failure in
+`TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent`.
+The next two initial invocations passed, then **3/3 fresh method-isolated audits**
+passed. The final P679 validation also passed this method **3/3**. Per the lane
+rule this is a load/timing flake; no assertion, deadline, skip or quarantine was
+changed. See [the audit evidence](reports/P679_assets/exploratory-flake.json)
+and [the final report](reports/P679_PIPELINE_COST.md).
+
 ## P668 observation (2026-10-14)
 
 `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction`

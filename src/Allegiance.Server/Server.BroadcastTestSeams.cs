@@ -46,6 +46,7 @@ public sealed partial class Server
         _sameSideNpcExportSent.Clear();
         _lastSameSideNpcStatusTick.Clear();
         _teammateLoadoutCache.Clear();
+        _crossSideExportPackets.Clear();
         _viewerPoseCadence.Clear();
         _retiredPoseAges.Clear();
         _retiredTierAges.Clear();
@@ -166,6 +167,8 @@ public sealed partial class Server
 public sealed partial class Server
 {
     internal Action<ConnectionId, byte[], int, bool>? TestPublicationCapture;
+    internal Action<ConnectionId, int, int, bool>? TestPublicationSizeCapture;
+    internal Action<string, long>? TestProjectionAllocationCapture;
     internal List<(ConnectionId Conn, Ship Ship, Sector Sector)> TestSnapshotPeers()
         => _peerShips.Select(p => (p.Key, p.Value.Ship, p.Value.Sector)).ToList();
     internal void TestSendSnapshotBarrier(uint marker)
@@ -185,24 +188,59 @@ public sealed partial class Server
         if (measure) StartBroadcastProjectionMeasurement();
         try
         {
+            long allocationMark;
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             SweepCrossSideExports();
+            TestProjectionAllocationCapture?.Invoke("SweepCrossSideExports", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             SweepCrossSideMineExports();
+            TestProjectionAllocationCapture?.Invoke("SweepCrossSideMineExports", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             SweepCrossSideShipStatuses();
+            TestProjectionAllocationCapture?.Invoke("SweepCrossSideShipStatuses", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastShipStates")) BroadcastShipStates(tick);
+            TestProjectionAllocationCapture?.Invoke("step:broadcastShipStates", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastStationsUpdate")) BroadcastStationsUpdate();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastStationsUpdate", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastAsteroidsUpdate")) BroadcastAsteroidsUpdate();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastAsteroidsUpdate", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastProbesUpdate")) BroadcastProbesUpdate();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastProbesUpdate", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             _objectSyncDirtySides.Clear();
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastShipsUpdate")) BroadcastShipsUpdate(tick);
+            TestProjectionAllocationCapture?.Invoke("step:broadcastShipsUpdate", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastSectorThreats")) BroadcastSectorThreats();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastSectorThreats", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastShipWarnings")) BroadcastShipWarnings();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastShipWarnings", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissileLock")) BroadcastMissileLock();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastMissileLock", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissilesUpdate")) BroadcastMissilesUpdate();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastMissilesUpdate", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastOwnShipMining")) BroadcastOwnShipMining();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastOwnShipMining", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastOwnShipKillBonus")) BroadcastOwnShipKillBonus();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastOwnShipKillBonus", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissileTrackWarning")) BroadcastMissileTrackWarning();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastMissileTrackWarning", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastScoreRoster")) BroadcastScoreRoster();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastScoreRoster", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastLeadIndicator")) BroadcastLeadIndicator();
+            TestProjectionAllocationCapture?.Invoke("step:broadcastLeadIndicator", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
         }
         finally
         {

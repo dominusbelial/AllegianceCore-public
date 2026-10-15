@@ -1,0 +1,19 @@
+# P600 tick profiler — one row per bucket per report window.
+window_start_unix,window_seconds,bucket,count,mean_ms,p95_ms,max_ms,total_ms
+1792054125,7,step:broadcastShipsUpdate,120,25.3512,29.3323,51.5176,3042.1422
+1792054125,7,step:broadcastShipStates,120,19.8128,24.4017,31.1638,2377.5402
+1792054125,7,bss.setup,120,19.8122,24.4012,31.1632,2377.4607
+1792054125,7,bss.mates,120,19.168,23.9827,29.0448,2300.1583
+1792054125,7,step:broadcastMissileTrackWarning,120,0.3045,0.3227,0.3604,36.5397
+1792054125,7,step:broadcastStationsUpdate,120,0.0381,0.0623,0.0672,4.5661
+1792054125,7,step:broadcastSectorThreats,120,0.0341,0.0479,0.0973,4.0916
+1792054125,7,step:broadcastLeadIndicator,120,0.0329,0.0377,0.0876,3.9451
+1792054125,7,step:broadcastShipWarnings,120,0.0268,0.0321,0.0926,3.216
+1792054125,7,step:broadcastOwnShipMining,120,0.0266,0.0385,0.0823,3.1886
+1792054125,7,step:broadcastOwnShipKillBonus,120,0.0253,0.0315,0.0884,3.0393
+1792054125,7,step:broadcastMissilesUpdate,120,0.0156,0.0177,0.021,1.8753
+1792054125,7,step:broadcastProbesUpdate,120,0.0076,0.0225,0.0269,0.9065
+1792054125,7,step:broadcastMissileLock,120,0.0074,0.0112,0.0126,0.8843
+1792054125,7,step:broadcastAsteroidsUpdate,120,0.0066,0.0088,0.0122,0.7945
+1792054125,7,broadcast.snapshotPublish,120,0.0065,0.0095,0.0119,0.7798
+1792054125,7,step:broadcastScoreRoster,120,0.0031,0.0011,0.1211,0.3777

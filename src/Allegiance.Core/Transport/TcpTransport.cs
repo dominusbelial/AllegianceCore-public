@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Net;
@@ -441,7 +442,7 @@ public sealed class TcpTransport : ITransport
         }
         // Enqueue-and-return: never blocks on socket I/O. A dead/disconnected
         // peer's sender no-ops its enqueue internally.
-        ps.Enqueue(BuildFrame(FrameType.Data, data), guaranteed, coalesceKey);
+        ps.EnqueueData(data, guaranteed, coalesceKey);
     }
 
     /// <summary>
@@ -1183,6 +1184,29 @@ public sealed class TcpTransport : ITransport
         private readonly LinkedList<QueuedFrame> _orderedQueue = new();
         private readonly LinkedList<QueuedFrame> _streamQueue = new();
         private readonly object _sync = new();
+        private readonly Stack<LinkedListNode<QueuedFrame>> _freeNodes = new();
+        // A peer's frames return on a different thread from their producer.
+        // A private pool retains its recurring status bursts without competing
+        // for the shared pool's small cross-thread bucket capacity.
+        private readonly ArrayPool<byte> _framePool = ArrayPool<byte>.Create(
+            maxArrayLength: 1 << 20, maxArraysPerBucket: 512);
+        private LinkedListNode<QueuedFrame> RentNode(QueuedFrame frame)
+        {
+            if (!_freeNodes.TryPop(out var node)) return new(frame);
+            node.Value = frame;
+            return node;
+        }
+        private void RecycleNode(LinkedListNode<QueuedFrame> node)
+        {
+            node.Value = default;
+            // Keep the reusable node cache bounded even after a reliable burst.
+            if (_freeNodes.Count < 512) _freeNodes.Push(node);
+        }
+        private void ReturnFrame(QueuedFrame frame)
+        {
+            if (frame.Pooled) _framePool.Return(frame.Frame);
+        }
+
         // P606 — latest-wins coalescing over the STREAM lane only:
         // coalesceKey -> the stream-queue node holding that key's newest
         // pending frame. Lets Enqueue supersede an older pending stream frame
@@ -1200,7 +1224,8 @@ public sealed class TcpTransport : ITransport
         // connection is closed (unknown progress on a timed-out write), never
         // abandoned-and-continued on the same socket.
         private byte[]? _inflight;
-        private int _inflightOffset;
+        private int _inflightOffset, _inflightLength;
+        private bool _inflightPooled;
         private bool _inflightStream;
         internal EgressAccounting? Egress;
         // Classification is diagnostic only, independent of IsHuman (which
@@ -1267,12 +1292,26 @@ public sealed class TcpTransport : ITransport
         /// place) any older pending frame for the same peer+key — latest-wins —
         /// instead of appending a stale duplicate (P606).</summary>
         public void Enqueue(byte[] frame, bool guaranteed, int coalesceKey)
+            => EnqueueCore(frame, frame.Length, false, guaranteed, coalesceKey);
+
+        internal void EnqueueData(ReadOnlySpan<byte> body, bool guaranteed, int coalesceKey)
+        {
+            if (_disconnected) return;
+            int length = HeaderWidth + body.Length;
+            var frame = _framePool.Rent(length);
+            frame[0] = (byte)FrameType.Data;
+            BinaryPrimitives.WriteUInt32LittleEndian(frame.AsSpan(1), (uint)body.Length);
+            body.CopyTo(frame.AsSpan(HeaderWidth));
+            EnqueueCore(frame, length, true, guaranteed, coalesceKey);
+        }
+
+        private void EnqueueCore(byte[] frame, int length, bool pooled, bool guaranteed, int coalesceKey)
         {
             bool fireDisconnect = false;
             lock (_sync)
             {
-                if (_disconnected) return;
-                Egress?.Record(frame, EgressHarness, coalesceKey != 0, EgressEvent.Offered);
+                if (_disconnected) { if (pooled) _framePool.Return(frame); return; }
+                Egress?.Record(frame.AsSpan(0, length), EgressHarness, coalesceKey != 0, EgressEvent.Offered);
                 // Was the peer's send path fully drained before this enqueue?
                 // If so the peer is current (idle or caught up); its writer
                 // gets a fresh liveness window rather than being judged stale
@@ -1294,10 +1333,11 @@ public sealed class TcpTransport : ITransport
                         // same key is superseded in place, so the collapsed
                         // frame keeps its stream-lane position and the byte
                         // accounting stays exact.
-                        _queuedBytes -= existing.Value.Frame.Length;
-                        Egress?.Record(existing.Value.Frame, EgressHarness, true, EgressEvent.Coalesced);
-                        existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks);
-                        _queuedBytes += frame.Length;
+                        _queuedBytes -= existing.Value.Length;
+                        Egress?.Record(existing.Value.Frame.AsSpan(0, existing.Value.Length), EgressHarness, true, EgressEvent.Coalesced);
+                        ReturnFrame(existing.Value);
+                        existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled);
+                        _queuedBytes += length;
                     }
                     else
                     {
@@ -1305,10 +1345,11 @@ public sealed class TcpTransport : ITransport
                         // capacity (guaranteed traffic is never dropped here).
                         // Streaming ship-state frames are sent non-guaranteed,
                         // so they are the natural shed candidates.
-                        while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                        var node = _streamQueue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks));
+                        while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                        var node = RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled));
+                        _streamQueue.AddLast(node);
                         _coalesceNodes[coalesceKey] = node;
-                        _queuedBytes += frame.Length;
+                        _queuedBytes += length;
                     }
                 }
                 else
@@ -1319,9 +1360,9 @@ public sealed class TcpTransport : ITransport
                     // before any stream frame — so world data never starves
                     // behind the position stream. Also shed stream traffic if
                     // over capacity so an ordered burst can still land.
-                    while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                    _orderedQueue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks));
-                    _queuedBytes += frame.Length;
+                    while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                    _orderedQueue.AddLast(RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled)));
+                    _queuedBytes += length;
                 }
                 Monitor.Pulse(_sync);
 
@@ -1487,10 +1528,12 @@ public sealed class TcpTransport : ITransport
             {
                 if (!node.Value.Guaranteed)
                 {
-                    Egress?.Record(node.Value.Frame, EgressHarness, true, EgressEvent.Dropped);
-                    _queuedBytes -= node.Value.Frame.Length;
+                    Egress?.Record(node.Value.Frame.AsSpan(0, node.Value.Length), EgressHarness, true, EgressEvent.Dropped);
+                    _queuedBytes -= node.Value.Length;
                     if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                     _streamQueue.Remove(node);
+                    ReturnFrame(node.Value);
+                    RecycleNode(node);
                     return true;
                 }
             }
@@ -1522,9 +1565,12 @@ public sealed class TcpTransport : ITransport
             // pointing at this (now-consumed) node.
             if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
             _inflight = node.Value.Frame;
+            _inflightLength = node.Value.Length;
+            _inflightPooled = node.Value.Pooled;
             _inflightOffset = 0;
             _inflightStream = node.Value.CoalesceKey != 0;
-            _queuedBytes -= _inflight.Length;
+            _queuedBytes -= _inflightLength;
+            RecycleNode(node);
             if (_orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
             else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
             return true;
@@ -1561,7 +1607,7 @@ public sealed class TcpTransport : ITransport
         {
             if (SendOverride is { } ov)
             {
-                var o = ov(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset);
+                var o = ov(_inflight!, _inflightOffset, _inflightLength - _inflightOffset);
                 if (o.Timeout) { FailAndClose(DisconnectReason.SendTimeout); return DrainResult.Dead; }
                 if (o.Error) { FailAndClose(DisconnectReason.SendError); return DrainResult.Dead; }
                 if (o.WouldBlock) return DrainResult.Blocked;
@@ -1573,7 +1619,7 @@ public sealed class TcpTransport : ITransport
                 int n;
                 try
                 {
-                    n = sock.Send(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset, SocketFlags.None);
+                    n = sock.Send(_inflight!, _inflightOffset, _inflightLength - _inflightOffset, SocketFlags.None);
                 }
                 catch (SocketException se)
                 {
@@ -1595,8 +1641,8 @@ public sealed class TcpTransport : ITransport
             // controlled-stream test seam can drive the write behaviour.
             try
             {
-                _stream.Write(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset);
-                return AdvanceInflight(_inflight.Length - _inflightOffset);
+                _stream.Write(_inflight!, _inflightOffset, _inflightLength - _inflightOffset);
+                return AdvanceInflight(_inflightLength - _inflightOffset);
             }
             catch (Exception ex) when (IsSocketTimeout(ex))
             {
@@ -1626,11 +1672,13 @@ public sealed class TcpTransport : ITransport
             // Real write progress: the OS accepted these bytes — refresh the
             // no-progress liveness clock so a slow-but-flowing peer is never cut.
             Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
-            Egress?.Record(_inflight!, EgressHarness, _inflightStream, EgressEvent.Sent, _inflightOffset, n);
+            Egress?.Record(_inflight!.AsSpan(0, _inflightLength), EgressHarness, _inflightStream, EgressEvent.Sent, _inflightOffset, n);
             _inflightOffset += n;
-            if (_inflightOffset >= _inflight!.Length)
+            if (_inflightOffset >= _inflightLength)
             {
+                if (_inflightPooled) _framePool.Return(_inflight!);
                 _inflight = null;
+                _inflightPooled = false;
                 _inflightOffset = 0;
                 return DrainResult.Wrote;   // frame fully on the wire
             }
@@ -1724,7 +1772,17 @@ public sealed class TcpTransport : ITransport
         public void Close()
         {
             _cts.Cancel();
-            lock (_sync) { _disconnected = true; Monitor.PulseAll(_sync); }
+            lock (_sync)
+            {
+                _disconnected = true;
+                foreach (var frame in _orderedQueue) ReturnFrame(frame);
+                foreach (var frame in _streamQueue) ReturnFrame(frame);
+                _orderedQueue.Clear(); _streamQueue.Clear(); _coalesceNodes.Clear();
+                _queuedBytes = 0;
+                // The sole writer may still be inside Send. It owns the in-flight
+                // lease until completion; Close never returns its buffer early.
+                Monitor.PulseAll(_sync);
+            }
             CloseQuiet(_stream);
             try { _tcpClient.Dispose(); } catch { }
         }
@@ -1736,15 +1794,19 @@ public sealed class TcpTransport : ITransport
         private readonly struct QueuedFrame
         {
             public readonly byte[] Frame;
+            public readonly int Length;
+            public readonly bool Pooled;
             public readonly bool Guaranteed;
             public readonly int CoalesceKey;
             // P634 — enqueue timestamp (Utc ticks) so the transport can report
             // the age of the oldest pending guaranteed frame (join/world
             // head-of-line delay) for the live measurements.
             public readonly long EnqueuedUtcTicks;
-            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey, long enqueuedUtcTicks)
+            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey, long enqueuedUtcTicks, int length = -1, bool pooled = false)
             {
                 Frame = frame;
+                Length = length < 0 ? frame.Length : length;
+                Pooled = pooled;
                 Guaranteed = guaranteed;
                 CoalesceKey = coalesceKey;
                 EnqueuedUtcTicks = enqueuedUtcTicks;
