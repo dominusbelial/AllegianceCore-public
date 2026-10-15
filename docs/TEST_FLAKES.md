@@ -103,7 +103,8 @@ no product code changed. Classes of fix:
    `LiveWinConditionTests`, `MineCrossSideVisibilityLiveTests`, `AddPartTests`,
    `StationUnderAttackAlertLiveTests`, `AutoReloadOnEmptyTests`, `SideEliminationLiveTests`,
    `AsteroidExportTests`, `CrossSideCombatVisibilityLiveTests`, `ShipIdAllocationLiveTests.
-   Valid_logon_advances_nextShipId`.
+   Valid_logon_advances_nextShipId`, `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self`
+   (12 ms fail = the pump did not reach the cross-side HEAVY_SHIPS_UPDATE before asserting; passes 3/3 isolated).
 3. **Structural seating / leader / premise assumptions** → made deterministic:
    `CargoBayReloadTests.SeatThree` (select subject+observer from the majority side —
    robust to async seat order), `ReadyCheckLiveTests.Only_mission_owner` (seat the leader

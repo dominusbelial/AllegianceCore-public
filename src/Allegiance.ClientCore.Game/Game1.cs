@@ -599,10 +599,6 @@ public sealed partial class Game1 : Game
     // bug that hid P518 — is never invisible again.
     private bool _ownShipEligible;
 
-    // P508 — wall-clock seconds of the last FM_CS_PING send (a ~1 Hz keepalive that
-    // feeds the own-ship server clock).
-    private double _lastPingSentAt = double.MinValue;
-
     // P508 — cumulative count of received SHIP_RESETs (live diagnostics + reset count).
     private long _shipResetCount;
 
