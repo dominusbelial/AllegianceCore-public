@@ -268,9 +268,9 @@ public sealed partial class Game1
         // renders the requested tier consistently end to end.
         if (_autoPlan is null)
             EnsureVolumetricBudget(gameTime.ElapsedGameTime.TotalSeconds);
-        // P508 — keep the own-ship server clock fed and pinging every frame (regardless
-        // of lobby/flying state), so a server-converted SHIP_UPDATE time is ready by
-        // undock. Cheap: only drains received echoes + sends a ~1 Hz ping.
+        // P508 — keep the own-ship server clock fed in every state so a
+        // server-converted SHIP_UPDATE time is ready by undock. Bootstrap once
+        // per connection; subsequent echoes come from the session keep-alive.
         PumpServerClock();
         var world = _session.World;
         UpdateMissionCatalog();
@@ -1844,7 +1844,7 @@ public sealed partial class Game1
         bool sendArm = !turretGunner;
         _ownShipSendArmed = sendArm;
         if (sendArm)
-            _ownSim.Step((float)gameTime.ElapsedGameTime.TotalSeconds, sentControls, sentStateM);
+            StepOwnShipSimulation(gameTime.ElapsedGameTime.TotalSeconds, sentControls, sentStateM);
 
         // Recompute every ship's render pose from its raw last-known
         // ServerShipUpdate — no smoothing/prediction (see PredictedPose's

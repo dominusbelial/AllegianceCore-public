@@ -4,6 +4,41 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P695 observation (2026-10-15)
+
+The final unfiltered workspace-output suites reported Core **4557 pass / 1 fail**,
+ClientCore **1012 pass / 2 fail / 1 default opt-in skip**, and MonoGame **2199 pass /
+0 fail / 3 existing optional Meshy-pack skips**. The local 15v15 P660 showcase was
+subsequently enabled explicitly and passed **3/3**. All P695 clock/flight/warp/
+reconnect/summary regressions and affected focused checks passed three isolated
+repetitions (**111 invocations / 126 case executions**).
+
+After the suites, both ClientCore failures passed **3/3 exact-method isolated
+reruns**, satisfying P695's load-flake rule:
+
+- `ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume`
+- `CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return`
+
+A `LiveTeamLobbyToggleTests.Sides_lock_from_owner_relays_and_non_owner_refused`
+relay-receipt failure in a discarded temporary-output diagnostic run also passed
+3/3 individually. The temporary output layout itself failed repository-root
+lookup guards; normal workspace output corrected that harness error, and the
+root guards passed three repetitions. Those layout failures are not load flakes.
+
+**Unresolved intermittent check:**
+`StationBucketSpawnsConstructorLiveTests.Completing_station_type_bucket_spawns_waiting_constructor_and_build_order_builds`
+failed the full Core run with the previously recorded P425 construction-start
+timeout (see P655b below). Its first isolated batch passed **2/3** and a fresh
+second batch passed **1/3**: **3 passes / 3 failures in six isolated runs**. This
+observation does not satisfy the three-clean-isolated-passes rule and is not
+classified as a verified load flake. No batch failed all three runs. The existing
+fixture, deadline, assertion, quarantine traits and server/bot construction code
+were unchanged; P695 changes only the human client's clock and flight timing.
+
+See [P695 report](reports/P695_CLIENT_UPDATES_OUT_OF_DATE.md) and the
+[complete invocation ledger](reports/P695_assets/results.json), including every
+failed rerun. No full-suite failure was silently discarded or assertion relaxed.
+
 ## P685 observation (2026-10-15)
 
 The merged unfiltered sequential suites passed cleanly: Lobby **19/19**, Core
