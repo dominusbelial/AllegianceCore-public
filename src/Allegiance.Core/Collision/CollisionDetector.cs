@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace Allegiance.Core.Collision;
 
 /// <summary>
@@ -30,9 +28,12 @@ public sealed class CollisionDetector
     /// Detect all collisions over a step of <paramref name="dt"/> seconds
     /// (from the colliders' current positions). Returns the events sorted
     /// ascending by collision time. Calling again with the same colliders and dt
-    /// yields the same list (determinism).
+    /// yields the same list (determinism). A pure pair filter may exclude
+    /// categories the caller does not handle; retained events keep their original
+    /// ordinals, collision times, sub-shapes, and tie order.
     /// </summary>
-    public IReadOnlyList<CollisionEvent> Detect(float dt) => Detect(dt, parallel: false, threads: 1);
+    public IReadOnlyList<CollisionEvent> Detect(float dt, Func<Collider, Collider, bool>? pairFilter = null)
+        => Detect(dt, parallel: false, threads: 1, pairFilter);
 
     /// <summary>
     /// P667 — Detect over a step, optionally parallelising the detection phase.
@@ -49,9 +50,10 @@ public sealed class CollisionDetector
     /// <paramref name="threads"/> value yields the same ordered events as the
     /// serial path.
     /// </summary>
-    public IReadOnlyList<CollisionEvent> Detect(float dt, bool parallel, int threads)
+    public IReadOnlyList<CollisionEvent> Detect(float dt, bool parallel, int threads, Func<Collider, Collider, bool>? pairFilter = null)
     {
         _queue.Clear();
+        GeometricPairTests = 0;
         if (_colliders.Count < 2) return _queue.Ordered();
 
         if (parallel && threads > 1)
@@ -66,35 +68,126 @@ public sealed class CollisionDetector
                 c.SetStep(0f, dt);              // swept AABB for the step (SetBB)
         }
 
-        // Broad phase: deterministic (index-ordered) candidate pairs.
-        var pairs = BroadPhase.OverlappingPairs(_colliders).ToList();
-
-        if (parallel && threads > 1)
+        // Identical launch/ordnance bodies can contribute thousands of pairs
+        // with exactly the same geometric inputs. Solve each ordered geometry
+        // pair once per Detect call, then expand onto the ORIGINAL colliders.
+        // No persistent cache, approximation, or gameplay-state filtering.
+        var groups = new Dictionary<Geometry, int>();
+        var groupIds = new int[_colliders.Count];
+        for (int i = 0; i < _colliders.Count; i++)
         {
-            // Narrow phase is a pure function of the (fixed) collider state; the
-            // final deterministic Sort repairs any insertion-order variation.
-            var found = new ConcurrentBag<CollisionEvent>();
-            Parallel.For(0, pairs.Count, NewOpts(threads), k =>
-            {
-                var (i, j) = pairs[k];
-                var ev = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
-                if (ev.Found)
-                    found.Add(new CollisionEvent(_colliders[i], _colliders[j], ev.TCollision, ev.HtsA, ev.HtsB));
-            });
-            foreach (var e in found) _queue.Add(e);
+            var key = Geometry.Of(_colliders[i]);
+            if (!groups.TryGetValue(key, out int group))
+                groups.Add(key, group = groups.Count);
+            groupIds[i] = group;
         }
-        else
+        if (!parallel || threads <= 1)
         {
-            foreach (var (i, j) in pairs)
+            // The serial path can solve/expand in candidate order without
+            // materialising a pair array or a per-pair expansion map.
+            // Small repeated-geometry sets need no hash lookup for every
+            // expanded identity pair. Bound the direct table to 65,536 cells;
+            // larger worlds retain the sparse dictionary and unique geometry
+            // still needs no result cache at all.
+            bool direct = groups.Count * 2 <= _colliders.Count && groups.Count <= 256;
+            var resultsByGroup = direct ? new CollisionTest[groups.Count * groups.Count] : null;
+            var tested = direct ? new bool[resultsByGroup!.Length] : null;
+            Dictionary<long, CollisionTest>? solved = !direct && groups.Count < _colliders.Count ? [] : null;
+            foreach (var (i, j) in BroadPhase.OverlappingPairs(_colliders, pairFilter))
             {
-                var ev = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
+                CollisionTest ev;
+                if (direct)
+                {
+                    int index = groupIds[i] * groups.Count + groupIds[j];
+                    if (!tested![index])
+                    {
+                        resultsByGroup![index] = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
+                        tested[index] = true;
+                        GeometricPairTests++;
+                    }
+                    ev = resultsByGroup![index];
+                }
+                else
+                {
+                    long key = ((long)groupIds[i] << 32) | (uint)groupIds[j];
+                    if (solved is null || !solved.TryGetValue(key, out ev))
+                    {
+                        ev = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
+                        GeometricPairTests++;
+                        solved?.Add(key, ev);
+                    }
+                }
                 if (ev.Found)
                     _queue.Add(new CollisionEvent(_colliders[i], _colliders[j], ev.TCollision, ev.HtsA, ev.HtsB));
             }
+            _queue.SortOrdinalEvents();
+            return _queue.Ordered();
         }
 
-        _queue.Sort();
+        var pairs = BroadPhase.OverlappingPairs(_colliders, pairFilter).ToList();
+        var work = pairs;
+        int[]? workIds = null;
+        if (groups.Count < _colliders.Count)
+        {
+            work = [];
+            workIds = new int[pairs.Count];
+            var unique = new Dictionary<long, int>();
+            for (int k = 0; k < pairs.Count; k++)
+            {
+                var (i, j) = pairs[k];
+                long key = ((long)groupIds[i] << 32) | (uint)groupIds[j]; // preserve A/B order
+                if (!unique.TryGetValue(key, out int index))
+                {
+                    unique.Add(key, index = work.Count);
+                    work.Add((i, j));
+                }
+                workIds[k] = index;
+            }
+        }
+        GeometricPairTests = work.Count;
+        var results = new CollisionTest[work.Count];
+        if (parallel && threads > 1)
+            Parallel.For(0, work.Count, NewOpts(threads), k =>
+            {
+                var (i, j) = work[k];
+                results[k] = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
+            });
+        else
+            for (int k = 0; k < work.Count; k++)
+            {
+                var (i, j) = work[k];
+                results[k] = NarrowPhase.TestPair(_colliders[i], _colliders[j], dt);
+            }
+
+        for (int k = 0; k < pairs.Count; k++)
+        {
+            var ev = results[workIds is null ? k : workIds[k]];
+            if (!ev.Found) continue;
+            var (i, j) = pairs[k];
+            _queue.Add(new CollisionEvent(_colliders[i], _colliders[j], ev.TCollision, ev.HtsA, ev.HtsB));
+        }
+
+        _queue.SortOrdinalEvents();
         return _queue.Ordered();
+    }
+
+    /// <summary>Number of distinct ordered geometric pairs solved by the last detection.</summary>
+    public int GeometricPairTests { get; private set; }
+
+    // Bitwise keys deliberately distinguish signed zero and NaN payloads. A
+    // collider's Data/ordinal never enters TestPair; every other input does.
+    private readonly record struct Bits(int X, int Y, int Z)
+    {
+        public static Bits Of(Vector3 v) => new(BitConverter.SingleToInt32Bits(v.X),
+            BitConverter.SingleToInt32Bits(v.Y), BitConverter.SingleToInt32Bits(v.Z));
+    }
+    private readonly record struct Geometry(CvhFile? Hull, int Shape, int Radius, int Scale,
+        Bits Position, Bits Velocity, Bits Right, Bits Up, Bits Backward)
+    {
+        public static Geometry Of(Collider c) => new(c.Hull, c.Shape,
+            BitConverter.SingleToInt32Bits(c.EffectiveRadius), BitConverter.SingleToInt32Bits(c.Scale),
+            Bits.Of(c.Position), Bits.Of(c.Velocity), Bits.Of(c.Orientation.GetRight()),
+            Bits.Of(c.Orientation.GetUp()), Bits.Of(c.Orientation.GetBackward()));
     }
 
     private static ParallelOptions NewOpts(int threads) => new() { MaxDegreeOfParallelism = Math.Max(1, threads) };

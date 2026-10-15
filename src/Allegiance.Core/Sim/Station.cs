@@ -15,10 +15,10 @@ namespace Allegiance.Core.Sim;
 /// <c>MaxShieldHitPoints</c>, <c>ShieldRegeneration</c>,
 /// <c>ArmorRegeneration</c> and the two defense-type indices are all already
 /// decoded — <c>DataStationTypeIGC.cs:32-35,42-43</c>) carries the capacity
-/// data, and this object carries exactly the <b>two</b> live per-instance
-/// pieces of combat state the task scopes: <see cref="ArmorFraction"/> and
-/// <see cref="ShieldFraction"/>, plus their damage intake
-/// (<see cref="ReceiveDamage"/>) and regen (<see cref="Regenerate"/>).
+/// data, and this object carries the live combat fractions
+/// (<see cref="ArmorFraction"/> and <see cref="ShieldFraction"/>), damage intake
+/// (<see cref="ReceiveDamage"/>), regen (<see cref="Regenerate"/>), and the
+/// station's rotating launch slot / last-launch time (<see cref="Launch"/>).
 /// </summary>
 /// <remarks>
 /// <para>Mirrors the <see cref="Asteroid"/> half of the split — and
@@ -79,6 +79,66 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Station : IStationIgc, ISideVisible
 {
+    private int _undockPosition;
+    private double _lastLaunch = double.NegativeInfinity;
+
+    /// <summary>
+    /// Native stationIGC.cpp:299-382: launch immediately from the next slot,
+    /// with +/-5 jitter and a larger outward offset for rapid successive
+    /// launches. There is no launch queue or temporary ship collision immunity.
+    /// The caller moves sector membership and sends the launch state.
+    /// </summary>
+    public void Launch(Ship ship, HullLandingBayGeometry? geometry, double now, Random? random = null)
+    {
+        random ??= Random.Shared;
+        const float maxOffset = 5;
+        float Jitter() => (float)(random.NextDouble() * (2 * maxOffset) - maxOffset);
+        var position = new Vector3(Jitter(), Jitter(), Jitter());
+        var orientation = Orientation;
+        float speed = ship.Mission!.Core.Constants.FloatConstants[4];
+        float radius = ship.HullType.Length * .5f;
+        var slots = geometry?.LaunchSlots;
+        Vector3 forward;
+        if (slots is not { Count: > 0 })
+        {
+            if (ship.PilotType < Ship.PilotTypePlayer && Type.HasCapability(DataStationTypeIGC.SabmRipcord))
+            {
+                // Vector::RandomDirection (zlib/vector.cpp:37-46).
+                double z = random.NextDouble() * 2 - 1;
+                double angle = random.NextDouble() * 2 * Math.PI;
+                double r = Math.Sqrt(1 - z * z);
+                forward = new Vector3((float)(r * Math.Cos(angle)), (float)(r * Math.Sin(angle)), (float)z);
+            }
+            else
+            {
+                // Preserve native's case 4 reset/fallthrough (including the
+                // repeated right launch at the five-launch wrap).
+                int direction = _undockPosition++;
+                if (direction == 4) { _undockPosition = 0; direction = 0; }
+                forward = direction switch
+                {
+                    1 => orientation.GetUp(), 2 => -orientation.GetRight(),
+                    3 => -orientation.GetUp(), _ => orientation.GetRight()
+                };
+            }
+            position += forward * (Radius + radius + speed * .5f + maxOffset);
+        }
+        else
+        {
+            var slot = slots[_undockPosition % slots.Count];
+            position += slot.Position * orientation;
+            forward = slot.Direction * orientation;
+            position += forward * (radius + speed * (now - _lastLaunch <= .1 ? .85f : .5f) + maxOffset);
+            _undockPosition = (_undockPosition + 1) % slots.Count;
+        }
+        ship.Orientation.Set(forward, orientation.GetForward());
+        ship.Position = position + Center;
+        ship.Velocity = forward * speed;
+        for (int axis = 0; axis < 3; axis++) ship.SetTurnRate(axis, 0);
+        ship.LastLaunchTime = now;
+        _lastLaunch = now;
+    }
+
     /// <summary>
     /// <c>c_sabmPedestal = 0x400</c> (<c>src/Igc/igc.h:758</c>) — the
     /// station-ability bit saying a station is a flag pedestal and therefore

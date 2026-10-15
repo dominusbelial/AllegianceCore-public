@@ -87,6 +87,45 @@ were unchanged; P695 changes only the human client's clock and flight timing.
 See [P695 report](reports/P695_CLIENT_UPDATES_OUT_OF_DATE.md) and the
 [complete invocation ledger](reports/P695_assets/results.json), including every
 failed rerun. No full-suite failure was silently discarded or assertion relaxed.
+## P694 observation (2026-10-15)
+
+The prepared Core suite had two existing asynchronous transport failures under
+whole-suite load. Each failed method then passed **3/3 fresh method-filtered runs**
+with its original assertions and timeouts:
+
+- `TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`:
+  `TimeoutException: no OnPeerJoined for raw peer` (five-second wait).
+- `ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout`:
+  healthy peers had not yet received updates when the fast tick loop ended.
+
+The unfiltered ClientCore run also hit two existing live-wire timing failures;
+both passed **3/3 fresh isolated reruns**, unchanged:
+
+- `SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent`:
+  observed `Lost` before its subsequent callback flag was set (already recorded
+  in this ledger's historical observations).
+- `ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target`:
+  its bounded loop ended in sector 1053 rather than target 1060.
+
+These are recorded as load flakes under the lane's isolated-rerun rule. The prior
+unfiltered Core run passed **4584/4584** with the same production changes. No
+transport assertion, timeout, scheduling rule, or quarantine was changed.
+
+Exploratory P694 100 ms guards also caught fixture-induced timing outliers: the
+fixture repeatedly imported servers/cores and queued megabytes of unmeasured
+warmup output immediately before timing. The final benchmark silences unmeasured
+output and collects unreachable setup garbage **before** the stopwatch; measured
+callbacks, allocations, GC pauses and the **100 ms wall-time assertion** remain
+inside/unchanged. All 14 cases passed three fresh isolated invocations: **126 timed
+updates, maximum 50.324 ms**, with zero measured collections/GC pauses. The final
+unfiltered Core run's 42 corresponding samples also passed (maximum 27.522 ms).
+This is a correction of benchmark preparation, not a claim that live GC/scheduler
+pauses cannot occur.
+
+The deterministic missing-runtime synthetic-station fixture failure and the old
+flight test's global -Z assumption were fixed and revalidated; they are **not**
+classified as flakes. Commands, complete attempt history, profiles and native
+citations: [P694 report](reports/P694_MASS_EVENT_TICKS.md).
 
 ## P685 observation (2026-10-15)
 
@@ -874,3 +913,35 @@ P699's final rebuilt sequential suites reported Core **4562 pass / 2 fail / 0 sk
 | `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | An additional earlier suite attempt timed out waiting for `OnPeerJoined` for a raw peer. | 3/3 pass |
 
 The [final isolated ledger](reports/P699_assets/post-final-results.json) preserves all nine passes; [validation-summary.json](reports/P699_assets/validation-summary.json) records final suite timestamps and portable TRX hashes. No source, assertion, timeout or quarantine changes were made for these failures. These observations classify intermittent receipt/join failures; they do not claim an underlying transport fix.
+## P694b observation (2026-10-15)
+
+Full unfiltered Debug suite counters (every completed attempt):
+
+- `suite-Allegiance.Core.Tests`: 4588 pass / 2 fail / 0 skip.
+- `suite-Allegiance.ClientCore.Tests`: 1010 pass / 0 fail / 0 skip.
+- `suite-Allegiance.ClientCore.MonoGame.Tests-retry`: 2195 pass / 0 fail / 3 skip.
+- `suite-Allegiance.Core.Tests-final`: 4590 pass / 0 fail / 0 skip.
+
+The initial MonoGame attempt ended without a summary/TRX; its complete diagnostic
+retry passed. No method failure or cause was established for the interrupted
+attempt. All 169 affected Core methods and five ClientCore methods passed three
+isolated Release runs each; the corrected mass-event fixture also passed both
+critical single rows three times in each configuration. The full P539 recordings
+and opt-in P660 local showcase were enabled.
+
+After the final suite, every full-suite failure passed **3/3 fresh exact-method
+isolated Debug reruns**:
+
+| Test | Full-suite symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Assert.Equal() Failure: Values differ; Expected: 11; Actual:   26 | 3/3 pass |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | System.TimeoutException : no OnPeerJoined for raw peer | 3/3 pass |
+
+These are load/receipt flakes under the P694b brief's explicit rule. The isolated
+passes do not establish a fix for the delayed mining receipts or raw-peer join
+timeout. No assertions, receipt deadlines, quarantine traits, or transport/mining
+behavior were changed for them. The intermediate single-row P694 timing failure
+was a fixture warmup defect and was corrected separately; it is not classified as
+a load flake. See the [report](reports/P694_MASS_EVENT_TICKS.md) and
+[ledger](reports/P694b_assets/verification.json) for raw counters, errors, stack
+traces, timing profiles and all isolated attempts.

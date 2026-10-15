@@ -489,15 +489,11 @@ public class LiveTeleportDockTests
             s => s.ShipId == shipId && s.State == ShipStatusMessage.StateFlying && s.StationId == -1);
     }
 
-    /// <summary>Reflection-free helper note: the Core assembly does not expose
-    /// <c>AttachStations</c> to tests, so the synthetic-station injection walks
-    /// the private <c>_stations</c> list directly. Test-only, on the sim thread
-    /// (ShipSpawner runs during the join), safe because the server disposes
-    /// afterward.</summary>
+    /// <summary>Register both the station record and its runtime, as a normal
+    /// mission does, so ripcord/undock can exercise the native launch routine.</summary>
     private static void AddStationToSector(Sector sector, DataStationIGC station)
     {
-        var field = typeof(Sector).GetField("_stations", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var list = (List<DataStationIGC>)field.GetValue(sector)!;
-        list.Add(station);
+        var mission = sector.Mission!;
+        mission.PlaceStation(new Station(station, mission.Core.StationTypes[station.StationTypeId]), sector);
     }
 }

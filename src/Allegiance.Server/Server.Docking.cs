@@ -499,7 +499,7 @@ public sealed partial class Server
     /// <item><b>Ship anchor with enough energy</b> (<c>FedSrv.CPP:13446-13474</c>):
     /// pay <c>RipcordCost</c> (the ripper's hull cost) from the target's energy,
     /// then the genuinely new ship-relative repositioning: <c>r = target.Radius +
-    /// ripper.Radius + 25.0f</c> (<b>25, not the 50-margin station launch</b>),
+    /// ripper.Radius + 25.0f</c> (the native ship-anchor margin),
     /// a <b>random</b> direction (<c>Vector::RandomDirection()</c>), the same
     /// <c>c_fcidExitStationSpeed</c> (slot 4, stationIGC.cpp:307) velocity (<c>c_fcidExitStationSpeed</c>),
     /// zeroed turn rates, and relocation to the target ship's cluster.</item>
@@ -598,7 +598,7 @@ public sealed partial class Server
 
             // Ship-relative reposition (FedSrv.CPP:13461-13474): NOT station-
             // relative — r = target.Radius + ripper.Radius + 25.0f (literal 25,
-            // distinct from the station launch's 50 margin), a random direction,
+            // distinct from the station launch-slot offsets), a random direction,
             // ExitStationSpeed velocity, zeroed turn rates, and move to the
             // target's cluster. Shared with the probe branch via
             // <see cref="PlaceRipcordNearTarget"/>.
@@ -1855,29 +1855,13 @@ public sealed partial class Server
     /// core, replace the ship's loadout with the requested parts, and echo the
     /// mounted parts back byte-for-byte.
     /// </summary>
-    /// <summary>
-    /// P69/P113 — the shared station-launch reposition: push a ship radially
-    /// outward from a station to just clear <see cref="Sector.DockRadius"/> by
-    /// <see cref="LaunchClearMargin"/> and kick it outward at
-    /// <c>c_fcidExitStationSpeed</c> (slot 4, stationIGC.cpp:307). Position = stationPos + dir·(DockRadius +
-    /// LaunchClearMargin), velocity = dir·ExitStationSpeed, where <c>dir</c> is
-    /// the station→ship direction (a fixed <c>(1,0,0)</c> fallback when the ship
-    /// sits exactly at the station's position). This is the port's undock-launch
-    /// mechanic (born P69, refined P74/P75) — <b>and</b> the exact launch shape
-    /// <c>FedSrvSiteBase::UseRipcord</c>'s station-anchor branch produces by
-    /// delegating to the station's own <c>Launch</c> (<c>FedSrv.CPP:13441-13443</c>:
-    /// native <c>UseRipcord</c> calls <c>((IstationIGC*)pmodel)-&gt;Launch(pship)</c>,
-    /// the same launch the undock path uses). The ripcord teleport calls this
-    /// rather than duplicating the math.
-    /// </summary>
+    /// <summary>Shared undock/ripcord station launch, native stationIGC.cpp:299-382.</summary>
     private void RepositionForLaunch(Ship ship, DataStationIGC station)
     {
-        if (station.Position is not { Length: 3 } sp) return;
-        var stationPos = new Vector3(sp[0], sp[1], sp[2]);
-        var offset = ship.Position - stationPos;
-        var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
-        ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
-        ship.Velocity = dir * ship.Mission!.Core.Constants.FloatConstants[4];
+        var sector = ship.Mission!.Sectors.FirstOrDefault(s => s.Id == station.ClusterId);
+        var runtime = sector?.StationRuntimes.FirstOrDefault(s => s.StationId == station.StationId);
+        if (runtime is null) return;
+        runtime.Launch(ship, sector!.StationLandingBays?.LaunchGeometry(runtime.Type), _simNow);
     }
 
     /// <summary>
@@ -1886,8 +1870,8 @@ public sealed partial class Server
     /// new docked-NPC "launch" arm of <see cref="HandleOrderChange"/>
     /// (ORDER_CHANGE Stage 6) share one state transition with no duplication:
     /// resolve the ship's docked station in <paramref name="sector"/>, clear
-    /// <see cref="Ship.StationId"/>, push the ship physically clear of
-    /// <see cref="Sector.DockRadius"/> via <see cref="RepositionForLaunch"/>, and
+    /// <see cref="Ship.StationId"/>, apply the station's launch geometry via
+    /// <see cref="RepositionForLaunch"/>, and
     /// start the undock debounce (<see cref="Ship.LastLaunchTime"/>, P75).
     /// <para><b>Why this is safe to share with an NPC.</b> The only part of the
     /// real-peer <see cref="PerformUndock"/> that needs a <see cref="ConnectionId"/>
@@ -1913,18 +1897,7 @@ public sealed partial class Server
         // docked forever after its parent launches, blocking valid turret input.
         foreach (var child in ship.ChildShips) child.StationId = null;
 
-        // Push the ship physically clear of DockRadius and start the undock
-        // debounce (Ship.LastLaunchTime / P75). Without the position push,
-        // Sector.ResolveDockCollisions (Sector.cs:453) gates re-docking on
-        // StationId==null alone, so the very next tick can re-latch a ship
-        // that never moved. Reposition just outside DockRadius along the
-        // station->ship direction (a fixed fallback direction if the ship
-        // happens to be exactly at the station's position), with an outward
-        // velocity kick — see the P69/P74 history in the original undock
-        // handler (git blame) for why both the position push and the
-        // LaunchCooldownSeconds debounce below are needed together. (Logic and
-        // comments reproduced verbatim from the former PerformUndock body — the
-        // P152 extraction refactor is behavior-preserving.)
+        // Use the station's native slot rotation, offsets, jitter, and velocity.
         DataStationIGC? stationModel = null;
         foreach (var st in sector.Stations)
             if (st.StationId == station) { stationModel = st; break; }
@@ -1954,8 +1927,8 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// Undock a docked ship: clear its station, push it clear of DockRadius
-    /// with an outward kick, start the re-dock debounce, and re-send
+    /// Undock a docked ship: clear its station, apply its native launch pose
+    /// and outward velocity, start the re-dock debounce, and re-send
     /// FM_S_SET_CLUSTER(7) — the only message that clears the native client's
     /// own GetStation()/GetCluster() model state (appmsg.cpp:1044-1049), which
     /// BaseClient::flyingF() (clintlib.h:1198) and the Hangar screen's launch

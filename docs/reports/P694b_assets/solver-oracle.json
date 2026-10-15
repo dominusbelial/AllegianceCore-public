@@ -1,0 +1,112 @@
+{
+  "baseline_commit": "0e7615fe64e0aefc329fc6e48f36c11c4a7bbfb4",
+  "reference_files": [
+    "src/Allegiance.Core/Collision/Collider.cs",
+    "src/Allegiance.Core/Collision/NarrowPhase.cs",
+    "src/Allegiance.Core/Collision/Separate.cs"
+  ],
+  "reference_generation": "git show HEAD:<file>, rename whole-word Collider, NarrowPhase, CollisionTest, Separate with Baseline prefix; compile with current Core binary and unchanged shared CVH/math types",
+  "harness": "solver-oracle.cs",
+  "runs": [
+    {
+      "configuration": "Release",
+      "attempt": 1,
+      "command": [
+        "dotnet",
+        "run",
+        "--project",
+        "/tmp/p694b/oracle/oracle.csproj",
+        "-c",
+        "Release",
+        "-p:UseSharedCompilation=false"
+      ],
+      "exit": 0,
+      "output": "{\"supportChecks\":168000,\"narrowChecks\":12000,\"separationChecks\":2501,\"result\":\"bit-identical to HEAD collision solver\"}\n",
+      "stderr": ""
+    },
+    {
+      "configuration": "Release",
+      "attempt": 2,
+      "command": [
+        "dotnet",
+        "run",
+        "--project",
+        "/tmp/p694b/oracle/oracle.csproj",
+        "-c",
+        "Release",
+        "-p:UseSharedCompilation=false",
+        "--no-build"
+      ],
+      "exit": 0,
+      "output": "{\"supportChecks\":168000,\"narrowChecks\":12000,\"separationChecks\":2501,\"result\":\"bit-identical to HEAD collision solver\"}\n",
+      "stderr": ""
+    },
+    {
+      "configuration": "Release",
+      "attempt": 3,
+      "command": [
+        "dotnet",
+        "run",
+        "--project",
+        "/tmp/p694b/oracle/oracle.csproj",
+        "-c",
+        "Release",
+        "-p:UseSharedCompilation=false",
+        "--no-build"
+      ],
+      "exit": 0,
+      "output": "{\"supportChecks\":168000,\"narrowChecks\":12000,\"separationChecks\":2501,\"result\":\"bit-identical to HEAD collision solver\"}\n",
+      "stderr": ""
+    },
+    {
+      "configuration": "Debug",
+      "attempt": 1,
+      "command": [
+        "dotnet",
+        "run",
+        "--project",
+        "/tmp/p694b/oracle/oracle.csproj",
+        "-c",
+        "Debug",
+        "-p:UseSharedCompilation=false"
+      ],
+      "exit": 0,
+      "output": "{\"supportChecks\":168000,\"narrowChecks\":12000,\"separationChecks\":2501,\"result\":\"bit-identical to HEAD collision solver\"}\n",
+      "stderr": ""
+    },
+    {
+      "configuration": "Debug",
+      "attempt": 2,
+      "command": [
+        "dotnet",
+        "run",
+        "--project",
+        "/tmp/p694b/oracle/oracle.csproj",
+        "-c",
+        "Debug",
+        "-p:UseSharedCompilation=false",
+        "--no-build"
+      ],
+      "exit": 0,
+      "output": "{\"supportChecks\":168000,\"narrowChecks\":12000,\"separationChecks\":2501,\"result\":\"bit-identical to HEAD collision solver\"}\n",
+      "stderr": ""
+    },
+    {
+      "configuration": "Debug",
+      "attempt": 3,
+      "command": [
+        "dotnet",
+        "run",
+        "--project",
+        "/tmp/p694b/oracle/oracle.csproj",
+        "-c",
+        "Debug",
+        "-p:UseSharedCompilation=false",
+        "--no-build"
+      ],
+      "exit": 0,
+      "output": "{\"supportChecks\":168000,\"narrowChecks\":12000,\"separationChecks\":2501,\"result\":\"bit-identical to HEAD collision solver\"}\n",
+      "stderr": ""
+    }
+  ]
+}

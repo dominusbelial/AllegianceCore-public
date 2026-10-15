@@ -50,8 +50,15 @@ public sealed class StationLandingBayCache
     /// </summary>
     public HullLandingBayGeometry? Bay(DataStationTypeIGC type)
     {
-        // Runtime type overrides (and synthetic stations) can retain an id while
-        // replacing the model or scale. Cache the actual geometry inputs.
+        var geometry = LaunchGeometry(type);
+        return geometry?.LandSlots.Count > 0 ? geometry : null;
+    }
+
+    /// <summary>Station launch frames, including models with no landing bay (P694).
+    /// Runtime type overrides (and synthetic stations) can retain an id while
+    /// replacing the model or scale, so the cache keys the actual geometry inputs (P699).</summary>
+    public HullLandingBayGeometry? LaunchGeometry(DataStationTypeIGC type)
+    {
         var key = (type.StationTypeId, type.ModelName, type.Radius);
         if (_bay.TryGetValue(key, out var cached)) return cached;
 
@@ -64,7 +71,7 @@ public sealed class StationLandingBayCache
         if (model is not null)
         {
             var reconstructed = HullLandingBay.ReconstructStation(model, type.Radius);
-            g = reconstructed.LandSlots.Count == 0 ? null : reconstructed;
+            g = reconstructed;
         }
         _bay[key] = g;
         return g;

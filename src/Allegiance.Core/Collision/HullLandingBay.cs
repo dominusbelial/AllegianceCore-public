@@ -89,7 +89,7 @@ public static class HullLandingBay
     public static HullLandingBayGeometry ReconstructStation(CvhFile model, float radius)
     {
         var scale = radius / model.Radius;                 // stationtypeigc.cpp:46
-        var capital = Reconstruct(model, scale, "capgarage", maxLaunchSlots: 0);
+        var capital = Reconstruct(model, scale, "capgarage", maxLaunchSlots: MaxLaunchSlots);   // P694: native launch slots (stationtypeigc.cpp:47-66), capped at six
         var lands = capital.LandSlots.ToList();
         int capCount = lands.Count;
         // Native appends garage slots using the TOTAL slot index, rather than
@@ -109,7 +109,7 @@ public static class HullLandingBay
     /// for a carrier hull (<c>hullTypeIGC.cpp:178-212</c>) and <c>capgarage</c>
     /// for a station (<c>stationtypeigc.cpp:83-101</c>);
     /// <paramref name="maxLaunchSlots"/> caps the launch scan (hulls: 2, the
-    /// port's established <c>MaxShipLaunchSlots</c>; stations: none here).</summary>
+    /// port's established <c>MaxShipLaunchSlots</c>; stations: six).</summary>
     private static HullLandingBayGeometry Reconstruct(CvhFile model, float scale, string landPrefix, int maxLaunchSlots)
     {
         var launches = new List<HullLaunchSlot>();

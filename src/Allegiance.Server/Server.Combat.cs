@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Allegiance.Core.Profiling;
 using System.Runtime.InteropServices;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
@@ -850,6 +851,7 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastStationDestroyed(Station station, Model? launcher)
     {
+        using var scope = TickProfiler.Enter("combat.stationEvents");
         short launcherId = -1;                     // NA
         if (launcher is Ship s) launcherId = s.Id;
 
@@ -1262,6 +1264,7 @@ public sealed partial class Server
     private void BroadcastKillShip(
         double now, IShipIgc ship, IModelIgc? launcher, float amount, Vector3 p1, Vector3 p2)
     {
+        using var scope = TickProfiler.Enter("combat.shipEvents");
         // Resolve the victim and (if it is a ship) the credited attacker to ids.
         if (ship is not Ship victim)
         {
@@ -1604,6 +1607,7 @@ public sealed partial class Server
     /// </summary>
     private void DropKillShipLoot(Ship victim, double now)
     {
+        using var scope = TickProfiler.Enter("combat.treasure");
         var sector = victim.Sector;
         var mission = victim.Mission;
         if (sector is null || mission is null) return;

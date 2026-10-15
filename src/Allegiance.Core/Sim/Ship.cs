@@ -4548,7 +4548,8 @@ public sealed class Ship : Model, IShipIgc
                         if (top is Ship topShip && ReferenceEquals(topShip.Mission, Mission))
                             credit = top;
                     }
-                    Mission?.Site.KillShipEvent(now, this, credit, amount, position1, position2);
+                    using (Allegiance.Core.Profiling.TickProfiler.Enter("combat.killEject"))
+                        Mission?.Site.KillShipEvent(now, this, credit, amount, position1, position2);
                     dr = DamageResult.Killed;
                 }
             }

@@ -1651,9 +1651,7 @@ public sealed class Sector : IClusterIgc
     /// <see cref="WarpCooldownSeconds"/>'s own shape for the analogous
     /// problem on the dock side. Longer than the warp window: a warp
     /// transit relocates the ship well clear of the source aleph as part of
-    /// the transit itself, but an undock only clears
-    /// <see cref="DockRadius"/> by a fixed margin (<c>Server.cs</c>'s
-    /// <c>LaunchClearMargin</c>) with no guarantee the ship's own autopilot
+    /// the transit itself, but a station launch has no guarantee the ship's own autopilot
     /// commits to a heading away from the station quickly — confirmed live
     /// (P74/P75) that a ship reorienting toward a distant target can drift
     /// back within <see cref="DockRadius"/> well past a 2 s window before
@@ -1765,10 +1763,19 @@ public sealed class Sector : IClusterIgc
         return s.Hull;
     }
 
+    // P689: reject only type combinations this pass unconditionally discards.
+    // Damage/FF/death/launcher gates stay in dispatch: earlier events can mutate
+    // that state. Native resolves the shared collision list once (clusterIGC.cpp:
+    // 289-321); this port has separate combat and physical-collision passes.
+    internal static bool CombatPair(Collider a, Collider b) =>
+        (a.Data is IOrdnance && b.Data is Ship or Probe or Asteroid or Station)
+        || (b.Data is IOrdnance && a.Data is Ship or Probe or Asteroid or Station);
+
     private void ResolveCombatCollisions(double now, float dt)
     {
         if (!_models.Any(m => m is Projectile || m is Missile)) return;   // nothing can deal damage
 
+        var buildScope = TickProfiler.Enter("combat.build");
         var detector = new CollisionDetector();
         foreach (var model in _models)
         {
@@ -1818,7 +1825,10 @@ public sealed class Sector : IClusterIgc
                 hull: CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
+        buildScope.Dispose();
+        IReadOnlyList<CollisionEvent> events;
+        using (TickProfiler.Enter("combat.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, CombatPair);
+        using var dispatchScope = TickProfiler.Enter("combat.dispatch");
         var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
         {
@@ -2352,7 +2362,10 @@ public sealed class Sector : IClusterIgc
                 Orientation.Identity, CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
+        IReadOnlyList<CollisionEvent> events;
+        using (TickProfiler.Enter("collision.asteroid.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, static (a, b) =>
+            (a.Data is Ship && b.Data is Asteroid) || (b.Data is Ship && a.Data is Asteroid));
+        using var dispatchScope = TickProfiler.Enter("collision.asteroid.dispatch");
         foreach (var ev in events)
         {
             var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;
@@ -2576,7 +2589,22 @@ public sealed class Sector : IClusterIgc
                 CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
+        // With one uniform velocity there can be no approach response in this
+        // pass, so none of its events can change that invariant. This does not
+        // exclude equal-velocity pairs in a mixed moving fleet: an earlier
+        // impact there can change a later pair's relative velocity.
+        if (detector.Colliders.Count < 2) return;
+        var velocity = detector.Colliders[0].Velocity;
+        if (detector.Colliders.All(c =>
+        {
+            var d = c.Velocity - velocity;
+            return d.X == 0 && d.Y == 0 && d.Z == 0;
+        })) return;
+
+        IReadOnlyList<CollisionEvent> events;
+        using (TickProfiler.Enter("collision.ship.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
+        using var dispatchScope = TickProfiler.Enter("collision.ship.dispatch");
+        var probeCache = new Separate.ProbeCache();
         foreach (var ev in events)
         {
             var ship1 = ev.A.Data as Ship;
@@ -2584,12 +2612,19 @@ public sealed class Sector : IClusterIgc
             if (ship1 is null || ship2 is null) continue;   // only ship↔ship pairs interest this pass
             if (ReferenceEquals(ship1, ship2)) continue;
             if (ship1.Dead || ship2.Dead) continue;
-            ResolveShipShipCollision(now, ev, ship1, ship2);
+            ResolveShipShipCollision(now, ev, ship1, ship2, probeCache);
         }
     }
 
-    private void ResolveShipShipCollision(double now, CollisionEvent ev, Ship ship1, Ship ship2)
+    private void ResolveShipShipCollision(double now, CollisionEvent ev, Ship ship1, Ship ship2, Separate.ProbeCache probeCache)
     {
+        // Equal current velocities give zero relative normal speed for EVERY
+        // separating normal. The existing approach gate below would return
+        // without applying separation, damage, or events. Check at dispatch
+        // (not detection): an earlier collision may have changed either ship.
+        var relativeVelocity = ship1.Velocity - ship2.Velocity;
+        if (relativeVelocity.X == 0 && relativeVelocity.Y == 0 && relativeVelocity.Z == 0) return;
+
         // Collision-time positions (unsmeared) — the rescue-gate proximity uses
         // these (the same convention the old code did).
         var rawPos1 = ship1.Position + ship1.Velocity * ev.TCollision;
@@ -2601,7 +2636,7 @@ public sealed class Sector : IClusterIgc
         // sign convention is unchanged: from ship2 toward ship1, so a rear ship
         // bumping the one ahead has v1 − v2 along +normal and the normal-speed
         // formulas below accelerate the forward ship.
-        var sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB);
+        var sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB, probeCache);
         var normal = sep.Normal;
 
         // Mutual exclusivity with the rescue pass: a rescue-eligible pair is
@@ -2804,7 +2839,10 @@ public sealed class Sector : IClusterIgc
                 Orientation.Identity, CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
+        IReadOnlyList<CollisionEvent> events;
+        using (TickProfiler.Enter("collision.station.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, static (a, b) =>
+            (a.Data is Ship && b.Data is Station) || (b.Data is Ship && a.Data is Station));
+        using var dispatchScope = TickProfiler.Enter("collision.station.dispatch");
         foreach (var ev in events)
         {
             var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;
@@ -3317,18 +3355,26 @@ public sealed class Sector : IClusterIgc
         // A missile killed by splash can create another blast (FedSrv.CPP:12524-12529).
         // Drain those after the current blast, like native's explosion list, to
         // avoid recursive damage walks and process each death exactly once.
+        using var scope = TickProfiler.Enter("blast.resolve");
         _pendingExplosions.Enqueue(e);
         if (_resolvingExplosions) return;
         _resolvingExplosions = true;
         try
         {
-            while (_pendingExplosions.TryDequeue(out var blast)) ApplyExplosion(blast);
+            bool secondary = false;
+            while (_pendingExplosions.TryDequeue(out var blast))
+            {
+                using var chained = secondary ? TickProfiler.Enter("blast.secondary") : default;
+                ApplyExplosion(blast);
+                secondary = true;
+            }
         }
         finally { _resolvingExplosions = false; }
     }
 
     private void ApplyExplosion(Explosion e)
     {
+        using var scope = TickProfiler.Enter("blast.apply");
         byte type = (byte)(e.DamageType | BlastDamage.NoWarn | BlastDamage.NoDebris); // clusterIGC.cpp:431
         var models = _models.ToArray();
         var stations = _stationRuntimes.ToArray();
@@ -3350,6 +3396,7 @@ public sealed class Sector : IClusterIgc
             double stateTime = ReferenceEquals(target, _updatingModel) ? _modelStateTime : target.LastUpdate;
             Vector3 p = target.Position + target.CollisionVelocity * (float)(e.Time - stateTime);
             if (!ExplosionAmount(e, p, radius, out float amount)) continue;
+            using (TickProfiler.Enter("blast.damage"))
             switch (target)
             {
                 case Ship ship:
@@ -3369,7 +3416,10 @@ public sealed class Sector : IClusterIgc
         {
             if (station.Dead || !_stationRuntimes.Contains(station)
                 || !ExplosionAmount(e, station.Center, station.Radius, out float amount)) continue;
-            if (station.ReceiveDamage(type, amount, e.Time, station.Center, e.Position, e.Launcher) == DamageResult.Killed)
+            DamageResult stationResult;
+            using (TickProfiler.Enter("blast.damage"))
+                stationResult = station.ReceiveDamage(type, amount, e.Time, station.Center, e.Position, e.Launcher);
+            if (stationResult == DamageResult.Killed)
             {
                 RemoveStation(station);
                 var mission = Mission ?? station.Mission ?? (e.Launcher as Ship)?.Mission;
@@ -3388,7 +3438,10 @@ public sealed class Sector : IClusterIgc
             var p = new Vector3(asteroid.Data.Position[0], asteroid.Data.Position[1], asteroid.Data.Position[2]);
             if (asteroid.Dead || !_mineable.Contains(asteroid)
                 || !ExplosionAmount(e, p, asteroid.Radius, out float amount)) continue;
-            if (asteroid.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher) == DamageResult.Killed)
+            DamageResult asteroidResult;
+            using (TickProfiler.Enter("blast.damage"))
+                asteroidResult = asteroid.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher);
+            if (asteroidResult == DamageResult.Killed)
             {
                 RemoveAsteroid(asteroid);
                 (Mission ?? (e.Launcher as Ship)?.Mission)?.Site.KillAsteroidEvent(asteroid, true);
@@ -3405,6 +3458,7 @@ public sealed class Sector : IClusterIgc
 
     private static bool ExplosionAmount(Explosion e, Vector3 p, float radius, out float amount)
     {
+        using var scope = TickProfiler.Enter("blast.evaluate");
         float d = (e.Position - p).Length() - radius; // clusterIGC.cpp:420
         amount = e.Amount;
         if (!(d < e.Radius)) return false;          // strict boundary (clusterIGC.cpp:422)
