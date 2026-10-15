@@ -78,17 +78,12 @@ public class LiveRipcordTests
     private static Ship ServerShip(Srv server, short id) =>
         server.Ships.First(s => s.Ship.Id == id).Ship;
 
-    /// <summary>Reflection-free helper note: the Core assembly does not expose
-    /// <c>Sector.AttachStations</c> to tests, so synthetic-station injection
-    /// walks the private <c>_stations</c> list directly (same technique as
-    /// P110's <c>AddStationToSector</c>). Test-only, on the sim thread
-    /// (ShipSpawner runs during the join), safe because the server disposes
-    /// afterward.</summary>
+    /// <summary>Register both the station record and its runtime, as a normal
+    /// mission does, so ripcord/undock can exercise the native launch routine.</summary>
     private static void AddStationToSector(Sector sector, DataStationIGC station)
     {
-        var field = typeof(Sector).GetField("_stations", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var list = (List<DataStationIGC>)field.GetValue(sector)!;
-        list.Add(station);
+        var mission = sector.Mission!;
+        mission.PlaceStation(new Station(station, mission.Core.StationTypes[station.StationTypeId]), sector);
     }
 
     private sealed class RipcordSpawn
@@ -474,13 +469,20 @@ public class LiveRipcordTests
         Assert.False(after.IsRipcordActive);
         Assert.Null(after.RipcordModel);
         Assert.Equal(TargetA, after.Sector!.Id);   // moved into the station's cluster
-        // Station-launch shape (native station Launch via UseRipcord's station
-        // branch): positioned DockRadius + LaunchClearMargin (200+50) radially
-        // out from the station, kicked outward at ExitStationSpeed (50).
-        // Direction is arbitrary so the DISTANCE is the direction-independent check.
-        float dist = (after.Position - stationPos).Length();
-        Assert.True(MathF.Abs(dist - 250f) < 1.0f,
-            $"station-launch distance {dist} != DockRadius(200)+LaunchClearMargin(50)=250");
+        // Native stationIGC.cpp:350-366: a rotating model slot, +/-5 jitter,
+        // and either the isolated or rapid-launch outward offset.
+        var runtime = after.Sector.StationRuntimes.Single(s => s.StationId == sp.AnchorA.StationId);
+        var bay = after.Sector.StationLandingBays?.LaunchGeometry(runtime.Type);
+        float speed = after.Mission!.Core.Constants.FloatConstants[4];
+        float radius = after.HullType.Length * .5f;
+        if (bay?.LaunchSlots is { Count: > 0 } slots)
+            Assert.Contains(slots, slot => new[] { .5f, .85f }.Any(factor =>
+                (after.Position - (stationPos + slot.Position * runtime.Orientation
+                    + slot.Direction * runtime.Orientation * (radius + speed * factor + 5))).Length() <= 8.67f));
+        else
+            Assert.InRange((after.Position - stationPos).Length(),
+                runtime.Radius + radius + speed * .5f + 5 - 8.67f,
+                runtime.Radius + radius + speed * .5f + 5 + 8.67f);
         Assert.True(MathF.Abs(after.Velocity.Length() - 50f) < 1.0f,
             $"launch speed {after.Velocity.Length()} != ExitStationSpeed 50");
         // And no abort fired — the anchor stayed legal the whole time.
@@ -496,7 +498,7 @@ public class LiveRipcordTests
         Assert.False(ServerShip(server, rid).IsRipcordActive);
         Assert.Null(ServerShip(server, rid).RipcordModel);
 
-        Console.WriteLine($"RIPCORD-P113-STATION: ship {rid} station-anchor ripcord reached 0 -> relocated to launch shape {dist:F1}u @ {after.Velocity.Length():F1}u/s in sector {TargetA}, state cleared, no re-trigger");
+        Console.WriteLine($"RIPCORD-P113-STATION: ship {rid} station-anchor ripcord reached 0 -> relocated to launch shape {(after.Position - stationPos).Length():F1}u @ {after.Velocity.Length():F1}u/s in sector {TargetA}, state cleared, no re-trigger");
     }
 
     /// <summary>⭐ P112 — Scenario 3: a real mid-countdown side change on a

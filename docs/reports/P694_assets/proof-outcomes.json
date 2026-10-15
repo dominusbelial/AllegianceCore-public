@@ -1,0 +1,107 @@
+[
+  {
+    "label": "proof-capture-normal",
+    "exit": 0,
+    "seconds": 301.456,
+    "log": "/tmp/p694-verification-final/proof-capture-normal.log",
+    "plan": {
+      "boardingHull": {
+        "id": 26,
+        "name": "Hvy Troop Transport"
+      },
+      "escortHull": {
+        "id": 13,
+        "name": "Adv Scout"
+      }
+    },
+    "station": {
+      "id": 4328,
+      "name": "Garrison",
+      "sector": 1050
+    },
+    "outcome": {
+      "refusalConfirmed": true,
+      "refusalAt": 41.919713699999996,
+      "attackerReachedStation": true,
+      "shieldsDownAt": -1,
+      "captured": false,
+      "capturedAt": -1,
+      "stationSideStart": 0,
+      "stationSideEnd": 0,
+      "downedShieldConstant": 0.1
+    },
+    "event_counts": {
+      "station_selected": 1,
+      "group_spawned": 1,
+      "station_state": 299,
+      "capture_refused_full_shield": 1,
+      "scenario_end": 1
+    }
+  },
+  {
+    "label": "proof-capture-debug",
+    "exit": 0,
+    "seconds": 301.189,
+    "log": "/tmp/p694-verification-final/proof-capture-debug.log",
+    "plan": {
+      "boardingHull": {
+        "id": 26,
+        "name": "Hvy Troop Transport"
+      },
+      "escortHull": {
+        "id": 13,
+        "name": "Adv Scout"
+      }
+    },
+    "station": {
+      "id": 24465,
+      "name": "Omega Debug Garrison",
+      "sector": 1053
+    },
+    "outcome": {
+      "refusalConfirmed": true,
+      "refusalAt": 27.9235036,
+      "attackerReachedStation": true,
+      "shieldsDownAt": -1,
+      "captured": false,
+      "capturedAt": -1,
+      "stationSideStart": 0,
+      "stationSideEnd": 0,
+      "downedShieldConstant": 0.1
+    },
+    "event_counts": {
+      "station_selected": 1,
+      "group_spawned": 1,
+      "station_state": 299,
+      "capture_refused_full_shield": 1,
+      "scenario_end": 1
+    }
+  },
+  {
+    "label": "proof-baseline20",
+    "exit": 0,
+    "seconds": 241.887,
+    "log": "/tmp/p694-verification-final/proof-baseline20.log",
+    "observations": [
+      "P539-LOG-BASELINE ups=20: shots=0 hits=0 hitRate=0.0 % collisions=11 ejects=0 podsDocked=0"
+    ]
+  },
+  {
+    "label": "proof-baseline10",
+    "exit": 0,
+    "seconds": 242.586,
+    "log": "/tmp/p694-verification-final/proof-baseline10.log",
+    "observations": [
+      "P539-LOG-BASELINE ups=10: shots=0 hits=0 hitRate=0.0 % collisions=8 ejects=3 podsDocked=3"
+    ]
+  },
+  {
+    "label": "proof-repro",
+    "exit": 0,
+    "seconds": 122.235,
+    "log": "/tmp/p694-verification-final/proof-repro.log",
+    "observations": [
+      "P539C-REPRO wrote /tmp/p539c_repro_size2_probep0.txt"
+    ]
+  }
+]

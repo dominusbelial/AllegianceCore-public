@@ -88,16 +88,15 @@ public static class HullLandingBay
     /// the station twin of <see cref="Reconstruct(CvhFile, float)"/>'s carrier
     /// geometry. Note native sets <c>m_nCapLandSlots = m_nLandSlots</c>
     /// (<c>stationtypeigc.cpp:101</c>), so a station exposes a single land-slot
-    /// set used for both fighters and capitals. Launch slots are not consumed
-    /// by the dock predicate, so none are reconstructed here
-    /// (<c>maxLaunchSlots: 0</c>); the returned geometry is the shared
+    /// set used for both fighters and capitals. Launch slots come from the
+    /// same model (stationtypeigc.cpp:47-66), capped at six. The geometry is the shared
     /// <see cref="HullLandingBayGeometry"/> shape so it feeds the SAME
     /// geometric <c>InGarage</c> test the carrier bays feed.
     /// </summary>
     public static HullLandingBayGeometry ReconstructStation(CvhFile model, float radius)
     {
         var scale = radius / model.Radius;                 // stationtypeigc.cpp:92
-        return Reconstruct(model, scale, "capgarage", maxLaunchSlots: 0);
+        return Reconstruct(model, scale, "capgarage", MaxLaunchSlots);
     }
 
     /// <summary>The shared slot/plane reconstruction: scan <c>launchN</c> and
@@ -107,7 +106,7 @@ public static class HullLandingBay
     /// for a carrier hull (<c>hullTypeIGC.cpp:178-212</c>) and <c>capgarage</c>
     /// for a station (<c>stationtypeigc.cpp:83-101</c>);
     /// <paramref name="maxLaunchSlots"/> caps the launch scan (hulls: 2, the
-    /// port's established <c>MaxShipLaunchSlots</c>; stations: none here).</summary>
+    /// port's established <c>MaxShipLaunchSlots</c>; stations: six).</summary>
     private static HullLandingBayGeometry Reconstruct(CvhFile model, float scale, string landPrefix, int maxLaunchSlots)
     {
         var launches = new List<HullLaunchSlot>();

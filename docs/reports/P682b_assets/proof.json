@@ -1,0 +1,2555 @@
+{
+  "base": "integ8 / 86770578",
+  "baseline": "Production lifecycle/finale files restored byte-for-byte from HEAD for the final regression; restored fix and rebuilt afterward.",
+  "baselineCases": [
+    {
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: False)",
+      "outcome": "Failed",
+      "message": "Assert.False() Failure\nExpected: False\nActual:   True"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: True)",
+      "outcome": "Failed",
+      "message": "Assert.False() Failure\nExpected: False\nActual:   True"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+      "outcome": "Failed",
+      "message": "Assert.Null() Failure: Value is not null\nExpected: null\nActual:   FinaleOriginal { Hull = 23, Name = Stealth Bomber, Parts = System.Collections.Generic.List`1[Allegiance.Core.Wire.ExpandedPartData], Weapon = , Launcher = , ReadyTime = 0, Wingman = 6, Target = 3, RouteIndex = -1, Arena = False, Role = bomber }"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: True)",
+      "outcome": "Failed",
+      "message": "Assert.False() Failure\nExpected: False\nActual:   True"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: False)",
+      "outcome": "Passed",
+      "message": null
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: False)",
+      "outcome": "Failed",
+      "message": "match 2 cycle 1 counted real pod to relaunch; counters=0,0 timed out"
+    }
+  ],
+  "fixedCases": [
+    {
+      "invocation": "focused-03-1",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: True)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 3.2644446,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 3.2644446,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1267533999999992,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1267533999999992,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-1",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: False)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 3.2413224,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 3.2413224,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.0720530999999998,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.0720530999999998,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-1",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: True)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2638044,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2638044,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1768880999999993,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1768880999999993,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-1",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: False)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.216539,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.216539,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1277927000000005,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1277927000000005,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-2",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: False)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 3.2665287,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 3.2665287,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1767141000000008,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1767141000000008,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-2",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: True)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 3.2659268,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 3.2659268,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1262062999999998,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1262062999999998,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-2",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: True)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2081192,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2081192,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1781714,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1781714,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-2",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: False)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.229879,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.229879,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.0718619,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.0718619,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-3",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: False)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2869798,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2869798,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1218695999999984,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1218695999999984,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-3",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: True)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2678066,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2678066,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1263576000000004,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1263576000000004,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-3",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: True)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2140754,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.2140754,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1268239999999992,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.1268239999999992,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "invocation": "focused-03-3",
+      "test": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: False)",
+      "outcome": "Passed",
+      "freshRuns": [
+        {
+          "match": 1,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        },
+        {
+          "match": 3,
+          "state": "armed",
+          "kills": 0,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "triggeredAt": null,
+          "strikeStartedAt": null,
+          "gameOverAt": null,
+          "wings": [
+            {
+              "targetStation": 4329,
+              "targetSide": 1,
+              "targetSector": 1051,
+              "assignedBombers": 0,
+              "escorts": 0
+            },
+            {
+              "targetStation": 4328,
+              "targetSide": 0,
+              "targetSector": 1050,
+              "assignedBombers": 0,
+              "escorts": 0
+            }
+          ]
+        }
+      ],
+      "cycles": [
+        {
+          "match": 1,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.3170193,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 1,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 4.3170193,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 1,
+          "completedCyclesAssertedPerBot": 1,
+          "state": "armed",
+          "kills": 2,
+          "relaunched": [
+            0,
+            0
+          ],
+          "selectedSides": [],
+          "strikeStartedAt": null,
+          "armedBombers": [
+            0,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 2,
+          "completedCyclesAssertedPerBot": 2,
+          "state": "strike",
+          "kills": 4,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.0778456999999992,
+          "armedBombers": [
+            1,
+            0
+          ]
+        },
+        {
+          "match": 2,
+          "cycle": 3,
+          "completedCyclesAssertedPerBot": 3,
+          "state": "strike",
+          "kills": 6,
+          "relaunched": [
+            1,
+            1
+          ],
+          "selectedSides": [
+            0
+          ],
+          "strikeStartedAt": 1.0778456999999992,
+          "armedBombers": [
+            1,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Counter values labelled asserted are the exact per-bot assertions in the passing fixture; finale JSON reports distinct relaunched bots, not total cycles.",
+    "Cycle JSON is sampled before the next one-second finale update, so cycle 1 can show the preceding maturity snapshot.",
+    "Game over follows the existing accelerated P682 base-damage/conquest helper after a verified strike; a fresh armed run in match 3 proves both automatic rotations.",
+    "Raw logs and TRX files: /tmp/p682b-validation/"
+  ],
+  "productionFiles": {
+    "tools/allegiance-mcp/BotManager.Lifecycle.cs": {
+      "baselineSha256": "9fcb430e3d7836edf49c07157e98965e210033fa7136ec39c366194f2215cac8",
+      "fixedSha256": "91e9245c09f7835224b528a6edacbbb54f8948de3bbd29c4a8d7ec0d349b558c"
+    },
+    "tools/allegiance-mcp/BotManager.Finale.cs": {
+      "baselineSha256": "64c562ccc2dad4e1e700de0ac1a3ebcaa4a4d0526acc2eafecdbe70666aa36b0",
+      "fixedSha256": "9b9ea1421c793a978ff6488fe0902a62f39696a2256ea1014731f44daea53e0c"
+    }
+  },
+  "finalBuild": {
+    "log": "/tmp/p682b-validation/build.log",
+    "warnings": 0,
+    "errors": 0
+  },
+  "finalValidation": {
+    "focusedInvocations": 60,
+    "focusedCasePasses": 99,
+    "suites": [
+      {
+        "project": "Core",
+        "passed": 4555,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "project": "ClientCore",
+        "passed": 1010,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "project": "ClientCore.MonoGame",
+        "passed": 2186,
+        "failed": 0,
+        "skipped": 3
+      }
+    ]
+  }
+}

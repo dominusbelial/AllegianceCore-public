@@ -61,6 +61,8 @@ public sealed class P689CollisionPairTests
         Assert.NotEmpty(expected);
         Assert.True(all.Length > actual.Length, "the fixture must contain work that combat discards");
         Assert.Equal(expected, actual);
+        foreach (int threads in new[] { 1, 2, 4, 8 })
+            Assert.Equal(expected, detector.Detect(.05f, true, threads, Sector.CombatPair));
 
         var candidates = BroadPhase.OverlappingPairsBruteForce(detector.Colliders)
             .Where(p => OldDispatch(detector.Colliders[p.I], detector.Colliders[p.J])).ToArray();

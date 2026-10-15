@@ -350,8 +350,7 @@ public class GhostShipSectorMembershipTests
 
     private static void AddStationToSector(Sector sector, DataStationIGC station)
     {
-        var field = typeof(Sector).GetField("_stations", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var list = (List<DataStationIGC>)field.GetValue(sector)!;
-        list.Add(station);
+        var mission = sector.Mission!;
+        mission.PlaceStation(new Station(station, mission.Core.StationTypes[station.StationTypeId]), sector);
     }
 }

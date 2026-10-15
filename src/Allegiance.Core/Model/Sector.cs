@@ -999,6 +999,20 @@ public sealed class Sector : IClusterIgc
                 ships.Add(s);
         if (ships.Count < 2) return;
 
+        // P667 — parallel detection path. The expensive part is the read-only
+        // O(n²) per-pair qualification (side / lifepod↔rescue capability /
+        // proximity). Qualifying (i,j) pairs are collected in parallel, sorted
+        // back into the serial scan order, then the one-rescue-per-ship latch
+        // (which decides WHICH pair wins and mutates _pendingRescues) runs serially
+        // in that exact order — so the result is byte-identical to the serial loop
+        // below for any thread count. Ships' positions are not mutated during
+        // qualification, so the concurrent reads are safe.
+        if (ParallelSectorSim.Enabled && ParallelSectorSim.ThreadCount > 1)
+        {
+            ResolveRescueEventsParallel(ships);
+            return;
+        }
+
         var done = new HashSet<Ship>();              // one rescue per ship per tick
         for (int i = 0; i < ships.Count; i++)
         {
@@ -1041,6 +1055,76 @@ public sealed class Sector : IClusterIgc
                 done.Add(a);
                 done.Add(b);
             }
+        }
+    }
+
+    /// <summary>
+    /// P667 — the parallel form of <see cref="ResolveRescueEvents"/>' detection
+    /// phase. Qualifies every (i,j) ship pair (read-only) on up to
+    /// <see cref="ParallelSectorSim.ThreadCount"/> workers, collects the
+    /// qualifying pairs, sorts them back into the exact serial scan order
+    /// (ascending i, ascending j), then applies the one-rescue-per-ship latch
+    /// and <c>_pendingRescues</c> accumulation serially in that order. The
+    /// accepted rescue set — and the order they land in <c>_pendingRescues</c> —
+    /// is therefore identical to the serial loop for any thread count, satisfying
+    /// the P667 determinism gate. Ship positions are never mutated during
+    /// qualification (a rescue only latches and drains later), so the concurrent
+    /// reads are safe.
+    /// </summary>
+    private void ResolveRescueEventsParallel(List<Ship> ships)
+    {
+        int n = ships.Count;
+        var qualifying = new System.Collections.Concurrent.ConcurrentBag<(int I, int J)>();
+        Parallel.For(0, n, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, ParallelSectorSim.ThreadCount) }, i =>
+        {
+            var a = ships[i];
+            for (int j = i + 1; j < n; j++)
+            {
+                var b = ships[j];
+                if (a.SideId != b.SideId) continue;              // friendly gate (shipIGC.cpp:1023-1026)
+
+                // Symmetric capability match (shipIGC.cpp:1027-1035).
+                if (a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                    && b.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
+                { }
+                else if (b.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                    && a.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
+                { }
+                else continue;
+
+                float ra = 0.5f * a.HullType.Length;
+                float rb = 0.5f * b.HullType.Length;
+                float threshold = ra + rb;
+                float dx = a.Position.X - b.Position.X;
+                float dy = a.Position.Y - b.Position.Y;
+                float dz = a.Position.Z - b.Position.Z;
+                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+
+                qualifying.Add((i, j));
+            }
+        });
+
+        // Serial latch in the identical (i,j) scan order the serial loop uses.
+        var done = new HashSet<Ship>();
+        foreach (var (i, j) in qualifying.OrderBy(p => p.I).ThenBy(p => p.J))
+        {
+            var a = ships[i];
+            var b = ships[j];
+            if (done.Contains(a) || done.Contains(b)) continue;
+
+            Ship rescuee, rescuer;
+            if (a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                && b.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
+            {
+                rescuee = a; rescuer = b;
+            }
+            else
+            {
+                rescuee = b; rescuer = a;
+            }
+            _pendingRescues.Add((rescuee, rescuer));
+            done.Add(a);
+            done.Add(b);
         }
     }
 
@@ -1567,9 +1651,7 @@ public sealed class Sector : IClusterIgc
     /// <see cref="WarpCooldownSeconds"/>'s own shape for the analogous
     /// problem on the dock side. Longer than the warp window: a warp
     /// transit relocates the ship well clear of the source aleph as part of
-    /// the transit itself, but an undock only clears
-    /// <see cref="DockRadius"/> by a fixed margin (<c>Server.cs</c>'s
-    /// <c>LaunchClearMargin</c>) with no guarantee the ship's own autopilot
+    /// the transit itself, but a station launch has no guarantee the ship's own autopilot
     /// commits to a heading away from the station quickly — confirmed live
     /// (P74/P75) that a ship reorienting toward a distant target can drift
     /// back within <see cref="DockRadius"/> well past a 2 s window before
@@ -1745,7 +1827,7 @@ public sealed class Sector : IClusterIgc
 
         buildScope.Dispose();
         IReadOnlyList<CollisionEvent> events;
-        using (TickProfiler.Enter("combat.detect")) events = detector.Detect(dt, CombatPair);
+        using (TickProfiler.Enter("combat.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, CombatPair);
         using var dispatchScope = TickProfiler.Enter("combat.dispatch");
         var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
@@ -2280,8 +2362,10 @@ public sealed class Sector : IClusterIgc
                 Orientation.Identity, CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt, static (a, b) =>
+        IReadOnlyList<CollisionEvent> events;
+        using (TickProfiler.Enter("collision.asteroid.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, static (a, b) =>
             (a.Data is Ship && b.Data is Asteroid) || (b.Data is Ship && a.Data is Asteroid));
+        using var dispatchScope = TickProfiler.Enter("collision.asteroid.dispatch");
         foreach (var ev in events)
         {
             var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;
@@ -2505,7 +2589,22 @@ public sealed class Sector : IClusterIgc
                 CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt);
+        // With one uniform velocity there can be no approach response in this
+        // pass, so none of its events can change that invariant. This does not
+        // exclude equal-velocity pairs in a mixed moving fleet: an earlier
+        // impact there can change a later pair's relative velocity.
+        if (detector.Colliders.Count < 2) return;
+        var velocity = detector.Colliders[0].Velocity;
+        if (detector.Colliders.All(c =>
+        {
+            var d = c.Velocity - velocity;
+            return d.X == 0 && d.Y == 0 && d.Z == 0;
+        })) return;
+
+        IReadOnlyList<CollisionEvent> events;
+        using (TickProfiler.Enter("collision.ship.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
+        using var dispatchScope = TickProfiler.Enter("collision.ship.dispatch");
+        var probeCache = new Separate.ProbeCache();
         foreach (var ev in events)
         {
             var ship1 = ev.A.Data as Ship;
@@ -2513,12 +2612,19 @@ public sealed class Sector : IClusterIgc
             if (ship1 is null || ship2 is null) continue;   // only ship↔ship pairs interest this pass
             if (ReferenceEquals(ship1, ship2)) continue;
             if (ship1.Dead || ship2.Dead) continue;
-            ResolveShipShipCollision(now, ev, ship1, ship2);
+            ResolveShipShipCollision(now, ev, ship1, ship2, probeCache);
         }
     }
 
-    private void ResolveShipShipCollision(double now, CollisionEvent ev, Ship ship1, Ship ship2)
+    private void ResolveShipShipCollision(double now, CollisionEvent ev, Ship ship1, Ship ship2, Separate.ProbeCache probeCache)
     {
+        // Equal current velocities give zero relative normal speed for EVERY
+        // separating normal. The existing approach gate below would return
+        // without applying separation, damage, or events. Check at dispatch
+        // (not detection): an earlier collision may have changed either ship.
+        var relativeVelocity = ship1.Velocity - ship2.Velocity;
+        if (relativeVelocity.X == 0 && relativeVelocity.Y == 0 && relativeVelocity.Z == 0) return;
+
         // Collision-time positions (unsmeared) — the rescue-gate proximity uses
         // these (the same convention the old code did).
         var rawPos1 = ship1.Position + ship1.Velocity * ev.TCollision;
@@ -2530,7 +2636,7 @@ public sealed class Sector : IClusterIgc
         // sign convention is unchanged: from ship2 toward ship1, so a rear ship
         // bumping the one ahead has v1 − v2 along +normal and the normal-speed
         // formulas below accelerate the forward ship.
-        var sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB);
+        var sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB, probeCache);
         var normal = sep.Normal;
 
         // Mutual exclusivity with the rescue pass: a rescue-eligible pair is
@@ -2733,8 +2839,10 @@ public sealed class Sector : IClusterIgc
                 Orientation.Identity, CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt, static (a, b) =>
+        IReadOnlyList<CollisionEvent> events;
+        using (TickProfiler.Enter("collision.station.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, static (a, b) =>
             (a.Data is Ship && b.Data is Station) || (b.Data is Ship && a.Data is Station));
+        using var dispatchScope = TickProfiler.Enter("collision.station.dispatch");
         foreach (var ev in events)
         {
             var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;

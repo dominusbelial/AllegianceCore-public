@@ -67,7 +67,10 @@ public static class BroadPhase
         // interval already overlaps the current one on the sweep axis, so only
         // the other two axes need testing.
         var active = new List<(int Index, float SweepMax)>(64);
-        var pairs = new List<(int I, int J)>();
+        // Bucket by the first registration index. Sorting only each bucket's
+        // second indices preserves the exact oracle stream while avoiding a
+        // large tuple comparison sort in dense launch clusters.
+        var pairs = new List<int>?[n];
         for (int si = 0; si < n; si++)
         {
             float curMin = sweep[si].Min;
@@ -85,20 +88,22 @@ public static class BroadPhase
                 // for asymmetric predicates and avoid storing/sorting rejected pairs.
                 if (OverlapRemaining(cur, b, axis)
                     && (pairFilter is null || (curIdx < aj ? pairFilter(cur, b) : pairFilter(b, cur))))
-                    pairs.Add(curIdx < aj ? (curIdx, aj) : (aj, curIdx));
+                {
+                    int i = Math.Min(curIdx, aj), j = Math.Max(curIdx, aj);
+                    (pairs[i] ??= []).Add(j);
+                }
             }
 
             active.Add((curIdx, sweep[si].Max));
         }
 
         // Bit-identical to the O(n²) index-ordered stream (stable ties).
-        pairs.Sort(static (a, b) =>
+        for (int i = 0; i < n; i++)
         {
-            int c = a.I.CompareTo(b.I);
-            return c != 0 ? c : a.J.CompareTo(b.J);
-        });
-        foreach (var p in pairs)
-            yield return p;
+            if (pairs[i] is not { } seconds) continue;
+            seconds.Sort();
+            foreach (int j in seconds) yield return (i, j);
+        }
     }
 
     /// <summary>

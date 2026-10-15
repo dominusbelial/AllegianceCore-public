@@ -38,6 +38,28 @@ public sealed class CollisionQueue
         });
     }
 
+    /// <summary>
+    /// Detection emits at most one event per pair in (A ordinal, B ordinal)
+    /// order. Bucket those already ordered ties by time instead of comparing
+    /// every tie O(log N) times in a mass overlap. The public unordered queue
+    /// entry point above retains its full comparator.
+    /// </summary>
+    internal void SortOrdinalEvents()
+    {
+        if (_events.Count < 256) { Sort(); return; }
+        var buckets = new Dictionary<float, List<CollisionEvent>>();
+        foreach (var ev in _events)
+        {
+            if (!buckets.TryGetValue(ev.TCollision, out var bucket))
+                buckets.Add(ev.TCollision, bucket = []);
+            bucket.Add(ev);
+        }
+        var times = buckets.Keys.ToArray();
+        Array.Sort(times);
+        _events.Clear();
+        foreach (float time in times) _events.AddRange(buckets[time]);
+    }
+
     /// <summary>Clear the queue (the C++ <c>purge</c>, <c>CollisionQueue.cpp:124-136</c>).</summary>
     public void Clear() => _events.Clear();
 

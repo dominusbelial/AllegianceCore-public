@@ -358,6 +358,7 @@ internal sealed partial class BotManager
                 bot.RouteIndex = original.RouteIndex; bot.Arena = original.Arena; bot.Role = original.Role;
                 bot.MineDispenserPartId = original.Parts is { } parts ? FindMineDispenser(parts) : null;
             }
+            bot.FinaleOriginal = null;
             bot.FinaleBomberReserved = bot.FinaleBomberActive = bot.FinaleEscort = false;
             bot.FinaleProtectedSince = null;
             bot.FinaleGrantVerified = false;

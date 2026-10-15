@@ -49,6 +49,13 @@ public sealed class StationLandingBayCache
     /// </summary>
     public HullLandingBayGeometry? Bay(DataStationTypeIGC type)
     {
+        var geometry = LaunchGeometry(type);
+        return geometry?.LandSlots.Count > 0 ? geometry : null;
+    }
+
+    /// <summary>Station launch frames, including models with no landing bay.</summary>
+    public HullLandingBayGeometry? LaunchGeometry(DataStationTypeIGC type)
+    {
         if (_bay.TryGetValue(type.StationTypeId, out var cached)) return cached;
 
         HullLandingBayGeometry? g = null;
@@ -60,7 +67,7 @@ public sealed class StationLandingBayCache
         if (model is not null)
         {
             var reconstructed = HullLandingBay.ReconstructStation(model, type.Radius);
-            g = reconstructed.LandSlots.Count == 0 ? null : reconstructed;
+            g = reconstructed;
         }
         _bay[type.StationTypeId] = g;
         return g;

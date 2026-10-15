@@ -1300,7 +1300,10 @@ public sealed partial class Game1 : Game
         // lock so real GPU frame time (not the 60 Hz presentation period) is
         // observable via ALLEGIANCE_VOL_PERF. Inert for normal play.
         if (System.Environment.GetEnvironmentVariable("ALLEGIANCE_NOVSYNC") == "1")
+        {
             _graphics.SynchronizeWithVerticalRetrace = false;
+            IsFixedTimeStep = false;
+        }
         _session = new ConnectionSession();
         // P448b — register the remote-ship hull-stats resolver so the ClientWorld
         // dead-reckoner can (re-)seed each remote ship's ShipDeadReckoner from real
@@ -1390,9 +1393,7 @@ public sealed partial class Game1 : Game
         // drift from the viewport the smoke/HUD draw into.
         Window.ClientSizeChanged += (_, _) =>
         {
-            var w = GraphicsDevice.PresentationParameters.BackBufferWidth;
-            var h = GraphicsDevice.PresentationParameters.BackBufferHeight;
-            if (w > 0 && h > 0) _post?.SetSize(w, h);
+            _postWidth = _postHeight = 0; // recreated at next scene boundary, including dynamic scale
         };
         if (_debugMode)
         {
@@ -1747,6 +1748,10 @@ public sealed partial class Game1 : Game
         // P547 — the post-processor owns the shader effects + depth/scene/bloom
         // targets (and the SoftParticleRenderer/Bloom effect); the cache owns
         // the shared Effect objects. Dispose both after the renderers.
+        _gpuTimer?.Dispose();
+        _frameTelemetry?.Dispose();
+        _flightGc.Dispose();
+        _fsr?.Dispose();
         _post?.Dispose();
         _shaders?.Dispose();
         _nativeEffects?.Dispose();   // P545 — after the renderers that borrow it

@@ -588,13 +588,6 @@ public sealed partial class Server : IDisposable
     /// </summary>
     private const float ShieldFractionEpsilon = 0.005f;
 
-    /// <summary>How far past <see cref="Sector.DockRadius"/> an undocking ship
-    /// gets repositioned, so it clears the sphere test
-    /// (<see cref="Sector"/>'s dock-collision pass) before the next tick can
-    /// re-latch it. Arbitrary but generous relative to <c>DirtyEpsilon</c>-scale
-    /// position noise; see the undock handler for the full reasoning.</summary>
-    private const float LaunchClearMargin = 50f;
-
     /// <summary>
     /// Optional seam for tests (and future launch logic): replace the default
     /// ship-on-logon allocation with a caller-supplied one. Receives the core,

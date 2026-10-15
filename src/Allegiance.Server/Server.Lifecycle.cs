@@ -161,6 +161,13 @@ public sealed partial class Server
         // into the profiler report header.
         ResolveShipUpdateModel();
 
+        // P667 — resolve the intra-sector parallel sim (sim.parallelSectorCells,
+        // default OFF) from config + the ALLEGIANCE_SIM_PARALLEL_CELLS env var
+        // (env wins), clamp the degree of parallelism, and PRINT the active value
+        // so a measurement run is never mistaken for an uninstrumented one.
+        // Default OFF = today's serial byte-for-byte path.
+        ResolveParallelSectorSim();
+
         // P619 — log the ACTIVE garbage collector (server vs workstation, and
         // concurrent vs batch) so a measurement run is attributable: a server that
         // somehow falls back to workstation GC (e.g. a runtime config or a host
@@ -1259,6 +1266,47 @@ public sealed partial class Server
         TickProfiler.SetLabel(enabled
             ? $"broadcast.parallelBuild=true (maxPar={_broadcastMaxParallelism})"
             : "broadcast.parallelBuild=false");
+    }
+
+    /// <summary>
+    /// P667 — resolve the intra-sector parallel simulation from config
+    /// (<c>sim.parallelSectorCells</c>) + the <c>ALLEGIANCE_SIM_PARALLEL_CELLS</c>
+    /// env var (env wins), clamp the degree of parallelism to <c>[1, ProcessorCount]</c>,
+    /// and print the active value at boot. Default OFF = today's serial detector
+    /// path, byte-for-byte. A missing/disabled <c>sim</c> section keeps
+    /// <see cref="Allegiance.Core.Sim.ParallelSectorSim.Enabled"/> false (no
+    /// behaviour change). The thread count is diagnostic only — the parallel
+    /// detection's output is byte-identical for any value (see P667).
+    /// </summary>
+    private void ResolveParallelSectorSim()
+    {
+        var sc = _config.Sim;
+        bool enabled = sc?.ParallelSectorCells ?? false;
+
+        string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_SIM_PARALLEL_CELLS");
+        if (!string.IsNullOrEmpty(env))
+            enabled = env is not ("0" or "false" or "off" or "");
+
+        int ncpu = Math.Max(1, Environment.ProcessorCount);
+        int threads = sc?.ParallelSectorCellThreads is { } t && t > 0
+            ? t
+            : ParallelSectorSim.ThreadCount;   // default: about half the logical processors
+        threads = Math.Clamp(threads, 1, ncpu);
+
+        ParallelSectorSim.Enabled = enabled;
+        ParallelSectorSim.ThreadCount = threads;
+
+        Console.WriteLine(enabled
+            ? $"[boot] sim.parallelSectorCells = true — sector collision detection runs on up to {threads} workers " +
+              "(max-parallelism; deterministic merge — tick output byte-identical to serial; see P667)"
+            : "[boot] sim.parallelSectorCells = false — serial sector simulation (today's byte-for-byte behaviour)");
+
+        // Append to the existing profiler header label (broadcast / transport /
+        // ship-update-model / time-scale) so a parallel measurement run is never
+        // mistaken for a serial one — without clobbering the earlier flags.
+        string prior = TickProfiler.Label ?? "";
+        TickProfiler.SetLabel($"{prior}{(prior.Length > 0 ? "; " : "")}" +
+                              (enabled ? $"sim.parallelSectorCells=true (threads={threads})" : "sim.parallelSectorCells=false"));
     }
 
     /// <summary>
