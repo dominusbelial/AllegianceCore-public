@@ -205,12 +205,29 @@ amplification idiom.
     **4145 passed / 1 failed** (`MineCrossSideVisibilityLiveTests`, passes 3/3
     isolated — load flake, not a regression; my touched code paths all green).
     QUARANTINE: only documented flakes (pass in isolation).
-- Live 30v30 / 200v200 rig: **NOT completed in this session.** The shared
-  workstation was under heavy concurrent load from other Allegiance sessions
-  (allegiance-codex-sim, p653c each running their own 200v200-scale suites),
-  and the transport/server change class requires a dedicated, uncontended live
-  bot run. The connection-caps change is unit/loopback-tested (H-15 refuses
-  over-limit peers; the README recommended settings raise the per-IP cap to
-  1024 so the rig's ~391 same-Mac-host bots connect), but the mandated live
-  30v30 combat and 200v200 tick-p95 measurement remain to be run on an
-  uncontended box and are flagged as the outstanding verification step.
+- Live verification (ran 2026-10-14, local server on this workstation,
+  `m2xspiderw.igc`, thread-per-peer transport, the P654 config keys set with
+  `maxConnectionsPerIp=1024` per the README rig guidance):
+  - **Connectivity / anti-amplification under the new caps — SHOWCASE (mixed
+    fleet, size_scale 1):** 31/31 peers seated and broadcasting from one host
+    (127.0.0.1) with **zero** `cap reached` refusals (per-IP/connection/
+    pending-handshake caps hold; the raised per-IP cap admits a full 30v30
+    from a single IP). 82 `[warp]` sector-crossing lines; clean shutdown
+    `3628 ticks, 0 overruns`.
+  - **30v30 combat — homogeneous `spawn_scenario {size:30, target_sector:
+    Alderan}` (60 `Adv Scout` bots):** 61 sessions live; bots **reached the
+    target** (route arrival side0 27/30, side1 28/30) and **fought**: 68
+    kills, 16,366 shots fired / 10,403 ship hits (63.6% hit rate),
+    **0 friendly-fire hits**. Decision-pass p95 **1.74 ms**, `decisionRateHz
+    19.8`, update-interval p95 ~50.5 ms (20 Hz nominal), 0 stalls / 0
+    incidents / 0 dropped log lines. Disconnect summary: only the normal
+    `ReadErrorOrEof=1` pre-join greeting drop — **zero
+    `QueueOverCapacity`/`HardCap` disconnects**, i.e. the H-05/H-24
+    re-encode + chat-budget changes hold under live 30v30 combat (the exact
+    failure class H-05 guarded against). Clean shutdown `10026 ticks, 0
+    overruns`.
+  - **Remaining outstanding:** the **200v200-scale rig** (~391 same-Mac-host
+    bots, tick-p95 ≈44 ms comparison vs P646b) is **not** run in this session
+    — it needs the Mac bot host / an uncontended box. It remains the sole
+    unrun verification step; the 30v30 mandated live check (kills > 0) is now
+    satisfied.
