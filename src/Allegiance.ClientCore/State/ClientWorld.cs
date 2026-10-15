@@ -581,8 +581,9 @@ public sealed partial class ClientWorld
     private MissileTrackState _missileTrack = MissileTrackState.Clear;
     private LeadIndicatorState _leadIndicator = LeadIndicatorState.None;
 
-    /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
-    /// assignment; null until the server has told us which ship we are.</summary>
+    /// <summary>The local ship id assigned by SET_CLUSTER(7), with its launch
+    /// pose/cookie. JOINED_MISSION's earlier player identity is JoinedShipId.
+    /// Keeping these separate preserves the launch contract for consumers.</summary>
     public short? MyShipId { get; private set; }
 
     /// <summary>
@@ -1533,6 +1534,12 @@ public sealed partial class ClientWorld
         ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
+        MyAcceptedCommand = null;
+        _myQueuedCommand = null;
+        JoinedShipId = null;
+        JoinedMissionCookie = null;
+        JoinError = null;
+        MissionCore = null;
         MySideId = null;
         // P636 — a fresh connection starts with an empty published snapshot; a
         // reader holding the pre-reconnect snapshot keeps a valid (stale) object.
@@ -1569,6 +1576,7 @@ public sealed partial class ClientWorld
         _ownProjectileCount = 0;
         _projectileDrainCursor = 0;
         _missiles.Clear();
+        _lastMissileFiredByShip.Clear();
         MarkSnapshotDirty();
         Diag.Clear();
         _probes.Clear();
@@ -1587,6 +1595,8 @@ public sealed partial class ClientWorld
         _developmentTechsBySideId.Clear();
         _moneyByShipId.Clear();                    // P442 — per-player wallet state
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
+        _feedbackLines.Clear();
+        _cameraOverrideRequests.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();   // P373 — drop any pending first-sighting cues on disconnect
         _highlightedClusters.Clear();
@@ -1608,6 +1618,18 @@ public sealed partial class ClientWorld
     {
         switch (msg)
         {
+            case JoinedMission joined:
+                Apply(joined);
+                break;
+            case ObjectSpotted spotted:
+                Apply(spotted);
+                break;
+            case SetWingId wing:
+                Apply(wing);
+                break;
+            case OrderChange order:
+                Apply(order);
+                break;
             case Promote promote:
                 Apply(promote);
                 break;
@@ -3032,17 +3054,29 @@ public sealed partial class ClientWorld
     private void Apply(FireMissile m)
     {
         if (m.Entries.Count == 0) return;               // degenerate (legal) empty salvo
-        var e = m.Entries[0];
-        _missiles[e.MissileId] = new MissileEntity
+        foreach (var e in m.Entries)
         {
-            MissileId = e.MissileId,
-            TypeId = m.MissileTypeId,
-            ClusterId = m.ClusterId,
-            Position = e.VecPosition,
-            Forward = e.VecForward.LengthSquared() > 1e-6f ? e.VecForward.Normalize() : new Vector3(0f, 0f, -1f),
-            LastUpdatedLocalMs = Environment.TickCount64,
-        };
+            _missiles[e.MissileId] = new MissileEntity
+            {
+                MissileId = e.MissileId,
+                LauncherId = m.LauncherId,
+                TargetType = (IgcObjectType)m.TargetType,
+                TargetId = m.TargetId,
+                TypeId = m.MissileTypeId,
+                ClusterId = m.ClusterId,
+                Position = e.VecPosition,
+                Forward = e.VecForward.LengthSquared() > 1e-6f ? e.VecForward.Normalize() : new Vector3(0f, 0f, -1f),
+                LastUpdatedLocalMs = Environment.TickCount64,
+            };
+            _lastMissileFiredByShip[m.LauncherId] = e.MissileId;
+        }
     }
+
+    // Native GetLastMissileFired (WinTrek.cpp:7237-7268). Expiry of the last
+    // shot falls back to chase; it must never switch to an older or enemy shot.
+    private readonly Dictionary<short, short> _lastMissileFiredByShip = new();
+    public MissileEntity? LastMissileFiredBy(short shipId) =>
+        _lastMissileFiredByShip.TryGetValue(shipId, out short id) && _missiles.TryGetValue(id, out var missile) && missile.LauncherId == shipId ? missile : null;
 
     /// <summary>FM_S_MISSILE_UPDATE(205) — the P234 per-tick ongoing-position
     /// stream. Upsert every carried record by missile id (an id not seen via a
@@ -3054,15 +3088,13 @@ public sealed partial class ClientWorld
         long now = Environment.TickCount64;
         foreach (var r in m.Records)
         {
-            _missiles[r.MissileId] = new MissileEntity
-            {
-                MissileId = r.MissileId,
-                TypeId = r.TypeId,
-                ClusterId = r.ClusterId,
-                Position = r.Position,
-                Forward = r.Forward.LengthSquared() > 1e-6f ? r.Forward.Normalize() : new Vector3(0f, 0f, -1f),
-                LastUpdatedLocalMs = now,
-            };
+            if (!_missiles.TryGetValue(r.MissileId, out var missile))
+                _missiles[r.MissileId] = missile = new MissileEntity { MissileId = r.MissileId };
+            missile.TypeId = r.TypeId;
+            missile.ClusterId = r.ClusterId;
+            missile.Position = r.Position;
+            missile.Forward = r.Forward.LengthSquared() > 1e-6f ? r.Forward.Normalize() : new Vector3(0f, 0f, -1f);
+            missile.LastUpdatedLocalMs = now;
         }
     }
 
@@ -3104,7 +3136,9 @@ public sealed partial class ClientWorld
         var e = Upsert(info.ShipId);        // create-if-absent: a ship we only
                                             // heard of via PLAYERINFO
         e.Player = info;
-        if (string.IsNullOrEmpty(e.CharacterName)) e.CharacterName = info.CharacterName;
+        e.SideId = info.ISide;
+        if (info.ShipId == (MyShipId ?? JoinedShipId)) MySideId = info.ISide;
+        if (string.IsNullOrEmpty(e.CharacterName) || e.CharacterName == "<error>") e.CharacterName = info.CharacterName;
     }
 
     private void Apply(ScoreRosterUpdate m) =>
@@ -3692,6 +3726,12 @@ public sealed partial class ClientWorld
         MissionGeneration++;
         ShipWarnings.Reset();
         MyShipId = null;
+        MyAcceptedCommand = null;
+        _myQueuedCommand = null;
+        JoinedShipId = null;
+        JoinedMissionCookie = null;
+        JoinError = null;
+        MissionCore = null;
         Graph = null;
         CountdownStartLocalMs = null;
         _countdownTargetMs = null;
@@ -3719,6 +3759,7 @@ public sealed partial class ClientWorld
         _ownProjectileCount = 0;
         _projectileDrainCursor = 0;
         _missiles.Clear();
+        _lastMissileFiredByShip.Clear();
         MarkSnapshotDirty();
         Diag.Clear();
         _probes.Clear();
@@ -3737,6 +3778,8 @@ public sealed partial class ClientWorld
         _developmentTechsBySideId.Clear();
         _moneyByShipId.Clear();
         _autoDonateTargetByShipId.Clear();
+        _feedbackLines.Clear();
+        _cameraOverrideRequests.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();
         _highlightedClusters.Clear();

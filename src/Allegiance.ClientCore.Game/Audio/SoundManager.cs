@@ -713,6 +713,12 @@ public sealed class SoundManager : IDisposable
         if (_commandMessage is { } sound) PlayWarnOneShot(sound);
     }
 
+    /// <summary>WinTrek.cpp:10658; sounddef.mdl:304 (acceptCommandSound).</summary>
+    public void PlayCommandAccepted()
+    {
+        if (IsLoaded && WeaponWaveByStem("accept") is { } sound) PlayWarnOneShot(sound);
+    }
+
     public void PlayAutopilotEngage()
     {
         PlayWarnOneShot(_apEngage);

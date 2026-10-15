@@ -63,8 +63,8 @@ public sealed partial class Game1
         // P594 — announce a newly-arrived QUEUED order (a teammate's "pick me
         // up" rescue offer, streamed by the server on c_cidPickup) as a HUD tip
         // + the native "new command" chime, exactly once per order. The player
-        // then presses [Home] to accept, which promotes the order AND engages
-        // the P594 intercept autopilot toward the pod (see the accept handler).
+        // then presses Accept to select/store it. P675's distinct Execute action
+        // also engages the intercept autopilot when the ship can fly.
         short qid;
         lock (_session.Gate)
             qid = world.MyQueuedCommand is { } qc ? qc.CommandId : Allegiance.Core.Wire.OrderChange.CidNone;

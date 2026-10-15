@@ -46,7 +46,7 @@ public sealed partial class Game1
     /// <summary>A selected autopilot target: enough to re-resolve its live
     /// position each frame from <see cref="ClientWorld"/> (ships may move),
     /// plus a display name for the console / window-title readout.</summary>
-    internal readonly record struct AutopilotTarget(TargetKind Kind, short Id, string Name);
+    internal readonly record struct AutopilotTarget(TargetKind Kind, short Id, string Name, short CommandId = OrderChange.CidNone);
 
     /// <summary>
     /// Soft-lock target candidates (P212, cycling added live 2026-09-14; P256
@@ -1151,17 +1151,8 @@ public sealed partial class Game1
     //                             PickNearestTarget already ranks candidates
     //                             nearest-to-crosshair (screen-space DistSq),
     //                             so it is the direct reuse (no new ranking).
-    //   TK_TargetCommand (10408) SetTarget(GetCommandTarget(c_cmdAccepted),
-    //                             GetCommandID(c_cmdAccepted)) — targets the
-    //                             current COMMAND-CONSOLE target. The MonoGame
-    //                             client has NO command-console / command-target
-    //                             concept (verified: no GetCommandTarget /
-    //                             command-id state anywhere in ClientCore or the
-    //                             MonoGame client — the only c_cmdAccepted
-    //                             references are the P366 leader-bot ORDER_CHANGE
-    //                             wire, an unrelated bot-order feature). So it
-    //                             is a genuine no-equivalent: documented in the
-    //                             writeup, not built.
+    //   TK_TargetCommand (10408) selects the independent accepted slot;
+    //   production key handling is in Game1.Orders.cs (P675).
     //
     // P523 — NATIVE DEFAULT KEYS: the decoded Artwork/defaultinputmap.mdl
     // (triples (VK, modifier, TK id), P445's method) binds TK_TargetCenter (90)

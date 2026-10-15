@@ -497,7 +497,7 @@ public sealed partial class Game1
                 s += ":st" + (_autoTarget is { Kind: TargetKind.Station } st ? st.Id.ToString() : "any");
                 break;
             case CameraMode.ExternalMissile:
-                s += ":miss" + (TryGetLatestMissilePos(out _) ? "1" : "0");
+                s += ":miss" + (TryGetMissileCameraFrame(out _, out _) ? "1" : "0");
                 break;
             case CameraMode.ExternalOverride:
                 s += ":ov" + (_overrideTarget is { } ? "1" : "0");

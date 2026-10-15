@@ -2534,6 +2534,12 @@
 /processorParam:Quality=Best
 /build:Sounds/hitrock.ogg
 
+#begin Sounds/accept.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/accept.ogg
+
 #begin Sounds/receivedobjective.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

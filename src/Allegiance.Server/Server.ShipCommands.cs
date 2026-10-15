@@ -1360,6 +1360,14 @@ public sealed partial class Server
                 }
                 else
                 {
+                    // WinTrek.cpp:10659-10662: joining changes wing and leaves
+                    // the existing accepted target intact.
+                    if (target.QueuedCommandId == OrderChange.CidJoin && target.QueuedShipTarget is Ship wingLeader)
+                    {
+                        target.WingId = wingLeader.WingId;
+                        ClearQueuedCommand(target);
+                        return;
+                    }
                     target.AcceptedShipCommandId = target.QueuedCommandId;
                     target.AcceptedShipTarget = target.QueuedShipTarget;   // SetTarget+SetAccepted move the target too (WinTrek.cpp:10668-10681)
                     ClearQueuedCommand(target);

@@ -18,8 +18,10 @@ public sealed class ShipEntity
     /// <c>OidTarget</c> in SINGLE_SHIP_UPDATE / <c>ShipID</c> in SHIP_STATUS).</summary>
     public short ShipId { get; init; }
 
+    public short WingId { get; internal set; }
+
     /// <summary>True iff this is the local player's own ship (learned from the
-    /// SET_CLUSTER assignment).</summary>
+    /// JOINED_MISSION identity or SET_CLUSTER assignment).</summary>
     public bool IsMine { get; internal set; }
 
     /// <summary>True once a KILL_SHIP(105) names this ship as the victim. The
@@ -153,7 +155,8 @@ public sealed class ShipEntity
     public short StationId { get; internal set; }
 
     /// <summary>Status.GetParentID() (NA/-1 when not docked/turreted).</summary>
-    public short ParentId { get; internal set; }
+    // Native starts unparented (Igc/shipIGC.cpp:37); ship 0 is a real id.
+    public short ParentId { get; internal set; } = -1;
 
     /// <summary>The ordered ShipState enum value (bits 0-5).</summary>
     public byte State { get; internal set; }

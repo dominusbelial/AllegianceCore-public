@@ -206,6 +206,8 @@ public static class InputActionCatalog
         new("TargetHostile", "TARGETING / AUTOPILOT", "Target hostile (who last damaged you) [TK_TargetHostile]", U(), null),
 
         // -- QUEUED ORDERS (RECEIVED COMMAND) --
+        new("ExecuteCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Accept order and engage autopilot [TK_ExecuteCommand]", U(), null),
+        new("TargetCommand", "TARGETING / AUTOPILOT", "Select accepted command target [TK_TargetCommand]", U(), null),
         new("AcceptCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Accept the pending order [TK_AcceptCommand]", K(Keys.Home), K(Keys.OemOpenBrackets)),
         new("RejectCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Reject / decline the pending order [TK_RejectCommand]", K(Keys.End), K(Keys.OemCloseBrackets)),
         new("ClearCommand", "QUEUED ORDERS (RECEIVED COMMAND)", "Clear whatever order is already accepted [TK_ClearCommand]", K(Keys.Delete), null),
@@ -289,6 +291,12 @@ public static class InputActionCatalog
         // All→Default→Target→Minimal, WinTrek.cpp:9955-9975). Native binds the
         // period key (defaultinputmap.mdl line 111) — honored here.
         new("CycleRadar", "CAMERA / VIEW", "Cycle radar modes (All/Default/Target/Minimal) [TK_CycleRadar]", K(Keys.OemPeriod), K(Keys.OemPeriod)),
+        // These TKs have no keyboard defaults in Artwork/defaultinputmap.mdl.
+        new("ViewMissile", "CAMERA / VIEW", "Toggle missile view [TK_ViewMissile]", U(), null),
+        new("ViewChase", "CAMERA / VIEW", "Toggle chase view [TK_ViewChase]", U(), null),
+        // Native's turret branch is disabled (WinTrek.cpp:9856-9864).
+        // Port extension: expose the existing carrier gunner camera, unbound.
+        new("ViewTurret", "CAMERA / VIEW", "Toggle gunner carrier view [TK_ViewTurret]", U(), null),
         new("ViewExternalOrbit", "CAMERA / VIEW", "External orbit camera [TK_ViewExternalOrbit]", K(Keys.F4), null),
         new("ViewFlyby", "CAMERA / VIEW", "External fly-by camera [TK_ViewFlyby]", K(Keys.F5), null),
         new("ViewTarget", "CAMERA / VIEW", "External target camera [TK_ViewTarget]", K(Keys.F7), null),

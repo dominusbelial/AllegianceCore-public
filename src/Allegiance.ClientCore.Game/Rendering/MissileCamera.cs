@@ -8,9 +8,9 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// frame tracks the pilot's last-fired missile via <c>TrackCamera</c>
 /// (<c>WinTrek.cpp:7237-7268</c>; the helper itself at
 /// <c>WinTrek.cpp:6848-6878</c>): the eye is set behind-and-to-the-side of the
-/// missile and turned to keep it AND its target — or, in this port's case since
-/// the client wire carries no missile target/shooter, the local ship it was
-/// fired from — in frame together. When no missile is flying, native falls back
+/// missile and turned to keep it AND its target (or its source ship when the
+/// target is absent) in frame together. P675 retains FIRE_MISSILE's launcher
+/// and target through motion updates for this native selection. When no missile is flying, native falls back
 /// to the external chase view (<c>WinTrek.cpp:7259-7268</c>); the port does the
 /// same (Game1 hands control to the chase camera).
 /// </summary>

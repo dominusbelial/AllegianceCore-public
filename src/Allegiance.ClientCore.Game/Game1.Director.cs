@@ -147,9 +147,9 @@ public sealed partial class Game1
             }
             case CameraMode.ExternalMissile:
             {
-                if (TryGetLatestMissilePos(out var missPos))
+                if (TryGetMissileCameraFrame(out var missPos, out var focus))
                 {
-                    var (v, p) = _missileCamera.Matrices(missPos, myPos, aspect, out var me);
+                    var (v, p) = _missileCamera.Matrices(missPos, focus, aspect, out var me);
                     return (v, p, me);
                 }
                 var (v3, p3) = _chaseCamera.Matrices(myPos, myRot, aspect, dt, out var mee, _myRenderRadius);
@@ -461,14 +461,30 @@ public sealed partial class Game1
     private void ToggleCameraKey(KeyboardState ks, bool composing, string action, CameraMode mode, ref bool wasDown)
     {
         bool down = ActionDown(ks, action);
-        if (SpectatorCameraActive) { wasDown = down; return; }   // P612 — don't kick a spectator camera
-        if (!composing && down && !wasDown)
+        bool docked;
+        lock (_session.Gate)
+            docked = _session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var own) && own.StationId >= 0;
+        if (CameraKeyTransition(_cameraMode, mode, down, ref wasDown, composing || SpectatorCameraActive, docked) is { } next)
         {
             _directorActive = false;
-            _cameraMode = _cameraMode == mode ? CameraMode.Cockpit : mode;
+            _headLookYaw = 0;
+            _consolePanes = default;
+            _minimapExpanded = _teamPaneVisible = _investActive = _teleportActive = false;
+            _cameraMode = next;
+            _hangarOnly = docked;
             Console.WriteLine($"[monogame] camera: {_cameraMode}");
         }
+    }
+
+    // WinTrek.cpp:9820-9864,9357-9383: discrete view toggles return to cockpit,
+    // reset head orientation and leave command overlays. Also observe suppressed
+    // presses so composing/held keys never leak a delayed action.
+    internal static CameraMode? CameraKeyTransition(CameraMode current, CameraMode requested,
+        bool down, ref bool wasDown, bool suppressed, bool docked = false)
+    {
+        bool press = down && !wasDown && !suppressed;
         wasDown = down;
+        return press ? docked || current == requested ? CameraMode.Cockpit : requested : null;
     }
 
     /// <summary>P625 — resolve an action's CURRENT binding chord from the live

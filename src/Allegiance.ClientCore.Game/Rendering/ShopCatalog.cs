@@ -99,38 +99,44 @@ public sealed record ShopCatalog(
             var file = IgcReader.Parse(AssetSources.ReadAllBytes(assets, CoreFileName));
             if (file.Wrapper != IgcWrapper.VersionAndDataSize) return null;
             var core = StaticCore.Load(file);
-            var hulls = core.HullTypes.Values.OrderBy(h => h.HullId).ToList();
-            var parts = core.PartTypes.Values.OrderBy(p => p.PartId).ToList();
-            // P434/P435 — carry the REAL launchers from core.Launchers (the
-            // 123-record compact launcher table, SEPARATE from the 117 core.Parts:
-            // the launcher form of OT_partType lands here, not in PartTypes).
-            // Each is resolved/shaped EXACTLY the way P433 resolves a missile
-            // launcher (StaticCore.TryBuildExpendableLauncher ->
-            // DataPartTypeIGC.From<Kind>Launcher), the shared bridge the server's
-            // ApplyLoadout and both tools use — so a shop-bought launcher is the
-            // selfsame mountable part a P433/P435-equipped bot carries. P435
-            // extends the offer from the 56 genuine missile launchers to ALL real
-            // kinds that share the Launchers table: the 67 real chaff/mine/probe
-            // dispensers now also resolve here (their expendable resolves in
-            // core.ChaffTypes/core.MineTypes/core.ProbeTypes). The real ammo
-            // (DataLauncherTypeIGC.Amount) rides beside the part so the row shows
-            // a real ammo count and the toggle grants the real reserve.
-            var launchers = new List<LauncherOffer>();
-            foreach (var lkv in core.Launchers.OrderBy(kv => kv.Key))
-                if (core.TryBuildExpendableLauncher(lkv.Key, out var launcherPart))
-                    launchers.Add(new LauncherOffer(launcherPart, lkv.Value.Amount, LauncherKindUtil.KindOf(launcherPart)));
-            if (hulls.Count == 0 && parts.Count == 0) return null;
-            // P377 — the Lifepod oxygen-endurance seconds from the SAME core
-            // constant the server arms pods with (FloatConstants[31]); the
-            // client uses it to turn the wire fraction into an mm:ss countdown.
-            var fc = core.Constants.FloatConstants;
-            float endurance = fc is { Length: > 31 } ? fc[31] : 300f;
-            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers, core.ProjectileTypes, core.ProbeTypes, core.Developments, core.DroneTypes, core);
+            return FromCore(core);
         }
         catch
         {
             return null;
         }
+    }
+
+    /// <summary>Use the mission-selected static data (appmsg.cpp:2162-2163).</summary>
+    public static ShopCatalog? FromCore(StaticCore core)
+    {
+        var hulls = core.HullTypes.Values.OrderBy(h => h.HullId).ToList();
+        var parts = core.PartTypes.Values.OrderBy(p => p.PartId).ToList();
+        // P434/P435 — carry the REAL launchers from core.Launchers (the
+        // 123-record compact launcher table, SEPARATE from the 117 core.Parts:
+        // the launcher form of OT_partType lands here, not in PartTypes).
+        // Each is resolved/shaped EXACTLY the way P433 resolves a missile
+        // launcher (StaticCore.TryBuildExpendableLauncher ->
+        // DataPartTypeIGC.From<Kind>Launcher), the shared bridge the server's
+        // ApplyLoadout and both tools use — so a shop-bought launcher is the
+        // selfsame mountable part a P433/P435-equipped bot carries. P435
+        // extends the offer from the 56 genuine missile launchers to ALL real
+        // kinds that share the Launchers table: the 67 real chaff/mine/probe
+        // dispensers now also resolve here (their expendable resolves in
+        // core.ChaffTypes/core.MineTypes/core.ProbeTypes). The real ammo
+        // (DataLauncherTypeIGC.Amount) rides beside the part so the row shows
+        // a real ammo count and the toggle grants the real reserve.
+        var launchers = new List<LauncherOffer>();
+        foreach (var lkv in core.Launchers.OrderBy(kv => kv.Key))
+            if (core.TryBuildExpendableLauncher(lkv.Key, out var launcherPart))
+                launchers.Add(new LauncherOffer(launcherPart, lkv.Value.Amount, LauncherKindUtil.KindOf(launcherPart)));
+        if (hulls.Count == 0 && parts.Count == 0) return null;
+        // P377 — the Lifepod oxygen-endurance seconds from the SAME core
+        // constant the server arms pods with (FloatConstants[31]); the
+        // client uses it to turn the wire fraction into an mm:ss countdown.
+        var fc = core.Constants.FloatConstants;
+        float endurance = fc is { Length: > 31 } ? fc[31] : 300f;
+        return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers, core.ProjectileTypes, core.ProbeTypes, core.Developments, core.DroneTypes, core);
     }
 
     /// <summary>

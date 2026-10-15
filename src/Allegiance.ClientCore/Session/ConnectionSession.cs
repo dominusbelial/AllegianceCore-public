@@ -439,6 +439,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Join the target wing (WinTrek.cpp:10659-10662).</summary>
+    public void SendWingId(short shipId, short wingId)
+    {
+        var message = new SetWingId { ShipID = shipId, WingId = wingId };
+        Send(FedPacket.Pack([message.Encode()]));
+    }
+
     /// <summary>P281 — send a real <c>FM_C_RANDOMIZE_TEAMS(21)</c>, the mission
     /// owner's "balance the teams" trigger surfaced on the side-select screen.
     /// The server owner-gates it (<c>FedSrv.CPP:6964-6997</c>), so the client
@@ -532,6 +539,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             CommandId = commandId,
             Command = command,
         };
+        lock (_gate) _world.Apply(msg);
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -720,6 +728,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
+        if (_lost) return; // a rejected core cannot be followed by a partial join burst
         // P633 — count every inbound byte for the decode-throughput metric
         // (atomic; the read side diffs over a wall window).
         Interlocked.Add(ref _decodedBytes, data.Length);
@@ -919,6 +928,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case PlayerReady.Fmid:
                         _world.Apply(PlayerReady.Decode(m));
+                        break;
+                    case JoinedMission.Fmid:
+                        _world.Apply(JoinedMission.Decode(m));
+                        if (_world.JoinError is not null)
+                        {
+                            _lost = true;
+                            SessionLost?.Invoke();
+                            return;
+                        }
+                        break;
+                    case ObjectSpotted.Fmid:
+                        _world.Apply(ObjectSpotted.Decode(m));
+                        break;
+                    case SetWingId.Fmid:
+                        _world.Apply(SetWingId.Decode(m));
+                        break;
+                    case OrderChange.Fmid:
+                        _world.Apply(OrderChange.Decode(m));
                         break;
                     case MissionDef.Fmid:
                         _world.Apply(MissionDef.Decode(m));
