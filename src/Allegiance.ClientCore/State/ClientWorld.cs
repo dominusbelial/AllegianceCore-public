@@ -2803,19 +2803,17 @@ public sealed partial class ClientWorld
     /// <summary>P267 — <c>FM_S_STATION_DESTROYED(59)</c>: an own/friendly station
     /// plays the <c>DestroyedSound</c> one-shot, an enemy station the
     /// <c>EnemyDestroyedSound</c> (native <c>appmsg.cpp:548-551</c>), decided by
-    /// the destroyed station's side vs <see cref="MySideId"/> (collapsed to
-    /// same-side — the client has no alliance graph; see
-    /// <see cref="StationEventSoundKind"/>). The station then leaves the world
+    /// the destroyed station's side and alliances (appmsg.cpp:548-551).
+    /// The station type is retained in the queued event before it leaves the world
     /// table, which also ends its exterior ambient loop via the station-sound
     /// planner's disappearance pass.</summary>
     private void Apply(StationDestroyed destroyed)
     {
         MarkSnapshotDirty();
-        bool enemy = true;
-        if (_stations.TryGetValue(destroyed.StationId, out var st))
-            enemy = !(MySideId.HasValue && st.SideId == MySideId.Value);
-        RecordSoundEvent(enemy ? ClientSoundEventKind.StationEnemyDestroyed : ClientSoundEventKind.StationDestroyed,
-            destroyed.StationId);
+        if (!_stations.TryGetValue(destroyed.StationId, out var st)) return;
+        bool friendly = IsFriendlyStationSide(st.SideId);
+        RecordSoundEvent(friendly ? ClientSoundEventKind.StationDestroyed : ClientSoundEventKind.StationEnemyDestroyed,
+            destroyed.StationId, st.StationTypeId);
         _stations.Remove(destroyed.StationId);
     }
 
@@ -2827,29 +2825,28 @@ public sealed partial class ClientWorld
     private void Apply(StationCapture capture)
     {
         MarkSnapshotDirty();
-        ClientSoundEventKind kind;
-        if (MySideId.HasValue && capture.SidOld == MySideId.Value)
-            kind = ClientSoundEventKind.StationCaptured;
-        else if (MySideId.HasValue && capture.SidNew == MySideId.Value)
-            kind = ClientSoundEventKind.StationEnemyCaptured;
-        else
-            kind = ClientSoundEventKind.StationCaptured;   // neither ours — default to the neutral-capture readout
+        if (!_stations.TryGetValue(capture.StationId, out var st)) return;
+        // Native appmsg.cpp:674-679: old friendly side takes precedence;
+        // unrelated captures are silent, but still change ownership.
+        if (IsFriendlyStationSide(capture.SidOld))
+            RecordSoundEvent(ClientSoundEventKind.StationCaptured, capture.StationId, st.StationTypeId);
+        else if (IsFriendlyStationSide(capture.SidNew))
+            RecordSoundEvent(ClientSoundEventKind.StationEnemyCaptured, capture.StationId, st.StationTypeId);
 
-        RecordSoundEvent(kind, capture.StationId);
-
-        // Re-side the station to its new owner (native SetSide).
-        if (_stations.TryGetValue(capture.StationId, out var st))
-            _stations[capture.StationId] = st with { SideId = capture.SidNew };
+        _stations[capture.StationId] = st with { SideId = capture.SidNew };
     }
+
+    private bool IsFriendlyStationSide(short side) =>
+        MySideId is { } mine && (side == mine || AreAllied(mine, side));
 
     /// <summary>P267 — <c>FM_S_DEV_COMPLETED(8)</c>: a development finished
     /// researching → its completion chime (native <c>appmsg.cpp:3326</c>).</summary>
     private void Apply(DevCompleted completed) =>
         RecordSoundEvent(ClientSoundEventKind.DevCompleted, completed.DevId);
 
-    private void RecordSoundEvent(ClientSoundEventKind kind, short id)
+    private void RecordSoundEvent(ClientSoundEventKind kind, short id, short stationTypeId = -1)
     {
-        _soundEvents.Add(new ClientSoundEvent(kind, id));
+        _soundEvents.Add(new ClientSoundEvent(kind, id, stationTypeId));
         if (_soundEvents.Count > MaxSoundEvents) _soundEvents.RemoveAt(0);
     }
 

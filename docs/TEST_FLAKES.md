@@ -175,6 +175,28 @@ P647's 4 measurement runs and are not quarantined; if they reappear, the fix is 
 their exact-content assertions marker-filtered (count only the lines the test itself
 produces) rather than quarantining.
 
+## P664 verification observation (2026-10-14)
+
+P664 ran the full Core/ClientCore/MonoGame/Lobby suites sequentially, unfiltered,
+including the existing LiveTiming lane. Core was **4197 passed / 2 failed**;
+ClientCore, MonoGame and Lobby had no failures. Both Core failures are existing
+LiveTiming tests already listed above; this is an additional observation, not a
+new quarantine assignment:
+
+| Test | Full-run failure | Exact isolated retries |
+|---|---|---|
+| `Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join` | `ThreadStateException: Thread has not been started` from `TcpTransport.Shutdown`, line 447 | **pass/pass/pass**; load flake under the P664 brief's 3/3 rule |
+| `ConquestTerritoryLiveTests.Conquest_win_in_one_mission_does_not_leak_to_another` | Test line 161 expected mission B's `GameStates` to be empty; saw conquest `[80,20,...]` | **fail/pass/pass**, then **pass/pass/fail** (4/6 passed); existing intermittent quarantine behavior remains, including isolated failures |
+
+No clean full Core result or 3/3 isolation stability is claimed for the second
+case. Neither test failed three isolated attempts in a row. P664 modifies only
+client station sound processing/content; Core.Tests and its Core/Server/Bot/Lobby
+dependency graph are unchanged and do not reference the modified ClientCore/Game
+assemblies. No transport, conquest, test, or lane changes were made in response.
+Evidence: `/tmp/p664-suite-Core.log`, `/tmp/p664-rerun-*.log`,
+`/tmp/p664-conquest-followup*.log`; task report
+[`P664_PARITY_WAVE3.md`](reports/P664_PARITY_WAVE3.md).
+
 ---
 
 ## History (preserved verbatim from before P647)

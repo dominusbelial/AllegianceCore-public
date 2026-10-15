@@ -117,14 +117,6 @@ public sealed class SoundManager : IDisposable
     // ILStationExternalSound (sounddef id 380), see StationAmbientSoundCurve.
     private SoundEffect _stationAmbient = null!;      // shipout
     private readonly Dictionary<short, SoundEffectInstance> _stationAmbients = new();
-    // P267 — station event one-shots. Real per-station-class VO defaults from
-    // the demo core's garrison family (sounddef ids 860-927):
-    // vo_destroy_garrison / vo_capture_garrison / vo_destroy_enemygarrison /
-    // vo_capture_enemygarrison. Single-real-defaults (no core client-side).
-    private SoundEffect _stationDestroyed = null!;        // vo_destroy_garrison (garrisonDestroyedSound, id 860)
-    private SoundEffect _stationEnemyDestroyed = null!;   // vo_destroy_enemygarrison (garrisonEnemyDestroyedSound, id 900)
-    private SoundEffect _stationCaptured = null!;         // vo_capture_garrison (garrisonCapturedSound, id 880)
-    private SoundEffect _stationEnemyCaptured = null!;    // vo_capture_enemygarrison (garrisonEnemyCapturedSound, id 920)
     // P451 — id → asset-stem table for the base UNDER-ATTACK / CRITICAL voice
     // cues, covering EXACTLY the SoundIDs the real PCore001 station types decode
     // for UnderAttackSound / CriticalSound (dump: garrison=820, outpost=821,
@@ -580,16 +572,11 @@ public sealed class SoundManager : IDisposable
             _probeDeploy = _content.Load<SoundEffect>("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
             _probeAmbient = _content.Load<SoundEffect>("Sounds/erbeam");      // scanning-loop default
             // P267 — hull maneuvering-thruster turn loop (adjust), hull exterior
-            // loop (shipout), station exterior ambient loop (shipout), the four
-            // station event one-shots (garrison VO defaults), and the tech
+            // loop (shipout), station exterior ambient loop (shipout), and the tech
             // completion chime (vo_sal_researchcomplete). See the field docs.
             _turnThruster = Loop("Sounds/adjust");
             _shipExterior = Loop("Sounds/shipout");
             _stationAmbient = _content.Load<SoundEffect>("Sounds/shipout");
-            _stationDestroyed = _content.Load<SoundEffect>("Sounds/vo_destroy_garrison");
-            _stationEnemyDestroyed = _content.Load<SoundEffect>("Sounds/vo_destroy_enemygarrison");
-            _stationCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_garrison");
-            _stationEnemyCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_enemygarrison");
             _devComplete = _content.Load<SoundEffect>("Sounds/vo_sal_researchcomplete");
             _ripcordAborted = _content.Load<SoundEffect>("Sounds/vo_sal_ripcordaborted"); // P414
             // P578 — eject/death/rescue feedback cues (sounddef.mdl).
@@ -1261,24 +1248,14 @@ public sealed class SoundManager : IDisposable
         }
     }
 
-    /// <summary>P267 — play a station event one-shot (destroyed / captured, with
-    /// the own vs enemy variant) at non-positional volume. Driven by the real
-    /// <c>STATION_DESTROYED</c>/<c>STATION_CAPTURE</c> wire events (see
-    /// <see cref="StationEventSoundKind"/>); mirrors native
-    /// <c>appmsg.cpp:548-551</c> (destroyed) and <c>:674-677</c> (captured).
-    /// No-op when audio is not loaded.</summary>
-    public void PlayStationEvent(StationEventSoundKind kind)
+    /// <summary>Play the core-selected station cue, even after the station has
+    /// been removed. Native clintlib/appmsg.cpp:548-551,674-677. Uses the same
+    /// cached, budgeted warning voice path as other station announcements.</summary>
+    public void PlayStationEvent(Allegiance.ClientCore.State.ClientSoundEvent ev,
+        IReadOnlyDictionary<short, Allegiance.Core.DataStationTypeIGC>? stationTypes)
     {
-        if (!IsLoaded) return;
-        var sfx = kind switch
-        {
-            StationEventSoundKind.Destroyed => _stationDestroyed,
-            StationEventSoundKind.EnemyDestroyed => _stationEnemyDestroyed,
-            StationEventSoundKind.Captured => _stationCaptured,
-            StationEventSoundKind.EnemyCaptured => _stationEnemyCaptured,
-            _ => null,
-        };
-        if (sfx is not null) PlayWarnOneShot(sfx);
+        if (StationEventSoundMap.TryResolve(ev, stationTypes, out var stem))
+            PlayVoice(stem);
     }
 
     /// <summary>P267 — play the development/tech-completion chime (one-shot)
@@ -1477,10 +1454,6 @@ public sealed class SoundManager : IDisposable
             _shipExterior?.Dispose();
             _stationAmbient?.Dispose();
             foreach (var inst in _stationAmbients.Values) inst.Dispose();
-            _stationDestroyed?.Dispose();
-            _stationEnemyDestroyed?.Dispose();
-            _stationCaptured?.Dispose();
-            _stationEnemyCaptured?.Dispose();
             _devComplete?.Dispose();
             _ripcordAborted?.Dispose();   // P414
             _newContactEnemy?.Dispose();       // P373
