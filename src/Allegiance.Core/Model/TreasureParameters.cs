@@ -4,13 +4,13 @@ namespace Allegiance.Core.Model;
 /// Defaults: igc.h:1287-1290,1321-1322. Rates are treasures per second per sector.</summary>
 public sealed class TreasureParameters
 {
-    public float PlayerSectorTreasureRate { get; init; } = 0.2f / 60f;
-    public float NeutralSectorTreasureRate { get; init; } = 0.5f / 60f;
-    public short PlayerRegenerateSet { get; init; } = 1;
-    public short NeutralRegenerateSet { get; init; } = 1;
-    public short PlayerStartSet { get; init; } = 1;
-    public short NeutralStartSet { get; init; } = 1;
-    public bool AllowDevelopments { get; init; } = true;
+    public float PlayerSectorTreasureRate { get; set; } = 0.2f / 60f;
+    public float NeutralSectorTreasureRate { get; set; } = 0.5f / 60f;
+    public short PlayerRegenerateSet { get; set; } = 1;
+    public short NeutralRegenerateSet { get; set; } = 1;
+    public short PlayerStartSet { get; set; } = 1;
+    public short NeutralStartSet { get; set; } = 1;
+    public bool AllowDevelopments { get; set; } = true;
 
     public void Validate()
     {

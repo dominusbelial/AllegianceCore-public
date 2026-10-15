@@ -15,32 +15,32 @@ namespace Allegiance.Server;
 public sealed class GameConfig
 {
     /// <summary>Native bAllowDevelopments, FedSrv/fsmission.cpp:2520.</summary>
-    public bool AllowDevelopments { get; init; } = true;
+    public bool AllowDevelopments { get; set; } = true;
     /// <summary>Native bAllowAlliedRip, FedSrv/FedSrv.CPP:13387.</summary>
-    public bool AllowAlliedRip { get; init; }
+    public bool AllowAlliedRip { get; set; }
 
     /// <summary>Human name, used in logs only.</summary>
-    public string Name { get; init; } = "";
+    public string Name { get; set; } = "";
 
     /// <summary>File name of the map, relative to <see cref="ServerConfig.ArtPath"/>.</summary>
-    public string Map { get; init; } = "";
+    public string Map { get; set; } = "";
 
     /// <summary>Number of sides. Sides are built for ids 0..Teams-1.</summary>
-    public int Teams { get; init; }
+    public int Teams { get; set; }
 
     /// <summary>P655: native nMaxPlayersPerTeam; supports the 200v200 lane.</summary>
-    public int MaxPlayersPerTeam { get; init; } = 256;
+    public int MaxPlayersPerTeam { get; set; } = 256;
 
     /// <summary>Native iMaxImbalance; 32767 disables balance; default 1 matches native.
     /// Applied after NotStarted (FedSrv/fsmission.cpp:4614-4626).</summary>
-    public int MaxTeamImbalance { get; init; } = 1;
+    public int MaxTeamImbalance { get; set; } = 1;
 
     /// <summary>Per-team <c>rgCivID[]</c> — indexes <see cref="ServerConfig.StaticCore"/>
     /// civilizations. Length must be &gt;= Teams.</summary>
-    public int[] CivIds { get; init; } = [];
+    public int[] CivIds { get; set; } = [];
 
     /// <summary>Per-team display names; length must be &gt;= Teams.</summary>
-    public string[] SideNames { get; init; } = [];
+    public string[] SideNames { get; set; } = [];
 
     /// <summary>
     /// P397 — when set, this game's mission map is <b>generated procedurally</b>
@@ -50,7 +50,7 @@ public sealed class GameConfig
     /// generator is a pure addition, mirroring the opt-in <c>liveSettings</c>
     /// convention. See <see cref="MapGenConfig"/> for the tunables.
     /// </summary>
-    public MapGenConfig? MapGen { get; init; }
+    public MapGenConfig? MapGen { get; set; }
 
     /// <summary>Mission treasure rates and loaded-core set IDs, with native defaults.</summary>
     public Allegiance.Core.Model.TreasureParameters Treasure { get; set; } = new();
@@ -66,7 +66,7 @@ public sealed class GameConfig
     /// default) the restart relies on the ready-up auto-start, exactly as
     /// before P598.
     /// </summary>
-    public bool AutoRestart { get; init; }
+    public bool AutoRestart { get; set; }
 
     /// <summary>
     /// P598 — the port of native's <c>fRestartCountdown</c> (igc.h:1171,
@@ -74,7 +74,7 @@ public sealed class GameConfig
     /// <see cref="AutoRestart"/> is on, between a game-over rotation and the
     /// rebuilt mission's auto-restart start countdown. Absent → 60.0.
     /// </summary>
-    public double? RestartCountdownSeconds { get; init; }
+    public double? RestartCountdownSeconds { get; set; }
 }
 
 /// <summary>
@@ -91,23 +91,23 @@ public sealed class MapGenConfig
 {
     /// <summary>The topology name, e.g. <c>"HiHigher"</c>. Matched
     /// case-insensitively against <see cref="Allegiance.Core.MapGen.MapGenType"/>.</summary>
-    public string Type { get; init; } = "";
+    public string Type { get; set; } = "";
 
     /// <summary>0 ⇒ one team cluster per team; non-zero ⇒ two (<c>iMapSize</c>).</summary>
-    public int? MapSize { get; init; }
+    public int? MapSize { get; set; }
 
-    public int? PlayerSectorMineableAsteroids { get; init; }
-    public int? PlayerSectorSpecialAsteroids { get; init; }
-    public int? PlayerSectorAsteroids { get; init; }
-    public int? PlayerSectorTreasures { get; init; }
-    public int? NeutralSectorMineableAsteroids { get; init; }
-    public int? NeutralSectorSpecialAsteroids { get; init; }
-    public int? NeutralSectorAsteroids { get; init; }
-    public int? NeutralSectorTreasures { get; init; }
+    public int? PlayerSectorMineableAsteroids { get; set; }
+    public int? PlayerSectorSpecialAsteroids { get; set; }
+    public int? PlayerSectorAsteroids { get; set; }
+    public int? PlayerSectorTreasures { get; set; }
+    public int? NeutralSectorMineableAsteroids { get; set; }
+    public int? NeutralSectorSpecialAsteroids { get; set; }
+    public int? NeutralSectorAsteroids { get; set; }
+    public int? NeutralSectorTreasures { get; set; }
 
-    public double? He3Density { get; init; }
-    public bool? FlagsGame { get; init; }
-    public bool? ArtifactsGame { get; init; }
+    public double? He3Density { get; set; }
+    public bool? FlagsGame { get; set; }
+    public bool? ArtifactsGame { get; set; }
 }
 
 /// <summary>
@@ -120,17 +120,17 @@ public sealed class MapGenConfig
 public sealed class LobbyConfig
 {
     /// <summary>Base URL of the lobby directory (e.g. <c>http://localhost:5000</c>).</summary>
-    public string Url { get; init; } = "";
+    public string Url { get; set; } = "";
 
     /// <summary>Human-readable name shown in the directory listing.</summary>
-    public string DisplayName { get; init; } = "";
+    public string DisplayName { get; set; } = "";
 
     /// <summary>Publicly reachable address advertised to players (hostname/IP, no scheme).</summary>
-    public string PublicAddress { get; init; } = "";
+    public string PublicAddress { get; set; } = "";
 
     /// <summary>Seconds between heartbeats. Registry default expiry is 90s, so the
     /// default 25s tolerates ~3 missed beats before a live server flaps off the list.</summary>
-    public int HeartbeatIntervalSeconds { get; init; } = 25;
+    public int HeartbeatIntervalSeconds { get; set; } = 25;
 }
 
 /// <summary>P660 dedicated-server rotation policy. Uses native bAutoRestart's
@@ -643,7 +643,7 @@ public sealed class ServerConfig
 {
     /// <summary>P629 simulation rules, including the stress-test crowding override.</summary>
     public SimConfig Sim { get; set; } = new();
-    public ReceiveConfig? Receive { get; init; }
+    public ReceiveConfig? Receive { get; set; }
     /// <summary>Root of the artwork tree (contains the core and map files).
     /// Resolved by <see cref="ExternalPaths"/>: <c>$ALLEGIANCE_ARTWORK_PATH</c>,
     /// else the gitignored <c>local.env</c>, else empty (validation in
@@ -683,7 +683,7 @@ public sealed class ServerConfig
     /// <summary>When set, enable the lobby heartbeat (announce to an
     /// <c>Allegiance.Lobby</c> directory on a fixed cadence). Null (the default) =
     /// fully opt-out: no heartbeat client is constructed and no HTTP call is ever made.</summary>
-    public LobbyConfig? Lobby { get; init; }
+    public LobbyConfig? Lobby { get; set; }
 
     /// <summary>
     /// P594 — the P591b/P591c warp re-entry guard (<c>Sector.WarpReEntryGuardEnabled</c>)
@@ -706,26 +706,26 @@ public sealed class ServerConfig
     public LiveSettingsConfig LiveSettings { get; set; } = new();
 
     /// <summary>The game worlds to instantiate at boot.</summary>
-    public List<GameConfig> Games { get; init; } = [];
+    public List<GameConfig> Games { get; set; } = [];
 
     /// <summary>
     /// P600 — the per-tick profiler settings. Null/absent (the default) = the
     /// profiler is OFF, with no hot-path overhead. See <see cref="ProfilerConfig"/>.
     /// </summary>
-    public ProfilerConfig? Profiler { get; init; }
+    public ProfilerConfig? Profiler { get; set; }
 
     /// <summary>
     /// Per-peer broadcast settings. Null/absent uses serial building, the port
     /// ship-update model and P659's 2 Hz pose floor. See <see cref="BroadcastConfig"/>.
     /// </summary>
-    public BroadcastConfig? Broadcast { get; init; }
+    public BroadcastConfig? Broadcast { get; set; }
 
     /// <summary>
     /// P605 — the server transport's send-draining mode. Null/absent (the
     /// default) = thread-per-peer, today's behaviour (unchanged). See
     /// <see cref="TransportConfig"/>.
     /// </summary>
-    public TransportConfig? Transport { get; init; }
+    public TransportConfig? Transport { get; set; }
 }
 
 /// <summary>Static helpers for reading <see cref="ServerConfig"/> from JSON.</summary>
