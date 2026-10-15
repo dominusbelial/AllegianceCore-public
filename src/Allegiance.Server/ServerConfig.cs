@@ -16,6 +16,15 @@ public sealed class GameConfig
 {
     /// <summary>Native bAllowDevelopments, FedSrv/fsmission.cpp:2520.</summary>
     public bool AllowDevelopments { get; set; } = true;
+    public bool AllowShipyardPath { get; set; } = true;
+    public bool AllowExpansionPath { get; set; } = true;
+    public bool AllowTacticalPath { get; set; } = true;
+    public bool AllowSupremacyPath { get; set; } = true;
+    public int InitialMinersPerTeam { get; set; } = 1;
+    /// <summary>Optional runtime plan validation/selection. Directory contains core/civ*-*.json.</summary>
+    public string? ResearchPlanDirectory { get; set; }
+    /// <summary>Selections by side id: auto, generated, or a plan name.</summary>
+    public Dictionary<short, string> ResearchPlans { get; set; } = new();
     /// <summary>Native bAllowAlliedRip, FedSrv/FedSrv.CPP:13387.</summary>
     public bool AllowAlliedRip { get; set; }
 

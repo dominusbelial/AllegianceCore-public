@@ -449,6 +449,11 @@ public sealed partial class Mission
         Site = site;
     }
 
+    /// <summary>Selected plans keyed by side id; consumed by the P703 commander.</summary>
+    public Dictionary<short, ResearchPlan> ResearchPlans { get; } = new();
+
+    public ResearchSettings Research { get; private set; } = new();
+
     /// <summary>
     /// Assemble the mission object graph from a core, a map and the side
     /// specifications. Throws on a side naming a civilization absent from the
@@ -462,7 +467,8 @@ public sealed partial class Mission
         MissionMap map,
         IReadOnlyList<SideSpec> sides,
         IIgcSite site,
-        double initialTime = 0)
+        double initialTime = 0,
+        ResearchSettings? research = null)
     {
         if (!double.IsFinite(initialTime) || initialTime < 0)
             throw new ArgumentOutOfRangeException(nameof(initialTime));
@@ -471,6 +477,8 @@ public sealed partial class Mission
         ArgumentNullException.ThrowIfNull(sides);
         ArgumentNullException.ThrowIfNull(site);
 
+        research ??= new ResearchSettings();
+        research.Validate();
         // 1. Resolve the sides' civilizations from the core.
         var sideList = new List<Side>(sides.Count);
         foreach (var spec in sides)
@@ -480,11 +488,13 @@ public sealed partial class Mission
                     $"side {spec.Id} ('{spec.Name}') names civilization {spec.CivilizationId} " +
                     $"absent from core {core.Version}; a side's civilization must exist in the core");
             sideList.Add(new Side(spec.Id, spec.Name, civ,
-                BucketCatalog.ForSide(core, site, TechTreeBitMask.FromBytes(civ.TtbmBaseTechs),
+                research.AllowDevelopments ? BucketCatalog.ForSide(core, site, research.StartingTechs(civ),
                     // P478 — the side's GA at bucket creation is the civ's base
                     // attribute set (no development has completed yet), exactly
                     // what native reads while CreateBuckets runs.
-                    GlobalAttributeSet.FromArray(civ.GasBaseAttributes))));
+                    GlobalAttributeSet.FromArray(civ.GasBaseAttributes)) : Array.Empty<Bucket>()));
+            sideList[^1].DevelopmentTechs = research.StartingTechs(civ);
+            sideList[^1].InitialTechs = sideList[^1].DevelopmentTechs;
             // P363 — seed each side's colour from the native per-side-id palette
             // (missionigc.cpp:3734-3746), the port of `ds.color.SetRGBA(...)`.
             var (cr, cg, cb) = SidePalette.ColorFor(spec.Id);
@@ -551,7 +561,7 @@ public sealed partial class Mission
         // Native CmissionIGC::Initialize(now) seeds m_lastUpdate (missionigc.cpp:3055-3059).
         // Seed BEFORE any ship placement or countdown can observe this world.
         var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site)
-        { LastUpdate = initialTime };
+        { LastUpdate = initialTime, Research = research, AllowDevelopments = research.AllowDevelopments };
         foreach (var sector in sectors)
         {
             sector.Mission = mission;

@@ -139,9 +139,9 @@ public sealed class StationBucketSpawnsConstructorLiveTests
         var mission = server.Missions[0];
         var side = mission.Sides.Single(s => s.Id == sideId);
 
-        // The real station-type bucket to invest in (the lowest reachable
-        // station-type id in PCore001, via the catalog's reachable-techs gate).
-        var stBucket = side.Buckets.First(b => b.ItemType == BucketItemType.BitStationType);
+        // Catalog eligibility includes future tiers. Native path seeding makes
+        // those visible at boot; fund a station the side can actually buy now.
+        var stBucket = side.Buckets.First(b => b.ItemType == BucketItemType.BitStationType && side.CanBuy(b));
         var stationType = stBucket.StationType!.Value;
         short conDroneId = stationType.ConstructionDroneTypeId;
         var conDrone = mission.Core.DroneTypes[conDroneId];

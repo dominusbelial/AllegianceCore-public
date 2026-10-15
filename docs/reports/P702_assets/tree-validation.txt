@@ -1,0 +1,11 @@
+civ1 Dreghklar: generated 167 steps; authored 0
+civ2 Technoflux: generated 143 steps; authored 0
+civ3 Ga'Taraan: generated 181 steps; authored 2
+civ4 Phoenix: generated 186 steps; authored 0
+civ5 Omicron: generated 147 steps; authored 0
+civ18 Gigacorp: generated 168 steps; authored 0
+civ25 Iron Coalition: generated 157 steps; authored 2
+civ35 Bios: generated 152 steps; authored 0
+civ101 Belters: generated 163 steps; authored 0
+civ201 Rixian: generated 147 steps; authored 0
+Validated 4 authored plans and 10 generated plans.

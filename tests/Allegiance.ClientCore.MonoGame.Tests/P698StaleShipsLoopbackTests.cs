@@ -142,7 +142,13 @@ public class P698StaleShipsLoopbackTests
             subject.Mission!.Site.KillShipEvent(0, subject, null, -1, subject.Position, Vector3.Zero);
         }
         else if (dock)
-            subject.Position = stationPos + new Vector3(20, 0, 0);
+        {
+            // A station's center is not necessarily inside a native landing bay.
+            // Exercise the actual docking event before asserting pose retirement.
+            var home = origin!.Stations.First(s => s.SideId == subject.SideId);
+            subject.Position = DockTestPlacement.Inside(subject.Mission!, home, subject.HullType);
+            subject.Velocity = Vector3.Zero;
+        }
         else
             subject.Position = new(-6000, 0, 0);
 

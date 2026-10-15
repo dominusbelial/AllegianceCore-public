@@ -17,6 +17,7 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/igcdump/igcdump.csproj" />
+    <Project Path="tools/tech-tree/tech-tree.csproj" />
     <Project Path="tools/missiondump/missiondump.csproj" />
     <Project Path="tools/fedmsgdump/fedmsgdump.csproj" />
     <Project Path="tools/corpusvalidate/corpusvalidate.csproj" />

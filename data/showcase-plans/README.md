@@ -1,0 +1,71 @@
+# Research plans
+
+Plans are data files under `<core>/civ<id>-<name>.json`. IDs and exact names must
+match the loaded core. `coreVersion` is the core header version. Every file for
+the selected core is validated at boot when `games[].researchPlanDirectory` is
+configured. A mismatch names its file and the offending one-based step.
+
+Configure a game without changing its matchup:
+
+```json
+{
+  "researchPlanDirectory": "data/showcase-plans",
+  "researchPlans": { "0": "auto", "1": "plan_b" },
+  "allowShipyardPath": true,
+  "allowExpansionPath": true,
+  "allowTacticalPath": true,
+  "allowSupremacyPath": true,
+  "initialMinersPerTeam": 1
+}
+```
+
+Selections are keyed by **side id**; the civ comes from the actual mission side.
+Missing selections default to `auto`, which selects the first authored plan by name, or produces a generated fallback and a clear log message.
+`generated` explicitly requests the fallback. An unknown explicit plan fails.
+The optional plan-directory setting leaves execution and showcase configuration
+to P703/P705. Selected, validated plans are in `mission.ResearchPlans[sideId]`.
+
+Schema version 1 is represented by `ResearchPlan` and `ResearchStep` in Core.
+Each step has `action`, core `id`, exact `name`, and `expectedUnlocks` (typed
+identities with kind/id/name/role). Actions:
+
+- `develop`: fund the development bucket, await completion.
+- `station`: fund the type's constructor bucket, order construction on an
+  unoccupied asteroid matching `asteroidClass` (a **single capability bit**),
+  await the built station. This also exercises the associated constructor type.
+- `drone`: fund the drone bucket and await spawn. Builder pilots use `station`.
+- `wait`: wait `waitSeconds`; `requiredTechs` is a 50-byte mask (JSON base64).
+  Its condition must already be satisfiable at this point in the script.
+
+IDs for `wait` are unused. Empty expected-unlock lists are allowed for steps
+that change attributes, build infrastructure or exercise a drone without adding
+a purchase. All expected unlock identities must be buyable after the step.
+The validator assumes retention of earlier stations and unlimited suitable
+rocks/funding. It rejects repeated/obsolete steps. It does not execute actions,
+predict combat losses, reserve rocks, or simulate income. P703 must fund real
+buckets, wait for real completion, choose available rocks and react to losses.
+
+`plan_a` favors cheapest currently available completions; `plan_b` favors the
+most expensive. Both supplied race plans have been generated and inspected for
+all four branches, advanced stations, garrison successors and non-builder drone
+types. All reachable attribute developments and tech prerequisites are included;
+obsolete equivalent alternatives are represented in the tree's closure.
+
+Run from the repository root (replace `$CORE` with a core `.igc` path):
+
+```sh
+dotnet run --project tools/tech-tree -- "$CORE" dump
+dotnet run --project tools/tech-tree -- "$CORE" validate data/showcase-plans
+dotnet run --project tools/tech-tree -- "$CORE" sweep data/showcase-plans all
+# Explicit tuples; the same interface accepts triples:
+dotnet run --project tools/tech-tree -- "$CORE" sweep data/showcase-plans '25,3;1,2;4,35,101'
+# Author additional plans; this writes files:
+dotnet run --project tools/tech-tree -- "$CORE" author data/showcase-plans '1,2'
+```
+
+The sweep boots one generated mission per tuple, iterates its actual sides,
+selects and validates both/all plans, and writes one Markdown table. It reports
+funding, serial bucket time, each station completion's serial timestamp,
+branches, hull/part counts and links to exact purchase catalogs. These times are
+**not** economy time-to-tier predictions: constructor flight/build effects,
+income, simultaneous funding, combat and mining are not simulated.
