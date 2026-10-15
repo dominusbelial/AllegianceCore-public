@@ -52,6 +52,8 @@ public sealed class NativeShipUpdateModelTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        Broadcast = new() { MinUpdateHz = 0 }, // tests the pre-floor ranked budget
+
         Games =
         [
             new Gm { Name = "Native Ship Update Model Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

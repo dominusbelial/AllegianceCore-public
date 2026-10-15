@@ -1,0 +1,47 @@
+Isolation run 1: native, 0 Hz
+RESULT_P659 model=native hz=0 ships=100 viewers=4 seconds=6.142 rxShipsBps=17796.5 rxP50=0.75 rxP95=1.5 rxMax=7.164 seenMin=99 maxTickAge=145 maxTickGap=0.05 maxArrivalGap=0.059
+[update-age] window=6.141s viewers=4 minHz=0 0-1km[n=6588,p50=0.8,p95=2.3,max=7.164s] 1-3km[n=12200,p50=0.75,p95=1.5,max=2.427s] 3-6km[n=18056,p50=0.75,p95=1.5,max=1.836s] 6+km[n=11468,p50=0.75,p95=1.5,max=1.831s] visiblePairs=396 older1s=117 older3s=2 older1sSamples=16025 older3sSamples=168 neverPose=2 shipsBytes=109312 shipsBps=17800.5 floorExtraBytes=0 floorExtraBps=0.0
+
+Isolation run 1: native, 2 Hz
+RESULT_P659 model=native hz=2 ships=100 viewers=4 seconds=6.147 rxShipsBps=47712.3 rxP50=0.25 rxP95=0.497 rxMax=0.497 seenMin=99 maxTickAge=10 maxTickGap=0.05 maxArrivalGap=0.051
+[update-age] window=6.147s viewers=4 minHz=2 0-1km[n=6588,p50=0.2,p95=0.497,max=0.497s] 1-3km[n=12200,p50=0.2,p95=0.496,max=0.496s] 3-6km[n=18056,p50=0.25,p95=0.496,max=0.496s] 6+km[n=11468,p50=0.25,p95=0.496,max=0.496s] visiblePairs=396 older1s=0 older3s=0 older1sSamples=0 older3sSamples=0 neverPose=0 shipsBytes=293314 shipsBps=47712.9 floorExtraBytes=184002 floorExtraBps=29931.3
+
+Isolation run 1: port, 0 Hz
+RESULT_P659 model=port hz=0 ships=100 viewers=4 seconds=6.105 rxShipsBps=21723.3 rxP50=0.6 rxP95=5.1 rxMax=7.738 seenMin=93 maxTickAge=156 maxTickGap=0.051 maxArrivalGap=0.053
+[update-age] window=6.105s viewers=4 minHz=0 0-1km[n=6534,p50=2.65,p95=7.1,max=7.589s] 1-3km[n=12100,p50=1.3,p95=5.7,max=7.589s] 3-6km[n=17908,p50=0.5,p95=1.05,max=1.64s] 6+km[n=11374,p50=0.5,p95=1,max=1.232s] visiblePairs=396 older1s=97 older3s=96 older1sSamples=12640 older3sSamples=6704 neverPose=2904 shipsBytes=132616 shipsBps=21723.4 floorExtraBytes=0 floorExtraBps=0.0
+
+Isolation run 1: port, 2 Hz
+RESULT_P659 model=port hz=2 ships=100 viewers=4 seconds=6.135 rxShipsBps=50599.2 rxP50=0.2 rxP95=0.5 rxMax=0.51 seenMin=99 maxTickAge=10 maxTickGap=0.051 maxArrivalGap=0.063
+[update-age] window=6.135s viewers=4 minHz=2 0-1km[n=6588,p50=0.2,p95=0.5,max=0.501s] 1-3km[n=12200,p50=0.2,p95=0.5,max=0.5s] 3-6km[n=18056,p50=0.2,p95=0.5,max=0.5s] 6+km[n=11468,p50=0.2,p95=0.45,max=0.501s] visiblePairs=396 older1s=0 older3s=0 older1sSamples=0 older3sSamples=0 neverPose=0 shipsBytes=310421 shipsBps=50599.4 floorExtraBytes=176709 floorExtraBps=28804.0
+
+Isolation run 2: native, 0 Hz
+RESULT_P659 model=native hz=0 ships=100 viewers=4 seconds=6.104 rxShipsBps=17759.9 rxP50=0.75 rxP95=1.5 rxMax=7.144 seenMin=99 maxTickAge=144 maxTickGap=0.052 maxArrivalGap=0.059
+[update-age] window=6.103s viewers=4 minHz=0 0-1km[n=6534,p50=0.8,p95=2.3,max=7.144s] 1-3km[n=12100,p50=0.75,p95=1.5,max=2.426s] 3-6km[n=17908,p50=0.75,p95=1.5,max=1.855s] 6+km[n=11374,p50=0.75,p95=1.5,max=1.837s] visiblePairs=396 older1s=118 older3s=2 older1sSamples=16107 older3sSamples=166 neverPose=2 shipsBytes=108416 shipsBps=17764.4 floorExtraBytes=0 floorExtraBps=0.0
+
+Isolation run 2: native, 2 Hz
+RESULT_P659 model=native hz=2 ships=100 viewers=4 seconds=6.147 rxShipsBps=47575.4 rxP50=0.25 rxP95=0.498 rxMax=0.498 seenMin=99 maxTickAge=10 maxTickGap=0.05 maxArrivalGap=0.051
+[update-age] window=6.147s viewers=4 minHz=2 0-1km[n=6588,p50=0.2,p95=0.496,max=0.496s] 1-3km[n=12200,p50=0.2,p95=0.497,max=0.497s] 3-6km[n=18056,p50=0.25,p95=0.497,max=0.497s] 6+km[n=11468,p50=0.25,p95=0.496,max=0.496s] visiblePairs=396 older1s=0 older3s=0 older1sSamples=0 older3sSamples=0 neverPose=0 shipsBytes=292456 shipsBps=47573.9 floorExtraBytes=183144 floorExtraBps=29792.1
+
+Isolation run 2: port, 0 Hz
+RESULT_P659 model=port hz=0 ships=100 viewers=4 seconds=6.141 rxShipsBps=21775.0 rxP50=0.6 rxP95=5.15 rxMax=7.773 seenMin=93 maxTickAge=157 maxTickGap=0.05 maxArrivalGap=0.051
+[update-age] window=6.141s viewers=4 minHz=0 0-1km[n=6588,p50=2.7,p95=7.1,max=7.624s] 1-3km[n=12200,p50=1.3,p95=5.7,max=7.624s] 3-6km[n=18056,p50=0.5,p95=1.05,max=1.635s] 6+km[n=11468,p50=0.5,p95=1,max=1.237s] visiblePairs=396 older1s=112 older3s=96 older1sSamples=12752 older3sSamples=6800 neverPose=2928 shipsBytes=133712 shipsBps=21775.1 floorExtraBytes=0 floorExtraBps=0.0
+
+Isolation run 2: port, 2 Hz
+RESULT_P659 model=port hz=2 ships=100 viewers=4 seconds=6.132 rxShipsBps=50624.4 rxP50=0.2 rxP95=0.499 rxMax=0.499 seenMin=99 maxTickAge=10 maxTickGap=0.05 maxArrivalGap=0.051
+[update-age] window=6.132s viewers=4 minHz=2 0-1km[n=6588,p50=0.2,p95=0.498,max=0.498s] 1-3km[n=12200,p50=0.2,p95=0.497,max=0.497s] 3-6km[n=18056,p50=0.2,p95=0.499,max=0.499s] 6+km[n=11468,p50=0.2,p95=0.45,max=0.499s] visiblePairs=396 older1s=0 older3s=0 older1sSamples=0 older3sSamples=0 neverPose=0 shipsBytes=310421 shipsBps=50624.9 floorExtraBytes=176709 floorExtraBps=28818.5
+
+Isolation run 3: native, 0 Hz
+RESULT_P659 model=native hz=0 ships=100 viewers=4 seconds=6.147 rxShipsBps=17782.0 rxP50=0.75 rxP95=1.5 rxMax=7.19 seenMin=99 maxTickAge=145 maxTickGap=0.05 maxArrivalGap=0.059
+[update-age] window=6.146s viewers=4 minHz=0 0-1km[n=6588,p50=0.8,p95=2.3,max=7.19s] 1-3km[n=12200,p50=0.75,p95=1.5,max=2.43s] 3-6km[n=18056,p50=0.75,p95=1.5,max=1.836s] 6+km[n=11468,p50=0.75,p95=1.5,max=1.836s] visiblePairs=396 older1s=117 older3s=2 older1sSamples=16025 older3sSamples=168 neverPose=2 shipsBytes=109312 shipsBps=17785.7 floorExtraBytes=0 floorExtraBps=0.0
+
+Isolation run 3: native, 2 Hz
+RESULT_P659 model=native hz=2 ships=100 viewers=4 seconds=6.134 rxShipsBps=47675.6 rxP50=0.25 rxP95=0.498 rxMax=0.498 seenMin=99 maxTickAge=10 maxTickGap=0.05 maxArrivalGap=0.052
+[update-age] window=6.135s viewers=4 minHz=2 0-1km[n=6588,p50=0.2,p95=0.497,max=0.497s] 1-3km[n=12200,p50=0.2,p95=0.498,max=0.498s] 3-6km[n=18056,p50=0.25,p95=0.498,max=0.498s] 6+km[n=11468,p50=0.25,p95=0.497,max=0.497s] visiblePairs=396 older1s=0 older3s=0 older1sSamples=0 older3sSamples=0 neverPose=0 shipsBytes=292456 shipsBps=47672.3 floorExtraBytes=183144 floorExtraBps=29853.7
+
+Isolation run 3: port, 0 Hz
+RESULT_P659 model=port hz=0 ships=100 viewers=4 seconds=6.149 rxShipsBps=21746.1 rxP50=0.6 rxP95=5.15 rxMax=7.785 seenMin=93 maxTickAge=157 maxTickGap=0.05 maxArrivalGap=0.051
+[update-age] window=6.149s viewers=4 minHz=0 0-1km[n=6588,p50=2.7,p95=7.1,max=7.636s] 1-3km[n=12200,p50=1.3,p95=5.75,max=7.636s] 3-6km[n=18056,p50=0.5,p95=1.05,max=1.638s] 6+km[n=11468,p50=0.5,p95=1,max=1.241s] visiblePairs=396 older1s=112 older3s=96 older1sSamples=12752 older3sSamples=6800 neverPose=2928 shipsBytes=133712 shipsBps=21747.0 floorExtraBytes=0 floorExtraBps=0.0
+
+Isolation run 3: port, 2 Hz
+RESULT_P659 model=port hz=2 ships=100 viewers=4 seconds=6.103 rxShipsBps=50631.9 rxP50=0.2 rxP95=0.498 rxMax=0.498 seenMin=99 maxTickAge=10 maxTickGap=0.051 maxArrivalGap=0.051
+[update-age] window=6.103s viewers=4 minHz=2 0-1km[n=6534,p50=0.2,p95=0.497,max=0.497s] 1-3km[n=12100,p50=0.2,p95=0.497,max=0.497s] 3-6km[n=17908,p50=0.2,p95=0.498,max=0.498s] 6+km[n=11374,p50=0.2,p95=0.45,max=0.498s] visiblePairs=396 older1s=0 older3s=0 older1sSamples=0 older3sSamples=0 neverPose=0 shipsBytes=309013 shipsBps=50629.9 floorExtraBytes=176397 floorExtraBps=28901.6

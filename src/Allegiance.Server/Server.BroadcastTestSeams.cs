@@ -46,6 +46,8 @@ public sealed partial class Server
         _sameSideNpcExportSent.Clear();
         _lastSameSideNpcStatusTick.Clear();
         _teammateLoadoutCache.Clear();
+        _viewerPoseCadence.Clear();
+        _retiredPoseAges.Clear();
         _clusterInfoBytes = null;
         foreach (var m in _missions)
             foreach (var s in m.Sectors)

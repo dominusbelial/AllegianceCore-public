@@ -473,6 +473,8 @@ public sealed partial class Server
         });
         // P600 — close the tick's wall-time reference and roll the profiler window.
         TickProfiler.EndTick();
+        if (Interlocked.Exchange(ref _updateAgeReportRequested, 0) != 0)
+            EmitUpdateAgeWindow();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2536,12 +2538,19 @@ public sealed partial class Server
     private void BroadcastShipsUpdate(uint tickIndex)
     {
         var peers = _peerShips.ToArray();
+        // Allocate viewer state on the sim thread before sector workers read it.
+        bool trackCadence = _minUpdateHz > 0 || TickProfiler.Instance is not null;
+        if (trackCadence)
+            foreach (var kv in peers)
+                if (!_viewerPoseCadence.ContainsKey(kv.Key))
+                    _viewerPoseCadence.Add(kv.Key, new ViewerPoseCadence());
+        double poseNow = UpdateCadenceNow;
 
         // P603 — default (broadcast.parallelBuild off): the original serial
         // per-peer loop, byte-for-byte.
         if (!_broadcastParallelBuild)
         {
-            foreach (var kv in peers) BroadcastShipsUpdatePeer(kv, tickIndex);
+            foreach (var kv in peers) BroadcastShipsUpdatePeer(kv, tickIndex, trackCadence, poseNow);
             return;
         }
 
@@ -2566,7 +2575,7 @@ public sealed partial class Server
         var po = new ParallelOptions { MaxDegreeOfParallelism = _broadcastMaxParallelism };
         Parallel.ForEach(bySector, po, grp =>
         {
-            foreach (var kv in grp.Value) BroadcastShipsUpdatePeer(kv, tickIndex);
+            foreach (var kv in grp.Value) BroadcastShipsUpdatePeer(kv, tickIndex, trackCadence, poseNow);
         });
     }
 
@@ -2578,7 +2587,7 @@ public sealed partial class Server
     /// order-dependent shared state read back by same-sector peers this tick — is
     /// preserved exactly.
     /// </summary>
-    private void BroadcastShipsUpdatePeer(KeyValuePair<ConnectionId, LiveShip> kv, uint tickIndex)
+    private void BroadcastShipsUpdatePeer(KeyValuePair<ConnectionId, LiveShip> kv, uint tickIndex, bool trackCadence, double poseNow)
     {
         var self = kv.Value.Ship;
         // P612 — an admin spectator's broadcast serves the sector its free camera
@@ -2674,6 +2683,8 @@ public sealed partial class Server
             // which includes the peer's own ship and any target — both excluded
             // here as in native's assembly loop, FedSrv.CPP:4148-4154).
             var all = sector.GetShipUpdateCandidates().ToList();
+            ViewerPoseCadence? cadence = trackCadence ? _viewerPoseCadence[kv.Key] : null;
+            cadence?.Begin(all, self, sector, adminSpectator, poseNow, TickProfiler.Instance is not null);
 
             // Fixed quotas — native's REAL, shipped values (the "w0dk4 Bandwidth
             // Patch", FedSrv.CPP:3844-3845). The disabled bandwidth-adaptive
@@ -2803,6 +2814,16 @@ public sealed partial class Server
                 }
             }
 
+            // P659 — preserve ranking, target promotion and deviation exactly.
+            // Only HEAVY carries a pose (native igc.h:2423-2442). Append a
+            // separate fair sweep; LIGHT presence never resets the pose clock.
+            if (cadence is not null)
+            {
+                foreach (var entry in entries) cadence.MarkPose(entry.ShipId, poseNow);
+                cadence.AppendFloor(entries, tickIndex, posRef, poseNow, _minUpdateHz,
+                    Math.Max(1, _config.UpdatesPerSecond));
+            }
+
             var heavy = new HeavyShipsUpdate
             {
                 TimeReference = tickIndex,
@@ -2832,7 +2853,9 @@ public sealed partial class Server
             byte[][] frames = lightEntries is { Count: > 0 }
                 ? new[] { heavy.Encode(), new LightShipsUpdate { LightShipEntries = lightEntries.ToArray() }.Encode() }
                 : new[] { heavy.Encode() };
-            SendPeerCoalescing(kv.Key, FedPacket.Pack(frames), CoalesceShipsUpdate);
+            byte[] packet = FedPacket.Pack(frames);
+            SendPeerCoalescing(kv.Key, packet, CoalesceShipsUpdate);
+            if (cadence is not null) cadence.PacketBytes += packet.Length;
             ConsoleLog.Write($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
                               $"target={(targetShip?.Id.ToString() ?? "none")} " +
                               $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count}" +

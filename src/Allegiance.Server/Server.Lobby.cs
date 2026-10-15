@@ -1815,6 +1815,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             live.Ship.SideId = null;
             BroadcastQuitMission(mission, live.Ship.Id, QuitSideReason.LinkDead);
             _peerShips.Remove(conn);
+            RetireViewerUpdateCadence(conn);
             _peerNames.Remove(conn);
             _playerReady.Remove(conn);
         }

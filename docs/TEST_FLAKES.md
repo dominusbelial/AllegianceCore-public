@@ -35,6 +35,30 @@ quarantine pass, not the parallel CI run).
 | Before (4 measurement runs, master 22d024b8) | **0/4** (no clean run; 3/7/7/6 Core fails + 0/2/2/0 ClientCore) | n/a (no lane existed) | ~20 unique failing tests |
 | After (verification on final tree) | **3/3 clean MAIN runs** (V4, V7, V11; V11 EXIT 0) | not expected 4/4 (residual isolation-flaky live-timing tests) | 21 quarantined; each of V5–V10 surfaced 1–2 new load-flakes, quarantined on the spot |
 
+## P659 observation (2026-10-14)
+
+The initial Core suite pass during the cadence work hit three existing wire-timing
+failures. Each passed **3/3 in separate method-filtered runs** on the corrected
+P659 tree:
+
+| Test | Isolated result |
+| --- | --- |
+| `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector` | 3/3 pass |
+| `LiveRipcordTests.Re_target_activates_to_requester_only` | 3/3 pass |
+| `P590PodRescueTests.Pod_pickup_order_streams_queued_order_to_real_player_rescuer` | 3/3 pass |
+
+The final Core pass had one failure:
+`ConquestTerritoryLiveTests.Conquest_win_in_one_mission_does_not_leak_to_another`
+(a delayed `GAME_STATE` violated its empty-receipt assertion). It also passed
+**3/3 alone** on the final tree. All P659 tests passed in that suite run.
+
+P590 also failed 1/3 in an earlier loaded isolation batch, then passed all three
+consecutive final-tree checks. These remain timing observations, with no new
+quarantine or test skips. The initial P659 rejected-boot profiler callback leak
+was a real integration defect, fixed by validating cadence before registering
+other subsystem callbacks; it is **not** classified as a flake. See
+[the P659 report](reports/P659_UPDATE_CADENCE.md) for final-suite outcomes.
+
 ## P648 observation (2026-10-14)
 
 Two `scripts/run-tests.sh` runs on the P648 final tree (dead-latch / relaunch-visibility
