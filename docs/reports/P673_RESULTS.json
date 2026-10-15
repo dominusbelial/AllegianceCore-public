@@ -1,0 +1,2348 @@
+{
+  "task": "P673",
+  "base": "6c3e54ad",
+  "git_writes": false,
+  "build": {
+    "command": "NUGET_HTTP_CACHE_PATH=/tmp/p673-nuget-http dotnet build -m:8 -v:q",
+    "warnings": 0,
+    "errors": 0
+  },
+  "environment": {
+    "ALLEGIANCE_RECEIVE_DECOUPLE": "1",
+    "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+  },
+  "isolation_methods": 51,
+  "isolation_process_runs": 153,
+  "isolation_case_runs": 183,
+  "isolation": [
+    {
+      "method": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Seated_peer_duplicate_LOGONREQ_is_rejected_no_new_ship_no_new_id",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.495,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Seated_peer_duplicate_LOGONREQ_is_rejected_no_new_ship_no_new_id",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Seated_peer_duplicate_LOGONREQ_is_rejected_no_new_ship_no_new_id",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.479,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Seated_peer_duplicate_LOGONREQ_is_rejected_no_new_ship_no_new_id",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Seated_peer_duplicate_LOGONREQ_is_rejected_no_new_ship_no_new_id",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.423,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Seated_peer_duplicate_LOGONREQ_is_rejected_no_new_ship_no_new_id",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Pending_peer_duplicate_LOGONREQ_is_idempotent_same_ack_no_new_id",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.438,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Pending_peer_duplicate_LOGONREQ_is_idempotent_same_ack_no_new_id",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Pending_peer_duplicate_LOGONREQ_is_idempotent_same_ack_no_new_id",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.405,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Pending_peer_duplicate_LOGONREQ_is_idempotent_same_ack_no_new_id",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Pending_peer_duplicate_LOGONREQ_is_idempotent_same_ack_no_new_id",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.462,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveDuplicateLogonTests.Pending_peer_duplicate_LOGONREQ_is_idempotent_same_ack_no_new_id",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.341,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work(attack: -2147483647)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work(attack: -1000)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.367,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work(attack: -2147483647)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work(attack: -1000)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.382,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work(attack: -2147483647)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Negative_gifts_fail_and_positive_gifts_and_leader_toggle_work(attack: -1000)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Overflow_and_negative_wallet_do_not_transfer",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.361,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Overflow_and_negative_wallet_do_not_transfer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Overflow_and_negative_wallet_do_not_transfer",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.364,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Overflow_and_negative_wallet_do_not_transfer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Overflow_and_negative_wallet_do_not_transfer",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.343,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H01_Overflow_and_negative_wallet_do_not_transfer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_hull_has_no_refund_and_paid_parts_refund_once_to_player",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.372,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_hull_has_no_refund_and_paid_parts_refund_once_to_player",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_hull_has_no_refund_and_paid_parts_refund_once_to_player",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.365,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_hull_has_no_refund_and_paid_parts_refund_once_to_player",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_hull_has_no_refund_and_paid_parts_refund_once_to_player",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.391,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_hull_has_no_refund_and_paid_parts_refund_once_to_player",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_spawn_parts_cannot_be_sold_but_bought_parts_can",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.347,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_spawn_parts_cannot_be_sold_but_bought_parts_can",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_spawn_parts_cannot_be_sold_but_bought_parts_can",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.365,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_spawn_parts_cannot_be_sold_but_bought_parts_can",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_spawn_parts_cannot_be_sold_but_bought_parts_can",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.348,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Free_spawn_parts_cannot_be_sold_but_bought_parts_can",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Launcher_purchase_and_refund_charge_only_remaining_units",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.312,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Launcher_purchase_and_refund_charge_only_remaining_units",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Launcher_purchase_and_refund_charge_only_remaining_units",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.306,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Launcher_purchase_and_refund_charge_only_remaining_units",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Launcher_purchase_and_refund_charge_only_remaining_units",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.339,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Launcher_purchase_and_refund_charge_only_remaining_units",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.333,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.348,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.381,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Promotion_transfers_paid_credit_and_preserves_free_parts(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.346,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.318,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.377,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H03_Teleport_refunds_paid_hardware_once_and_never_free_hull(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Initial_bot_purchase_starts_docked_and_can_launch",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.316,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Initial_bot_purchase_starts_docked_and_can_launch",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Initial_bot_purchase_starts_docked_and_can_launch",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.321,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Initial_bot_purchase_starts_docked_and_can_launch",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Initial_bot_purchase_starts_docked_and_can_launch",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.387,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Initial_bot_purchase_starts_docked_and_can_launch",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Docked_pod_can_buy_a_fighter_and_relaunch_like_MCP",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.371,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Docked_pod_can_buy_a_fighter_and_relaunch_like_MCP",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Docked_pod_can_buy_a_fighter_and_relaunch_like_MCP",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.37,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Docked_pod_can_buy_a_fighter_and_relaunch_like_MCP",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Docked_pod_can_buy_a_fighter_and_relaunch_like_MCP",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.349,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Docked_pod_can_buy_a_fighter_and_relaunch_like_MCP",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.382,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"flying\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"missing_station\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"boarded\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"dead\")",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.446,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"dead\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"boarded\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"flying\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"missing_station\")",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.416,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"dead\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"missing_station\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"boarded\")",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H06_Invalid_purchase_state_fails_and_docked_purchase_launches(state: \"flying\")",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H07_Invalid_and_duplicate_mounts_fail_and_real_mount_and_cargo_work",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.382,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H07_Invalid_and_duplicate_mounts_fail_and_real_mount_and_cargo_work",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H07_Invalid_and_duplicate_mounts_fail_and_real_mount_and_cargo_work",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.365,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H07_Invalid_and_duplicate_mounts_fail_and_real_mount_and_cargo_work",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H07_Invalid_and_duplicate_mounts_fail_and_real_mount_and_cargo_work",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.377,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H07_Invalid_and_duplicate_mounts_fail_and_real_mount_and_cargo_work",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H08_Quantities_and_ammo_are_bounded_and_normal_reload_works",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.366,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H08_Quantities_and_ammo_are_bounded_and_normal_reload_works",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H08_Quantities_and_ammo_are_bounded_and_normal_reload_works",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.366,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H08_Quantities_and_ammo_are_bounded_and_normal_reload_works",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H08_Quantities_and_ammo_are_bounded_and_normal_reload_works",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.359,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H08_Quantities_and_ammo_are_bounded_and_normal_reload_works",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H09_Buy_and_swap_publish_one_final_loadout",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.403,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H09_Buy_and_swap_publish_one_final_loadout",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H09_Buy_and_swap_publish_one_final_loadout",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.361,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H09_Buy_and_swap_publish_one_final_loadout",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H09_Buy_and_swap_publish_one_final_loadout",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.323,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H09_Buy_and_swap_publish_one_final_loadout",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.352,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.327,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.331,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication(paid: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication(paid: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H20_Decoder_rejects_audit_sized_tail_and_accepts_native_limit",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.252,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H20_Decoder_rejects_audit_sized_tail_and_accepts_native_limit",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H20_Decoder_rejects_audit_sized_tail_and_accepts_native_limit",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.266,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H20_Decoder_rejects_audit_sized_tail_and_accepts_native_limit",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H20_Decoder_rejects_audit_sized_tail_and_accepts_native_limit",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.289,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H20_Decoder_rejects_audit_sized_tail_and_accepts_native_limit",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H22_Docked_drop_swap_reload_fail_and_flying_actions_work",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.35,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H22_Docked_drop_swap_reload_fail_and_flying_actions_work",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H22_Docked_drop_swap_reload_fail_and_flying_actions_work",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.347,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H22_Docked_drop_swap_reload_fail_and_flying_actions_work",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H22_Docked_drop_swap_reload_fail_and_flying_actions_work",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.366,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H22_Docked_drop_swap_reload_fail_and_flying_actions_work",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Constructor_and_rock_are_used_once_and_gone_builder_aborts",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.374,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Constructor_and_rock_are_used_once_and_gone_builder_aborts",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Constructor_and_rock_are_used_once_and_gone_builder_aborts",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.385,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Constructor_and_rock_are_used_once_and_gone_builder_aborts",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Constructor_and_rock_are_used_once_and_gone_builder_aborts",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.4,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Constructor_and_rock_are_used_once_and_gone_builder_aborts",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Docked_and_nonleader_orders_fail_and_commander_build_completes",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.349,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Docked_and_nonleader_orders_fail_and_commander_build_completes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Docked_and_nonleader_orders_fail_and_commander_build_completes",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.337,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Docked_and_nonleader_orders_fail_and_commander_build_completes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Docked_and_nonleader_orders_fail_and_commander_build_completes",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.344,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Docked_and_nonleader_orders_fail_and_commander_build_completes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H26_Pilot_and_pod_suicide_fail_and_child_suicide_works",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.387,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H26_Pilot_and_pod_suicide_fail_and_child_suicide_works",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H26_Pilot_and_pod_suicide_fail_and_child_suicide_works",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.333,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H26_Pilot_and_pod_suicide_fail_and_child_suicide_works",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H26_Pilot_and_pod_suicide_fail_and_child_suicide_works",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.327,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H26_Pilot_and_pod_suicide_fail_and_child_suicide_works",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Unplaced_ack_is_consumed_without_mutation_and_live_ack_works_once",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.337,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Unplaced_ack_is_consumed_without_mutation_and_live_ack_works_once",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Unplaced_ack_is_consumed_without_mutation_and_live_ack_works_once",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.331,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Unplaced_ack_is_consumed_without_mutation_and_live_ack_works_once",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Unplaced_ack_is_consumed_without_mutation_and_live_ack_works_once",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.323,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Unplaced_ack_is_consumed_without_mutation_and_live_ack_works_once",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Send_failure_after_accept_cannot_replay_the_offer",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.401,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Send_failure_after_accept_cannot_replay_the_offer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Send_failure_after_accept_cannot_replay_the_offer",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.326,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Send_failure_after_accept_cannot_replay_the_offer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Send_failure_after_accept_cannot_replay_the_offer",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.342,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H30_Send_failure_after_accept_cannot_replay_the_offer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.754,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.788,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.726,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.422,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.415,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.435,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Inbound_flood_from_one_peer_is_bounded_by_budget",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.258,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Inbound_flood_from_one_peer_is_bounded_by_budget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Inbound_flood_from_one_peer_is_bounded_by_budget",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.255,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Inbound_flood_from_one_peer_is_bounded_by_budget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Inbound_flood_from_one_peer_is_bounded_by_budget",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.296,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Inbound_flood_from_one_peer_is_bounded_by_budget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Multiple_peers_do_not_starve_each_other",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.273,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Multiple_peers_do_not_starve_each_other",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Multiple_peers_do_not_starve_each_other",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.284,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Multiple_peers_do_not_starve_each_other",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Multiple_peers_do_not_starve_each_other",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.308,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Multiple_peers_do_not_starve_each_other",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_EmitsMaxThenSuppressesWithPeriodicSummaries",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.252,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_EmitsMaxThenSuppressesWithPeriodicSummaries",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_EmitsMaxThenSuppressesWithPeriodicSummaries",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.26,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_EmitsMaxThenSuppressesWithPeriodicSummaries",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_EmitsMaxThenSuppressesWithPeriodicSummaries",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.236,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_EmitsMaxThenSuppressesWithPeriodicSummaries",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_WindowBoundary_ResetsBudget",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.241,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_WindowBoundary_ResetsBudget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_WindowBoundary_ResetsBudget",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.259,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_WindowBoundary_ResetsBudget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_WindowBoundary_ResetsBudget",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.23,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_WindowBoundary_ResetsBudget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.Reload_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.297,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.Reload_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.Reload_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.266,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.Reload_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.Reload_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.274,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.Reload_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.FireMissile_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.266,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.FireMissile_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.FireMissile_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.273,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.FireMissile_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.FireMissile_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.25,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.FireMissile_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.ConsoleLogSanitize_TruncatesAndEscapes",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.259,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.ConsoleLogSanitize_TruncatesAndEscapes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.ConsoleLogSanitize_TruncatesAndEscapes",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.236,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.ConsoleLogSanitize_TruncatesAndEscapes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.ConsoleLogSanitize_TruncatesAndEscapes",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.319,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.ConsoleLogSanitize_TruncatesAndEscapes",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Chat_Relay_StampsSender_NotTheForgedSidSender",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.471,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Chat_Relay_StampsSender_NotTheForgedSidSender",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Chat_Relay_StampsSender_NotTheForgedSidSender",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.418,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Chat_Relay_StampsSender_NotTheForgedSidSender",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Chat_Relay_StampsSender_NotTheForgedSidSender",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.512,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Chat_Relay_StampsSender_NotTheForgedSidSender",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.PlayerReady_RelaysSendersOwnShip_NotForged",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.654,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.PlayerReady_RelaysSendersOwnShip_NotForged",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.PlayerReady_RelaysSendersOwnShip_NotForged",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.47,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.PlayerReady_RelaysSendersOwnShip_NotForged",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.PlayerReady_RelaysSendersOwnShip_NotForged",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.412,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.PlayerReady_RelaysSendersOwnShip_NotForged",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.LogonName_Over24Chars_IsRefused",
+      "run": 1,
+      "exit": 0,
+      "seconds": 3.217,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.LogonName_Over24Chars_IsRefused",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.LogonName_Over24Chars_IsRefused",
+      "run": 2,
+      "exit": 0,
+      "seconds": 3.171,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.LogonName_Over24Chars_IsRefused",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.LogonName_Over24Chars_IsRefused",
+      "run": 3,
+      "exit": 0,
+      "seconds": 3.231,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.LogonName_Over24Chars_IsRefused",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Logoff_ClosesConnection_SecondLogonCannotRearmShip",
+      "run": 1,
+      "exit": 0,
+      "seconds": 3.196,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Logoff_ClosesConnection_SecondLogonCannotRearmShip",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Logoff_ClosesConnection_SecondLogonCannotRearmShip",
+      "run": 2,
+      "exit": 0,
+      "seconds": 3.177,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Logoff_ClosesConnection_SecondLogonCannotRearmShip",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Logoff_ClosesConnection_SecondLogonCannotRearmShip",
+      "run": 3,
+      "exit": 0,
+      "seconds": 3.179,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Logoff_ClosesConnection_SecondLogonCannotRearmShip",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ReqPingData_SeatedPeerGetsRoster_NormalActionWorks",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.46,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ReqPingData_SeatedPeerGetsRoster_NormalActionWorks",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ReqPingData_SeatedPeerGetsRoster_NormalActionWorks",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.424,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ReqPingData_SeatedPeerGetsRoster_NormalActionWorks",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ReqPingData_SeatedPeerGetsRoster_NormalActionWorks",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.43,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ReqPingData_SeatedPeerGetsRoster_NormalActionWorks",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.409,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.462,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.48,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.424,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: Pool)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: ThreadPerPeer)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.489,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: ThreadPerPeer)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: Pool)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.46,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: ThreadPerPeer)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: Pool)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Worker_decodes_once_before_tick_and_drain_runs_only_on_its_caller",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.27,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Worker_decodes_once_before_tick_and_drain_runs_only_on_its_caller",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Worker_decodes_once_before_tick_and_drain_runs_only_on_its_caller",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.309,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Worker_decodes_once_before_tick_and_drain_runs_only_on_its_caller",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Worker_decodes_once_before_tick_and_drain_runs_only_on_its_caller",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.293,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Worker_decodes_once_before_tick_and_drain_runs_only_on_its_caller",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.279,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.272,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: False)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: True)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.261,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Incomplete_peer_does_not_block_ready_peer_or_let_leave_overtake_receive",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.286,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Incomplete_peer_does_not_block_ready_peer_or_let_leave_overtake_receive",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Incomplete_peer_does_not_block_ready_peer_or_let_leave_overtake_receive",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.29,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Incomplete_peer_does_not_block_ready_peer_or_let_leave_overtake_receive",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Incomplete_peer_does_not_block_ready_peer_or_let_leave_overtake_receive",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.276,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Incomplete_peer_does_not_block_ready_peer_or_let_leave_overtake_receive",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.244,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.293,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: False)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: True)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.234,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: True)",
+          "outcome": "Passed",
+          "error": null
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: False)",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Histogram_retains_100_ticks_and_attributes_fmids_bytes_and_peer_ids",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.274,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Histogram_retains_100_ticks_and_attributes_fmids_bytes_and_peer_ids",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Histogram_retains_100_ticks_and_attributes_fmids_bytes_and_peer_ids",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.28,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Histogram_retains_100_ticks_and_attributes_fmids_bytes_and_peer_ids",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Histogram_retains_100_ticks_and_attributes_fmids_bytes_and_peer_ids",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.315,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Histogram_retains_100_ticks_and_attributes_fmids_bytes_and_peer_ids",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Identical_tick_inputs_produce_identical_simulation_and_wire_results_off_vs_on",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.345,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Identical_tick_inputs_produce_identical_simulation_and_wire_results_off_vs_on",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Identical_tick_inputs_produce_identical_simulation_and_wire_results_off_vs_on",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.409,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Identical_tick_inputs_produce_identical_simulation_and_wire_results_off_vs_on",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Identical_tick_inputs_produce_identical_simulation_and_wire_results_off_vs_on",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.403,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Identical_tick_inputs_produce_identical_simulation_and_wire_results_off_vs_on",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.SelfReplenishing_flood_is_bounded_and_returns_within_budget",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.282,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.SelfReplenishing_flood_is_bounded_and_returns_within_budget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.SelfReplenishing_flood_is_bounded_and_returns_within_budget",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.282,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.SelfReplenishing_flood_is_bounded_and_returns_within_budget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.SelfReplenishing_flood_is_bounded_and_returns_within_budget",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.246,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.SelfReplenishing_flood_is_bounded_and_returns_within_budget",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_does_not_starve_a_normal_peer",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.229,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_does_not_starve_a_normal_peer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_does_not_starve_a_normal_peer",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.226,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_does_not_starve_a_normal_peer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_does_not_starve_a_normal_peer",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.293,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_does_not_starve_a_normal_peer",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Drain_release_never_recreates_a_departed_peers_accounting_entry",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.25,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Drain_release_never_recreates_a_departed_peers_accounting_entry",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Drain_release_never_recreates_a_departed_peers_accounting_entry",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.267,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Drain_release_never_recreates_a_departed_peers_accounting_entry",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Drain_release_never_recreates_a_departed_peers_accounting_entry",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.234,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Drain_release_never_recreates_a_departed_peers_accounting_entry",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Churn_of_1000_peers_leaves_zero_retained_accounting_entries",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.25,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Churn_of_1000_peers_leaves_zero_retained_accounting_entries",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Churn_of_1000_peers_leaves_zero_retained_accounting_entries",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.292,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Churn_of_1000_peers_leaves_zero_retained_accounting_entries",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Churn_of_1000_peers_leaves_zero_retained_accounting_entries",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.317,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Churn_of_1000_peers_leaves_zero_retained_accounting_entries",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.328,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.275,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.242,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Carried_events_keep_fifo_ahead_of_mid_drain_arrivals",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.27,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Carried_events_keep_fifo_ahead_of_mid_drain_arrivals",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Carried_events_keep_fifo_ahead_of_mid_drain_arrivals",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.241,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Carried_events_keep_fifo_ahead_of_mid_drain_arrivals",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Carried_events_keep_fifo_ahead_of_mid_drain_arrivals",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.224,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Carried_events_keep_fifo_ahead_of_mid_drain_arrivals",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    }
+  ],
+  "full_suites": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "label": "full-Allegiance.Core.Tests",
+      "exit": 0,
+      "seconds": 321.997,
+      "counts": {
+        "Passed": 4312,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": [],
+      "skips": []
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "label": "full-Allegiance.ClientCore.Tests",
+      "exit": 1,
+      "seconds": 296.27,
+      "counts": {
+        "Passed": 932,
+        "Failed": 2,
+        "NotExecuted": 0
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment",
+          "outcome": "Failed",
+          "error": "System.InvalidOperationException : Collection was modified; enumeration operation may not execute."
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent",
+          "outcome": "Failed",
+          "error": "SessionLost event must fire on the transport thread"
+        }
+      ],
+      "skips": []
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "label": "full-Allegiance.ClientCore.MonoGame.Tests",
+      "exit": 0,
+      "seconds": 263.598,
+      "counts": {
+        "Passed": 2125,
+        "Failed": 0,
+        "NotExecuted": 3
+      },
+      "failures": [],
+      "skips": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "outcome": "NotExecuted",
+          "error": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "outcome": "NotExecuted",
+          "error": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "outcome": "NotExecuted",
+          "error": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        }
+      ]
+    }
+  ],
+  "failure_isolation": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "label": "retry-3-1",
+      "exit": 0,
+      "seconds": 2.327,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": [],
+      "skips": [],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "label": "retry-4-2",
+      "exit": 0,
+      "seconds": 2.334,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": [],
+      "skips": [],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "label": "retry-5-3",
+      "exit": 0,
+      "seconds": 2.38,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": [],
+      "skips": [],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "label": "retry-6-1",
+      "exit": 0,
+      "seconds": 1.731,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": [],
+      "skips": [],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "label": "retry-7-2",
+      "exit": 0,
+      "seconds": 1.772,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": [],
+      "skips": [],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "label": "retry-8-3",
+      "exit": 0,
+      "seconds": 1.821,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": [],
+      "skips": [],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent",
+          "outcome": "Passed",
+          "error": null
+        }
+      ]
+    }
+  ]
+}

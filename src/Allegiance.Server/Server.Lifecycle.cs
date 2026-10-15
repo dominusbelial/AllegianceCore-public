@@ -753,7 +753,16 @@ public sealed partial class Server
 
     private void BindHostAndTransport()
     {
-        _host = new ServerHost();
+        bool decouple = _config.Receive?.Decouple ?? false;
+        string? receiveEnv = Environment.GetEnvironmentVariable("ALLEGIANCE_RECEIVE_DECOUPLE");
+        if (!string.IsNullOrWhiteSpace(receiveEnv))
+            decouple = receiveEnv == "1" || receiveEnv.Equals("true", StringComparison.OrdinalIgnoreCase);
+        _host = new ServerHost
+        {
+            ReceiveDecouple = decouple,
+            InboundTrace = _config.Receive?.Measure == true ? new InboundTrace() : null,
+        };
+        Console.WriteLine($"[boot] receive.decouple = {decouple.ToString().ToLowerInvariant()} (receive-worker decode; tick-boundary apply)");
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
@@ -1505,7 +1514,7 @@ public sealed partial class Server
                 break;
             case ReceivedEvt r:
                 CaptureReceived(r.Data);
-                ProcessDatagram(r.From, r.Data);
+                ProcessInboundPacket(r.From, r.Prepared ?? InboundPacket.Prepare(r.Data, decode: false));
                 break;
         }
     }

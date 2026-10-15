@@ -32,5 +32,6 @@
     <Project Path="tools/allegiance-mcp/allegiance-mcp.csproj" />
     <Project Path="tools/p605synth/p605synth.csproj" />
     <Project Path="tools/p629-proof/p629-proof.csproj" />
+    <Project Path="tools/receive-proof/receive-proof.csproj" />
   </Folder>
 </Solution>

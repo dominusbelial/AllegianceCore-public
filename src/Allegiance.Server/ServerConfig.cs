@@ -582,6 +582,16 @@ public sealed class TransportConfig
     public int? ChatBudgetRefillPerTick { get; set; }
 }
 
+/// <summary>Opt-in receive pipeline and attribution settings.</summary>
+public sealed class ReceiveConfig
+{
+    /// <summary>Decode and validate wire data on transport receive workers. Default off.
+    /// ALLEGIANCE_RECEIVE_DECOUPLE overrides this value at boot.</summary>
+    public bool Decouple { get; set; }
+    /// <summary>Emit per-tick fmid/peer counts, bytes and a 100-tick drain histogram.</summary>
+    public bool Measure { get; set; }
+}
+
 /// <summary>
 /// Top-level server configuration. Shape is decided (see task): a JSON file at
 /// <c>--config</c> (default <c>server.json</c>), with scalar fields overridable
@@ -593,6 +603,7 @@ public sealed class ServerConfig
 {
     /// <summary>P629 simulation rules, including the stress-test crowding override.</summary>
     public SimConfig Sim { get; set; } = new();
+    public ReceiveConfig? Receive { get; init; }
     /// <summary>Root of the artwork tree (contains the core and map files).
     /// Resolved by <see cref="ExternalPaths"/>: <c>$ALLEGIANCE_ARTWORK_PATH</c>,
     /// else the gitignored <c>local.env</c>, else empty (validation in

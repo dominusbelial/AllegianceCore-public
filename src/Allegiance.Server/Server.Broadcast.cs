@@ -82,7 +82,16 @@ public sealed partial class Server
         // bad tick degrades gracefully (log + skip that stage) instead of
         // propagating to the top-level catch and killing the server. Stages are
         // independent; one failure never cascades into its siblings.
-        Step("drain", () => _host.Drain(HandleTransportEvent));
+        var inboundTrace = _host.InboundTrace;
+        double drainMs = 0;
+        Step("drain", () =>
+        {
+            long started = inboundTrace is not null ? Stopwatch.GetTimestamp() : 0;
+            _host.Drain(HandleTransportEvent);
+            if (inboundTrace is not null) drainMs = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+        });
+        if (inboundTrace is not null)
+            Step("inboundTrace", () => inboundTrace.EndTick(TickIndex, drainMs));
         lock (_statsLock) _simNow += EffectiveSimPeriod;   // P612 — period × sim.timeScale for slow motion
         double now;
         lock (_statsLock) now = _simNow;

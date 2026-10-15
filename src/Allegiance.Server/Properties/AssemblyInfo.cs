@@ -8,3 +8,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("hullhit-proof")]
 [assembly: InternalsVisibleTo("hitsound-proof")]
 [assembly: InternalsVisibleTo("shieldflare-proof")]
+
+[assembly: InternalsVisibleTo("receive-proof")]

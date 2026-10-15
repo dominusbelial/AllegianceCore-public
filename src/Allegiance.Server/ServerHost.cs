@@ -16,8 +16,22 @@ internal interface ITransportEvent { }
 internal readonly record struct PeerJoinedEvt(ConnectionId Id, string Name) : ITransportEvent;
 /// <summary>A peer disconnected, cleanly or abruptly.</summary>
 internal readonly record struct PeerLeftEvt(ConnectionId Id) : ITransportEvent;
-/// <summary>A framed packet (messages + trailing CRC) arrived from a peer.</summary>
-internal readonly record struct ReceivedEvt(ConnectionId From, byte[] Data) : ITransportEvent;
+/// <summary>A reserved framed packet. Prepared is published once by its receive
+/// worker; ReadySequence freezes eligibility at a simulation tick boundary.</summary>
+internal sealed class ReceivedEvt(ConnectionId from, byte[] data, bool pending = false) : ITransportEvent
+{
+    internal ConnectionId From { get; } = from;
+    internal byte[] Data { get; } = data;
+    private InboundPacket? _prepared;
+    internal InboundPacket? Prepared => Volatile.Read(ref _prepared);
+    private long _readySequence = pending ? long.MaxValue : 0;
+    internal long ReadySequence => Volatile.Read(ref _readySequence);
+    internal void Complete(InboundPacket packet, long sequence = 0)
+    {
+        Volatile.Write(ref _prepared, packet);
+        Volatile.Write(ref _readySequence, sequence);
+    }
+}
 /// <summary>The host session ended for reasons other than our own shutdown.</summary>
 internal readonly record struct SessionLostEvt() : ITransportEvent;
 
@@ -44,6 +58,18 @@ internal readonly record struct SessionLostEvt() : ITransportEvent;
 internal sealed class ServerHost : IIgcSite, ITransportSite
 {
     private readonly ConcurrentQueue<ITransportEvent> _events = new();
+    internal bool ReceiveDecouple { get; init; }
+    internal InboundTrace? InboundTrace { get; init; }
+    private uint _lastSelectedPeer;
+    // Only receive workers take this tiny publication lock; Drain just reads
+    // the completed sequence. It never waits for decoding or a worker lock.
+    private readonly object _decodePublication = new();
+    private long _decodeSequence;
+    private long _packetsReceived;
+    internal long PacketsReceived => Interlocked.Read(ref _packetsReceived);
+    private sealed class ReceivePublication { internal bool Closed; }
+    private readonly ConcurrentDictionary<uint, ReceivePublication> _receivePublications = new();
+
 
     // P646b — the drain's per-peer carry-over, owned by the SIMULATION thread
     // (only Drain touches these; the transport threads write solely to
@@ -55,8 +81,8 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     //     carried and eventually handled — its lane is never abandoned);
     //   * per-peer FIFO always holds (carried events precede later arrivals,
     //     which are appended AFTER them, never interleaved);
-    //   * the round-robin order is STABLE across drains (a lane keeps its
-    //     position; keys are only added on first sight and removed when empty).
+    //   * P673 selects round-robin in sorted peer-id order, rotating its start
+    //     across ticks, then applies the selected batch by peer id / FIFO.
     // Worst-case growth is bounded by the receive-side byte reservation (P315):
     // a ReceivedEvt is enqueued only while its peer's reserved in-flight bytes
     // stay under MaxBufferedBytesPerPeer, and a reservation is released only
@@ -86,7 +112,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     // queue never-empty, so an unbounded `while (TryDequeue)` drain would defer
     // simulation/broadcast indefinitely (the reviewer saw one Drain consume
     // 1,000 self-replenishing events). Drain therefore (a) pulls at most the
-    // events present when it began plus <see cref="DrainBudgetEvents"/> more,
+    // events present at its tick-boundary snapshot,
     // and (b) services peers ROUND-ROBIN with a per-peer cap
     // <see cref="DrainFairShareEvents"/>, so one flooding peer cannot starve
     // the others. Anything over the budget is deferred (re-queued, keeping its
@@ -102,8 +128,9 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <summary>P646 — cumulative events handled by <c>Drain</c> (test seam).</summary>
     internal long EventsDrained => Interlocked.Read(ref _eventsDrained);
     /// <summary>P646 — cumulative events deferred (over the per-tick budget /
-    /// per-peer fair share) instead of handled this tick (test seam). Non-zero
-    /// only under overload; 0 in normal 200v200 play.</summary>
+    /// per-peer fair share, or a decoder not ready at the tick boundary)
+    /// instead of handled this tick (test seam). Decode deferral can occur
+    /// during normal arrivals too; it does not by itself indicate overload.</summary>
     internal long EventsDeferred => Interlocked.Read(ref _eventsDeferred);
     /// <summary>P646 — release one peer's byte reservation WITHOUT ever
     /// inserting an entry (a departed peer's entry must not be re-created by a
@@ -1140,8 +1167,13 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         => RequestRipcordReceived?.Invoke((Ship)ship, (Sector)pcluster);
 
     // ── ITransportSite ──────────────────────────────────────────────────────
-    // These run on transport threads; they only reduce to an immutable event.
-    void ITransportSite.OnPeerJoined(ConnectionId id, string name) => _events.Enqueue(new PeerJoinedEvt(id, name));
+    // Transport callbacks publish lifecycle events and reserved receives.
+    // With decoupling enabled, schema decoding stays on the peer's reader.
+    void ITransportSite.OnPeerJoined(ConnectionId id, string name)
+    {
+        if (ReceiveDecouple) _receivePublications[id.Value] = new ReceivePublication();
+        _events.Enqueue(new PeerJoinedEvt(id, name));
+    }
     void ITransportSite.OnPeerLeft(ConnectionId id)
     {
         // P315: drop the departed peer's buffered-byte accounting and log-gate
@@ -1163,10 +1195,49 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // stay bounded by the LIVE peer set (same rationale as _bufferedPerPeer).
         _pingLastReplyUtcTicks.TryRemove(id.Value, out _);
         _pingLog.Remove(id.Value);
-        _events.Enqueue(new PeerLeftEvt(id));
+        if (ReceiveDecouple && _receivePublications.TryRemove(id.Value, out var publication))
+        {
+            // Serialize only publication, never decoding. A pending receive is
+            // already ahead of this leave, even if a send worker disconnects it.
+            lock (publication)
+            {
+                publication.Closed = true;
+                _events.Enqueue(new PeerLeftEvt(id));
+            }
+        }
+        else _events.Enqueue(new PeerLeftEvt(id));
     }
     void ITransportSite.OnSessionLost() => _events.Enqueue(new SessionLostEvt());
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
+    {
+        if (!ReceiveDecouple)
+        {
+            if (EnqueueReceive(from, data, pending: false) is not null)
+                Interlocked.Increment(ref _packetsReceived);
+            return;
+        }
+        // A closed peer cannot publish a late command or recreate accounting.
+        if (!_receivePublications.TryGetValue(from.Value, out var publication)) return;
+        ReceivedEvt? received;
+        lock (publication)
+        {
+            if (publication.Closed) return;
+            received = EnqueueReceive(from, data, pending: true);
+        }
+        if (received is not null)
+        {
+            var prepared = InboundPacket.Prepare(received.Data, decode: true);
+            lock (_decodePublication)
+            {
+                long sequence = _decodeSequence + 1;
+                received.Complete(prepared, sequence);
+                Volatile.Write(ref _decodeSequence, sequence);
+            }
+            Interlocked.Increment(ref _packetsReceived);
+        }
+    }
+
+    private ReceivedEvt? EnqueueReceive(ConnectionId from, ReadOnlySpan<byte> data, bool pending)
     {
         // P315 (H3): bound the shared receive queue per-peer. Only the tick's
         // ~20 Hz drain consumes _events; a flooding peer must not be able to
@@ -1187,9 +1258,14 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
                 Console.WriteLine($"[rx] peer {from} inbound buffered > {MaxBufferedBytesPerPeer} B — dropping excess (P315 queue bound)");
             else if (t.Summarize)
                 Console.WriteLine($"[rx] peer {from}: {t.Suppressed} more inbound frames dropped under the P315 queue bound (rate-limited)");
-            return;
+            return null;
         }
-        _events.Enqueue(new ReceivedEvt(from, data.ToArray()));
+        // Publish a placeholder before decoding. Drain never waits: an
+        // incomplete head defers its whole peer lane (including leave), while
+        // ready peers keep their fair share. Reservation covers all stages.
+        var received = new ReceivedEvt(from, data.ToArray(), pending);
+        _events.Enqueue(received);
+        return received;
     }
 
     /// <summary>
@@ -1209,6 +1285,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public int Drain(Action<ITransportEvent> handle)
     {
+        long readyThrough = Volatile.Read(ref _decodeSequence);
         long budget = DrainBudgetEvents;
         int fairShare = DrainFairShareEvents;
 
@@ -1219,13 +1296,13 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // reservation is NOT released here; it is released only when the event
         // is actually HANDLED, so a deferred event keeps its reservation (it is
         // still occupying queue memory). The pull is bounded (the events
-        // present when we began plus the budget) so the drain phase itself is
+        // present when we began) so the drain phase itself is
         // bounded; the carry-over cannot grow without limit anyway, because the
         // per-peer byte reservation bounds how many un-handled receives a
         // flooding peer can have in flight (see _pendingLanes comment).
         long pulled = 0;
         int snapshot = _events.Count;
-        long pullCap = snapshot + budget;
+        long pullCap = snapshot; // arrivals after this tick snapshot wait for the next boundary
         while (pulled < pullCap && _events.TryDequeue(out var evt))
         {
             uint key = PeerKeyOf(evt);
@@ -1239,52 +1316,43 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             pulled++;
         }
 
-        // Phase 2 — service lanes round-robin (STABLE order: carried lanes keep
-        // their position) until the per-tick budget is consumed or every lane is
+        // Select fairly first; apply the selected immutable tick batch in
+        // (peer id, per-peer arrival sequence) order. Rotate the starting peer
+        // so a small global budget cannot starve higher ids.
+        List<(uint Key, int Sequence, ITransportEvent Event)> selected = [];
+        _pendingOrder.Sort();
+
+        // Phase 2 — select from the rotating round-robin until the per-tick
+        // budget is consumed or every lane is
         // empty / over its fair share. A lane leaves the rotation ONLY when it
         // is empty — never when it merely hits its fair share, so nothing is
         // dropped and a flooding peer's PeerLeftEvt is still carried.
         int processed = 0;
         var handled = new Dictionary<uint, int>();
         int idx = 0;
+        if (_pendingOrder.Count > 0)
+        {
+            int next = _pendingOrder.FindIndex(k => k > _lastSelectedPeer);
+            if (next >= 0) idx = next;
+        }
         int fairSkips = 0;   // consecutive fair-share skips → stop when nobody can be served
         while (_pendingOrder.Count > 0 && processed < budget)
         {
             uint key = _pendingOrder[idx];
             var q = _pendingLanes[key];
-            if (handled.TryGetValue(key, out int done) && done >= fairShare)
+            if ((handled.TryGetValue(key, out int done) && done >= fairShare)
+                || (q.Peek() is ReceivedEvt pending && pending.ReadySequence > readyThrough))
             {
-                // This peer's share for this drain is spent; defer its
-                // remainder but KEEP its lane in the rotation for next drain.
+                // This peer's share is spent or its head was not decoded at
+                // the boundary. Keep its whole FIFO lane for the next drain.
                 if (++fairSkips >= _pendingOrder.Count) break;  // everyone over share
                 idx = (idx + 1) % _pendingOrder.Count;
                 continue;
             }
             fairSkips = 0;
             var evt = q.Dequeue();
-            if (evt is ReceivedEvt r)
-                ReleaseReservation(r);   // a handled receive frees its reserved bytes (never inserts)
-            // P654 (H-34) — per-event exception barrier (defence in depth). Every
-            // dispatch branch already has its own try/catch, but the remaining
-            // throwers (logon-path code after decode, CaptureReceived file I/O on
-            // a full disk, ReleasePeer) would previously abort the WHOLE Drain,
-            // dropping every event already pulled into the lanes (PeerLeftEvt →
-            // ghost ship, byte reservations never released). Wrapping each
-            // handle() here means a throwing handler costs only that one event —
-            // the rest of the lane keeps its FIFO and the drain completes.
-            try
-            {
-                handle(evt);
-            }
-            catch (Exception ex)
-            {
-                // The event is gone from the lane (dequeued above) and its byte
-                // reservation already released (for a receive); do not let one
-                // bad event take the lane (and the drain) down. Log once.
-                var et = _dropLog.Ticket(PeerKeyOf(evt));
-                if (et.Emit)
-                    Console.WriteLine($"[drain] event handler threw for key {PeerKeyOf(evt)}: {ex.GetType().Name}: {ex.Message}");
-            }
+            selected.Add((key, processed, evt));
+            _lastSelectedPeer = key;
             processed++;
             handled[key] = done + 1;
             if (q.Count == 0)
@@ -1301,6 +1369,10 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             }
         }
 
+        selected.Sort(static (a, b) => a.Key != b.Key
+            ? a.Key.CompareTo(b.Key) : a.Sequence.CompareTo(b.Sequence));
+        foreach (var item in selected) HandleDrainedEvent(item.Event, handle);
+
         // Phase 3 — count whatever is left sitting in the lanes as deferred
         // (it keeps its byte reservation and is carried to the next drain).
         int deferred = 0;
@@ -1310,6 +1382,33 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         Interlocked.Add(ref _eventsDrained, processed);
         Interlocked.Add(ref _eventsDeferred, deferred);
         return processed;
+    }
+
+    private void HandleDrainedEvent(ITransportEvent evt, Action<ITransportEvent> handle)
+    {
+        if (evt is ReceivedEvt r)
+            ReleaseReservation(r);   // a handled receive frees its reserved bytes (never inserts)
+        // P654 (H-34) — per-event exception barrier (defence in depth). Every
+        // dispatch branch already has its own try/catch, but the remaining
+        // throwers (logon-path code after decode, CaptureReceived file I/O on
+        // a full disk, ReleasePeer) would previously abort the WHOLE Drain,
+        // dropping every event already pulled into the lanes (PeerLeftEvt →
+        // ghost ship, byte reservations never released). Wrapping each
+        // handle() here means a throwing handler costs only that one event —
+        // the rest of the lane keeps its FIFO and the drain completes.
+        try
+        {
+            handle(evt);
+        }
+        catch (Exception ex)
+        {
+            // The event is gone from the lane (dequeued above) and its byte
+            // reservation already released (for a receive); do not let one
+            // bad event take the lane (and the drain) down. Log once.
+            var et = _dropLog.Ticket(PeerKeyOf(evt));
+            if (et.Emit)
+                Console.WriteLine($"[drain] event handler threw for key {PeerKeyOf(evt)}: {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     /// <summary>The per-peer bucket key for an event: receives and lifecycle

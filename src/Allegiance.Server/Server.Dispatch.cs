@@ -20,20 +20,30 @@ namespace Allegiance.Server;
 public sealed partial class Server
 {
 
-    /// <summary>Unpack, validate and answer one inbound packet. At the headless
-    /// milestone the only message a client is expected to send is the logon
-    /// request; anything else is reported and ignored (no crash).</summary>
+    /// <summary>Synchronous entry retained for packet-level regression fixtures.
+    /// Live receives use the same dispatcher with worker-prepared commands when
+    /// receive.decouple is enabled.</summary>
     private void ProcessDatagram(ConnectionId from, byte[] data)
-    {
-        byte[][] messages;
-        try { messages = FedPacket.Unpack(data); }
-        catch (FedCrcException e) { Console.WriteLine($"[wire] crc/ framing failure from {from}: {e.Message}"); return; }
+        => ProcessInboundPacket(from, InboundPacket.Prepare(data, decode: false));
 
-        foreach (var m in messages)
+    private void ProcessInboundPacket(ConnectionId from, InboundPacket inbound)
+    {
+        if (inbound.Error is { } error)
         {
-            ushort fmid;
-            try { fmid = FedMessageHeader.Read(m).Fmid; }
-            catch (Exception e) { Console.WriteLine($"[wire] bad message header from {from}: {e.Message}"); continue; }
+            Console.WriteLine($"[wire] crc/ framing failure from {from}: {error.Message}");
+            return;
+        }
+
+        foreach (var command in inbound.Messages)
+        {
+            var m = command.Bytes;
+            if (command.BadHeader)
+            {
+                Console.WriteLine($"[wire] bad message header from {from}: FedMessageHeader needs >= 4 bytes");
+                continue;
+            }
+            ushort fmid = command.Fmid;
+            _host.InboundTrace?.Message(from, fmid, m.Length);
 
             if (fmid == Ping.Fmid)   // FM_CS_PING (Messages.h:280-284)
             {
@@ -47,7 +57,7 @@ public sealed partial class Server
                 // game state (even with no mission assigned).
                 try
                 {
-                    var ping = Ping.Decode(m);
+                    var ping = command.Read<Ping>();
                     // P645 — rate-limit client-triggered replies: the native
                     // client pings at most once per ~6 s (clintlib.cpp:2052-2085
                     // CheckServerLag, maxLagCheck=6.0f), so a peer exceeding the
@@ -76,7 +86,7 @@ public sealed partial class Server
             if (fmid == LogonRequest.Fmid)
             {
                 LogonRequest req;
-                try { req = LogonRequest.Decode(m); }
+                try { req = command.Read<LogonRequest>(); }
                 catch (Exception e) { Console.WriteLine($"[wire] bad LOGONREQ from {from}: {e.Message}"); continue; }
 
                 // P654 (H-28) — reject an out-of-range / control-character
@@ -209,7 +219,7 @@ public sealed partial class Server
                 // position/velocity/orientation echoes are ignored as authority.
                 try
                 {
-                    var u = ShipUpdate.Decode(m);
+                    var u = command.Read<ShipUpdate>();
                     if (_peerShips.TryGetValue(from, out var live))
                     {
                         // P180 — a genuine pre-game hold: while the mission is
@@ -313,7 +323,7 @@ public sealed partial class Server
                 // sender actually being a boarded gunner (FedSrv.CPP:4873-4875).
                 try
                 {
-                    var u = ActiveTurretUpdate.Decode(m);
+                    var u = command.Read<ActiveTurretUpdate>();
                     if (_peerShips.TryGetValue(from, out var live))
                         HandleActiveTurretUpdate(live.Ship, u.Atu);
                     else
@@ -331,7 +341,7 @@ public sealed partial class Server
                 // Clears the same "shooting" state bit ACTIVE_TURRET_UPDATE set.
                 try
                 {
-                    _ = InactiveTurretUpdate.Decode(m);   // no fields; decode validates cbmsg=4
+                    _ = command.Read<InactiveTurretUpdate>();   // no fields; decode validates cbmsg=4
                     if (_peerShips.TryGetValue(from, out var live))
                     {
                         var gunner = live.Ship;
@@ -374,7 +384,7 @@ public sealed partial class Server
                 // crash the server). Matches README's "report and ignore" rule.
                 try
                 {
-                    var chat = ChatMessage.Decode(m);
+                    var chat = command.Read<ChatMessage>();
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
                         ConsoleLog.Write($"[chat] {from}: chat from a peer with no ship — ignored");
@@ -450,7 +460,7 @@ public sealed partial class Server
                 // logged and ignored — never fatal, never creates a ballot.
                 try
                 {
-                    var vote = Vote.Decode(m);
+                    var vote = command.Read<Vote>();
                     if (!_peerShips.TryGetValue(from, out var voterLive))
                     {
                         ConsoleLog.Write($"[vote] {from}: VOTE from a peer with no ship — ignored");
@@ -499,7 +509,7 @@ public sealed partial class Server
                 // CS_PING's echo and ChatMessage's own relay, Server.cs:1281).
                 try
                 {
-                    var buoy = ChatBuoy.Decode(m);
+                    var buoy = command.Read<ChatBuoy>();
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
                         ConsoleLog.Write($"[chatbuoy] {from}: chat from a peer with no ship — ignored");
@@ -603,7 +613,7 @@ public sealed partial class Server
                 // so no new relay infrastructure is introduced.
                 try
                 {
-                    var hl = HighlightCluster.Decode(m);
+                    var hl = command.Read<HighlightCluster>();
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
                         ConsoleLog.Write($"[highlight] {from}: highlight from a peer with no ship — ignored");
@@ -666,7 +676,7 @@ public sealed partial class Server
                 //    defer the trigger" discipline).
                 try
                 {
-                    var docked = Docked.Decode(m);
+                    var docked = command.Read<Docked>();
                     if (!_peerShips.TryGetValue(from, out var undockLive))
                     {
                         ConsoleLog.Write($"[undock] {from}: dock message from a peer with no ship — ignored");
@@ -699,7 +709,7 @@ public sealed partial class Server
                 // the actual mounted-part tail (nParts = real count, not 0).
                 try
                 {
-                    var buy = BuyLoadoutRequest.Decode(m);
+                    var buy = command.Read<BuyLoadoutRequest>();
                     if (!_peerShips.TryGetValue(from, out var buyLive))
                     {
                         ConsoleLog.Write($"[loadout] {from}: BUY_LOADOUT from a peer with no ship — ignored");
@@ -731,7 +741,7 @@ public sealed partial class Server
                 // (iSide==NA) are out of scope per the task.
                 try
                 {
-                    var pr = PositionReq.Decode(m);
+                    var pr = command.Read<PositionReq>();
                     // P281 — the initial side-select request: a peer in
                     // _pendingSideSelect (logged on, ship not yet spawned) that
                     // sends POSITIONREQ is choosing its starting side. Record the
@@ -827,7 +837,7 @@ public sealed partial class Server
                 // whole-mission. Silent no-op if there was no matching pending request.
                 try
                 {
-                    var pa = PositionAck.Decode(m);
+                    var pa = command.Read<PositionAck>();
                     if (!_peerShips.TryGetValue(from, out var ackLive))
                     {
                         ConsoleLog.Write($"[posack] {from}: POSITIONACK from a peer with no ship — ignored");
@@ -900,7 +910,7 @@ public sealed partial class Server
                 // additional broadcast (the relay already told everyone).
                 try
                 {
-                    var del = DelPositionReq.Decode(m);
+                    var del = command.Read<DelPositionReq>();
                     if (!_peerShips.TryGetValue(from, out var delLive))
                     {
                         ConsoleLog.Write($"[delreq] {from}: DELPOSITIONREQ from a peer with no ship — ignored");
@@ -966,7 +976,7 @@ public sealed partial class Server
                 // triggering auto-start if the mission is now fully ready.
                 try
                 {
-                    var ft = ForceTeamReady.Decode(m);
+                    var ft = command.Read<ForceTeamReady>();
                     if (!_peerShips.TryGetValue(from, out var frLive))
                     {
                         ConsoleLog.Write($"[forceready] {from}: FORCE_TEAM_READY from a peer with no ship — ignored");
@@ -1028,7 +1038,7 @@ public sealed partial class Server
                 // c_fMissionBriefingCountdown = 15s (igc.h:1005).
                 try
                 {
-                    _ = StartGame.Decode(m);   // zero-field marker; decode validates cbmsg=4
+                    _ = command.Read<StartGame>();   // zero-field marker; decode validates cbmsg=4
                     if (!_peerShips.TryGetValue(from, out var sgLive))
                     {
                         ConsoleLog.Write($"[startgame] {from}: START_GAME from a peer with no ship — ignored");
@@ -1080,7 +1090,7 @@ public sealed partial class Server
                 // ordinary player-initiated side-switch the lock guards.
                 try
                 {
-                    _ = RandomizeTeams.Decode(m);   // zero-field marker; decode validates cbmsg=4
+                    _ = command.Read<RandomizeTeams>();   // zero-field marker; decode validates cbmsg=4
                     if (!_peerShips.TryGetValue(from, out var rtLive))
                     {
                         ConsoleLog.Write($"[randomizeteams] {from}: RANDOMIZE_TEAMS from a peer with no ship — ignored");
@@ -1116,7 +1126,7 @@ public sealed partial class Server
                 // FedSrv.CPP:5516-5658 case FM_C_AUTODONATE.
                 try
                 {
-                    var autoDonate = AutoDonate.Decode(m);
+                    var autoDonate = command.Read<AutoDonate>();
                     if (!_peerShips.TryGetValue(from, out var adLive))
                     {
                         ConsoleLog.Write($"[autodonate] {from}: AUTODONATE from a peer with no ship — ignored");
@@ -1143,7 +1153,7 @@ public sealed partial class Server
                 // recipient resolves.
                 try
                 {
-                    var requestMoney = RequestMoney.Decode(m);
+                    var requestMoney = command.Read<RequestMoney>();
                     if (!_peerShips.TryGetValue(from, out var rmLive))
                     {
                         ConsoleLog.Write($"[requestmoney] {from}: REQUEST_MONEY from a peer with no ship — ignored");
@@ -1170,7 +1180,7 @@ public sealed partial class Server
                 // sender alone with no wallet movement.
                 try
                 {
-                    var playerDonate = PlayerDonate.Decode(m);
+                    var playerDonate = command.Read<PlayerDonate>();
                     if (!_peerShips.TryGetValue(from, out var pdLive))
                     {
                         ConsoleLog.Write($"[playerdonate] {from}: PLAYER_DONATE from a peer with no ship — ignored");
@@ -1201,7 +1211,7 @@ public sealed partial class Server
                 // for wire completeness and any future client UI only.
                 try
                 {
-                    var ll = LockLobby.Decode(m);
+                    var ll = command.Read<LockLobby>();
                     if (!_peerShips.TryGetValue(from, out var llLive))
                     {
                         ConsoleLog.Write($"[locklobby] {from}: LOCK_LOBBY from a peer with no ship — ignored");
@@ -1247,7 +1257,7 @@ public sealed partial class Server
                 // (fsmission.cpp:4590).
                 try
                 {
-                    var ls = LockSides.Decode(m);
+                    var ls = command.Read<LockSides>();
                     if (!_peerShips.TryGetValue(from, out var lsLive))
                     {
                         ConsoleLog.Write($"[locksides] {from}: LOCK_SIDES from a peer with no ship — ignored");
@@ -1295,7 +1305,7 @@ public sealed partial class Server
                 // NOT consume the new Side.Active field.
                 try
                 {
-                    var si = SideInactive.Decode(m);
+                    var si = command.Read<SideInactive>();
                     if (!_peerShips.TryGetValue(from, out var siLive))
                     {
                         ConsoleLog.Write($"[sideinactive] {from}: SIDE_INACTIVE from a peer with no ship — ignored");
@@ -1393,7 +1403,7 @@ public sealed partial class Server
                 // requester via TryJoinSide (fsmission.cpp:4974-5011 SetAutoAccept).
                 try
                 {
-                    var aa = AutoAccept.Decode(m);
+                    var aa = command.Read<AutoAccept>();
                     if (!_peerShips.TryGetValue(from, out var aaLive))
                     {
                         ConsoleLog.Write($"[autoaccept] {from}: AUTO_ACCEPT from a peer with no ship — ignored");
@@ -1460,7 +1470,7 @@ public sealed partial class Server
                 // GAME_OVER_PLAYERS from [[allegiance-win-condition-plan]]).
                 try
                 {
-                    var cc = ChangeTeamCiv.Decode(m);
+                    var cc = command.Read<ChangeTeamCiv>();
                     if (!_peerShips.TryGetValue(from, out var ccLive))
                     {
                         ConsoleLog.Write($"[changeciv] {from}: CHANGE_TEAM_CIV from a peer with no ship — ignored");
@@ -1528,7 +1538,7 @@ public sealed partial class Server
                 // fsmission.cpp:5642-5647; here we log-and-ignore up front).
                 try
                 {
-                    var ca = ChangeAlliance.Decode(m);
+                    var ca = command.Read<ChangeAlliance>();
                     if (!_peerShips.TryGetValue(from, out var caLive))
                     {
                         ConsoleLog.Write($"[alliances] {from}: CHANGE_ALLIANCE from a peer with no ship — ignored");
@@ -1575,7 +1585,7 @@ public sealed partial class Server
                 // entry) -- same shape as ChatTarget.Team in SelectChatTargets.
                 try
                 {
-                    var ready = PlayerReady.Decode(m);
+                    var ready = command.Read<PlayerReady>();
                     if (!_peerShips.TryGetValue(from, out var readyLive))
                     {
                         ConsoleLog.Write($"[ready] {from}: PLAYER_READY from a peer with no ship — ignored");
@@ -1629,7 +1639,7 @@ public sealed partial class Server
                 // every other inbound handler — never crashes the server.
                 try
                 {
-                    Suicide.Decode(m);
+                    _ = command.Read<Suicide>();
                     if (!_peerShips.TryGetValue(from, out var live))
                     {
                         ConsoleLog.Write($"[suicide] {from}: SUICIDE from a peer with no ship — ignored");
@@ -1665,7 +1675,7 @@ public sealed partial class Server
                 // that never validated/logged on.
                 try
                 {
-                    Logoff.Decode(m);
+                    _ = command.Read<Logoff>();
                     SendPeer(from, FedPacket.Pack(new[] { m }));   // guaranteed echo back
                     ReleasePeer(from);
                     // P654 (H-14) — close the transport connection now. Native
@@ -1695,7 +1705,7 @@ public sealed partial class Server
                 // dropped like every other inbound handler.
                 try
                 {
-                    var req = ViewClusterRequest.Decode(m);
+                    var req = command.Read<ViewClusterRequest>();
                     if (!_peerShips.TryGetValue(from, out var reqLive))
                     {
                         ConsoleLog.Write($"[viewcluster] {from}: VIEW_CLUSTER from a peer with no ship — ignored");
@@ -1741,7 +1751,7 @@ public sealed partial class Server
                 // reported and dropped like every other inbound handler.
                 try
                 {
-                    var board = BoardShip.Decode(m);
+                    var board = command.Read<BoardShip>();
                     if (!_peerShips.TryGetValue(from, out var boardLive))
                     {
                         ConsoleLog.Write($"[boardship] {from}: BOARD_SHIP from a peer with no ship — ignored");
@@ -1766,7 +1776,7 @@ public sealed partial class Server
                 // wide. A mount matching no real child is a silent no-op.
                 try
                 {
-                    var promoteReq = PromoteRequest.Decode(m);
+                    var promoteReq = command.Read<PromoteRequest>();
                     if (!_peerShips.TryGetValue(from, out var promoteLive))
                     {
                         ConsoleLog.Write($"[promote] {from}: PROMOTE from a peer with no ship — ignored");
@@ -1792,7 +1802,7 @@ public sealed partial class Server
                 // filled in. A source mount holding no part is a silent no-op.
                 try
                 {
-                    var swapReq = SwapPart.Decode(m);
+                    var swapReq = command.Read<SwapPart>();
                     if (!_peerShips.TryGetValue(from, out var swapLive))
                     {
                         ConsoleLog.Write($"[swappart] {from}: SWAP_PART from a peer with no ship — ignored");
@@ -1817,7 +1827,7 @@ public sealed partial class Server
                 // sector-wide with shipID filled in.
                 try
                 {
-                    var reloadReq = Reload.Decode(m);
+                    var reloadReq = command.Read<Reload>();
                     if (!_peerShips.TryGetValue(from, out var reloadLive))
                     {
                         ConsoleLog.Write($"[reload] {from}: RELOAD from a peer with no ship — ignored");
@@ -1844,7 +1854,7 @@ public sealed partial class Server
                 // A source mount holding no part is a silent no-op.
                 try
                 {
-                    var dropReq = DropPart.Decode(m);
+                    var dropReq = command.Read<DropPart>();
                     if (!_peerShips.TryGetValue(from, out var dropLive))
                     {
                         ConsoleLog.Write($"[droppart] {from}: DROP_PART from a peer with no ship — ignored");
@@ -1870,7 +1880,7 @@ public sealed partial class Server
                 // false, and a side-wide broadcast + server-side WingId mutation.
                 try
                 {
-                    var swReq = SetWingId.Decode(m);
+                    var swReq = command.Read<SetWingId>();
                     if (!_peerShips.TryGetValue(from, out var swLive))
                     {
                         ConsoleLog.Write($"[setwingid] {from}: SET_WINGID from a peer with no ship — ignored");
@@ -1896,7 +1906,7 @@ public sealed partial class Server
                 // current position; either way the pending offer is cleared.
                 try
                 {
-                    var ack = TreasureAck.Decode(m);
+                    var ack = command.Read<TreasureAck>();
                     if (!_peerShips.TryGetValue(from, out var ackLive))
                     {
                         ConsoleLog.Write($"[treasureack] {from}: TREASURE_ACK from a peer with no ship — ignored");
@@ -1919,7 +1929,7 @@ public sealed partial class Server
                 // the port of FedSrv.CPP:7715-7728 and FedSrv.CPP:13319-13378.
                 try
                 {
-                    var req = RipcordRequest.Decode(m);
+                    var req = command.Read<RipcordRequest>();
                     if (!_peerShips.TryGetValue(from, out var ripLive))
                     {
                         ConsoleLog.Write($"[ripcord] {from}: RIPCORD_REQUEST from a peer with no ship — ignored");
@@ -1948,7 +1958,7 @@ public sealed partial class Server
                 // BUCKET_STATUS to the whole side.
                 try
                 {
-                    var donate = BucketDonate.Decode(m);
+                    var donate = command.Read<BucketDonate>();
                     if (!_peerShips.TryGetValue(from, out var donateLive))
                     {
                         ConsoleLog.Write($"[bucketdonate] {from}: BUCKET_DONATE from a peer with no ship — ignored");
@@ -1975,7 +1985,7 @@ public sealed partial class Server
                 // of scope this task and no-ops with a log.
                 try
                 {
-                    var ocReq = OrderChange.Decode(m);
+                    var ocReq = command.Read<OrderChange>();
                     if (!_peerShips.TryGetValue(from, out var ocLive))
                     {
                         ConsoleLog.Write($"[orderchange] {from}: ORDER_CHANGE from a peer with no ship — ignored");
@@ -2003,7 +2013,7 @@ public sealed partial class Server
                 // of scope (separate, already-solved DeployMine/DeployProbe).
                 try
                 {
-                    var feReq = FireExpendableRequest.Decode(m);
+                    var feReq = command.Read<FireExpendableRequest>();
                     if (!_peerShips.TryGetValue(from, out var feLive))
                     {
                         ConsoleLog.Write($"[fireexpendable] {from}: FIRE_EXPENDABLE from a peer with no ship — ignored");
@@ -2037,7 +2047,7 @@ public sealed partial class Server
                 // broadcast) and decrements ammo.
                 try
                 {
-                    var fmReq = FireMissile.Decode(m);
+                    var fmReq = command.Read<FireMissile>();
                     if (!_peerShips.TryGetValue(from, out var fmLive))
                     {
                         ConsoleLog.Write($"[firemissile] {from}: FIRE_MISSILE from a peer with no ship — ignored");
@@ -2065,7 +2075,7 @@ public sealed partial class Server
                 // native CFMConnection::PingQuery (messagecore.h:217-223).
                 try
                 {
-                    _ = ReqPingData.Decode(m);   // zero-field trigger; decode validates cbmsg=4
+                    _ = command.Read<ReqPingData>();   // zero-field trigger; decode validates cbmsg=4
                     HandleReqPingData(from);
                 }
                 catch (Exception e)
