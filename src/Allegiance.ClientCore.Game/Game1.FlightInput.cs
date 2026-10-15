@@ -270,12 +270,12 @@ public sealed partial class Game1
         // undock. Cheap: only drains received echoes + sends a ~1 Hz ping.
         PumpServerClock();
         var world = _session.World;
+        UpdateMissionCatalog();
         if (_nextMatchGeneration != world.MissionGeneration)
         {
             _nextMatchGeneration = world.MissionGeneration;
             _briefingDismissed = false;
-            _countdownStartCuePlayed = false;
-            _countdownLastSecond = 0;
+            _missionCountdownSound.Reset();
             _gameOverCuePlayed = false;
             _ownReady = false;
         }
@@ -555,6 +555,9 @@ public sealed partial class Game1
         _selPrevKeyWasDown             = ActionDown(ks, "SelectSectorPrev");
         _selNextKeyWasDown             = ActionDown(ks, "SelectSectorNext");
         _vKeyWasDown                   = ActionDown(ks, "CycleView");
+        _viewMissileWasDown = ActionDown(ks, "ViewMissile");
+        _viewChaseWasDown = ActionDown(ks, "ViewChase");
+        _viewTurretWasDown = ActionDown(ks, "ViewTurret");
         _kKeyWasDown                = ActionDown(ks, "Suicide");
         _cKeyWasDown                = ActionDown(ks, "DropChaff");
         _fCloakWasDown              = ActionDown(ks, "ToggleCloak");
@@ -580,9 +583,7 @@ public sealed partial class Game1
         _p3TurretKeyWasDown         = ActionDown(ks, "PromoteTurret3");
         _p4TurretKeyWasDown         = ActionDown(ks, "PromoteTurret4");
         _xKeyWasDown                = ActionDown(ks, "LeaderCommand");
-        _acceptKeyWasDown           = ActionDown(ks, "AcceptCommand");
-        _rejectKeyWasDown           = ActionDown(ks, "RejectCommand");
-        _clearKeyWasDown            = ActionDown(ks, "ClearCommand");
+        _commandActionInput.Prime(ks, KeyBindingStore.Instance.Map);
         // P624 — prime the new flight-pack edge latches (vector lock, radar cycle)
         // so a key held across the pre-flight→flight transition can't fire once.
         _lockVectorKeyWasDown       = ActionDown(ks, "LockVector");
@@ -806,7 +807,14 @@ public sealed partial class Game1
         // navigating or typing never also thrusts/turns the ship.
         bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame;
         HandleRemainderTargetKeys(ks, composing);
+        HandleCommandActionKeys(ks, composing);
         HandleP623TargetingKeys(ks, composing);
+        // Native SetViewToCombatMode also works while docked: close the panes
+        // and return to the hangar (WinTrek.cpp:9357-9385).
+        ToggleCameraKey(ks, composing, "ViewMissile", CameraMode.ExternalMissile, ref _viewMissileWasDown);
+        ToggleCameraKey(ks, composing, "ViewChase", CameraMode.Chase, ref _viewChaseWasDown);
+        ToggleCameraKey(ks, composing || !IsTurretGunner(), "ViewTurret", CameraMode.ExternalTurret, ref _viewTurretWasDown);
+
 
         // P626 — vote YES/NO (TK_VoteYes/TK_VoteNo, native WinTrek.cpp:10377-10387
         // trekClient.Vote(bAgree)). Edge-triggered + composing-gated like every
@@ -1728,79 +1736,6 @@ public sealed partial class Game1
             _xKeyWasDown = xPress;
 
             // P424 — accept / reject / clear a received queued order (native
-            // TK_AcceptCommand / TK_RejectCommand / TK_ClearCommand,
-            // WinTrek.cpp:10389-10406). The local player's OWN pending queued
-            // order arrives via the owner-only QUEUED_COMMAND_UPDATE(215) message
-            // (world.MyQueuedCommand); this client has no sim to derive it from,
-            // so the server streams it. All three edge-triggered + composing-gated
-            // like every key above.
-            //   Home    → ACCEPT: promote the pending queued order to the
-            //             accepted slot (echoes the pending command id; the
-            //             server promotes authoritatively, native
-            //             AcceptQueuedCommand, WinTrek.cpp:10626-10712).
-            //   End     → REJECT: clear the pending queued order (decline it,
-            //             native RejectQueuedCommand, WinTrek.cpp:10583-10623).
-            //   Delete  → CLEAR: cancel whatever is already ACCEPTED — distinct
-            //             from rejecting a still-queued order (native
-            //             TK_ClearCommand → SetAccepted(NULL, c_cidNone)).
-            // Keys: Home/End/Delete are unclaimed (grep-verified — no other
-            // binding uses any of them), chosen over ,/./ which the starmap nav
-            // already claims.
-            if (world.MyShipId is { } me)
-            {
-                bool acc = ActionDown(ks, "AcceptCommand");
-                if (acc && !_acceptKeyWasDown)
-                {
-                    var pend = world.MyQueuedCommand;
-                    if (pend is { } p && p.CommandId != Allegiance.Core.Wire.OrderChange.CidNone)
-                    {
-                        _session.SendOrderChange(me, p.CommandId, Allegiance.Core.Wire.OrderChange.CmdQueued, (IgcObjectType)(-1), -1);
-                        Console.WriteLine($"[monogame] ACCEPT queued order commandID={p.CommandId} (ORDER_CHANGE c_cmdQueued promote)");
-
-                        // P594 — accepting a POD-PICKUP offer (CidPickup → a Ship
-                        // target = the pod) engages the autopilot to go get them.
-                        // Native's TK_ExecuteCommand / AcceptQueuedCommand bExecute
-                        // branch (WinTrek.cpp:10626-10712) promotes the order AND
-                        // sets the autopilot toward the target; that is exactly the
-                        // rescue the player wants from "prepare for recovery" — and
-                        // the P594 intercept autopilot now flies the player INTO the
-                        // pod at full speed. Home therefore selects the pod and
-                        // engages, so the offer and the rescue are one keypress.
-                        if (PickupPodIdForQueued(pend) is { } podId)
-                        {
-                            string podName = "pod";
-                            lock (_session.Gate)
-                                if (world.Ships.TryGetValue(podId, out var pe)
-                                    && !string.IsNullOrEmpty(pe.CharacterName))
-                                    podName = pe.CharacterName;
-                            EngageAutopilotToward(
-                                new AutopilotTarget(TargetKind.Ship, podId, $"{podName} #{podId}"),
-                                "pickup accept:");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("[monogame] ACCEPT with no pending queued order — nothing sent");
-                    }
-                }
-                _acceptKeyWasDown = acc;
-
-                bool rej = ActionDown(ks, "RejectCommand");
-                if (rej && !_rejectKeyWasDown)
-                {
-                    _session.SendOrderChange(me, Allegiance.Core.Wire.OrderChange.CidNone, Allegiance.Core.Wire.OrderChange.CmdQueued, (IgcObjectType)(-1), -1);
-                    Console.WriteLine("[monogame] REJECT queued order (ORDER_CHANGE c_cmdQueued clear)");
-                }
-                _rejectKeyWasDown = rej;
-
-                bool cls = ActionDown(ks, "ClearCommand");
-                if (cls && !_clearKeyWasDown)
-                {
-                    _session.SendOrderChange(me, Allegiance.Core.Wire.OrderChange.CidNone, Allegiance.Core.Wire.OrderChange.CmdAccepted, (IgcObjectType)(-1), -1);
-                    Console.WriteLine("[monogame] CLEAR accepted order (ORDER_CHANGE c_cmdAccepted clear)");
-                }
-                _clearKeyWasDown = cls;
-            }
         }
 
         // Native behaviour (WinTrek.cpp's SenseJoystick): a real manual
@@ -2604,14 +2539,10 @@ public sealed partial class Game1
         };
 
     /// <summary>
-    /// P594 — the pod <b>ship id</b> a pending queued order asks the local
-    /// player to pick up, or null when it is not a lifepod pickup offer. Native
-    /// <c>AcceptQueuedCommand</c>'s <c>bExecute</c> branch (WinTrek.cpp:10626-
-    /// 10712) accepts the queued order AND sets the autopilot toward its target;
-    /// this is the pure decision for that target: only a <c>CidPickup</c> whose
-    /// target is a <c>Ship</c> (the pod) should engage the intercept autopilot.
-    /// Pure + static so the accept→engage wiring is unit-testable without a
-    /// live world.
+    /// P594 — read the ship id of a queued pickup target. This only identifies
+    /// the requested model. P675 validates legality in ClientWorld.Orders and
+    /// handles Accept versus Execute independently in CommandActionInput.
+    /// Native pickup branch: WinTrek.cpp:10666-10679.
     /// </summary>
     internal static short? PickupPodIdForQueued(QueuedCommandState? qc)
     {
@@ -3069,27 +3000,17 @@ public sealed partial class Game1
     // briefing holds the player on the team screen, as well as in flight.
     private void UpdateMissionCountdownSound(Allegiance.ClientCore.State.ClientWorld world)
     {
-        if (world.Mission?.Stage == (int)MissionStage.Starting && world.CountdownStartLocalMs is { } cdStart)
+        Audio.MissionCountdownCue cue;
+        lock (_session.Gate) cue = _missionCountdownSound.Update(world);
+        if (cue.Start)
         {
-            if (!_countdownStartCuePlayed)
-            {
-                _sound?.PlayCountdownStart();
-                _countdownStartCuePlayed = true;
-                _countdownLastSecond = 0;
-                Console.WriteLine("[monogame] audio: countdown-start");
-            }
-
-            int remaining = world.CountdownRemainingSeconds() ?? (int)Math.Ceiling(
-                Audio.CountdownSound.BriefingCountdownSeconds - (Environment.TickCount64 - cdStart) / 1000.0);
-            if (remaining != _countdownLastSecond)
-            {
-                _countdownLastSecond = remaining;
-                if (Audio.CountdownSound.TickAssetFor(remaining) is { })
-                {
-                    _sound?.PlayCountdownSecond(remaining);
-                    Console.WriteLine($"[monogame] audio: countdown tick {remaining}");
-                }
-            }
+            _sound?.PlayCountdownStart();
+            Console.WriteLine("[monogame] audio: countdown-start");
+        }
+        if (cue.Second is { } second)
+        {
+            _sound?.PlayCountdownSecond(second);
+            Console.WriteLine($"[monogame] audio: countdown tick {second}");
         }
     }
 

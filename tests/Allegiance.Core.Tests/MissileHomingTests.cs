@@ -201,9 +201,11 @@ public class MissileHomingTests
         // heading: its heading error to the target direction converges onto the
         // target line (dips to a small minimum) and it re-orients well off the
         // launch heading. (A straight-line missile would hold launchError forever.)
-        float minError = angles.Min();
-        Assert.True(minError < 0.015f * Math.Max(1f, launchError),
-            $"the missile must turn onto the target line; min heading error {minError:F3} rad (launch error {launchError:F3})");
+        // Igc/missileigc.cpp:386-389 aims at dp + t*(targetVelocity-lock
+        // correction - missileVelocity), so heading need not converge to the
+        // geometric target line while lateral missile momentum remains.
+        Assert.True((targetPos - missile.Position).Length() < .5f * (targetPos - p0).Length(),
+            "native lead steering must close at least half the initial separation");
         Assert.True(angles[0] < launchError - 1e-3f,
             "the missile must begin turning toward the target on the first tick, not hold the launch heading");
         Assert.True(AngleBetween(missile.Forward, forward) > 0.2f,
@@ -316,8 +318,9 @@ public class MissileHomingTests
         // climbing by a constant per-tick increment (acceleration·dt), not
         // flattening out.
         Vector3 headingAtDrop = missile.Forward;
-        var dropLengths = new List<float>();
-        Step(mission, 12, dt, _ => dropLengths.Add(missile.Velocity.Length()));
+        var dropVelocities = new List<Vector3>();
+        Step(mission, 12, dt, _ => dropVelocities.Add(missile.Velocity));
+        var dropLengths = dropVelocities.Select(v => v.Length()).ToList();
         Assert.Null(missile.Target);
         Assert.Equal(headingAtDrop, missile.Forward);   // no more steering once dropped
         Assert.True(dropLengths[^1] > dropLengths[0] + 1f,
@@ -325,8 +328,12 @@ public class MissileHomingTests
         float expectedPerTickGrowth = mType.Acceleration * (float)dt;
         for (int i = 1; i < dropLengths.Count; i++)
         {
-            Assert.True(Math.Abs((dropLengths[i] - dropLengths[i - 1]) - expectedPerTickGrowth) < 0.5f,
-                $"per-tick speed growth after drop must match acceleration·dt (~{expectedPerTickGrowth}), got {dropLengths[i] - dropLengths[i - 1]} at tick {i}");
+            // Igc/missileigc.cpp:393-397 adds a VECTOR along the latched
+            // heading. Its scalar speed growth is smaller while prior lateral
+            // velocity remains; it is not acceleration*dt in that case.
+            var expected = headingAtDrop * expectedPerTickGrowth;
+            Assert.True((dropVelocities[i] - dropVelocities[i - 1] - expected).Length() < .001f,
+                $"per-tick velocity change must equal forward*acceleration*dt ({expected})");
         }
     }
 

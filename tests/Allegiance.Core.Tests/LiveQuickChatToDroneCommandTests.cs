@@ -121,6 +121,35 @@ public sealed class LiveQuickChatToDroneCommandTests
         return (server, mission!, sector!, side0, side1, wing, bots);
     }
 
+    [SkippableTheory, Trait("Requires", "Artwork")]
+    [InlineData(false)] [InlineData(true)]
+    public void P676_Individual_repair_orders_ship_or_station_and_affirms_over_tcp(bool stationTarget)
+    {
+        Require.Artwork();
+        var (server, mission, sector, _, _, wing, bots) = Boot(1);
+        using (server)
+        using (var commander = bots[0])
+        {
+            short side = SideOf(server, commander)!.Value;
+            var wingman = server.SpawnNpcShip(mission, sector, side, new Vector3(710, 605, 542), wing);
+            var charge = server.Ships.Single(p => p.Ship.Id == ShipId(commander)).Ship;
+            var type = mission.Core.StationTypes.Values.First();
+            var data = DataStationIGC.Decode(new byte[DataStationIGC.Size]) with
+            { StationId = 31000, StationTypeId = type.StationTypeId, ClusterId = sector.Id,
+                SideId = side, Position = [500, 500, 500] };
+            var station = new Station(data, type); mission.PlaceStation(station, sector);
+            commander.SendChat("repair", ChatTarget.Individual, oidRecipient: wingman.Id,
+                commandId: OrderChange.CidRepair,
+                oidTarget: stationTarget ? station.StationId : charge.Id,
+                otTarget: (short)(stationTarget ? IgcObjectType.Station : IgcObjectType.Ship));
+            Pump(server, () => GotAffirmative(commander, wingman.Id), 3000);
+            Assert.True(GotAffirmative(commander, wingman.Id));
+            if (stationTarget) Assert.Same(station, wingman.RepairStationTarget);
+            else Assert.Same(charge, wingman.RepairTarget);
+            Assert.Null(wingman.AttackTarget);
+        }
+    }
+
     /// <summary>⭐ Primary leg: a commander on side A orders a same-side Wingman
     /// NPC (Individual <c>cidAttack</c>, targeting an enemy ship on side B). The
     /// Wingman's <see cref="Ship.AttackTarget"/> becomes that enemy and the

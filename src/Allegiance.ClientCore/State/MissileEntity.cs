@@ -11,12 +11,11 @@ namespace Allegiance.ClientCore.State;
 /// pose) and kept current by the per-tick <c>FM_S_MISSILE_UPDATE(205)</c> (P234),
 /// which refreshes <see cref="Position"/> / <see cref="Forward"/> to the
 /// server-authoritative values every sim tick — this renderer-only client has no
-/// static core to simulate the missile's homing/turning locally, so it trusts
+/// local homing simulation; it trusts
 /// the server's per-tick stream rather than extrapolating a straight line.
 /// </summary>
 /// <remarks>
-/// <para><b>Expiry.</b> The client has no static core to read
-/// <c>DataMissileTypeIGC.Lifespan</c>, so a missile entity is removed by the
+/// <para><b>Expiry.</b> The server owns expiry; a missile entity is removed by the
 /// server's <c>FM_S_MISSILE_DESTROYED(83)</c> (sent on real expiry/destruction)
 /// and, as a belt-and-suspenders guard against a missed destroy, by the stale
 /// pruner (<see cref="ClientWorld.PruneExpiredMissiles"/>) once no
@@ -33,6 +32,11 @@ public sealed class MissileEntity
 {
     /// <summary>The missile's ObjectID (<c>MissileID</c> = short, the key).</summary>
     public short MissileId;
+
+    // FIRE_MISSILE carries these; MISSILE_UPDATE only refreshes motion.
+    public short LauncherId = -1;
+    public Allegiance.Core.IgcObjectType TargetType = (Allegiance.Core.IgcObjectType)(-1);
+    public short TargetId = -1;
 
     /// <summary>The decoded missile type's ExpendableTypeId (maps to the model).</summary>
     public short TypeId;

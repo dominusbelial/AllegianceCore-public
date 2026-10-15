@@ -1,0 +1,425 @@
+--- P632 p685 model=port debug=1 ---
+RESULT botsReached=30/30 killsA=10 killsB=2 killsTotal=12 deathsA=2 deathsB=10 shots=17869 hits=9996 hitRate=55.9 % friendly=0 shieldHits=6256 hullHits=3740 maxTargeted=29 maxVisibleEnemies=15
+ACTIVE side=0 sector=1053 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target= hull=Adv Scout
+ACTIVE side=0 sector=1053 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1053 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1053 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1052 target= hull=Adv Scout
+ACTIVE side=1 sector=1060 target= hull=Adv Scout
+ACTIVE side=0 sector=1053 target= hull=Adv Scout
+ACTIVE side=1 sector=1052 target= hull=Adv Scout
+--- P636 DECISION PERF (snapshot fix) ---
+  P636PERF p685: t=10s passMean=1.4 passP50=1.2 passP95=2.3 passMax=24.2 decisionHz=19.812 cpu=1.5 gen0=76 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=0.0 decLagP95=0.0 decLagMax=1
+  P636PERF p685: t=20s passMean=1.5 passP50=1.5 passP95=2.4 passMax=24.2 decisionHz=19.896 cpu=1.3 gen0=160 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=3.9 decLagP95=4.0 decLagMax=4
+  P636PERF p685: t=30s passMean=1.5 passP50=1.5 passP95=2.4 passMax=7.5 decisionHz=19.894 cpu=1.5 gen0=239 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=0.0 decLagP95=0.0 decLagMax=1
+  P636PERF p685: t=40s passMean=1.3 passP50=1.2 passP95=1.9 passMax=4.2 decisionHz=19.950 cpu=1.3 gen0=313 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=2.8 decLagP95=3.0 decLagMax=3
+  P636PERF p685: t=50s passMean=1.0 passP50=0.9 passP95=1.5 passMax=3.8 decisionHz=19.736 cpu=1.3 gen0=378 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=1.0 decLagP95=1.0 decLagMax=1
+  P636PERF p685: t=60s passMean=1.0 passP50=0.9 passP95=1.5 passMax=3.6 decisionHz=19.774 cpu=1.4 gen0=441 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=2.5 decLagP95=3.0 decLagMax=3
+  P636PERF p685: t=70s passMean=1.3 passP50=1.2 passP95=1.9 passMax=4.1 decisionHz=20.159 cpu=1.6 gen0=523 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=1.0 decLagP95=1.0 decLagMax=1
+  P636PERF p685: t=80s passMean=1.5 passP50=1.5 passP95=2.1 passMax=4.6 decisionHz=19.851 cpu=1.4 gen0=604 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=2.0 decLagP95=2.0 decLagMax=3
+  P636PERF p685: t=90s passMean=1.4 passP50=1.4 passP95=2.1 passMax=9.1 decisionHz=20.060 cpu=1.6 gen0=682 gen2=2 botCount=30 snapAgeMean=0.0 snapAgeP95=0.0 snapAgeMax=0 pubPs=0.0 pubMsPs=0.0 decLagMean=1.9 decLagP95=6.0 decLagMax=6
+--- SERVER LOG (kills/warp/collision tail) ---
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1110.2244, Y = 990, Z = 0 } jiggle(0.7909428,0.7909428) -> COLLISION_EVENT(216) -> 4 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -749.77563, Y = -612, Z = 0 } jiggle(0.7909428,0.7909428) -> COLLISION_EVENT(216) -> 3 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1102.2335, Y = 990, Z = 0 } jiggle(1.6228241,1.6228241) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1116.8503, Y = 990, Z = 0 } jiggle(0.6175033,0.6175033) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -757.76624, Y = -612, Z = 0 } jiggle(1.6228241,1.6228241) -> COLLISION_EVENT(216) -> 4 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -743.14954, Y = -612, Z = 0 } jiggle(0.61750317,0.61750317) -> COLLISION_EVENT(216) -> 4 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1094.4028, Y = 990, Z = 0 } jiggle(2.4951818,2.4951818) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1108.8651, Y = 990, Z = 0 } jiggle(1.2868729,1.2868729) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1122.0905, Y = 990, Z = 0 } jiggle(0.51196754,0.51196754) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -765.5971, Y = -612, Z = 0 } jiggle(2.4951818,2.4951818) -> COLLISION_EVENT(216) -> 4 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -751.1349, Y = -612, Z = 0 } jiggle(1.2868729,1.2868729) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1086.645, Y = 990, Z = 0 } jiggle(3.4088802,3.4088802) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1100.9204, Y = 990, Z = 0 } jiggle(1.9848477,1.9848477) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -737.9092, Y = -612, Z = 0 } jiggle(0.51196754,0.51196754) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1114.0397, Y = 990, Z = 0 } jiggle(1.0787104,1.0787104) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -773.355, Y = -612, Z = 0 } jiggle(3.4088802,3.4088802) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1126.4825, Y = 990, Z = 0 } jiggle(0.4628679,0.4628679) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -759.0796, Y = -612, Z = 0 } jiggle(1.9848471,1.9848471) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1079.1133, Y = 990, Z = 0 } jiggle(4.275893,4.275893) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -745.9603, Y = -612, Z = 0 } jiggle(1.0787104,1.0787104) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1093.1533, Y = 990, Z = 0 } jiggle(2.7188916,2.7188916) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -733.5171, Y = -612, Z = 0 } jiggle(0.46286774,0.46286774) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1106.1249, Y = 990, Z = 0 } jiggle(1.6677235,1.6677235) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1118.4677, Y = 990, Z = 0 } jiggle(0.8821276,0.8821276) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -780.8867, Y = -612, Z = 0 } jiggle(4.275893,4.275893) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -766.84674, Y = -612, Z = 0 } jiggle(2.7188916,2.7188916) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1130.4828, Y = 990, Z = 0 } jiggle(0.3563182,0.3563182) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -753.87506, Y = -612, Z = 0 } jiggle(1.6677235,1.6677235) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1071.6934, Y = 990, Z = 0 } jiggle(5.275469,5.275469) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1085.4988, Y = 990, Z = 0 } jiggle(3.6062677,3.6062677) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -741.5323, Y = -612, Z = 0 } jiggle(0.8821276,0.8821276) -> COLLISION_EVENT(216) -> 6 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1098.2593, Y = 990, Z = 0 } jiggle(2.4232435,2.4232435) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1110.4578, Y = 990, Z = 0 } jiggle(1.4706314,1.4706314) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -729.5167, Y = -612, Z = 0 } jiggle(0.3563182,0.3563182) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1122.3898, Y = 990, Z = 0 } jiggle(0.7614395,0.7614395) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -788.3065, Y = -612, Z = 0 } jiggle(5.2754707,5.2754707) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -774.5013, Y = -612, Z = 0 } jiggle(3.6062677,3.6062677) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -761.7411, Y = -612, Z = 0 } jiggle(2.4232435,2.4232435) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1133.6193, Y = 990, Z = 0 } jiggle(0.29270002,0.29270002) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1064.4984, Y = 990, Z = 0 } jiggle(6.1190968,6.1190963) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -749.5422, Y = -612, Z = 0 } jiggle(1.4706314,1.4706314) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1078.0322, Y = 990, Z = 0 } jiggle(4.207405,4.207405) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1090.5386, Y = 990, Z = 0 } jiggle(2.848103,2.848103) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -737.6102, Y = -612, Z = 0 } jiggle(0.7614395,0.7614395) -> COLLISION_EVENT(216) -> 7 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1102.5402, Y = 990, Z = 0 } jiggle(1.8899987,1.8899987) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1114.3109, Y = 990, Z = 0 } jiggle(1.1182193,1.1182193) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -726.3802, Y = -612, Z = 0 } jiggle(0.29270002,0.29270002) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8110 x ship 8112 sector 1060 pos Vector3 { X = -795.5016, Y = -612, Z = 0 } jiggle(6.1190968,6.1190963) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1125.5349, Y = 990, Z = 0 } jiggle(0.6188417,0.6188417) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -781.9677, Y = -612, Z = 0 } jiggle(4.2074065,4.2074065) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -769.46136, Y = -612, Z = 0 } jiggle(2.8481038,2.8481038) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1136.2369, Y = 990, Z = 0 } jiggle(0.26219422,0.26219422) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -757.45996, Y = -612, Z = 0 } jiggle(1.8899983,1.8899983) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -745.6892, Y = -612, Z = 0 } jiggle(1.1182193,1.1182193) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8113 sector 1053 pos Vector3 { X = 1059.0068, Y = 990, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1070.6354, Y = 990, Z = 0 } jiggle(4.6639023,4.6639023) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -734.4651, Y = -612, Z = 0 } jiggle(0.6188414,0.6188414) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1082.8295, Y = 990, Z = 0 } jiggle(3.1716907,3.1716907) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1094.7568, Y = 990, Z = 0 } jiggle(2.1171796,2.1171796) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -723.76263, Y = -612, Z = 0 } jiggle(0.26219404,0.26219404) -> COLLISION_EVENT(216) -> 8 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1106.403, Y = 990, Z = 0 } jiggle(1.3797535,1.3797535) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1117.5498, Y = 990, Z = 0 } jiggle(0.78616136,0.78616136) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8112 x ship 8114 sector 1060 pos Vector3 { X = -800.9932, Y = -612, Z = 0 } jiggle(6.419217,6.419217) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8110 x ship 8112 sector 1060 pos Vector3 { X = -789.3643, Y = -612, Z = 0 } jiggle(4.6639013,4.6639013) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1128.1797, Y = 990, Z = 0 } jiggle(0.4107574,0.4107574) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -777.17035, Y = -612, Z = 0 } jiggle(3.17169,3.17169) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -765.24316, Y = -612, Z = 0 } jiggle(2.1171796,2.1171796) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -753.5972, Y = -612, Z = 0 } jiggle(1.3797535,1.3797535) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1138.6047, Y = 990, Z = 0 } jiggle(0.12009877,0.12009877) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8115 sector 1053 pos Vector3 { X = 1063.2566, Y = 990, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1075.2543, Y = 990, Z = 0 } jiggle(4.6639023,4.6639023) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -742.45026, Y = -612, Z = 0 } jiggle(0.78616136,0.78616136) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1086.9233, Y = 990, Z = 0 } jiggle(3.3674583,3.3674583) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1098.4891, Y = 990, Z = 0 } jiggle(2.2549298,2.2549298) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -731.8204, Y = -612, Z = 0 } jiggle(0.4107574,0.4107574) -> COLLISION_EVENT(216) -> 9 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1109.571, Y = 990, Z = 0 } jiggle(1.4755467,1.4755467) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1120.1598, Y = 990, Z = 0 } jiggle(0.9366642,0.9366642) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -721.3951, Y = -612, Z = 0 } jiggle(0.12009877,0.12009877) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1130.5486, Y = 990, Z = 0 } jiggle(0.5705409,0.5705409) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8112 x ship 8116 sector 1060 pos Vector3 { X = -796.74347, Y = -612, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1139.8025, Y = 990, Z = 0 } jiggle(0.38010702,0.38010702) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8110 x ship 8112 sector 1060 pos Vector3 { X = -784.7456, Y = -612, Z = 0 } jiggle(4.6639023,4.6639023) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -773.07654, Y = -612, Z = 0 } jiggle(3.3674583,3.3674583) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -761.511, Y = -612, Z = 0 } jiggle(2.2549298,2.2549298) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -750.4292, Y = -612, Z = 0 } jiggle(1.4755467,1.4755467) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -739.8403, Y = -612, Z = 0 } jiggle(0.9366642,0.9366642) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -729.45135, Y = -612, Z = 0 } jiggle(0.5705409,0.5705409) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8115 x ship 8117 sector 1053 pos Vector3 { X = 1058.4005, Y = 990, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -720.1974, Y = -612, Z = 0 } jiggle(0.38010702,0.38010702) -> COLLISION_EVENT(216) -> 10 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8115 sector 1053 pos Vector3 { X = 1068.2754, Y = 990, Z = 0 } jiggle(4.6639013,4.6639013) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1079.4154, Y = 990, Z = 0 } jiggle(3.3674576,3.3674576) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1090.7303, Y = 990, Z = 0 } jiggle(2.254929,2.254929) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1101.6782, Y = 990, Z = 0 } jiggle(1.4755461,1.4755461) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1112.2327, Y = 990, Z = 0 } jiggle(0.93666375,0.93666375) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8116 x ship 8118 sector 1060 pos Vector3 { X = -801.5995, Y = -612, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1122.4962, Y = 990, Z = 0 } jiggle(0.5705406,0.5705406) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8112 x ship 8116 sector 1060 pos Vector3 { X = -791.7245, Y = -612, Z = 0 } jiggle(4.6639023,4.6639023) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1131.7786, Y = 990, Z = 0 } jiggle(0.38010684,0.38010684) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8110 x ship 8112 sector 1060 pos Vector3 { X = -780.58435, Y = -612, Z = 0 } jiggle(3.3674583,3.3674583) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -769.2693, Y = -612, Z = 0 } jiggle(2.2549298,2.2549298) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -758.3219, Y = -612, Z = 0 } jiggle(1.4755467,1.4755467) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -747.76764, Y = -612, Z = 0 } jiggle(0.9366642,0.9366642) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8115 x ship 8119 sector 1053 pos Vector3 { X = 1060.955, Y = 990, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -737.5038, Y = -612, Z = 0 } jiggle(0.5705409,0.5705409) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8115 sector 1053 pos Vector3 { X = 1071.9004, Y = 990, Z = 0 } jiggle(4.6639023,4.6639023) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -728.22144, Y = -612, Z = 0 } jiggle(0.38010702,0.38010702) -> COLLISION_EVENT(216) -> 11 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1083.0071, Y = 990, Z = 0 } jiggle(3.3674583,3.3674583) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1093.7523, Y = 990, Z = 0 } jiggle(2.4131908,2.4131908) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1104.2927, Y = 990, Z = 0 } jiggle(1.713673,1.713673) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1114.5299, Y = 990, Z = 0 } jiggle(1.203459,1.203459) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1123.7578, Y = 990, Z = 0 } jiggle(0.83360213,0.83360213) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8116 x ship 8120 sector 1060 pos Vector3 { X = -799.0451, Y = -612, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1135.1058, Y = 990, Z = 0 } jiggle(0.38314062,0.38314062) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8112 x ship 8116 sector 1060 pos Vector3 { X = -788.0996, Y = -612, Z = 0 } jiggle(4.6639013,4.6639013) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1143.4226, Y = 990, Z = 0 } jiggle(0.24820833,0.24820833) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8110 x ship 8112 sector 1060 pos Vector3 { X = -776.9608, Y = -612, Z = 0 } jiggle(3.3674576,3.3674576) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -766.23145, Y = -612, Z = 0 } jiggle(2.4131901,2.4131901) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -755.7076, Y = -612, Z = 0 } jiggle(1.713672,1.713672) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -745.4702, Y = -612, Z = 0 } jiggle(1.2034582,1.2034582) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -736.24225, Y = -612, Z = 0 } jiggle(0.8336016,0.8336016) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8115 x ship 8121 sector 1053 pos Vector3 { X = 1064.5798, Y = 990, Z = 0 } jiggle(6.1190977,6.1190977) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -724.89435, Y = -612, Z = 0 } jiggle(0.38314018,0.38314018) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8115 sector 1053 pos Vector3 { X = 1075.4048, Y = 990, Z = 0 } jiggle(4.441968,4.441968) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -716.57745, Y = -612, Z = 0 } jiggle(0.24820805,0.24820805) -> COLLISION_EVENT(216) -> 12 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1086.058, Y = 990, Z = 0 } jiggle(3.2038598,3.2038598) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1096.4858, Y = 990, Z = 0 } jiggle(2.2930534,2.2930534) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1106.6359, Y = 990, Z = 0 } jiggle(1.6258572,1.6258572) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1115.8026, Y = 990, Z = 0 } jiggle(1.1396309,1.1396309) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1127.0564, Y = 990, Z = 0 } jiggle(0.63244444,0.63244444) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1135.6096, Y = 990, Z = 0 } jiggle(0.42402264,0.42402264) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8116 x ship 8122 sector 1060 pos Vector3 { X = -795.42017, Y = -612, Z = 0 } jiggle(6.1190977,6.1190977) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8112 x ship 8116 sector 1060 pos Vector3 { X = -784.49915, Y = -612, Z = 0 } jiggle(4.441968,4.441968) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8110 x ship 8112 sector 1060 pos Vector3 { X = -773.88586, Y = -612, Z = 0 } jiggle(3.2038598,3.2038598) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1145.7279, Y = 990, Z = 0 } jiggle(0.15790923,0.15790923) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -763.5387, Y = -612, Z = 0 } jiggle(2.2930534,2.2930534) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -753.3642, Y = -612, Z = 0 } jiggle(1.6258572,1.6258572) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -744.1973, Y = -612, Z = 0 } jiggle(1.1396309,1.1396309) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -732.94366, Y = -612, Z = 0 } jiggle(0.63244444,0.63244444) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -724.39044, Y = -612, Z = 0 } jiggle(0.42402264,0.42402264) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8121 x ship 8123 sector 1053 pos Vector3 { X = 1059.0189, Y = 990, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -714.27203, Y = -612, Z = 0 } jiggle(0.15790923,0.15790923) -> COLLISION_EVENT(216) -> 13 peer(s) (union of both parties)
+  [collision] ship 8115 x ship 8121 sector 1053 pos Vector3 { X = 1068.605, Y = 990, Z = 0 } jiggle(4.6639013,4.6639013) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8119 x ship 8123 sector 1053 pos Vector3 { X = 1056.5139, Y = 990, Z = 0 } jiggle(0.07571476,0.07571476) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8115 sector 1053 pos Vector3 { X = 1078.4954, Y = 990, Z = 0 } jiggle(3.3674576,3.3674576) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1088.7893, Y = 990, Z = 0 } jiggle(2.4131901,2.4131901) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1098.7439, Y = 990, Z = 0.0017100264 } jiggle(1.7136011,1.7136011) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1107.9116, Y = 990, Z = -0.00028816448 } jiggle(1.2033669,1.203367) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8119 sector 1053 pos Vector3 { X = 1050.2626, Y = 990, Z = -5.844778E-05 } jiggle(2.334637E-21,2.334637E-21) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8123 sector 1053 pos Vector3 { X = 1054.2034, Y = 990, Z = 0.001815759 } jiggle(1.7874513E-21,1.7874513E-21) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8119 sector 1053 pos Vector3 { X = 1049.9595, Y = 990, Z = -4.167456E-05 } jiggle(3.6480604E-23,3.6480604E-23) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8119 x ship 8121 sector 1053 pos Vector3 { X = 1055.0095, Y = 990, Z = 0.001457097 } jiggle(3.8241304E-17,3.8241304E-17) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1119.1425, Y = 990, Z = -5.36353E-06 } jiggle(0.6741889,0.674189) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8122 x ship 8124 sector 1060 pos Vector3 { X = -800.80316, Y = -612, Z = 0 } jiggle(6.4192185,6.4192185) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1127.741, Y = 990, Z = -5.374738E-06 } jiggle(0.45472297,0.45472297) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8117 sector 1053 pos Vector3 { X = 1056.211, Y = 990, Z = 0.002694514 } jiggle(1.2963189E-37,1.2963189E-37) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8123 sector 1053 pos Vector3 { X = 1052.0897, Y = 990, Z = 0.0030955912 } jiggle(3.266648E-35,3.266648E-35) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8116 x ship 8122 sector 1060 pos Vector3 { X = -791.1507, Y = -612, Z = 0.00063753 } jiggle(4.6656427,4.6656427) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8112 x ship 8116 sector 1060 pos Vector3 { X = -781.40576, Y = -612, Z = -7.9751735E-05 } jiggle(3.3735306,3.3735306) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8121 sector 1053 pos Vector3 { X = 1055.706, Y = 990, Z = -0.11222113 } jiggle(9.952598E-06,9.952597E-06) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8118 x ship 8120 sector 1060 pos Vector3 { X = -811.5579, Y = -612, Z = -0.10344237 } jiggle(1.1169573E-05,1.1169573E-05) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8110 x ship 8112 sector 1060 pos Vector3 { X = -771.13794, Y = -612, Z = -0.12638551 } jiggle(2.382756,2.382756) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8117 sector 1053 pos Vector3 { X = 1058.1201, Y = 990, Z = -0.3697737 } jiggle(6.6977623E-06,6.6977623E-06) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8114 x ship 8120 sector 1060 pos Vector3 { X = -809.9328, Y = -612, Z = -0.27657673 } jiggle(1.5430065E-05,1.5430065E-05) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8120 x ship 8124 sector 1060 pos Vector3 { X = -801.34564, Y = -612, Z = -0.50240123 } jiggle(0.012483594,0.012483594) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -760.999, Y = -612, Z = -0.33658177 } jiggle(1.6574801,1.6574801) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8119 sector 1053 pos Vector3 { X = 1060.7937, Y = 990, Z = 0.051120937 } jiggle(8.7817045E-07,8.7817335E-07) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8121 sector 1053 pos Vector3 { X = 1056.9133, Y = 990, Z = -0.73126304 } jiggle(5.238465E-05,5.238465E-05) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1138.1511, Y = 990, Z = -0.45509815 } jiggle(0.1806277,0.1806277) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -751.7689, Y = -612, Z = -0.47864327 } jiggle(1.1307501,1.1307501) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8117 sector 1053 pos Vector3 { X = 1057.8318, Y = 990, Z = -0.90883315 } jiggle(1.1153206E-05,1.1153216E-05) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8119 sector 1053 pos Vector3 { X = 1058.9021, Y = 990, Z = -0.92769265 } jiggle(6.8329277E-06,6.832929E-06) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8121 sector 1053 pos Vector3 { X = 1058.0602, Y = 990, Z = -1.8272347 } jiggle(5.521075E-05,5.521075E-05) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8118 x ship 8124 sector 1060 pos Vector3 { X = -813.33093, Y = -614.07086, Z = -1.201707 } jiggle(0.009029186,0.009029186) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8125 sector 1053 pos Vector3 { X = 1060.3424, Y = 990, Z = -2.9953876 } jiggle(4.544471,4.544471) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8106 sector 1060 pos Vector3 { X = -739.9451, Y = -612, Z = -1.6156566 } jiggle(0.5186512,0.5186512) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8113 x ship 8121 sector 1053 pos Vector3 { X = 1060.7737, Y = 990, Z = -4.616856 } jiggle(2.0738297,2.0738297) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8115 x ship 8121 sector 1053 pos Vector3 { X = 1073.3779, Y = 990, Z = -1.367559 } jiggle(1.5171655,1.5171655) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1148.4834, Y = 990, Z = -2.01287 } jiggle(0.06940942,0.06940942) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -731.12573, Y = -612, Z = -1.5881486 } jiggle(0.37156627,0.37156627) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8115 sector 1053 pos Vector3 { X = 1082.8295, Y = 990, Z = -1.9033406 } jiggle(1.1055712,1.1055712) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1092.7744, Y = 990, Z = -2.6060412 } jiggle(0.798691,0.798691) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -720.3332, Y = -612, Z = -3.1454928 } jiggle(0.24808899,0.24808899) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1102.318, Y = 990, Z = -3.0564334 } jiggle(0.58098525,0.58098525) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8098 x ship 8100 sector 1060 pos Vector3 { X = -710.7921, Y = -612, Z = -3.42457 } jiggle(0.17826097,0.17826097) -> COLLISION_EVENT(216) -> 14 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1114.9595, Y = 990, Z = -5.1383314 } jiggle(0.35282746,0.35282746) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1124.4612, Y = 990, Z = -5.597102 } jiggle(0.26343676,0.26343676) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8120 x ship 8126 sector 1060 pos Vector3 { X = -796.5172, Y = -612, Z = -8.852035 } jiggle(1.0460799,1.0460799) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1135.2037, Y = 990, Z = -7.0797462 } jiggle(0.20069924,0.20069924) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8101 sector 1053 pos Vector3 { X = 1144.75, Y = 990, Z = -7.355723 } jiggle(0.12964289,0.12964289) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8097 x ship 8099 sector 1053 pos Vector3 { X = 1155.9569, Y = 990, Z = -8.017062 } jiggle(0.029090643,0.029090641) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1098.963, Y = 990, Z = -9.685807 } jiggle(6.555207E-06,6.5552385E-06) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -752.2189, Y = -612, Z = -9.693099 } jiggle(3.903222E-05,3.903232E-05) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1128.4192, Y = 990, Z = -11.01066 } jiggle(0.00026647397,0.0002664743) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1119.6287, Y = 990, Z = -10.915217 } jiggle(0.0002914804,0.0002914807) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8107 x ship 8109 sector 1053 pos Vector3 { X = 1109.9248, Y = 990, Z = -9.960121 } jiggle(0.00033630765,0.00033630765) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8110 x ship 8112 sector 1060 pos Vector3 { X = -759.8592, Y = -610.70953, Z = -13.354446 } jiggle(9.0415946E-05,9.041623E-05) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1130.8071, Y = 990, Z = -11.006453 } jiggle(8.855039E-06,8.855039E-06) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1053 pos Vector3 { X = 1122.6527, Y = 991.1653, Z = -12.152528 } jiggle(0.0002884442,0.0002884442) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8103 x ship 8105 sector 1053 pos Vector3 { X = 1133.1115, Y = 990, Z = -11.245704 } jiggle(4.530204E-05,4.5301935E-05) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8115 sector 1053 pos Vector3 { X = 1093.2941, Y = 991.5334, Z = -15.136951 } jiggle(0.00047432558,0.00047432567) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8108 x ship 8110 sector 1060 pos Vector3 { X = -748.5371, Y = -612.0002, Z = -12.599583 } jiggle(1.2646943E-06,1.2646944E-06) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8100 x ship 8102 sector 1060 pos Vector3 { X = -708.76733, Y = -610.6949, Z = -16.368324 } jiggle(8.704454E-05,8.704434E-05) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8102 x ship 8104 sector 1060 pos Vector3 { X = -718.7617, Y = -612, Z = -15.008851 } jiggle(5.589949E-06,5.589949E-06) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8119 x ship 8123 sector 1053 pos Vector3 { X = 1063.1859, Y = 990, Z = -17.103025 } jiggle(3.2679964E-05,3.267983E-05) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8106 x ship 8108 sector 1060 pos Vector3 { X = -733.44904, Y = -610.449, Z = -19.08158 } jiggle(0.00032205993,0.00032206034) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8119 sector 1053 pos Vector3 { X = 1059.874, Y = 990, Z = -22.013712 } jiggle(0.0002483496,0.00024834936) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8123 sector 1053 pos Vector3 { X = 1061.9805, Y = 990, Z = -18.622059 } jiggle(2.2163416E-05,2.2163409E-05) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8116 x ship 8120 sector 1060 pos Vector3 { X = -773.74585, Y = -612, Z = -18.3566 } jiggle(0.019914253,0.019914253) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8119 sector 1053 pos Vector3 { X = 1063.89, Y = 990, Z = -23.396832 } jiggle(1.594451E-06,1.5944441E-06) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8111 sector 1053 pos Vector3 { X = 1112.577, Y = 988.51843, Z = -23.769934 } jiggle(1.3994903E-05,1.3994897E-05) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8123 sector 1053 pos Vector3 { X = 1079.4032, Y = 990, Z = -37.786263 } jiggle(0.051061112,0.051061124) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8119 sector 1053 pos Vector3 { X = 1081.6554, Y = 990, Z = -40.65693 } jiggle(0.04127075,0.041270755) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8123 sector 1053 pos Vector3 { X = 1098.8416, Y = 990, Z = -58.742027 } jiggle(0.03708476,0.037084755) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8101 x ship 8103 sector 1053 pos Vector3 { X = 1254.616, Y = 990.82324, Z = -105.70835 } jiggle(0.015794387,0.01579439) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8123 sector 1053 pos Vector3 { X = 1183.8282, Y = 990.11975, Z = -186.04396 } jiggle(0.0814027,0.08140269) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8119 sector 1053 pos Vector3 { X = 1192.3357, Y = 990.29663, Z = -199.6219 } jiggle(0.21855488,0.21855488) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [collision] ship 8117 x ship 8123 sector 1053 pos Vector3 { X = 1197.4331, Y = 990.85034, Z = -207.70474 } jiggle(0.08056449,0.08056448) -> COLLISION_EVENT(216) -> 16 peer(s) (union of both parties)
+  [warp] ship 8098 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8102 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8108 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8102 x ship 8108 sector 1052 pos Vector3 { X = -418.1091, Y = -5426.5547, Z = -82.05716 } jiggle(2.5198415E-05,2.5199235E-05) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [warp] ship 8112 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8102 x ship 8108 sector 1052 pos Vector3 { X = -412.38498, Y = -5358.075, Z = -80.884476 } jiggle(0.00021619858,0.00021619792) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [warp] ship 8104 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8118 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8120 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8118 x ship 8120 sector 1052 pos Vector3 { X = -418.58673, Y = -5410.418, Z = -82.849434 } jiggle(5.505478,5.505478) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8104 x ship 8118 sector 1052 pos Vector3 { X = -420.3386, Y = -5401.381, Z = -86.06155 } jiggle(1.4678265,1.4678265) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [warp] ship 8122 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8100 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8110 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8114 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8116 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8120 x ship 8122 sector 1052 pos Vector3 { X = -406.89572, Y = -5242.6274, Z = -73.82865 } jiggle(1.932594,1.9325937) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [warp] ship 8106 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8126 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8124 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8106 x asteroid 3315 sector 1052 pos Vector3 { X = -425.79092, Y = -3531.7544, Z = 272.32477 } jiggle(33.089397,0) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8124 x asteroid 3315 sector 1052 pos Vector3 { X = -436.80267, Y = -3521.0513, Z = 220.78159 } jiggle(44.66697,0) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8102 x asteroid 3195 sector 1052 pos Vector3 { X = 1266.9467, Y = -4159.303, Z = 1581.1779 } jiggle(54.968853,0) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [collision] ship 8118 x asteroid 3328 sector 1052 pos Vector3 { X = 203.1752, Y = -2326.138, Z = -440.324 } jiggle(44.796055,0) -> COLLISION_EVENT(216) -> 15 peer(s) (union of both parties)
+  [warp] ship 8097 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8099 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8103 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8107 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [collision] ship 8103 x ship 8107 sector 1052 pos Vector3 { X = -2738.4358, Y = 2381.5273, Z = -336.0613 } jiggle(1.0502813E-05,1.0502578E-05) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8107 sector 1052 pos Vector3 { X = -2729.9648, Y = 2376.8174, Z = -334.29645 } jiggle(1.2711144E-05,1.2711421E-05) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8109 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8115 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8105 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [collision] ship 8109 x ship 8115 sector 1052 pos Vector3 { X = -2720.0188, Y = 2373.096, Z = -334.78308 } jiggle(1.3088197E-12,1.3770318E-12) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8103 sector 1052 pos Vector3 { X = -2679.7017, Y = 2329.6055, Z = -325.46445 } jiggle(0.0016839684,0.0016839694) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8113 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8123 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [collision] ship 8105 x ship 8113 sector 1052 pos Vector3 { X = -2645.6133, Y = 2308.4866, Z = -322.5473 } jiggle(0.06511133,0.065111354) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8111 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [collision] ship 8099 x ship 8103 sector 1052 pos Vector3 { X = -2584.4028, Y = 2245.6018, Z = -312.7134 } jiggle(0.0004193708,0.00041937229) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8101 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [collision] ship 8099 x ship 8103 sector 1052 pos Vector3 { X = -2554.4158, Y = 2218.1846, Z = -308.2291 } jiggle(0.00074888737,0.00074888737) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8103 sector 1052 pos Vector3 { X = -2532.527, Y = 2198.159, Z = -304.98386 } jiggle(0.0012357574,0.0012357581) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8119 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8117 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8125 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8121 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [collision] ship 8119 x ship 8117 sector 1052 pos Vector3 { X = -2596.7522, Y = 2264.3284, Z = -328.40118 } jiggle(0.3642837,0.36428365) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8125 x ship 8121 sector 1052 pos Vector3 { X = -2577.7043, Y = 2240.8293, Z = -308.66763 } jiggle(0.17356656,0.17356662) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8119 sector 1052 pos Vector3 { X = -2152.699, Y = 1625.3141, Z = -247.7915 } jiggle(4.615963,4.615963) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [combat] ship 8107 killed by ship 8098 at sim-t 139.49999999999747 — KILL_SHIP(105) -> 28 peer(s)
+  [combat] ship 8114 killed by ship 8111 at sim-t 146.14999999999898 — KILL_SHIP(105) -> 27 peer(s)
+  [combat] ship 8110 killed by ship 8097 at sim-t 150.24999999999991 — KILL_SHIP(105) -> 26 peer(s)
+  [warp] ship 8119 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8106 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8115 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8103 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8120 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8117 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8125 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8123 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8121 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8114 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8107 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8110 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [combat] ship 8120 killed by ship 8109 at sim-t 195.80000000001027 — KILL_SHIP(105) -> 22 peer(s)
+  [warp] ship 8118 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [combat] ship 8110 killed by ship 8105 at sim-t 212.6500000000141 — KILL_SHIP(105) -> 20 peer(s)
+  [collision] ship 8097 x ship 8109 sector 1052 pos Vector3 { X = -960.6206, Y = -2626.8152, Z = 151.06767 } jiggle(7.565857,7.565857) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8099 x ship 8105 sector 1052 pos Vector3 { X = -965.4899, Y = -2649.5442, Z = 148.53629 } jiggle(0.936747,0.936747) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8122 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [collision] ship 8111 x asteroid 3313 sector 1052 pos Vector3 { X = -1039.5618, Y = -2729.9138, Z = 174.66441 } jiggle(35.69517,0) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8120 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8104 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8124 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8126 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8112 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8113 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8110 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8105 x ship 8101 sector 1052 pos Vector3 { X = -583.13885, Y = -4117.6416, Z = 2.3219197 } jiggle(0.7483801,0.7483801) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8108 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8098 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8116 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [combat] ship 8120 killed by ship 8101 at sim-t 248.50000000002225 — KILL_SHIP(105) -> 14 peer(s)
+  [warp] ship 8100 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8106 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [collision] ship 8105 x ship 8107 sector 1052 pos Vector3 { X = -294.5527, Y = -4720.4985, Z = -83.114914 } jiggle(1.1999682,1.1999682) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8111 sector 1052 pos Vector3 { X = -287.08362, Y = -4726.3267, Z = -86.47425 } jiggle(0.16828059,0.16828056) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8111 x ship 8107 sector 1052 pos Vector3 { X = -292.86157, Y = -4725.9927, Z = -80.828026 } jiggle(1.819932,1.819932) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8109 x ship 8107 sector 1052 pos Vector3 { X = -283.27524, Y = -4734.721, Z = -99.30098 } jiggle(0.6700812,0.6700812) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8114 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8120 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8110 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [collision] ship 8099 x ship 8113 sector 1052 pos Vector3 { X = -92.867065, Y = -4516.0166, Z = -305.4999 } jiggle(10.223266,10.223266) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8105 x ship 8107 sector 1052 pos Vector3 { X = -88.367035, Y = -4520.721, Z = -314.88727 } jiggle(0.7667591,0.7667591) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8120 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [collision] ship 8111 x asteroid 3254 sector 1052 pos Vector3 { X = -1180.0742, Y = 2617.6348, Z = -419.47906 } jiggle(57.225044,0) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8118 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8124 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8126 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8122 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8100 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8104 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8112 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8108 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8119 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8097 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8103 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8116 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8115 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8098 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8125 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8117 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8123 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8121 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8105 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8113 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [combat] ship 8118 killed by ship 8121 at sim-t 502.35000000007994 — KILL_SHIP(105) -> 26 peer(s)
+  [warp] ship 8106 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [combat] ship 8122 killed by ship 8119 at sim-t 506.30000000008084 — KILL_SHIP(105) -> 26 peer(s)
+  [warp] ship 8097 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [combat] ship 8109 killed by ship 8126 at sim-t 527.6500000000678 — KILL_SHIP(105) -> 24 peer(s)
+  [warp] ship 8114 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8118 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8122 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8125 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8117 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8103 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [combat] ship 8126 killed by ship 8113 at sim-t 560.450000000038 — KILL_SHIP(105) -> 23 peer(s)
+  [collision] ship 8121 x ship 8114 sector 1052 pos Vector3 { X = -982.857, Y = -596.467, Z = -83.21255 } jiggle(10.610329,10.610329) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8115 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+  [warp] ship 8110 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8109 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+  [warp] ship 8126 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8107 x ship 8123 sector 1052 pos Vector3 { X = -1018.79956, Y = -1518.8516, Z = -203.25441 } jiggle(0.62527174,0.62527174) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8120 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8104 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8124 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8100 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8112 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [combat] ship 8110 killed by ship 8105 at sim-t 628.8999999999758 — KILL_SHIP(105) -> 21 peer(s)
+  [warp] ship 8110 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8098 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8116 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8108 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8108 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [combat] ship 8126 killed by ship 8105 at sim-t 657.3999999999498 — KILL_SHIP(105) -> 19 peer(s)
+  [warp] ship 8108 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8114 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8122 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [collision] ship 8107 x ship 8113 sector 1052 pos Vector3 { X = -663.83765, Y = -3775.6685, Z = -139.8326 } jiggle(0.87122506,0.8712252) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8126 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8106 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8099 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8121 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8119 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8118 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8120 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8110 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+  [warp] ship 8099 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [warp] ship 8119 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8105 x ship 8109 sector 1052 pos Vector3 { X = -280.35745, Y = -4895.2886, Z = 74.529495 } jiggle(0.4047614,0.40476137) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [collision] ship 8123 x ship 8109 sector 1052 pos Vector3 { X = -250.17545, Y = -4901.771, Z = 80.048805 } jiggle(0.79027915,0.7902791) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)
+  [warp] ship 8121 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+  [collision] ship 8105 x ship 8109 sector 1052 pos Vector3 { X = -211.94154, Y = -4876.4146, Z = 87.3294 } jiggle(0.18667099,0.18667099) -> COLLISION_EVENT(216) -> 31 peer(s) (union of both parties)

@@ -345,34 +345,44 @@ public sealed partial class Game1
     }
 
     /// <summary>
-    /// P295 — the world position of the missile the external-missile camera
-    /// should watch: the most recently created live missile in the local
-    /// player's sector (cluster). The client has no per-ship "last missile
-    /// fired" pointer and the missile wire carries no shooter id
-    /// (<see cref="Allegiance.ClientCore.State.MissileEntity"/>), so — faithful
-    /// in spirit to native's <c>GetLastMissileFired()</c> — it watches the
-    /// newest in-sector missile (missile ids are monotonically increasing
-    /// shorts). Returns false when no missile is flying in-sector (caller falls
-    /// back to a chase view, matching native WinTrek.cpp:7259-7268).
+    /// P675 — resolve native's source ship last-fired missile and its current
+    /// target (or launcher fallback). WinTrek.cpp:7237-7268. The creation wire
+    /// already carries launcher/target ids; retain them through motion updates.
     /// </summary>
-    private bool TryGetLatestMissilePos(out Vector3 missileXna)
+    private bool TryGetMissileCameraFrame(out Vector3 missileXna, out Vector3 focusXna)
     {
-        missileXna = default;
-        var world = _session.World;
         lock (_session.Gate)
         {
-            if (world.MyShipId is not { } me) return false;
-            if (!world.Ships.TryGetValue(me, out var own)) return false;
-            short mySector = own.SectorId;
-            MissileEntity? best = null;
-            foreach (var (_, m) in world.Missiles)
+            if (_session.World.MyShipId is { } me && MissileCameraFrame(_session.World, me, out var missile, out var focus))
             {
-                if (m.ClusterId != mySector) continue;
-                if (best is null || (short)(m.MissileId - best.MissileId) > 0)
-                    best = m;
+                missileXna = PoseConverter.ToXna(missile); focusXna = PoseConverter.ToXna(focus); return true;
             }
-            if (best is null) return false;
-            missileXna = PoseConverter.ToXna(best.Position);
+        }
+        missileXna = focusXna = default; return false;
+    }
+
+    // WinTrek.cpp:7237-7268: source ship's LAST missile; track its live target,
+    // otherwise its launcher. A gunner uses the parent carrier as source.
+    internal static bool MissileCameraFrame(ClientWorld world, short me, out SimVec missilePosition, out SimVec focus)
+    {
+        missilePosition = focus = default;
+        if (!world.Ships.TryGetValue(me, out var own)) return false;
+        short sourceId = own.ParentId >= 0 ? own.ParentId : me;
+        if (!world.Ships.TryGetValue(sourceId, out var source) || source.Latest is not { } pose
+            || world.LastMissileFiredBy(sourceId) is not { } missile || missile.ClusterId != source.SectorId) return false;
+        missilePosition = missile.Position; focus = pose.Position;
+        if (missile.SpoofTargetPosition is { } spoof) { focus = spoof; return true; }
+        switch (missile.TargetType)
+        {
+            case IgcObjectType.Ship when world.Ships.TryGetValue(missile.TargetId, out var ship)
+                && !ship.IsNotVisible && ship.SectorId == missile.ClusterId && ship.Latest is { } target:
+                focus = target.Position; break;
+            case IgcObjectType.Station when world.Stations.TryGetValue(missile.TargetId, out var station) && station.ClusterId == missile.ClusterId:
+                focus = Vec(station.Position); break;
+            case IgcObjectType.Asteroid when world.Asteroids.TryGetValue(missile.TargetId, out var asteroid) && asteroid.ClusterId == missile.ClusterId:
+                focus = Vec(asteroid.Position); break;
+            case IgcObjectType.Probe when world.Probes.TryGetValue(missile.TargetId, out var probe) && probe.ClusterId == missile.ClusterId:
+                focus = probe.Position; break;
         }
         return true;
     }

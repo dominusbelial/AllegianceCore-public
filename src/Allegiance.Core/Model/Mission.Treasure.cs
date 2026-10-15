@@ -45,7 +45,7 @@ public sealed partial class Mission
         else if (setId == -1) return null;
         else { code = TreasureCode.Flag; payload = Side.ArtifactSentinelFlag; }
 
-        if (code == TreasureCode.Cash && !TreasureParameters.AllowDevelopments) return null;
+        if (code == TreasureCode.Cash && (!AllowDevelopments || !TreasureParameters.AllowDevelopments)) return null;
 
         // Native uses these fixed placement constants, rather than the mutable
         // universe-boundary float slots (missionigc.cpp:2685-2686,4158-4169).

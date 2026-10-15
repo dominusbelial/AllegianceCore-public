@@ -1,0 +1,18 @@
+{
+  "full_suites": {
+    "passed": 7739,
+    "failed": 0,
+    "skipped": 3,
+    "skipped_tests": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+    ]
+  },
+  "invocations": 15,
+  "failed_invocations": 0,
+  "p682_repetitions": 3,
+  "battle_kills": 12,
+  "conflict_markers": 0,
+  "git_write_commands": 0
+}

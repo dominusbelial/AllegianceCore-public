@@ -47,12 +47,10 @@ public sealed class MissionMapGenerator
     private const string NeutralTexture = "plnt19";
     private const string PlayerTexture = "plnt42";
 
-    /// <summary>Native mission default <c>c_radiusUniverse = 5000.0f</c>
-    /// (<c>missionigc.cpp:2686</c>) — the warp-ring radius basis. Native places
-    /// warps at ~<c>position.z (0.6..0.85) × majorRadius</c> from a sector's
-    /// origin (<c>mapmakerigc.cpp:404-413</c>); this is the functional stand-in
-    /// for that (the cosmetic randomization itself is out of scope).</summary>
-    internal const float MajorRadius = 5000.0f;
+    /// <summary>Loaded c_fcidRadiusUniverse (Igc/mapmakerigc.cpp:364).
+    /// The deterministic warp ring retains the generator's existing placement
+    /// policy; its radius now follows the loaded core.</summary>
+    private float MajorRadius => FloatConst(1); // Igc/mapmakerigc.cpp:364
 
     // EastWest's per-sector asteroid-count tables (mapmakerigc.cpp:2547-2548),
     // indexed by the sector's position within its 13-sector team block (local
@@ -1267,7 +1265,7 @@ public sealed class MissionMapGenerator
 
         _asteroids.Add(new DataAsteroidIGC(
             Signature: signature,
-            Position: RandomShellPosition(radius),
+            Position: RandomAsteroidPosition(),
             Up: up,
             Forward: fwd,
             Rotation: [fwd[0], fwd[1], fwd[2], 0.2f / signature],
@@ -1337,17 +1335,14 @@ public sealed class MissionMapGenerator
         return len < 1e-6f ? [0f, 0f, 1f] : [v[0] / len, v[1] / len, v[2] / len];
     }
 
-    /// <summary>A random point in a shell well away from the sector origin (the
-    /// starbase sits at the origin) — the simplified stand-in for native's
-    /// <c>RandomPosition(pcluster-&gt;GetModels(), …)</c>
-    /// (<c>common.cpp:2882-2884</c>), which avoids overlapping existing models.
-    /// The shell keeps rocks off the base and off the ~3000-unit warp ring.</summary>
-    private static float[] RandomShellPosition(float radius)
+    /// <summary>Native asteroid volume/lens rule (common.cpp:2814-2818,
+    /// 2882-2884). Existing generator does not perform model clearance retries.</summary>
+    private float[] RandomAsteroidPosition()
     {
-        const float inner = 600f, outer = 2400f;
-        // random direction, random distance in [inner, outer]
+        // Igc/common.cpp:2814-2818,2882-2884: uniform volume in the
+        // loaded universe's 0.75-radius ellipsoid, with loaded lens on Z.
         var dir = RandomDirection();
-        float dist = (float)(inner + Random.Shared.NextDouble() * (outer - inner));
-        return [dir[0] * dist, dir[1] * dist, dir[2] * dist * 0.5f];
+        float dist = MajorRadius * 0.75f * MathF.Cbrt((float)Random.Shared.NextDouble());
+        return [dir[0] * dist, dir[1] * dist, dir[2] * dist * FloatConst(0)];
     }
 }

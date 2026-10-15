@@ -1,0 +1,5 @@
+Test run for /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+Results File: /home/domingo/.claude/jobs/82c1509b/tmp/integ7/docs/reports/P685_assets/rotation-2.trx
+
+Passed!  - Failed:     0, Passed:     8, Skipped:     0, Total:     8, Duration: 31 s - Allegiance.ClientCore.Tests.dll (net10.0)

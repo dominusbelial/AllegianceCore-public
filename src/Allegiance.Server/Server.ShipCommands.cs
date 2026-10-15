@@ -1375,6 +1375,14 @@ public sealed partial class Server
                 }
                 else
                 {
+                    // WinTrek.cpp:10659-10662: joining changes wing and leaves
+                    // the existing accepted target intact.
+                    if (target.QueuedCommandId == OrderChange.CidJoin && target.QueuedShipTarget is Ship wingLeader)
+                    {
+                        target.WingId = wingLeader.WingId;
+                        ClearQueuedCommand(target);
+                        return;
+                    }
                     target.AcceptedShipCommandId = target.QueuedCommandId;
                     target.AcceptedShipTarget = target.QueuedShipTarget;   // SetTarget+SetAccepted move the target too (WinTrek.cpp:10668-10681)
                     ClearQueuedCommand(target);
@@ -1920,7 +1928,7 @@ public sealed partial class Server
     /// <summary>
     /// P469 — map a legal command onto an existing port sim arm. Returns true
     /// only when the order was actually executed (an arm was set). The
-    /// <see cref="OrderChange.CidJoin"/>/Pickup/Repair/Capture commands have no
+    /// <see cref="OrderChange.CidJoin"/>/Capture commands have no
     /// matching arm and fall through to false — logged as unsupported (the P469
     /// report lists them).
     /// </summary>
@@ -1940,6 +1948,19 @@ public sealed partial class Server
                 {
                     drone.AttackTarget = enemy;                     // P162 wingman attack
                     ConsoleLog.Write($"[drone] ship {sender.Id}: ordered NPC {drone.Id} (wingman) to ATTACK ship {enemy.Id} (side {enemy.SideId})");
+                    return true;
+                }
+                return false;
+            case OrderChange.CidRepair:
+                if (model is Ship repairShip)
+                {
+                    drone.SetRepairOrder(repairShip);
+                    return true;
+                }
+                if (ot == IgcObjectType.Station && drone.Mission?.Sectors
+                    .SelectMany(s => s.StationRuntimes).FirstOrDefault(s => s.StationId == oid) is { } repairStation)
+                {
+                    drone.SetRepairOrder(null, repairStation);
                     return true;
                 }
                 return false;
@@ -1980,6 +2001,7 @@ public sealed partial class Server
                     Command = OrderChange.CmdAccepted,
                 });
             case OrderChange.CidDoNothing:
+                if (drone.HasRepairOrder) drone.SetRepairOrder(null);
                 drone.StayDocked = true;                            // P148 stay/hold
                 ConsoleLog.Write($"[drone] ship {sender.Id}: ordered NPC {drone.Id} to DO NOTHING (stay/hold — StayDocked=true, P148)");
                 return true;
@@ -1993,7 +2015,7 @@ public sealed partial class Server
                 ConsoleLog.Write($"[pickup] ship {sender.Id}: ordered NPC {drone.Id} (rescue-capable) to PICK UP pod {podShip.Id} (side {podShip.SideId}) — diversion armed");
                 return true;
             default:
-                return false;   // Join/Pickup/Repair/Capture — no matching arm
+                return false;   // Join/Capture — no matching arm
         }
     }
 

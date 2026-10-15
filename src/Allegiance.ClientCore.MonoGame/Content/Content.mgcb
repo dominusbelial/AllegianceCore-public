@@ -2534,6 +2534,12 @@
 /processorParam:Quality=Best
 /build:Sounds/hitrock.ogg
 
+#begin Sounds/accept.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/accept.ogg
+
 #begin Sounds/receivedobjective.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
@@ -2803,3 +2809,15 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_destroy_teleport.ogg
+
+#begin Sounds/unmount.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/unmount.ogg
+
+#begin Sounds/vo_sal_playerwaiting.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_playerwaiting.ogg

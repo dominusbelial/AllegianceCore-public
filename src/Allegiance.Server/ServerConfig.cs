@@ -14,6 +14,11 @@ namespace Allegiance.Server;
 /// </summary>
 public sealed class GameConfig
 {
+    /// <summary>Native bAllowDevelopments, FedSrv/fsmission.cpp:2520.</summary>
+    public bool AllowDevelopments { get; init; } = true;
+    /// <summary>Native bAllowAlliedRip, FedSrv/FedSrv.CPP:13387.</summary>
+    public bool AllowAlliedRip { get; init; }
+
     /// <summary>Human name, used in logs only.</summary>
     public string Name { get; init; } = "";
 

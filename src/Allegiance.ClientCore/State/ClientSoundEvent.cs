@@ -40,6 +40,9 @@ public enum ClientSoundEventKind
 
     /// <summary>Native newCommandMsgSound, appmsg.cpp:1757.</summary>
     SectorHighlighted,
+
+    /// <summary>POSITIONREQ: salPlayerWaitingSound (appmsg.cpp:2481).</summary>
+    PlayerWaiting,
 }
 
 /// <summary>A single observed sound event.</summary>

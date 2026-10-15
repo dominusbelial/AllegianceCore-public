@@ -210,6 +210,11 @@ public sealed class NpcWingmanAttackLiveTests
                 : 0f;
             Console.WriteLine($"P162-RANGE: mounted weapon projectile range = {fireRange:F1} (standoff caps at 350)");
 
+            // P676: native intercept-time range includes the target radius.
+            // Start beyond projectile reach plus that radius, so approaching is
+            // actually required; a target inside the close band is shot at rest.
+            wp = ep - new Vector3(fireRange * 1.1f + enemy.HullType.Length * 0.5f, 0, 0);
+            wingman.Position = wp;
             float d0 = Dist(wp, ep);
             Assert.True(d0 > 400f, $"wingman must spawn well beyond engagement standoff: d0={d0:F1}");
 

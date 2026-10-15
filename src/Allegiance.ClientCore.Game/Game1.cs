@@ -872,15 +872,8 @@ public sealed partial class Game1 : Game
     private Rendering.InvestmentPaneModel? _investModel;
     private short? _investAsteroidAabm;
 
-    // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
-    // the single countdown-start callout; _countdownLastSecond mirrors native's
-    // m_nLastCountdown change-detection (WinTrek.cpp:11150) so each second's
-    // per-second tick plays exactly once, not every frame it happens to still be
-    // true; _gameOverCuePlayed fires the game-over callout exactly once on the
-    // real Stage → Over transition.
     private long _nextMatchGeneration;
-    private bool _countdownStartCuePlayed;
-    private int _countdownLastSecond;
+    private readonly Audio.MissionCountdownSound _missionCountdownSound = new();
     private readonly Audio.RipcordCountdownSound _ripcordCountdownSound = new();
     private bool _gameOverCuePlayed;
 
@@ -1021,9 +1014,9 @@ public sealed partial class Game1 : Game
     private LeaderBotCommand? _leaderBotCommand;
     private bool _xKeyWasDown; // edge-detect X (leader bot dock/launch) so holding it doesn't re-fire
     // P424 — edge-detect the accept/reject/clear queued-order keys (Home/End/Delete).
-    private bool _acceptKeyWasDown;
-    private bool _rejectKeyWasDown;
-    private bool _clearKeyWasDown;
+    private bool _viewMissileWasDown;
+    private bool _viewChaseWasDown;
+    private bool _viewTurretWasDown;
     // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.

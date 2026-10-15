@@ -4,6 +4,35 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P685 observation (2026-10-15)
+
+The merged unfiltered sequential suites passed cleanly: Lobby **19/19**, Core
+**4539/4539**, ClientCore **996/996**, and MonoGame **2185 passed / 0 failed /
+3 existing optional Meshy-pack skips**. No isolated reruns were needed. The
+P682 two-match combat and reset group passed **8/8 ×3**, the enabled-pipeline
+15v15 next-match showcase passed, and the separate local 15v15 battle recorded
+**12 kills** with **30/30 bots reached**. Both MCP relaunch cases and all nine
+mining checks passed. No timing thresholds, quarantine traits, skip conditions,
+or assertions were relaxed. See [P685 report](reports/P685_MERGE_WAVES.md) and
+[invocation ledger](reports/P685_assets/results.json).
+
+## P674 observation (2026-10-14)
+
+The parity audit's sequential, unfiltered suites reported Core **4309 pass /
+1 fail**, ClientCore **933 pass / 0 fail / 1 opt-in skip**, and MonoGame
+**2125 pass / 0 fail / 3 optional Meshy-pack skips**. The sole failure was
+`Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events`:
+its full-suite allocation sample observed 1712 bytes instead of zero. After all
+three assemblies completed, it passed **3/3 exact-method isolated runs**, each
+retaining the zero-allocation assertion. This meets P674's load-flake rule;
+the allocation's source was not established. No product/test behavior or
+quarantine traits changed. All eight new P674 validator cases passed three
+focused repetitions and the full Core run. See
+[P674_PARITY_RECONCILE](reports/P674_PARITY_RECONCILE.md) for the complete results;
+raw failure/isolation TRX files are under `/tmp/p674/final/` and
+`/tmp/p674/rechecks/`. The opted-in local P660 15v15 showcase subsequently
+passed (1/1), resolving its default skip; the optional Meshy pack is absent.
+
 ## The two lanes (P647)
 
 `scripts/run-tests.sh` (P471 sequential runner) now executes every test in one of two
@@ -617,3 +646,58 @@ the batching change alone still passes the original roster fixture only 11/15.
 See the [P655c report](reports/P655_GAME_STATE_INTEGRITY.md#p655c) and its
 per-run evidence for final-tree rates, side elimination, P660 repetitions,
 and complete suite results. Existing quarantine traits are unchanged.
+
+
+## P676 observation (2026-10-15)
+
+Final unfiltered sequential suites: Core **4352 pass / 2 fail / 0 skip**, ClientCore **945 pass / 1 fail / 0 skip**, MonoGame **2151 pass / 0 fail / 3 skip**. The opt-in local 15v15 next-match showcase passed. The final local 15v15 battle recorded 5 kills; the real MCP purchase/death/pod/relaunch/refire check passed 3/3 alone.
+
+All observed receipt failures passed 3/3 exact-method isolated retries after all three final suites. These are load/receipt flakes under the task lane rule. No timing-only product changes, assertion relaxations, or quarantine changes were made.
+
+| Test | Symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | System.InvalidOperationException : logon drain order diverged from connection order — peer2 side 0 not cross-side (0, 1, 0); determinism broken | 3/3 pass |
+| `Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+
+See [P676 report](reports/P676_PARITY_WAVE4B.md) and [invocation ledger](reports/P676_RESULTS.json). The report separately explains the native-law fixture corrections; those are not classified as load flakes.
+
+## P678 observation (2026-10-15)
+
+The final build completed with zero warnings/errors; 71 affected methods (86 cases) passed three exact-method isolated invocations each. Final full-suite raw counts and the additional overlapping verification pass are preserved in [P678 report](reports/P678_PARITY_WAVE5.md) and [invocation ledger](reports/P678_RESULTS.json). Every failure below passed 3/3 alone after all full-suite activity finished. Per the P678 Codex lane rule these are load/receipt flakes. No assertion, timeout, quarantine, or product change was made for them.
+
+| Test | Symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer` | Assert.DoesNotContain() Failure: Filter matched in collection | 3/3 pass |
+| `Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking` | healthy bot 0 must keep receiving per-tick updates during the flood (had 0, now 0) | 3/3 pass |
+
+The treasure-pickup check initially passed 2/3 alone and then passed 3/3 in the final triplet; both triplets are recorded.
+
+
+## P680 observation (2026-10-15)
+
+The simulation countdown sound bundle completed 53 affected methods (80 data cases), each **3/3 individual runs**. The final unfiltered Core, ClientCore (including the opt-in local P660 15v15 showcase), and MonoGame passes reported the raw counts in [P680 report](reports/P680_PARITY_WAVE6.md); [P680_RESULTS.json](reports/P680_RESULTS.json) preserves every invocation.
+
+Every failure below passed **3/3 exact-method isolated reruns after all three full suites finished**, qualifying as a load/receipt flake under the Codex lane rule. No assertion, timeout, quarantine, or product change was made for it.
+
+| Test | Full-pass symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | System.InvalidOperationException : logon drain order diverged from connection order — peer2 side 0 not cross-side (0, 1, 0); determinism broken | 3/3 pass |
+
+
+## P681 observation (2026-10-15)
+
+The final unfiltered sequential Core, ClientCore (including the opt-in local 15v15 next-match showcase), and MonoGame suites produced the raw counts in [P681 report](reports/P681_PARITY_WAVE7.md). All 2 full-pass failures passed **3/3 exact-method isolated reruns after all three suites completed**, qualifying as load/receipt flakes under the Codex lane rule. No assertions, deadlines, quarantine tags, or product behavior were changed for them. The affected cohort passed three individual invocations each; exact counts are in the report.
+
+| Test | Full-pass symptom | Isolation |
+| --- | --- | --- |
+| Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking | healthy bot 0 must keep receiving per-tick updates during the flood (had 0, now 0) | 3/3 pass |
+| Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy | Assert.Contains() Failure: Filter not matched in collection; Collection: [] | 3/3 pass |
+
+See [P681_RESULTS.json](reports/P681_RESULTS.json) for the complete invocation ledger.

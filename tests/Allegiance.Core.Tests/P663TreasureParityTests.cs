@@ -106,6 +106,28 @@ public sealed class P663TreasureParityTests
         Assert.Null(m.GenerateTreasure(0, sector, 11));
     }
 
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void P685_Started_gate_preserves_treasure_elapsed_and_both_development_controls(bool developments, bool treasureDevelopments)
+    {
+        var (m, _) = Domain();
+        m.AllowDevelopments = developments;
+        m.TreasureParameters = new() { AllowDevelopments = treasureDevelopments,
+            PlayerSectorTreasureRate = 1f / 120, NeutralSectorTreasureRate = 1f / 60 };
+        m.Stage = MissionStage.Starting;
+        m.Update(5);
+        Assert.All(m.Sectors, sector => Assert.Equal(0, sector.PendingTreasures));
+        m.Stage = MissionStage.Started;
+        m.Update(8);
+        Assert.Equal(8d / 120, m.Sectors[0].PendingTreasures, 6);
+        Assert.Equal(8d / 60, m.Sectors[1].PendingTreasures, 6);
+        Assert.Equal(10, m.NextPaydayTime);
+        var cash = m.GenerateTreasure(8, m.Sectors[0], 11, new Random(685));
+        Assert.Equal(developments && treasureDevelopments, cash is not null);
+    }
+
     [Fact]
     public void ArtifactRespawn_SelectsNeutralSectors_AndInitialPopulationUsesStartSets()
     {

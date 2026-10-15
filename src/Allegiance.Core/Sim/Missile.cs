@@ -4,64 +4,16 @@ using Allegiance.Core.Sim;
 
 namespace Allegiance.Core.Sim;
 
-/// <summary>
-/// A live missile as a sector model — the port of <c>CmissileIGC</c>
-/// (<c>src/Igc/missileIGC.cpp</c>, ~900 lines), kept to this slice's need: a
-/// real <see cref="Model"/> that lives in a <see cref="Sector"/>, moves in a
-/// straight line at a constant velocity inherited from its firing ship, ticks
-/// with the sector like any other model, and <b>expires</b> after its decoded
-/// <see cref="DataMissileTypeIGC.Lifespan"/>, removing itself from the sector.
-/// Structurally this mirrors <see cref="Projectile"/> exactly — a non-homing
-/// missile is a projectile whose lifetime is data — so the two are siblings,
-/// deliberately <em>not</em> a shared base (each is a port of a different,
-/// unrelated C++ class).
-/// </summary>
-/// <remarks>
-/// Honest-deferral statement, same style as P87's "no shield regeneration":
-/// the <see cref="DataMissileTypeIGC"/> fields that make a missile a missile —
-/// <c>TurnRate</c>, <c>Acceleration</c>, <c>LockTime</c>, <c>MaxLock</c>,
-/// <c>LockAngle</c>, <c>ChaffResistance</c>, <c>Power</c> etc. — are read and
-/// stored here, but <b>not acted on</b> this slice. They are carried on the
-/// type record so a later homing/combat task has everything it needs without
-/// touching the loader. Specifically <em>not</em> implemented (separate
-/// follow-ups):
-/// <list type="bullet">
-/// <item><b>Homing/turning/target-tracking.</b> <c>TurnRate</c>/<c>LockTime</c>/
-/// <c>MaxLock</c> are stored, never consulted. This missile flies straight, in
-/// one unaccelerated line (advancing <c>position += velocity·dt</c> like
-/// <see cref="Projectile.OnUpdate"/>, <c>projectileIGC.cpp:120-144</c>).</item>
-/// <item><b>Collision/damage — now resolved (P91).</b> Since P91, a missile is a
-/// first-class participant in <see cref="Sector.ResolveCombatCollisions"/>: it
-/// builds a sphere collider from <c>MissileType.Radius</c>, lands its decoded
-/// <c>Power</c> of its decoded <c>DamageType</c> on the first cross-side ship it
-/// hits (via <see cref="Ship.ReceiveDamage"/>, shields included), is removed
-/// from the sector on impact like a spent projectile, and raises
-/// <see cref="IIgcSite.MissileDestroyedEvent"/> so a same-side peer who saw the
-/// launch also learns of the destruction — the identical consistency fix that
-/// the port's <c>HandleCollision</c> half represents (this retired the earlier
-/// "collision deferred" line of P90, parallel to how <see cref="Projectile"/>'s
-/// collision became a later task after its existence slice). Still deferred:
-/// homing/turning, area-of-effect (<c>BlastPower</c>/<c>BlastRadius</c> are read
-/// but not acted on — a missile is single-target, same as a projectile today),
-/// and chaff/spoofing (<c>ChaffResistance</c>).</item>
-/// </list>
-/// The one behavioural addition beyond copying <see cref="Projectile"/>'s
-/// shape verbatim is the destruction event: on expiry, in addition to
-/// <c>sector.Remove(this)</c>, the missile raises the host seam's
-/// <see cref="IIgcSite.MissileDestroyedEvent"/> so the server can broadcast a
-/// real <c>FM_S_MISSILE_DESTROYED(83)</c> — the same idea as
-/// <c>Ship.ReceiveDamage</c> firing <see cref="IIgcSite.KillShipEvent"/> on a
-/// real ship death (<c>Sim/Ship.cs:494</c>), applied to a missile's own
-/// expiry instead of a ship's death. The site is derived from the launcher (a
-/// <see cref="Ship"/>'s <see cref="Ship.Mission"/>.<see cref="Mission.Site"/>);
-/// a directly-constructed missile with no launcher has no site and its
-/// destruction event is a no-op.
-/// </remarks>
+/// <summary>A guided, accelerating missile. Native Igc/missileigc.cpp:354-419
+/// gates steering/thrust on activation, then integrates movement; burnout is
+/// handled on the next update after the previous clock reaches expiry.</summary>
 public sealed class Missile : Model, IOrdnance, IMissileIgc
 {
     private readonly Sector _sector;
     private readonly double _timeExpire;
     private readonly double _timeReady;
+    private float _impactTime;
+    private bool _terminated;
 
     /// <summary>Construct a missile in <paramref name="sector"/> at
     /// <paramref name="position"/> with <paramref name="velocity"/>, facing
@@ -99,12 +51,14 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         // velocity (the position step below still runs — native
         // TmodelIGC::Update always advances position).
         _timeReady = now + missileType.ReadyTime;
+        if (target is not null && missileType.Acceleration > 0)
+            _impactTime = missileType.ReadyTime + MathF.Sqrt(2 / missileType.Acceleration *
+                (target.Position - position + missileType.ReadyTime * (target.CollisionVelocity - velocity)).Length());
         InitClock(now);
     }
 
     /// <summary>The decoded missile type from the static core — the source of
-    /// <c>Lifespan</c>, <c>InitialSpeed</c>, and (read-but-unused this slice)
-    /// the homing/turning fields. Never hardcoded; the task rule.</summary>
+    /// lifespan, launch speed, activation delay, acceleration and turn rate.</summary>
     public DataMissileTypeIGC MissileType { get; }
 
     /// <summary>The linear velocity of this missile — constant for a straight-line
@@ -220,125 +174,48 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// <inheritdoc/>
     public override Vector3 CollisionVelocity => Velocity;
 
-    /// <summary>
-    /// One chunk's work: advance the straight-line position by
-    /// <c>velocity·dt</c> and expire once <paramref name="now"/> reaches
-    /// <see cref="TimeExpire"/>. On expiry, remove <c>this</c> from
-    /// <see cref="OwnerSector"/> and raise the host seam's
-    /// <see cref="IIgcSite.MissileDestroyedEvent"/> so the server can broadcast a
-    /// real <c>FM_S_MISSILE_DESTROYED(83)</c> to the same-side peers who saw it
-    /// launch. An area-effect missile (<see cref="MissileType.BlastPower"/> ≠ 0)
-    /// that times out without hitting anything still detonates at its
-    /// <em>current</em> position before removal — <c>CmissileIGC::Update</c>'s
-    /// <c>Explode(GetPosition())</c> (<c>missileigc.cpp:356-360,516-532</c>), a
-    /// real <see cref="Explosion"/> handed to <see cref="Sector.ResolveExplosion"/>.
-    /// Removing <c>this</c> from the sector during this call is safe: the
-    /// sector ticks over a snapshot (<c>Sector.Update</c>), and a fire-at-expiry
-    /// never repeats (expiry is latched by <see cref="TimeExpire"/>, monotone).
-    /// </summary>
+    /// <summary>Native Igc/missileigc.cpp:354-419.</summary>
     protected override void OnUpdate(double now, double dt)
     {
-        // P549 — the arming-delay gate (native missileigc.cpp:363: `if (now >
-        // m_timeActivate)`): before the missile's readyTime elapses it neither
-        // homes NOR thrusts — it coasts inert at its launch velocity. Only the
-        // position step below runs regardless (native TmodelIGC::Update always
-        // advances). This wraps the P179 homing/turning layer and the
-        // P179-thrust block below, matching native's single gate that encloses
-        // both steering and primary thrust.
-        bool armed = now > _timeReady;
-
-        // P179 — the real homing/turning layer of native's Update, performed
-        // BEFORE position integration (native's order: cluster-drop → turn →
-        // thrust → TmodelIGC::Update's position step, missileigc.cpp:371-397,419).
-        // Deliberate simplifications vs native, stated plainly (both are the
-        // established "approximate, don't port the heavyweight original" choices
-        // this port applies consistently — cf. the quartic-solve note below):
-        //   (a) m_lock is now the real per-launch <see cref="LockFraction"/>
-        //       (P181; default 1f reproduces Stage 1's m_lock ≡ 1.0 exactly),
-        //       so dV = target.Velocity·lockFraction − myVelocity
-        //       (missileigc.cpp:386).
-        //   (b) the lead-point prediction reuses the already-ported quadratic
-        //       Ship.SolveForImpact (P168's port of common.cpp:59-119) instead of
-        //       porting native's quartic static solve(...) (missileigc.cpp:260-
-        //       352) — the missile is modelled as coasting at its *current* speed
-        //       for the prediction only. (c_gaTurnRateMissile — missileigc.cpp:389 —
-        //       now scales the turn via GaFactor, P467.)
-        //
-        // BUG FIX (found live 2026-09-16, interactive playtest — "missiles are
-        // super slow"): the thrust/acceleration application was previously
-        // nested INSIDE this `if (Target is { } t)` block, so a target-less
-        // missile (e.g. dumbfire, or CommandTarget null at launch) never
-        // accelerated past its slow DataMissileTypeIGC.InitialSpeed (native's
-        // own real data: every missile type launches at just 0-25 units/s,
-        // relying entirely on post-launch thrust to become fast). Re-checked
-        // native directly: CmissileIGC::Update (missileigc.cpp:379-397) only
-        // gates the STEERING (solve/TurnTo) on `m_target` — the thrust itself
-        // (`deltaV = backward * (acceleration * dt); SetVelocity(...)`) runs
-        // UNCONDITIONALLY every tick, every missile, targeted or not. Moved
-        // below to match — steering is target-gated, thrust is not.
-        if (armed && Target is { } t)
+        if (_terminated) return;
+        if (LastUpdate >= _timeExpire)
         {
-            // Native drops the target outright when it leaves the missile's
-            // cluster (missileigc.cpp:371-375). The port's cluster == sector, and
-            // its membership primitive is the sector's model list (Sector.Add/
-            // Remove, the same mechanism that backs Ship.Sector).
-            if (!EquipmentTarget.IsPresent(t, _sector))
-            {
-                Target = null;   // lost our target — revert to straight line
-            }
-            else if (MissileType.Acceleration > 0f)
-            {
-                // Lead point: predict the intercept direction as if the missile
-                // coasted at its current speed (radius 0 ⇒ aim at the predicted
-                // centre, the dP + tImpact·dV target of native's TurnTo,
-                // missileigc.cpp:389). SolveForImpact returns direction = Zero on
-                // no-solution; fall back to aiming at the target's current
-                // position so a temporarily-uncatchable target still gets chased.
-                Vector3 deltaP = t.Position - Position;
-                Vector3 deltaV = t.CollisionVelocity * LockFraction - Velocity;   // m_lock → LockFraction (a); Model.CollisionVelocity (Ship overrides) is the target's velocity
-                float speed = Velocity.Length();                     // coast-at-current-speed predict (b)
-                Ship.SolveForImpact(deltaP, deltaV, speed, 0f, out Vector3 direction);
-                if (direction.LengthSquared() <= 1e-6f)
-                    direction = deltaP.Normalize();                  // no intercept this tick → aim at current pos
-                if (direction.LengthSquared() > 1e-6f)
-                    Forward = RotateToward(Forward, direction,
-                        MissileType.TurnRate * (float)dt * GaFactor(GlobalAttributeSet.TurnRateMissile));   // missileigc.cpp:389 (× c_gaTurnRateMissile, P467)
-            }
-        }
-
-        // Thrust: accelerate along the current heading, every tick, regardless
-        // of target — native's backward·(acceleration·dt) then
-        // SetVelocity(myVelocity − deltaV) (missileigc.cpp:393-397) is a
-        // forward-acceleration written backwards, and runs unconditionally
-        // AFTER the arming gate (missileigc.cpp:363 — a missile before its
-        // readyTime does not thrust, P549).
-        if (armed && MissileType.Acceleration > 0f)
-            Velocity += Forward * MissileType.Acceleration * (float)dt;
-
-        Position += Velocity * (float)dt;
-        if (now >= _timeExpire)
-        {
-            _sector.Remove(this); // expiry blast must not hit its own spent missile
-            if (MissileType.BlastPower != 0f)
-            {
-                // Native projects the blast to the exact expiry instant
-                // (missileigc.cpp:356-360, Explode at GetPosition(); the projectile
-                // Update it inherits unwinds to the straight-line burnout point).
-                // Our per-chunk advance has already overshot `now` past expiry, so
-                // unwind that overshoot to the precise position at _timeExpire.
-                var expiryPos = Position - Velocity * (float)(now - _timeExpire);
-                var blast = new Explosion(
-                    MissileType.DamageType,
-                    MissileType.BlastPower * GaFactor(GlobalAttributeSet.DamageMissiles),   // missileigc.cpp:523 (× c_gaDamageMissiles, P467)
-                    MissileType.BlastRadius,
-                    _timeExpire,
-                    expiryPos,
-                    Launcher);
-                _sector.ResolveExplosion(blast, _timeExpire);
-            }
-            // A sector-bound missile reaches the host even without a launcher.
+            _terminated = true;
+            _sector.Remove(this);
+            if (MissileType.BlastPower != 0)
+                _sector.ResolveExplosion(new Explosion(MissileType.DamageType,
+                    MissileType.BlastPower * GaFactor(GlobalAttributeSet.DamageMissiles),
+                    MissileType.BlastRadius, now, Position, Launcher), now);
             (_sector.Mission ?? (Launcher as Ship)?.Mission)?.Site.MissileDestroyedEvent(this);
+            return;
         }
+
+        if (now > _timeReady)
+        {
+            // Only the part of this tick after activation contributes thrust
+            // and turning (missileigc.cpp:371). Preserve the literal native
+            // teleport at :399-405: its deltaV uses BACKWARD, so subtracting
+            // deltaV adds forward displacement for the inactive prefix.
+            float activeDt = (float)(now - Math.Max(_timeReady, LastUpdate));
+            if (Target is { } t && (!EquipmentTarget.IsPresent(t, _sector)
+                || t is Ship ship && !ReferenceEquals(ship.Sector, _sector))) Target = null;
+            if (Target is { } target && MissileType.Acceleration > 0)
+            {
+                var dp = target.Position - Position;
+                var dv = target.CollisionVelocity * LockFraction - Velocity;
+                _impactTime = MissileIntercept.Solve(dp, dv, MissileType.Acceleration, _impactTime);
+                var direction = dp + _impactTime * dv;
+                if (direction.LengthSquared() > 0)
+                    Forward = RotateToward(Forward, direction.Normalize(),
+                        MissileType.TurnRate * activeDt * GaFactor(GlobalAttributeSet.TurnRateMissile));
+            }
+            var deltaV = Forward * (MissileType.Acceleration * activeDt);
+            Velocity += deltaV;
+            if (_timeReady > LastUpdate)
+                Position += deltaV * (float)(_timeReady - LastUpdate);
+            _impactTime -= activeDt;
+        }
+        Position += Velocity * (float)dt;
     }
 
     /// <summary>

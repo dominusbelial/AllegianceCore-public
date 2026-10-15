@@ -587,8 +587,9 @@ public sealed partial class ClientWorld
     private MissileTrackState _missileTrack = MissileTrackState.Clear;
     private LeadIndicatorState _leadIndicator = LeadIndicatorState.None;
 
-    /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
-    /// assignment; null until the server has told us which ship we are.</summary>
+    /// <summary>The local ship id assigned by SET_CLUSTER(7), with its launch
+    /// pose/cookie. JOINED_MISSION's earlier player identity is JoinedShipId.
+    /// Keeping these separate preserves the launch contract for consumers.</summary>
     public short? MyShipId { get; private set; }
 
     /// <summary>
@@ -1006,21 +1007,30 @@ public sealed partial class ClientWorld
     /// <see cref="Apply(QueuedCommandUpdate)"/>).</summary>
     public QueuedCommandState? MyQueuedCommand => _myQueuedCommand;
 
-    /// <summary>P626 — the most recently announced in-flight ballot, or
-    /// <c>null</c> when none. Populated from the server's BALLOT(17) broadcast
-    /// (P187); the VoteYes/VoteNo keys read it and send a VOTE(19) naming this
-    /// ballot id. A new ballot replaces the previous one; the server resolves
-    /// ballots on expiry/all-votes-in, at which point no further clear message
-    /// arrives, so this is a "latest announced" latch (mirroring how the native
-    /// client surfaces the current ballot, WinTrek.cpp:10377-10387).</summary>
-    public PendingBallotView? ActiveBallot => _activeBallot;
-    private PendingBallotView? _activeBallot;
+    /// <summary>Oldest pending ballot, native clintlib.cpp:2497-2507.
+    /// CANCEL_BALLOT removes every matching id without disturbing other votes.</summary>
+    public PendingBallotView? ActiveBallot => GetActiveBallot();
+    private readonly List<PendingBallotView> _pendingBallots = new();
+
+    public void DismissBallot(short ballotId) => _pendingBallots.RemoveAll(b => b.BallotId == ballotId);
+
+    public PendingBallotView? GetActiveBallot(long? localMs = null)
+    {
+        // clintlib.cpp:2497-2507: strict expiration < now, oldest first.
+        if (_countdownClockLocalMs is { } anchor)
+        {
+            double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+            while (_pendingBallots.Count > 0 && _pendingBallots[0].TimeExpiration < now)
+                _pendingBallots.RemoveAt(0);
+        }
+        return _pendingBallots.FirstOrDefault();
+    }
 
     /// <summary>P626 — a lightweight, client-safe view of an active ballot (the
     /// ballot text + id the server announced), kept deliberately small so the
     /// whole wire object isn't cached client-side. Consumed by the vote keys and
     /// a small HUD hint.</summary>
-    public sealed record PendingBallotView(short BallotId, string BallotText);
+    public sealed record PendingBallotView(short BallotId, string BallotText, uint TimeExpiration = uint.MaxValue);
 
     /// <summary>Transient projectile instances, in arrival order, pruned by
     /// expiry via <see cref="PruneExpiredProjectiles"/>. A projectile carries no
@@ -1499,6 +1509,10 @@ public sealed partial class ClientWorld
     /// CountdownRemainingSeconds uses the absolute server-time target.</summary>
     public long? CountdownStartLocalMs { get; private set; }
     private uint? _countdownTargetMs;
+    private uint? _missionTimeStartMs;
+    /// <summary>Native OnMissionCountdown event serial (appmsg.cpp:2330-2334).
+    /// SET_START_TIME changes only the epoch, not the audio change detector.</summary>
+    public long CountdownVersion { get; private set; }
     private double _countdownClockServerMs;
     private long? _countdownClockLocalMs;
 
@@ -1509,6 +1523,23 @@ public sealed partial class ClientWorld
         if (_countdownTargetMs is not { } target || _countdownClockLocalMs is not { } anchor) return null;
         double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
         return Math.Max(0, (int)Math.Ceiling((target - now) / 1000.0));
+    }
+
+    /// <summary>Native CheckCountdownSound (WinTrek.cpp:11135-11156). The
+    /// announcer lags by one second; Starting adds one AFTER truncation,
+    /// whereas Started adds it BEFORE truncation. Keep this separate from HUD
+    /// ceiling arithmetic. MISSIONDEF supplies late joiners' duration/epoch;
+    /// SET_START_TIME replaces the epoch for the briefing and ensuing game.</summary>
+    public int? MissionCountdownSoundSeconds(long? localMs = null)
+    {
+        if (_missionTimeStartMs is not { } start || _countdownClockLocalMs is not { } anchor) return null;
+        double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+        double untilStart = (start - now) / 1000.0;
+        if (_mission?.Stage == MissionStageMessage.StageStarting)
+            return Math.Max(0, (int)untilStart + 1);
+        if (_mission?.Stage == MissionStageMessage.StageStarted && _mission.GameLengthSeconds != 0f)
+            return Math.Max(0, (int)(_mission.GameLengthSeconds + untilStart + 1));
+        return null;
     }
 
     public bool IsIntermission => _countdownTargetMs is not null
@@ -1553,6 +1584,12 @@ public sealed partial class ClientWorld
         ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
+        MyAcceptedCommand = null;
+        _myQueuedCommand = null;
+        JoinedShipId = null;
+        JoinedMissionCookie = null;
+        JoinError = null;
+        MissionCore = null;
         MySideId = null;
         // P636 — a fresh connection starts with an empty published snapshot; a
         // reader holding the pre-reconnect snapshot keeps a valid (stale) object.
@@ -1562,6 +1599,7 @@ public sealed partial class ClientWorld
         Graph = null;
         CountdownStartLocalMs = null;
         _countdownTargetMs = null;
+        _missionTimeStartMs = null;
         _countdownClockLocalMs = null;
         _mission = null;
         _gameOver = null;
@@ -1590,6 +1628,7 @@ public sealed partial class ClientWorld
         _ownProjectileCount = 0;
         _projectileDrainCursor = 0;
         _missiles.Clear();
+        _lastMissileFiredByShip.Clear();
         MarkSnapshotDirty();
         Diag.Clear();
         _probes.Clear();
@@ -1612,6 +1651,8 @@ public sealed partial class ClientWorld
         _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();                    // P442 — per-player wallet state
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
+        _feedbackLines.Clear();
+        _cameraOverrideRequests.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();   // P373 — drop any pending first-sighting cues on disconnect
         _highlightedClusters.Clear();
@@ -1623,6 +1664,7 @@ public sealed partial class ClientWorld
         _clusterWarningCues.Clear();         // P374 — drop any pending threat cues on disconnect
         _events.Clear();
         _roster.Clear();
+        ResetLobby();
     }
 
     /// <summary>Upsert the world state from a decoded message. Switch on the
@@ -1633,6 +1675,18 @@ public sealed partial class ClientWorld
     {
         switch (msg)
         {
+            case JoinedMission joined:
+                Apply(joined);
+                break;
+            case ObjectSpotted spotted:
+                Apply(spotted);
+                break;
+            case SetWingId wing:
+                Apply(wing);
+                break;
+            case OrderChange order:
+                Apply(order);
+                break;
             case Promote promote:
                 Apply(promote);
                 break;
@@ -1722,6 +1776,25 @@ public sealed partial class ClientWorld
                 // P626 — a new in-flight ballot was announced (P187); latch it
                 // as ActiveBallot + surface a system chat line.
                 Apply(ballot);
+                break;
+            case CancelBallot cancelBallot:
+                // clintlib/appmsg.cpp:377-392: remove all queued matches.
+                DismissBallot(cancelBallot.BallotId);
+                break;
+            case PositionReqBroadcast positionRequest:
+                Apply(positionRequest);
+                break;
+            case DelPositionReq removeRequest:
+                Apply(removeRequest);
+                break;
+            case LockLobby lockLobby:
+                Apply(lockLobby);
+                break;
+            case LockSides lockSides:
+                Apply(lockSides);
+                break;
+            case AutoAccept autoAccept:
+                Apply(autoAccept);
                 break;
             case ChatBuoy chatBuoy:
                 Apply(chatBuoy);
@@ -3061,17 +3134,29 @@ public sealed partial class ClientWorld
     private void Apply(FireMissile m)
     {
         if (m.Entries.Count == 0) return;               // degenerate (legal) empty salvo
-        var e = m.Entries[0];
-        _missiles[e.MissileId] = new MissileEntity
+        foreach (var e in m.Entries)
         {
-            MissileId = e.MissileId,
-            TypeId = m.MissileTypeId,
-            ClusterId = m.ClusterId,
-            Position = e.VecPosition,
-            Forward = e.VecForward.LengthSquared() > 1e-6f ? e.VecForward.Normalize() : new Vector3(0f, 0f, -1f),
-            LastUpdatedLocalMs = Environment.TickCount64,
-        };
+            _missiles[e.MissileId] = new MissileEntity
+            {
+                MissileId = e.MissileId,
+                LauncherId = m.LauncherId,
+                TargetType = (IgcObjectType)m.TargetType,
+                TargetId = m.TargetId,
+                TypeId = m.MissileTypeId,
+                ClusterId = m.ClusterId,
+                Position = e.VecPosition,
+                Forward = e.VecForward.LengthSquared() > 1e-6f ? e.VecForward.Normalize() : new Vector3(0f, 0f, -1f),
+                LastUpdatedLocalMs = Environment.TickCount64,
+            };
+            _lastMissileFiredByShip[m.LauncherId] = e.MissileId;
+        }
     }
+
+    // Native GetLastMissileFired (WinTrek.cpp:7237-7268). Expiry of the last
+    // shot falls back to chase; it must never switch to an older or enemy shot.
+    private readonly Dictionary<short, short> _lastMissileFiredByShip = new();
+    public MissileEntity? LastMissileFiredBy(short shipId) =>
+        _lastMissileFiredByShip.TryGetValue(shipId, out short id) && _missiles.TryGetValue(id, out var missile) && missile.LauncherId == shipId ? missile : null;
 
     /// <summary>FM_S_MISSILE_UPDATE(205) — the P234 per-tick ongoing-position
     /// stream. Upsert every carried record by missile id (an id not seen via a
@@ -3083,15 +3168,13 @@ public sealed partial class ClientWorld
         long now = Environment.TickCount64;
         foreach (var r in m.Records)
         {
-            _missiles[r.MissileId] = new MissileEntity
-            {
-                MissileId = r.MissileId,
-                TypeId = r.TypeId,
-                ClusterId = r.ClusterId,
-                Position = r.Position,
-                Forward = r.Forward.LengthSquared() > 1e-6f ? r.Forward.Normalize() : new Vector3(0f, 0f, -1f),
-                LastUpdatedLocalMs = now,
-            };
+            if (!_missiles.TryGetValue(r.MissileId, out var missile))
+                _missiles[r.MissileId] = missile = new MissileEntity { MissileId = r.MissileId };
+            missile.TypeId = r.TypeId;
+            missile.ClusterId = r.ClusterId;
+            missile.Position = r.Position;
+            missile.Forward = r.Forward.LengthSquared() > 1e-6f ? r.Forward.Normalize() : new Vector3(0f, 0f, -1f);
+            missile.LastUpdatedLocalMs = now;
         }
     }
 
@@ -3133,7 +3216,9 @@ public sealed partial class ClientWorld
         var e = Upsert(info.ShipId);        // create-if-absent: a ship we only
                                             // heard of via PLAYERINFO
         e.Player = info;
-        if (string.IsNullOrEmpty(e.CharacterName)) e.CharacterName = info.CharacterName;
+        e.SideId = info.ISide;
+        if (info.ShipId == (MyShipId ?? JoinedShipId)) MySideId = info.ISide;
+        if (string.IsNullOrEmpty(e.CharacterName) || e.CharacterName == "<error>") e.CharacterName = info.CharacterName;
     }
 
     private void Apply(ScoreRosterUpdate m) =>
@@ -3382,7 +3467,7 @@ public sealed partial class ClientWorld
     /// are voting on (the port has no native-style ballot popup).</summary>
     private void Apply(Ballot m)
     {
-        _activeBallot = new PendingBallotView(m.BallotId, m.BallotText);
+        _pendingBallots.Add(new PendingBallotView(m.BallotId, m.BallotText, m.TimeExpiration));
         _events.Record(new ChatMessage
         {
             Message = "[VOTE] " + m.BallotText,
@@ -3635,7 +3720,8 @@ public sealed partial class ClientWorld
     }
 
     // ── Mission info (persistent mission state, distinct from any ship) ────
-    private void Apply(MissionDef def) =>
+    private void Apply(MissionDef def)
+    {
         // Both MISSIONDEF(38) and MISSION_STAGE(37) can carry a Stage. The
         // server sends MISSIONDEF first (twice, in fact, at stage 0) and
         // MISSION_STAGE last (StageStarted) in the join burst, but rather than
@@ -3650,9 +3736,12 @@ public sealed partial class ClientWorld
             StaticCoreFile = def.SzIGCStaticFile,
             StaticCoreVersion = def.VerIgcCore,
             Cookie = def.DwCookie,
+            GameLengthSeconds = def.GameLengthSeconds,
             SideMissionOwner = def.ISideMissionOwner,
             Stage = def.Stage,
         };
+        _missionTimeStartMs = def.TimeStart;
+    }
 
     private void Apply(MissionStageMessage stage)
     {
@@ -3679,6 +3768,7 @@ public sealed partial class ClientWorld
             StaticCoreFile = _mission?.StaticCoreFile ?? "",
             StaticCoreVersion = _mission?.StaticCoreVersion ?? 0,
             Cookie = _mission?.Cookie ?? 0,
+            GameLengthSeconds = _mission?.GameLengthSeconds ?? 0,
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = stage.Stage,
         };
@@ -3688,7 +3778,10 @@ public sealed partial class ClientWorld
         // Native gameoverscreen.cpp:638-645 advances the game-over screen on Starting
         // to the new mission. Keep scoreboard during NotStarted intermission.
         if (stage.Stage == MissionStageMessage.StageStarting)
+        {
+            CountdownVersion++;
             ClearGameOver();
+        }
         if (stage.Stage == MissionStageMessage.StageStarted)
         {
             if (previousStage != MissionStageMessage.StageStarted) ClearGameOver();
@@ -3721,9 +3814,16 @@ public sealed partial class ClientWorld
         MissionGeneration++;
         ShipWarnings.Reset();
         MyShipId = null;
+        MyAcceptedCommand = null;
+        _myQueuedCommand = null;
+        JoinedShipId = null;
+        JoinedMissionCookie = null;
+        JoinError = null;
+        MissionCore = null;
         Graph = null;
         CountdownStartLocalMs = null;
         _countdownTargetMs = null;
+        _missionTimeStartMs = null;
         _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
@@ -3748,6 +3848,7 @@ public sealed partial class ClientWorld
         _ownProjectileCount = 0;
         _projectileDrainCursor = 0;
         _missiles.Clear();
+        _lastMissileFiredByShip.Clear();
         MarkSnapshotDirty();
         Diag.Clear();
         _probes.Clear();
@@ -3770,6 +3871,8 @@ public sealed partial class ClientWorld
         _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();
         _autoDonateTargetByShipId.Clear();
+        _feedbackLines.Clear();
+        _cameraOverrideRequests.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();
         _highlightedClusters.Clear();
@@ -3781,6 +3884,7 @@ public sealed partial class ClientWorld
         _clusterWarningCues.Clear();
         _events.Clear();
         _roster.Clear();
+        ResetLobby();
     }
 
     /// <summary>Native SET_START_TIME can be reset for the briefing after the
@@ -3788,6 +3892,7 @@ public sealed partial class ClientWorld
     private void Apply(SetStartTime startTime)
     {
         _countdownTargetMs = startTime.TimeStart;
+        _missionTimeStartMs = startTime.TimeStart;
         CountdownStartLocalMs = Environment.TickCount64;
     }
 
@@ -3971,6 +4076,9 @@ public sealed partial class ClientWorld
     /// </summary>
     private void Apply(JoinSide join)
     {
+        // clintlib/clintlib.cpp:4133-4135: joining satisfies this side's request.
+        _positionRequests.Remove(new(join.SideId, join.ShipId));
+        if (join.ShipId == (JoinedShipId ?? MyShipId)) MyPositionRequestResult = null;
         // Known ship: update its side. Unknown ship: do not mint a phantom
         // entity (see the doc comment) — its EXPORT will carry the side.
         if (_ships.TryGetValue(join.ShipId, out var e))

@@ -1763,6 +1763,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (_attackTarget == value) return;
             _attackTarget = value;
+            if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
             DronePlanChanged();
         }
     }
@@ -1794,6 +1795,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (_defendTarget == value) return;
             _defendTarget = value;
+            if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
             DronePlanChanged();
         }
     }
@@ -2267,15 +2269,10 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     /// <remarks>
     /// <list type="number">
-    /// <item><b>"Enemy" = a different <see cref="SideId"/>.</b> This port has no
-    /// alliance system (the established finding P159 states for its own
-    /// same-side filtering, and P149 documents for the friendly-station
-    /// search's <c>c_ttFriendly</c> gate), so the whole enemy test is
-    /// <c>ship.SideId != this.SideId</c> — the <c>pside != pHisSide</c> /
-    /// <c>!AlliedSides</c> story (<c>common.cpp:269-273</c>) with no alliance
-    /// tier to add. A ship with no <see cref="SideId"/> is skipped (native's
-    /// null-<c>pside</c> path never matches <c>c_ttEnemy</c> against a side
-    /// it can't identify).</item>
+    /// <item><b>Enemy excludes same-side and live allies.</b> Native
+    /// <c>common.cpp:269-273</c> uses <c>!AlliedSides</c>; the shared
+    /// <see cref="IsFriendlySide"/> reads the current alliance groups.
+    /// Side-less ships are neutral and never match an enemy search.</item>
     /// <item><b>Undocked, alive, not self.</b> Enumerates
     /// <see cref="Model.Sector.GetShipUpdateCandidates()"/> — the port's
     /// established per-sector ship-membership accessor (used by P138/P159/P161),
@@ -2293,13 +2290,13 @@ public sealed class Ship : Model, IShipIgc
     /// <c>c_cidAttack</c> either — not built, stated not assumed).</item>
     /// </list>
     /// </remarks>
-    /// <returns>The nearest undocked, alive ship with a different (non-null)
-    /// <see cref="SideId"/> in this ship's sector, excluding this ship itself,
+    /// <returns>The nearest undocked, alive enemy ship with a non-null
+    /// <see cref="SideId"/> in this sector, excluding self and live allies,
     /// or <c>null</c> if the ship has no sector/side or no such ship exists.</returns>
     private Ship? FindNearestEnemyShip()
     {
         if (Sector is not { } sector) return null;
-        if (SideId is not { } sideId) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
+        if (SideId is null) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
 
         Ship? best = null;
         float bestDistanceSquared = float.MaxValue;
@@ -2307,7 +2304,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (ReferenceEquals(ship, this)) continue;                 // a ship is never its own enemy
             if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
-            if (otherSide == sideId) continue;                         // c_ttEnemy: different side (no alliance system)
+            if (IsFriendlySide(otherSide)) continue;                  // common.cpp:269-273; igc.h:4297-4305
 
             float dx = ship.Position.X - Position.X;
             float dy = ship.Position.Y - Position.Y;
@@ -2355,7 +2352,7 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     private Ship? FindNearestEnemyNear(Vector3 center, ref float radius)
     {
-        if (SideId is not { } sideId) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
+        if (SideId is null) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
         if (Sector is not { } sector) return null;   // no sector → nothing to search (defend gate guarantees charge is same-sector)
 
         Ship? best = null;
@@ -2365,7 +2362,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (ReferenceEquals(ship, this)) continue;                 // a ship is never its own enemy
             if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
-            if (otherSide == sideId) continue;                         // c_ttEnemy: different side (no alliance system)
+            if (IsFriendlySide(otherSide)) continue;                  // common.cpp:269-273; igc.h:4297-4305
 
             float dx = ship.Position.X - center.X;
             float dy = ship.Position.Y - center.Y;
@@ -3040,7 +3037,11 @@ public sealed class Ship : Model, IShipIgc
             if (part.EquipmentType == EquipmentType.Afterburner || part.MountedFraction >= 1f) continue;
             part.MountedFraction = Math.Min(1f, part.MountedFraction + dt * MountRate());
             if (part.MountedFraction >= 1f)
+            {
+                if (part.EquipmentType == EquipmentType.Weapon)
+                    Mission?.Site.WeaponReady(this, part.Type.Name); // weaponIGC.h:44-46
                 RaiseLoadoutChange(part, LoadoutChange.Mounted);
+            }
         }
     }
 
@@ -5004,32 +5005,9 @@ public sealed class Ship : Model, IShipIgc
     /// <c>TurnTorques</c> (the manoeuvre ramp at <c>Ship.cs:1790-1804</c>).</summary>
     private const float AutopilotTurnGain = 2.0f;
 
-    // P162 — Wingman combat-approach constants. The combat leg of
-    // ApplyNpcAutopilot steers toward the enemy's LIVE position through the
-    // SAME face+thrust computation as every other goal, but with a different
-    // arrival condition: "close enough to fire" (a standoff inside weapon
-    // range) rather than "stopped on the point" (AutopilotArrivalRadius).
-    //
-    //   MaxEngagementStandoff caps how far the Wingman holds from its target
-    //     so a very-long-range weapon doesn't park it at extreme range where
-    //     a small aim error misses entirely; the effective standoff is
-    //     min(0.7 · weaponRange, this), floored at AutopilotArrivalRadius so a
-    //     weapon-less Wingman still behaves like a normal arrival.
-    //   FireFacingCosine is the CosForward-style dot-product bar (forward·dir
-    //     = −local Z, the same metric the P155 turn law already uses) for
-    //     "facing the target closely enough to fire".
+    // Existing engagement standoff; the native lead/turn/fire law lives below.
     private const float WingmanMaxEngagementStandoff = 350f;
-    private const float WingmanFireFacingCosine = 0.90f;
-
-    // P169 — native's plain-Wingman shoot skill (Igc/shipIGC.cpp:2359,
-    // fShootSkill = 0.75f; only overridden for c_ptCheatPlayer, shipIGC.cpp:
-    // 2366-2369, which this port has no analogue for and needs none). Inside
-    // the lead solve it SCALES THE TARGET'S VELOCITY DOWN (common.cpp:137:
-    // hisVelocity * skill), i.e. a lower skill leads less — a 0.75 Wingman
-    // accounts for only 75% of the target's motion, so its shots trail the
-    // ideal intercept slightly. Named+cited following the
-    // WingmanFireFacingCosine precedent (P162) for a tuned constant.
-    private const float WingmanShootSkill = 0.75f;   // shipIGC.cpp:2359
+    private const float WingmanShootSkill = 0.75f; // Igc/shipIGC.cpp:2359
 
     // P166 — the native c_cidDefend re-evaluation thresholds, ported with their
     // exact native values (Igc/shipIGC.cpp:2373-2407). Distance in world units,
@@ -5232,6 +5210,7 @@ public sealed class Ship : Model, IShipIgc
             BuilderAsteroidTarget = null;
             MiningAsteroidTarget = null; LayerAsteroidTarget = null;
             AttackTarget = null; DefendTarget = null; LayerBuildOrder = null;
+            RepairTarget = null; RepairStationTarget = null;
             // Re-arm cross-cluster nav + ripcord caches for the fresh target.
             _npcNavCached = false; _npcRipcordCached = false;
             _npcCrossClusterDepartureLogged = false; _npcCrossClusterNoPathLogged = false;
@@ -5267,6 +5246,7 @@ public sealed class Ship : Model, IShipIgc
             BuilderAsteroidTarget = null;
             MiningAsteroidTarget = null; LayerAsteroidTarget = null;
             AttackTarget = null; DefendTarget = null; PickupTarget = null;
+            RepairTarget = null; RepairStationTarget = null;
             LayerBuildOrder = g;
             _npcNavCached = false; _npcRipcordCached = false;
             ConsoleLog.Write($"[layer] ship {Id} (side {SideId}) — layer BUILD order to sector {g.ClusterId} position ({g.Position.X:0},{g.Position.Y:0},{g.Position.Z:0}) armed (native c_cmdPlan=c_cidBuild, shipIGC.cpp:2810-2828)");
@@ -5342,6 +5322,18 @@ public sealed class Ship : Model, IShipIgc
             else if (!TryRipcordOrDefer(repairSector.Id, now, $"repair carrier {repairShip.Id}"))
             {
                 goal = CrossClusterWarpGoal(repairSector.Id, $"repair carrier {repairShip.Id}");
+                goalIsWarp = goal is not null;
+            }
+        }
+        else if (HasRepairOrder)
+        {
+            short? targetSector = RepairTarget?.Sector?.Id ?? RepairStationTarget?.ClusterId;
+            if (targetSector == sector.Id)
+                goal = RepairTarget?.Position ?? RepairStationTarget?.Center;
+            else if (targetSector is { } destination &&
+                !TryRipcordOrDefer(destination, now, "repair"))
+            {
+                goal = CrossClusterWarpGoal(destination, "repair");
                 goalIsWarp = goal is not null;
             }
         }
@@ -5473,6 +5465,12 @@ public sealed class Ship : Model, IShipIgc
         else if (AttackTarget is { } enemy && enemy.Sector == sector)
         {
             goal = enemy.Position;
+            if (Weapons.FirstOrDefault(w => w.MountId == 0) is { } leadWeapon)
+            {
+                SolveForLead(enemy, leadWeapon, WingmanShootSkill, out var lead);
+                if (lead.LengthSquared() > 1e-6f)
+                    goal = Position + lead * (enemy.Position - Position).Length();
+            }
             float range = EstimateWeaponRange();
             float standoff = Math.Clamp(range * 0.7f, AutopilotArrivalRadius, WingmanMaxEngagementStandoff);
             arrivalRadius = standoff;
@@ -6805,107 +6803,171 @@ public sealed class Ship : Model, IShipIgc
         }
     }
 
-    /// <summary>
-    /// P162 — the Wingman's per-tick combat leg, the counterpart of the
-    /// decision in <see cref="DecideWingmanDefaultOrder"/>: (1) validate the
-    /// current <see cref="AttackTarget"/> and clear it when it is no longer a
-    /// valid same-sector enemy, and (2) decide whether to hold the trigger and
-    /// set/clear the <c>AllWeapons</c> <see cref="StateM"/> bit that the
-    /// already-built <see cref="Weapon.Update"/>/<see cref="Weapon.FireWeapon"/>
-    /// mechanic checks (<see cref="Weapon.IsWeaponSelected"/>,
-    /// Weapon.cs:363-375). Runs every tick <em>before</em> the weapon loop in
-    /// <see cref="OnUpdate"/> so the fire decision is in place for that tick's
-    /// fire. Called only for <see cref="IsNpc"/> <see cref="PilotTypeWingman"/>
-    /// ships.
-    /// </summary>
-    /// <remarks>
-    /// <list type="number">
-    /// <item><b>Target validity — cleared, never pursued across sectors.</b> The
-    /// target is dropped when it dies, docks (<see cref="StationId"/> non-null),
-    /// leaves this ship's sector, or is no longer a different-sided enemy — the
-    /// scope's same-sector-only contract (no cross-sector pursuit, matching
-    /// native's same-sector-only selection). When cleared, the trigger is
-    /// released and <see cref="DecideWingmanDefaultOrder"/> will re-pick on the
-    /// next idle tick.</item>
-    /// <item><b>The fire decision reuses the already-working mechanic.</b>
-    /// Nothing here modifies <c>Weapon.cs</c>: the weapon already fires whenever
-    /// the mounting ship's <see cref="StateM"/> carries the weapon-selection bit
-    /// (<c>AllWeapons</c>, Weapon.cs:372) — the exact input a real player's
-    /// client streams. This leg only sets that bit when the target is alive,
-    /// same-sector, within the mounted weapon's effective range
-    /// (<see cref="EstimateWeaponRange"/>), and the nose is within
-    /// <see cref="WingmanFireFacingCosine"/> of the target — the
-    /// CosForward-style <c>forward·dir</c> dot-product the P155 turn law already
-    /// uses (<c>−Orientation.TimesInverse(dir).Z</c>, Ship.cs:2545/2588) — and
-    /// clears it when any condition stops holding. No aim-leading: fire at the
-    /// target's current position, no velocity-lead calculation.</item>
-    /// </list>
-    /// </remarks>
-    private void UpdateWingmanCombat()
+    /// <summary>Native turnToFace (Igc/common.cpp:152-254), including
+    /// skill-scaled angular stopping drift and coupled yaw/pitch normalization.</summary>
+    private float TurnWingmanToFace(Vector3 direction, float dt, float skill)
     {
-        // (a) Release the trigger when there is no target or it is no longer a
-        //     valid same-sector enemy. Keep the release unconditional at the
-        //     top so a stale target can never leave the bit latched.
-        if (AttackTarget is not { } target
-            || target.Dead
-            || target.StationId is not null
-            || target.Sector != Sector
-            || SideId is null || target.SideId is null || target.SideId == SideId)
+        Vector3 local = Orientation.TimesInverse(direction);
+        float cosine = Math.Clamp(-local.Z, -1f, 1f);
+        if (cosine <= -0.999f)
         {
-            if (AttackTarget is not null)
-            {
-                ConsoleLog.Write($"[npc] ship {Id} — dropping attack target {AttackTarget.Id}: " +
-                                  $"{(AttackTarget.Dead ? "dead" : AttackTarget.StationId is not null ? "docked" : AttackTarget.Sector != Sector ? "left sector" : "no longer an enemy")}");
-                AttackTarget = null;
-            }
-            StateM &= ~ShipControlState.AllWeapons;
+            Controls = Controls with { Yaw = 1, Pitch = 0, Roll = 0 };
+            return MathF.PI;
+        }
+        float angle, yaw, pitch;
+        if (cosine < 0.98f)
+        {
+            angle = MathF.Acos(cosine);
+            var twist = Orientation.TimesInverse(Vector3.CrossProduct(Orientation.GetBackward(), direction).Normalize());
+            yaw = -twist.Y * angle;
+            pitch = twist.X * angle;
+        }
+        else
+        {
+            yaw = MathF.Acos(Math.Clamp(local.X, -1f, 1f)) - MathF.PI * 0.5f;
+            pitch = MathF.Acos(Math.Clamp(local.Y, -1f, 1f)) - MathF.PI * 0.5f;
+            angle = MathF.Sqrt(yaw * yaw + pitch * pitch);
+        }
+        float fraction = EffectiveMaxSpeed() > 0 ? Velocity.Length() / EffectiveMaxSpeed() : 0;
+        float tm = 0.5f + fraction / (fraction + 1f); // shipIGC.h:542-549
+        float Drift(int axis)
+        {
+            float torque = tm * EffectiveTurnTorque(axis);
+            float rate = TurnRates[axis];
+            return torque > 0 ? skill * MathF.Abs(rate) * (0.5f * rate * Mass / torque) : 0;
+        }
+        float Axis(float error, int axis)
+        {
+            float maximum = dt * EffectiveMaxTurnRate(axis);
+            return maximum > 0 ? error / maximum : 0;
+        }
+        yaw = Axis(yaw - Drift(ControlData.AxisYaw), ControlData.AxisYaw);
+        pitch = Axis(pitch - Drift(ControlData.AxisPitch), ControlData.AxisPitch);
+        float length = MathF.Sqrt(yaw * yaw + pitch * pitch);
+        if (length > 1) { yaw /= length; pitch /= length; }
+        Controls = Controls with { Yaw = yaw, Pitch = pitch, Roll = 0 };
+        return angle;
+    }
+
+    /// <summary>Native attack gate: angle to the lead <= 0.10 rad and
+    /// intercept time <= 95% of effective lifespan (shipIGC.cpp:2463-2477,2600).
+    /// Time, rather than centre distance, includes radius and relative velocity.</summary>
+    private void UpdateWingmanCombat(float dt)
+    {
+        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire | ShipControlState.MoveButtonsMask);
+        if (AttackTarget is not { } target) return;
+        if (target.Dead || target.StationId is not null || target.Sector != Sector ||
+            SideId is null || target.SideId is null || IsFriendlySide(target.SideId))
+        {
+            AttackTarget = null;
             return;
         }
-
-        // (b) Fire decision: within weapon range AND facing the AIM direction
-        // within tolerance → select all weapons; otherwise release.
-        float distance = (target.Position - Position).Length();
-
-        // Aim direction for the fire check. Native LEADS the shot:
-        // solveForLead() predicts where to point so the round intercepts the
-        // moving target (shipIGC.cpp:2463-2468), and the fire gate is the
-        // angle to that AIM POINT, not the target's raw current position
-        // (turnToFace(direction), shipIGC.cpp:2470-2476). Mirror that here:
-        // when a weapon is mounted, aim at the lead direction; only with NO
-        // mounted weapon does this fall back to P162's facing-the-raw-position
-        // check (no lead to solve for an unmounted ship — the same empty-
-        // weapons safety EstimateWeaponRange already exercises for range).
-        // Crucially this changes ONLY the fire gate's aim reference; the
-        // pursuit steering (SteerToward, ApplyNpcAutopilot) still flies at the
-        // target's LIVE position to close/keep range — the honest, stated
-        // decoupling (native turns the WHOLE ship to the lead vector via
-        // turnToFace; this port keeps approach steering as-is and only
-        // re-checks facing against the lead direction for the shoot decision).
-        Vector3 aim = target.Position - Position;             // raw-position fallback (P162, weapon-less)
-        if (Weapons.Count > 0)
-        {
-            // Native leads with the FIRST mounted weapon (m_mountedWeapons[0],
-            // shipIGC.cpp:2353,2466) — mirror that. A solved direction is a
-            // unit vector; the no-intercept branch leaves it Zero
-            // (SolveForImpact returns its mmf sentinel and direction = default,
-            // Ship.cs:2919), in which case we fall back to raw facing rather
-            // than aim at the zero vector (native's *direction is left UNSET in
-            // that branch, common.cpp:91 — undefined behaviour this port
-            // declines to reproduce; a target no longer reachable is no longer
-            // worth leading at anyway).
-            SolveForLead(target, Weapons[0], WingmanShootSkill, out Vector3 leadDir);
-            if (leadDir.LengthSquared() > 1e-6f)
-                aim = leadDir;
-        }
-
-        float toLen = aim.Length();
-        float facing = toLen > 1e-6f
-            ? -Orientation.TimesInverse(aim / toLen).Z      // forward·dir (P155 metric)
-            : 1f;                                                 // dead-centre: "facing"
-        if (distance <= EstimateWeaponRange() && facing >= WingmanFireFacingCosine)
+        var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+        if (weapon is null) return;
+        float t = SolveForLead(target, weapon, WingmanShootSkill, out var direction);
+        if (direction.LengthSquared() < 1e-6f) return;
+        float angle = TurnWingmanToFace(direction, dt, 0.75f);
+        float throttle = 0.5f + (MathF.PI - angle) / (2f * MathF.PI); // shipIGC.cpp:2474
+        if (angle < MathF.PI * 0.5f && t < weapon.GetLifespan() * 0.45f)
+            throttle = ComputeWingmanRangeThrottle(target); // closest band, :2493-2512
+        Controls = Controls with { Throttle = throttle };
+        if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f)
             StateM |= ShipControlState.AllWeapons;
-        else
-            StateM &= ~ShipControlState.AllWeapons;
+    }
+
+    /// <summary>Native c_cidRepair target (shipIGC.cpp:2608-2678). Stations
+    /// have a separate runtime representation in this port.</summary>
+    public Ship? RepairTarget { get; private set; }
+    public Station? RepairStationTarget { get; private set; }
+    public bool HasRepairOrder => RepairTarget is not null || RepairStationTarget is not null;
+
+    public void SetRepairOrder(Ship? target, Station? station = null)
+    {
+        AttackTarget = null;
+        DefendTarget = null;
+        GotoWaypoint = null;
+        PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+        AcceptedTarget = null; AcceptedCommandId = OrderChange.CidNone;
+        MiningAsteroidTarget = null; LayerAsteroidTarget = null; BuilderAsteroidTarget = null;
+        LayerBuildOrder = null; PickupTarget = null;
+        RepairTarget = target;
+        RepairStationTarget = station;
+        DronePlanChanged();
+    }
+
+    private void UpdateWingmanRepair(double now, float dt)
+    {
+        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire | ShipControlState.MoveButtonsMask);
+        if (Dead || StationId is not null || ParentShip is not null) return;
+        var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+        if (weapon is null || weapon.ProjectileType.Power >= 0 || Sector is null) return;
+        Vector3 position, velocity;
+        float radius;
+        bool needsRepair;
+        if (RepairTarget is { } ship)
+        {
+            if (ship.Dead || ship.StationId is not null || ship.Sector is null ||
+                !IsFriendlySide(ship.SideId))
+            { SetRepairOrder(null); return; }
+            if (ship.Sector != Sector) return;
+            position = ship.Position; velocity = ship.Velocity;
+            radius = ship.HullType.Length * 0.5f;
+            needsRepair = ship.Fraction != 1f; // shipIGC.cpp:2669-2671
+        }
+        else if (RepairStationTarget is { } station)
+        {
+            if (!IsFriendlySide(station.SideId) ||
+                Mission?.Sectors.FirstOrDefault(s => s.Id == station.ClusterId)?.StationRuntimes.Contains(station) != true)
+            { SetRepairOrder(null); return; }
+            if (!Sector.StationRuntimes.Contains(station)) return;
+            position = station.Center; velocity = Vector3.Zero;
+            radius = station.Radius;
+            needsRepair = true; // native tests full health only for OT_ship
+        }
+        else return;
+
+        float speed = weapon.ProjectileType.Speed;
+        if (weapon.Type.CAmmoPerShot != 0) speed *= GlobalAttributeFactor(GlobalAttributeSet.SpeedAmmo);
+        float t = SolveForImpact(position - Position,
+            weapon.ProjectileType.AbsoluteF ? velocity : velocity - Velocity,
+            speed, radius, out var direction); // common.cpp:121-149, skill=1
+        if (direction.LengthSquared() < 1e-6f) return;
+        float angle = TurnWingmanToFace(direction, dt, 1f); // shipIGC.cpp:2612-2627
+        Controls = Controls with { Throttle = 0.5f + (MathF.PI - angle) / (2f * MathF.PI) };
+        bool dodging = TryComputeDodgeGoal(out _);
+        int state = 0;
+        if (!dodging && t <= weapon.GetLifespan() * 0.25f)
+        {
+            if ((WingmanBehaviour & 1) != 0) state |= ShipControlState.LeftButton;
+            if (angle < MathF.PI * 0.5f)
+                state |= angle > 0.10f ? ShipControlState.BackwardButton : ShipControlState.ForwardButton;
+        }
+        // Native deliberately tests different sides here, including allies,
+        // and only wingmen / player pilots (shipIGC.cpp:2653-2665).
+        if ((WingmanBehaviour & 4) != 0 &&
+            _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0)
+                is { Type.Type: DataPartTypeIGC.MineLauncher } &&
+            Sector.Models.OfType<Ship>().Any(s => s.SideId != SideId &&
+                (s.PilotType == PilotTypeWingman || s.PilotType >= PilotTypePlayer) &&
+                (s.Position - Position).Length() < 2500f))
+            state |= ShipControlState.MineFire;
+        if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f && needsRepair)
+            state |= ShipControlState.AllWeapons;
+        StateM = (StateM & ~(ShipControlState.MoveButtonsMask | ShipControlState.WeaponsMask |
+            ShipControlState.MineFire)) | state;
+        if ((state & ShipControlState.MineFire) != 0) TryDeployRepairMine(now);
+    }
+
+    private void TryDeployRepairMine(double now)
+    {
+        // dispenserigc.cpp:103-119: amount, mount and load-time gates.
+        var part = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0);
+        if (IsRipcordActive || part is not { Amount: > 0, MountedFraction: >= 1f, Type.Type: DataPartTypeIGC.MineLauncher launcher } ||
+            now <= part.TimeLoaded || Mission is not { } mission ||
+            !mission.Core.MineTypes.TryGetValue(launcher.ExpendableTypeId, out var type)) return;
+        part.TimeLoaded = now + type.LoadTime;
+        DeployMine(type, now);
+        SetPartAmount(part, (short)(part.Amount - 1));
     }
 
     /// <summary>
@@ -7061,7 +7123,7 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>Native WingmanBehaviour bits (igc.h:789-790); default from
-    /// shipIGC.cpp:197. Only the retreat bits are consumed here.</summary>
+    /// shipIGC.cpp:197; repair consumes Strafe/UseMines as well as retreat policy.</summary>
     public int WingmanBehaviour { get; set; } = 0x22; // UseMissiles | RunAt60Hull
 
     private sealed record DroneOrder(DataStationIGC? Station, short Command,
@@ -7255,7 +7317,9 @@ public sealed class Ship : Model, IShipIgc
         return (null, null);
     }
 
-    private bool IsFriendlySide(short? other)
+    /// <summary>Native IsideIGC::AlliedSides, Igc/igc.h:4297-4305:
+    /// same side or equal non-null alliance groups.</summary>
+    public bool IsFriendlySide(short? other)
     {
         if (SideId is not { } side || other is null) return false;
         if (other == side) return true;
@@ -7739,11 +7803,12 @@ public sealed class Ship : Model, IShipIgc
         // UpdateWingmanCombat reflects any just-made acquire/switch/return-to-
         // escort (a returned-to-escort Wingman releases the trigger; a switched
         // one aims at the new threat).
-        if (IsNpc && PilotType == PilotTypeWingman && !IsRunningAway)
+        if (IsNpc && (PilotType == PilotTypeWingman || PilotType == PilotTypeCheatPlayer) && !IsRunningAway)
         {
             if (DefendTarget is not null)
                 UpdateWingmanDefend();
-            UpdateWingmanCombat();
+            if (HasRepairOrder) UpdateWingmanRepair(now, (float)dt);
+            else UpdateWingmanCombat((float)dt);
         }
 
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
@@ -7958,7 +8023,7 @@ public sealed class Ship : Model, IShipIgc
                     // would instantly re-engage the very foe UpdateWingmanDefend
                     // just broke off from to escort the charge.
                     // P403 — an active goto also counts as non-idle.
-                    if (DefendTarget is null && AttackTarget is null && StationId is null && GotoWaypoint is null)
+                    if (!HasRepairOrder && DefendTarget is null && AttackTarget is null && StationId is null && GotoWaypoint is null)
                         DecideWingmanDefaultOrder();
                 }
                 else if (PilotType == PilotTypeBuilder)

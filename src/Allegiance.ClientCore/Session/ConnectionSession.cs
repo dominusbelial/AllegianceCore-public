@@ -551,6 +551,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Join the target wing (WinTrek.cpp:10659-10662).</summary>
+    public void SendWingId(short shipId, short wingId)
+    {
+        var message = new SetWingId { ShipID = shipId, WingId = wingId };
+        Send(FedPacket.Pack([message.Encode()]));
+    }
+
     /// <summary>P281 — send a real <c>FM_C_RANDOMIZE_TEAMS(21)</c>, the mission
     /// owner's "balance the teams" trigger surfaced on the side-select screen.
     /// The server owner-gates it (<c>FedSrv.CPP:6964-6997</c>), so the client
@@ -560,6 +567,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         var msg = new RandomizeTeams();
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
+
+    /// <summary>Native lobby controls. Settings change only on the server echo;
+    /// the server checks mission ownership / team leadership.</summary>
+    public void SendLockLobby(bool locked) => Send(FedPacket.Pack([new LockLobby { FLock = locked }.Encode()]));
+    public void SendLockSides(bool locked) => Send(FedPacket.Pack([new LockSides { FLock = locked }.Encode()]));
+    public void SendAutoAccept(short sideId, bool enabled) =>
+        Send(FedPacket.Pack([new AutoAccept { SideId = sideId, FAutoAccept = enabled }.Encode()]));
+    public void SendPositionAck(short shipId, short sideId, bool accepted) =>
+        Send(FedPacket.Pack([new PositionAck { ShipId = shipId, SideId = sideId, FAccepted = accepted }.Encode()]));
+    public void SendDelPositionReq(short shipId, short sideId, DelPositionReqReason reason) =>
+        Send(FedPacket.Pack([new DelPositionReq { ShipId = shipId, SideId = sideId, Reason = reason }.Encode()]));
 
     /// <summary>Send a real <c>FM_C_BOARD_SHIP(103)</c> — the client's
     /// dual-purpose board/leave request, the mirror of <c>Bot.SendBoard</c>.
@@ -644,6 +662,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             CommandId = commandId,
             Command = command,
         };
+        lock (_gate) _world.Apply(msg);
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -722,6 +741,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     {
         var msg = new Vote { BallotId = ballotId, Agree = agree };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
+        // Native Vote() pops the answered ballot (clintlib.cpp:2510-2522).
+        lock (_gate) _world.DismissBallot(ballotId);
     }
 
     /// <summary>
@@ -843,6 +864,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
+        if (_lost) return; // a rejected core cannot be followed by a partial join burst
         // P633 — count every inbound byte for the decode-throughput metric
         // (atomic; the read side diffs over a wall window).
         Interlocked.Add(ref _decodedBytes, data.Length);
@@ -1016,6 +1038,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // world latches it as the ActiveBallot for the vote keys.
                         _world.Apply(Ballot.Decode(m));
                         break;
+                    case CancelBallot.Fmid:
+                        _world.Apply(CancelBallot.Decode(m));
+                        break;
+                    case PositionReqBroadcast.Fmid:
+                        _world.Apply(PositionReqBroadcast.Decode(m));
+                        break;
+                    case DelPositionReq.Fmid:
+                        _world.Apply(DelPositionReq.Decode(m));
+                        break;
+                    case LockLobby.Fmid:
+                        _world.Apply(LockLobby.Decode(m));
+                        break;
+                    case LockSides.Fmid:
+                        _world.Apply(LockSides.Decode(m));
+                        break;
+                    case AutoAccept.Fmid:
+                        _world.Apply(AutoAccept.Decode(m));
+                        break;
                     case ChatBuoy.Fmid:
                         _world.Apply(ChatBuoy.Decode(m));
                         break;
@@ -1049,6 +1089,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case PlayerReady.Fmid:
                         _world.Apply(PlayerReady.Decode(m));
+                        break;
+                    case JoinedMission.Fmid:
+                        _world.Apply(JoinedMission.Decode(m));
+                        if (_world.JoinError is not null)
+                        {
+                            _lost = true;
+                            SessionLost?.Invoke();
+                            return;
+                        }
+                        break;
+                    case ObjectSpotted.Fmid:
+                        _world.Apply(ObjectSpotted.Decode(m));
+                        break;
+                    case SetWingId.Fmid:
+                        _world.Apply(SetWingId.Decode(m));
+                        break;
+                    case OrderChange.Fmid:
+                        _world.Apply(OrderChange.Decode(m));
                         break;
                     case MissionDef.Fmid:
                         _world.Apply(MissionDef.Decode(m));

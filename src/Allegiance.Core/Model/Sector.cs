@@ -865,13 +865,16 @@ public sealed class Sector : IClusterIgc
     /// </summary>
     internal void ResolveRipcordCountdowns(float dt)
     {
-        foreach (var model in _models)
+        foreach (var model in _models.ToArray())
         {
             if (model is not Ship ship) continue;
             if (!ship.IsRipcordActive || ship.ParentShip is not null) continue;
 
             var anchor = ship.RipcordModel!.Value;
-            if (RipcordAnchorStillLegal(ship, anchor))
+            var site = ship.Mission!.Site;
+            if ((!site.QueueRipcordUse || RipcordAnchorStillLegal(ship, anchor)) &&
+                ResolveRipcordAnchor(ship, anchor) is { } modelAnchor &&
+                site.ContinueRipcord(ship, modelAnchor))
             {
                 ship.AdvanceRipcordCountdown(dt);
                 // P113 — the real trigger: the countdown reached zero with a
@@ -882,11 +885,25 @@ public sealed class Sector : IClusterIgc
                 // ripcord state — the attempt is consumed either way (the
                 // native UseRipcord always returns true), never retried.
                 if (ship.RipcordTimeLeft <= 0.0f)
-                    _pendingRipcordTeleports.Add(ship);
+                {
+                    // shipIGC.cpp:285-289: false leaves an active zero countdown
+                    // for a later retry; true consumes it. Queued hosts drain it.
+                    bool used = site.UseRipcord(ship, modelAnchor);
+                    if (used) ship.SetRipcordModel(null);
+                    else
+                    {
+                        // Native false-use path explicitly clamps zero, even if
+                        // the callback reset the countdown (shipIGC.cpp:289).
+                        ship.AdvanceRipcordCountdown(ship.RipcordTimeLeft);
+                        if (site.QueueRipcordUse && !_pendingRipcordTeleports.Contains(ship))
+                            _pendingRipcordTeleports.Add(ship);
+                    }
+                }
             }
             else
             {
                 ship.SetRipcordModel(null);
+                ship.StateM &= ~0x1000; // droneRipMaskIGC, FedSrv.CPP:13427
                 _pendingRipcordAborts.Add(ship);
             }
         }
@@ -1394,86 +1411,73 @@ public sealed class Sector : IClusterIgc
         return taken;
     }
 
-    /// <summary>
-    /// P112 — the port of <c>ContinueRipcord</c>'s revalidation
-    /// (<c>FedSrv.CPP:13379-13437</c>), <b>"regular" (same-side) branch only</b>.
-    /// This port does not decode <c>MissionDef.misparms.bAllowAlliedRip</c> and
-    /// has no alliance/<c>AlliedSides</c> concept at all, so the allied-allowance
-    /// <c>if</c> is dropped unconditionally — the same simplification precedent
-    /// P107 set for <c>bEjectPods</c> (stated plainly in the P112 report).
-    /// Three gates:
-    /// <list type="number">
-    /// <item><b>Flag gate</b> (<c>pship-&gt;GetFlag() != NA</c>,
-    /// <c>FedSrv.CPP:13385</c>) — collapses to always-passing, this port tracks
-    /// no flags (same precedent as P111's request gate).</item>
-    /// <item><b>Same-side</b> (<c>pship-&gt;GetSide() != pmodel-&gt;GetSide()</c>,
-    /// <c>FedSrv.CPP:13387</c>) — the anchor's current side is read off the
-    /// resolved model, not cached (native dereferences the pointer each tick).</item>
-    /// <item><b>Anchor still has a cluster</b> (<c>pmodel-&gt;GetCluster() == NULL</c>,
-    /// <c>FedSrv.CPP:13388</c>) — the anchor left its own cluster (a station was
-    /// captured/destroyed, a target ship died/warped away). Read as: the anchor
-    /// is still present in its <see cref="RipcordTarget.ClusterId"/> sector.</item>
-    /// </list>
-    /// For a <b>ship</b> anchor the identical hull-capability re-check
-    /// <c>FindRipcordModel</c> Tier 4 already applies (<c>shipIGC.cpp:3900-3906</c>;
-    /// the port's copy lives in <c>Server.FindRipcordModel</c>) is performed —
-    /// a <b>second read</b> of the same check, not a reimplementation. A station
-    /// anchor always passes (native <c>else rc = true</c>, <c>FedSrv.CPP:13396</c>).
-    /// </summary>
+    /// <summary>Native ContinueRipcord, FedSrv/FedSrv.CPP:13379-13437.
+    /// The anchor is resolved by identity every tick: a flying carrier may warp
+    /// during the countdown, while a flag, lost alliance, docking, destruction,
+    /// or loss of the required hull capability invalidates it.</summary>
+    private static IModelIgc? ResolveRipcordAnchor(Ship ship, Ship.RipcordTarget anchor)
+    {
+        foreach (var cluster in ship.Mission!.Sectors)
+        {
+            IModelIgc? model = anchor.Ot switch
+            {
+                (short)IgcObjectType.Ship => cluster.Models.OfType<Ship>().FirstOrDefault(s => s.Id == anchor.Oid && s.Sector == cluster),
+                (short)IgcObjectType.Probe => cluster.Models.OfType<Probe>().FirstOrDefault(p => p.Id == anchor.Oid),
+                (short)IgcObjectType.Station => cluster.StationRuntimes.FirstOrDefault(s => s.StationId == anchor.Oid),
+                _ => null
+            };
+            // Historical data-only station fixtures use the same marker as docking.
+            if (model is null && anchor.Ot == (short)IgcObjectType.Station)
+                foreach (var station in cluster.Stations)
+                    if (station.StationId == anchor.Oid) { model = new DockStation(station); break; }
+            if (model is null) continue;
+            ship.SetRipcordModel(anchor with { ClusterId = cluster.Id });
+            return model;
+        }
+        return null;
+    }
+
     private static bool RipcordAnchorStillLegal(Ship ship, Ship.RipcordTarget anchor)
     {
         var mission = ship.Mission;
-        if (mission is null) return false;
-        var cluster = mission.Sectors.FirstOrDefault(s => s.Id == anchor.ClusterId);
-        if (cluster is null) return false;   // requested sector gone → anchor has no cluster
-
-        if (anchor.Ot == (short)IgcObjectType.Station)
+        if (mission is null || ship.Flag is not null) return false;
+        bool Friendly(short? side) => side is not null && (side == ship.SideId ||
+            mission.AllowAlliedRip && ship.IsFriendlySide(side));
+        foreach (var cluster in mission.Sectors)
         {
-            DataStationIGC? station = null;
-            foreach (var st in cluster.Stations)
-                if (st.StationId == anchor.Oid) { station = st; break; }
-            if (station is null) return false;               // captured/destroyed → no cluster (FedSrv.CPP:13388)
-            return station.Value.SideId == ship.SideId;      // same-side only (FedSrv.CPP:13387)
+            if (anchor.Ot == (short)IgcObjectType.Station)
+            {
+                foreach (var station in cluster.Stations)
+                    if (station.StationId == anchor.Oid && Friendly(station.SideId))
+                    {
+                        ship.SetRipcordModel(anchor with { ClusterId = cluster.Id });
+                        return true;
+                    }
+            }
+            else if (anchor.Ot == (short)IgcObjectType.Ship)
+            {
+                var target = cluster.Models.OfType<Ship>().FirstOrDefault(s => s.Id == anchor.Oid);
+                if (target is null || target.Dead || target.StationId is not null ||
+                    target.Sector != cluster || !Friendly(target.SideId)) continue;
+                short mask = ship.HullType.HasCapability(DataHullTypeIGC.HabmCanLtRipcord)
+                    ? (short)(DataHullTypeIGC.HabmIsRipcordTarget | DataHullTypeIGC.HabmIsLtRipcordTarget)
+                    : DataHullTypeIGC.HabmIsRipcordTarget;
+                if (!target.HullType.HasCapability(mask)) return false;
+                ship.SetRipcordModel(anchor with { ClusterId = cluster.Id });
+                return true;
+            }
+            else if (anchor.Ot == (short)IgcObjectType.Probe)
+            {
+                var target = cluster.Models.OfType<Probe>().FirstOrDefault(p => p.Id == anchor.Oid);
+                if (target is null || !Friendly(target.SideId)) continue;
+                // ContinueRipcord checks presence/side for non-ships. The full
+                // activation/expiry horizon belongs to FindRipcordModel, not
+                // every subsequent tick (FedSrv.CPP:13420-13421).
+                ship.SetRipcordModel(anchor with { ClusterId = cluster.Id });
+                return true;
+            }
         }
-
-        if (anchor.Ot == (short)IgcObjectType.Ship)
-        {
-            Ship? target = null;
-            foreach (var m in cluster.Models)
-                if (m is Ship s && s.Id == anchor.Oid) { target = s; break; }
-            if (target is null) return false;                // died / removed → no cluster (FedSrv.CPP:13388)
-            if (target.Sector?.Id != anchor.ClusterId) return false;  // warped away
-            if (target.SideId != ship.SideId) return false;  // same-side only (FedSrv.CPP:13387)
-
-            // Identical hull-capability re-check to FindRipcordModel Tier 4
-            // (shipIGC.cpp:3900-3906) — a second read, not a reimplementation.
-            short habm = ship.HullType.HasCapability(DataHullTypeIGC.HabmCanLtRipcord)
-                ? (short)(DataHullTypeIGC.HabmIsRipcordTarget | DataHullTypeIGC.HabmIsLtRipcordTarget)
-                : DataHullTypeIGC.HabmIsRipcordTarget;
-            return target.HullType.HasCapability(habm);
-        }
-
-        if (anchor.Ot == (short)IgcObjectType.Probe)
-        {
-            // P454 — probe anchor legality, the native per-tick re-check for a
-            // probe (the same revalidation the ship/station branches perform):
-            // the probe must still exist in the target cluster (destroyed or
-            // expired probes are removed from the sector, so a vanished probe
-            // is "no cluster", FedSrv.CPP:13388), still be same-side
-            // (FedSrv.CPP:13387), and still be ripcordable NOW — i.e. still a
-            // teleport type, past its activation delay, and not expired before
-            // the ripcord lands (GetCanRipcord, probeigc.h:248-254). The last
-            // conjunct makes an expiring probe abort a mid-countdown ripcord,
-            // and the existence check makes a destroyed one abort too.
-            Probe? target = null;
-            foreach (var m in cluster.Models)
-                if (m is Probe pr && pr.Id == anchor.Oid) { target = pr; break; }
-            if (target is null) return false;                 // destroyed/expired → no cluster (FedSrv.CPP:13388)
-            if (target.SideId != ship.SideId) return false;   // same-side only (FedSrv.CPP:13387)
-            return target.CanRipcord(mission.LastUpdate, ship.RipcordSpeed);
-        }
-
-        return false;   // unsupported anchor type can never be legal here
+        return false;
     }
 
     /// <summary>

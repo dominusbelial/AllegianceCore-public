@@ -1077,6 +1077,8 @@ public sealed partial class Server : IDisposable
     {
         short side = ship.SideId!.Value;
         var core = ship.Mission!.Core;
+        bool Friendly(short? other) => other == side ||
+            ship.Mission.AllowAlliedRip && AlliedSides(ship.Mission, side, other);
         double now = ship.Mission.LastUpdate;
         float ripcordSpeed = ship.RipcordSpeed;     // GetRipcordSpeed(), shipIGC.cpp:3796
 
@@ -1102,7 +1104,7 @@ public sealed partial class Server : IDisposable
         // ripcorded to, it is the anchor. (The command-target SHIP case,
         // shipIGC.cpp:3816-3831, is a scoped-out follow-up.)
         if (ship.CommandTarget is Probe cmdProbe &&
-            cmdProbe.SideId == side &&
+            Friendly(cmdProbe.SideId) &&
             cmdProbe.OwnerSector.Id == target.Id &&
             cmdProbe.CanRipcord(now, ripcordSpeed))
             return new Ship.RipcordTarget((short)IgcObjectType.Probe, cmdProbe.Id, target.Id);
@@ -1110,7 +1112,7 @@ public sealed partial class Server : IDisposable
         // Tier 2: friendly c_sabmRipcord station (shipIGC.cpp:3835-3838).
         foreach (var st in target.Stations)
         {
-            if (st.SideId == side &&
+            if (Friendly(st.SideId) &&
                 core.StationTypes.TryGetValue(st.StationTypeId, out var stype) &&
                 stype.HasCapability(DataStationTypeIGC.SabmRipcord))
                 return new Ship.RipcordTarget((short)IgcObjectType.Station, st.StationId, st.ClusterId);
@@ -1127,7 +1129,7 @@ public sealed partial class Server : IDisposable
             foreach (var m in target.Models)
             {
                 if (m is not Probe pr) continue;
-                if (pr.SideId != side || !pr.CanRipcord(now, ripcordSpeed)) continue;
+                if (!Friendly(pr.SideId) || !pr.CanRipcord(now, ripcordSpeed)) continue;
 
                 if (goal is { } g)
                 {
@@ -1151,7 +1153,7 @@ public sealed partial class Server : IDisposable
         {
             var s = peer.Ship;
             if (!ReferenceEquals(s, ship) && s.Sector is not null &&
-                s.Sector.Id == target.Id && s.SideId == side &&
+                s.Sector.Id == target.Id && Friendly(s.SideId) &&
                 s.HullType.HasCapability(habm))
                 return new Ship.RipcordTarget((short)IgcObjectType.Ship, s.Id, target.Id);
         }

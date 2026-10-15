@@ -777,6 +777,7 @@ public sealed partial class Server
         _host.ProjectileHit = BroadcastProjectileHullHit;      // P364: wire the site's ProjectileHitEvent to the wire broadcast
         _host.VictimDamaged = BroadcastVictimDamaged;          // P623: wire the site's VictimDamagedEvent to the targeted unicast
         _host.Collision = BroadcastCollision;                  // P463c: wire the site's CollisionEvent to the wire broadcast
+        _host.WeaponReadyNotification = BroadcastWeaponReady;
         _host.LoadoutChange = BroadcastLoadoutChange;          // P173: wire the site's LoadoutChangeEvent to the wire broadcast
         _host.AutoReload = BroadcastAutoReload;                // P361: wire the site's AutoReloadTriggered to the wire broadcast
         _host.MineCreated = BroadcastExportMine;                // P94: wire the site's MineCreatedEvent to the wire broadcast
@@ -1040,6 +1041,8 @@ public sealed partial class Server
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
         var mission = Mission.Assemble(core, map, sides, _host, _simNow);  // preserve next-match clock
+        mission.AllowDevelopments = g.AllowDevelopments;
+        mission.AllowAlliedRip = g.AllowAlliedRip;
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;

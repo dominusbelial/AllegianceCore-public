@@ -400,6 +400,10 @@ public sealed class P649CombatBlastParityTests
         s.Add(missile);
         var ship = Ship(m, s, 2, 1, new Vector3(220, 0, 0));
         s.Update(1);
+        // Igc/missileigc.cpp:354-360 tests the PREVIOUS update clock.
+        Assert.Contains(missile, s.Models);
+        Assert.Equal(0, site.MissileKills);
+        s.Update(1.1);
         Assert.DoesNotContain(missile, s.Models);
         Assert.Equal(.711f, ship.Fraction, 5);
         Assert.Equal(1, site.MissileKills);

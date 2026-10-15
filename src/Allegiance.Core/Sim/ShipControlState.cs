@@ -10,6 +10,8 @@ namespace Allegiance.Core.Sim;
 /// </summary>
 public static class ShipControlState
 {
+    /// <summary>Native mineFireIGC (igc.h:831).</summary>
+    public const int MineFire = 0x20000;
     public const int CoastButton = 8;          // 2*selectedWeaponTwoIGC  ("vector lock")
     public const int BackwardButton = 16;      // 2*coastButtonIGC   thrust back
     public const int ForwardButton = 32;       // 4*coastButtonIGC   thrust forward

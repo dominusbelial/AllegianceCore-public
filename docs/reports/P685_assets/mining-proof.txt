@@ -1,0 +1,18 @@
+Passed: Allegiance.Core.Tests.MiningSellTests.Loopback_dock_with_no_ore_emits_no_FM_S_PAYDAY
+
+Passed: Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Accepted_return_to_base_slot_cleared_on_dock
+
+Passed: Allegiance.Core.Tests.MiningSellTests.Dock_transition_sells_ore_into_treasury_and_zeroes_cargo
+
+Passed: Allegiance.Core.Tests.MiningSellTests.Dock_with_zero_ore_has_no_payday_side_effect
+
+Passed: Allegiance.Core.Tests.MiningSellTests.Loopback_mine_then_dock_sells_ore_and_pays_FM_S_PAYDAY
+
+Passed: Allegiance.Core.Tests.MiningSellTests.Loopback_redock_sells_again_each_transition
+
+Passed: Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell
+
+Passed: Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station
+
+Passed: Allegiance.Core.Tests.MiningSellTests.Redock_after_undock_sells_again
+
