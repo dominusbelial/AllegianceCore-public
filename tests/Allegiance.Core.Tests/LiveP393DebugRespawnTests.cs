@@ -118,7 +118,12 @@ public class LiveP393DebugRespawnTests
 
         var ship = ShipOf(server, bot.ShipAssignment!.Ship.ShipId);
         Assert.Equal(sideId, ship.SideId);
-        Assert.Null(ship.StationId);   // spawner parks clear of the garrison (P390 420u standoff)
+        // H-06: default seats are docked. Launch before the death scenario.
+        if (ship.StationId is not null)
+        {
+            bot.SendBuyLoadout(ship.HullType.HullId, fLaunch: true);
+            Assert.True(PumpUntil(server, () => ship.StationId is null, 4000) < 4000);
+        }
 
         // Convert to the side's Lifepod hull so the death is a bKilled death
         // (native bLifepod → bKilled, FedSrv.CPP:11776-11780), not an eject.
@@ -126,6 +131,9 @@ public class LiveP393DebugRespawnTests
         var lp = mission.Core.HullTypes[mission.Sides.First(s => s.Id == sideId).Civilization.Lifepod];
         ship.ChangeHull(lp);
 
+        // H-26 / FedSrv.CPP:6338: privileged death-fixture connection.
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig
+            { Enabled = true, AllowNames = [name] };
         bot.SendSuicide();
         int ticks = PumpUntil(server, () => ShipOf(server, ship.Id).StationId is not null, 2000);
         Assert.True(ticks < 2000, $"{name}: suicide on lifepod hull never respawned at a station");

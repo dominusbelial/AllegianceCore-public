@@ -289,7 +289,12 @@ public sealed class P554AdminCheatLiveTests
     {
         Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        server.Boot(Config(null));                                     // adminCheats disabled → server refuses
+        var config = Config(null);
+        // H-06: buy in the real debug hangar with an explicit test-harness
+        // tech grant, so this test reaches the intended relocation refusal.
+        config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
+            { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
+        server.Boot(config);                                           // adminCheats disabled → server refuses
         var ticker = new Ticker(server);
         try
         {

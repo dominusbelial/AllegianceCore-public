@@ -456,6 +456,7 @@ public sealed partial class Server
             Console.WriteLine($"[debugtopology] peer {n + 1} spawned: ship {shipId}, hull {hull.Name}, side {sideId}, sector {home.Id} '{home.Name}'");
             return (ship, home);
         };
+        _hangarShipSpawner = ShipSpawner;
 
         Console.WriteLine("[boot] DEBUG MODE ACTIVE — side 0 home Omega(1053)/side 1 home Plato(1060), single warp each to Alderan(1052), Alderan sealed to just those 2 warps, Scout+Fighter mix");
     }
@@ -504,6 +505,7 @@ public sealed partial class Server
             Console.WriteLine($"[debugtopology] peer {n + 1} spawned: ship {shipId}, hull {hull.Name}, side {sideId}, sector {home.Id} '{home.Name}'");
             return (ship, home);
         };
+        _hangarShipSpawner = ShipSpawner;
     }
 
     private static Sector RequireSector(Mission mission, short id, string name) =>

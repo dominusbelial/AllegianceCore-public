@@ -1,0 +1,36 @@
+511278b9 2026-08-30 P26: port FM_CS_NEW_SHIP_INSTANCE(31), send it before SET_CLUSTER
+ec908746 2026-08-30 P27: port FM_S_EXPORT(26), send it (replacing inert NEW_SHIP_INSTANCE) before SET_CLUSTER
+7df45738 2026-08-30 P28: send FM_S_BUY_LOADOUT_ACK(5) after SET_CLUSTER so the client's dummy ship adopts a real hull
+7746abf8 2026-08-31 P29: port FM_S_MISSIONDEF(38)+FM_S_JOINED_MISSION(95), send before EXPORT so the client loads its static core
+07d20fb9 2026-08-31 P30: export every sector (FM_S_EXPORT 26 / OT_cluster 13) before SET_CLUSTER
+cc366830 2026-09-01 P40: send FM_S_SHIP_STATUS -- ScoutExploreMap's primary sweep engages for the first time
+8b52b768 2026-09-01 P47: send FM_S_CLUSTERINFO(200) so ScoutExploreMap's smart targets can engage
+62a75622 2026-09-01 P49: prune ghost ships from the explore visualizer on disconnect
+957af812 2026-09-01 P51: wire up PAYDAY (fmid 114) on a 60s cadence
+51fac5a0 2026-09-02 P55: real asteroid mining (part 1) — accumulate ore, wire-visible, no sell
+4f92201b 2026-09-02 P56: sell mined ore on dock — PaydayEvent at friendly dock turns ore into money
+199aeeff 2026-09-02 P59: live event feed in spectator UI (dock/undock/mine/sell/payday/warp)
+9e28473a 2026-09-02 P61: real per-part loadout (FM_C_BUY_LOADOUT(4) + real BUY_LOADOUT_ACK tail)
+a9f2cd17 2026-09-03 P62: broadcast a real teammate-ship EXPORT to each peer, once, before its status
+b8df8b13 2026-09-05 P75: undock debounce (LastLaunchTime/LaunchCooldownSeconds), restore velocity
+28413e3a 2026-09-08 P110: TELEPORT_ACK(102) — extend the existing FM_C_DOCKED(48) handler to serve the non-NA teleport/relocation dock request. New FM_S_TELEPORT_ACK(102) codec (st
+a5529e1c 2026-09-09 P118: MONEY_CHANGE(60) + SET_MONEY(115) — the first Phase 4 task
+28c1e806 2026-09-09 P119: bucket construction funding — BUCKET_DONATE(64)/BUCKET_STATUS(65)/CREATE_BUCKETS(191)
+764cd04e 2026-09-09 P120: ASTEROID_MINED(198) real-time ore broadcast — whole-mission, finishes the MineAsteroidEvent seam
+b7fdacf2 2026-09-09 P122: PLAYER_DONATE(67)/AUTODONATE(112/116)/REQUEST_MONEY(182) -- confirmed N/A
+96e85f85 2026-09-09 P123: Treasure pickup (cash-only) — TREASURE(28)/DESTROY_TREASURE(30)/ACQUIRE_TREASURE(162)/TREASURE_ACK(163)/TREASURE_SETS(89)
+b23c6011 2026-09-09 P124: SIDE_TECH_CHANGE(75)/SIDE_ATTRIBUTE_CHANGE(76)/POSTER(27) -- confirmed N/A (findings)
+f695d3fc 2026-09-10 P127: FM_CS_LOGOFF(3) — graceful client-initiated disconnect. Zero-field CS echo codec (Wire/Logoff.cs, mirrors Suicide.cs). Handler echoes the same message bac
+95127ee8 2026-09-10 P130: RANK_INFO(13) — join-sync rank table. Wire/RankInfo.cs codec (FM_VAR_ITEM ranks + short cRanks; RankInfoEntry 36 B under default MSVC packing per Messages
+e9dd08c9 2026-09-10 P144: DROP_PART(33) — in-space part-drop, creating a real part-type treasure (first FM_S_TREASURE send)
+9929f852 2026-09-10 P145: ADD_PART(164) — treasure-ack mount placement (pickup round-trip)
+93cdf47a 2026-09-10 P156: miner decision cycle — an NPC autonomously mines and sells
+86afb878 2026-09-11 P158: cross-cluster searches — the autonomous mining loop closes itself
+346213c4 2026-09-11 P159: fair-share asteroid contention among same-side NPC miners
+b1500133 2026-09-11 P160: Ship.PilotType foundation — stop forcing every NPC into mining
+f58f106d 2026-09-12 P174: Allegiance.Lobby Stage 1 — the core server-directory app
+dc678f56 2026-09-12 P189: tech-tree Stage 1 — development buckets, tech masks, attribute set
+69ee9d32 2026-09-13 P193: player-score/rank foundation — in-memory, connection-lifetime-only PlayerScore (Rank/Score) on LiveShip
+ae7b8941 2026-09-13 P197: per-player money & auto-donate foundation
+2db8f8cc 2026-09-13 P198: BUCKET_DONATE spends from the donating player's own wallet (P197)
+9694ae09 2026-09-13 P199: REQUEST_MONEY(182) — ask whoever holds the team's funds

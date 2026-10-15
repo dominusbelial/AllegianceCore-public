@@ -154,6 +154,10 @@ public sealed class P652ConstructorBuildTests
         for (int i = 1; i <= 200; i++) Tick(i * 0.05);
         Assert.True(ship.WaitsForBuildOrder); Assert.False(ship.IsBuilding);
         Assert.Empty(sector.BuildingEffects);
+        // H-18: launch the waiting constructor before issuing BUILD; native
+        // drone orders distinguish LAUNCH from construction (FedSrv.CPP:7281-7322).
+        Invoke(server, "UndockShipState", ship, sector);
+        Assert.Null(ship.StationId);
         var rock = Rock(mission, sector, type, ship.Position + new Vector3(400, 0, 0));
         Order(server, ship, rock);
         for (int i = 201; i <= 2200 && sector.BuildingEffects.Count == 0; i++) Tick(i * 0.05);

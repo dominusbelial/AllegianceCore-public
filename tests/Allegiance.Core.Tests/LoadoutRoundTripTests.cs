@@ -113,6 +113,11 @@ public class LoadoutRoundTripTests
             // Drop the rest of the burst, then send a real per-part request.
             client.DrainAll();
             var requested = RequestedWeapon();
+            // H-07 / shipIGC.h:1029: explicitly sell the chosen real weapon
+            // and verify its hardpoint, rather than relying on first-record order.
+            var mission = server.Missions.Single();
+            Assert.True(mission.Core.HullTypes[hullId].CanMountPart(mission.Core.PartTypes[requested.PartId], 0));
+            EconomyLoadoutTestSetup.Sell(mission, mission.Core.PartTypes[requested.PartId]);
             var req = new BuyLoadoutRequest { HullId = hullId, FLaunch = false, Parts = [requested] };
             client.Send(FedPacket.Pack(new[] { req.Encode() }));
 

@@ -961,14 +961,9 @@ public sealed partial class Server
     /// "has a cluster" faithfully means placed <b>and</b> not docked:
     /// <c>Sector != null &amp;&amp; StationId == null</c>. Docked/off-sector
     /// ships are a no-op — no kill, no broadcast — matching the native gate.</item>
-    /// <item><b>Deliberate relaxation (documented, not a silent drop): the
-    /// child-ship / cheat gate collapses.</b> Native also requires
-    /// <c>GetParentShip() != NULL</c> (a boarded/turret gunner) <em>or</em>
-    /// <c>CanCheat()</c> (admin). This port has <em>neither</em> — no
-    /// boarding/child-ship concept (Phase 3 cluster E) and no admin/cheat
-    /// concept at all. Following the P100 precedent (a gate collapses to
-    /// always-true when its own prerequisite doesn't exist yet), any placed
-    /// ship may suicide. Revisit only when boarding lands.</item>
+    /// <item><b>Gate: child ship or admin.</b> Native permits a boarded child
+    /// or CanCheat player (FedSrv.CPP:6338); the port's configured admin
+    /// predicate is shared with spectator/cheat access.</item>
     /// <item><b>Kill path reused, not rebuilt.</b> Triggering uses the exact
     /// seam a combat death's lethal branch raises
     /// (<c>Ship.ReceiveDamage</c> → <c>Mission.Site.KillShipEvent</c>,
@@ -1000,7 +995,8 @@ public sealed partial class Server
                               $"{(ship.Sector is null ? "no cluster" : "docked")} — refused (gate: GetCluster(), FedSrv.CPP:6338)");
             return;
         }
-        // Relaxed child/cheat gate (see doc comment): ANY placed ship may suicide.
+        // Native FedSrv.CPP:6338: only a child ship or a CanCheat player.
+        if (ship.ParentShip is null && !IsSpectatorAdmin(from)) return;
         Console.WriteLine($"[suicide] {from} ship {ship.Id} — re-triggering the combat kill path (KillShipEvent, launcher NULL)");
         mission.Site.KillShipEvent(mission.LastUpdate, ship, null, 1.0f, ship.Position, Vector3.Zero);
     }
@@ -2707,6 +2703,15 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (requestedSideId is { } requested && ship.SideId != requested)
             sector = RepositionShipToSideHome(ship, mission, requested);
 
+        // P653 H-03: free-spawn provenance — server-granted spawn hardware has no
+        // purchase cost to refund, for BOTH the default and injected spawn paths.
+        ship.MarkSpawnLoadoutFree();
+
+        // Native fresh seats enter the hangar (fsmission.cpp:791-796).
+        // Include built-in debug arenas used by MCP BUY_LOADOUT(fLaunch).
+        // An explicitly replaced test hook still owns its placement/state.
+        if (ShipSpawner is null || ReferenceEquals(ShipSpawner, _hangarShipSpawner))
+            DockInitialLoadout(ship, sector);
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
     }
 
@@ -2725,6 +2730,7 @@ private void CompleteStartCountdown(Mission mission, double now)
     private LiveShip AssignMigratedShip(Mission mission, short shipId, short? requestedSideId = null)
     {
         var (ship, sector) = SpawnDefaultShip(mission, shipId, requestedSideId);
+        DockInitialLoadout(ship, sector);
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
     }
 
@@ -3538,6 +3544,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 FLaunch = false,
             }.Encode(),
         }));
+        SendInitialDockState(from, live.Ship);
 
         // FM_S_MISSION_STAGE(37): the message this whole join burst
         // was missing (P37, 2026-08-31). The native client's entire

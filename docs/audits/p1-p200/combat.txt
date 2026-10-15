@@ -1,0 +1,41 @@
+1104bd3a 2026-08-30 P19: wire combat into the live server/bot loop
+1d311486 2026-08-30 P22: two-bot combat on the real Bot class
+43509782 2026-08-30 P24: scale live combat demo to N independent 1v1 bot lanes (4 pairs, 8 bots)
+38717a2f 2026-08-31 P32: real PartMask/hardpoint compatibility for weapon arming
+cc366830 2026-09-01 P40: send FM_S_SHIP_STATUS -- ScoutExploreMap's primary sweep engages for the first time
+e9a4e78a 2026-09-01 P43: live-combat spectator backend (state broadcast + WebSocket bridge)
+962e8bf0 2026-09-01 P44: 3D renderer for the live-combat spectator feed
+3727dba2 2026-09-01 P45: exploration spectator backend (Scout spawn + live sector export)
+63ffbb6f 2026-09-01 P46: single-sector-focused renderer for real WOPR AI exploration
+8b52b768 2026-09-01 P47: send FM_S_CLUSTERINFO(200) so ScoutExploreMap's smart targets can engage
+62a75622 2026-09-01 P49: prune ghost ships from the explore visualizer on disconnect
+199aeeff 2026-09-02 P59: live event feed in spectator UI (dock/undock/mine/sell/payday/warp)
+835037c6 2026-09-07 P87: real shield damage absorption (Phase 2, slice 1)
+991fd5f6 2026-09-07 P88: broadcast real projectile instances (Phase 2, slice 2)
+0b2b9f31 2026-09-07 P89: missile wire codecs (wire layer only) (Phase 2, slice 3)
+ed5f9933 2026-09-07 P90: minimal non-homing Missile sim object + fire/destroy same-side broadcast (Phase 2, slice 4)
+9d3a99fe 2026-09-07 P91: missile collision + damage resolution (Phase 2, slice 5)
+c32cae5e 2026-09-07 P93: mine wire codecs (Phase 2, slice 6, wire layer only)
+b235d6e4 2026-09-07 P94: minimal static Mine sim object + deploy/destroy same-side broadcast (Phase 2, slice 7)
+ef511d39 2026-09-07 P95: mine proximity detonation — proximity trigger + detonation damage (Phase 2, slice 8)
+e7ba6ddb 2026-09-07 P96: real explosion/blast propagation + mine destructibility (Phase 2, slice 9)
+57c3af48 2026-09-07 P97: missile/projectile blast-on-impact and blast-on-expiry (Phase 2, slice 10)
+aa298fd4 2026-09-07 P98: probe wire codecs — DataProbeExport / ExportProbe (FM_S_EXPORT 26, OT_probe 4) + ProbeDestroyed (85)
+d49db4c7 2026-09-07 P99: minimal static Probe sim object + same-side create/destroy broadcast
+450192e4 2026-09-07 P100: probe combat destructibility — direct-hit target in ResolveCombatCollisions + Probe.ReceiveDamage
+7ff1433f 2026-09-07 P101: warp bombing — missile-vs-warp trigger, whole-mission WARP_BOMB(188) broadcast, 15s delayed real explosion
+8baf38bd 2026-09-08 P102: asteroid combat destructibility — direct-hit target in ResolveCombatCollisions + Asteroid.ReceiveDamage + whole-mission ASTEROID_DESTROYED(86) broadcast
+2c50e3e2 2026-09-08 P103: FM_C_SUICIDE(80) death slice reuses the combat kill path + FM_S_SHIP_DELETE(20) SDR_KILLED-only broadcast on every ship death
+50fb0278 2026-09-08 P107: in-space EJECT (drifting lifepod hull) — the !bKilled branch
+bf2ba30a 2026-09-08 P109: TURRET_GUNNER_BINDING — a boarded turret gunner actually crews the carrier's weapon: FM_C_ACTIVE/INACTIVE_TURRET_UPDATE(99/100) wire codecs + server handl
+a2d91b09 2026-09-09 P125: Station combat damage + STATION_DESTROYED(59) — shield-absorbs-then-overflows-to-armor (CstationIGC::ReceiveDamage port), live ArmorFraction/ShieldFractio
+c5c03ad8 2026-09-10 P133: STATIONS_UPDATE(57) — per-side visible-station hull/shield sync
+830e6a16 2026-09-10 P135: PROBES_UPDATE(92) — per-side visible-probe sync
+59ec0d8f 2026-09-10 P151: ORDER_CHANGE Stage 5 — NPC takes cover at a local station when damaged
+f5e71f79 2026-09-11 P162: Wingman combat AI foundation — attack-nearest-enemy default order + firing
+e2b578b5 2026-09-11 P166: Wingman combat AI Stage 2 — c_cidDefend defend-an-ally decision layer
+d9e11813 2026-09-11 P169: Wingman combat Stage 3 — aim leading (solveForLead)
+adfc7641 2026-09-12 P171: Wingman combat Stage 4 — dynamic range maintenance (relative-speed, band 1)
+2c5a8b7e 2026-09-12 P179: missile homing stage 1 — real acceleration + turn-rate-limited steering
+96f8decb 2026-09-12 P181: missile lock Stage 2 — real lock-quality buildup toward a target
+7f5c4232 2026-09-12 P182: chaff/countermeasures — Chaff sim model, Ship.DeployChaff spoof loop, FIRE_EXPENDABLE(82) dispatch + 5 wire codecs

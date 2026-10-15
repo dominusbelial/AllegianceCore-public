@@ -107,6 +107,70 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
         return done();
     }
 
+    // P653c: real MCP initial BUY_LOADOUT and pod relaunch, both using
+    // fLaunch, on the built-in debug spawner rather than an injected flying fixture.
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Mcp_debug_bot_buys_relaunches_and_fights()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        var config = Config();
+        config.LiveSettings.DebugMode = true;
+        config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
+            { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
+        config.Games[0] = new Gm { Name = "P653c MCP lifecycle", Map = "m2xspiderw.igc", Teams = 2,
+            CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] };
+        server.Boot(config);
+        foreach (var m in server.Missions) m.Stage = MissionStage.Started;
+        var mission = server.Missions[0];
+        var hull = EconomyLoadoutTestSetup.WeaponHull(mission.Core);
+        var gun = mission.Core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon)
+            .OrderBy(p => p.PartId).First();
+        Ship? fighter = null;
+        Ship? target = null;
+        int hits = 0, killRequested = 0, killHandled = 0;
+        using var ticker = new ServerTicker(server, _ =>
+        {
+            if (fighter is not { } f) return;
+            if (Interlocked.Exchange(ref killRequested, 0) == 1)
+            {
+                // Drive the production death path, then the production pod dock
+                // seam. The MCP lifecycle must perform its own purchase/relaunch.
+                mission.Site.KillShipEvent(mission.LastUpdate, f, target, 1_000_000, f.Position, f.Position);
+                var station = f.Sector!.Stations.First(st => st.SideId == f.SideId);
+                mission.Site.DockWithStationEvent(f, new DockStation(station));
+                Volatile.Write(ref killHandled, 1);
+            }
+            if (target is { } t && f.StationId is null && !f.HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
+            {
+                if (t.Fraction < 1f) Interlocked.Increment(ref hits);
+                t.SetFraction(1f);
+                t.Position = f.Position + f.Orientation.GetForward() * 180f;
+                t.Velocity = f.Velocity;
+            }
+        });
+        using var mgr = new BotManager("127.0.0.1", server.BoundPort);
+        Assert.True(mgr.ServerReady);
+        var spawn = mgr.SpawnBot(hull.HullId, hull.Name, 0,
+            [new ExpandedPartData(gun.PartId, 1, 0, 255)], "combat");
+        Assert.Equal(hull.HullId, spawn.Granted.HullId);
+        Assert.Single(spawn.Granted.Parts);
+        fighter = Ships(server).Single(ship => ship.Id == spawn.ShipId);
+        Assert.Null(fighter.StationId);
+        target = new Ship(30000, hull, fighter.Position + fighter.Orientation.GetForward() * 180f,
+            Vector3.Zero, Orientation.Identity) { SideId = 1 };
+        mission.PlaceShip(target, fighter.Sector!);
+        Assert.True(Wait(() => Volatile.Read(ref hits) > 0, 15000), "MCP bot must deal real projectile damage after initial buy");
+        Interlocked.Exchange(ref killRequested, 1);
+        Assert.True(Wait(() => Volatile.Read(ref killHandled) == 1, 5000));
+        Assert.True(Wait(() => fighter.StationId is null && fighter.HullType.HullId == hull.HullId
+            && fighter.Parts.Any(p => p.PartId == gun.PartId), 20000), "MCP bot must buy and relaunch after pod docking");
+        int afterRelaunch = Volatile.Read(ref hits);
+        Assert.True(Wait(() => Volatile.Read(ref hits) > afterRelaunch, 15000), "relaunched MCP bot must fight again");
+        Console.WriteLine($"P653C-MCP: ship {fighter.Id} bought, dealt damage, died, docked as pod, re-bought, relaunched and dealt damage again");
+    }
+
     /// <summary>⭐ The live proof.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]

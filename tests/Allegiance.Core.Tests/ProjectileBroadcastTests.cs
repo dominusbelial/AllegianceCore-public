@@ -112,7 +112,10 @@ public class ProjectileBroadcastTests
         spawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {
             var sector = mission.Sectors[0];
-            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // Use a hull with a real magazine: P653 H-08 clamps Ammo to hull.MaxAmmo
+            // (shipIGC.h:597-601); the generic Values.First() is a 'Miner' with
+            // MaxAmmo=0, which would leave the shooter unable to fire.
+            var hull = core.HullTypes.Values.Where(h => h.MaxAmmo >= 10).OrderBy(h => h.HullId).First();
             var side = mission.Sides[placed % mission.Sides.Count].Id;   // round-robin — matches the test's ships dict
             var ship = new Ship(id, hull, new Vector3(placed * 250f, 0f, 0f), Vector3.Zero, Orientation.Identity) { SideId = side };
             mission.PlaceShip(ship, sector);

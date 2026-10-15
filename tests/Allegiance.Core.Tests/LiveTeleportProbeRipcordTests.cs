@@ -110,6 +110,9 @@ public class LiveTeleportProbeRipcordTests
             GroupId: 0, TtbmRequired: [], TtbmEffects: [], Mass: 0f, Signature: 0f,
             PartId: 777, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
             Type: new DataPartTypeIGC.ProbeLauncher(probeType.ExpendableTypeId));
+        // H-07/H-08: remount replaces the depleted launcher; do not leave
+        // duplicate dispensers at slot zero and rely on excess old rounds.
+        ship.TryRemovePart(EquipmentType.Dispenser, 0, out _);
         ship.MountPart(part, amount, mountId: 0, fractionMounted: 255);
     }
 

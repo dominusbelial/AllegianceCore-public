@@ -550,7 +550,14 @@ public sealed partial class Server
         {
             HullId = ship.HullType.HullId,
             SidShip = ship.Id,
-            Parts = ship.ExportInventoryForAck().ToArray(),
+            // Launch repair uses 255 for fully armed runtime parts. Native
+            // ExpandedPartData stores BytePercentage(1) == 240 (Utility.h:1311-
+            // 1327; shipIGC.h:819). Keep the final post-launch inventory,
+            // including refilled packs, but publish its native full-mount byte.
+            Parts = ship.ExportInventoryForAck()
+                .Select(p => p.FractionMounted == byte.MaxValue
+                    ? p with { FractionMounted = ExpandedPartData.FullyMounted } : p)
+                .ToArray(),
             Passengers = ship.ChildShips
                 .Select(c => new PassengerData(c.Id, (byte)(c.TurretId ?? 0)))
                 .ToArray(),

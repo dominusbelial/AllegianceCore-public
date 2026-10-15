@@ -112,7 +112,8 @@ public class ChaffDropLiveTests
         StaticCore? placedCore = null;
         SetShipSpawner(server, (core, mission, shipId) =>
         {
-            var hull = core.HullTypes.Values.First();
+            // H-08: three chaff units require actual hull capacity.
+            var hull = core.HullTypes.Values.First(h => h.CapacityChaffLauncher >= 3 * core.ChaffTypes.Values.First().LauncherExpendableSize);
             var ship = new Ship(shipId, hull, new Vector3(810f, 820f, 930f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
             mission.PlaceShip(ship, mission.Sectors[0]);
@@ -174,7 +175,8 @@ public class ChaffDropLiveTests
         StaticCore? placedCore = null;
         SetShipSpawner(server, (core, mission, shipId) =>
         {
-            var hull = core.HullTypes.Values.First();
+            // H-08: three chaff units require actual hull capacity.
+            var hull = core.HullTypes.Values.First(h => h.CapacityChaffLauncher >= 3 * core.ChaffTypes.Values.First().LauncherExpendableSize);
             var ship = new Ship(shipId, hull, new Vector3(810f, 820f, 930f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
             mission.PlaceShip(ship, mission.Sectors[0]);

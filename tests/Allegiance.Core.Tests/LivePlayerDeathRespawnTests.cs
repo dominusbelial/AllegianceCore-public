@@ -242,6 +242,11 @@ public class LivePlayerDeathRespawnTests
         var origSectorId = noStationSector!.Id;
         Assert.Equal(origSectorId, server.Ships.First(s => s.Ship.Id == victimId).Ship.Sector!.Id);
 
+        // P653 H-26 restores native's child-or-CAN_CHEAT suicide gate (FedSrv.CPP:6338);
+        // a regular pilot may no longer suicide. Enable the configured admin predicate
+        // for the test connection (the same escape hatch native's CanCheat provides).
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig { Enabled = true, AllowNames = ["VICTIM"] };
+
         victim.SendSuicide();
         int ticks = PumpUntil(server,
             () => victim.Pods.Any(p => p.ShipId == victimId),
@@ -308,6 +313,10 @@ public class LivePlayerDeathRespawnTests
         PumpUntil(server, () => victim.ShipAssignment is not null && observer.ShipAssignment is not null, 4000);
         short victimId = victim.ShipAssignment!.Ship.ShipId;
         var preHull = server.Ships.First(s => s.Ship.Id == victimId).Ship.HullType;
+
+        // P653 H-26 restores native's child-or-CAN_CHEAT suicide gate (FedSrv.CPP:6338);
+        // enable the configured admin predicate for the test connection.
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig { Enabled = true, AllowNames = ["VOID"] };
 
         victim.SendSuicide();
         int ticks = PumpUntil(server, () => victim.Kills.Any(k => k.ShipId == victimId), 4000);

@@ -73,7 +73,7 @@ public sealed class P470RemovePlayerFlyableBuilderTests
     /// side, spawned UNDOCKED in a station-less sector (no dock, so P441's
     /// docked-only tech gate is inert — only the P470 GroupId gate applies).
     /// Returns the server, the spawned peer ship and the core.</summary>
-    private static (Srv Server, Ship Peer, StaticCore Core) BootUndocked(out FltBot bot)
+    private static (Srv Server, Ship Peer, StaticCore Core) BootDocked(out FltBot bot)
     {
         var server = new Srv();
         StaticCore? core = null;
@@ -83,11 +83,12 @@ public sealed class P470RemovePlayerFlyableBuilderTests
         {
             core = m.Core;
             peerSide = m.Sides[0].Id;
-            var stationless = m.Sectors.First(s => !s.Stations.Any(st => st.SideId >= 0));
+            var station = m.Sectors.SelectMany(s => s.Stations).First(st => st.SideId == peerSide.Value);
+            var stationless = m.Sectors.First(s => s.Stations.Contains(station));
             // Spawn on a distinctive normal hull (the most expensive) so the
             // "buy a normal hull" leg provably changes the hull.
             var hull = m.Core.HullTypes.Values.OrderByDescending(h => h.Price).First();
-            peer = new Ship(id, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity) { SideId = peerSide.Value };
+            peer = new Ship(id, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity) { SideId = peerSide.Value, StationId = station.StationId };
             m.PlaceShip(peer, stationless);
             return (peer, stationless);
         };
@@ -102,7 +103,7 @@ public sealed class P470RemovePlayerFlyableBuilderTests
 
         Assert.NotNull(core); Assert.NotNull(peer); Assert.NotNull(peerSide);
         // The peer must spawn UNDOCKED (station-less sector ⇒ no dock latch).
-        Assert.Null(peer!.StationId);
+        Assert.NotNull(peer!.StationId);
         return (server!, peer!, core!);
     }
 
@@ -115,7 +116,7 @@ public sealed class P470RemovePlayerFlyableBuilderTests
     public void BuyLoadout_for_a_constructor_hull_is_refused()
     {
         Require.Artwork();
-        var (srv, peer, core) = BootUndocked(out var bot);
+        var (srv, peer, core) = BootDocked(out var bot);
         using (srv)
         using (bot)
         {
@@ -148,7 +149,7 @@ public sealed class P470RemovePlayerFlyableBuilderTests
     public void A_normal_player_hull_is_still_buyable()
     {
         Require.Artwork();
-        var (srv, peer, core) = BootUndocked(out var bot);
+        var (srv, peer, core) = BootDocked(out var bot);
         using (srv)
         using (bot)
         {
@@ -158,6 +159,7 @@ public sealed class P470RemovePlayerFlyableBuilderTests
                 .OrderBy(h => h.Price).First();
             Assert.True(normal.GroupId >= 0, $"'{normal.Name}' should be a player hull (group >= 0), got {normal.GroupId}");
 
+            normal = EconomyLoadoutTestSetup.Sell(peer.Mission!, normal);
             Fund(srv, peer.Id, 1_000_000);
 
             bot.SendBuyLoadout(normal.HullId, fLaunch: false);
