@@ -4,6 +4,23 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P674 observation (2026-10-14)
+
+The parity audit's sequential, unfiltered suites reported Core **4309 pass /
+1 fail**, ClientCore **933 pass / 0 fail / 1 opt-in skip**, and MonoGame
+**2125 pass / 0 fail / 3 optional Meshy-pack skips**. The sole failure was
+`Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events`:
+its full-suite allocation sample observed 1712 bytes instead of zero. After all
+three assemblies completed, it passed **3/3 exact-method isolated runs**, each
+retaining the zero-allocation assertion. This meets P674's load-flake rule;
+the allocation's source was not established. No product/test behavior or
+quarantine traits changed. All eight new P674 validator cases passed three
+focused repetitions and the full Core run. See
+[P674_PARITY_RECONCILE](reports/P674_PARITY_RECONCILE.md) for the complete results;
+raw failure/isolation TRX files are under `/tmp/p674/final/` and
+`/tmp/p674/rechecks/`. The opted-in local P660 15v15 showcase subsequently
+passed (1/1), resolving its default skip; the optional Meshy pack is absent.
+
 ## The two lanes (P647)
 
 `scripts/run-tests.sh` (P471 sequential runner) now executes every test in one of two

@@ -276,7 +276,7 @@ fedmsg,92 PROBES_UPDATE,Inc/Messages.h:644,partial,Wire/ProbesUpdate.cs (server 
 fedmsg,93 ORDER_CHANGE,Inc/Messages.h:648,done,Wire/OrderChange.cs,4
 fedmsg,94 LEAVE_SHIP,Inc/Messages.h:656,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1221; src/Allegiance.ClientCore/State/ClientWorld.cs:3315,4
 fedmsg,95 JOINED_MISSION,Inc/Messages.h:660,partial,Wire/JoinedMission.cs (server emits; no client handler found),5
-fedmsg,96 LOADOUT_CHANGE,Inc/Messages.h:667,partial,Wire/LoadoutChange.cs (server emits; no client handler found),4
+fedmsg,96 LOADOUT_CHANGE,Inc/Messages.h:667; clintlib/appmsg.cpp:1991-2084; FedSrv/fsship.cpp:708-735,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:855; src/Allegiance.ClientCore/State/ClientWorld.cs:3190; P648RelaunchVisibilityTests.LoadoutChange_RevivesDeadShip_AdoptsNewHullAndParts (tests/Allegiance.ClientCore.Tests/P648RelaunchVisibilityTests.cs:70); P648RelaunchVisibilityTests.LoadoutChange_ReparentsBoardedChildren (tests/Allegiance.ClientCore.Tests/P648RelaunchVisibilityTests.cs:139); FedMsgDispatchCoverageTests.EveryExpectedServerSentMessage_IsConsumed_NotUnknownFmid (tests/Allegiance.ClientCore.Tests/FedMsgDispatchCoverageTests.cs:220); P648 consumes native 96; applies hull/parts/passengers and revives non-pod relaunch.,4
 fedmsg,99 ACTIVE_TURRET_UPDATE,Inc/Messages.h:673,done,Wire/ActiveTurretUpdate.cs,4
 fedmsg,100 INACTIVE_TURRET_UPDATE,Inc/Messages.h:678,done,Wire/InactiveTurretUpdate.cs,4
 fedmsg,102 TELEPORT_ACK,Inc/Messages.h:681,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1186; src/Allegiance.ClientCore/State/ClientWorld.cs:3242,4
@@ -371,7 +371,7 @@ parts,Chaff (ET_ChaffLauncher=0),Igc/igc.h ET_ChaffLauncher,done,src/Allegiance.
 parts,Shields (ET_Shield=4),Igc/igc.h ET_Shield,done,src/Allegiance.Core/Sim/Ship.cs shield + P87/P450,5
 parts,Cloaks (ET_Cloak=5),Igc/igc.h ET_Cloak,done,src/Allegiance.Core/Sim/Ship.cs UpdateCloak + P269/P270,4
 parts,"Afterburners/Boosters (ET_Afterburner=7, ET_Pack=6)",Igc/igc.h ET_Afterburner,done,src/Allegiance.Core/Sim/Ship.cs Afterburner + P220,4
-parts,Fuel/ammo packs (ET_Pack=6),Igc/igc.h ET_Pack,partial,ammo/fuel reload via cargo bay (P192); no fuel-consumption economy,3
+parts,Fuel/ammo packs (ET_Pack=6),Igc/shipIGC.h:608-651; FedSrv/FedSrv.CPP:6552-6591; Igc/afterburnerIGC.cpp:148-159,done,"src/Allegiance.Core/Sim/Ship.cs:3202; src/Allegiance.Core/Sim/Ship.cs:7564; FuelPoolAndAfterburnerTests.Fuel_pack_reload_drain_refills_to_the_real_max (tests/Allegiance.Core.Tests/FuelPoolAndAfterburnerTests.cs:238); AutoReloadOnEmptyTests.Firing_ammo_to_zero_auto_reloads_from_cargo_spare (tests/Allegiance.Core.Tests/AutoReloadOnEmptyTests.cs:152); P650SimRulesTests.Afterburner_uses_GA_thrust_and_current_step_power_without_scaling_fuel (tests/Allegiance.Core.Tests/P650SimRulesTests.cs:120); loaded mount-rate debounce, real fuel depletion and cargo refill implemented; ready/reload sounds tracked separately.",3
 parts,c_habmBoard,Igc/igc.h:726,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmBoard + BOARD_SHIP P108,4
 parts,c_habmRescue,Igc/igc.h:727,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmRescue + rescue P115,4
 parts,c_habmLifepod,Igc/igc.h:728,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmLifepod + eject P308,4
@@ -381,7 +381,7 @@ parts,c_habmNoRipcord,Igc/igc.h:731,done,src/Allegiance.Core/Data/DataHullTypeIG
 parts,c_habmIsRipcordTarget,Igc/igc.h:732,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmIsRipcordTarget + RIP 111-113,4
 parts,c_habmFighter,Igc/igc.h:733,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmFighter,4
 parts,c_habmRemoteLeadIndicator,Igc/igc.h:734,partial,decoded (HabmRemoteLeadIndicator); remote lead relay partial,3
-parts,c_habmThreatToStation,Igc/igc.h:735,partial,decoded (HabmThreatToStation); base-threat scoring partial,3
+parts,c_habmThreatToStation,Igc/igc.h:735; Igc/igc.h:5390,partial,"tools/allegiance-mcp/Showcase.cs:105; tools/allegiance-mcp/CombatTargetSelector.cs:82; BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode (tests/Allegiance.ClientCore.Tests/P656ShowcaseFinaleTests.cs:424); P656 implements bomber/defense classification; tool policy does not close native simulation wingman command/behavior gaps, so partial retained.",3
 parts,c_habmCarrier,Igc/igc.h:736,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmCarrier + carrier P368,4
 parts,c_habmLeadIndicator,Igc/igc.h:737,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmLeadIndicator + P266,4
 parts,c_habmIsLtRipcordTarget,Igc/igc.h:738,partial,decoded (HabmIsLtRipcordTarget); lt-ripcord target behavior partial,3
