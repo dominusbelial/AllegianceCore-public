@@ -433,13 +433,21 @@ public sealed partial class Server
                     Console.WriteLine($"[disconnect-summary] window: {body}");
                 }
             }
-            // P604 — egress per player for the window just elapsed (bytes enqueued
-            // by the sim thread / window-seconds / seated peers). Diagnostic only.
-            long bytes = _egressBytesSent;
-            _egressBytesSent = 0;
-            double windowSecs = DisconnectSummaryTicks / (double)Math.Max(1, _config.UpdatesPerSecond);
+            // P670 — simulation payload offers versus actual transport enqueue / socket acceptance.
+            // Transport counters include framing; offers do not. Use measured wall time.
+            long bytes = _egressPayloadOfferedBytes;
+            _egressPayloadOfferedBytes = 0;
+            long stamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            double windowSecs = Math.Max(1e-9, (stamp - _egressWindowStarted) / (double)System.Diagnostics.Stopwatch.Frequency);
+            _egressWindowStarted = stamp;
+            long totalEnqueued = _host.Transport?.TotalEnqueuedBytes ?? 0;
+            long enqueued = totalEnqueued - _lastEgressEnqueuedBytes;
+            _lastEgressEnqueuedBytes = totalEnqueued;
+            long totalWritten = _host.Transport?.TotalWrittenBytes ?? 0;
+            long written = totalWritten - _lastEgressWrittenBytes;
+            _lastEgressWrittenBytes = totalWritten;
             int peers = _peerShips.Count;
-            double perPeerBps = peers > 0 ? bytes / windowSecs / peers : 0d;
+            double perPeerBps = peers > 0 ? enqueued / windowSecs / peers : 0d;
             // P604b — GC collections this window, so an allocation-burst-induced
             // tick hitch can be tied to a GC pause (Gen0/1/2 counts are monotonic
             // per-process; the delta over the window is what matters).
@@ -448,7 +456,7 @@ public sealed partial class Server
             // bytes/tick), for the port-mode allocation A/B.
             long alloc = GC.GetTotalAllocatedBytes();
             long logDrops = ConsoleLog.DroppedWrites;
-            Console.WriteLine($"[egress] window: bytes={bytes} peers={peers} windowSecs={windowSecs:0.#} per-peer-bps={perPeerBps:0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}} allocMB={(alloc - _lastAllocatedBytes) / (1024.0 * 1024.0):0.##} logDrops={logDrops - _lastLogDrops}");
+            Console.WriteLine($"[egress] window: payloadOfferedBytes={bytes} enqueuedBytes={enqueued} writtenBytes={written} peers={peers} windowSecs={windowSecs:0.###} enqueued-per-peer-bps={perPeerBps:0.0} written-per-peer-bps={(peers > 0 ? written / windowSecs / peers : 0):0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}} allocMB={(alloc - _lastAllocatedBytes) / (1024.0 * 1024.0):0.##} logDrops={logDrops - _lastLogDrops}");
             _lastGc0 = g0; _lastGc1 = g1; _lastGc2 = g2; _lastAllocatedBytes = alloc; _lastLogDrops = logDrops;
         });
         // P507 — every ~10s, a per-peer acceptance summary of the native

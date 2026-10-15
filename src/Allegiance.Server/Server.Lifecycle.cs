@@ -815,7 +815,7 @@ public sealed partial class Server
         lock (_captureLock)
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
         // P604 — egress accounting (sim-thread only; see the field doc).
-        _egressBytesSent += packet.Length;
+        _egressPayloadOfferedBytes += packet.Length;
         // P603 — internal test seam (InternalsVisibleTo): observe every outbound
         // packet per recipient, in order, so the byte-identity harness can collect
         // the exact per-peer payload stream both broadcast modes produce. Null in
@@ -842,7 +842,7 @@ public sealed partial class Server
         lock (_captureLock)
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
         // P604 — egress accounting (sim-thread only; see the field doc).
-        _egressBytesSent += packet.Length;
+        _egressPayloadOfferedBytes += packet.Length;
         _testSendCapture?.Invoke(target, packet);
         _testSendCoalescingCapture?.Invoke(target, packet, coalesceKey, guaranteed);
         if (guaranteed) _host.SendGuaranteedCoalescing(target, packet, coalesceKey);

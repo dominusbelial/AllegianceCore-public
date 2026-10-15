@@ -107,15 +107,14 @@ public sealed partial class Server : IDisposable
     private int _nextShipId = 8096;
 
     /// <summary>
-    /// P604 — rolling count of bytes the sim thread enqueued for send this
-    /// window (incremented in <c>SendPeer</c>/<c>SendPeerCoalescing</c>, both
-    /// sim-thread only). Reported every <c>DisconnectSummaryTicks</c> by the
-    /// disconnectSummary step as a <c>[egress] window: bytes=… peers=…
-    /// per-peer-bps=…</c> line, so the A/B can measure real egress per player
-    /// (and compare against native's ~1.6 KB/s heavy/light budget,
-    /// <c>FedSrv.CPP:3836</c>). Diagnostic only; no behavioural effect.
+    /// P604/P670 — simulation payload bytes offered to SendPeer, before framing,
+    /// coalescing or transport lookup. The [egress] line labels these separately
+    /// from transport-enqueued and socket-written bytes (both include framing).
+    /// Diagnostic only; no behavioural effect.
     /// </summary>
-    private long _egressBytesSent;
+    private long _egressPayloadOfferedBytes;
+    private long _lastEgressWrittenBytes, _lastEgressEnqueuedBytes;
+    private long _egressWindowStarted = System.Diagnostics.Stopwatch.GetTimestamp();
     // P604b — last window's GC collection counts, so the [egress] summary can
     // report the per-window GC delta (ties any allocation-burst tick hitch to a
     // GC pause). Sim-thread only.

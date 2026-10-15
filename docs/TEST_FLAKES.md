@@ -189,6 +189,23 @@ their existing traits remain. Native readiness/prediction and legal-capacity
 fixture corrections are described in the [P666 report](reports/P666_MERGE_SIM.md),
 with [durable verification evidence](reports/P666_RESULTS.json).
 
+## P670 send-stall observation (2026-10-14)
+
+Unfiltered sequential suites on the P670 final tree: Core **4309 pass / 0 fail**,
+ClientCore **933 pass / 1 fail**, MonoGame **2125 pass / 0 fail / 3 existing
+optional Meshy-pack skips**. All 86 new/affected transport method filters passed
+three isolated invocations each (264 cases); the optional local 15v15 showcase
+also ran and passed.
+
+| Test | Full-run symptom | Exact-method isolation after all suites |
+| --- | --- | --- |
+| `ClientCore: ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | Async logon drain order differed from connection order; sides `(0, 1, 0)` left peer2 on the same side. | 3/3 pass; existing seating-order load flake under the P670 lane rule. |
+
+No assertion, timeout, or quarantine trait changed. See the
+[P670 report](reports/P670_SEND_STALL.md) and
+[verification ledger](reports/P670_RESULTS.json) for exact outcomes, baseline
+loopback evidence and native references.
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition
