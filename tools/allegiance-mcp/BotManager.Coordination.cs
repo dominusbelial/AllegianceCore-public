@@ -40,9 +40,9 @@ internal sealed partial class BotManager
         }
     }
 
-    private void ApplyGlobalDefense(ActiveBot[] bots, double now)
+    private void ApplyGlobalDefense(ActiveBot[] bots, double now, HashSet<DefenseKey> liveKeys)
     {
-        var defense = FreshCoordination?.Defense ?? [];
+        var defense = (FreshCoordination?.Defense ?? []).Where(d => liveKeys.Contains(d.Key)).ToArray();
         var keys = defense.Select(d => d.Key).ToHashSet();
         foreach (var key in DefenseIncidents.Keys.Where(k => !keys.Contains(k)).ToArray()) DefenseIncidents.Remove(key);
         foreach (var deployment in defense)
