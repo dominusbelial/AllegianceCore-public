@@ -81,8 +81,19 @@ public class ShipStatusServerTests
 
         Assert.NotNull(bot.ShipAssignment);
         Assert.NotEmpty(bot.ShipStatuses);
-        var status = bot.ShipStatuses[0];
-        Assert.Equal(bot.ShipAssignment!.Ship.ShipId, status.ShipId);
+
+        // P653 H-06: fresh default-spawn ships start DOCKED at the base hangar
+        // (native FedSrv/fsmission.cpp:791-796). Launch the probe so the sanity
+        // frame below observes the ordinary FLYING status, not the docked spawn.
+        bot.ResetShipStatuses();
+        short probeShipId = bot.ShipAssignment!.Ship.ShipId;
+        var probeHull = server.Ships.First(s => s.Ship.Id == probeShipId).Ship.HullType.HullId;
+        bot.SendBuyLoadout(probeHull, fLaunch: true);
+        PumpUntil(server, () => bot.ShipStatuses.Any(s => s.ShipId == probeShipId
+            && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 800);
+        Assert.NotEmpty(bot.ShipStatuses);
+        var status = bot.ShipStatuses.First(s => s.ShipId == probeShipId);
+        Assert.Equal(probeShipId, status.ShipId);
         Assert.Equal(bot.ShipAssignment!.SectorId, status.SectorId);
 
         // Sanity: the decoded status is a healthy flying scout-less frame per the
@@ -90,7 +101,7 @@ public class ShipStatusServerTests
         Assert.Equal(ShipStatusMessage.StateFlying, status.State);
         Assert.False(status.Unknown);
         Assert.True(status.Detected);
-        Assert.Equal(-1, status.StationId);   // NA — no docking in this server
+        Assert.Equal(-1, status.StationId);   // NA — flying, not docked
         Assert.Equal(-1, status.ParentId);
 
         // The server also recorded the sector so a future sector-crossing would

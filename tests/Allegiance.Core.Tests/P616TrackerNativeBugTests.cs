@@ -184,10 +184,9 @@ public class P616TrackerNativeBugTests
         Require.Artwork();
         var ship = NewShip();
         ship.MountPart(AfterburnerType(fuelConsumption: 2f, maxThrust: 10f, onRate: 1e6f, offRate: 1e6f), amount: 1, mountId: 0, fractionMounted: 255);
-        ship.MountPart(FuelPackType(amount: 1000), amount: 1000, mountId: 1, fractionMounted: 255);
-        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 1, -1), "pack1 must land in cargo slot 0");
-        ship.MountPart(FuelPackType(amount: 1000), amount: 1000, mountId: 2, fractionMounted: 255);
-        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 2, -2), "pack2 must land in cargo slot 1");
+        // H-07/H-22: spare packs occupy native cargo slots, not positive equipment mounts.
+        ship.MountPart(FuelPackType(amount: 1000), amount: 1000, mountId: 255, fractionMounted: 255);
+        ship.MountPart(FuelPackType(amount: 1000), amount: 1000, mountId: 254, fractionMounted: 255);
 
         Assert.Equal(2, CountCargoPacks(ship));
         Assert.Equal(PinnedHull.Value.MaxFuel, ship.Fuel, 3);
@@ -253,8 +252,7 @@ public class P616TrackerNativeBugTests
                 Name: "fuel", Description: "", GroupId: 0, TtbmRequired: [], TtbmEffects: [],
                 Mass: 0f, Signature: 0f, PartId: 7918, SuccessorPartId: -1, PartMask: 0,
                 InventoryLineMdl: "", Type: new DataPartTypeIGC.Pack(PackType: 1, Amount: 500));
-            ship.MountPart(fp, amount: 500, mountId: 1, fractionMounted: 255);
-            Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 1, -1));
+            ship.MountPart(fp, amount: 500, mountId: 255, fractionMounted: 255);
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };

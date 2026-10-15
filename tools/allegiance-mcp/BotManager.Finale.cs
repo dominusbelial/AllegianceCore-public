@@ -12,6 +12,8 @@ internal sealed partial class BotManager
         ActiveBot[] bots, Dictionary<short, FinalePlan> plans)
     {
         internal readonly object Sync = new();
+        internal readonly Dictionary<ActiveBot, long> Generations = bots.ToDictionary(b => b, b => b.LifeGeneration);
+        internal readonly Dictionary<ActiveBot, long> InitialKills = bots.ToDictionary(b => b, b => b.Kills);
         internal readonly ShowcaseFinale.Settings Settings = settings;
         internal readonly double Created = created;
         internal readonly ActiveBot[] Bots = bots;
@@ -23,7 +25,7 @@ internal sealed partial class BotManager
         internal short? Winner;
         internal string? EndReason;
         internal double LastUpdate = double.NegativeInfinity;
-        internal bool Rotated;
+        internal bool Rotated, NextRunCreated;
         internal long CohesionSamples, Protected, BombersKilled;
         internal double CohesionDistance;
     }
@@ -72,7 +74,7 @@ internal sealed partial class BotManager
         var run = new FinaleRun(settings, Now(), bots, plans);
         run.Maturity = plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
             bots.Count(b => b.Side == side), bots.Count(b => b.Side == side && b.CompletedPodCycles > 0),
-            bots.Where(b => b.Side == side).Sum(b => b.Kills))).ToArray();
+            bots.Where(b => b.Side == side).Sum(b => b.Kills - run.InitialKills[b]))).ToArray();
         lock (_gate)
         {
             foreach (var bot in bots) bot.Finale = run;
@@ -142,8 +144,43 @@ internal sealed partial class BotManager
         }
     }
 
+    // The old run remains available as the finished game's report. Re-arm only
+    // after EVERY participating bot has reset and resolved the fresh world; old
+    // station ids and the old maturity/kill window must never drive a new strike.
+    private void RearmRotatedFinales()
+    {
+        FinaleRun[] runs;
+        lock (_gate) runs = _finales?.ToArray() ?? [];
+        foreach (var run in runs)
+        {
+            lock (run.Sync)
+                if (!run.Rotated || run.NextRunCreated) continue;
+            var bots = run.Bots.Where(IsParticipating).ToArray();
+            if (bots.Length == 0 || bots.Any(b => !b.FinaleResetObserved || b.ObjectivesPending
+                || !ReferenceEquals(b.Finale, run) || b.LifeGeneration <= run.Generations[b])) continue;
+            DataStationIGC[] stations = [];
+            bool ready = true;
+            foreach (var bot in bots)
+            {
+                if (bot.Cs is not { } cs) { ready = false; break; }
+                lock (cs.Gate)
+                {
+                    if (!cs.World.WorldReady || cs.World.GameOverResult is not null
+                        || cs.World.Mission?.Stage != MissionStageMessage.StageStarted)
+                    { ready = false; break; }
+                    if (stations.Length == 0) stations = cs.World.Stations.Values.ToArray();
+                }
+            }
+            if (!ready || bots.Any(b => !stations.Any(s => s.SideId >= 0 && s.SideId != b.Side))) continue;
+            RegisterFinale(run.Settings, bots.Select(b => b.Name).ToArray(), stations);
+            lock (run.Sync) run.NextRunCreated = true;
+            Console.WriteLine($"[finale] re-armed for next mission with {bots.Length} bots and fresh station objectives");
+        }
+    }
+
     private void UpdateFinales(double now)
     {
+        RearmRotatedFinales();
         FinaleRun[] runs;
         lock (_gate) runs = _finales?.ToArray() ?? [];
         foreach (var run in runs)
@@ -156,7 +193,7 @@ internal sealed partial class BotManager
             var bots = run.Bots.Where(b => IsParticipating(b) && !b.SpawnPending).ToArray();
             run.Maturity = run.Plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
                 bots.Count(b => b.Side == side), bots.Count(b => b.Side == side && b.CompletedPodCycles > 0),
-                run.Bots.Where(b => b.Side == side).Sum(b => b.Kills))).ToArray();
+                run.Bots.Where(b => b.Side == side).Sum(b => b.Kills - run.InitialKills[b]))).ToArray();
             foreach (var bot in bots)
             {
                 var cs = bot.Cs!;
@@ -241,12 +278,18 @@ internal sealed partial class BotManager
         }
     }
 
-    private static void RestoreFinaleForNextMission(ActiveBot bot)
+    private static void RestoreFinaleForNextMission(ActiveBot bot, double now, GameOver? over)
     {
         if (bot.Finale is not { } run) return;
         lock (run.Sync)
         {
             run.Rotated = true;
+            if (over is not null)
+            {
+                run.GameOverAt ??= now;
+                run.Winner = over.SideWinner;
+                run.EndReason = over.GameoverMessage;
+            }
             if (bot.FinaleOriginal is { } original)
             {
                 bot.HullId = original.Hull; bot.HullName = original.Name; bot.Parts = original.Parts;

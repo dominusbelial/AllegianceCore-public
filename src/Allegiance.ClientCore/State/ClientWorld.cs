@@ -23,7 +23,7 @@ namespace Allegiance.ClientCore.State;
 /// <c>Add</c>-fresh anywhere, so every branch preserves the one-entity-per-id
 /// invariant.
 /// </summary>
-public sealed class ClientWorld
+public sealed partial class ClientWorld
 {
     private readonly Dictionary<short, ShipEntity> _ships = new();
 
@@ -320,7 +320,20 @@ public sealed class ClientWorld
     /// on their authoritative (slowed) positions instead of overshooting and
     /// rubber-banding. Lives on the world (written on the receive thread, read on
     /// the render thread under the gate).</summary>
-    public double TimeScale { get; set; } = 1.0;
+    private double _timeScale = 1.0;
+    public double TimeScale
+    {
+        get => _timeScale;
+        set
+        {
+            // Integrate the previous rate before applying a new dilation rate.
+            long now = Environment.TickCount64;
+            if (_countdownClockLocalMs is { } last)
+                _countdownClockServerMs += (now - last) * _timeScale;
+            if (_countdownClockLocalMs is not null) _countdownClockLocalMs = now;
+            _timeScale = value;
+        }
+    }
 
     /// <summary>
     /// P540 — resolve the lifepod <c>HullId</c> for an ejected ship's side
@@ -1467,15 +1480,31 @@ public sealed class ClientWorld
     /// clear). Read under the caller's lock like the other world tables.</summary>
     public LeadIndicatorState LeadIndicator => _leadIndicator;
 
-    /// <summary>Local receipt instant (monotonic ms, <see cref="Environment.TickCount64"/>)
-    /// of the first <c>SET_START_TIME(14)</c> countdown announcement, i.e. the
-    /// moment the mission's visible start countdown began. <c>null</c> until such
-    /// a message arrives. The wire's <c>TimeStart</c> is a server-clock millisecond
-    /// value that shares no epoch with the client, so the port anchors the
-    /// countdown to the moment it learned the countdown had begun (see
-    /// <c>Game1</c>'s wiring), rather than trying to reconstruct absolute time.
-    /// Set once; the countdown is a one-shot per mission in this port.</summary>
+    /// <summary>Local receipt instant of the latest SET_START_TIME announcement.
+    /// Reset when the restart hold is replaced by the briefing deadline.
+    /// CountdownRemainingSeconds uses the absolute server-time target.</summary>
     public long? CountdownStartLocalMs { get; private set; }
+    private uint? _countdownTargetMs;
+    private double _countdownClockServerMs;
+    private long? _countdownClockLocalMs;
+
+    /// <summary>P660: native SET_START_TIME deadline in server simulation time.
+    /// PING samples provide the epoch; wall extrapolation uses the live scale.</summary>
+    public int? CountdownRemainingSeconds(long? localMs = null)
+    {
+        if (_countdownTargetMs is not { } target || _countdownClockLocalMs is not { } anchor) return null;
+        double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+        return Math.Max(0, (int)Math.Ceiling((target - now) / 1000.0));
+    }
+
+    public bool IsIntermission => _countdownTargetMs is not null
+        && _mission?.Stage == MissionStageMessage.StageNotStarted;
+
+    public void ObserveServerTime(uint serverMs, long localMs)
+    {
+        _countdownClockServerMs = serverMs;
+        _countdownClockLocalMs = localMs;
+    }
 
     /// <summary>
     /// P321 — reset the world to the pristine state it had at construction,
@@ -1508,6 +1537,8 @@ public sealed class ClientWorld
         MissionOwnerBroadcast = null;
         Graph = null;
         CountdownStartLocalMs = null;
+        _countdownTargetMs = null;
+        _countdownClockLocalMs = null;
         _mission = null;
         _gameOver = null;
         _scoreRoster = [];
@@ -1554,6 +1585,11 @@ public sealed class ClientWorld
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
         _soundEvents.Clear();
         _newContactCues.Clear();   // P373 — drop any pending first-sighting cues on disconnect
+        _highlightedClusters.Clear();
+        Array.Fill(_allianceGroups, (sbyte)-1);
+        ViewedClusterId = null;
+        ViewedClusterPosition = null;
+        ViewClusterVersion = 0;
         _clusterWarningBySectorId.Clear();   // P374 — drop per-sector threat state on disconnect
         _clusterWarningCues.Clear();         // P374 — drop any pending threat cues on disconnect
         _events.Clear();
@@ -1568,6 +1604,15 @@ public sealed class ClientWorld
     {
         switch (msg)
         {
+            case Promote promote:
+                Apply(promote);
+                break;
+            case HighlightCluster highlight:
+                Apply(highlight);
+                break;
+            case ViewClusterReply viewCluster:
+                Apply(viewCluster);
+                break;
             case SetCluster setCluster:
                 Apply(setCluster);
                 break;
@@ -1612,6 +1657,12 @@ public sealed class ClientWorld
                 break;
             case Reload reload:
                 Apply(reload);
+                break;
+            case SwapPart swapPart:
+                Apply(swapPart);
+                break;
+            case DropPart dropPart:
+                Apply(dropPart);
                 break;
             case Allegiance.Core.Wire.RankInfo rankInfo:
                 Apply(rankInfo);
@@ -1687,6 +1738,9 @@ public sealed class ClientWorld
             case MissionStageMessage missionStage:
                 Apply(missionStage);
                 break;
+            case Ping ping:
+                ObserveServerTime(ping.TimeServer, Environment.TickCount64);
+                break;
             case SetStartTime setStartTime:
                 Apply(setStartTime);
                 break;
@@ -1737,6 +1791,9 @@ public sealed class ClientWorld
             case CreateChaff createChaff:
                 // P292 — the server's deploy broadcast for a fresh chaff decoy.
                 Apply(createChaff);
+                break;
+            case ChangeAlliances alliances:
+                ApplyAlliances(alliances);
                 break;
             case TreasureSpawn treasureSpawn:
                 // P293 — the server's "a treasure is here" broadcast.
@@ -2359,9 +2416,9 @@ public sealed class ClientWorld
         // FractionMounted has no wire representation here (PartData is the
         // smaller, requester-agnostic observer struct, see its own doc
         // comment); an already-mounted part is definitionally fully mounted.
-        e.Loadout = export.Parts
-            .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted))
-            .ToArray();
+        var exportedInventory = export.Parts
+            .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted)).ToList();
+        StoreInventory(e, exportedInventory);
         // P370 — an identity EXPORT re-establishes this ship in our view (e.g. a
         // cross-side ship we'd marked gone warped back into our sector, or we
         // re-gained visibility after the server re-sent it); clear the transient
@@ -3572,6 +3629,7 @@ public sealed class ClientWorld
         // MISSION_STAGE Over, so it never triggers this reset (the mission is
         // still running for the other sides). Guarded on the prior stage so it
         // fires once, not on every identical Over broadcast.
+        int? previousStage = _mission?.Stage;
         bool enteringOver = stage.Stage == MissionStageMessage.StageOver
                             && _mission?.Stage != MissionStageMessage.StageOver;
 
@@ -3589,6 +3647,15 @@ public sealed class ClientWorld
 
         if (enteringOver)
             BeginNextMission();
+        // Native gameoverscreen.cpp:638-645 advances the game-over screen on Starting
+        // to the new mission. Keep scoreboard during NotStarted intermission.
+        if (stage.Stage == MissionStageMessage.StageStarting)
+            ClearGameOver();
+        if (stage.Stage == MissionStageMessage.StageStarted)
+        {
+            if (previousStage != MissionStageMessage.StageStarted) ClearGameOver();
+            _countdownTargetMs = null;
+        }
     }
 
     /// <summary>
@@ -3617,6 +3684,7 @@ public sealed class ClientWorld
         MyShipId = null;
         Graph = null;
         CountdownStartLocalMs = null;
+        _countdownTargetMs = null;
         _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
@@ -3661,25 +3729,24 @@ public sealed class ClientWorld
         _autoDonateTargetByShipId.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();
+        _highlightedClusters.Clear();
+        Array.Fill(_allianceGroups, (sbyte)-1);
+        ViewedClusterId = null;
+        ViewedClusterPosition = null;
+        ViewClusterVersion = 0;
         _clusterWarningBySectorId.Clear();
         _clusterWarningCues.Clear();
         _events.Clear();
         _roster.Clear();
     }
 
-    /// <summary>FM_S_SET_START_TIME(14) — the server's visible countdown
-    /// announcement (broadcast whole-mission in Server.StartCountdown). The wire
-    /// carries only the target start time in server-clock milliseconds, which
-    /// shares no epoch with the client; the port treats the RECEIPT of this
-    /// message as the countdown's t=0 and records the local monotonic instant
-    /// once (the countdown is one-shot per mission here). This is the real
-    /// message native's <c>CheckCountdownSound</c> anchors on (it reads
-    /// <c>timeStart</c>, WinTrek.cpp:11144), so it is the faithful "countdown
-    /// began" signal — distinct from <c>Mission.Stage</c>, which the join burst
-    /// pins to <c>StageStarted</c> and therefore cannot distinguish the brief
-    /// STAGE_STARTING window (see the Game1 wiring).</summary>
-    private void Apply(SetStartTime startTime) =>
-        CountdownStartLocalMs ??= Environment.TickCount64;
+    /// <summary>Native SET_START_TIME can be reset for the briefing after the
+    /// restart hold (fsmission.cpp:1931-1938, 3539-3546). Use its absolute deadline.</summary>
+    private void Apply(SetStartTime startTime)
+    {
+        _countdownTargetMs = startTime.TimeStart;
+        CountdownStartLocalMs = Environment.TickCount64;
+    }
 
     /// <summary>FM_S_SET_BRIEFING_TEXT(9) — the server's per-player mission
     /// briefing, sent once in the join-sync burst (P121, Server.cs:2011-2051).

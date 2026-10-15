@@ -16,6 +16,7 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed partial class Game1
 {
     private bool _mapLeftButtonWasDown;
+    private bool _mapRightButtonWasDown;
 
     /// <summary>
     /// P541 — edge-triggered left-button handler: on a fresh left-button press,
@@ -30,10 +31,14 @@ public sealed partial class Game1
         bool down = mouse.LeftButton == ButtonState.Pressed;
         if (down && !_mapLeftButtonWasDown)
             ExecuteStarmapClick(new NumericsVec2(mouse.X, mouse.Y));
+        bool right = mouse.RightButton == ButtonState.Pressed;
+        if (right && !_mapRightButtonWasDown && ActionDown(Keyboard.GetState(), "SectorHighlightModifier"))
+            ExecuteStarmapClick(new NumericsVec2(mouse.X, mouse.Y), mark: true);
+        _mapRightButtonWasDown = right;
         _mapLeftButtonWasDown = down;
     }
 
-    private void ExecuteStarmapClick(NumericsVec2 cursor)
+    private void ExecuteStarmapClick(NumericsVec2 cursor, bool mark = false)
     {
         // Build the layout for whichever map is up (mini or expanded) under the
         // Gate lock (reads world.Graph/world.Clusters, mutated by the receive
@@ -76,6 +81,19 @@ public sealed partial class Game1
             return;
         }
 
+        if (mark)
+        {
+            // Native sectormap.cpp:1491-1510: leader broadcasts toggle, other
+            // teammates can dismiss their local mark. Echo applies the leader's mark.
+            lock (_session.Gate)
+            {
+                var world = _session.World;
+                if (world.IsTeamLeader) _session.SendHighlightCluster(cluster, !world.HighlightedClusters.Contains(cluster));
+                else world.Apply(new Allegiance.Core.Wire.HighlightCluster { ClusterId = cluster, Highlight = false });
+            }
+            return;
+        }
+
         // Gather the player state native's branches read, then decide.
         bool autopilot = _autoPilotEngaged;
         bool ripcord, docked, teleportOpen;
@@ -114,11 +132,11 @@ public sealed partial class Game1
 
             case StarmapClick.Action.ViewCluster:
                 // native docked: RequestViewCluster(cluster) + SetViewMode(vmCommand)
-                // (sectormap.cpp:1539-1545). The port has no docked 3D "view into
-                // another sector" camera (it renders only the pilot's own sector),
-                // so the faithful available effect is to select that sector on the
-                // map (the port's "view" of a sector) — the highlight + info pane.
+                // (sectormap.cpp:1539-1545), using the server-confirmed sector stream.
                 _selectedSectorId = cluster;
+                _session.SendViewClusterRequest(cluster);
+                _cameraMode = CameraMode.Command;
+                _minimapExpanded = false;
                 Console.WriteLine($"[monogame] starmap click (docked): view sector -> {cluster}");
                 break;
 

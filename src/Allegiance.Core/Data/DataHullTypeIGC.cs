@@ -268,6 +268,19 @@ public readonly record struct DataHullTypeIGC(
         return (part.PartMask & ~PmEquipment[idx]) == 0;
     }
 
+    /// <summary>Native per-slot CanMount (Igc/hullTypeIGC.h:163-176,199-213).
+    /// Cargo accepts any part; weapons use hardpoints, other equipment mount 0.</summary>
+    public bool CanMountPart(in DataPartTypeIGC part, int mount)
+    {
+        if (mount < 0) return mount >= -5;
+        if (part.EquipmentType == EquipmentType.Weapon)
+            return mount < Hardpoints.Length && mount < 8
+                && (part.PartMask & ~Hardpoints[mount].PartMask) == 0;
+        int et = (int)part.EquipmentType;
+        return mount == 0 && (uint)et < (uint)PmEquipment.Length
+            && (part.PartMask & ~PmEquipment[et]) == 0;
+    }
+
     /// <summary>
     /// One <c>HardpointData</c> (<c>src/Igc/igc.h:1696</c>), 30 bytes unpacked.
     /// </summary>

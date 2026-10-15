@@ -1,0 +1,77 @@
+P660 verification excerpt
+Branch codex/p660; base HEAD 32ceeccd; no commits or pushes.
+
+p660-Allegiance.Core.Tests
+[xUnit.net 00:00:47.84]     Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking [FAIL]
+[xUnit.net 00:03:12.76]     Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Sides_lock_from_owner_relays_and_non_owner_refused [FAIL]
+[xUnit.net 00:03:25.17]     Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback [FAIL]
+[xUnit.net 00:04:09.36]     Allegiance.Core.Tests.GameOverPlayersWireTests.Conquest_win_lists_every_connected_player_including_losing_side [FAIL]
+Failed!  - Failed:     4, Passed:  4150, Skipped:     0, Total:  4154, Duration: 4 m 30 s - Allegiance.Core.Tests.dll (net10.0)
+
+p660-Allegiance.ClientCore.Tests
+Passed!  - Failed:     0, Passed:   877, Skipped:     1, Total:   878, Duration: 4 m 5 s - Allegiance.ClientCore.Tests.dll (net10.0)
+
+p660-Allegiance.ClientCore.MonoGame.Tests
+Passed!  - Failed:     0, Passed:  1972, Skipped:     3, Total:  1975, Duration: 4 m 22 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
+
+p660-final-core
+Total tests: 8
+     Passed: 8
+
+p660-final-client
+ intermission timer A=12s B=12s
+ MCP showcase: 30/30 bots migrated, 2/2 humans connected, sim elapsed=27.200s, wall total=20.992s, exceptions=0
+ enabled=True dilation=off scale=1.000; freshClock=2636.1478201210366; intermission observed at +0.000s; briefing at +8.000s; started at +23.500s; wall=0.538s; exceptions=0
+ enabled=True dilation=auto scale=0.250; freshClock=2636.1478201210366; intermission observed at +0.025s; briefing at +8.012s; started at +23.150s; wall=2.147s; exceptions=0
+ enabled=False dilation=auto scale=0.250; freshClock=2636.1478201210366; intermission observed at +0.000s; briefing at +0.000s; started at +15.137s; wall=1.429s; exceptions=0
+ enabled=False dilation=off scale=1.000; freshClock=2636.1478201210366; intermission observed at +0.000s; briefing at +0.000s; started at +15.500s; wall=0.375s; exceptions=0
+Total tests: 10
+     Passed: 10
+
+p660-final-monogame
+Total tests: 13
+     Passed: 13
+
+3x isolation (each failure run individually, after full suites completed):
+[
+  {
+    "test": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+    "runs": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "test": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Sides_lock_from_owner_relays_and_non_owner_refused",
+    "runs": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+    "runs": [
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "test": "Allegiance.Core.Tests.GameOverPlayersWireTests.Conquest_win_lists_every_connected_player_including_losing_side",
+    "runs": [
+      0,
+      0,
+      0
+    ]
+  }
+]
+
+Final required build: dotnet build AllegianceCore.slnx --no-restore -m:1
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.00

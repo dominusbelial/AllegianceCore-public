@@ -118,21 +118,23 @@ public sealed class LobbyConfig
     public int HeartbeatIntervalSeconds { get; init; } = 25;
 }
 
-/// <summary>
-/// P378 — the server's dedicated live/testing ("debug") settings section. A
-/// clearly separated object in the config file (<c>server.json</c> /
-/// <c>docker/compose.server.json</c>: <c>"liveSettings": { ... }</c>) that is
-/// the single, obvious, growable home for runtime/testing-tunable knobs as
-/// more are added later — distinct from the mission / network / artwork-path
-/// config. The first real field is <see cref="DebugMode"/>. Crucially, the
-/// mechanism is a simple reusable boolean named <c>DebugMode</c> (NOT a
-/// single-purpose <c>LifepodDebugMode</c>), so a future debug convenience can
-/// gate on the same flag without a second knob. An absent section equals all
-/// defaults (debug off, no override) — byte-for-byte identical to pre-P378
-/// behaviour.
-/// </summary>
+/// <summary>P660 dedicated-server rotation policy. Uses native bAutoRestart's
+/// SET_START_TIME while NotStarted (fsmission.cpp:3539-3546), then StartCountdown.</summary>
+public sealed class AutoNextMatchConfig
+{
+    public bool Enabled { get; set; } = true;
+    /// <summary>Simulation seconds, like the native restart and briefing timers.</summary>
+    public double IntermissionSeconds { get; set; } = 30;
+}
+
+/// <summary>The dedicated live/testing settings section. An absent section
+/// uses defaults: debug off, automatic next match on, automatic dilation on.</summary>
 public sealed class LiveSettingsConfig
 {
+    /// <summary>P660: keep connected players seated and start the next match after
+    /// an intermission. Enabled by default for this dedicated server. Disable to
+    /// retain the ready-up flow. Legacy GameConfig.AutoRestart remains independent.</summary>
+    public AutoNextMatchConfig AutoNextMatch { get; set; } = new();
     /// <summary>
     /// P378 — the server-wide debug-mode flag (default <c>false</c>). When
     /// <c>true</c>, useful live-testing conveniences become available; the
@@ -640,9 +642,8 @@ public sealed class ServerConfig
 
     /// <summary>
     /// P378 — the dedicated live/testing settings section (see
-    /// <see cref="LiveSettingsConfig"/>). Absent section = defaults (debug off,
-    /// no lifepod override), so a normal server run with no config change is
-    /// byte-for-byte identical to pre-P378 behaviour.
+    /// <see cref="LiveSettingsConfig"/>). Absent section uses defaults:
+    /// debug off, no lifepod override, automatic next match and dilation on.
     /// </summary>
     public LiveSettingsConfig LiveSettings { get; init; } = new();
 

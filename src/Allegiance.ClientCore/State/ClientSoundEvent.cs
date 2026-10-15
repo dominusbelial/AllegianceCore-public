@@ -37,6 +37,9 @@ public enum ClientSoundEventKind
     /// Mapped to the <c>jumpin</c> one-shot, the same wave native's jumpSound
     /// plays.</summary>
     TeleportArrived,
+
+    /// <summary>Native newCommandMsgSound, appmsg.cpp:1757.</summary>
+    SectorHighlighted,
 }
 
 /// <summary>A single observed sound event.</summary>

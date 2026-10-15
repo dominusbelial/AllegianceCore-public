@@ -1,6 +1,7 @@
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.Core;
 
 namespace Allegiance.ClientCore.Flight;
 
@@ -52,6 +53,10 @@ public sealed class OwnShipSimulator
     private bool _haveHull;
     private bool _frozen;
     private readonly float[] _turnRates = new float[3];
+    private DataPartTypeIGC.Afterburner? _afterburner;
+    private float _boostFuel, _boostPower, _mountRate = 1f;
+    private byte _boostMounted = 255;
+    private bool _boostActive;
 
     /// <summary>Whether a hull has been resolved yet (false ⇒ <see cref="Step"/>
     /// is a no-op until <see cref="SetHull"/>).</summary>
@@ -92,13 +97,44 @@ public sealed class OwnShipSimulator
     public int StateM { get; private set; }
 
     /// <summary>
-    /// The current afterburner power (0..1) reported in the wire <c>power</c> slot.
-    /// The port has no afterburner-engagement input in flight, so the simulation
-    /// integrates (and reports) flat 0 — the server ignores the client-reported
-    /// power in its replay anyway (<c>BuildKinematicsInputs</c> uses the server's
-    /// own state), so this only needs to be a valid 0..1 value.
+    /// The current afterburner power (0..1), integrated with the same power,
+    /// mount and fuel rules as Ship.UpdateAfterburner.
     /// </summary>
-    public float Power => 0f;
+    public float Power => _boostPower;
+
+    /// <summary>P641 — configure on equipment change/reset, not each frame.
+    /// Mirrors Ship.UpdateAfterburner / native afterburnerIGC.cpp:103-164.
+    /// Carries the real power/fuel ramp into the shared movement step.</summary>
+    public void SetAfterburner(DataPartTypeIGC.Afterburner? type, byte mounted, float fuel, float mountRate, float power = 0)
+    {
+        _afterburner = type;
+        _boostMounted = mounted;
+        _boostFuel = fuel;
+        _mountRate = mountRate > .0001f ? mountRate : 1f;
+        _boostPower = type is null ? 0 : Math.Clamp(power, 0, 1);
+        _boostActive = _boostPower > 0;
+        _inputs = _inputs with { AfterburnerMaxThrust = type?.MaxThrust ?? 0, AfterburnerPower = _boostPower };
+    }
+
+    private void StepAfterburner(float dt)
+    {
+        if (_afterburner is not { } type) return;
+        float fraction = _boostMounted / (float)ExpandedPartData.FullyMounted;
+        if (fraction < 1)
+        {
+            fraction += dt * _mountRate;
+            _boostMounted = (byte)(Math.Min(1f, fraction) * ExpandedPartData.FullyMounted);
+            if (fraction < 1) return;
+        }
+        bool activate = (StateM & ShipControlState.AfterburnerButton) != 0 && _boostFuel != 0;
+        if (activate && !_boostActive) { _boostActive = true; _boostPower = 0; }
+        if (!_boostActive) return;
+        _boostPower = Math.Clamp(_boostPower + dt * (activate ? type.OnRate : -type.OffRate), 0, 1);
+        if (_boostPower <= 0) _boostActive = false;
+        float used = _boostPower * type.FuelConsumption * type.MaxThrust * dt;
+        if (used < _boostFuel) _boostFuel -= used;
+        else if (_boostFuel != 0) { _boostFuel = 0; _boostPower = 0; _boostActive = false; }
+    }
 
     /// <summary>
     /// Configure the own ship's already-effective hull stats + afterburner max thrust
@@ -131,8 +167,10 @@ public sealed class OwnShipSimulator
         float dc = dt / n;
         for (int i = 0; i < n; i++)
         {
+            _inputs = _inputs with { AfterburnerPower = _boostPower };
             ShipKinematics.Step(in _inputs, ref _velocity, _orientation, _turnRates, dc);
             Position += _velocity * dc;
+            StepAfterburner(dc); // authoritative Ship.OnUpdate moves before equipment
         }
     }
 

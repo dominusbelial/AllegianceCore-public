@@ -387,4 +387,41 @@ public sealed partial class BotFixRegressionTests
         manager.ConfigureFinale(new(AfterMinutes: 0), ["probe-bot"]);
         Assert.Empty(manager.FinaleStatus()); Assert.Null(Get<object?>(bot, "Finale"));
     }
+    [SkippableFact]
+    public void P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh()
+    {
+        Require.Artwork(); using var reads = new DefenseLiveReads(); using var rig = new FinaleRig(new(), 1);
+        for (int i = 0; i < rig.Bots.Length; i++)
+            Call("RefreshLife", rig.Manager, rig.Bots[i], rig.Sessions[i], rig.Started);
+        var freshStations = rig.Stations.Select(s => s with { StationId = (short)(s.StationId + 1000) }).ToArray();
+        for (int i = 0; i < rig.Bots.Length; i++)
+        {
+            var world = rig.Sessions[i].World;
+            world.BeginNextMission(); Seat(world, (short)(40 + i));
+            world.Apply(new JoinSide { ShipId = (short)(40 + i), SideId = (short)i });
+            DefenseMap(world);
+            foreach (short stationId in world.Stations.Keys.ToArray())
+                world.Apply(new StationDestroyed { StationId = stationId });
+            foreach (var station in freshStations) world.Apply(new ExportStation { Station = station });
+            world.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarted });
+            Call("RefreshLife", rig.Manager, rig.Bots[i], rig.Sessions[i], rig.Started + 1811);
+            if (i == 0)
+            {
+                rig.Tick(1812);
+                Assert.Single(rig.Manager.FinaleStatus()); // the other bot is still in the old generation
+            }
+        }
+        rig.Tick(1813);
+        var runs = rig.Manager.FinaleStatus().Select(r => JsonSerializer.SerializeToElement(r)).ToArray();
+        Assert.Equal(2, runs.Length);
+        Assert.Equal("armed", runs[1].GetProperty("state").GetString());
+        Assert.Equal(0, runs[1].GetProperty("killsLastFiveMinutes").GetInt32());
+        Assert.All(runs[1].GetProperty("wings").EnumerateArray(), w =>
+            Assert.Contains(freshStations, s => s.StationId == w.GetProperty("targetStation").GetInt16()));
+        Assert.All(runs[1].GetProperty("maturity").EnumerateArray(), m =>
+            Assert.Equal(0, m.GetProperty("relaunched").GetInt32()));
+        rig.Tick(1814);
+        Assert.Equal(2, rig.Manager.FinaleStatus().Length); // no duplicate re-arm
+    }
+
 }

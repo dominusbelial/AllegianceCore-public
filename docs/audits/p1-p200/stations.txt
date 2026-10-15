@@ -1,0 +1,30 @@
+6e6192bc 2026-08-31 P35: export warps + stations so bots have something to navigate to
+ba55dc2d 2026-09-02 P53: real docking — arrive -> dock, request -> undock (wire visibility via existing SHIP_STATUS)
+1916abd1 2026-09-02 P54: send FM_S_DOCKED(61) on dock — the trigger that makes native ship.GetStation() resolve
+4f92201b 2026-09-02 P56: sell mined ore on dock — PaydayEvent at friendly dock turns ore into money
+199aeeff 2026-09-02 P59: live event feed in spectator UI (dock/undock/mine/sell/payday/warp)
+4a388af3 2026-09-04 P69: launch the ship clear of the station on undock
+52ad289d 2026-09-04 P71: re-send SET_CLUSTER on undock so the client's movement gate reopens
+281b09da 2026-09-05 P74: drop undock's arbitrary launch velocity, position-only reposition
+b8df8b13 2026-09-05 P75: undock debounce (LastLaunchTime/LaunchCooldownSeconds), restore velocity
+b94af206 2026-09-05 P78: fix PlayerInfo baseObjectID sentinel, root-cause of the native asteroid-export-adjacent crash
+20912014 2026-09-05 P80: substitute identity orientation for stations with degenerate Up/Forward
+6b7c82b6 2026-09-08 P106: FM_C/S_VIEW_CLUSTER(104/177) docked spectator/map-view request-reply (no new server-side per-player state; reuses same-side visibility gate Server.cs:521)
+28413e3a 2026-09-08 P110: TELEPORT_ACK(102) — extend the existing FM_C_DOCKED(48) handler to serve the non-NA teleport/relocation dock request. New FM_S_TELEPORT_ACK(102) codec (st
+a2d91b09 2026-09-09 P125: Station combat damage + STATION_DESTROYED(59) — shield-absorbs-then-overflows-to-armor (CstationIGC::ReceiveDamage port), live ArmorFraction/ShieldFractio
+a0dc9343 2026-09-10 P126: STATION_CAPTURE(58) — hostile docking captures an enemy station
+c5c03ad8 2026-09-10 P133: STATIONS_UPDATE(57) — per-side visible-station hull/shield sync
+58ff4157 2026-09-10 P133: fill session stats into STATIONS_UPDATE_P133.md
+e73fe688 2026-09-10 P148: ORDER_CHANGE(93) Stage 2 — command a docked NPC to stay docked
+8e136052 2026-09-10 P149: FIND_TARGET (ORDER_CHANGE Stage 3) — nearest friendly station with an ability, same cluster
+6b8f3340 2026-09-10 P150: ORDER_CHANGE(93) Stage 4 — command a flying NPC to return to base
+59ec0d8f 2026-09-10 P151: ORDER_CHANGE Stage 5 — NPC takes cover at a local station when damaged
+54d6e29d 2026-09-10 P152: ORDER_CHANGE(93) Stage 6 — command a docked NPC to launch
+02afa128 2026-09-11 P163: BuildingEffect mechanic (Stage 1) — timed asteroid→station construction + builder self-sacrifice
+58f9dd01 2026-09-11 P164: BUILDINGEFFECT_DESTROYED(181) wire (Stage 2) — interrupted-build whole-mission broadcast
+4965d8d8 2026-09-11 P165: Builder AI decision layer (Stage 3) — idle Builder autonomously starts a real build
+f20b27ca 2026-09-11 P170: NPC collision avoidance Stage 2 — include stations in the dodge scan
+be549be1 2026-09-12 P172: NPC ripcord-as-travel Stage 1 — safety gate + station-anchor search
+296b6d9a 2026-09-12 P177: deployment polish — Dockerfiles, docker-compose, CI, LOBBY_APP.md (Lobby Stage 3)
+96f8decb 2026-09-12 P181: missile lock Stage 2 — real lock-quality buildup toward a target
+e00c75a2 2026-09-13 P191: conquest/territory game mode — GAME_STATE(155), station-based win conditions

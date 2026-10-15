@@ -115,7 +115,7 @@ public class TeamPaneLayoutTests
 
         Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Money && l.Text == "MY MONEY: 3210");
         Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Ballot && l.Text.Contains("Move miners to G7"));
-        Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Note && l.Text.Contains("SET_WINGID"));
+        Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Note && l.Text.Contains("Wing assignments unavailable"));
     }
 
     /// <summary>Ballot is omitted when not a team leader.</summary>

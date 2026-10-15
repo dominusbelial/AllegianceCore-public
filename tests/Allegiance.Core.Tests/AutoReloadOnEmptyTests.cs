@@ -126,9 +126,9 @@ public class AutoReloadOnEmptyTests
         ship.Ammo = 2;                            // a small pool so a burst empties it
         ship.MountWeapon(AmmoWeapon(mission.Core));
 
-        // A spare ammo pack at equipped mount 1, moved into cargo slot 0.
-        ship.MountPart(AmmoPackType(), amount: (short)ammoPackAmount, mountId: 1, fractionMounted: 255);
-        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 1, -1),
+        // A spare ammo pack at native equipment mount 0, moved into cargo slot 0.
+        ship.MountPart(AmmoPackType(), amount: (short)ammoPackAmount, mountId: 0, fractionMounted: 255);
+        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 0, -1),
             "the ammo pack must land in the cargo hold");
         Assert.NotNull(ship.CargoHold[Ship.CargoSlotForMount(-1)]);
 
@@ -216,8 +216,8 @@ public class AutoReloadOnEmptyTests
 
         // Cargo spare, pool already zero (simulating a post-depletion ship).
         ship.Ammo = 0;
-        ship.MountPart(AmmoPackType(), amount: 5, mountId: 1, fractionMounted: 255);
-        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 1, -1));
+        ship.MountPart(AmmoPackType(), amount: 5, mountId: 0, fractionMounted: 255);
+        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 0, -1));
 
         double t0 = mission.LastUpdate;
         Assert.Equal(AutoReloadOutcome.Reloaded, ship.TryAutoReloadAmmo(t0));   // 1st attempt, spare consumed
@@ -226,8 +226,8 @@ public class AutoReloadOnEmptyTests
         // Immediately re-triggering (same instant) must be debounced — the
         // pool is now empty again, but the rate limit forbids a new attempt.
         // Re-seed a second pack so the only gate is the debounce.
-        ship.MountPart(AmmoPackType(), amount: 5, mountId: 1, fractionMounted: 255);
-        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 1, -1));
+        ship.MountPart(AmmoPackType(), amount: 5, mountId: 0, fractionMounted: 255);
+        Assert.True(ship.TrySwapPartWithCargo(EquipmentType.Pack, 0, -1));
         ship.Ammo = 0;
 
         Assert.Equal(AutoReloadOutcome.NotAttempted, ship.TryAutoReloadAmmo(t0));
@@ -378,6 +378,10 @@ public class AutoReloadOnEmptyTests
             // assertion forced everyone into one sector — the very bug P368 fixes.
             Assert.Equal(subject.Sector!.Id, observer.Sector!.Id);
             Assert.NotEqual(subject.Sector!.Id, third.Sector!.Id);
+            // P653 H-06 docks fresh default-spawn ships (native FedSrv/fsmission.cpp:791-796),
+            // but H-22 requires flying/alive/unboarded for wire inventory ops. Seat the
+            // subject flying so SWAP_PART/auto-reload mechanics are exercised (audit gate kept).
+            subject.StationId = null;
             return new Seat(server, bots, subject, bots[0], observerBot);
         }
         catch

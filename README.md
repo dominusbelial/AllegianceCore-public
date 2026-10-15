@@ -73,6 +73,10 @@ dotnet run --project src/Allegiance.ClientCore.MonoGame -- 127.0.0.1 6073 "My Pi
 **What you should see:** the client logs on and opens the **READY CHECK** screen. Pick a
 team, press **Y** to ready up — a game starts once every team with a player in it is ready,
 so alone you start right away — and after a 15 s countdown you launch into space.
+After game over, connected players enter the next match automatically: a default
+30-second scoreboard intermission, then the normal 15-second briefing. See
+[automatic next-match configuration](docs/NEXT_MATCH.md) to change or disable it.
+Both timers follow simulation time under dilation.
 **F1** shows every key; **F6** rebinds them. If the log says
 `HD sky asset '…' unavailable`, the sky pack path isn't set (step 3).
 

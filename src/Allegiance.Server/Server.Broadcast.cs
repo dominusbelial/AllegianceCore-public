@@ -126,6 +126,16 @@ public sealed partial class Server
         // deadline has passed enters the start countdown without a ready-up
         // (native's unattended restart, fsmission.cpp:3539-3546).
         Step("autoRestarts", () => AdvanceAutoRestarts(now));
+        // P660: refresh the absolute sim-clock sample during both timer phases.
+        // This PING broadcast is a port adaptation; native SET_START_TIME stays unchanged.
+        if (TickIndex % Math.Max(1, _config.UpdatesPerSecond) == 0)
+            Step("countdownClock", () =>
+            {
+                var clock = FedPacket.Pack(new[] { new Ping { TimeServer = (uint)(now * 1000) }.Encode() });
+                foreach (var m in _missions)
+                    if (_autoRestartDeadline.ContainsKey(m) || _startCountdownDeadline.ContainsKey(m))
+                        SendToMissionPeers(m, clock);
+            });
         // P281 — the side-select drain: seat ready/timed-out pending peers in
         // logon order (deterministic), incl. the auto-assign timeout.
         Step("sideSelection", () => AdvanceSideSelection(now));
@@ -1638,9 +1648,11 @@ public sealed partial class Server
     /// <summary>The teammate ExportShip PartData[] tail as it is right now,
     /// mount order — see <see cref="PartData"/>'s own doc comment for why this
     /// drops <c>MountedPart.FractionMounted</c> (a requester-only, BUY_LOADOUT-
-    /// specific concern; an already-mounted part observed via EXPORT has none).</summary>
+    /// specific concern; an already-mounted part observed via EXPORT has none).
+    /// Include signed cargo mounts too, so a refreshed EXPORT cannot erase the
+    /// cargo learned from LOADOUT_CHANGE or needed by a later SWAP_PART.</summary>
     private static IReadOnlyList<PartData> SnapshotParts(Ship ship) =>
-        ship.Parts.Select(p => new PartData(p.PartId, p.Amount, p.MountId)).ToArray();
+        ship.ExportInventoryForAck().Select(p => new PartData(p.PartId, p.Amount, p.MountId)).ToArray();
 
     /// <summary>P366 — build a same-side NPC's FM_S_SHIP_STATUS(90) so a team
     /// leader's client learns the drone's real docked state (drives the

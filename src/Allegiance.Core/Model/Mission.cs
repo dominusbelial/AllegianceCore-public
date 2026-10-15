@@ -63,12 +63,10 @@ public sealed class Mission
     public WeaponMuzzleCache? WeaponMuzzles { get; set; }
 
     /// <summary>
-    /// The mission's last-updated time. Starts at 0 and is advanced by
-    /// <see cref="Update"/>; the C++ field is <c>m_lastUpdate</c>
-    /// (<c>missionigc.cpp:3127</c>). Before any tick it is 0, matching the
-    /// C++ constructor (<c>missionigc.h:397</c> keeps the mission
-    /// <c>STAGE_NOTSTARTED</c>). Read-only to callers; written only by
-    /// <see cref="Update"/>.
+    /// The mission's last-updated time. Seeded by Assemble to initialTime,
+    /// matching CmissionIGC::Initialize(now) (missionigc.cpp:3055-3059), then
+    /// advanced by Update even while NotStarted (missionigc.cpp:3180-3181).
+    /// Read-only to callers.
     /// </summary>
     public double LastUpdate { get; private set; }
 
@@ -474,8 +472,11 @@ public sealed class Mission
         StaticCore core,
         MissionMap map,
         IReadOnlyList<SideSpec> sides,
-        IIgcSite site)
+        IIgcSite site,
+        double initialTime = 0)
     {
+        if (!double.IsFinite(initialTime) || initialTime < 0)
+            throw new ArgumentOutOfRangeException(nameof(initialTime));
         ArgumentNullException.ThrowIfNull(core);
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(sides);
@@ -518,7 +519,7 @@ public sealed class Mission
 
         var sectorsById = new Dictionary<short, Sector>(map.Clusters.Count);
         foreach (var cluster in map.Clusters)
-            sectorsById.Add(cluster.ClusterId, new Sector(cluster));
+            sectorsById.Add(cluster.ClusterId, new Sector(cluster, initialTime));
 
         // 3. Attribute stations and asteroids by ClusterId.
         foreach (var g in map.Stations.GroupBy(s => RequireSector(s.ClusterId, "station", s.Name)))
@@ -558,7 +559,10 @@ public sealed class Mission
         // the P132 cross-side visibility sweep can reconcile every side — even
         // one with no presence in the sector — to its correct SeenBySide value.
         foreach (var s in sectors) s.MissionSides = sideList;
-        var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site);
+        // Native CmissionIGC::Initialize(now) seeds m_lastUpdate (missionigc.cpp:3055-3059).
+        // Seed BEFORE any ship placement or countdown can observe this world.
+        var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site)
+        { LastUpdate = initialTime };
         foreach (var sector in sectors)
         {
             sector.Mission = mission;

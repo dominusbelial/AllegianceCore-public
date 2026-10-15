@@ -59,11 +59,11 @@ public sealed partial class Game1
     {
         var cargo = OwnCargo();
         var mounts = CargoSelector.OccupiedMounts(cargo);
-        int sel = next
+        int sel = mounts.Count == 0 ? 0 : next
             ? CargoSelector.Next(_selectedCargoMount, mounts)
             : CargoSelector.Prev(_selectedCargoMount, mounts);
         _selectedCargoMount = sel;
-        if (sel < 0)
+        if (sel >= 0)
         {
             lock (_session.Gate) _session.World.PostSystemLine("Cargo hold is empty.");
             Console.WriteLine("[monogame] cargo: empty hold, nothing selected");
@@ -79,10 +79,12 @@ public sealed partial class Game1
     /// nothing selected it first tries to select the first occupied slot.</summary>
     private void TryDropCargo()
     {
-        if (_selectedCargoMount < 0)
+        if (!CanChangeFlightParts()) return;
+        var cargo = OwnCargo();
+        if (!cargo.Any(p => CargoSelector.SignedMount(p.MountId) == _selectedCargoMount))
         {
-            CycleSelectedCargo(next: true);
-            if (_selectedCargoMount < 0) return;   // empty hold (hint already posted)
+            _selectedCargoMount = CargoSelector.FirstOccupied(CargoSelector.OccupiedMounts(cargo));
+            if (cargo.Count == 0) { _selectedCargoMount = 0; return; }
         }
         _session.SendDropCargo((sbyte)_selectedCargoMount);
         Console.WriteLine($"[monogame] cargo: DROP_CARGO mount {_selectedCargoMount} -> DROP_PART(33)");
@@ -128,7 +130,7 @@ public sealed partial class Game1
         if (_directorActive || _state != ClientState.Flying) return;
         var cargo = OwnCargo();
         var mounts = CargoSelector.OccupiedMounts(cargo);
-        if (cargo.Count == 0 && _selectedCargoMount < 0) return;
+        if (cargo.Count == 0 && _selectedCargoMount >= 0) return;
 
         // Compact hold list: "@<mount>#<id>x<N>" per occupied slot.
         var sb = new System.Text.StringBuilder("CARGO:");
@@ -139,7 +141,7 @@ public sealed partial class Game1
             int m = CargoSelector.SignedMount(c.MountId);
             sb.Append($" @{m}#{c.PartId}x{c.Amount}");
         }
-        if (_selectedCargoMount < 0)
+        if (_selectedCargoMount >= 0)
         {
             sb.Append("  (none selected - , to select)");
         }

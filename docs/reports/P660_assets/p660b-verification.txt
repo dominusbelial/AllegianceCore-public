@@ -1,0 +1,64 @@
+P660b verification — 2026-10-14
+Branch integ/rig-next-match; HEAD 535b56b3; no commits or pushes.
+
+Commands and measurements are described in ../P660_NEXT_MATCH.md, P660b section.
+Raw run logs and TRX files: /tmp/p660b-*.log and /tmp/p660b-results/.
+
+p660b-P641FlightPartsLiveTests-1.trx: passed=1 failed=0 skipped=0 total=1
+p660b-P641FlightPartsLiveTests-2.trx: passed=1 failed=0 skipped=0 total=1
+p660b-P641FlightPartsLiveTests-3.trx: passed=1 failed=0 skipped=0 total=1
+p660b-PromoteTurretKeyLiveTests-1.trx: passed=1 failed=0 skipped=0 total=1
+p660b-PromoteTurretKeyLiveTests-2.trx: passed=1 failed=0 skipped=0 total=1
+p660b-PromoteTurretKeyLiveTests-3.trx: passed=1 failed=0 skipped=0 total=1
+p660b-baseline.trx: passed=0 failed=2 skipped=0 total=2
+  FAILED Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsLiveTests.Production_inventory_commands_weapon_selection_and_booster_roundtrip
+  P641 live condition timed out: replace
+  FAILED Allegiance.ClientCore.MonoGame.Tests.PromoteTurretKeyLiveTests.Live_promote_turret_key_over_production_send_promotes_the_gunner
+  Assert.Contains() Failure: Filter not matched in collection Collection: [ChatMessage { BObjectModel = False, Cd = Allegiance.Core.Wire.ChatData, ChatTarget = 0, CommandID = 0, Message = "Arrokoth secured.", ··· }, ChatMessage { BObjectModel = False, Cd = Allegiance.Core.Wire.ChatData, ChatTarget = 0, CommandID = 0, Message = "Ceto secured.", ··· }, ChatMessage { BObjectModel = False, Cd = Allegiance.Core.Wire.ChatData, ChatTarget = 0, CommandID = 0, Message = "Enemy miner spotted in Quaoar", ··· }]
+p660b-client-flake-1.trx: passed=1 failed=0 skipped=0 total=1
+p660b-client-flake-2.trx: passed=1 failed=0 skipped=0 total=1
+p660b-client-flake-3.trx: passed=1 failed=0 skipped=0 total=1
+p660b-core-flake-1.trx: passed=1 failed=0 skipped=0 total=1
+p660b-core-flake-2.trx: passed=1 failed=0 skipped=0 total=1
+p660b-core-flake-3.trx: passed=1 failed=0 skipped=0 total=1
+p660b-enhanced-fixed.trx: passed=2 failed=0 skipped=0 total=2
+p660b-enhanced.trx: passed=1 failed=1 skipped=0 total=2
+  FAILED Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsLiveTests.Production_inventory_commands_weapon_selection_and_booster_roundtrip
+  P641 live condition timed out: buy and launch
+p660b-fixed.trx: passed=2 failed=0 skipped=0 total=2
+p660b-full-ClientCore.MonoGame.trx: passed=2120 failed=0 skipped=3 total=2123
+p660b-full-ClientCore.trx: passed=892 failed=1 skipped=1 total=894
+  FAILED Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume
+  legacy 200/450 should park hull 26 OUTSIDE the ~115 u transit volume, but minWarpDist=131.5
+p660b-full-Core.trx: passed=4169 failed=1 skipped=0 total=4170
+  FAILED Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking
+  healthy bot 0 must keep receiving per-tick updates during the flood (had 0, now 0)
+p660b-showcase.trx: passed=1 failed=0 skipped=0 total=1
+intermission timer A=12s B=12s
+MCP showcase: 30/30 bots migrated, 2/2 humans connected, sim elapsed=27.250s, wall total=21.295s, exceptions=0
+
+Baseline stream excerpt (loadout snapshots precede explicit command echoes):
+[loadout] ship 8098 Mounted -> LOADOUT_CHANGE(96) hull 792 1 part(s) 0 passenger(s) -> 0 same-side peer(s)
+[loadout] ship 8098 Mounted -> LOADOUT_CHANGE(96) hull 792 2 part(s) 0 passenger(s) -> 0 same-side peer(s)
+[loadout] ship 8098 RemovePassenger -> LOADOUT_CHANGE(96) hull 792 2 part(s) 0 passenger(s) -> 2 same-side peer(s)
+[loadout] ship 8099 HullChange -> LOADOUT_CHANGE(96) hull 792 0 part(s) 0 passenger(s) -> 2 same-side peer(s)
+[loadout] ship 8099 AddPassenger -> LOADOUT_CHANGE(96) hull 792 2 part(s) 1 passenger(s) -> 2 same-side peer(s)
+[loadout] ship 8098 Removed -> LOADOUT_CHANGE(96) hull 792 0 part(s) 0 passenger(s) -> 2 same-side peer(s)
+[promote] 1 ship 8098: promoted gunner 8099 at mount 2 -> PROMOTE(189) shipidPromoted=8099 sector 1051 wide; old parent 8098 demoted to its own seat
+[loadout] ship 8098 Removed -> LOADOUT_CHANGE(96) hull 228 0 part(s) 0 passenger(s) -> 1 same-side peer(s)
+[loadout] ship 8098 Mounted -> LOADOUT_CHANGE(96) hull 228 1 part(s) 0 passenger(s) -> 1 same-side peer(s)
+[loadout] ship 8098 Mounted -> LOADOUT_CHANGE(96) hull 228 2 part(s) 0 passenger(s) -> 1 same-side peer(s)
+[loadout] ship 8098 Mounted -> LOADOUT_CHANGE(96) hull 228 3 part(s) 0 passenger(s) -> 1 same-side peer(s)
+[swappart] 1 ship 8098: Weapon mount 0 -> -2 -> SWAP_PART(34) shipID=8098 sector 1051 wide
+[loadout] ship 8098 Mounted -> LOADOUT_CHANGE(96) hull 228 3 part(s) 0 passenger(s) -> 1 same-side peer(s)
+[swappart] 1 ship 8098: Weapon mount -2 -> 0 -> SWAP_PART(34) shipID=8098 sector 1051 wide
+[loadout] ship 8098 Mounted -> LOADOUT_CHANGE(96) hull 228 2 part(s) 0 passenger(s) -> 1 same-side peer(s)
+[swappart] 1 ship 8098: Weapon mount -1 -> 0 -> SWAP_PART(34) shipID=8098 sector 1051 wide
+
+Final build:
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:05.87

@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using G1 = Allegiance.ClientCore.MonoGame.Game1;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
@@ -31,6 +32,7 @@ public class RendererDisposalGuardTests
         "_treasureRenderer",          // P646 — was never disposed
         "_chaffRenderer",             // P646 — was never disposed
         "_damageDebrisRenderer",      // P646 — was never disposed
+        "_commandGridRenderer",       // P640 — disposed by UnloadContent
         "_debrisRenderer",            // P646 — was never disposed
         "_engineTrailRenderer",       // P646 — was never disposed
         "_nozzleGlowRenderer",        // P646 — was never disposed
@@ -81,5 +83,21 @@ public class RendererDisposalGuardTests
         var missing = rendererFields.Where(n => !DisposedOnUnload.Contains(n)).ToList();
         Assert.True(missing.Count == 0,
             "Renderer fields not disposed in UnloadContent: " + string.Join(", ", missing));
+
+        // P642b: the registry alone can pass even if a Dispose call is removed.
+        // Verify the actual method too, following the other source guards.
+        string? root = AppContext.BaseDirectory;
+        while (root is not null && !File.Exists(Path.Combine(root, "src", "Allegiance.ClientCore.Game", "Game1.cs")))
+            root = Path.GetDirectoryName(root);
+        Assert.NotNull(root);
+        string source = File.ReadAllText(Path.Combine(root, "src", "Allegiance.ClientCore.Game", "Game1.cs"));
+        source = Regex.Replace(source, @"//[^\r\n]*|/\*[\s\S]*?\*/", "");
+        int start = source.IndexOf("protected override void UnloadContent()", StringComparison.Ordinal);
+        Assert.True(start >= 0, "UnloadContent must exist");
+        int end = source.IndexOf("base.UnloadContent();", start, StringComparison.Ordinal);
+        Assert.True(end > start, "UnloadContent must call its base implementation");
+        string unload = source[start..end];
+        foreach (string field in rendererFields)
+            Assert.Matches($@"\b{Regex.Escape(field)}\s*\?\s*\.\s*Dispose\s*\(\s*\)", unload);
     }
 }

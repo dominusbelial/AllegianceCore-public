@@ -479,6 +479,15 @@ public sealed partial class Game1
         string s = m.ToString();
         switch (m)
         {
+            case CameraMode.Command:
+                s += ":" + _commandCamera.TopDown;
+                if (_commandCamera.Tracking) s += ":track:" + _autoTarget;
+                lock (_session.Gate) s += ":sector:" + RenderSector(CurrentOwnSector() ?? -1);
+                break;
+            case CameraMode.DroneFollow:
+            case CameraMode.DroneCockpit:
+                s += ":" + _commandee?.Id;
+                break;
             case CameraMode.ExternalTarget:
             case CameraMode.ExternalFlyBy:
             case CameraMode.ExternalFlyByTarget:

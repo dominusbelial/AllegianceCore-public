@@ -490,7 +490,8 @@ public sealed class P467E2eGunDamageDevLiveTests
         server.ShipSpawner = (core, mission, shipId) =>
         {
             short sideIdx = (short)(seq < 1 ? 0 : 1);
-            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // H-08: the weapon shooter's one round needs hull ammo capacity.
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First() with { MaxAmmo = 1 };
             var pos = seq == 0 ? new Vector3(0f, 0f, 0f)
                      : seq == 1 ? new Vector3(0f, 0f, -gap)
                      : new Vector3(400f, 940f, 880f);
@@ -579,7 +580,8 @@ public sealed class P467E2eGunDamageDevLiveTests
     /// hull lands a survivable, measurable hull delta in [0.08, 0.55].</summary>
     private static (DataPartTypeIGC.Weapon Weapon, DataProjectileTypeIGC Proj) E2eWeapon(StaticCore core)
     {
-        var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        // H-08: the weapon shooter's one round needs hull ammo capacity.
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First() with { MaxAmmo = 1 };
         foreach (var p in core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon)
             .Select(p => (DataPartTypeIGC.Weapon)p.Type))
         {

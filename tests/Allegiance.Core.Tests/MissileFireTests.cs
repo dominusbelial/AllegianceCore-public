@@ -94,7 +94,11 @@ public class MissileFireTests
     private static (Ship Shooter, Ship Target) PlaceDuo(Mission mission, Sector sector, DataMissileTypeIGC mt)
     {
         var (core, _, _) = Rep.Value;
-        var hull = core.HullTypes.Values.First();
+        // Use a combat hull with a real magazine (P653 H-08 clamps a launcher's
+        // rounds to hull.CapacityMagazine / expendableSize, min 1 —
+        // launchertypeigc.h:130-145). The generic Values.First() is hull 3
+        // 'Miner' with CapacityMagazine=0, which would clamp every mount to 1.
+        var hull = core.HullTypes.Values.Where(h => h.CapacityMagazine >= 10).OrderBy(h => h.HullId).First();
         var shooter = new Ship(901, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
         mission.PlaceShip(shooter, sector);
         shooter.SideId = 0;

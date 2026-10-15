@@ -482,6 +482,13 @@ public sealed partial class Server
             SendExplosionEvent(targets, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
     }
 
+    // Explicit PROMOTE/SWAP_PART echoes apply their own mutations on clients.
+    // Publishing intermediate snapshots first would erase PROMOTE's parent or
+    // make SWAP_PART undo an already-applied swap. Sim-thread scoped, with finally
+    // restoration at the command handlers. Native FedSrv.CPP:13530-13555 does
+    // not queue LOADOUT_CHANGE from these low-level site events.
+    private int _loadoutCommandDepth;
+
     /// <summary>
     /// Handle a ship loadout mutation (<see cref="ServerHost.LoadoutChange"/>,
     /// raised from <c>Sim/Ship.cs</c> <c>ChangeHull</c>/<c>MountPart</c>/
@@ -533,6 +540,8 @@ public sealed partial class Server
         if (lc == LoadoutChange.HullChange)
             _crossSideExportSent.RemoveWhere(e => e.ShipId == ship.Id);
 
+        if (_loadoutCommandDepth > 0) return;
+
         // The changed ship's CURRENT whole loadout (hull + every part), rebuilt
         // fresh at broadcast time (native ExportShipLoadout, FedSrv/fsship.cpp:710),
         // plus one PassengerData per boarded child (fsship.cpp:726-733). sidShip is
@@ -541,8 +550,13 @@ public sealed partial class Server
         {
             HullId = ship.HullType.HullId,
             SidShip = ship.Id,
-            Parts = ship.Parts
-                .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, p.FractionMounted))
+            // Launch repair uses 255 for fully armed runtime parts. Native
+            // ExpandedPartData stores BytePercentage(1) == 240 (Utility.h:1311-
+            // 1327; shipIGC.h:819). Keep the final post-launch inventory,
+            // including refilled packs, but publish its native full-mount byte.
+            Parts = ship.ExportInventoryForAck()
+                .Select(p => p.FractionMounted == byte.MaxValue
+                    ? p with { FractionMounted = ExpandedPartData.FullyMounted } : p)
                 .ToArray(),
             Passengers = ship.ChildShips
                 .Select(c => new PassengerData(c.Id, (byte)(c.TurretId ?? 0)))

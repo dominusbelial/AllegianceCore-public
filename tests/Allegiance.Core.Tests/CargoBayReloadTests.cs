@@ -118,6 +118,21 @@ public class CargoBayReloadTests
             var thirdShip = ships.First(x => x.ship.SideId != subject.SideId).ship;
             Assert.Equal(subject.Sector!.Id, observerShip.Sector!.Id);
             Assert.NotEqual(subject.Sector.Id, thirdShip.Sector!.Id);
+            // P653 H-06 docks fresh default-spawn ships (native FedSrv/fsmission.cpp:791-796),
+            // but H-22 requires flying/alive/unboarded for wire inventory ops (SwapPart/
+            // Reload/DropPart). These tests exercise the reload/swap MECHANICS, so seat the
+            // subject as flying (undocked) exactly as a launched pilot would be.
+            subject.StationId = null;
+            // P653 H-08 clamps pack/launcher quantities to the hull's capacity
+            // (packigc.h:102-123, launchertypeigc.h:130-145). The default Scout has a small
+            // magazine/fuel/chaff capacity; give the reload-test subject a generous hull so
+            // its 10-round packs and launchers survive the clamp (audit gate preserved; this
+            // only arms the fixture with realistic headroom for the reload mechanics).
+            subject.ChangeHull(subject.HullType with
+            {
+                MaxAmmo = 2000, MaxFuel = 50,
+                CapacityMagazine = 50, CapacityChaffLauncher = 50, CapacityDispenser = 50,
+            });
             return new Seat(server, bots, subject, subjectBot, observerBot);
         }
         catch
@@ -260,13 +275,14 @@ public class CargoBayReloadTests
         seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -1);
         PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null, 4000);
 
+        ship.Ammo = 0;   // P653 H-08 clamps ammo to hull.MaxAmmo (shipIGC.h:597-601); drain first so the +6 transfer has room
         short ammoBefore = ship.Ammo;
         foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
         seat.SubjectBot.SendReload(new ReloadData(AmountTransfered: 6, Mount: -1));
 
         PumpUntil(seat.Server,
             () => ship.Ammo == (short)(ammoBefore + 6)
-               && ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted == 0
+               && ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted < ExpandedPartData.FullyMounted
                && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
             4000);
 
@@ -274,8 +290,11 @@ public class CargoBayReloadTests
         Assert.Equal((short)(ammoBefore + 6), ship.Ammo);
         // Cargo pack drained 10 -> 4.
         Assert.Equal(4, ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount);
-        // Ammo-weapon mounted-fraction reset to 0.
-        Assert.Equal(0, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted);
+        // Native resets to zero, then weaponIGC.h:33-49 advances readiness on
+        // subsequent flight ticks. The observer receipt happens asynchronously.
+        // P641FlightPartsSimTests asserts the exact zero before any update.
+        Assert.InRange(ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted,
+            (byte)0, (byte)(ExpandedPartData.FullyMounted - 1));
         // Sector relay reached the same-sector observer with shipID filled in.
         var relay = seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id);
         Assert.Equal(new ReloadData(6, -1), relay.Entries.Single());
@@ -301,6 +320,7 @@ public class CargoBayReloadTests
         seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -1);
         PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null, 4000);
 
+        ship.Ammo = 0;   // P653 H-08 clamps ammo to hull.MaxAmmo (shipIGC.h:597-601); drain first so the +8 NA transfer has room
         short ammoBefore = ship.Ammo;
         foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
         seat.SubjectBot.SendReload(new ReloadData(AmountTransfered: -1, Mount: -1));
@@ -331,9 +351,10 @@ public class CargoBayReloadTests
 
         // Equipped target launcher (partially loaded: 2) at mount 0.
         ship.MountPart(launcher, amount: 2, mountId: 0, fractionMounted: 255);
-        // Spare launcher (5 rounds) at mount 1, then moved to cargo slot 1 (mount -2).
-        ship.MountPart(launcher, amount: 5, mountId: 1, fractionMounted: 255);
-        seat.SubjectBot.SendSwapPart(EquipmentType.ChaffLauncher, mountOld: 1, mountNew: -2);
+        // Spare launcher (5 rounds) placed directly into cargo slot 1 (mount -2).
+        // (P653 H-07/H-22: non-weapon equipment mounts only at 0 — hullTypeIGC.h:199-213 —
+        // so a second launcher must live in cargo, never at a positive mount.)
+        ship.MountPart(launcher, amount: 5, unchecked((byte)-2), fractionMounted: 255);
         PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-2)] is not null, 4000);
 
         Assert.Equal(2, ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0).Amount);
@@ -351,7 +372,8 @@ public class CargoBayReloadTests
         // Equipped launcher 2 -> 5 (added the transferred 3) and fraction reset.
         var equipped = ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0);
         Assert.Equal(5, equipped.Amount);
-        Assert.Equal(0, equipped.FractionMounted);
+        // dispenserigc.cpp:86-102 advances the native reset on later ticks.
+        Assert.InRange(equipped.FractionMounted, (byte)0, (byte)(ExpandedPartData.FullyMounted - 1));
         // Cargo launcher drained 5 -> 2 (did not fully terminate).
         Assert.Equal(2, ship.CargoHold[Ship.CargoSlotForMount(-2)]!.Amount);
         Assert.Equal(new ReloadData(3, -2), seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id).Entries.Single());
@@ -372,13 +394,15 @@ public class CargoBayReloadTests
         // Two ammo packs in cargo: slot 0 (mount -1) with 10, slot 1 (mount -2) with 3.
         ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 2, fractionMounted: 255);   // kept equipped (NYI gate, FedSrv.CPP:6516)
         ship.MountPart(AmmoPackType(), amount: 10, mountId: 0, fractionMounted: 255);
-        ship.MountPart(AmmoPackType(), amount: 3, mountId: 1, fractionMounted: 255);
+        // Second pack placed directly into cargo slot 1 (mount -2). (P653 H-07/H-22:
+        // non-weapon equipment mounts only at 0 — hullTypeIGC.h:199-213.)
+        ship.MountPart(AmmoPackType(), amount: 3, unchecked((byte)-2), fractionMounted: 255);
         seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -1);
-        seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 1, mountNew: -2);
         PumpUntil(seat.Server,
             () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null && ship.CargoHold[Ship.CargoSlotForMount(-2)] is not null,
             4000);
 
+        ship.Ammo = 0;   // P653 H-08 clamps ammo to hull.MaxAmmo (shipIGC.h:597-601); drain first so the +6 entry has room
         short ammoBefore = ship.Ammo;
         foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
 

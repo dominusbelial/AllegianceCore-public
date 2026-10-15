@@ -1,0 +1,48 @@
+c9d3e054 2026-08-30 P25: port FM_CS_CHATMESSAGE(23), wire it live (Everyone + Team)
+7746abf8 2026-08-31 P29: port FM_S_MISSIONDEF(38)+FM_S_JOINED_MISSION(95), send before EXPORT so the client loads its static core
+8c3e6790 2026-08-31 P31a: port + send FM_S_PLAYERINFO(10), the side-carrier the SET_CLUSTER handler was missing
+3f7ac0ca 2026-08-31 P33: wire Individual/NoFilter, AllSector, FriendlySector, Group chat targets
+7f143edf 2026-08-31 P37: send FM_S_MISSION_STAGE -- real WOPR bot flight confirmed, first time ever
+8cc220bf 2026-09-02 P58: broadcast same-side teammate SHIP_STATUS to each peer
+a9f2cd17 2026-09-03 P62: broadcast a real teammate-ship EXPORT to each peer, once, before its status
+9fc49edc 2026-09-03 P63: broadcast a real teammate-ship PLAYERINFO to each peer, once, after its EXPORT
+41a447da 2026-09-03 P64: export real asteroid data to each peer at join (OT_asteroid 5)
+d4f35df4 2026-09-03 P67: relay FM_CS_CHATBUOY(108) to selected chat peers
+5707cebe 2026-09-04 P70: fix vizfight's spectator page 404ing outside its own project dir
+ed5f9933 2026-09-07 P90: minimal non-homing Missile sim object + fire/destroy same-side broadcast (Phase 2, slice 4)
+b235d6e4 2026-09-07 P94: minimal static Mine sim object + deploy/destroy same-side broadcast (Phase 2, slice 7)
+d49db4c7 2026-09-07 P99: minimal static Probe sim object + same-side create/destroy broadcast
+7ff1433f 2026-09-07 P101: warp bombing — missile-vs-warp trigger, whole-mission WARP_BOMB(188) broadcast, 15s delayed real explosion
+8baf38bd 2026-09-08 P102: asteroid combat destructibility — direct-hit target in ResolveCombatCollisions + Asteroid.ReceiveDamage + whole-mission ASTEROID_DESTROYED(86) broadcast
+6b7c82b6 2026-09-08 P106: FM_C/S_VIEW_CLUSTER(104/177) docked spectator/map-view request-reply (no new server-side per-player state; reuses same-side visibility gate Server.cs:521)
+28413e3a 2026-09-08 P110: TELEPORT_ACK(102) — extend the existing FM_C_DOCKED(48) handler to serve the non-NA teleport/relocation dock request. New FM_S_TELEPORT_ACK(102) codec (st
+764cd04e 2026-09-09 P120: ASTEROID_MINED(198) real-time ore broadcast — whole-mission, finishes the MineAsteroidEvent seam
+78a724f8 2026-09-09 P121: SET_BRIEFING_TEXT(9) join-sync mission briefing
+b23c6011 2026-09-09 P124: SIDE_TECH_CHANGE(75)/SIDE_ATTRIBUTE_CHANGE(76)/POSTER(27) -- confirmed N/A (findings)
+a2d91b09 2026-09-09 P125: Station combat damage + STATION_DESTROYED(59) — shield-absorbs-then-overflows-to-armor (CstationIGC::ReceiveDamage port), live ArmorFraction/ShieldFractio
+20221cd9 2026-09-10 P129: MUTE(117)/STATIC_MAP_INFO(11)/ICQ_CHAT_ACK(107) -- confirmed N/A
+95127ee8 2026-09-10 P130: RANK_INFO(13) — join-sync rank table. Wire/RankInfo.cs codec (FM_VAR_ITEM ranks + short cRanks; RankInfoEntry 36 B under default MSVC packing per Messages
+738db781 2026-09-10 P131: cross-side visibility foundation — per-side detection state + scanner-range + line-of-sight (no wiring)
+207b18f9 2026-09-10 P132: periodic cross-side detection sweep — wires P131's foundation in
+c5c03ad8 2026-09-10 P133: STATIONS_UPDATE(57) — per-side visible-station hull/shield sync
+5d236af4 2026-09-10 P134: ASTEROIDS_UPDATE(179) — per-side visible-asteroid sync
+830e6a16 2026-09-10 P135: PROBES_UPDATE(92) — per-side visible-probe sync
+3a28d7d0 2026-09-10 P141: ENTER_GAME(128) — join-sync completion notification
+b1194eed 2026-09-10 P142: HIGHLIGHT_CLUSTER(199) — sector-highlight relay to the sender's side
+7028b665 2026-09-10 P146: SET_WINGID(106) — wing-group membership tag, side-wide relay
+346213c4 2026-09-11 P159: fair-share asteroid contention among same-side NPC miners
+58f9dd01 2026-09-11 P164: BUILDINGEFFECT_DESTROYED(181) wire (Stage 2) — interrupted-build whole-mission broadcast
+85deb710 2026-09-11 P167: cross-side asteroid-contention lockout (native nEnemy>0 branch)
+f58f106d 2026-09-12 P174: Allegiance.Lobby Stage 1 — the core server-directory app
+9794f0f6 2026-09-12 P176: opt-in lobby heartbeat client in Allegiance.Server (Lobby Stage 2)
+296b6d9a 2026-09-12 P177: deployment polish — Dockerfiles, docker-compose, CI, LOBBY_APP.md (Lobby Stage 3)
+622eddfa 2026-09-12 P180: team-lobby Stage 1 — real ready-up gating on a genuine pre-game phase
+80492e03 2026-09-12 P183: team/mission leadership + real side join/quit
+43dd41e6 2026-09-12 P184: position-request accept/reject workflow + FORCE_TEAM_READY
+7c95df2c 2026-09-12 P186: leader-gated team-lobby config toggles
+b8e78ce1 2026-09-12 P187: ballot/voting system — #resign/#draw/#mutiny, BALLOT(17)/CANCEL_BALLOT(18)/VOTE(19), per-mission pending-ballot state + OnPassed effects
+2fd719b6 2026-09-12 P190: team alliances — CHANGE_ALLIANCE(196)/CHANGE_ALLIANCES(197) wire codecs, per-side AllyGroup, UpdateAlliances merge/clear port, owner-gate hardening beyond
+69ee9d32 2026-09-13 P193: player-score/rank foundation — in-memory, connection-lifetime-only PlayerScore (Rank/Score) on LiveShip
+d0e800ba 2026-09-13 P195: RANDOMIZE_TEAMS(21) — rank-balanced side reassignment (highest-rank-first greedy rebalance across real sides)
+9694ae09 2026-09-13 P199: REQUEST_MONEY(182) — ask whoever holds the team's funds
+a69c2886 2026-09-13 P200: PINGDATA(194)/REQPINGDATA(195) server-wide latency roster

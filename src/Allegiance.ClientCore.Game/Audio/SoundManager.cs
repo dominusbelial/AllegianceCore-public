@@ -693,6 +693,20 @@ public sealed class SoundManager : IDisposable
 
     /// <summary>Play the autopilot-engage voice chime (one-shot). No-op when
     /// audio is not loaded.</summary>
+    private SoundEffect? _commandMessage;
+    private bool _commandMessageAttempted;
+    public void PlayCommandMessage()
+    {
+        if (!IsLoaded) return;
+        if (!_commandMessageAttempted)
+        {
+            _commandMessageAttempted = true;
+            try { _commandMessage = _content.Load<SoundEffect>("Sounds/receivedobjective"); }
+            catch (ContentLoadException) { }
+        }
+        if (_commandMessage is { } sound) PlayWarnOneShot(sound);
+    }
+
     public void PlayAutopilotEngage()
     {
         PlayWarnOneShot(_apEngage);
@@ -1431,6 +1445,7 @@ public sealed class SoundManager : IDisposable
             _missileTone?.Dispose();
             _missileWarning?.Dispose();
             foreach (var sfx in _ambienceVariants) sfx.Dispose();
+            _commandMessage?.Dispose();
             _apEngage?.Dispose();
             _apDisengage?.Dispose();
             _countdownStart?.Dispose();

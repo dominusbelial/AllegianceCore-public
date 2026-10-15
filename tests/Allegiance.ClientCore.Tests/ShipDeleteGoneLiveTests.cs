@@ -103,6 +103,10 @@ public sealed class ShipDeleteGoneLiveTests
         var s = new ConnectionSession();
         s.Connect(server.BoundPort, name);
         s.SendLogonRequest(Request(name));
+        // All three scenes assign watcher/departer roles by arrival order.
+        // Complete this seat before the caller starts the next connection.
+        Assert.True(PumpUntil(server, () => s.World.MyShipId is not null, 4000) < 4000,
+            $"{name} did not seat");
         return s;
     }
 

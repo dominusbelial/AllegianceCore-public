@@ -124,9 +124,9 @@ public sealed partial class Server
     /// <c>LeaveShip()</c> sends a dedicated acknowledgement — they only flush
     /// the <c>SHIP_STATUS</c> updates queued by their <c>ShipStatus-&gt;SetState</c>
     /// calls (<c>FedSrv.CPP:2450-2457</c>). This port's equivalent mechanism is
-    /// the existing per-tick status refresh (<see cref="BroadcastShipStates"/>
-    /// → <see cref="MakeOwnShipStatus"/>, which now derives the boarded state
-    /// directly from the ship), so <b>no new success message is introduced</b>.</item>
+    /// an immediate same-side status refresh using <see cref="MakeOwnShipStatus"/>,
+    /// so all clients know the parent before a subsequent PROMOTE arrives.
+    /// <b>No new success message is introduced</b>.</item>
     /// <item><b>Failure ⇒ <c>BOARD_NACK(178)</c> to the requester alone.</b>
     /// <c>g.fm.SendMessages(pfsPlayer-&gt;GetConnection(), ...)</c>
     /// (<c>FedSrv.CPP:6412-6416</c>). Covers: not a started mission; the leave
@@ -168,6 +168,16 @@ public sealed partial class Server
         {
             SendBoardNack(from, req.SidParent);
             ConsoleLog.Write($"[boardship] {from} ship {ship.Id} -> sidParent {req.SidParent} refused — BOARD_NACK(178) to requester only");
+        }
+        else
+        {
+            // Native BoardShip flushes the queued SHIP_STATUS changes
+            // (FedSrv.CPP:2450-2457). A periodic teammate refresh can arrive
+            // after PROMOTE, whose wire payload names only the child.
+            var packet = FedPacket.Pack([MakeOwnShipStatus(ship.Id, live).Encode()]);
+            foreach (var peer in _peerShips)
+                if (peer.Value.Ship.Mission == mission && peer.Value.Ship.SideId == ship.SideId)
+                    SendPeer(peer.Key, packet);
         }
     }
 
@@ -297,7 +307,9 @@ public sealed partial class Server
         {
             if (child.TurretId == req.MountidPromoted)
             {
-                child.Promote();
+                _loadoutCommandDepth++;
+                try { child.Promote(); }
+                finally { _loadoutCommandDepth--; }
                 promoted = child;
                 break;
             }
@@ -364,6 +376,9 @@ public sealed partial class Server
             return;
         }
 
+        // Native GetCluster gate: FedSrv.CPP:6302,6466,6515-6516.
+        if (ship.StationId is not null || ship.Sector is null || ship.Dead || ship.SideId is not >= 0) return;
+
         // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
         // (FedSrv.CPP:6464): a boarded gunner/observer cannot swap parts.
         if (ship.ParentShip is not null)
@@ -378,7 +393,11 @@ public sealed partial class Server
         // ship's cargo hold rather than the equipped-mount list
         // (Ship.TrySwapPartWithCargo), native's mechanism for moving a part
         // into/out of cargo.
-        if (!ship.TrySwapPartWithCargo(req.EtOld, req.MountOld, req.MountNew))
+        bool swapped;
+        _loadoutCommandDepth++;
+        try { swapped = ship.TrySwapPartWithCargo(req.EtOld, req.MountOld, req.MountNew); }
+        finally { _loadoutCommandDepth--; }
+        if (!swapped)
         {
             Console.WriteLine($"[swappart] {from} ship {ship.Id}: no mounted {req.EtOld} part at mount {req.MountOld} — silent no-op (native, FedSrv.CPP:6485)");
             return;
@@ -449,6 +468,9 @@ public sealed partial class Server
             ConsoleLog.Write($"[reload] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6506)");
             return;
         }
+
+        // Native GetCluster gate: FedSrv.CPP:6302,6466,6515-6516.
+        if (ship.StationId is not null || ship.Sector is null || ship.Dead || ship.SideId is not >= 0) return;
 
         // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
         // (FedSrv.CPP:6509): a boarded gunner/observer cannot reload its own hold.
@@ -577,6 +599,9 @@ public sealed partial class Server
             return;
         }
 
+        // Native GetCluster gate: FedSrv.CPP:6302,6466,6515-6516.
+        if (ship.StationId is not null || ship.Sector is null || ship.Dead || ship.SideId is not >= 0) return;
+
         // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
         // (FedSrv.CPP:6300): a boarded gunner/observer cannot drop its own parts.
         if (ship.ParentShip is not null)
@@ -590,6 +615,12 @@ public sealed partial class Server
         // into space); a non-negative mount drops an equipped part. The wire
         // Mount is a signed char, so a high-bit byte is a negative mount.
         sbyte signedMount = unchecked((sbyte)req.Mount);
+        if ((short)req.Et < -1 || (short)req.Et > 7
+            || signedMount < -Ship.CargoCapacity || signedMount >= 8
+            || signedMount > 0 && req.Et != EquipmentType.Weapon
+            || signedMount >= 0 && (short)req.Et < 0) return;
+        if (signedMount < 0 && ship.CargoHold[-signedMount - 1] is { } cargo
+            && (short)req.Et >= 0 && cargo.EquipmentType != req.Et) return;
         bool droppedOk;
         MountedPart dropped;
         if (signedMount < 0) droppedOk = ship.TryRemoveCargoPart(signedMount, out dropped);
@@ -2183,6 +2214,8 @@ public sealed partial class Server
     /// </summary>
     private void HandleDirectNpcBuildOrder(ConnectionId from, LiveShip live, Ship target, OrderChange req)
     {
+        // This direct NPC build path is port-added (native FedSrv.CPP:7281-7322).
+        if (live.Ship.Mission is not { } mission || !IsSideLeader(mission, live.Ship)) return;
         StartBuildIfLegal(from, live.Ship.Id, target, req);
     }
 
@@ -2222,19 +2255,16 @@ public sealed partial class Server
     /// the port's stand-in for native "the builder reaches the asteroid's
     /// cluster"; a rock elsewhere is refused rather than crashing the tick.</item>
     /// </list>
-    /// A legal command starts the timed construction immediately via
-    /// <see cref="Model.Sector.StartBuildingEffect"/> — this port's established
-    /// builder behavior (P163-165 "no travel-before-build gate", P285): unlike
-    /// native, it does not fly the ship to and physically ENTER the asteroid
-    /// first, because the P168 collision-avoidance would deflect a ship trying
-    /// to occupy the rock's volume and native's enter is superseded by the
-    /// building-effect's collision exemption (<c>buildingeffectigc.h:256-258</c>)
-    /// which this port does not implement. The legality gate (the task's core)
-    /// is real and enforced; the approach is abstracted exactly as the NPC
-    /// autonomous Builder and P285 already abstract it.
+    /// NPC constructors retain an accepted target while traveling and register
+    /// construction only on arrival (native shipIGC.cpp:2810-2827). Player
+    /// Builder hulls use the existing immediate effect path. A registered
+    /// effect commits its constructor and asteroid until completion or abort.
     /// </summary>
     private bool StartBuildIfLegal(ConnectionId from, short commanderShipId, Ship target, OrderChange req)
     {
+        if (target.Dead || target.StationId is not null
+            || target.Sector is null || !target.Sector.Models.Contains(target)) return false;
+
         // Gate 1 — Builder-role pilot (native LegalCommand requires
         // m_pilotType == c_ptBuilder, shipIGC.h:1699-1702). The port's stand-in
         // for "Builder-role" is twofold, both faithful to native's PILOT-TYPE
@@ -2249,6 +2279,13 @@ public sealed partial class Server
             RefuseBuild(from, commanderShipId, target, $"BUILD from a non-Builder ship ('{target.HullType.Name}', pilotType {target.PilotType}, no c_habmBuilder) — refused (native LegalCommand Builder-only gate, shipIGC.h:1699-1702)");
             return false;
         }
+        // H-18: only an actual construction effect commits a constructor.
+        // IsBuilding also marks an idle reservation (P652c). Repeating the
+        // accepted order is harmless; changing its rock cannot start a second build.
+        if (target.IsBuilding && !target.IsNpc) return false;
+        var commitment = target.Sector.BuildingEffects.FirstOrDefault(e => ReferenceEquals(e.Builder, target));
+        if (commitment is not null)
+            return req.ObjectType == IgcObjectType.Asteroid && req.ObjectID == commitment.Target.Data.AsteroidId;
 
         // Gate 2 — OT_asteroid target only (shipIGC.h:1699-1701).
         if (req.ObjectType != IgcObjectType.Asteroid)
@@ -2296,9 +2333,17 @@ public sealed partial class Server
             return false;
         }
 
-        // P652: an NPC keeps the accepted build target while traveling, so
-        // damage can trigger the native build-vs-repair distance exception
-        // (shipIGC.cpp:1752-1777). Drilling starts on arrival (2810-2827).
+        // H-18: single-commitment — never register two constructors on the same
+        // asteroid. Refuse if another builder already has a pending effect here.
+        if (sector.BuildingEffects.Any(effect => ReferenceEquals(effect.Target, rock)))
+        {
+            RefuseBuild(from, commanderShipId, target, $"BUILD target asteroid {rock.Data.AsteroidId} is already under construction — refused (H-18 single-commitment)");
+            return false;
+        }
+
+        // Native constructors travel to the accepted rock before drilling
+        // (shipIGC.cpp:2810-2827). SetBuilderBuild releases idle reservations;
+        // the arrival path and Sector enforce H-18's single commitment.
         if (target.IsNpc)
             target.SetBuilderBuild(rock);
         else
@@ -2402,18 +2447,13 @@ public sealed partial class Server
     /// <item><b>Gates.</b> Stage started (<c>FedSrv.CPP:6096</c>) and a non-null
     /// <see cref="Ship.PendingTreasureOffer"/> (native
     /// <c>GetTreasureObjectID() != NA</c>, <c>FedSrv.CPP:6097</c>). The task's
-    /// enumerated gates only — the native's initial
-    /// <c>TrapHackBoot(GetParentShip() == NULL)</c> (<c>FedSrv.CPP:6099</c>) is
-    /// deliberately <b>not</b> ported: it would boot every ordinary unboarded
-    /// pilot sending an ack, which is exactly the primary (working) scenario, so
-    /// it reads as a native quirk inconsistent with the feature. Stated, not
-    /// silently dropped.</item>
+    /// native unboarded gate is enforced before accepting or declining the offer
+    /// (FedSrv.CPP:6099). The pending offer is consumed before any mutation or send.</item>
     /// <item><b>Bad mount = native TrapHackBoot abort.</b> A mount out of the
     /// hull's hardpoint range, or one whose <c>PartMask</c> cannot host the part
     /// type (native <c>TrapHackBoot(!CanMount(ppt, pfmTA-&gt;mountID))</c>,
     /// <c>FedSrv.CPP:6100</c>), is a hack: this port's TrapHackBoot analogue is
-    /// log-and-return WITHOUT clearing the offer — native's boot abandons the
-    /// handler before the <c>SetTreasureObjectID(NA)</c> at the end.</item>
+    /// log-and-return; the offer has already been consumed so it cannot replay.</item>
     /// <item><b>Fresh-mount fraction.</b> <see cref="Ship.MountPart"/> is given
     /// <see cref="ExpandedPartData.FullyMounted"/> — an accepted part is mounted
     /// up, the same observer-facing stance the port's other mount paths use.</item>
@@ -2440,22 +2480,25 @@ public sealed partial class Server
             return;
         }
 
+        ship.PendingTreasureOffer = null; // Native clears its buffer (FedSrv.CPP:6148).
+        if (ship.Sector is null || ship.StationId is not null || ship.Dead
+            || ship.ParentShip is not null || offer.Amount < 0) return;
+
         // Resolve the buffered part type from the static core (native
         // pMission->GetPartType(oid), FedSrv.CPP:6104) — the port's part-type
         // lookup is Mission.Core.PartTypes (StaticCore).
         if (!mission.Core.PartTypes.TryGetValue(offer.PartTypeId, out var partType))
         {
             Console.WriteLine($"[treasureack] {from} ship {ship.Id}: buffered part-type {offer.PartTypeId} absent from core — offer cleared");
-            ship.PendingTreasureOffer = null;
             return;
         }
 
+        offer.Amount = Ship.ClampPartAmount(ship.HullType, mission.Core, partType, offer.Amount);
         if (ack.MountId != TreasureAck.MountNA)
         {
             // Accept into a real mount.
             byte mount = ack.MountId;
-            var hardpoints = ship.HullType.Hardpoints;
-            if (mount >= hardpoints.Length || !CanMount(partType, hardpoints[mount].PartMask))
+            if (!ship.HullType.CanMountPart(partType, unchecked((sbyte)mount)))
             {
                 Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mount {mount} cannot mount part {offer.PartTypeId} — dropped (native TrapHackBoot !CanMount, FedSrv.CPP:6100)");
                 return;
@@ -2467,7 +2510,10 @@ public sealed partial class Server
             var existing = ship.Parts.FirstOrDefault(p => p.EquipmentType == partType.EquipmentType && p.MountId == mount);
             if (existing is not null)
             {
-                ship.SetPartAmount(existing, (short)(existing.Amount + offer.Amount));
+                if (existing.PartId != offer.PartTypeId) return;
+                int total = Ship.ClampPartAmount(ship.HullType, mission.Core, partType, (int)existing.Amount + offer.Amount);
+                offer.Amount = (short)Math.Max(0, total - existing.Amount);
+                ship.SetPartAmount(existing, total);
                 Console.WriteLine($"[treasureack] {from} ship {ship.Id}: merged part {offer.PartTypeId} amount {offer.Amount} into existing mount {mount} (now {existing.Amount + offer.Amount})");
             }
             else
@@ -2479,8 +2525,7 @@ public sealed partial class Server
                 if (ship.MountPart(partType, offer.Amount, mount, ExpandedPartData.FullyMounted) is null)
                 {
                     Console.WriteLine($"[treasureack] {from} ship {ship.Id}: REFUSED fresh mount of part {offer.PartTypeId} at mount {mount} — ship already at the 255-part wire ceiling; offer dropped");
-                    ship.PendingTreasureOffer = null;
-                    return;
+                            return;
                 }
                 Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mounted fresh part {offer.PartTypeId} amount {offer.Amount} at mount {mount}");
             }
@@ -2507,7 +2552,6 @@ public sealed partial class Server
             Console.WriteLine($"[treasureack] {from} ship {ship.Id}: declined part {offer.PartTypeId} amount {offer.Amount} -> re-created treasure obj={treasure.Data.ObjectId} -> TREASURE(28) sector {ship.Sector.Id} wide");
         }
 
-        ship.PendingTreasureOffer = null;   // clear the buffer either way (FedSrv.CPP:6148)
     }
 
     private void ApplyLoadout(ConnectionId from, LiveShip live, BuyLoadoutRequest buy)
@@ -2539,14 +2583,8 @@ public sealed partial class Server
         }
         bool hullChanged = hull.HullId != ship.HullType.HullId;
 
-        // P441 — the docked-station context for the tech gate. Native requires
-        // m_station for any purchase (shipIGC.h:992) and gates hull+part on the
-        // station's CanBuy (RequiredTechs ⊆ station TtbmLocal | side techs). The
-        // port applies PRICING + FUNDS unconditionally (a BUY_LOADOUT that moves
-        // money must always be paid for), but the TECH gate needs a station, so
-        // it only runs when the ship is docked at a resolvable station type. A
-        // non-docked ship (StationId null) keeps its existing ungated behavior —
-        // no station to consult — documented in P441_SERVER_BUY_PRICING.md.
+        // A real docked station is required even when the harness bypasses tech.
+        // Native PurchaseShipLoadout consults that station (shipIGC.h:992-1000).
         DataStationTypeIGC? stationType = null;
         Side? side = null;
         if (ship.StationId is { } dockId && ship.SideId is { } sd)
@@ -2577,7 +2615,16 @@ public sealed partial class Server
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: {why} — REFUSED (ship unchanged; ack fbought=false fLaunch=false)");
         }
 
-        int oldShipValue = ShipValue(ship);
+        // Native FedSrv.CPP:6153-6172: docked, alive/non-ghost, side, unboarded.
+        if (ship.StationId is null || ship.Dead || ship.ParentShip is not null
+            || ship.SideId is not >= 0 || stationType is null || side is null
+            || buy.Parts.Count > BuyLoadoutRequest.MaxParts || buy.Parts.Any(p => p.Amount < 0))
+        {
+            Refuse("purchase requires a live unboarded ship docked at a valid station and a bounded nonnegative loadout");
+            return;
+        }
+
+        long oldShipValue = RefundableShipValue(ship);
 
         // P441+P470 — hull acceptance gate. Native's hangar never offers a
         // player a drone-only hull (GroupID < 0 — load.cpp:1603-1606,
@@ -2640,7 +2687,6 @@ public sealed partial class Server
                 // core.Part nor a real launcher is reported as not-in-core.
                 if (!mission.Core.TryBuildExpendableLauncher(p.PartId, out partType))
                 {
-                    Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested part {p.PartId} not in core (and not a real launcher/dispenser) — skipped (report, not fabricated)");
                     projectedSkipped++;
                     continue;
                 }
@@ -2657,7 +2703,6 @@ public sealed partial class Server
             if (!harnessIgnoreTech && stationType is { } pSt && side is { } pSide &&
                 !TechTreeBitMask.RequiredTechsBuyable(partType.TtbmRequired, pSt.TtbmLocal, pSide.Techs))
             {
-                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') not buyable at docked station (tech) — skipped (native CanBuy else-branch, shipIGC.h:1042; no reuse implemented, P441)");
                 projectedSkipped++;
                 continue;
             }
@@ -2669,32 +2714,15 @@ public sealed partial class Server
             // consult, same scope as the tech gate).
             if (stationType is { } pSuccSt && side is { } pSuccSide)
                 partType = SuccessorUpgrade.PartSuccessor(mission.Core, partType, pSuccSt.TtbmLocal, pSuccSide.Techs);
-            // P334 — hardpoint-compatibility policy for the NEW hull after a
-            // swap. Native PurchaseShipLoadout only mounts a part when the
-            // (new) hull can host it — `m_myHullType.CanMount(ppt, mountID)`
-            // (shipIGC.h:1030); a part that has nowhere to mount on the new
-            // hull is simply not mounted, and since all old parts were already
-            // cleared the fewer-slots-than-mounted case is resolved by the
-            // clear+rebuild (native detaches every part before
-            // SetBaseHullType, shipIGC.h:1007-1018, so the new hull's layout is
-            // the only one consulted). Scoped to the hull-change path: a
-            // same-hull loadout (no layout change) is left to the port's
-            // existing free-mount behavior, matching the POC shop and the
-            // pre-existing loadout tests. The port applies the test as a
-            // hull-level compatibility check — DataHullTypeIGC.CanMountPart,
-            // the P276 port of native CanMount (hullTypeIGC.h:199-213) —
-            // rather than native's per-mount check, because the POC shop's
-            // mount ids are sequential list positions (ShopModel.RenumberMounts,
-            // ShopModel.cs:165-168), not real hardpoint slots (a stated
-            // simplification, same spirit as the treasureack CanMount gate,
-            // Server.ShipCommands.cs:1380-1383).
-            if (grantedHullChanged && !grantedHull.CanMountPart(partType))
+            int mount = unchecked((sbyte)p.MountId);
+            bool occupied = toMount.Any(x => x.MountId == p.MountId
+                && (mount < 0 || x.Type.EquipmentType == partType.EquipmentType));
+            if (!grantedHull.CanMountPart(partType, mount) || occupied)
             {
-                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') has no compatible hardpoint on hull {grantedHull.HullId} ('{grantedHull.Name}') — dropped (native CanMount gate, shipIGC.h:1030)");
                 projectedSkipped++;
                 continue;
             }
-            toMount.Add((partType, p.Amount, p.MountId, p.FractionMounted));
+            toMount.Add((partType, Ship.ClampPartAmount(grantedHull, mission.Core, partType, p.Amount), p.MountId, p.FractionMounted));
         }
 
         // P441 — PRICING, the way native does: cost = ShipValue(after) -
@@ -2704,13 +2732,14 @@ public sealed partial class Server
         // dispensers carry their REAL price (DataPartTypeIGC.FromLauncherDef now
         // takes the expendable's launcherDef.price — DataMissileTypeIGC.Price &
         // friends), not 0.
-        int cost = (grantedHull.Price + toMount.Sum(x => x.Type.Price)) - oldShipValue;
+        long newHullValue = grantedHullChanged ? Math.Max(0, grantedHull.Price) : ship.RefundableHullValue;
+        long cost = newHullValue + toMount.Sum(x => PartValue(x.Type, x.Amount)) - oldShipValue;
 
         // P441 — FUNDS gate. Native TrapHackBoot disconnects here; the port's
         // soft-fail convention is log-and-refuse: ship unchanged, ack shows the
         // real unchanged loadout with FBoughtEverything=false / FLaunch=false,
         // no MONEY_CHANGE. A negative cost (downgrade) refunds, as in native.
-        if (cost > live.Wallet.Money)
+        if (cost > live.Wallet.Money || live.Wallet.Money < 0 || (long)live.Wallet.Money - cost > int.MaxValue)
         {
             Refuse($"cost {cost} > wallet {live.Wallet.Money}");
             return;
@@ -2720,6 +2749,7 @@ public sealed partial class Server
         // The ship mutates here. All refusal gates already returned with the
         // ship untouched.
         // ------------------------------------------------------------------
+        using var loadoutUpdate = ship.BeginLoadoutUpdate();
         if (grantedHullChanged)
         {
             // P334 — real server-side hull swap, mirroring native's actual
@@ -2739,6 +2769,7 @@ public sealed partial class Server
             // per-field recomputation is needed.
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: swapping base hull {ship.HullType.HullId} ('{ship.HullType.Name}') -> {grantedHull.HullId} ('{grantedHull.Name}') — in-place SetBaseHullType (native PurchaseShipLoadout, shipIGC.h:1019-1020; P488 successor {(grantedHull.HullId != hull.HullId ? $"of requested {hull.HullId}" : "")})");
             ship.ChangeHull(grantedHull);
+            ship.RefundableHullValue = Math.Max(0, grantedHull.Price);
 
             // Native SetBaseHullType resets the construction-seeded runtime
             // pools to empty (m_energy = 0.0f, m_ammo = 0; full repair
@@ -2771,7 +2802,11 @@ public sealed partial class Server
             // P314 — the MountPart cap (Ship.cs) refuses a fresh mount once a
             // ship is at the wire's 255-part ceiling; log and count it skipped
             // instead of letting a 256th part crash ExportShip.Encode later.
-            if (ship.MountPart(partType, amount, mountId, fraction) is null)
+            int mount = unchecked((sbyte)mountId);
+            bool mounted = mount < 0
+                ? ship.TryMountCargoPart(partType, amount, mount, fraction)
+                : ship.MountPart(partType, amount, mountId, fraction) is not null;
+            if (!mounted)
             {
                 ConsoleLog.Write($"[loadout] {from} ship {ship.Id}: refused mounting part {partType.PartId} at mount {mountId} — ship already at the 255-part wire ceiling; counted as skipped");
                 skipped++;
@@ -2790,6 +2825,7 @@ public sealed partial class Server
         // swapped) ship can launch with a shield below 1.0 — less than native's
         // starting shield (the other half of the P522 undock false-red-flash
         // fix; the client resets its flash baseline across undock regardless).
+        ship.SetFraction(1.0f);
         ship.SetShieldFraction(1.0f);
 
         // P441 — DEBIT / REFUND + side-wide MONEY_CHANGE (native
@@ -2798,12 +2834,12 @@ public sealed partial class Server
         // only when cost != 0 does money move. Negative cost (downgrade) refunds:
         // dMoney = -cost > 0, sidTo = buyer ship, sidFrom = NA, sent to the
         // buyer's whole side group (BroadcastMoneyChangeSideWide).
-        int actualCost = ShipValue(ship) - oldShipValue;
+        long actualCost = RefundableShipValue(ship) - oldShipValue;
         if (actualCost != 0)
         {
-            live.Wallet.Money -= actualCost;
+            live.Wallet.Money = checked((int)(live.Wallet.Money - actualCost));
             if (ship.SideId is { } buyerSide)
-                BroadcastMoneyChangeSideWide(buyerSide, -actualCost, ship.Id);
+                BroadcastMoneyChangeSideWide(buyerSide, checked((int)-actualCost), ship.Id);
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: {(actualCost < 0 ? "refunded" : "debited")} {(-actualCost < 0 ? -actualCost : actualCost)} (wallet now {live.Wallet.Money}) + MONEY_CHANGE(60) dMoney={-actualCost} side-wide");
         }
         else
@@ -2814,10 +2850,10 @@ public sealed partial class Server
         // The ACK's tail reflects the ship's REAL inventory after the apply:
         // equipped parts then the cargo hold (native's ProcessShipLoadout mixes
         // both into one tail, P626). The byte-for-byte round-trip guarantee
-        // applies to the MOUNTED parts (the ones the buy requested), so the
-        // "everything granted" test counts only non-negative (mounted) entries.
+        // applies to the entire requested inventory, including native negative
+        // cargo mounts, so "everything granted" counts equipped and cargo parts.
         var ackParts = ship.ExportInventoryForAck().ToArray();
-        int mountedAcked = ackParts.Count(p => p.MountId < 0x80);
+        int mountedAcked = ackParts.Length;
         bool allGranted = mountedAcked == buy.Parts.Count && granted == buy.Parts.Count && skipped == 0;
         // fBoughtEverything = every requested part was actually mounted. Kept
         // false for the zero-part hull-only case so those bytes stay identical

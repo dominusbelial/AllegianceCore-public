@@ -36,6 +36,16 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public static class TeamPaneLayout
 {
+    // Native WinTrek.cpp:10061-10081 / teampane.cpp: compact team roster.
+    public static IReadOnlyList<Line> Compact(IReadOnlyList<Line> expanded,
+        IReadOnlyList<ScoreRosterEntry> entries, short? side)
+    {
+        return new[] { new Line(LineKind.Title, "MINI TEAM") }
+            .Concat(entries.Where(e => e.SideId == side).OrderBy(e => e.CharacterName, StringComparer.Ordinal)
+                .Select(e => new Line(LineKind.Pilot, $"{ScoreboardLayout.AsciiSafe(e.CharacterName),-18} K:{e.Kills} D:{e.Deaths}",
+                    expanded.Any(l => l.Highlight && l.Text.TrimStart().StartsWith(ScoreboardLayout.AsciiSafe(e.CharacterName) + " ", StringComparison.Ordinal)))))
+            .Concat(expanded.Where(l => l.Kind is LineKind.Money or LineKind.Ballot)).ToArray();
+    }
     /// <summary>The flattened per-pilot ship state the caller extracts from
     /// <c>ClientWorld.Ships</c> (kept MonoGame/ClientCore-free so this layout is
     /// headless-testable).</summary>
@@ -62,10 +72,11 @@ public static class TeamPaneLayout
         int? myMoney,
         string? activeBallot,
         bool isLeader,
-        string? selfName)
+        string? selfName,
+        string? controlsHint = null)
     {
         var lines = new List<Line>();
-        lines.Add(new Line(LineKind.Title, "TEAM PANE  (T TOGGLE)"));
+        lines.Add(new Line(LineKind.Title, "TEAM PANE"));
 
         foreach (var g in entries.GroupBy(e => e.SideId).OrderBy(g => g.Key))
         {
@@ -94,8 +105,8 @@ public static class TeamPaneLayout
             lines.Add(new Line(LineKind.Ballot, $"ACTIVE BALLOT: {ScoreboardLayout.AsciiSafe(activeBallot)}"));
 
         lines.Add(new Line(LineKind.Note,
-            "WINGS: SET_WINGID(106) not consumed by this client - wing roster unavailable (infra constraint)"));
-        lines.Add(new Line(LineKind.Hint, "T TOGGLE  |  B LEADERBOARD  |  P CHARACTER SHEET"));
+            "Wing assignments unavailable"));
+        lines.Add(new Line(LineKind.Hint, controlsHint ?? "Ctrl + T TOGGLE  |  B LEADERBOARD  |  P CHARACTER SHEET"));
 
         return lines;
     }

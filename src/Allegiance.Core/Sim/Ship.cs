@@ -257,6 +257,8 @@ public sealed class Ship : Model, IShipIgc
     public void ChangeHull(DataHullTypeIGC hull)
     {
         _hull = hull;
+        RefundableHullValue = 0;
+        PendingTreasureOffer = null;
         StateM = 0;   // SetStateM(0), shipIGC.cpp:1356
 
         // P279 — arm/clear the drifting Lifepod's oxygen countdown. Native sets
@@ -284,14 +286,103 @@ public sealed class Ship : Model, IShipIgc
         // P173: raise the host seam so the server can broadcast a real
         // FM_S_LOADOUT_CHANGE(96) — the whole current loadout (native raises
         // c_lcHullChange, shipIGC.cpp:1455; NULL part, matching native).
-        Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.HullChange);
+        RaiseLoadoutChange(null, LoadoutChange.HullChange);
     }
 
     /// <summary>The ship's energy pool. Seeded to <c>Hull.MaxEnergy</c> at construction.</summary>
     public float Energy { get; set; }
 
-    /// <summary>The ship's ammo count (magazine rounds for projectile weapons). Seeded to <c>Hull.MaxAmmo</c> at construction.</summary>
-    public short Ammo { get; set; }
+    private short _ammo;
+    /// <summary>The ship's projectile ammo, clamped to the hull's maximum
+    /// (native Igc/shipIGC.h:597-601).</summary>
+    public short Ammo
+    {
+        get => _ammo;
+        set => _ammo = (short)Math.Clamp((int)value, 0, Math.Max(0, (int)_hull.MaxAmmo));
+    }
+
+    /// <summary>Paid hull value eligible for trade-in. Free spawn/respawn hulls
+    /// start at zero; a server purchase records the paid hull price.</summary>
+    public int RefundableHullValue { get; set; }
+
+    /// <summary>Mark the initial, unpaid hardware before the peer is seated.</summary>
+    public void MarkSpawnLoadoutFree()
+    {
+        RefundableHullValue = 0;
+        static MountedPart Free(MountedPart part) => new()
+        {
+            PartId = part.PartId, Type = part.Type, Amount = part.Amount,
+            MountId = part.MountId, FractionMounted = part.FractionMounted,
+            FunctionalWeapon = part.FunctionalWeapon, FreeSpawn = true,
+        };
+        for (int i = 0; i < _parts.Count; i++) _parts[i] = Free(_parts[i]);
+        for (int i = 0; i < _cargo.Length; i++)
+            if (_cargo[i] is { } part) _cargo[i] = Free(part);
+    }
+
+    private int _loadoutUpdateDepth;
+    private bool _loadoutUpdateDirty;
+
+    /// <summary>Native queues one final loadout per purchase/swap
+    /// (FedSrv/fsship.cpp:694-735). Nested batches publish only at the outer end.</summary>
+    public IDisposable BeginLoadoutUpdate()
+    {
+        _loadoutUpdateDepth++;
+        return new LoadoutUpdate(this);
+    }
+
+    private sealed class LoadoutUpdate(Ship ship) : IDisposable
+    {
+        private Ship? _ship = ship;
+        public void Dispose()
+        {
+            if (_ship is not { } owner) return;
+            _ship = null;
+            if (--owner._loadoutUpdateDepth == 0 && owner._loadoutUpdateDirty)
+            {
+                owner._loadoutUpdateDirty = false;
+                owner.Mission?.Site.LoadoutChangeEvent(owner, null!, LoadoutChange.Mounted);
+            }
+        }
+    }
+
+    private void RaiseLoadoutChange(IPartIgc? part, LoadoutChange change)
+    {
+        if (_loadoutUpdateDepth > 0) _loadoutUpdateDirty = true;
+        else Mission?.Site.LoadoutChangeEvent(this, part!, change);
+    }
+
+    /// <summary>Native quantity ceilings: packigc.h:102-123 and
+    /// launchertypeigc.h:130-145 (hull capacity / expendable size, minimum 1).</summary>
+    public static short ClampPartAmount(DataHullTypeIGC hull, StaticCore? core, DataPartTypeIGC type, int amount)
+    {
+        int max;
+        if (type.Type is DataPartTypeIGC.Pack pack)
+            max = pack.PackType == cPackAmmo ? hull.MaxAmmo : (int)Math.Min(short.MaxValue, hull.MaxFuel);
+        else if (IsLauncherType(type.Type))
+        {
+            int capacity = type.EquipmentType switch
+            {
+                EquipmentType.Magazine => hull.CapacityMagazine,
+                EquipmentType.Dispenser => hull.CapacityDispenser,
+                _ => hull.CapacityChaffLauncher,
+            };
+            int size = type.Type switch
+            {
+                DataPartTypeIGC.MissileLauncher m when core is not null && core.MissileTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.LauncherExpendableSize,
+                DataPartTypeIGC.MineLauncher m when core is not null && core.MineTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.LauncherExpendableSize,
+                DataPartTypeIGC.ProbeLauncher m when core is not null && core.ProbeTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.LauncherExpendableSize,
+                DataPartTypeIGC.ChaffLauncher m when core is not null && core.ChaffTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.LauncherExpendableSize,
+                _ => 1,
+            };
+            max = Math.Max(1, capacity / Math.Max(1, size));
+        }
+        else max = short.MaxValue;   // weapons & other single-item equipment: no per-unit
+                                     // capacity — native clamps only pack/launcher quantities
+                                     // (packigc.h:102-123, launchertypeigc.h:130-145); only the
+                                     // non-negative bound below applies.
+        return (short)Math.Clamp(amount, 0, Math.Clamp(max, 0, short.MaxValue));
+    }
 
     /// <summary>
     /// P412 — the ship's fuel pool (afterburner propellant), the live port of
@@ -462,6 +553,7 @@ public sealed class Ship : Model, IShipIgc
     public void SetFraction(float value)
     {
         _fraction = value;
+        if (Dead) PendingTreasureOffer = null; // H-30: clear the pending treasure offer on death
         if (value > _fractionLastOrder) _fractionLastOrder = value; // shipIGC.h:316-317
     }
 
@@ -2371,7 +2463,7 @@ public sealed class Ship : Model, IShipIgc
             // P173: raise on the PARENT ship (this) whose passenger list grew,
             // matching native's LoadoutChangeEvent(pshipParent, NULL,
             // c_lcAddPassenger) at shipIGC.cpp:3668.
-            Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.AddPassenger);
+            RaiseLoadoutChange(null, LoadoutChange.AddPassenger);
         }
     }
 
@@ -2384,7 +2476,7 @@ public sealed class Ship : Model, IShipIgc
             // P173: raise on the parent (this) whose passenger list shrank
             // (native's LoadoutChangeEvent(pshipParent, NULL,
             // c_lcRemovePassenger), shipIGC.cpp:3670).
-            Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.RemovePassenger);
+            RaiseLoadoutChange(null, LoadoutChange.RemovePassenger);
     }
 
     /// <summary>
@@ -2471,10 +2563,15 @@ public sealed class Ship : Model, IShipIgc
 
         // 2. Take the parent's hull (SetBaseHullType, shipIGC.cpp:3515).
         ChangeHull(parent.HullType);
+        RefundableHullValue = parent.RefundableHullValue;
+        parent.RefundableHullValue = 0;
 
         // 3. Copy the parent's inventory (shipIGC.cpp:3519-3532); fuel is N/A (see doc).
         foreach (var p in parent.Parts.ToArray())
-            MountPart(p.Type, p.Amount, p.MountId, p.FractionMounted);
+            MountPart(p.Type, p.Amount, p.MountId, p.FractionMounted, p.FreeSpawn);
+        for (int slot = 0; slot < parent.CargoHold.Count; slot++)
+            if (parent.CargoHold[slot] is { } cargo)
+                MountPart(cargo.Type, cargo.Amount, unchecked((byte)(-slot - 1)), cargo.FractionMounted, cargo.FreeSpawn);
         Ammo = parent.Ammo;
         SetFuel(parent.Fuel);   // SetFuel(pshipParent->GetFuel()), shipIGC.cpp:3538 (P412 real)
         Energy = parent.Energy;
@@ -2661,10 +2758,12 @@ public sealed class Ship : Model, IShipIgc
     /// <returns>The mounted-part record, or <c>null</c> if the mount was refused
     /// because the ship is already at the wire's 255-part ceiling. Always recorded
     /// (even when a weapon couldn't be realized) unless refused.</returns>
-    public MountedPart? MountPart(DataPartTypeIGC type, short amount, byte mountId, byte fractionMounted)
+    public MountedPart? MountPart(DataPartTypeIGC type, short amount, byte mountId, byte fractionMounted, bool freeSpawn = false)
     {
-        if (_parts.Count >= byte.MaxValue)
-            return null;
+        if (amount < 0 || _parts.Count + _cargo.Count(p => p is not null) >= byte.MaxValue) return null;
+        amount = ClampPartAmount(_hull, Mission?.Core, type, amount);
+        int signedMount = unchecked((sbyte)mountId);
+        if (signedMount < 0 && (signedMount < -CargoCapacity || _cargo[CargoSlotForMount(signedMount)] is not null)) return null;
 
         var part = new MountedPart
         {
@@ -2673,7 +2772,16 @@ public sealed class Ship : Model, IShipIgc
             MountId = mountId,
             FractionMounted = fractionMounted,
             Type = type,
+            FreeSpawn = freeSpawn,
         };
+
+        if (signedMount < 0)
+        {
+            _cargo[CargoSlotForMount(signedMount)] = AsCargoPart(part);
+            BumpLoadout();
+            RaiseLoadoutChange(part, LoadoutChange.Mounted);
+            return part;
+        }
 
         // Realize a weapon subtype against the mission core (best-effort).
         if (type.Type is DataPartTypeIGC.Weapon w && Mission is { } mission)
@@ -2701,9 +2809,20 @@ public sealed class Ship : Model, IShipIgc
         // port collapses native's Added/Mounted distinction — both AddPart and
         // SetMountID boil down to a MountPart here — to one Mounted raise,
         // a stated simplification, not a silent gap).
-        Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Mounted);
+        RaiseLoadoutChange(part, LoadoutChange.Mounted);
 
         return part;
+    }
+
+    /// <summary>Install purchased cargo at a signed wire mount, without
+    /// realizing equipment. Native ProcessShipLoadout/CreateAndAddPart uses
+    /// the signed mount (shipIGC.h:901-921,1030-1039; shipIGC.cpp:1520-1548).</summary>
+    public bool TryMountCargoPart(DataPartTypeIGC type, short amount, int mount, byte fractionMounted)
+    {
+        if (mount >= 0 || mount < -CargoCapacity) return false;
+        // Share quantity/slot validation and the final purchase batch with
+        // equipped parts (native FedSrv/fsship.cpp:694-735).
+        return MountPart(type, amount, unchecked((byte)mount), fractionMounted) is not null;
     }
 
     /// <summary>
@@ -2809,12 +2928,21 @@ public sealed class Ship : Model, IShipIgc
         // always safe (a FirstOrDefault scan, no indexing).
         if (mountOld < -CargoCapacity || mountNew < -CargoCapacity) return false;
 
+        if ((short)etOld < -1 || (short)etOld > 7
+            || mountOld >= 8 || mountNew >= 8
+            || (mountOld > 0 || mountNew > 0) && etOld != EquipmentType.Weapon
+            || (mountOld >= 0 || mountNew >= 0) && (short)etOld < 0) return false;
         var src = ResolvePart(etOld, mountOld);
-        if (src is null) return false;                       // source empty → silent no-op
+        if (src is null || (short)etOld >= 0 && src.EquipmentType != etOld
+            || !_hull.CanMountPart(src.Type, mountNew)) return false;
 
         var dst = ResolvePart(etOld, mountNew);              // GetMountedPart(etOld, mountNew)
         MountedPart? dstSwap = dst is not null && !ReferenceEquals(dst, src) ? dst : null;
 
+        if (dstSwap is not null && ((short)etOld >= 0 && dstSwap.EquipmentType != etOld
+            || !_hull.CanMountPart(dstSwap.Type, mountOld))) return false;
+        if (mountOld == mountNew) return true;
+        using var update = BeginLoadoutUpdate();
         RemoveFromHome(src, mountOld);                       // ppart->SetMountID(c_mountNA) prep
         if (dstSwap is not null) RemoveFromHome(dstSwap, mountNew);
         PlaceIntoHome(src, mountNew);                        // ppart->SetMountID(mountNew)
@@ -2833,6 +2961,7 @@ public sealed class Ship : Model, IShipIgc
     /// weapon, or the cargo slot), mirroring the detach half of a mount move.</summary>
     private void RemoveFromHome(MountedPart part, int mount)
     {
+        _flightMountProgress.Remove((part.PartId, part.MountId));
         if (mount < 0)
         {
             _cargo[CargoSlotForMount(mount)] = null;
@@ -2852,11 +2981,47 @@ public sealed class Ship : Model, IShipIgc
     {
         if (mount < 0)
         {
-            _cargo[CargoSlotForMount(mount)] = AsCargoPart(part);
+            _cargo[CargoSlotForMount(mount)] = AsCargoPart(WithFraction(part, 0));
+            BumpLoadout();
+            RaiseLoadoutChange(part, LoadoutChange.Mounted);
             return;
         }
-        MountPart(part.Type, part.Amount, (byte)mount, part.FractionMounted);
+        // Native shipIGC.cpp:1567 resets readiness on EVERY mount change.
+        MountPart(part.Type, part.Amount, (byte)mount, 0, part.FreeSpawn);
+        if (part.EquipmentType == EquipmentType.Shield) _shieldFraction = 0;
+        if (part.EquipmentType == EquipmentType.Afterburner) DeactivateAfterburner();
     }
+
+    /// <summary>P641 — weaponIGC.h:30-63, cloakigc.cpp:70-81,
+    /// shieldIGC.cpp:66-88: equipment is inert while mounting. Afterburner has
+    /// its own existing ramp. Cargo never advances. Keep a fractional remainder
+    /// so sub-byte frame intervals cannot stall a mounting part indefinitely.</summary>
+    private readonly Dictionary<(short PartId, byte Mount), float> _flightMountProgress = new();
+    private void AdvanceFlightMounts(float dt)
+    {
+        // Native shipIGC.cpp:266-271 updates only ships in a cluster without
+        // a parent. Docked ships retain a Sector in this port, but their reload
+        // readiness must remain reset until they launch.
+        if (StationId is not null || ParentShip is not null) return;
+        for (int i = 0; i < _parts.Count; i++)
+        {
+            var part = _parts[i];
+            if (part.EquipmentType == EquipmentType.Afterburner || part.FractionMounted >= ExpandedPartData.FullyMounted) continue;
+            var key = (part.PartId, part.MountId);
+            float fraction = part.FractionMounted / (float)ExpandedPartData.FullyMounted;
+            if (_flightMountProgress.TryGetValue(key, out var previous) && (byte)(previous * ExpandedPartData.FullyMounted) == part.FractionMounted)
+                fraction = previous;
+            fraction = Math.Min(1f, fraction + dt * MountRate());
+            _flightMountProgress[key] = fraction;
+            _parts[i] = WithFraction(part, (byte)(fraction * ExpandedPartData.FullyMounted));
+        }
+        foreach (var key in _flightMountProgress.Keys.ToArray())
+            if (!_parts.Any(p => p.PartId == key.PartId && p.MountId == key.Mount && p.FractionMounted < ExpandedPartData.FullyMounted))
+                _flightMountProgress.Remove(key);
+    }
+
+    internal bool IsWeaponMountReady(Weapon weapon) =>
+        _parts.FirstOrDefault(p => ReferenceEquals(p.FunctionalWeapon, weapon))?.FractionMounted is null or >= ExpandedPartData.FullyMounted;
 
     /// <summary>A <see cref="MountedPart"/> as a cargo-hold entry: same wire
     /// quantities, <c>MountId</c> forced to the placeholder 0 (slot implicit in
@@ -2870,6 +3035,7 @@ public sealed class Ship : Model, IShipIgc
         FractionMounted = p.FractionMounted,
         Type = p.Type,
         FunctionalWeapon = null,
+        FreeSpawn = p.FreeSpawn,
     };
 
     /// <summary>
@@ -2927,7 +3093,7 @@ public sealed class Ship : Model, IShipIgc
 
             if (packType == cPackAmmo)                   // c_packAmmo = 0 (Igc/igc.h:549)
             {
-                Ammo += amount;                          // SetAmmo(ammo + amount)
+                Ammo = (short)Math.Min(Math.Max(0, (int)_hull.MaxAmmo), (int)Ammo + amount);                          // SetAmmo(ammo + amount)
                 ResetAmmoWeaponFractions();              // FedSrv.CPP:6574-6581
             }
             else                                         // c_packFuel = 1 (Igc/igc.h:550)
@@ -2946,6 +3112,7 @@ public sealed class Ship : Model, IShipIgc
 
         if (amountTransfered == -1)                      // NA
         {
+            if (!_hull.CanMountPart(part.Type, 0)) return false;
             if (mounted is not null && mounted.Amount != 0) return false;   // boot (FedSrv.CPP:6607)
             if (mounted is not null)                     // terminate the equipped launcher
             {
@@ -2954,16 +3121,16 @@ public sealed class Ship : Model, IShipIgc
                 if (mounted.FunctionalWeapon is { } w) _weapons.Remove(w);
             }
             _cargo[slot] = null;                         // cargo launcher leaves cargo...
-            MountPart(part.Type, part.Amount, 0, part.FractionMounted);  // ...and mounts at 0 (SetMountID(0))
+            MountPart(part.Type, part.Amount, 0, part.FractionMounted, part.FreeSpawn);  // ...and mounts at 0 (SetMountID(0))
             return true;
         }
         else
         {
             short amount = part.Amount;
-            if (mounted is null || amountTransfered <= 0 || amountTransfered > amount) return false;  // boot
+            if (mounted is null || mounted.PartId != part.PartId || amountTransfered <= 0 || amountTransfered > amount) return false;  // boot
             if (amount == amountTransfered) _cargo[slot] = null;            // terminate cargo launcher
             else SetCargoPartAmount(slot, (short)(amount - amountTransfered));
-            SetPartAmount(mounted, (short)(mounted.Amount + amountTransfered));  // add to equipped
+            SetPartAmount(mounted, (int)mounted.Amount + amountTransfered);  // add to equipped
             ResetEquippedFraction(launcherType);         // mounted-fraction reset (FedSrv.CPP:6637)
             // ResetTimeLoaded() N/A — no per-launcher reload-time tracker here.
             return true;
@@ -3215,8 +3382,11 @@ public sealed class Ship : Model, IShipIgc
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.EquipmentType == et && p.MountId == 0 && p.FractionMounted != 0)
+            if (p.EquipmentType == et && p.MountId == 0)
+            {
+                _flightMountProgress.Remove((p.PartId, p.MountId));
                 _parts[i] = WithFraction(p, 0);
+            }
         }
     }
 
@@ -3229,8 +3399,11 @@ public sealed class Ship : Model, IShipIgc
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0 && p.FractionMounted != 0)
+            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0)
+            {
+                _flightMountProgress.Remove((p.PartId, p.MountId));
                 _parts[i] = WithFraction(p, 0);
+            }
         }
     }
 
@@ -3244,6 +3417,7 @@ public sealed class Ship : Model, IShipIgc
         FractionMounted = fractionMounted,
         Type = p.Type,
         FunctionalWeapon = p.FunctionalWeapon,
+        FreeSpawn = p.FreeSpawn,
     };
 
     /// <summary>Rewrite a <see cref="MountedPart"/>'s <c>Amount</c> via
@@ -3259,21 +3433,23 @@ public sealed class Ship : Model, IShipIgc
         FractionMounted = p.FractionMounted,
         Type = p.Type,
         FunctionalWeapon = p.FunctionalWeapon,
+        FreeSpawn = p.FreeSpawn,
     };
 
     /// <summary>Rewrite a cargo slot's part <c>Amount</c> via list-entry
     /// replacement (native <c>ppack-&gt;SetAmount</c> / <c>plauncher-&gt;SetAmount</c>).</summary>
-    public void SetCargoPartAmount(int slot, short amount)
+    public void SetCargoPartAmount(int slot, int amount)
     {
         if (slot < 0 || slot >= _cargo.Length || _cargo[slot] is not { } p) return;
         _cargo[slot] = new MountedPart
         {
             PartId = p.PartId,
-            Amount = amount,
+            Amount = ClampPartAmount(_hull, Mission?.Core, p.Type, amount),
             MountId = p.MountId,
             FractionMounted = p.FractionMounted,
             Type = p.Type,
             FunctionalWeapon = p.FunctionalWeapon,
+            FreeSpawn = p.FreeSpawn,
         };
     }
 
@@ -3304,6 +3480,7 @@ public sealed class Ship : Model, IShipIgc
             FractionMounted = part.FractionMounted,
             Type = part.Type,
             FunctionalWeapon = part.FunctionalWeapon,
+            FreeSpawn = part.FreeSpawn,
         };
         BumpLoadout();
         part.FunctionalWeapon?.SetMountId(mountId);
@@ -3318,18 +3495,19 @@ public sealed class Ship : Model, IShipIgc
     /// <see cref="RepointMount"/> uses. The realized weapon (if any) is carried
     /// over untouched; only the wire <c>Amount</c> changes.
     /// </summary>
-    public void SetPartAmount(MountedPart part, short amount)
+    public void SetPartAmount(MountedPart part, int amount)
     {
         int idx = _parts.IndexOf(part);
         if (idx < 0) return;   // defensive; every caller passes a live member
         _parts[idx] = new MountedPart
         {
             PartId = part.PartId,
-            Amount = amount,
+            Amount = ClampPartAmount(_hull, Mission?.Core, part.Type, amount),
             MountId = part.MountId,
             FractionMounted = part.FractionMounted,
             Type = part.Type,
             FunctionalWeapon = part.FunctionalWeapon,
+            FreeSpawn = part.FreeSpawn,
         };
         BumpLoadout();
     }
@@ -3362,7 +3540,7 @@ public sealed class Ship : Model, IShipIgc
         var replacement = new MountedPart
         {
             PartId = newType.PartId,
-            Amount = amount,
+            Amount = ClampPartAmount(_hull, Mission?.Core, newType, amount),
             MountId = part.MountId,
             FractionMounted = part.FractionMounted,
             Type = newType,
@@ -3378,7 +3556,7 @@ public sealed class Ship : Model, IShipIgc
 
         _parts[idx] = replacement;
         BumpLoadout();
-        Mission?.Site.LoadoutChangeEvent(this, replacement, LoadoutChange.Mounted);
+        RaiseLoadoutChange(replacement, LoadoutChange.Mounted);
         return replacement;
     }
 
@@ -3431,7 +3609,7 @@ public sealed class Ship : Model, IShipIgc
         // P173: raise the host seam so the server can broadcast a real
         // FM_S_LOADOUT_CHANGE(96) reflecting the loadout without this part
         // (native raises c_lcRemoved, shipIGC.cpp:1510, passing the part).
-        Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Removed);
+        RaiseLoadoutChange(part, LoadoutChange.Removed);
         return true;
     }
 
@@ -3850,7 +4028,7 @@ public sealed class Ship : Model, IShipIgc
         if (Mission is not { } mission) return;
         var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
         if (launcher is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) return;
-        if (launcher.Amount <= 0) return;
+        if (launcher.Amount <= 0 || launcher.FractionMounted < ExpandedPartData.FullyMounted) return;
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return;
         UpdateMissileLock(missileType, dt);
     }
@@ -3879,7 +4057,7 @@ public sealed class Ship : Model, IShipIgc
         if (Mission is not { } mission) return false;
         var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
         if (launcher is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) return false;
-        if (launcher.Amount <= 0) return false;
+        if (launcher.Amount <= 0 || launcher.FractionMounted < ExpandedPartData.FullyMounted) return false;
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return false;
 
         bool lockReady = missileType.MaxLock == 0f || MissileLock >= 1f;
@@ -4196,6 +4374,7 @@ public sealed class Ship : Model, IShipIgc
     /// <c>ProcessShipLoadout</c> rebuilds the ship's mounts wholesale.</summary>
     public void ClearLoadout()
     {
+        _flightMountProgress.Clear();
         _weapons.Clear();
         _parts.Clear();
         BumpLoadout();
@@ -4209,7 +4388,7 @@ public sealed class Ship : Model, IShipIgc
         // FM_S_LOADOUT_CHANGE(96). Exactly one Removed raise for the whole
         // clear (mirrors native ProcessShipLoadout triggering one
         // QueueLoadoutChange, not one event per part); NULL part.
-        Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.Removed);
+        RaiseLoadoutChange(null, LoadoutChange.Removed);
     }
 
 
@@ -4369,6 +4548,7 @@ public sealed class Ship : Model, IShipIgc
             else
             {
                 _fraction = 0.0f;
+                PendingTreasureOffer = null;
                 if (oldFraction > 0.0f)   // Only send the death message once (shipIGC.cpp:1317)
                 {
                     // P549 — native shipIGC.cpp:1319-1331: the kill is credited
@@ -4515,7 +4695,7 @@ public sealed class Ship : Model, IShipIgc
     private DataPartTypeIGC.Shield? MountedShieldType()
     {
         var shieldPart = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield);
-        return shieldPart?.Type.Type as DataPartTypeIGC.Shield;
+        return shieldPart is { FractionMounted: >= ExpandedPartData.FullyMounted } ? shieldPart.Type.Type as DataPartTypeIGC.Shield : null;
     }
 
     /// <summary>P389 — the mounted shield's per-tick regeneration, the port of
@@ -6612,6 +6792,10 @@ public sealed class Ship : Model, IShipIgc
 
         if (FindLeastTargetedAsteroidAnyCluster(stationType.AabmBuild) is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
+            // H-18: single-commitment — never send two constructors to the same
+            // asteroid. Another builder already owns this rock, so pick again
+            // next tick rather than duplicating the build (avoid occupied rocks).
+            if (sector.BuildingEffects.Any(effect => ReferenceEquals(effect.Target, rock))) return;
             BuilderAsteroidTarget = rock; // fly before drilling; shipIGC.cpp:2810-2827
             TryStartBuilderBuild(sector.LastUpdate);
             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
@@ -7020,6 +7204,10 @@ public sealed class Ship : Model, IShipIgc
         float radius = rock.Radius + 0.5f * HullType.Length + 30f;
         if ((Position - new Vector3(p[0], p[1], p[2])).LengthSquared() >= radius * radius ||
             Velocity.LengthSquared() >= 1f) return;
+        // H-18: another builder claimed this rock while we travelled — back off
+        // and pick again next decision cycle rather than crashing on the
+        // occupied-rock guard inside StartBuildingEffect (Sector.cs).
+        if (sector.BuildingEffects.Any(effect => ReferenceEquals(effect.Target, rock))) return;
         BuilderAsteroidTarget = null;
         sector.StartBuildingEffect(this, rock, type, now);
     }
@@ -7213,12 +7401,10 @@ public sealed class Ship : Model, IShipIgc
 
         // bActive = the cloak-active control bit AND fit-to-cloak (native
         // cloakigc.cpp:80-81: (stateM & cloakActiveIGC) && mountedFraction >= 1).
-        // The mountedFraction>=1 term collapses to "the part is present" (the
-        // loadout buys parts mounted-ready; the native mounting ramp is a
-        // separate notification-only concern not ported here). The docked/parent/
+        // P641 advances readiness for an in-flight remount. The docked/parent/
         // ripcord gates mirror SetStateM (shipIGC.cpp:1595-1601) refusing the bit
         // while docked/boarded/ripped.
-        bool bActive = (StateM & ShipControlState.CloakActive) != 0
+        bool bActive = cloak.FractionMounted >= ExpandedPartData.FullyMounted && (StateM & ShipControlState.CloakActive) != 0
                        && StationId is null
                        && ParentShip is null
                        && !IsRipcordActive;
@@ -7394,21 +7580,23 @@ public sealed class Ship : Model, IShipIgc
         }
 
         // Mount-ramp gate (afterburnerIGC.cpp:111-125): while the part is not
-        // fully mounted (wire FractionMounted < 255), ramp it toward 1.0 at
+        // fully mounted (wire FractionMounted < FullyMounted), ramp it toward 1.0 at
         // mountRate and stay inert until fully mounted (the early return).
-        float frac = ab.FractionMounted / 255f;
+        float frac = ab.FractionMounted / (float)ExpandedPartData.FullyMounted;
         if (frac < 1.0f)
         {
             frac += dt * MountRate();
             if (frac >= 1.0f)
             {
                 frac = 1.0f;
+                int mountedIndex = _parts.FindIndex(p => ReferenceEquals(p, ab));
+                if (mountedIndex >= 0) _parts[mountedIndex] = WithFraction(ab, ExpandedPartData.FullyMounted);
                 // native posts "%s ready." + mountsound here (afterburnerIGC.cpp:119-121);
                 // this port has no PostNotificationText wiring (same stance as cloak).
             }
             else
             {
-                byte advanced = (byte)(frac * 255f);
+                byte advanced = (byte)(frac * ExpandedPartData.FullyMounted);
                 if (advanced != ab.FractionMounted)
                 {
                     int i = _parts.FindIndex(p => ReferenceEquals(p, ab));
@@ -7566,6 +7754,7 @@ public sealed class Ship : Model, IShipIgc
         // settled. Derives activation from the CloakActive StateM bit, drains
         // energy, and ramps Cloaking (feeding EffectiveSignature → the sector's
         // cross-side detection sweep). No-op on a ship with no ET_Cloak@0 part.
+        AdvanceFlightMounts((float)dt);
         UpdateCloak((float)dt);
 
         // P389 — the mounted shield's per-tick regeneration (CshieldIGC::Update,
