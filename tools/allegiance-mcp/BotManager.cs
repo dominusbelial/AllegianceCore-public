@@ -234,7 +234,7 @@ internal sealed partial class BotManager : IDisposable
     /// P554 — the networked arena relocator (installed by default for a standalone
     /// MCP). Given a bot's ship id, target sector and mirrored pose, it sends the
     /// <c>relocate &lt;shipId&gt; &lt;sectorId&gt; &lt;x&gt; &lt;y&gt; &lt;z&gt; [fx fy fz]</c>
-    /// admin cheat through the PROBE connection (the allow-listed <c>mcp-probe</c>
+    /// admin cheat through the PROBE connection (the allow-listed <c>mcp-probe-*</c>
     /// — see the ownership rule <c>Server.MayRelocate</c>: the probe may move its
     /// own ship or any MCP-harness bot), then waits for the BOT's own real
     /// ClientWorld to show the new sector — the authoritative proof the server
@@ -255,7 +255,7 @@ internal sealed partial class BotManager : IDisposable
             }
             string F(double v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
             string cmd = $"relocate {shipId} {sector} {F(pos.X)} {F(pos.Y)} {F(pos.Z)} {F(fwd.X)} {F(fwd.Y)} {F(fwd.Z)}";
-            // Send via the PROBE (the allow-listed 'mcp-probe'), which may move
+            // Send via the PROBE (the allow-listed 'mcp-*' prefix), which may move
             // its own ship or any MCP-harness bot (Server.MayRelocate). On the
             // refusal path (non-privileged / disabled) the unconsumed line is
             // relayed as Individual chat to the target ship — contained, not a
@@ -298,14 +298,22 @@ internal sealed partial class BotManager : IDisposable
     /// startup therefore fails loudly instead of serving tools against nothing.</summary>
     private void ConnectProbe()
     {
-        _stallTelemetry.Connect(Probe, "mcp-probe", _host, _port);
-        Probe.SendLogonRequest(Request("mcp-probe"));
-        if (!WaitUntil(() => Probe.Ack is { FValidated: true }, 12000))
+        // Native mission names are unique. Include both worker identity and a
+        // fresh suffix so separate supervisors/single managers can coexist.
+        string name = $"mcp-probe-w{(Partition?.Index ?? 0) + 1}-{Guid.NewGuid().ToString("N")[..6]}";
+        _stallTelemetry.Connect(Probe, name, _host, _port);
+        Probe.SendLogonRequest(Request(name));
+        if (!WaitUntil(() => Probe.Ack is not null || Probe.Lost, 12000))
             throw new InvalidOperationException($"startup probe: no validated LOGONACK from {_host}:{_port}");
+        if (Probe.Ack is not { FValidated: true })
+            throw new InvalidOperationException($"startup probe: logon refused: {Probe.Ack?.CharNameOrFailureReason ?? "connection lost"}");
         short side = ProbeSidePref();
         Probe.SendPositionReq(side);
-        if (!WaitUntil(() => Probe.World.MyShipId is not null, 15000))
+        if (!WaitUntil(() => Probe.World.MyShipId is not null && Probe.World.MySideId is not null || Probe.LastPositionRefusal is not null || Probe.Lost, 15000))
             throw new InvalidOperationException("startup probe: never seated (no ship assigned by the server)");
+        if (Probe.LastPositionRefusal is { } refusal)
+            throw new InvalidOperationException($"startup probe: side {refusal.SideId} refused: {refusal.Reason}");
+        if (Probe.Lost) throw new InvalidOperationException("startup probe: connection lost while selecting a side");
         lock (Probe.Gate)
             ProbeSide = Probe.World.MySideId ?? (short)(side >= 0 ? side : 0);
 
@@ -341,13 +349,13 @@ internal sealed partial class BotManager : IDisposable
                 // P539c test seam: ALLEGIANCE_MCP_PROBE_SIDE_IDX forces which
                 // roster side the probe (and thus the "probe's side") seats on,
                 // so the per-side repro can swap the probe's side to test whether
-                // the dominance follows the probe. Unset in production → sides[0].
+                // the dominance follows the probe. Unset → server auto-pick,
+                // respecting P655 capacity/balance without harness privileges.
                 if (int.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_MCP_PROBE_SIDE_IDX"), out var idx)
                     && idx >= 0 && idx < sr.Sides.Length)
                     return sr.Sides[idx].SideId;
-                return sr.Sides[0].SideId;
             }
-        return 0;
+        return -1;
     }
 
     /// <summary>The set of sides this server can seat a bot on: the real positive

@@ -238,7 +238,7 @@ fedmsg,38 MISSIONDEF,Inc/Messages.h:294,done,Wire/MissionDef.cs,4
 fedmsg,39 POSITIONREQ,Inc/Messages.h:320,done,Wire/PositionReq.cs,4
 fedmsg,40 POSITIONREQ,Inc/Messages.h:325,partial,Wire/PositionReqBroadcast.cs (server emits; no client handler found),4
 fedmsg,41 POSITIONACK,Inc/Messages.h:331,done,Wire/PositionAck.cs,4
-fedmsg,42 DELPOSITIONREQ,Inc/Messages.h:366,partial,Wire/DelPositionReq.cs (server handled; client consumer not found),3
+fedmsg,42 DELPOSITIONREQ,Inc/Messages.h:366,partial,Wire/DelPositionReq.cs (server handled; ConnectionSession tracks own refusal; lobby rejection UI partial),3
 fedmsg,43 LOCK_LOBBY,Inc/Messages.h:372,partial,Wire/LockLobby.cs (server handled; client consumer not found),4
 fedmsg,44 LOCK_SIDES,Inc/Messages.h:376,partial,Wire/LockSides.cs (server handled; client consumer not found),4
 fedmsg,45 PLAYER_READY,Inc/Messages.h:380,done,Wire/PlayerReady.cs,5

@@ -36,7 +36,7 @@ MISSIONDEF,38,S,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client)
 POSITIONREQ,39,C,"(C) server handler: Server.Lifecycle, Server.Lobby",client→server (sender),Client requests a side position (SendPositionReq),appmsg.cpp:2470,done
 POSITIONREQ,40,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: seat-request forward to leader),appmsg.cpp:2470,partial
 POSITIONACK,41,C,(C) server handler: Server.Dispatch,client→server (sender),Real client does NOT send POSITIONACK (leader accept path absent),—,done
-DELPOSITIONREQ,42,CS,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: DELPOSITIONREQ),appmsg.cpp:2486,partial
+DELPOSITIONREQ,42,CS,"Server.Lifecycle, Server.Lobby","Bot; ConnectionSession.LastPositionRefusal","Own-session refusal retained for MCP startup diagnostics; lobby rejection UI partial",appmsg.cpp:2486,partial
 LOCK_LOBBY,43,CS,Server.Dispatch,Bot only (harness),Real client does NOT consume (candidate: LOCK_LOBBY lobby lock),appmsg.cpp:2611,partial
 LOCK_SIDES,44,CS,"Server.Lobby, Server.Dispatch",Bot only (harness),Real client does NOT consume (candidate: LOCK_SIDES side lock),appmsg.cpp:2620,partial
 PLAYER_READY,45,CS,"Server.Lobby, Server.Dispatch",ConnectionSession (real client),Client sends PLAYER_READY; relay echo applied (P282),appmsg.cpp:2297,done

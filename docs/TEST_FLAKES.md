@@ -336,3 +336,32 @@ the batching change alone still passes the original roster fixture only 11/15.
 See the [P655c report](reports/P655_GAME_STATE_INTEGRITY.md#p655c) and its
 per-run evidence for final-tree rates, side elimination, P660 repetitions,
 and complete suite results. Existing quarantine traits are unchanged.
+
+## P655d observation (2026-10-15)
+
+Full unfiltered suites after the P655d build: Core **4,242 pass / 2 fail**,
+ClientCore **900 pass / 0 fail / 1 existing opt-in skip**, MonoGame
+**2,120 pass / 0 fail / 3 existing private-pack skips**, Lobby **19 pass / 0 fail**.
+After all four suites completed, both failed methods passed **3/3 alone**:
+
+| Test | Full-run observation | Isolated result |
+| --- | --- | --- |
+| `Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join` | `TcpTransport.Shutdown` called `Thread.Join` before the thread started (`ThreadStateException`). Same shutdown symptom as the earlier P655 entry, in a different transport test. | 3/3 pass |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Expected loadout-change receipt collection was empty at the assertion. | 3/3 pass |
+
+These satisfy the brief's explicit load-flake classification rule. Neither
+assertions nor quarantine traits were changed. This classification does not
+claim that the underlying transport shutdown race has been fixed.
+
+The P655d startup regression is **not a flake**: omitted JSON limit fields
+became zero through the generated init-only constructor, reducing effective
+capacity to one. The original two-worker executable fails after 15 s even with
+a correct bearer; adding just the two explicit limit values seats both original
+same-name probes. See the [P655d report](reports/P655_GAME_STATE_INTEGRITY.md#p655d)
+and [results](reports/P655D_RESULTS.json) for the failing-first evidence,
+native duplicate-login decision, config fix and real two-worker MCP checks.
+
+The routine ClientCore showcase skip was subsequently enabled with
+`ALLEGIANCE_LIVE_P660_SHOWCASE=1` and passed **3/3 alone** (local 15v15 MCP,
+30/30 bots and 2/2 humans migrated each time). Only the three unavailable
+private Meshy-pack cases remain unexecuted.

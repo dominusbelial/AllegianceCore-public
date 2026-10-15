@@ -480,3 +480,174 @@ dotnet test tests/Allegiance.Lobby.Tests --no-build
 Not run in this lane: rig/221/200v200. Claude retains that verification per the
 brief. The two-match loopback regression uses forced match endings and is not
 a claim that two 200v200 battles were run. No commit or push was made.
+
+## P655d
+
+### Root cause: JSON defaults made the team capacity one
+
+The reported failure is reproduced locally with the **starting P655 revision
+`604a8714`**, a real server process, the real `allegiance-mcp --workers 2`, and
+wall-clock-paced TCP. It is **not keyed by character name**. P655 introduced
+`GameConfig.MaxPlayersPerTeam` and `MaxTeamImbalance` as `init` properties with
+initializers 256 and 1. The source-generated JSON constructor assigns both
+members from zero-valued arguments when the keys are omitted, overwriting the
+initializers. `Server.SideIntegrity.cs` then clamps the zero capacity with
+`Math.Max(1, game.MaxPlayersPerTeam)`: after the first player, side 0 is full.
+
+The exact seating path is `AdvanceSideSelection` → `CompleteSideSelection` →
+`CheckInitialPositionRequest` → `CheckPositionRequestCore`. The capacity check
+returns `TeamFull` **before** the authenticated-bot balance exception. The old
+server sends DELPOSITIONREQ and restores the pending entry without logging the
+refusal. Both old workers explicitly choose side 0. ConnectionSession did not
+consume DELPOSITIONREQ, and MCP waited 15 seconds for SET_CLUSTER, then exited.
+The server's 30-simulation-second retry cannot rescue a real-time 15-second
+startup deadline. A separate deterministic packet control also proves that
+with correctly constructed defaults, an *unprivileged*, distinctly named
+second side-0 requester is refused for `TeamBalance`; auto-pick seats it on side 1.
+
+Counterfactuals, with both JSON limit keys omitted unless stated:
+
+| Executables/config | Result |
+| --- | --- |
+| Original P655 server + original two-worker MCP, wrong bearer | One side-0 seat; second worker reports `never seated`; supervisor exits 1 after 15.44 s. |
+| Original P655 server + original two-worker MCP, correct bearer | Same failure, after 15.33 s. Authentication alone cannot bypass capacity. |
+| Original executables, correct bearer, **only add the two explicit limit keys** (256/1) | Both original `mcp-probe` sessions seat on side 0; MCP initializes in 0.40 s. This isolates the omitted defaults and disproves a name-specific gate in the starting port. |
+| Fixed executables, omitted limits, wrong bearer | Two unique probes seat on sides 0/1; MCP initializes in 0.42 s. No harness privilege is granted. |
+| Fixed executables, omitted limits, correct bearer | Both unique probes are forced onto side 0 and seat; MCP initializes in 0.51 s. |
+
+The baseline executable comparison initially used unmodified archived sources.
+A later diagnostic-only baseline build logged `maxPlayers=0 imbalance=0` and
+`authenticated=True refusal=TeamFull` for peer 2. Its emitted
+`ServerJsonContext.GameConfig.g.cs` confirms unconditional init-member
+assignments from constructor arguments. The explicit-limit control used that diagnostic-only baseline build; its only
+source changes print the decision and limits. No diagnostic instrumentation was
+added to production code. Artifacts are under `/tmp/p655d/comparison` and
+`/tmp/p655d/generated`.
+
+### Native duplicate-login decision and changes
+
+All native references below were inspected locally and are relative to
+`~/Development/Allegiance/src/`:
+
+| Rule | Native evidence / port decision |
+| --- | --- |
+| Private standalone servers refuse a duplicate character | `FedSrv/FedSrv.CPP:599-624`: in `JoinMission`, compare mission players with `_stricmp`, send `DELPOSITIONREQ(DPR_DuplicateLogin)` to the newcomer, and return. |
+| Authenticated native builds remove the old session | `FedSrv/FedSrv.CPP:627-630` calls `RemovePlayerByName(..., QSR_DuplicateLocalLogon)` under `USEAUTH`; `FedSrv/fsmission.cpp:1248-1272` matches case-insensitively and removes the existing player from that mission. Non-private builds without `USEAUTH` do not execute that removal branch. |
+| Capacity still applies to authenticated bots | `FedSrv/fsmission.cpp:4633-4642`: `DPR_TeamFull` precedes the bot-CDKey exception to `DPR_TeamBalance`. Balance is computed after NotStarted at `:4608-4623`. The port's configured 256-player default supports the requested 200-per-side lane; it is not claimed as native's default capacity. |
+| Logon failures have an explicit wire result | `FedSrv/FedSrv.CPP:977-984` fills failure text and `fValidated=false`, with ship id zero. P655d chooses this earlier refusal for duplicate names instead of native's later mission-join refusal. |
+
+The port follows the private standalone **refuse-newcomer** policy. Names are
+case-insensitive within the destination mission; a pending join reserves its
+name too. A duplicate gets a failed LOGONACK with
+`character name already in use in this mission`, ship id 0 and `FRetry=false`,
+before id allocation or privilege authentication. It cannot advance to seating,
+and it cannot evict or modify the original player. Pending and seated names are
+released by the existing disconnect path. Reserving a pending name and moving
+the refusal to logon are deliberate port policies, not claims about native's
+exact packet sequence.
+
+The two new limit properties now use ordinary setters, so the generated JSON
+loader retains their initializers when keys are absent. Explicit values,
+including zero and the 32767 balance-disable value, are preserved. There is no
+capacity or authentication bypass.
+
+Every MCP probe now uses `mcp-probe-w<worker>-<random suffix>`, including the
+single-worker path, and requests server auto-pick by default. The existing
+`ALLEGIANCE_MCP_PROBE_SIDE_IDX` override still forces an explicit roster side.
+This keeps probes eligible under `mcp-*` admin patterns and `mcp-` harness
+prefixes. A source search found no production behavior keyed on the exact
+literal `mcp-probe`. P485 ready-up still uses the assigned ship id; the real
+worker test verifies both probes ready. ConnectionSession now retains its own
+DELPOSITIONREQ reason, clears it on reconnect/retry, and ignores other players'
+refusals. MCP reports failed LOGONACK and side-refusal reasons directly. Server
+side-selection refusals also include the reason in diagnostics. The executable
+receive-dispatch registry and parity CSVs reflect the new consumer; lobby
+rejection UI remains partial.
+
+### Regression evidence and verification
+
+Before the duplicate policy, the four pending/seated and exact/case-variant
+packet cases failed because the starting server validated both names. The
+initial two-worker test also failed both name-uniqueness assertions. Those
+initial worker tests accelerated simulation and are **not** the evidence for
+the real-time 15-second failure; the process comparison above provides that.
+
+The JSON regression failed **3 of 4 cases before the setter fix**: omitted
+limits were zero, while the explicit-zero control passed. After strengthening
+the real worker test to load JSON with limits omitted and force both
+authenticated probes onto side 0, that case also failed before the setter fix;
+the auto-balanced wrong-bearer case passed. These failures prevented a
+probe-renaming-only patch from being mistaken for a complete fix.
+
+Coverage includes real concurrent same-name TCP logons (exactly one refusal and
+one seat), pending/seated duplicate reservations, case folding, no id consumption,
+disconnect reuse, balance refusal followed by legal auto-pick, JSON omission and
+explicit override cases, own-session refusal tracking/retry, immediate MCP
+startup refusal diagnostics, and the actual stdio MCP supervisor with two child
+processes. The authenticated worker case loads omitted limits, forces **both
+probes onto side 0**, readies them, and spawns two more bots on side 0 through
+MCP; the wrong-bearer case seats on 0/1 without privilege. Existing P655 hostile
+identity and positive-control tests remain in the isolation matrix.
+
+Build passed with **0 warnings / 0 errors** (`dotnet build -m:2 -v:q`).
+Every new/affected method passed **3/3 alone: 56 methods, 71 parameter cases,
+168 invocations / 213 passing case executions**, without isolated skips. This
+includes all P655 game-state hostile/positive controls, existing side-select,
+duplicate-logon and id-allocation cases, commanded-bot and normal-map ready-up
+proofs, reconnect/reseat and P660 next-match coverage, JSON defaults and the new
+worker/refusal regressions. The dispatch coverage sentinel initially failed
+because its old totals were still 90/28 after adding the consumer; correcting
+them to 91/27 yielded 3/3. That was a deterministic test-maintenance fix, not a
+load flake.
+
+Complete unfiltered suites ran sequentially after the final build and individual
+checks, with live/loopback and LiveTiming coverage included:
+
+| Suite | Passed | Failed in full run | Skipped |
+| --- | ---: | ---: | ---: |
+| Core | 4,242 | 2 | 0 |
+| ClientCore | 900 | 0 | 1 |
+| MonoGame | 2,120 | 0 | 3 |
+| Lobby | 19 | 0 | 0 |
+
+After **all four suites finished**, both failed Core methods passed **3/3
+alone**: `Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join`
+failed in `TcpTransport.Shutdown` with `ThreadStateException`, and
+`LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy`
+missed an expected loadout-change receipt. These meet the brief's explicit
+load-flake rule; the full suite is not represented as failure-free. Observations
+are appended to [TEST_FLAKES.md](../TEST_FLAKES.md#p655d-observation-2026-10-15).
+Neither assertions nor quarantine traits were changed.
+
+The suite's opt-in **local** 15v15 P660 showcase was then enabled explicitly
+and passed **3/3 alone**, so its routine-suite skip did not leave it untested.
+Each run migrated **30/30 bots and 2/2 humans** across a forced next-match
+transition and rearmed the finale. This is local loopback coverage, not a rig
+battle. Only the three unavailable private Meshy-pack checks remain unexecuted;
+every new/affected test executed.
+
+Per-case isolation outcomes, failing-first evidence, process comparisons, full
+suite counters/skips and all failure reruns are preserved in
+[P655D_RESULTS.json](P655D_RESULTS.json). Raw logs and TRXs are under
+`/tmp/p655d`. Whitespace validation passed with
+`git -c core.whitespace=cr-at-eol diff --check`, preserving the parity CSVs'
+existing CRLF line endings.
+
+Reproduce after exporting `local.env`:
+
+```bash
+dotnet build -m:2 -v:q
+# Each selected exact method was run three times with a distinct TRX file:
+dotnet test <test-project> --no-build --filter 'FullyQualifiedName=<method>'
+dotnet test tests/Allegiance.Core.Tests --no-build
+dotnet test tests/Allegiance.ClientCore.Tests --no-build
+dotnet test tests/Allegiance.ClientCore.MonoGame.Tests --no-build
+dotnet test tests/Allegiance.Lobby.Tests --no-build
+# Run three times to reproduce the explicitly enabled local showcase checks:
+ALLEGIANCE_LIVE_P660_SHOWCASE=1 dotnet test tests/Allegiance.ClientCore.Tests --no-build --filter FullyQualifiedName~P660ShowcaseLiveTests
+```
+
+
+No commit or push was made. Rig/221/200v200 verification remains assigned to
+Claude by the brief; all checks described here ran locally, including live TCP,
+real worker processes and stdio MCP.

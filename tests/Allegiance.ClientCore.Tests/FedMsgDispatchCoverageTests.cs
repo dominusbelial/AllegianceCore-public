@@ -20,7 +20,7 @@ namespace Allegiance.ClientCore.Tests;
 /// and is not silently falling into an "unknown fmid" sink. This test does that:
 ///
 ///  1. It encodes every server-sent message the real client is supposed to
-///     consume (the <see cref="ExpectedConsumedServerSent"/> registry — all 59
+///     consume (the <see cref="ExpectedConsumedServerSent"/> registry — all 75
 ///     native S/CS messages the client dispatches, plus the 16 port-added
 ///     server-sent messages), feeds the real bytes through the real dispatch
 ///     (no sockets — <see cref="ITransportSite.OnReceive"/> is invoked
@@ -58,7 +58,7 @@ public class FedMsgDispatchCoverageTests
         (9, "SetBriefingText"), (10, "PlayerInfo"), (12, "ProjectileInstance"), (13, "RankInfo"), (14, "SetStartTime"),
         (16, "PlayerRescued"), (17, "Ballot"), (20, "ShipDelete"), (23, "ChatMessage"),
         (26, "ExportShip"), (28, "TreasureSpawn"), (30, "DestroyTreasure"), (33, "DropPart"), (34, "SwapPart"), (35, "Ping"),
-        (37, "MissionStageMessage"), (38, "MissionDef"), (45, "PlayerReady"), (46, "TeamReady"),
+        (37, "MissionStageMessage"), (38, "MissionDef"), (42, "DelPositionReq"), (45, "PlayerReady"), (46, "TeamReady"),
         (47, "ForceTeamReady"), (57, "StationsUpdate"), (58, "StationCapture"), (59, "StationDestroyed"),
         (60, "MoneyChange"), (61, "DockedNotify"), (62, "GameOver"), (63, "GameOverPlayers"),
         (65, "BucketStatus"), (68, "SideInactive"), (70, "FireMissile"), (75, "SideTechChange"),
@@ -95,7 +95,6 @@ public class FedMsgDispatchCoverageTests
         (18, "CANCEL_BALLOT", "ballot withdrawn; VOTE/ballot state handled via BALLOT(17)+ActiveBallot"),
         (31, "NEW_SHIP_INSTANCE", "codec only; neither side wired (no sender, no handler)"),
         (40, "POSITIONREQ", "team-leader seat-request forward; leader acceptance path not surfaced"),
-        (42, "DELPOSITIONREQ", "cancel/reject seat request; same partial seat-request feature"),
         (43, "LOCK_LOBBY", "lobby lock broadcast; pre-game lobby not surfaced in MonoGame client"),
         (44, "LOCK_SIDES", "side-lock broadcast; side-select lock UI not surfaced"),
         (51, "CHANGE_TEAM_CIV", "team civ change broadcast; civ-swap feature not implemented"),
@@ -284,8 +283,8 @@ public class FedMsgDispatchCoverageTests
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(90, ExpectedConsumedServerSent.Length);
-        Assert.Equal(28, KnownUnconsumedServerSent.Length);
+        Assert.Equal(91, ExpectedConsumedServerSent.Length);
+        Assert.Equal(27, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

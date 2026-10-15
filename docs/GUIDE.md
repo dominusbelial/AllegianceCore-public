@@ -300,6 +300,16 @@ For the MCP harness, set the same explicit secret in both server sections:
 ```
 
 Start `allegiance-mcp` with `ALLEGIANCE_PRIVILEGE_SECRET` set to that value.
+MCP probes use unique `mcp-probe-w<worker>-<suffix>` names, which match the
+`mcp-*` admin allow-list. Each probe asks the server to pick an eligible side;
+`ALLEGIANCE_MCP_PROBE_SIDE_IDX` still forces a roster side for diagnostics.
+Duplicate character names (case-insensitive within a mission, including pending
+joins) receive a failed LOGONACK with `character name already in use in this mission`.
+MCP startup reports logon and side-selection refusals directly.
+Omitted `games[].maxPlayersPerTeam` and `maxTeamImbalance` retain their defaults
+of 256 and 1 when loading JSON; authenticated harness bots bypass balance but
+still obey capacity.
+
 Its probe and bots present the token at logon; subsequent commands need no
 prefix. Cross-peer relocation additionally requires an authenticated harness
 target. The TCP transport is plaintext, so keep tokens on trusted networks.

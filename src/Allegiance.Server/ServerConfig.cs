@@ -23,12 +23,14 @@ public sealed class GameConfig
     /// <summary>Number of sides. Sides are built for ids 0..Teams-1.</summary>
     public int Teams { get; init; }
 
-    /// <summary>P655: native nMaxPlayersPerTeam; supports the 200v200 lane.</summary>
-    public int MaxPlayersPerTeam { get; init; } = 256;
+    /// <summary>P655: native nMaxPlayersPerTeam; supports the 200v200 lane.
+    /// Use a setter so source-generated JSON retains the initializer when omitted;
+    /// init-only members are assigned zero by its generated constructor.</summary>
+    public int MaxPlayersPerTeam { get; set; } = 256;
 
     /// <summary>Native iMaxImbalance; 32767 disables balance; default 1 matches native.
     /// Applied after NotStarted (FedSrv/fsmission.cpp:4614-4626).</summary>
-    public int MaxTeamImbalance { get; init; } = 1;
+    public int MaxTeamImbalance { get; set; } = 1;
 
     /// <summary>Per-team <c>rgCivID[]</c> — indexes <see cref="ServerConfig.StaticCore"/>
     /// civilizations. Length must be &gt;= Teams.</summary>
