@@ -1,5 +1,8 @@
 # P656 — mature showcase bomber finale
 
+The original P656 results below are historical. The **P656b** section at the end
+supersedes the capital-hull selection described in the original report.
+
 Implemented on `codex/p656`. Changes are confined to `tools/allegiance-mcp`,
 socket-free ClientCore tests, and this report. No commits or pushes.
 
@@ -172,3 +175,87 @@ observed** here: Claude runs that exercise afterwards, as requested. Inspect
 grants, co-located escort samples, station kill/game-over times, then all bots
 reset/ready with no pending or idle bots on the new map. Defenders can defeat
 the strike, and a bomber that never dies must wait for its next normal relaunch.
+
+## P656b — bomber hulls only
+
+Implemented on `codex/p656b`, based on `integ/rig-next-match`, after the clash42
+run exposed hull 73 (`Flagship.4 [AsCr]`) being selected for the finale. Changes
+are confined to the bot tool, ClientCore regression tests, and this report.
+No commits or pushes.
+
+The old selector already required `Showcase.ClassifyHull == HullRole.Bomber`,
+but the classifier checked `HabmThreatToStation` before heavy/carrier status.
+Capitals carrying that bit therefore passed as bombers. Heavy and capital
+names (including Flagship) and `HabmCarrier` now take precedence. Remaining
+named bombers and station-threat hulls retain the existing bomber rule.
+Reservation also checks the actual configured hull's classification: a
+capital with a stale `"bomber"` role cannot enter the strike.
+
+The existing anti-station damage search, hardpoint/resource limits, obsolete
+filtering and deterministic ranking still choose among legal bomber hulls.
+Hull, gun, missile, shield and afterburner requirements are now checked against
+observed side development techs, owned stations' effect techs, and the shop's
+local techs. Unknown development tech does not imply all-tech. Selection is
+rechecked at the first assigned pod launch using the actual dock's shop and
+current observations.
+
+If no legal bomber strike loadout is available, selection returns no upgrade
+instead of throwing or substituting a capital. Existing bomber slots keep
+their hull, parts and equipment settings and use the normal next-pod-launch
+purchase/ACK path. Both registration and a fallback launch log the reason.
+Status retains `wings[].loadout`, adds `usingExistingBomberLoadouts`, and reports
+each active bomber's requested hull, name and parts alongside its grant.
+
+Against real PCore001 `Garrison (Str)` **10**, with all tech unlocked, selection
+now yields **69 — Hvy Bomber** (bomber role, no carrier capability):
+
+| Part ID | Part | Mount / quantity |
+| --- | --- | --- |
+| 76 | EW A-B Can 3 | Fixed gun mounts 0 and 1, one each |
+| 144 | LRM Anti-Base | Magazine mount 0, 5 missiles |
+| 44 | Med Shield 3 | Shield mount 0 |
+
+There is no selected afterburner. Purchase value is **500** before inventory
+credit. Nominal complete volley is **4,500 vs hull / 4,500 vs shield**, compared
+with the default **Stealth Bomber 23**'s **4,000 / 4,000**: a **12.5%** increase
+in equivalent volley score against this garrison. Refire figures are
+**10,000 / 10,000** per second under the original report's hit/resource
+assumptions; these are damage-matrix responses, not a measured kill time.
+
+Regression coverage checks every real station target with all tech, explicitly
+rejects hull 73/all Flagships/carriers, tests capital-name/ability precedence,
+and retains the default-bomber damage and mount-legality checks. It also tests
+a catalogue stripped of bomber hulls while retaining the buyable Flagship,
+restricted side and station tech, preservation of an existing bomber's exact
+loadout through a fallback launch and ACK, and rejection of a capital mislabeled
+with the bomber role. The controller fixture now uses real bomber hulls instead
+of fighter hulls labeled as bombers.
+
+Validation used the real configured PCore001 artwork catalogue and the standard
+VSTest/xUnit launcher, including loopback tests; no socket-free substitute was
+needed in this environment.
+
+| Check | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| Final focused P656/P656b and P660 finale rearm checks | 39 | 0 | 0 |
+| Full `Allegiance.ClientCore.Tests` suite | 907 | 0 | 1 |
+| Full `Allegiance.Core.Tests` suite | 4,170 | 0 | 0 |
+| Full `Allegiance.ClientCore.MonoGame.Tests` suite | 2,120 | 0 | 3 |
+
+The ClientCore skip is the explicitly opt-in P660 15v15 showcase proof
+(`ALLEGIANCE_LIVE_P660_SHOWCASE=1`); the MonoGame skips require the optional
+private Meshy pack. The new P656b real-catalogue and fallback tests all ran.
+No new unattended 200v200 match was run for this correction.
+
+- `dotnet restore AllegianceCore.slnx -m:1 -p:NuGetAudit=false` succeeded from
+  cached packages. The initial default restore could not write NuGet's
+  vulnerability cache outside the writable workspace.
+- Final `dotnet build AllegianceCore.slnx --no-restore -m:1`: **0 warnings,
+  0 errors**.
+- Focused command: `dotnet test tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj --no-restore --filter 'FullyQualifiedName~P656|FullyQualifiedName~P660_Finale'`.
+- Each full suite used `dotnet test tests/<suite>/<suite>.csproj --no-build --no-restore`.
+- Logs: `/tmp/p656b-restore.log`, `/tmp/p656b-build.log`,
+  `/tmp/p656b-targeted.log`, `/tmp/p656b-clientcore.log`, `/tmp/p656b-core.log`,
+  `/tmp/p656b-monogame.log`. Full-suite TRX results are
+  `/tmp/p656b-clientcore.trx`, `/tmp/p656b-core.trx`, `/tmp/p656b-monogame.trx`.
+- `git diff --check` passed. Changes remain uncommitted in the working tree.
