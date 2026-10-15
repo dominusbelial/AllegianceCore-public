@@ -860,6 +860,7 @@ public sealed partial class Game1 : Game
     private long _nextMatchGeneration;
     private bool _countdownStartCuePlayed;
     private int _countdownLastSecond;
+    private readonly Audio.RipcordCountdownSound _ripcordCountdownSound = new();
     private bool _gameOverCuePlayed;
 
     // P271 — mission-briefing popup. _briefingRenderer draws the dismissible

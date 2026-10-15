@@ -94,7 +94,10 @@ public class P478SideGaDevelopmentCostTimeTests
         Assert.NotEmpty(devBuckets);
         foreach (var b in devBuckets)
         {
-            Assert.Equal(b.Development!.Value.Price, b.Price);
+            var dev = b.Development!.Value;
+            int expectedPrice = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId
+                ? (int)Core.Value.Constants.FloatConstants[12] : dev.Price;
+            Assert.Equal(expectedPrice, b.Price);
             Assert.Equal(b.Development!.Value.TimeToBuild, b.TimeToBuild);
         }
     }
@@ -143,7 +146,7 @@ public class P478SideGaDevelopmentCostTimeTests
             Console.WriteLine("P478-TEAMMONEY: c_didTeamMoney not a live bucket (obsolete/absent) — exemption vacuously holds");
             return;
         }
-        Assert.Equal(tm.Development!.Value.Price, tm.Price);           // NOT ×1.5
+        Assert.Equal((int)Core.Value.Constants.FloatConstants[12], tm.Price); // loaded win-money, NOT ×1.5
         Assert.Equal(tm.Development!.Value.TimeToBuild, tm.TimeToBuild); // NOT ×2.0
     }
 

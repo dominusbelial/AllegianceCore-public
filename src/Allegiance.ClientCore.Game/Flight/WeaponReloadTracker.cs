@@ -16,6 +16,9 @@ public enum WeaponStatus
     /// <summary>Can fire: ammo &gt; 0, or a system that does not consume the ammo pool.</summary>
     Ready,
 
+    /// <summary>Part is mounting, or its magazine load deadline has not passed.</summary>
+    NotReady,
+
     /// <summary>An auto-reload attempt is in flight (RELOAD relay seen, or magazine just emptied).</summary>
     Reloading,
 
@@ -29,7 +32,8 @@ public readonly record struct WeaponSlotDescriptor(
     int MountId,
     string Name,
     bool ConsumesAmmo,
-    short CapacityAmmo);
+    short CapacityAmmo,
+    bool IsReady = true);
 
 /// <summary>One rendered row of the weapon-status HUD list — a snapshot taken by
 /// <see cref="WeaponReloadTracker.Update"/>, pure data (no MonoGame types) so a
@@ -129,6 +133,13 @@ public sealed class WeaponReloadTracker
         var rows = new List<WeaponStatusRow>(slots.Count);
         foreach (var s in slots)
         {
+            if (!s.IsReady)
+            {
+                rows.Add(new WeaponStatusRow(s.MountId, s.Name, s.ConsumesAmmo,
+                    (short)Math.Clamp((int)MathF.Round(s.CapacityAmmo * ammoFrac), 0, s.CapacityAmmo),
+                    s.CapacityAmmo, WeaponStatus.NotReady));
+                continue;
+            }
             if (!s.ConsumesAmmo)
             {
                 // Energy weapon / missile launcher: never touches the shared pool.

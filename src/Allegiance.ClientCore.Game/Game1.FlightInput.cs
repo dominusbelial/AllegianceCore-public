@@ -249,6 +249,9 @@ public sealed partial class Game1
 
     protected override void Update(GameTime gameTime)
     {
+        // Also runs in dock/lobby/disconnect states, so the loop cannot linger.
+        lock (_session.Gate)
+            _sound?.UpdateShipWarnings(_session.World.ShipWarnings.Mask, _session.World.ShipWarnings.TakeRisingEdges());
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
         // P618 — advance the sim-scaled game clock (wall × live server time
         // scale), clamped to [0,∞) so a scale=0 edge (never produced server-side;
@@ -1131,7 +1134,7 @@ public sealed partial class Game1
         // cross the 16-bit wire stateM (igc.h:829,2457-2465), so the wire request is
         // the player-launch path and the server fires authoritatively against its own
         // CommandTarget lock. A ~250 ms throttle bounds chatter while held; the
-        // server's lock-rebuild is the real fire-rate limiter. Bound to Left Ctrl —
+        // magazine's load deadline is the fire-rate limiter. Bound to Left Ctrl —
         // unclaimed by every other binding (W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/
         // Enter/Back/Escape/Space/K/C/N/OemTilde/[ /] all taken) and the common
         // flight-sim missile-fire convention (the brief's own suggestion).
@@ -1139,7 +1142,7 @@ public sealed partial class Game1
         if (!composing && missileCtrl)
         {
             long nowMs = Environment.TickCount64;
-            if (nowMs - _lastMissileSendMs >= 250)
+            if (nowMs - _lastMissileSendMs >= 250 && _session.World.MissileLock.IsReady)
             {
                 _lastMissileSendMs = nowMs;
                 _session.SendFireMissile();
@@ -2172,6 +2175,15 @@ public sealed partial class Game1
         // (undock) is likewise not automatic — when docked the hangar/loadout
         // screen (P268) takes over and the player launches via BUY_LOADOUT
         // (fLaunch=true) or the fallback timer.
+
+        // trekigc.cpp:1016-1075: own-ship ripcord voice uses the same
+        // countdown waves, with the native -7 dB gain (sounddef.mdl:353-362).
+        // Mission countdown audio is handled once by UpdateMissionCountdownSound.
+        float ripcordLeft = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
+            world.RipcordActiveSinceLocalMs, Environment.TickCount64,
+            RipcordDurationSeconds(world), world.TimeScale);
+        if (_ripcordCountdownSound.Update(world.RipcordActive, ripcordLeft) is { } ripcordSecond)
+            _sound?.PlayCountdownSecond(ripcordSecond, Audio.RipcordCountdownSound.Gain);
 
         // Game-over: fire once on the real transition of world.Mission.Stage
         // into Over — driven by the server's GAME_OVER(62) broadcast →

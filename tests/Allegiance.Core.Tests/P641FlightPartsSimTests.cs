@@ -159,14 +159,14 @@ public class P641FlightPartsSimTests
 
         // A second reset must discard even a sub-byte mounting remainder.
         float rate = m.Core.Constants.FloatConstants[10]; // c_fcidMountRate
-        double now = .75 / (ExpandedPartData.FullyMounted * rate);
+        double now = .4 / (ExpandedPartData.FullyMounted * rate);
         ship.Update(now);
         Assert.Equal(0, ship.Parts.Single().FractionMounted);
         Assert.True(ship.TryApplyReloadEntry(-1, 1));
         Assert.Equal(0, ship.Parts.Single().FractionMounted);
-        now += .5 / (ExpandedPartData.FullyMounted * rate);
+        now += .2 / (ExpandedPartData.FullyMounted * rate);
         ship.Update(now);
-        Assert.Equal(0, ship.Parts.Single().FractionMounted); // stale .75 + .5 would become 1
+        Assert.Equal(0, ship.Parts.Single().FractionMounted); // stale .4 + .2 would round to 1
         ship.StationId = 123;
         ship.Update(now += .1);
         Assert.Equal(0, ship.Parts.Single().FractionMounted);

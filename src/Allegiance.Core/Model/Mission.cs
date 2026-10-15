@@ -25,6 +25,9 @@ using Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Mission
 {
+    /// <summary>P629 stress-test override. Native sector crowding is enabled by default.</summary>
+    public bool CrowdingPenaltyEnabled { get; set; } = true;
+
     /// <summary>The type universe the mission draws on.</summary>
     public StaticCore Core { get; }
 
@@ -295,36 +298,16 @@ public sealed class Mission
     /// </summary>
     public const double TimeIncrement = 0.25;
 
-    /// <summary>The flat seconds between paydays, ported from
-    /// <c>c_dtBetweenPaydays = 60.0f</c> (<c>missionigc.cpp:2691</c>) and the
-    /// mission constant <c>c_fcidSecondsBetweenPaydays</c> it is stored under
-    /// (<c>missionigc.cpp:2746</c>). The reference mission <em>overrides</em>
-    /// whatever the core's <c>DataConstantsIGC.FloatConstants[6]</c> holds with
-    /// this fixed value at init (<c>missionigc.cpp:2773-2774</c>), so — like
-    /// <see cref="ServerHost.ExitWarpSpeedBonus"/> and per this repo's
-    /// honesty-about-simplifications convention — we use the fixed value and
-    /// say so, rather than reading the (overridden) core slot.</summary>
-    public const double SecondsBetweenPaydays = 60.0;
+    /// <summary>Loaded c_fcidSecondsBetweenPaydays (slot 6), read by
+    /// fsmission.cpp:2253,2516. Core import overrides constructor defaults
+    /// (missionigc.cpp:3283; missionigc.h:171-173).</summary>
+    public double SecondsBetweenPaydays => Core.Constants.FloatConstants[6];
 
-    /// <summary>The per-payday income before civilization adjustment, ported
-    /// from <c>c_fIncome = 600.0f</c> (<c>missionigc.cpp:2722</c>), also a
-    /// mission-set override of the core constant <c>c_fcidIncome=30</c>
-    /// (<c>missionigc.cpp:2773</c>; <c>igc.h:95</c>). This is the value
-    /// <c>DoTick</c> multiplies by <c>1.0 + IncomeMoney</c>
-    /// (<c>fsmission.cpp:2536</c>). Hardcoded for the same reason as
-    /// <see cref="SecondsBetweenPaydays"/>.</summary>
-    public const float IncomePerPayday = 600.0f;
+    /// <summary>Loaded c_fcidIncome (slot 30), fsmission.cpp:2523.</summary>
+    public float IncomePerPayday => Core.Constants.FloatConstants[30];
 
-    /// <summary>P443 — the per-side starting-treasury base, ported from the
-    /// reference mission's hardcoded <c>c_fStartingMoney = 16000.0f</c>
-    /// (<c>missionigc.cpp:2752</c>), the mission-set override of the core
-    /// constant <c>c_fcidStartingMoney</c> (<c>missionigc.cpp:2697</c>). Each
-    /// side's seed is this × <c>(fStartingMoney + civ.BonusMoney)</c> at game
-    /// start (<c>fsmission.cpp:1992-2001</c>); see
-    /// <see cref="ApplyStartingMoneyAndInitialPayday"/>. Hardcoded for the same
-    /// reason as <see cref="IncomePerPayday"/> / <see cref="SecondsBetweenPaydays"/>
-    /// — the reference mission overrides the core slot with this fixed value.</summary>
-    public const float StartingMoneyPerSide = 16000.0f;
+    /// <summary>Loaded c_fcidStartingMoney (slot 11), fsmission.cpp:1992.</summary>
+    public float StartingMoneyPerSide => Core.Constants.FloatConstants[11];
 
     /// <summary>P443 — the <c>MissionParams.fStartingMoney</c> multiplier in the
     /// seed formula <c>StartingMoneyPerSide × (fStartingMoney + civ.BonusMoney)</c>
@@ -750,7 +733,7 @@ public sealed class Mission
     /// <summary>P443 — the starting-treasury seed for one side:
     /// <c>StartingMoneyPerSide × (fStartingMoney + civ.BonusMoney)</c>, or 0 when
     /// the multiplier is ≤ 0 (<c>fsmission.cpp:1992-2002</c>).</summary>
-    private static long StartingMoneyFor(Side side)
+    private long StartingMoneyFor(Side side)
     {
         // The fStartingMoney ≤ 0 guard (fsmission.cpp:2001-2002), where a
         // non-positive multiplier yields 0. Taken through a local so the named

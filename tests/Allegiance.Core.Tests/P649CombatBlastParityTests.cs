@@ -151,6 +151,7 @@ public sealed class P649CombatBlastParityTests
     public void Launcherless_station_damage_uses_matrix_before_hostile_capture()
     {
         var (m, site) = Domain();
+        m.Core.Constants.FloatConstants[5] = 0.1f; // explicit capture threshold; the synthetic table otherwise contains zero
         var s = m.Sectors[0];
         m.Core.Constants.DamageConstants[0][0] = 0; // immune row, like the live fixture's type 0
         var station = new Station(DataStationIGC.Decode(new byte[DataStationIGC.Size]) with

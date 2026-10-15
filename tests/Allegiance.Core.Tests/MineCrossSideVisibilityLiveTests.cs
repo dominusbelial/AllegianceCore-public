@@ -135,6 +135,9 @@ public class MineCrossSideVisibilityLiveTests
         };
 
         seat.Server.Boot(Config());
+        // This visibility fixture deliberately separates peers by 900,000 units.
+        // Expand the loaded universe instead of exposing them to OOB damage.
+        foreach (var m in seat.Server.Missions) m.Core.Constants.FloatConstants[1] = 1_000_000f;
         foreach (var __m in seat.Server.Missions) __m.Stage = MissionStage.Started;  // sweep only runs Started/Starting
 
         var port = seat.Server.BoundPort;

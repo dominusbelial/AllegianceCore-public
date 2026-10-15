@@ -2539,3 +2539,21 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/receivedobjective.ogg
+
+#begin Sounds/boundsalert.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/boundsalert.ogg
+
+#begin Sounds/vo_sal_boundryexceeded.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_boundryexceeded.ogg
+
+#begin Sounds/vo_sal_sectorcrowded.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_sectorcrowded.ogg

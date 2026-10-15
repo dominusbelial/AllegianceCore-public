@@ -709,8 +709,8 @@ internal static class Catalog
     /// <summary>
     /// P433 — the real inter-shot readiness delay (seconds) of the missile a
     /// launcher <c>PartId</c> fires — the launcher's real cooldown from the data
-    /// (<c>DataMissileTypeIGC.ReadyTime</c>), floored so even a dumbfire launcher
-    /// (ReadyTime 0, instant-lock) is paced like the guns' refire rather than
+    /// (<c>DataMissileTypeIGC.LoadTime</c>, magazineigc.cpp:118), floored so even a dumbfire launcher
+    /// (LoadTime 0, instant-lock) is paced like the guns' refire rather than
     /// spammed. Used by the combat engines to decide when to send the real
     /// <c>SendFireMissile()</c>.
     /// </summary>
@@ -719,7 +719,7 @@ internal static class Catalog
         var core = RepresentativeCore();
         if (core.Launchers.TryGetValue(launcherPartId, out var l)
             && core.MissileTypes.TryGetValue(l.ExpendabletypeId, out var mt))
-            return Math.Max(mt.ReadyTime, 0.4f);
+            return Math.Max(mt.LoadTime, 0.4f);
         return 0.8f;
     }
 

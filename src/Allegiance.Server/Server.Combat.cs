@@ -355,14 +355,14 @@ public sealed partial class Server
 
         var msg = new FireMissile
         {
-            Lock = 0f,                               // no homing target this slice
+            Lock = m.LockFraction,
             TimeFired = timeFired,
             MissileTypeId = m.MissileType.ExpendableTypeId,
             LauncherId = shooter.Id,
             ClusterId = m.OwnerSector.Id,
-            TargetType = 0,                          // OT_* placeholder — no target this slice
-            TargetId = -1,                           // NA — no target
-            BDud = false,
+            TargetType = (int)EquipmentTarget.TypeOf(m.Target),
+            TargetId = m.Target?.Id ?? -1,
+            BDud = m.IsDud,
             // Exactly one missile per fire — this slice always sends a single
             // missile, never a salvo (see class doc).
             Entries =
@@ -550,14 +550,7 @@ public sealed partial class Server
         {
             HullId = ship.HullType.HullId,
             SidShip = ship.Id,
-            // Launch repair uses 255 for fully armed runtime parts. Native
-            // ExpandedPartData stores BytePercentage(1) == 240 (Utility.h:1311-
-            // 1327; shipIGC.h:819). Keep the final post-launch inventory,
-            // including refilled packs, but publish its native full-mount byte.
-            Parts = ship.ExportInventoryForAck()
-                .Select(p => p.FractionMounted == byte.MaxValue
-                    ? p with { FractionMounted = ExpandedPartData.FullyMounted } : p)
-                .ToArray(),
+            Parts = ship.ExportInventoryForAck().ToArray(),
             Passengers = ship.ChildShips
                 .Select(c => new PassengerData(c.Id, (byte)(c.TurretId ?? 0)))
                 .ToArray(),

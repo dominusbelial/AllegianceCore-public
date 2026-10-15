@@ -113,4 +113,5 @@ public readonly record struct HudFrame(
     // fed from ClientWorld.TimeScale (the server's TimescaleUpdate). The HUD
     // draws "TIME DILATION nn%" only while < 100 (i.e. the server is slowing the
     // game clock under load); 100 hides it entirely.
-    float TimeDilationPercent = 100f);
+    float TimeDilationPercent = 100f,
+    Allegiance.Core.Sim.ShipWarningMask WarningMask = Allegiance.Core.Sim.ShipWarningMask.None);

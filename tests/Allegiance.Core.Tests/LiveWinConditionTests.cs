@@ -630,10 +630,12 @@ public class LiveWinConditionTests
             short carId = sp.Carrier.Id;
             WaitDocked(control, sp.Carrier, sp.Boarder);
 
-            boarder.SendBoard(carId);
+            // The spawner assigns roles by logon drain order, not connection order.
+            var actualBoarder = new[] { carrier, boarder }.Single(c => c.ShipAssignment!.Ship.ShipId == sp.Boarder.Id);
+            actualBoarder.SendBoard(carId);
             int boarded = PumpUntil(control, () => sp.Boarder.ParentShip is not null, 8000);
             Assert.True(boarded < 8000, "control: board should succeed while Started");
-            Assert.Equal(0, boarder.BoardNacks);
+            Assert.Equal(0, actualBoarder.BoardNacks);
         }
 
         // ── Refusal leg: the same setup, but the mission is Over ──────────
@@ -651,8 +653,9 @@ public class LiveWinConditionTests
             WaitDocked(server, sp.Carrier, sp.Boarder);
 
             server.Missions[0].Stage = MissionStage.Over;    // end the mission behind the gate
-            boarder.SendBoard(sp.Carrier.Id);
-            int nacked = PumpUntil(server, () => boarder.BoardNacks > 0, 8000);
+            var actualBoarder = new[] { carrier, boarder }.Single(c => c.ShipAssignment!.Ship.ShipId == sp.Boarder.Id);
+            actualBoarder.SendBoard(sp.Carrier.Id);
+            int nacked = PumpUntil(server, () => actualBoarder.BoardNacks > 0, 8000);
             Assert.True(nacked < 8000, "boarder should get BOARD_NACK once the mission is Over");
             Assert.Null(sp.Boarder.ParentShip);              // refused — not boarded
 

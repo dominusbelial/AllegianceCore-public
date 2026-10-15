@@ -47,7 +47,8 @@ public sealed partial class Game1
         var constants = _shopCatalog?.Core?.Constants.FloatConstants;
         float rate = constants is { Length: > 10 } ? constants[10] : 1;
         var type = mounted is { } p ? ResolveFlightPart(p.PartId)?.Type as DataPartTypeIGC.Afterburner : null;
-        _ownSim.SetAfterburner(type, mounted?.FractionMounted ?? 255, update.FuelFraction * (hull?.MaxFuel ?? 0), rate, mine.HasPendingReset ? update.Power : 0);
+        _ownSim.SetAfterburner(type, mounted?.FractionMounted ?? 255, update.FuelFraction * (hull?.MaxFuel ?? 0), rate, mine.HasPendingReset ? update.Power : 0,
+            thrustFactor: _session.World.GlobalAttributesFor(_session.World.MySideId ?? -1).Get(GlobalAttributeSet.Thrust));
     }
     /// <summary>
     /// P508 — drive the own-ship local simulation from the real client world for
@@ -301,7 +302,7 @@ public sealed partial class Game1
                 foreach (var pt in cat.Parts)
                 {
                     if (pt.PartId != p.PartId) continue;
-                    if (pt.Type is DataPartTypeIGC.Afterburner ab) { abMax = ab.MaxThrust; }
+                    if (pt.Type is DataPartTypeIGC.Afterburner ab) { abMax = ab.MaxThrust * gas.Get(GlobalAttributeSet.Thrust); }
                     break;
                 }
             }

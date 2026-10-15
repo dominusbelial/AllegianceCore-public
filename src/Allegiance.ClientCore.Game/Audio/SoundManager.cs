@@ -62,6 +62,9 @@ public sealed class SoundManager : IDisposable
     // while an enemy missile's target is the local ship, pitched 0.75..1.25 by
     // the best lock (trekigc.cpp:5065).
     private SoundEffectInstance? _missileWarning;
+    private SoundEffectInstance? _boundsWarning;
+    private SoundEffect? _boundsVoice;
+    private SoundEffect? _crowdingVoice;
     private SoundEffect _apEngage = null!;    // vo_sal_autopilotengage
     private SoundEffect _apDisengage = null!; // vo_sal_autopilotdisengage
     private SoundEffect _countdownStart = null!;   // countdownstart
@@ -539,6 +542,9 @@ public sealed class SoundManager : IDisposable
             _afterburner = Loop("Sounds/iafter");
             _missileTone = Loop("Sounds/missilelock");   // P230 — lock-acquired beep (missileToneSound = ImportWave("missilelock"), sounddef.mdl:365; sound id missileTone, sounds.h:135)
             _missileWarning = Loop("Sounds/missilelockonme"); // P264 — incoming-missile warning loop (missileLockSound = LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364)
+            _boundsWarning = Loop($"Sounds/{ShipWarningState.LoopSound}");
+            _boundsVoice = _content.Load<SoundEffect>($"Sounds/{ShipWarningState.BoundsVoice}");
+            _crowdingVoice = _content.Load<SoundEffect>($"Sounds/{ShipWarningState.CrowdingVoice}");
             _ambienceVariants = AmbienceStems.Select(s => _content.Load<SoundEffect>($"Sounds/{s}")).ToArray();
             _apEngage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotengage");
             _apDisengage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotdisengage");
@@ -734,10 +740,10 @@ public sealed class SoundManager : IDisposable
     /// no-op (the caller decides eligibility via
     /// <see cref="CountdownSound.TickAssetFor"/>); this method only speaks the
     /// matching asset it already holds. No-op when audio is not loaded.</summary>
-    public void PlayCountdownSecond(int second)
+    public void PlayCountdownSecond(int second, float gain = 1f)
     {
         if (IsLoaded && _countdownTicks.TryGetValue(second, out var sfx))
-            PlayWarnOneShot(sfx);
+            PlayOneShot(sfx, SoundCategory.Warning, gain);
     }
 
     /// <summary>Play the game-over callout (one-shot) — <c>vo_ma_gameover</c>.
@@ -1331,6 +1337,23 @@ public sealed class SoundManager : IDisposable
             PlayWarnOneShot(sfx);
     }
 
+    /// <summary>WinTrek.cpp:8659-8666 voices on each rising bit;
+    /// trekigc.cpp:1285-1286 loops while either warning remains active.</summary>
+    public void UpdateShipWarnings(Allegiance.Core.Sim.ShipWarningMask mask, Allegiance.Core.Sim.ShipWarningMask rising)
+    {
+        if (!IsLoaded || _boundsWarning is not { } loop) return;
+        if ((rising & Allegiance.Core.Sim.ShipWarningMask.OutOfBounds) != 0 && _boundsVoice is { } bounds)
+            PlayWarnOneShot(bounds);
+        if ((rising & Allegiance.Core.Sim.ShipWarningMask.CrowdedSector) != 0 && _crowdingVoice is { } crowd)
+            PlayWarnOneShot(crowd);
+        if (mask != Allegiance.Core.Sim.ShipWarningMask.None)
+        {
+            SetLoopVolume(loop, 0.8f * _masterVolume);
+            EnsurePlaying(loop);
+        }
+        else if (loop.State == SoundState.Playing) Safe(loop.Stop);
+    }
+
     /// <summary>
     /// Play a quick-chat voice line (P217) by its real asset stem (e.g.
     /// <c>vo_player_attack</c>) — a one-shot <c>Sounds/{stem}</c> cue, loaded
@@ -1444,6 +1467,9 @@ public sealed class SoundManager : IDisposable
             _afterburner?.Dispose();
             _missileTone?.Dispose();
             _missileWarning?.Dispose();
+            _boundsWarning?.Dispose();
+            _boundsVoice?.Dispose();
+            _crowdingVoice?.Dispose();
             foreach (var sfx in _ambienceVariants) sfx.Dispose();
             _commandMessage?.Dispose();
             _apEngage?.Dispose();

@@ -882,19 +882,10 @@ public sealed partial class Server
     /// == NULL)</c>, <c>FedSrv.CPP:5423</c>), and a missile launcher mounted at
     /// <c>ET_Magazine</c>@0 (<c>GetMountedPart(ET_Magazine, 0)</c>,
     /// <c>FedSrv.CPP:5425</c>) with <c>Amount &gt; 0</c> (<c>FedSrv.CPP:5426</c>).
-    /// The server is authoritative and ignores the client-supplied ids/missile-type/
-    /// target ("Ignore the IDs provided by the client and generate one ourselves",
-    /// <c>FedSrv.CPP:5444</c>): it resolves the launcher's own missile type and
-    /// fires against the ship's server-side <see cref="Ship.CommandTarget"/> — the
-    /// lock target <c>Ship.UpdateMissileLock</c> builds against each tick — via the
-    /// shared <see cref="Ship.TryFireMissile"/> gate, which requires the lock to be
-    /// sufficient (a <c>MaxLock == 0</c> type needs none) <em>and</em> ammo
-    /// remaining before a <see cref="Missile"/> is created. Creation raises
-    /// <c>MissileCreatedEvent</c> → <see cref="BroadcastFireMissile"/>, the outbound
-    /// FIRE_MISSILE(70) to the firing ship's sector, and decrements ammo. No
-    /// inbound <c>Server.cs</c> FIRE_MISSILE case existed before P226 — the brief
-    /// called that absence correct — but native's real player path is exactly this
-    /// inbound message, so P226 adds it (documented in <c>docs/MISSILE_FIRE_P226.md</c>).
+    /// The server resolves the mounted type and current command target, preserves
+    /// the client's reported normalized lock (scaled by MaxLock), and marks
+    /// requests more than 0.5s before TimeLoaded as duds (FedSrv.CPP:5433-5468).
+    /// Creation broadcasts the actual lock, target identity and dud flag.
     /// </summary>
     private void HandleFireMissile(ConnectionId from, LiveShip live, FireMissile req)
     {
@@ -923,11 +914,11 @@ public sealed partial class Server
         }
 
         short amountBefore = part.Amount;
-        bool fired = ship.TryFireMissile(mission.LastUpdate);
+        bool fired = ship.TryFireMissile(mission.LastUpdate, clientRequest: true, requestedLock: req.Lock);
         short amountAfter = fired ? ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0)?.Amount ?? amountBefore : amountBefore;
         Console.WriteLine(fired
             ? $"[firemissile] {from} ship {ship.Id} launched -> FIRE_MISSILE(70) lock {ship.MissileLock:F3} ammo {amountBefore} -> {amountAfter}"
-            : $"[firemissile] {from} ship {ship.Id}: FIRE_MISSILE requested but lock gate not met (MissileLock {ship.MissileLock:F3}, MaxLock need none iff 0) — no missile");
+            : $"[firemissile] {from} ship {ship.Id}: FIRE_MISSILE requested while launcher unavailable — no missile");
     }
 
     private void HandleSetWingId(ConnectionId from, LiveShip live, SetWingId req)
@@ -1430,12 +1421,9 @@ public sealed partial class Server
                     : $"target ship {found.Id} (side {found.SideId}, {(found.IsNpc ? "NPC" : "peer")}{(accepted ? $") cmdID={req.CommandId}" : ")")} — {slot} set (FedSrv.CPP:7335-7339)";
                 if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} -> {foundDesc}");
             }
-            else
+            else if (!accepted)
             {
-                // Non-ship objectType (station/etc.): both slots are Model?-
-                // typed and cannot hold it — logged, slot unchanged (documented
-                // scope boundary).
-                if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} objectType {req.ObjectType} is not a ship — non-ship target out of scope for {slot} (logged, no-op)");
+                target.CommandTarget = EquipmentTarget.Resolve(target.Sector, req.ObjectType, req.ObjectID);
             }
             return;
         }

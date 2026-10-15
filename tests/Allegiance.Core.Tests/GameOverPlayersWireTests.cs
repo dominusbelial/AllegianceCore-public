@@ -353,6 +353,11 @@ public sealed class GameOverPlayersWireTests
             for (int i = 0; i < 3; i++) { bots[i].Connect(port, names[i]); bots[i].SendLogonRequest(Request(names[i])); }
             int got = PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(got < 4000, "no assignments");
+            // Spawn sequence routes peers to missions; socket drain order may differ.
+            var peersA = bots.Where(b => ReferenceEquals(server.Ships.Single(s =>
+                s.Ship.Id == b.ShipAssignment!.Ship.ShipId).Ship.Mission, server.Missions[0])).ToArray();
+            Assert.Equal(2, peersA.Length);
+            var peerB = Assert.Single(bots.Except(peersA));
             foreach (var s in server.Ships) s.Ship.Velocity = Vector3.Zero;
 
             var missionA = server.Missions[0];
@@ -365,21 +370,21 @@ public sealed class GameOverPlayersWireTests
             DropShield(target);
             capturer.Position = new Vector3(0, 0, -1000);   // at the side-1 flag target in mission A
 
-            int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over, 9000);
+            int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over && peersA.All(b => b.GameOverPlayerBroadcasts.Count > 0), 9000);
             Assert.True(seen < 9000, "mission A did not end by conquest");
             Assert.Equal(MissionStage.Over, missionA.Stage);
             Assert.Equal(MissionStage.Started, server.Missions[1].Stage);
 
             // Mission A peers got the per-player broadcast...
-            Assert.True(a0.GameOverPlayerBroadcasts.Count > 0 && a1.GameOverPlayerBroadcasts.Count > 0,
+            Assert.True(peersA.All(b => b.GameOverPlayerBroadcasts.Count > 0),
                 "mission A peers must receive GAME_OVER_PLAYERS");
 
             // ...mission B's peer heard NOTHING (whole-mission scoped per mission).
-            Assert.Empty(b0.GameOverPlayerBroadcasts);
+            Assert.Empty(peerB.GameOverPlayerBroadcasts);
 
             Console.WriteLine($"P194-MULTI-LIVE: mission A conquest win -> A peers saw " +
-                              $"{a0.GameOverPlayerBroadcasts.Count}/{a1.GameOverPlayerBroadcasts.Count} GAME_OVER_PLAYERS; " +
-                              $"mission B peer saw {b0.GameOverPlayerBroadcasts.Count}, stage {server.Missions[1].Stage}");
+                              $"{peersA[0].GameOverPlayerBroadcasts.Count}/{peersA[1].GameOverPlayerBroadcasts.Count} GAME_OVER_PLAYERS; " +
+                              $"mission B peer saw {peerB.GameOverPlayerBroadcasts.Count}, stage {server.Missions[1].Stage}");
         }
         finally
         {

@@ -9,10 +9,8 @@ namespace Allegiance.Core.Sim;
 /// minimum that lets a ship fire: the armed/active state, the cooldown gate, the
 /// energy/ammo checks, and the projectile creation in
 /// <c>FireWeapon</c> (<c>weaponIGC.cpp:142-348</c>). The mounting state machine
-/// (the <c>mountedFraction</c> ramp, <c>weaponIGC.h:30-49</c>) is <b>not</b>
-/// modelled — the part-equipping/unmounting path is out of this task's scope, so
-/// a weapon is constructed <b>armed</b> (ready to fire once selected and
-/// off-cooldown).
+/// (the <c>mountedFraction</c> ramp, <c>weaponIGC.h:30-49</c>) follows its
+/// mounted part, including swap and ammo reload delays.
 /// </summary>
 /// <remarks>
 /// Faithfulness notes (every deviation documented so the port stays honest):
@@ -67,9 +65,8 @@ public sealed class Weapon
     private bool _firingBurst;             // m_fFiringBurst
     private Ship? _gunner;                 // m_pshipGunner (weaponIGC.h:260)
 
-    /// <summary>Construct an <b>armed</b> weapon (the port's shortcut for the
-    /// out-of-scope mounting state machine). Ready to fire once selected,
-    /// off-cooldown, and with energy/ammo.</summary>
+    /// <summary>Construct a weapon. Mounted loadout weapons follow their part's
+    /// readiness; bare spawn weapons start armed.</summary>
     /// <param name="ship">The ship the weapon is mounted on (must be placed in a sector — it must have a <see cref="Mission"/> and <see cref="Ship.Sector"/>).</param>
     /// <param name="type">The decoded weapon part type.</param>
     /// <param name="projectileType">The decoded projectile type the weapon fires.</param>
@@ -120,6 +117,8 @@ public sealed class Weapon
     /// <summary>Whether the weapon is active (has been selected and armed; <c>m_fActive</c>).</summary>
     public bool Active => _active;
 
+    public float MountedFraction => _ship.Parts.FirstOrDefault(p => ReferenceEquals(p.FunctionalWeapon, this))?.MountedFraction ?? 1f;
+
     /// <summary>Whether the last <c>Update</c> produced a shot (<c>m_fFiringShot</c>).</summary>
     public bool FiringShot => _firingShot;
 
@@ -154,9 +153,10 @@ public sealed class Weapon
     /// </summary>
     public void Update(double now)
     {
-        if (!_ship.IsWeaponMountReady(this))
+        // weaponIGC.h:33-48: an unmounted/swapped/reloading gun is inert.
+        if (MountedFraction < 1f)
         {
-            Deactivate();
+            _firingShot = _firingBurst = false;
             return;
         }
         if (!_active && IsWeaponSelected())
@@ -210,7 +210,7 @@ public sealed class Weapon
     {
         bool fFiredShot = false;
 
-        if (_active && _nextFire < now)
+        if (MountedFraction >= 1f && _active && _nextFire < now)
         {
             double lastUpdate = _ship.LastUpdate;
 

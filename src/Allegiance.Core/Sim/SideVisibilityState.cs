@@ -59,6 +59,8 @@ public sealed class SideVisibilityState
     /// the port of <c>ThingSiteImpl::GetSideVisibility</c>
     /// (<c>FedSrv.CPP:11133-11137</c>). Untouched sides read <c>false</c>,
     /// matching a fresh native array entry (zero-initialised).</summary>
+    internal bool HasState(short sideId) => _visible.ContainsKey(sideId);
+
     public bool SeenBySide(short sideId)
         => _visible.TryGetValue(sideId, out var visible) && visible;
 

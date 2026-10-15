@@ -586,6 +586,8 @@ public sealed class TransportConfig
 /// </summary>
 public sealed class ServerConfig
 {
+    /// <summary>P629 simulation rules, including the stress-test crowding override.</summary>
+    public SimConfig Sim { get; set; } = new();
     /// <summary>Root of the artwork tree (contains the core and map files).
     /// Resolved by <see cref="ExternalPaths"/>: <c>$ALLEGIANCE_ARTWORK_PATH</c>,
     /// else the gitignored <c>local.env</c>, else empty (validation in

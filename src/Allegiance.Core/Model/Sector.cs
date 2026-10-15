@@ -64,6 +64,9 @@ public sealed class Sector : IClusterIgc
     /// <summary>Number of times <see cref="Update"/> has been called.</summary>
     public long UpdateCount { get; private set; }
 
+    /// <summary>Native clusterIGC.cpp:162-198,231: cost for this chunk, including dt.</summary>
+    public float Cost { get; private set; }
+
     /// <summary>
     /// The mission's full side set, when this sector is mission-bound — the
     /// port of the native <c>pcluster-&gt;GetMission()-&gt;GetSides()</c> iteration
@@ -640,10 +643,8 @@ public sealed class Sector : IClusterIgc
 
     /// <summary>
     /// Per-chunk sector tick (<c>CclusterIGC::Update</c>, <c>clusterIGC.cpp:97</c>).
-    /// Ports exactly the models loop — <c>l-&gt;data()-&gt;Update(now)</c>
-    /// (<c>clusterIGC.cpp:241-253</c>). Everything else in the C++ function
-    /// (station drone launch, ship plot/execute, cost, the <c>activeF</c>
-    /// collision block) is out of scope and deliberately absent.
+    /// Calculates the native crowding cost before the models loop
+    /// (<c>clusterIGC.cpp:162-198,241-253</c>), then resolves collisions.
     /// </summary>
     /// <remarks>
     /// The whole body is gated on <c>now &gt; m_lastUpdate</c> (<c>clusterIGC.cpp:99</c>).
@@ -674,6 +675,25 @@ public sealed class Sector : IClusterIgc
         double dt = timeUpdate - LastUpdate;    // chunk length — the collision sweep width
         UpdateCount++;
         LastUpdate = timeUpdate;
+
+        // clusterIGC.cpp:162-198,231. The native inactive reset is the
+        // !bStarted branch, independent of the later activeF collision gate.
+        Cost = 0f;
+        if (Mission is { Stage: MissionStage.Started, CrowdingPenaltyEnabled: true } mission)
+        {
+            var fc = mission.Core.Constants.FloatConstants;
+            Cost = fc[37];
+            foreach (var ship in _models.OfType<Ship>())
+            {
+                // Docked ships are absent from native GetShips(). Parent
+                // occupants remain members and contribute their turret weight.
+                if (ship.StationId is not null) continue;
+                Cost += ship.PilotType < Ship.PilotTypePlayer ? fc[35]
+                    : ship.ParentShip is not null ? fc[34]
+                    : ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod) ? fc[33] : fc[36];
+            }
+            if (Cost > 0f) Cost *= (float)dt / fc[38];
+        }
 
         // Snapshot: the models loop must survive a model that self-terminates
         // during its own Update (C++ capture-next, clusterIGC.cpp:243-250).
@@ -1569,31 +1589,12 @@ public sealed class Sector : IClusterIgc
     /// </summary>
     public const float DockRadius = 200.0f;
 
-    /// <summary>
-    /// The shield "down" threshold <c>c_fcidDownedShield</c> — a station whose
-    /// <see cref="Station.ShieldFraction"/> is BELOW this may be captured by a
-    /// hostile board ship (the IGC collision gate, shipIGC.cpp:851); at or above
-    /// it the base is still protected and rejects the boarding attempt. Native
-    /// assigns the mission constant from <c>c_downedShield</c>
-    /// (missionigc.cpp:2745), whose literal value is 0.1f — the same value
-    /// already used at Ship.cs:64,3873 ("≤ 0.1 … the shield absorbs nothing")
-    /// and cited there. Reused verbatim, not re-derived.
-    /// </summary>
-    private const float DownedShieldFraction = 0.1f;
+    /// <summary>Loaded c_fcidDownedShield (slot 5), shipIGC.cpp:851.</summary>
+    private float DownedShieldFraction => Mission?.Core.Constants.FloatConstants[5] ?? 0.1f;
 
-    /// <summary>
-    /// The regeneration rate constant in the native formula
-    /// <c>dOre = dT · regenConst · (oreMax − ore)</c>
-    /// (<c>asteroidigc.h:52-55</c>). <c>c_fcidHe3Regeneration</c> is a mission
-    /// float-constant index (<c>igc.h:75</c>) whose actual default is set from
-    /// core data, so this port substitutes a flat value and says so. Chosen
-    /// <b>small</b> (relative to <see cref="MiningRate"/>) so that a rock the
-    /// miner is draining is observably held near-empty within a short test —
-    /// the "pool limits mining" behaviour the verification wants — while still
-    /// being the faithful native regrowth (continuous, no permanent depletion),
-    /// not a fabricated native constant.
-    /// </summary>
-    public const float He3Regeneration = 0.025f;
+    /// <summary>Loaded c_fcidHe3Regeneration (slot 14), asteroidigc.h:52-55.
+    /// Standalone sectors use the native constructor default (missionigc.cpp:2702).</summary>
+    public float He3Regeneration => Mission?.Core.Constants.FloatConstants[14] ?? (0.01f / 60f);
 
     /// <summary>
     /// The proximity padding added to an asteroid's radius when deciding whether
@@ -1739,6 +1740,7 @@ public sealed class Sector : IClusterIgc
             var station = ev.B.Data as Station ?? ev.A.Data as Station;
             if (ord is null || (ship is null && probe is null && asteroid is null && station is null)) continue;
             if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe) || ReferenceEquals(ord, asteroid) || ReferenceEquals(ord, station)) continue;
+            if (ord is Missile { IsDud: true }) continue; // missileigc.cpp:428
             if (spent.Contains(ord)) continue;            // already terminated this step
 
             // P467 — the round's damage multiplier from its LAUNCHER's side
@@ -2873,7 +2875,7 @@ public sealed class Sector : IClusterIgc
     /// attacks a base, so it is never bounced — zero gameplay cost, and it keeps
     /// the pass from disturbing such bodies.</para>
     /// </remarks>
-    private static bool IsDockOrBoardCandidate(Ship ship, Station station)
+    private bool IsDockOrBoardCandidate(Ship ship, Station station)
     {
         // DOCK / RESCUE: the port's friendly-dock gate is same-side-only.
         if (ship.SideId is { } side && side == station.SideId) return true;
@@ -3523,7 +3525,7 @@ public sealed class Sector : IClusterIgc
             // detonate an aleph (native missileigc.cpp:459-466: `if (eabm &
             // c_eabmWarpBomb)`). Any other missile touching an aleph does
             // nothing — it does not arm a delayed blast.
-            if (!missile.MissileType.HasWarpBombCapability) continue;
+            if (missile.IsDud || !missile.MissileType.HasWarpBombCapability) continue;
 
             foreach (var warp in _warps)
             {
@@ -3928,7 +3930,12 @@ public sealed class Sector : IClusterIgc
 
             // ── rock-tapped log ──────────────────────────────────────────
             if (actual != minedOre)
-                Console.WriteLine($"[mine] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' tapped: yielded {actual:0.##} of {minedOre:0.##} requested — pool gates yield (regenerating)");
+            {
+                ConsoleLog.Write($"[mine] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' tapped: yielded {actual:0.##} of {minedOre:0.##} requested");
+                // shipIGC.cpp:2240-2244: a tapped NPC miner picks a new order.
+                if (ship.IsNpc && ship.PilotType == Ship.PilotTypeMiner)
+                    ship.RedirectTappedMiner();
+            }
 
             // ── host seam (throttled inside Asteroid.MineOre to the
             // native > 3.0 ore-change threshold, asteroidigc.h:246-251) ──
@@ -3938,7 +3945,7 @@ public sealed class Sector : IClusterIgc
                 ast.ClearPendingReport();
             }
 
-            ship.MiningAsteroid = ast;                 // P254: the specific rock this ship is now drilling (collision-exclusion consult)
+            if (!ship.IsNpc || ship.MiningAsteroidTarget == ast) ship.MiningAsteroid = ast; // P254: the specific rock this ship is now drilling (collision-exclusion consult)
 
         }
     }

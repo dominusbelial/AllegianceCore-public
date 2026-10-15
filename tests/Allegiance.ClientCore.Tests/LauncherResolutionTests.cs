@@ -165,7 +165,9 @@ public class LauncherResolutionTests
     {
         Require.Artwork();
         var launcher = Catalog.ResolveLauncher(MountableLauncherName());
-        Assert.True(Catalog.LauncherReadyTime(launcher.Id) > 0);
+        var core = Catalog.RepresentativeCore();
+        var mt = core.MissileTypes[core.Launchers[launcher.Id].ExpendabletypeId];
+        Assert.Equal(Math.Max(mt.LoadTime, 0.4f), Catalog.LauncherReadyTime(launcher.Id));
     }
 
     // ── P435 — the three new expendable kinds (mine / chaff / probe) ────────

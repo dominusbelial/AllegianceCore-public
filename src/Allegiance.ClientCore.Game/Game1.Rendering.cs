@@ -2420,7 +2420,8 @@ public sealed partial class Game1
                     // P618 — the live sim time scale as a percent (100 = full
                     // speed). Hidden by the renderer at full speed; shown as
                     // "TIME DILATION nn%" when the server slows the game clock.
-                    TimeDilationPercent: 100f * (float)_session.World.TimeScale);
+                    TimeDilationPercent: 100f * (float)_session.World.TimeScale,
+                    WarningMask: world.ShipWarnings.Mask);
             }
         }
         if (!_hideHud && !_directorActive && !_hudHidden)   // P572 --hide-hud; P580 the director always hides the HUD; P612 F1 HUD toggle
@@ -2468,10 +2469,12 @@ public sealed partial class Game1
 
             // Self-expire when RipcordSpeed seconds have elapsed since the
             // activation was decoded (abort clears it sooner via RIPCORD_ABORTED).
-            if (world.RipcordActiveSinceLocalMs is { } start)
+            if (world.RipcordActiveSinceLocalMs is not null)
             {
                 float dur = RipcordDurationSeconds(world);
-                if (dur > 0f && (Environment.TickCount64 - start) / 1000.0 >= dur)
+                float left = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
+                    world.RipcordActiveSinceLocalMs, Environment.TickCount64, dur, world.TimeScale);
+                if (dur > 0f && left <= 0f)
                 {
                     world.ClearRipcord();
                     return null;

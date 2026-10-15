@@ -997,20 +997,6 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         return true;
     }
 
-    /// <summary>The exit-speed boost added to a ship's entry speed when it
-    /// leaves an aleph. Native reads <c>GetFloatConstant(c_fcidExitWarpSpeed)</c>
-    /// (<c>fsship.cpp:126</c>) from the mission's own constants array, which the
-    /// mission constructor unconditionally seeds with
-    /// <c>c_fExitWarpSpeed = 15.0f</c> (<c>missionigc.cpp:2743</c>,
-    /// <c>missionigc.cpp:2688</c>) — never read back from the core at runtime.
-    /// So, per this repo's fixed-mission-constant convention (cf.
-    /// <c>Mission.IncomePerPayday</c>/<c>SecondsBetweenPaydays</c>), the faithful
-    /// port value is exactly <c>15.0f</c> (P246; formerly a smaller stand-in of
-    /// <c>5f</c>). Entering a warp at full throttle thus means exiting
-    /// noticeably faster, hard to instantly reverse course — the reason enemy
-    /// miners cluster near warp exits.</summary>
-    private const float ExitWarpSpeedBonus = 15f;
-
     /// <summary>Uniform source for the small exit-offset jitter, matching the
     /// C++ <c>random(2.0f, 5.0f)</c> (<c>fsship.cpp:130-131</c>). Accessed only
     /// on the simulation thread, so no synchronization is needed.</summary>
@@ -1051,7 +1037,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// (<c>fsship.cpp:77</c>, <c>pwarp->MassLimit()</c>). <c>DataWarpIGC</c>
     /// does not decode a mass limit, so the gate is omitted (everything may
     /// transit).</item>
-    /// <item><b>Fixed exit-speed bonus.</b> See <see cref="ExitWarpSpeedBonus"/>.</item>
+    /// <item><b>Loaded exit-speed bonus.</b> See <c>c_fcidExitWarpSpeed</c> (slot 3, fsship.cpp:126).</item>
     /// <item><b>Reverse is in place.</b> <c>Ship.Orientation</c> is a get-only,
     /// mutable class; <c>Orientation.Set</c> mutates it in place, so the ship
     /// keeps its identity (fine — a ship is uniquely owned here).</item>
@@ -1086,7 +1072,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // 2. Reverse the velocity direction at entry speed + the exit bonus
         //    (fsship.cpp:126-127).
         float entrySpeed = sh.Velocity.Length();
-        sh.Velocity = backward * -(entrySpeed + ExitWarpSpeedBonus);
+        sh.Velocity = backward * -(entrySpeed + sh.Mission!.Core.Constants.FloatConstants[3]);
 
         // P591b — record the warp the ship emerged at (the destination-side
         // partner) so the re-entry guard (Sector.ResolveWarpCollisions) refuses

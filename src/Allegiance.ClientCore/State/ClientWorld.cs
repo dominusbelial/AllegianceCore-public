@@ -479,6 +479,8 @@ public sealed partial class ClientWorld
     // clears them after the drain.
     private readonly List<ClientClusterWarningCue> _clusterWarningCues = new();
     private const int MaxClusterWarningCues = 64;
+
+    public ShipWarningState ShipWarnings { get; } = new();
     // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
     // per real-side player) streamed by the periodic owner-only
     // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
@@ -558,6 +560,7 @@ public sealed partial class ClientWorld
     // P230 — the local ship's missile-lock snapshot (from the owner-only
     // MISSILE_LOCK_UPDATE(204)) plus the previous-frame state used to edge-detect
     // the partial/full/lost console tips (native console.cpp:929-946).
+    private IgcObjectType _prevLockTargetType;
     private MissileLockState _missileLock = MissileLockState.None;
     private MissileLockFeedback.LockState _prevLockState = MissileLockFeedback.LockState.None;
     private short _prevLockTargetId = -1;
@@ -1527,6 +1530,7 @@ public sealed partial class ClientWorld
     /// </summary>
     public void Reset()
     {
+        ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
         MySideId = null;
@@ -1894,6 +1898,9 @@ public sealed partial class ClientWorld
                 // P438 — whole-mission side-join broadcast.
                 Apply(joinSide);
                 break;
+            case ShipWarningUpdate warning:
+                if (warning.ShipId == MyShipId) ShipWarnings.Apply(warning.Mask);
+                break;
             case ClusterWarningUpdate clusterWarning:
                 // P374 — a side's per-sector threat state changed.
                 Apply(clusterWarning);
@@ -1954,6 +1961,7 @@ public sealed partial class ClientWorld
 
     private void Apply(SetCluster set)
     {
+        ShipWarnings.Reset();
         MarkSnapshotDirty();
         // On first arrival this is the "here is your ship" assignment.
         MyShipId ??= set.Ship.ShipId;
@@ -3568,6 +3576,7 @@ public sealed partial class ClientWorld
     /// warps back, or is re-exported to us).</summary>
     private void Apply(ShipDelete m)
     {
+        if (m.ShipId == MyShipId) ShipWarnings.Reset();
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
         MarkSnapshotDirty();
         e.IsGone = true;
@@ -3681,6 +3690,7 @@ public sealed partial class ClientWorld
     public void BeginNextMission()
     {
         MissionGeneration++;
+        ShipWarnings.Reset();
         MyShipId = null;
         Graph = null;
         CountdownStartLocalMs = null;
@@ -4005,13 +4015,14 @@ public sealed partial class ClientWorld
     private void Apply(MissileLockUpdate m)
     {
         _missileLock = new MissileLockState(
-            m.LockFraction, m.TargetShipId, m.TargetPosition, m.MissileTypeName);
+            m.LockFraction, m.TargetShipId, m.TargetPosition, m.MissileTypeName, m.TargetType, m.IsReady);
 
         var curr = MissileLockFeedback.Classify(m.LockFraction);
-        bool targetChanged = m.TargetShipId != _prevLockTargetId;
+        bool targetChanged = m.TargetShipId != _prevLockTargetId || m.TargetType != _prevLockTargetType;
         string? tip = MissileLockFeedback.TipFor(_prevLockState, curr, targetChanged, m.MissileTypeName);
         _prevLockState = curr;
         _prevLockTargetId = m.TargetShipId;
+        _prevLockTargetType = m.TargetType;
 
         if (tip is not null)
         {

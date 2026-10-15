@@ -55,7 +55,7 @@ public sealed class OwnShipSimulator
     private readonly float[] _turnRates = new float[3];
     private DataPartTypeIGC.Afterburner? _afterburner;
     private float _boostFuel, _boostPower, _mountRate = 1f;
-    private byte _boostMounted = 255;
+    private float _boostMountedFraction = 1f;
     private bool _boostActive;
 
     /// <summary>Whether a hull has been resolved yet (false ⇒ <see cref="Step"/>
@@ -105,35 +105,39 @@ public sealed class OwnShipSimulator
     /// <summary>P641 — configure on equipment change/reset, not each frame.
     /// Mirrors Ship.UpdateAfterburner / native afterburnerIGC.cpp:103-164.
     /// Carries the real power/fuel ramp into the shared movement step.</summary>
-    public void SetAfterburner(DataPartTypeIGC.Afterburner? type, byte mounted, float fuel, float mountRate, float power = 0)
+    public void SetAfterburner(DataPartTypeIGC.Afterburner? type, byte mounted, float fuel, float mountRate, float power = 0, float thrustFactor = 1)
     {
         _afterburner = type;
-        _boostMounted = mounted;
+        _boostMountedFraction = Math.Min(1f, mounted / (float)ExpandedPartData.FullyMounted);
         _boostFuel = fuel;
-        _mountRate = mountRate > .0001f ? mountRate : 1f;
+        _mountRate = mountRate; // loaded zero must remain zero
         _boostPower = type is null ? 0 : Math.Clamp(power, 0, 1);
         _boostActive = _boostPower > 0;
-        _inputs = _inputs with { AfterburnerMaxThrust = type?.MaxThrust ?? 0, AfterburnerPower = _boostPower };
+        _inputs = _inputs with { AfterburnerMaxThrust = (type?.MaxThrust ?? 0) * thrustFactor, AfterburnerPower = _boostPower };
     }
 
-    private void StepAfterburner(float dt)
+    private void StepAfterburner(float dt, bool useFuel)
     {
         if (_afterburner is not { } type) return;
-        float fraction = _boostMounted / (float)ExpandedPartData.FullyMounted;
-        if (fraction < 1)
+        if (_boostMountedFraction < 1f)
         {
-            fraction += dt * _mountRate;
-            _boostMounted = (byte)(Math.Min(1f, fraction) * ExpandedPartData.FullyMounted);
-            if (fraction < 1) return;
+            _boostActive = false;
+            _boostPower = 0;
+            if (useFuel) _boostMountedFraction = Math.Min(1f, _boostMountedFraction + dt * _mountRate);
+            if (_boostMountedFraction < 1f) return;
         }
         bool activate = (StateM & ShipControlState.AfterburnerButton) != 0 && _boostFuel != 0;
         if (activate && !_boostActive) { _boostActive = true; _boostPower = 0; }
         if (!_boostActive) return;
         _boostPower = Math.Clamp(_boostPower + dt * (activate ? type.OnRate : -type.OffRate), 0, 1);
         if (_boostPower <= 0) _boostActive = false;
-        float used = _boostPower * type.FuelConsumption * type.MaxThrust * dt;
-        if (used < _boostFuel) _boostFuel -= used;
-        else if (_boostFuel != 0) { _boostFuel = 0; _boostPower = 0; _boostActive = false; }
+        if (useFuel)
+        {
+            // Native fuel consumption uses raw thrust, not the side GA bonus.
+            float used = _boostPower * type.FuelConsumption * type.MaxThrust * dt;
+            if (used < _boostFuel) _boostFuel -= used;
+            else if (_boostFuel != 0) { _boostFuel = 0; _boostPower = 0; _boostActive = false; }
+        }
     }
 
     /// <summary>
@@ -167,10 +171,13 @@ public sealed class OwnShipSimulator
         float dc = dt / n;
         for (int i = 0; i < n; i++)
         {
+            // shipIGC.cpp:2945-2957 advances power before movement; the
+            // mounted-parts pass advances it again and alone consumes fuel.
+            StepAfterburner(dc, useFuel: false);
             _inputs = _inputs with { AfterburnerPower = _boostPower };
             ShipKinematics.Step(in _inputs, ref _velocity, _orientation, _turnRates, dc);
             Position += _velocity * dc;
-            StepAfterburner(dc); // authoritative Ship.OnUpdate moves before equipment
+            StepAfterburner(dc, useFuel: true);
         }
     }
 

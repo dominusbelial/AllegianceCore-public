@@ -102,6 +102,69 @@ fixture defect, corrected by providing legal capacity for its ten-round setup;
 it is not classified as a flake. See [P665_MERGE](reports/P665_MERGE.md) for final
 suite numbers and [P665_RESULTS](reports/P665_RESULTS.json) for per-case outcomes.
 
+## P651 observation (2026-10-14)
+
+The required unfiltered sequential assembly passes on the P651 equipment tree
+reported Core **4189 pass / 1 fail**, ClientCore **873 pass / 2 fail**, and
+MonoGame **1974 pass / 0 fail / 3 optional Meshy-pack skips**. Each failure was
+rerun by exact method filter **3× alone**, after the assembly passes; all passed
+3/3, so they are load flakes under the task lane rule:
+
+| test | full-pass symptom | isolation |
+|---|---|---|
+| `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector` | bystander activation receipt collection empty | 3/3 pass |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | async logon drain order differs from connection order | 3/3 pass |
+| `ShipDeleteGoneLiveTests.DockOut_WatcherLatchesGone_UndockReturnsAndClears` | docker's own `StationId` receipt failed to latch | 3/3 pass |
+
+The last symptom occurs during the test's docking setup, before its watcher
+latch assertion; it is distinct from the historical P472/P482 product fix.
+P651's new equipment regressions and affected classes passed 3× focused runs.
+See [P651 report](reports/P651_EQUIPMENT_RULES.md) for native citations and the
+complete verification record. No new quarantine tags or timing-only product
+changes were introduced.
+
+## P629 observation (2026-10-14)
+
+The required unfiltered sequential assembly passes on the P629 sector-penalty
+tree reported Core **4208 pass / 2 fail**, ClientCore **886 pass / 0 fail**, and
+MonoGame **1974 pass / 0 fail / 3 optional Meshy-pack skips**. After all three
+assemblies finished, each failure passed **3/3 exact-method isolated reruns**,
+qualifying as a load flake under the task lane rule:
+
+| test | full-pass symptom | isolation |
+|---|---|---|
+| `Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking` | healthy bot receipt count still zero in the short packet-rejection window | 3/3 pass |
+| `LiveWinConditionTests.Board_refused_once_mission_over` | Started-stage control boarding did not complete; already `Lane=LiveTiming` | 3/3 pass |
+
+All 31 new P629 test cases and 15 affected existing classes passed three focused
+repetitions. No tags or timing-only product changes were made. See the
+[P629 report](reports/P629_NATIVE_SECTOR_PENALTIES.md) for native references,
+local TCP/bot proof, real-window HUD/audio evidence and durable verification ledgers.
+
+## P666 simulation merge observation (2026-10-14)
+
+Final unfiltered sequential suites: Core **4271 pass / 3 fail**, ClientCore
+**918 pass / 1 fail**, MonoGame **2125 pass / 0 fail / 3 existing optional-pack
+skips**. The opt-in 15v15 next-match showcase ran and passed; ClientCore skipped
+nothing. After all three final assemblies finished, every full-run failure
+passed **3/3 exact-method isolated runs**:
+
+| Test | Full-run symptom | Isolation |
+| --- | --- | --- |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Owner's mount receipt not yet collected after observer receipt | 3/3 pass |
+| `Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking` | Healthy bot's first heavy update not yet collected when flood suppression completed | 3/3 pass |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | Raw peer join callback timed out | 3/3 pass |
+| `ClientCore: CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return` | Initial warp-out setup timed out; existing LiveTiming case | 3/3 pass |
+
+No tags, deadlines or assertions changed for these four load flakes. Separately,
+P666 corrected concrete fixture roles in the existing quarantined boarding and
+multi-mission conquest tests: actual assigned ships/missions now determine the
+peers, and the game-over-player case waits for its asserted wire receipt. Those
+three corrected methods passed 3/3 individually and passed the final full suite;
+their existing traits remain. Native readiness/prediction and legal-capacity
+fixture corrections are described in the [P666 report](reports/P666_MERGE_SIM.md),
+with [durable verification evidence](reports/P666_RESULTS.json).
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition

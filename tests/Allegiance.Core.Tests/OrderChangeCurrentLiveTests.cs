@@ -33,10 +33,7 @@ namespace Allegiance.Core.Tests;
 ///   3. NPC target — A c_cmdCurrent-targets an ownerless NPC
 ///      (P147 <c>SpawnNpcShip</c>, which has NO <c>_peerShips</c> entry) →
 ///      resolved via the sector model-list scan and set on <c>A.CommandTarget</c>.
-///   4. station-typed object is a documented no-op — a station/other
-///      objectType must NOT clear or change <c>CommandTarget</c> (this port's
-///      <c>Station</c> is not a <c>Model</c>, so the Model?-typed slot cannot
-///      hold one — logged, unchanged).
+///   4. unknown station target — GetModel returns NULL and clears the slot.
 /// </summary>
 [Collection("LiveNetwork")]
 public sealed class OrderChangeCurrentLiveTests
@@ -224,16 +221,11 @@ public sealed class OrderChangeCurrentLiveTests
         Console.WriteLine($"P153-NPC: A({seat.A.Id}) c_cmdCurrent -> ownerless NPC {npc.Id} (side {npc.SideId}) : A.CommandTarget set (sector model-list scan)");
     }
 
-    /// <summary>A station-typed object is a documented no-op. A locks B first
-    /// (establishing the live pipeline and a non-null CommandTarget), then
-    /// issues <c>c_cmdCurrent</c> with <c>objectType=Station</c>. The port's
-    /// <c>Station</c> is deliberately not a <c>Model</c>, so the Model?-typed
-    /// <see cref="Ship.CommandTarget"/> cannot hold it — the branch logs and
-    /// leaves <c>CommandTarget</c> UNCHANGED (no crash, no silent wrong write,
-    /// and importantly no accidental clear).</summary>
+    /// <summary>An unknown station id resolves to NULL and clears the current
+    /// target, matching GetModel + SetCommand (FedSrv.CPP:7335-7339).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Station_typed_object_is_documented_no_op_and_does_not_change_target()
+    public void Unknown_station_target_clears_current_target()
     {
         Require.Artwork();
         using var seat = SeatTwo();
@@ -242,17 +234,8 @@ public sealed class OrderChangeCurrentLiveTests
         var locked = PumpUntil(seat.Server, () => ReferenceEquals(seat.A.CommandTarget, seat.B), 8000);
         Assert.True(locked > 0, $"precondition: A.CommandTarget must lock B first ({seat.B.Id})");
 
-        // Non-ship objectType (station) with a non-NA id -> the else no-op arm.
         seat.ABot.SendOrderChange(seat.A.Id, OrderChange.CidNone, OrderChange.CmdCurrent, IgcObjectType.Station, 9199);
-
-        // Pump enough to guarantee the second message drained through the same
-        // transport/dispatch that just proved itself live with the lock above.
-        PumpUntil(seat.Server, () => false, 300);
-
-        // The no-op must not clear, change, or crash — CommandTarget still B.
-        Assert.True(ReferenceEquals(seat.A.CommandTarget, seat.B),
-            $"station-typed c_cmdCurrent must be a no-op that leaves CommandTarget unchanged (still B({seat.B.Id}))");
-
-        Console.WriteLine($"P153-STATION: A({seat.A.Id}) c_cmdCurrent objectType=Station -> logged no-op, CommandTarget unchanged (B still locked) — scope boundary (Station not a Model)");
+        PumpUntil(seat.Server, () => seat.A.CommandTarget is null, 8000);
+        Assert.Null(seat.A.CommandTarget);
     }
 }

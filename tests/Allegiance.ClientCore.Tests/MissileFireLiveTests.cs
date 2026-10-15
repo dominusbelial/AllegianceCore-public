@@ -99,8 +99,10 @@ public class MissileFireLiveTests
         Ship? placedTarget = null;
         SetShipSpawner(server, (core, mission, shipId) =>
         {
-            // H-08 / launchertypeigc.h:130-145: use real magazine capacity.
-            var hull = core.HullTypes.Values.First(h => h.CapacityMagazine >= 3 * NoLockMissile(core).LauncherExpendableSize);
+            // H-08 / launchertypeigc.h:130-145: retain real three-round capacity.
+            // Native magazine/FedSrv CanSee gates also require a visible target.
+            var hull = core.HullTypes.Values.First(h => h.CapacityMagazine >= 3 * NoLockMissile(core).LauncherExpendableSize)
+                with { ScannerRange = 10000, Signature = 1 };
             var ship = new Ship(shipId, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
             mission.PlaceShip(ship, mission.Sectors[0]);
