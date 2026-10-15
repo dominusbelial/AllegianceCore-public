@@ -2557,3 +2557,249 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_sectorcrowded.ogg
+
+#begin Sounds/dn_vo_capture_enemytranseiver.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_vo_capture_enemytranseiver.ogg
+
+#begin Sounds/dn_vo_capture_transeiver.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_vo_capture_transeiver.ogg
+
+#begin Sounds/dn_vo_destroy_enemytranseiver.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_vo_destroy_enemytranseiver.ogg
+
+#begin Sounds/dn_vo_destroy_transeiver.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_vo_destroy_transeiver.ogg
+
+#begin Sounds/ef03.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ef03.ogg
+
+#begin Sounds/vo_capture_enemyexpansion.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemyexpansion.ogg
+
+#begin Sounds/vo_capture_enemymine.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemymine.ogg
+
+#begin Sounds/vo_capture_enemyoutpost.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemyoutpost.ogg
+
+#begin Sounds/vo_capture_enemypalisade.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemypalisade.ogg
+
+#begin Sounds/vo_capture_enemyresearch.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemyresearch.ogg
+
+#begin Sounds/vo_capture_enemyshipyard.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemyshipyard.ogg
+
+#begin Sounds/vo_capture_enemysupremecy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemysupremecy.ogg
+
+#begin Sounds/vo_capture_enemytactical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemytactical.ogg
+
+#begin Sounds/vo_capture_expansion.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_expansion.ogg
+
+#begin Sounds/vo_capture_mine.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_mine.ogg
+
+#begin Sounds/vo_capture_outpost.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_outpost.ogg
+
+#begin Sounds/vo_capture_palisade.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_palisade.ogg
+
+#begin Sounds/vo_capture_research.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_research.ogg
+
+#begin Sounds/vo_capture_shipyard.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_shipyard.ogg
+
+#begin Sounds/vo_capture_supremecy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_supremecy.ogg
+
+#begin Sounds/vo_capture_tactical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_tactical.ogg
+
+#begin Sounds/vo_destroy_enemyexpansion.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemyexpansion.ogg
+
+#begin Sounds/vo_destroy_enemymine.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemymine.ogg
+
+#begin Sounds/vo_destroy_enemyoutpost.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemyoutpost.ogg
+
+#begin Sounds/vo_destroy_enemypalisade.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemypalisade.ogg
+
+#begin Sounds/vo_destroy_enemyrefinery.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemyrefinery.ogg
+
+#begin Sounds/vo_destroy_enemyresearch.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemyresearch.ogg
+
+#begin Sounds/vo_destroy_enemyshipyard.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemyshipyard.ogg
+
+#begin Sounds/vo_destroy_enemysupremecy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemysupremecy.ogg
+
+#begin Sounds/vo_destroy_enemytactical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemytactical.ogg
+
+#begin Sounds/vo_destroy_enemyteleport.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemyteleport.ogg
+
+#begin Sounds/vo_destroy_expansion.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_expansion.ogg
+
+#begin Sounds/vo_destroy_mine.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_mine.ogg
+
+#begin Sounds/vo_destroy_outpost.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_outpost.ogg
+
+#begin Sounds/vo_destroy_palisade.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_palisade.ogg
+
+#begin Sounds/vo_destroy_refinery.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_refinery.ogg
+
+#begin Sounds/vo_destroy_research.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_research.ogg
+
+#begin Sounds/vo_destroy_shipyard.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_shipyard.ogg
+
+#begin Sounds/vo_destroy_supremecy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_supremecy.ogg
+
+#begin Sounds/vo_destroy_tactical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_tactical.ogg
+
+#begin Sounds/vo_destroy_teleport.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_teleport.ogg

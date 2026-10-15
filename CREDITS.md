@@ -20,7 +20,7 @@ repository (MIT, "Copyright (c) 2017 FreeAllegiance"; notice in `NOTICE`):
 
 | Files | Where |
 |---|---|
-| 418 game sounds (`.ogg`) | `src/Allegiance.ClientCore.MonoGame/Content/Sounds/` |
+| 460 game sounds (`.ogg`) | `src/Allegiance.ClientCore.MonoGame/Content/Sounds/` |
 | `sounddef.mdl`, `quickchat.mdl` (sound and quick-chat definitions) | `src/Allegiance.ClientCore.MonoGame/Content/` |
 
 Renders of original ship models (reference images used to generate the Meshy

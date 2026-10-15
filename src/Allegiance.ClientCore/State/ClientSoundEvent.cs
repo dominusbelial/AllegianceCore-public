@@ -46,4 +46,6 @@ public enum ClientSoundEventKind
 /// <param name="Kind"><see cref="ClientSoundEventKind"/>.</param>
 /// <param name="Id">The subject's id — the station id for station events, the
 /// development id for a dev completion.</param>
-public readonly record struct ClientSoundEvent(ClientSoundEventKind Kind, short Id);
+/// <param name="StationTypeId">Station type at receipt time, before destruction
+/// removes the station or subsequent exports replace it. Other events use NA.</param>
+public readonly record struct ClientSoundEvent(ClientSoundEventKind Kind, short Id, short StationTypeId = -1);

@@ -248,8 +248,8 @@ fedmsg,48 DOCKED,Inc/Messages.h:399,done,Wire/Docked.cs,4
 fedmsg,51 CHANGE_TEAM_CIV,Inc/Messages.h:407,partial,Wire/ChangeTeamCiv.cs (server handled; client consumer not found),4
 fedmsg,52 AUTO_ACCEPT,Inc/Messages.h:413,partial,Wire/AutoAccept.cs (server handled; client consumer not found),4
 fedmsg,57 STATIONS_UPDATE,Inc/Messages.h:425,done,Wire/StationsUpdate.cs,4
-fedmsg,58 STATION_CAPTURE,Inc/Messages.h:429,done,Wire/StationCapture.cs,4
-fedmsg,59 STATION_DESTROYED,Inc/Messages.h:436,done,Wire/StationDestroyed.cs,4
+fedmsg,58 STATION_CAPTURE,Inc/Messages.h:429,done,src/Allegiance.ClientCore/State/ClientWorld.cs:2825; src/Allegiance.ClientCore.Game/Audio/StationEventSoundMap.cs:13; tests/Allegiance.ClientCore.MonoGame.Tests/P664StationEventSoundTests.cs:81; P664 core-type capture sounds with alliance and unrelated-side gates,4
+fedmsg,59 STATION_DESTROYED,Inc/Messages.h:436,done,src/Allegiance.ClientCore/State/ClientWorld.cs:2810; src/Allegiance.ClientCore.Game/Audio/StationEventSoundMap.cs:13; tests/Allegiance.ClientCore.MonoGame.Tests/P664StationEventSoundTests.cs:57; P664 core-type destruction sounds captured before removal with alliance gates,4
 fedmsg,60 MONEY_CHANGE,Inc/Messages.h:441,done,Wire/MoneyChange.cs,5
 fedmsg,61 DOCKED,Inc/Messages.h:448,done,Wire/DockedNotify.cs,4
 fedmsg,62 GAME_OVER,Inc/Messages.h:467,done,Wire/GameOver.cs,5
