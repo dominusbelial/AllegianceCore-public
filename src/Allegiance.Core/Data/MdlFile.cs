@@ -30,6 +30,10 @@ public sealed class MdlMesh
     /// <summary>Triangle-list index array, raw order as read from the file.</summary>
     public required ushort[] Indices { get; init; }
 
+    /// <summary>The enclosing TextureGeo image namespace; null means inherit
+    /// ThingGeo's initial texture (geometry.cpp:1079-1082, 1439-1473).</summary>
+    public string? TextureStem { get; init; }
+
     public int VertexCount => Positions.Length / 3;
     public int TriangleCount => Indices.Length / 3;
 }
@@ -70,6 +74,11 @@ public sealed class MdlFrame
     public required float[] Up { get; init; }
 }
 
+/// <summary>Serialized native LightData (effect/efapp.cpp:99-112, 330-340).
+/// Positions are model-local, in the same space as mesh vertices.</summary>
+public sealed record MdlLight(float[] Color, float[] Position, float Period,
+    float Phase, float RampUp, float Hold, float RampDown);
+
 /// <summary>
 /// The result of parsing an Allegiance <c>.mdl</c> binary model file: the file
 /// header namespaces/imports/exports plus the resolved geometry (walked only
@@ -78,6 +87,11 @@ public sealed class MdlFrame
 public sealed class MdlFile
 {
     internal MdlFile() { }
+    /// <summary>Only lights reachable from the native "lights" export.</summary>
+    public IReadOnlyList<MdlLight> Lights { get; init; } = [];
+    /// <summary>Unsupported nodes reached while collecting drawable geometry.
+    /// Exposed so asset audits cannot silently accept dropped subgroups.</summary>
+    public IReadOnlyList<string> UnsupportedGeometryNodes { get; init; } = [];
     /// <summary>The namespace name table (file header).</summary>
     public required IReadOnlyList<string> Namespaces { get; init; }
 
@@ -156,6 +170,8 @@ internal sealed class MdlParser
     private readonly byte[] _data;
     private int _pos;
     private readonly List<string> _importNames = [];
+    private readonly List<string> _importNamespaces = [];
+    private readonly List<string> _unsupportedGeometryNodes = [];
     private readonly List<MdlFrame> _frames = [];
     private readonly Dictionary<uint, MdlNode> _objects = [];
     private readonly List<MdlMesh> _meshes = [];
@@ -183,7 +199,7 @@ internal sealed class MdlParser
 
         for (int i = 0; i < countImports; i++)
         {
-            ReadUInt32(); // indexLibrary (ignored; member name carries the identity)
+            _importNamespaces.Add(namespaces[ReadUInt32()]);
             _importNames.Add(ReadCString());
         }
 
@@ -217,6 +233,10 @@ internal sealed class MdlParser
             Meshes = _meshes,
             Frames = _frames,
             LodLevels = _lodLevels,
+            Lights = Array.IndexOf(exports, "lights") is int li && li >= 0
+                && _objects.TryGetValue((uint)li, out var lights) && lights is MdlLightsGeo lg
+                    ? lg.Lights : [],
+            UnsupportedGeometryNodes = _unsupportedGeometryNodes,
         };
     }
 
@@ -277,7 +297,7 @@ internal sealed class MdlParser
                 case ObjectImport:
                 {
                     uint idx = ReadUInt32();
-                    stack.Push(new MdlImport(_importNames[(int)idx]));
+                    stack.Push(new MdlImport(_importNames[(int)idx], _importNamespaces[(int)idx]));
                     break;
                 }
                 case ObjectPair:
@@ -357,10 +377,14 @@ internal sealed class MdlParser
             }
             case "LightsGeo":
             {
-                // Cosmetic only -- sizeof(LightData) = 48 bytes per light.
+                // Color RGBA + position XYZ + five timing floats, 48 bytes.
                 uint count = ReadUInt32();
-                _pos += checked((int)(48 * count));
-                return new MdlGeneric("LightsGeo");
+                var lights = new List<MdlLight>((int)count);
+                for (int i = 0; i < count; i++)
+                    lights.Add(new MdlLight(
+                        [ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle()],
+                        ReadVec3(), ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle()));
+                return new MdlLightsGeo(lights);
             }
             case "FrameData":
             {
@@ -396,27 +420,26 @@ internal sealed class MdlParser
 
     private void CollectMeshes(MdlNode? node) => CollectMeshes(node, _meshes);
 
-    private void CollectMeshes(MdlNode? node, List<MdlMesh> sink)
+    private void CollectMeshes(MdlNode? node, List<MdlMesh> sink, string? texture = null)
     {
         switch (node)
         {
             case null:
                 return;
             case MdlMeshGeo m:
-                sink.Add(BuildMesh(m));
+                sink.Add(BuildMesh(m, texture));
                 break;
             case MdlGroupGeo g:
-                CollectMeshes(g.Children, sink);
+                CollectMeshes(g.Children, sink, texture);
                 break;
             case MdlTextureGeo t:
-                CollectMeshes(t.Geo, sink);
+                CollectMeshes(t.Geo, sink, t.Image is MdlImport image ? image.Namespace : texture);
                 break;
             case MdlList l:
-                foreach (var item in l.Items) CollectMeshes(item, sink);
+                foreach (var item in l.Items) CollectMeshes(item, sink, texture);
                 break;
-            default:
-                // ModifiableNumber / LightsGeo / FrameData / Apply<...>: no mesh
-                // content.
+            case MdlGeneric unknown:
+                _unsupportedGeometryNodes.Add(unknown.Type);
                 break;
         }
     }
@@ -444,7 +467,7 @@ internal sealed class MdlParser
         }
     }
 
-    private static MdlMesh BuildMesh(MdlMeshGeo m)
+    private static MdlMesh BuildMesh(MdlMeshGeo m, string? texture)
     {
         int n = m.Verts.Length / 8;
         var pos = new float[3 * n];
@@ -468,6 +491,7 @@ internal sealed class MdlParser
             TexCoords = tc,
             Normals = nr,
             Indices = m.Indices,
+            TextureStem = texture,
         };
     }
 
@@ -549,9 +573,10 @@ internal sealed class MdlPair(MdlNode a, MdlNode b) : MdlNode
     public MdlNode B { get; } = b;
 }
 
-internal sealed class MdlImport(string name) : MdlNode
+internal sealed class MdlImport(string name, string ns) : MdlNode
 {
     public string Name { get; } = name;
+    public string Namespace { get; } = ns;
 }
 
 internal sealed class MdlGroupGeo(MdlNode children) : MdlNode
@@ -584,4 +609,9 @@ internal sealed class MdlFrameData(IReadOnlyList<MdlFrame> frames) : MdlNode
 internal sealed class MdlGeneric(string type) : MdlNode
 {
     public string Type { get; } = type;
+}
+
+internal sealed class MdlLightsGeo(IReadOnlyList<MdlLight> lights) : MdlNode
+{
+    public IReadOnlyList<MdlLight> Lights { get; } = lights;
 }

@@ -318,6 +318,15 @@ public sealed partial class Game1
         /// placeholder when its art is missing, side by side, at native default
         /// orientation (forward +Z, up +Y, yaw 0). <c>--inspect-stations</c>.</summary>
         public bool InspectStations;
+        /// <summary>Optional exact station id or model stem to inspect alone.</summary>
+        public string? InspectStation;
+        /// <summary>Hold native station light time for reproducible blink proof;
+        /// null keeps the live animated clock.</summary>
+        public float? InspectLightTime;
+        /// <summary>Orbit sweep elevation in degrees, useful for vertical station bays.</summary>
+        public float InspectPitch = 22f;
+        /// <summary>Capture the native model alone, centred in the orbit camera.</summary>
+        public bool InspectNativeOnly;
 
         /// <summary>P565 — when set in inspect mode, drive the catalogue browser to this
         /// replacement-model id on the current hull (<c>--inspect-catalogue &lt;id&gt;</c>):

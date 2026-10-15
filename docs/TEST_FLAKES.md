@@ -4,6 +4,21 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+
+## P701 observation (2026-10-15)
+
+The unfiltered sequential suites reported Core **4566/4566**, ClientCore
+**1017 passed / 1 failed / 1 explicit-opt-in showcase skip**, and MonoGame
+**2225 passed / 0 failed / 3 unavailable private Meshy-pack skips**.
+
+The unchanged ClientCore check
+`ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`
+failed because asynchronous logon drain order produced sides `(0, 1, 0)`.
+After all three suites finished, that exact method passed **3/3 isolated runs**.
+This satisfies P701's load-flake rule and matches the existing join-order entries
+below. No assertion, deadline, quarantine trait or seating/transport code changed.
+See [P701 verification](reports/P701_STATION_BAY_VISUALS.md) and its result ledger.
+
 ## P695 observation (2026-10-15)
 
 The final unfiltered workspace-output suites reported Core **4557 pass / 1 fail**,

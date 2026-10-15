@@ -852,6 +852,10 @@ public sealed partial class Game1
                         float nscale = Rendering.NativeStationResolver.ScaleForRadius(sRadius, ngeo.MeshRadius);
                         var sWorldNS = sRot * Matrix.CreateTranslation(sXnaPos - cameraEye);
                         _nativeStationRenderer.Draw(ngeo, ntex, sWorldNS, view, proj, nscale, _sectorLighting);
+                        if (Rendering.NativeStationLights.IsVisible(sXnaPos - cameraEye, sRadius,
+                                view, proj, GraphicsDevice.Viewport.Width))
+                            Rendering.NativeStationLights.Append(_nativeStationRenderer.LightsFor(sModel),
+                                sRot * Matrix.CreateTranslation(sXnaPos), nscale, (float)_nowSeconds, _drawNavStrobes);
                     }
                     else
                     {
@@ -862,13 +866,7 @@ public sealed partial class Game1
                         _stationRenderer.Draw(sWorld, view, proj, sTint, _sectorLighting);
                     }
 
-                    // P367 — this visible station's navigation beacon strobes too
-                    // (native LightsGeo is confirmed present in 422 shipped .mdl
-                    // files including stations — this is a common ship+station
-                    // effect, not ship-only). Anchored at the structure's real
-                    // radius and blinked by the same real pulse envelope.
-                    if (sRadius > 0f)
-                        AddNavStrobeAnchors(Rendering.NavStrobeLayout.StationAnchors(sPos, sOri, sRadius), sRadius);
+
                 }
 
                 // P294 — in-progress station constructions. Like stations/probes,
@@ -1493,7 +1491,7 @@ public sealed partial class Game1
                 // 99-286). Append this frame's ship strobes (the station beacons
                 // were added in the station pass above) and draw the combined set
                 // once: a small tinted decal at every visible ship's wingtips+stern
-                // and every visible station's beacons, each sized by the REAL
+                // and the station's authored lights, each sized by the REAL
                 // LightsGeo::Render pulse envelope (NavStrobeMath.Pulse) from the
                 // elapsed game clock — so the red-port/green-starboard/white-tail
                 // lights genuinely blink (ramp up → flash → ramp down → off,

@@ -1,0 +1,4 @@
+MESA: error: Failed to query drm device.
+glx: failed to create dri3 screen
+failed to load driver: iris
+PASS: 81 station models, 207 GPU groups; all draw ranges, buffer sizes and texture uploads verified; no blank models. 105 complete GPU texture readbacks match source RGBA.

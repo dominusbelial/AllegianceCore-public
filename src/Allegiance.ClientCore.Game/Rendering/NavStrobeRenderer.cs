@@ -8,7 +8,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>One strobe-light decal for a frame: its world position, the quad's
 /// half-extent (already scaled by the current pulse) and its linear RGB tint.</summary>
-public readonly record struct NavStrobeView(SimVec Position, float HalfExtent, Vector3 Rgb);
+public readonly record struct NavStrobeView(SimVec Position, float HalfExtent, Vector3 Rgb, float Alpha = 1f);
 
 /// <summary>
 /// P545 — draws the navigation strobe lights (P367) the native way: the real
@@ -44,7 +44,7 @@ public sealed class NavStrobeRenderer : IDisposable
         foreach (var l in lights)
         {
             var centre = new XnaVec(l.Position.X, l.Position.Y, l.Position.Z) - cameraEye;
-            items.Add(new ParticleBillboard(centre, l.HalfExtent, new Color(l.Rgb.X, l.Rgb.Y, l.Rgb.Z, 1f), 0f));
+            items.Add(new ParticleBillboard(centre, l.HalfExtent, new Color(l.Rgb.X, l.Rgb.Y, l.Rgb.Z, l.Alpha), 0f));
         }
         _batcher.Draw(items, _native.TextureFor(NativeEffectTextures.GlowStrobeStem) ?? _native.SoftFallback, view, projection);
     }

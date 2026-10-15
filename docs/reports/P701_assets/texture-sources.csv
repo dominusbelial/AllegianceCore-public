@@ -1,0 +1,106 @@
+namespace,format,source,width,height,binary_colour_key_or_png_alpha
+acs05bmp,binary RGB565,acs05bmp.mdl,256,256,0
+acs08bmp,binary RGB565,acs08bmp.mdl,2048,2048,0
+beltersbaybmp,PNG import,beltersbay.png,1024,1024,"(255, 255)"
+bgrnd03bmp,binary RGB565,bgrnd03bmp.mdl,2048,2048,0
+bgrnd51bmp,binary RGB565,bgrnd51bmp.mdl,2048,2048,0
+bgrnd53bmp,binary RGB565,bgrnd53bmp.mdl,2048,2048,0
+bgrnd55bmp,binary RGB565,bgrnd55bmp.mdl,2048,2048,0
+bgrnd57bmp,binary RGB565,bgrnd57bmp.mdl,2048,2048,0
+biosbaybmp,binary RGB565,biosbaybmp.mdl,512,512,0
+cap05bmp,binary RGB565,cap05bmp.mdl,2048,2048,0
+cwbaybmp,binary RGB565,cwbaybmp.mdl,256,256,0
+dbay3bmp,binary RGB565,dbay3bmp.mdl,256,256,0
+dbsebmp,binary RGB565,dbsebmp.mdl,256,256,0
+dgarrbmp,binary RGB565,dgarrbmp.mdl,256,256,0
+dgexpbmp,binary RGB565,dgexpbmp.mdl,256,256,0
+dgsupbmp,binary RGB565,dgsupbmp.mdl,256,256,0
+dn_faphbsexpbmp,binary RGB565,dn_faphbsexpbmp.mdl,512,512,0
+dn_faphbsgarbmp,binary RGB565,dn_faphbsgarbmp.mdl,512,512,0
+dn_faphbsinsidebmp,binary RGB565,dn_faphbsinsidebmp.mdl,512,512,0
+dn_faphbsopbmp,binary RGB565,dn_faphbsopbmp.mdl,512,512,0
+dn_faphbssupbmp,binary RGB565,dn_faphbssupbmp.mdl,2048,2048,0
+dn_faphbstacbmp,binary RGB565,dn_faphbstacbmp.mdl,512,512,0
+dn_faphbstpbmp,binary RGB565,dn_faphbstpbmp.mdl,512,512,0
+dn_faphbstrnbmp,binary RGB565,dn_faphbstrnbmp.mdl,256,256,0
+dregabmp,binary RGB565,dregabmp.mdl,256,256,0
+dregbaybmp,binary RGB565,dregbaybmp.mdl,256,256,0
+dregcrrbaybmp,binary RGB565,dregcrrbaybmp.mdl,256,256,0
+drgby2bmp,binary RGB565,drgby2bmp.mdl,256,256,0
+drgopabmp,binary RGB565,drgopabmp.mdl,256,256,0
+drgopbmp,binary RGB565,drgopbmp.mdl,256,256,0
+drgrockbmp,binary RGB565,drgrockbmp.mdl,256,256,0
+drgsybmp,binary RGB565,drgsybmp.mdl,256,256,0
+dtacbmp,binary RGB565,dtacbmp.mdl,256,256,0
+faohbsexpbmp,binary RGB565,faohbsexpbmp.mdl,2048,2048,0
+faohbsgarbmp,binary RGB565,faohbsgarbmp.mdl,2048,2048,0
+faohbsopbmp,binary RGB565,faohbsopbmp.mdl,2048,2048,0
+faohbssupbmp,binary RGB565,faohbssupbmp.mdl,2048,2048,0
+faohbssybmp,binary RGB565,faohbssybmp.mdl,2048,2048,0
+faohbstacbmp,binary RGB565,faohbstacbmp.mdl,2048,2048,0
+faohbstpbmp,binary RGB565,faohbstpbmp.mdl,2048,2048,0
+hembmp,binary RGB565,hembmp.mdl,128,128,0
+hmbmp,binary RGB565,hmbmp.mdl,256,256,0
+rainop1bmp,binary RGB565,rainop1bmp.mdl,2048,2048,0
+rainop2bmp,binary RGB565,rainop2bmp.mdl,2048,2048,0
+rixbaybmp,binary RGB565,rixbaybmp.mdl,1024,1024,0
+ss01bmp,binary RGB565,ss01bmp.mdl,2048,2048,0
+ss06bmp,binary RGB565,ss06bmp.mdl,128,128,0
+ss08bmp,binary RGB565,ss08bmp.mdl,256,256,0
+ss100bmp,binary RGB565,ss100bmp.mdl,2048,2048,0
+ss101bmp,binary RGB565,ss101bmp.mdl,2048,2048,0
+ss102bmp,PNG import,ss102.png,512,512,"(255, 255)"
+ss103bmp,PNG import,ss103.png,512,512,"(255, 255)"
+ss104bmp,PNG import,ss104.png,512,512,"(255, 255)"
+ss105bmp,PNG import,ss105.png,512,512,"(255, 255)"
+ss106bmp,binary RGB565,ss106bmp.mdl,2048,2048,0
+ss107bmp,PNG import,ss107.png,512,512,"(255, 255)"
+ss18abmp,binary RGB565,ss18abmp.mdl,2048,2048,0
+ss18bmp,binary RGB565,ss18bmp.mdl,256,256,0
+ss21abmp,binary RGB565,ss21abmp.mdl,2048,2048,0
+ss23bmp,binary RGB565,ss23bmp.mdl,256,256,0
+ss24abmp,binary RGB565,ss24abmp.mdl,256,256,0
+ss27bmp,binary RGB565,ss27bmp.mdl,2048,2048,0
+ss27insidebmp,binary RGB565,ss27insidebmp.mdl,1024,1024,0
+ss28bmp,binary RGB565,ss28bmp.mdl,2048,2048,0
+ss300bmp,PNG import,ss300.png,2048,2048,"(255, 255)"
+ss301bmp,PNG import,ss301.png,2048,2048,"(255, 255)"
+ss302bmp,PNG import,ss302.png,2048,2048,"(255, 255)"
+ss303bmp,PNG import,ss303.png,2048,2048,"(255, 255)"
+ss304bmp,PNG import,ss304.png,2048,2048,"(254, 255)"
+ss305bmp,PNG import,ss305.png,2048,2048,"(255, 255)"
+ss306bmp,PNG import,ss306.png,2048,2048,"(255, 255)"
+ss307bmp,PNG import,ss307.png,2048,2048,"(255, 255)"
+ss400bmp,binary RGB565,ss400bmp.mdl,512,512,0
+ss401bmp,binary RGB565,ss401bmp.mdl,512,512,0
+ss402bmp,binary RGB565,ss402bmp.mdl,512,512,0
+ss403bmp,binary RGB565,ss403bmp.mdl,512,512,0
+ss404bmp,binary RGB565,ss404bmp.mdl,512,512,0
+ss405bmp,binary RGB565,ss405bmp.mdl,512,512,0
+ss406bmp,binary RGB565,ss406bmp.mdl,512,512,0
+ss407bmp,binary RGB565,ss407bmp.mdl,512,512,0
+ss408bmp,binary RGB565,ss408bmp.mdl,512,512,0
+ss90bmp,binary RGB565,ss90bmp.mdl,2048,2048,0
+ss92abmp,binary RGB565,ss92abmp.mdl,2048,2048,0
+ss92bmp,binary RGB565,ss92bmp.mdl,256,256,0
+ss93abmp,binary RGB565,ss93abmp.mdl,2048,2048,0
+ss93bmp,binary RGB565,ss93bmp.mdl,256,256,0
+ss94bmp,PNG import,ss94.png,512,512,"(255, 255)"
+ss95bmp,binary RGB565,ss95bmp.mdl,2048,2048,0
+ss96bmp,binary RGB565,ss96bmp.mdl,2048,2048,0
+ss97bmp,binary RGB565,ss97bmp.mdl,2048,2048,0
+ss98bmp,binary RGB565,ss98bmp.mdl,2048,2048,0
+ss99bmp,binary RGB565,ss99bmp.mdl,2048,2048,0
+tacrockbmp,binary RGB565,tacrockbmp.mdl,256,256,0
+tectpbmp,binary RGB565,tectpbmp.mdl,256,256,0
+tfexpbmp,binary RGB565,tfexpbmp.mdl,256,256,0
+tfgrrbmp,binary RGB565,tfgrrbmp.mdl,256,256,0
+tfrefbmp,binary RGB565,tfrefbmp.mdl,256,256,0
+tfsupbmp,binary RGB565,tfsupbmp.mdl,256,256,0
+tfsybmp,binary RGB565,tfsybmp.mdl,256,256,0
+tftcbmp,binary RGB565,tftcbmp.mdl,256,256,0
+tftelbmp,binary RGB565,tftelbmp.mdl,256,256,0
+utl07bmp,binary RGB565,utl07bmp.mdl,256,256,0
+utl20abmp,binary RGB565,utl20abmp.mdl,1024,1024,0
+utl20bmp,binary RGB565,utl20bmp.mdl,256,256,0
+utl6bmp,binary RGB565,utl6bmp.mdl,256,256,0

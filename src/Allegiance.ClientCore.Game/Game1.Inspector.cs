@@ -40,6 +40,10 @@ public sealed partial class Game1
     // ---- configuration (from LaunchOptions.Inspect) ----
     private string? _inspectCivArg;    // --inspect-civ id|name (optional)
     private string? _inspectHullArg;   // --inspect-hull id|name (optional)
+    private string? _inspectStationArg;
+    private float? _inspectLightTime;
+    private float _inspectPitch = 22f;
+    private bool _inspectNativeOnly;
     private bool _inspectStationsArg;  // --inspect-stations (station mode)
 
     /// <summary>P565 — the committed per-hull art-override file path (repo-relative, so it
@@ -216,6 +220,10 @@ public sealed partial class Game1
                 _nativeStationRenderer.MeshFor(s.ModelName.Trim()) is not null;
             _inspectStationsList = Rendering.InspectorStationCatalog.Enumerate(
                 _shopCatalog.StationTypes?.Values ?? Enumerable.Empty<DataStationTypeIGC>(), stNative);
+            if (!string.IsNullOrEmpty(_inspectStationArg))
+                _inspectStationsList = _inspectStationsList.Where(s =>
+                    s.StationTypeId.ToString(System.Globalization.CultureInfo.InvariantCulture) == _inspectStationArg
+                    || string.Equals(s.ModelName, _inspectStationArg, StringComparison.OrdinalIgnoreCase)).ToList();
             if (_inspectStationsList.Count == 0)
             {
                 Console.WriteLine("[inspect] no station types enumerated — aborting.");
@@ -229,9 +237,9 @@ public sealed partial class Game1
             {
                 if (_inspectDist > 0f) _inspectOrbit.Distance = _inspectDist;
                 // Station sweep: native | procedural side by side from each angle.
-                _inspectSideBySide = true;
+                _inspectSideBySide = !_inspectNativeOnly;
                 _inspectShowNative = true;
-                _inspectShowMeshy = true;
+                _inspectShowMeshy = !_inspectNativeOnly;
                 Console.WriteLine($"[inspect] STATION ANGLE SWEEP: {_inspectSweepAngles} orbit angles");
             }
             else
@@ -405,6 +413,7 @@ public sealed partial class Game1
     {
         var s = CurrentInspectStation();
         if (s is null) return;
+        _drawNavStrobes.Clear();
         foreach (var (slotWorld, isNative) in InspectStationDrawSlots(s))
         {
             var world = slotWorld * Matrix.CreateTranslation(-cameraEye);
@@ -415,6 +424,10 @@ public sealed partial class Game1
                 float nscale = Rendering.NativeStationResolver.ScaleForRadius(
                     s.Radius > 0f ? s.Radius : Rendering.StationRenderer.DefaultFallbackRadius, geo.MeshRadius);
                 _nativeStationRenderer.Draw(geo, tex, world, view, proj, nscale, _sectorLighting);
+                if (Rendering.NativeStationLights.IsVisible(slotWorld.Translation - cameraEye, s.Radius,
+                        view, proj, GraphicsDevice.Viewport.Width))
+                    Rendering.NativeStationLights.Append(_nativeStationRenderer.LightsFor(s.ModelName),
+                        slotWorld, nscale, _inspectLightTime ?? (float)_nowSeconds, _drawNavStrobes);
             }
             else
             {
@@ -423,6 +436,7 @@ public sealed partial class Game1
                 _stationRenderer.Draw(phWorld, view, proj, Rendering.StationRenderer.FriendlyColor, _sectorLighting);
             }
         }
+        _navStrobeRenderer.Draw(_drawNavStrobes, cameraEye, view, proj);
     }
 
     private void DrawInspectStationHud(Viewport viewport)
@@ -436,6 +450,7 @@ public sealed partial class Game1
         var list = VisibleInspectStations();
         Line($"STATION {_inspectIndex + 1}/{list.Count}  [{s.Name}]  (id {s.StationTypeId}, grp {s.GroupId})", Color.White);
         Line($"model={s.ModelName}  texture={s.TextureName}  radius={s.Radius:0.#}  native={s.NativeAvailable}", Color.LightGray);
+        Line($"native lights={_nativeStationRenderer.LightsFor(s.ModelName).Count} active={_drawNavStrobes.Count} time={(_inspectLightTime ?? (float)_nowSeconds):0.000}", Color.LightGray);
         Line($"cam={(_inspectCam == InspectCamMode.FlyBy ? "flyby" : "orbit")}  yaw={_inspectOrbit.Yaw:0.##} pitch={_inspectOrbit.Pitch:0.##} dist={_inspectOrbit.Distance:0.#}  (native default orient: fwd +Z, up +Y, yaw 0)", Color.LightGray);
         Line($"art={( _inspectShowNative && _inspectShowMeshy ? "both" : _inspectShowNative ? "native" : "placeholder" )} side={_inspectSideBySide} wire={_inspectWireframe} norm={_inspectNormals} light={_inspectLightingVariant} soft={_inspectSoft} bloom={_inspectBloom}", Color.LightGray);
         string tag = MarkTags[Math.Clamp(_inspectTagIndex, 0, MarkTags.Length - 1)];
@@ -997,7 +1012,7 @@ public sealed partial class Game1
             // N angles), so one unattended run captures all 143 types for the contact sheet.
             float az = _inspectSweepStep * (360f / _inspectSweepAngles);
             _inspectOrbit.Yaw = MathHelper.ToRadians(az);
-            _inspectOrbit.Pitch = MathHelper.ToRadians(22f);   // tilt to expose the wings
+            _inspectOrbit.Pitch = MathHelper.ToRadians(_inspectPitch);
             _inspectShotTag = $"angle{_inspectSweepStep}";
             _inspectScreenshotLast = TakeInspectScreenshot();
             _inspectSweepStep++;

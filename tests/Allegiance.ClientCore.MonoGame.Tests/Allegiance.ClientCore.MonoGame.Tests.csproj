@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Fixtures/P701StationModels.json" CopyToOutputDirectory="PreserveNewest" />
     <Using Include="Xunit" />
   </ItemGroup>
 
