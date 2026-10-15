@@ -41,7 +41,7 @@ public sealed class GameConfig
     public MapGenConfig? MapGen { get; init; }
 
     /// <summary>Mission treasure rates and loaded-core set IDs, with native defaults.</summary>
-    public Allegiance.Core.Model.TreasureParameters Treasure { get; init; } = new();
+    public Allegiance.Core.Model.TreasureParameters Treasure { get; set; } = new();
 
     /// <summary>
     /// P598 — the port of native's <c>bAutoRestart</c> (igc.h:1154, default
@@ -678,7 +678,7 @@ public sealed class ServerConfig
     /// <see cref="LiveSettingsConfig"/>). Absent section uses defaults:
     /// debug off, no lifepod override, automatic next match and dilation on.
     /// </summary>
-    public LiveSettingsConfig LiveSettings { get; init; } = new();
+    public LiveSettingsConfig LiveSettings { get; set; } = new();
 
     /// <summary>The game worlds to instantiate at boot.</summary>
     public List<GameConfig> Games { get; init; } = [];
