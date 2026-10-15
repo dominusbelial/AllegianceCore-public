@@ -1063,8 +1063,8 @@ public sealed class MissionMapGenerator
 
     // ── PopulateClusters ───────────────────────────────────────────────────
     // mapmakerigc.cpp:952-967 — home sectors get a starbase, every sector gets
-    // asteroids. Treasure creation is deferred (the port's map universe has no
-    // treasure list) — documented simplification.
+    // asteroids. Runtime treasures are populated by Mission.PopulateTreasures
+    // after assembly; they do not belong in the static map record lists.
     private void PopulateClusters()
     {
         foreach (var cluster in _clusters)
@@ -1107,7 +1107,7 @@ public sealed class MissionMapGenerator
     }
 
     // ── PopulateCluster: asteroids (port of common.cpp:2963-3109, treasure
-    // branch deferred) ──────────────────────────────────────────────────────
+    // branch populated after mission assembly) ──────────────────────────────────────────────────────
     // Three topologies override population. PinWheel's (mapmakerigc.cpp:1901-
     // 1917) multiplies every asteroid count by k = 1 for a home sector or a
     // multi-sector centre, else k = 2 — i.e. the single central sector of a

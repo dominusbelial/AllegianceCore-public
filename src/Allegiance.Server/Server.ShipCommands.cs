@@ -577,16 +577,13 @@ public sealed partial class Server
     /// <c>treasureID = part.PartId</c>; <c>amount = part.Amount</c>;
     /// <c>lifespan = 120.0f</c>; <c>createNow = false</c>;
     /// <c>objectID = mission.NextObjectId()</c>; <c>clusterID = ship sector</c>;
-    /// <c>time0 = (uint)TickIndex</c> (this port's uint-Time convention).
+    /// <c>time0</c> uses server simulation milliseconds, matching native Time.
     /// <c>TreasureSpawn</c>(28) is this port's first real send of the
     /// previously-built-but-never-sent codec (P123 built it for round-trip
     /// completeness only).</item>
-    /// <item><b>Known accepted gaps (explicit, not silent).</b> The created
-    /// treasure is <em>not</em> pickup-able (that is <c>ADD_PART</c>(164), out
-    /// of scope), its <c>V0</c> is stored on the wire for a real client but not
-    /// integrated into <see cref="Treasure.OnUpdate"/> (it rests static, like
-    /// cash treasures), and <c>lifespan</c>/<c>time0</c> expiry is not enforced
-    /// — all per <see cref="Treasure"/>'s own remarks and this task's scope.</item>
+    /// <item>The created treasure drifts, decelerates and expires using the
+    /// shared Treasure simulation; pickup and ADD_PART are handled by the
+    /// existing treasure-offer / acknowledgement path.</item>
     /// </list>
     /// </remarks>
     private void HandleDropPart(ConnectionId from, LiveShip live, DropPart req)
@@ -659,7 +656,7 @@ public sealed partial class Server
             return;
         }
 
-        var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)TickIndex);
+        var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)(_simNow * 1000));
         SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
         Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector.Id} wide");
     }
@@ -2475,7 +2472,8 @@ public sealed partial class Server
         // Resolve the buffered part type from the static core (native
         // pMission->GetPartType(oid), FedSrv.CPP:6104) — the port's part-type
         // lookup is Mission.Core.PartTypes (StaticCore).
-        if (!mission.Core.PartTypes.TryGetValue(offer.PartTypeId, out var partType))
+        if (!mission.Core.PartTypes.TryGetValue(offer.PartTypeId, out var partType)
+            && !mission.Core.TryBuildExpendableLauncher(offer.PartTypeId, out partType))
         {
             Console.WriteLine($"[treasureack] {from} ship {ship.Id}: buffered part-type {offer.PartTypeId} absent from core — offer cleared");
             return;
@@ -2535,7 +2533,7 @@ public sealed partial class Server
             // (native CreateTreasure(g.timeNow, pfsPlayer->GetIGCShip(), amount,
             // ppt, GetPosition(), 25.0f, 120.0f), FedSrv.CPP:6127-6129) — a NEW
             // treasure (not the original, which was destroyed on touch).
-            var treasure = ship.CreateDropTreasure(partType, offer.Amount, _simNow, (uint)TickIndex);
+            var treasure = ship.CreateDropTreasure(partType, offer.Amount, _simNow, (uint)(_simNow * 1000));
             SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
             Console.WriteLine($"[treasureack] {from} ship {ship.Id}: declined part {offer.PartTypeId} amount {offer.Amount} -> re-created treasure obj={treasure.Data.ObjectId} -> TREASURE(28) sector {ship.Sector.Id} wide");
         }

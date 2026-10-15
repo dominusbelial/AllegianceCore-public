@@ -23,7 +23,7 @@ using Allegiance.Core.Sim;
 /// destination is the sector containing its partner warp (or the sector named
 /// directly), matching <c>warpIGC.h:129-141</c> and the corpus validator.
 /// </remarks>
-public sealed class Mission
+public sealed partial class Mission
 {
     /// <summary>P629 stress-test override. Native sector crowding is enabled by default.</summary>
     public bool CrowdingPenaltyEnabled { get; set; } = true;
@@ -646,17 +646,22 @@ public sealed class Mission
         // lives in the host's PaydayEvent handler, mirroring the split between
         // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
         if (NextPaydayTime == 0)
-            NextPaydayTime = now + SecondsBetweenPaydays;     // fsmission.cpp:2253 (seeded at start + 60)
+            NextPaydayTime = now + PaydayInterval;     // fsmission.cpp:2253 (seeded at start + 60)
         if (now >= NextPaydayTime)
         {
-            foreach (var side in Sides)
+            double treasureElapsed = PaydayInterval + now - NextPaydayTime;
+            if (TreasureParameters.AllowDevelopments) // native fsmission.cpp:2520
             {
-                long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
-                            + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
-                side.Money += income;                          // fsmission.cpp:2536
-                Site.PaydayEvent(side, income);                // site seam → host payout
+                foreach (var side in Sides)
+                {
+                    long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
+                                + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
+                    side.Money += income;                          // fsmission.cpp:2536
+                    Site.PaydayEvent(side, income);                // site seam → host payout
+                }
             }
-            NextPaydayTime += SecondsBetweenPaydays;           // keep phase (fsmission.cpp:2519)
+            RegenerateTreasures(now, treasureElapsed);
+            NextPaydayTime += PaydayInterval;           // keep phase (fsmission.cpp:2519)
         }
 
         double deltaT = now - LastUpdate;
@@ -727,7 +732,7 @@ public sealed class Mission
             side.Money = seed;                 // assignment, fsmission.cpp:2004 (fresh side starts at 0)
             Site.PaydayEvent(side, seed);      // fsmission.cpp:2278 — immediate payout via the existing seam
         }
-        NextPaydayTime = now + SecondsBetweenPaydays;   // fsmission.cpp:2253 — cadence anchored at the real start
+        NextPaydayTime = now + PaydayInterval;   // fsmission.cpp:2253 — cadence anchored at the real start
     }
 
     /// <summary>P443 — the starting-treasury seed for one side:

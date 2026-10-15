@@ -1012,9 +1012,8 @@ public sealed partial class Server
     /// <c>DESTROY_TREASURE(30)</c> whole-mission (every peer, every side) — the
     /// port of <c>KillTreasureEvent</c>'s wire half (<c>FedSrv.CPP:12498-12503</c>,
     /// <c>GetGroupRealSides()</c>). The treasure's <c>objectID</c> and its
-    /// sector id go on the wire; the (out-of-scope) flag respawn is omitted.
-    /// Called from the cash-pickup drain; would equally serve an expiry path
-    /// once the spawn/lifecycle system exists.</summary>
+    /// sector id go on the wire. Expiry's site handler separately respawns flags;
+    /// pickup consumes the payload without respawning (FedSrv.CPP:13576).</summary>
     private void BroadcastTreasureDestroyed(Treasure treasure)
     {
         var sector = treasure.OwnerSector;
@@ -1024,6 +1023,7 @@ public sealed partial class Server
         int n = 0;
         foreach (var kv in _peerShips)   // whole-mission: every peer, regardless of side
         {
+            if (treasure.OwnerMission is { } owner && !ReferenceEquals(kv.Value.Ship.Mission, owner)) continue;
             SendPeer(kv.Key, packet);
             n++;
         }
@@ -1998,6 +1998,7 @@ public sealed partial class Server
             Cookie = NextCookie(EnsurePeerUpdate(from)),
         };
         SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+        SendTreasureSnapshot(from, live.Sector);
 
         var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {undockedFrom} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
         Console.WriteLine(undockNote);

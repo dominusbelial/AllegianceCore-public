@@ -1229,7 +1229,7 @@ public sealed partial class Game1
                 // from the TREASURE(28) spawn broadcast (removed by
                 // DESTROY_TREASURE(30)), so — like probes/mines — the draw loop
                 // filters to the local player's OWN sector: te.ClusterId ==
-                // mySector. A treasure is static (its P0 is final). P586 — each
+                // mySector. Position follows the exported drift curve. P586 — each
                 // is now drawn with its RESOLVED NATIVE visual (part/development
                 // model, acs14 for cash/power-up, the artifact model, or the
                 // biosflag decal for a flag; TreasureVisualResolver), tumbling

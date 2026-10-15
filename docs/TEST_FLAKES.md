@@ -280,6 +280,30 @@ produces) rather than quarantining.
 
 ---
 
+## P663 observation (2026-10-14)
+
+The P663 full-suite passes exposed the following failures; each passed
+**3/3 as an individually filtered test** afterward, so these are load flakes
+under the P663 lane rule. No assertions were relaxed and no new quarantine
+traits were added.
+
+| Test | Isolated result | Full-pass symptom |
+|---|---|---|
+| `AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide` | 3/3 | Reload relay lookup had no matching element |
+| `ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation` | 3/3 | Sequence lookup had more than one matching element |
+| `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | 3/3 | B had not received HEAVY_SHIPS_UPDATE |
+| `LiveWinConditionTests.Board_refused_once_mission_over` | 3/3 | Started-state control boarding handshake did not complete; existing LiveTiming case |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | 3/3 | Seeded peer visibility / join order; also observed by P648 |
+| `RipcordRequestLiveTests.RipcordKey_Initiate_Countdown_Teleport_Deny_Cancel_EndToEnd` | 3/3 | Final MonoGame pass: client state did not clear on RIPCORD_ABORTED before the check |
+
+The PING echo and P522 undock-clock failures in that initial run were real P663
+regressions from unsolicited clock samples during empty/static treasure
+snapshots. P663 fixed those sends and verified both tests 3/3; they are not
+classified as flakes. See `docs/reports/P663_TREASURE_PARITY.md` for final
+full-suite results and the long pod traversal checks.
+
+---
+
 ## History (preserved verbatim from before P647)
 
 The ledger below is the cumulative pre-P647 record. Post-P647, the suite's current,

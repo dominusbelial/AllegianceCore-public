@@ -145,6 +145,45 @@ public class TreasureDropLiveTests
         Assert.True((te.Position - placedShip!.Position).LengthSquared() > 4f,
             $"treasure P0 {te.Position} should be offset from the ship {placedShip.Position}");
 
+        // P663: the real DROP_PART trajectory must move on both sides, including
+        // its server-ms creation epoch. Compare at an explicitly synchronized
+        // instant so transport latency does not affect the analytical assertion.
+        var dropped = placedShip!.Sector!.Models.OfType<Treasure>().Single(t => t.Id == te.TreasureId);
+        var origin = dropped.Position;
+        double target = Math.Max(server.Missions[0].LastUpdate, dropped.CreatedAt + 1);
+        while (server.Missions[0].LastUpdate < target) server.TickSim();
+        target = server.Missions[0].LastUpdate;
+        lock (session.Gate)
+        {
+            session.World.NowSeconds = () => 0;
+            session.World.ObserveServerTime((uint)(target * 1000), 0);
+            Assert.True((dropped.Position - origin).Length() > 1);
+            Assert.InRange((te.Position - dropped.Position).Length(), 0, 0.1f);
+            Assert.InRange((te.Velocity - dropped.Velocity).Length(), 0, 0.1f);
+        }
+
+        // A late sector entry exports the ORIGINAL trajectory plus a clock
+        // sample, rather than restarting motion from P0 at receipt time.
+        using var late = new ConnectionSession();
+        late.World.NowSeconds = () => 0;
+        late.Connect(server.BoundPort, "TRESDROP-LATE");
+        late.SendLogonRequest(Request("TRESDROP-LATE"));
+        PumpUntil(server, () =>
+        {
+            lock (late.Gate) return late.World.Treasures.ContainsKey(dropped.Id);
+        }, 4000);
+        lock (late.Gate)
+        {
+            Assert.True(late.World.Treasures.ContainsKey(dropped.Id), "late joiner missed the existing treasure export");
+            var samples = late.TakePingEchoes();
+            Assert.NotEmpty(samples);
+            double age = samples[^1].ServerMs / 1000.0 - dropped.CreatedAt;
+            Assert.True(age >= 1, "late export must retain at least one second of prior motion");
+            var expected = TreasureMotion.PositionAt(TreasureMotion.Vector(dropped.Data.P0),
+                TreasureMotion.Vector(dropped.Data.V0), age);
+            Assert.InRange((late.World.Treasures[dropped.Id].Position - expected).Length(), 0, 0.01f);
+        }
+
         Console.WriteLine($"TREASUREDROP-CLIENT-LIVE(P293): client world.Treasures hydrated from TREASURE(28): code={te.Code} part={te.PayloadId} amt={te.Amount} at ({te.Position.X:F1},{te.Position.Y:F1},{te.Position.Z:F1})");
     }
 }

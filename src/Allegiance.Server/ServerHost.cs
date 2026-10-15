@@ -573,6 +573,8 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// uses (P123). The destruction sibling of <see cref="ProbeDestroyed"/>.
     /// </summary>
     public Action<Treasure>? TreasureDestroyed;
+    public Action<Treasure>? TreasureGenerated;
+    public void TreasureGeneratedEvent(Treasure t) => TreasureGenerated?.Invoke(t);
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.TreasureDestroyedEvent"/>: raise the
     /// <see cref="TreasureDestroyed"/> hook so the owning <see cref="Server"/>
