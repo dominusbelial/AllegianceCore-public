@@ -372,6 +372,7 @@ public sealed class Sector : IClusterIgc
     public bool Remove(Model model)
     {
         if (!_models.Remove(model)) return false;
+        if (model is Probe probe) probe.OnRemoved();
         _memberVersion++;                       // P324 (M3): invalidate the in-tick candidate cache
         return true;
     }

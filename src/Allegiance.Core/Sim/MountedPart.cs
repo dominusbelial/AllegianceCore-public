@@ -11,7 +11,7 @@ namespace Allegiance.Core.Sim;
 /// subtypes only — the realized in-sim <see cref="Weapon"/> that actually
 /// fires in the authoritative tick.
 /// </summary>
-public sealed class MountedPart : IPartIgc
+public sealed class MountedPart : IPartIgc, IDispenserIgc
 {
     /// <summary>The wire <c>partID</c> — copied from <see cref="Type"/>.PartId at mount time.</summary>
     public required short PartId { get; init; }
@@ -38,7 +38,7 @@ public sealed class MountedPart : IPartIgc
     /// <summary>Native per-part mount accumulator; retain sub-byte progress.</summary>
     public float MountedFraction { get => _mountedFraction; internal set => _mountedFraction = value; }
 
-    /// <summary>Magazine load deadline (magazineigc.h:73,138-140).</summary>
+    /// <summary>Launcher load deadline (magazineigc.h:73,138-140; dispenserigc.h:72-76,135-152).</summary>
     public double TimeLoaded { get; internal set; }
 
     /// <summary>The resolved static-core part-type record (used to distinguish the subtype).</summary>

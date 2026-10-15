@@ -54,6 +54,18 @@ public sealed class SideVisibilityState
 {
     private readonly Dictionary<short, bool> _visible = [];
     private readonly Dictionary<short, bool> _currentEye = [];
+    private readonly HashSet<short> _revealedPredictable = [];
+
+    // Probe firing explicitly reveals a predictable static object. Native
+    // FedSrv/FedSrv.CPP:11120-11126 retains its known position after scanners
+    // lose the current eye. Other visibility participants retain their policy.
+    internal void RetainPredictableToSide(short sideId) => _revealedPredictable.Add(sideId);
+
+    internal void RevealPredictableToSide(short sideId)
+    {
+        RetainPredictableToSide(sideId);
+        SetSideVisibility(sideId, true);
+    }
 
     /// <summary>Whether <paramref name="sideId"/> can currently see this model —
     /// the port of <c>ThingSiteImpl::GetSideVisibility</c>
@@ -75,14 +87,16 @@ public sealed class SideVisibilityState
     /// <paramref name="visible"/>. Faithfully mirrors the native flag
     /// transitions of <c>SetSideVisibility</c> (<c>FedSrv.CPP:11153-11171</c>):
     /// the visible flag is assigned the new value, and the current-eyed flag is
-    /// synced to the same value in the same call (native line
-    /// <c>FedSrv.CPP:11168</c>). Sides are independent — updating one side
+    /// synced to the same value in the same call. A predictable probe contact
+    /// revealed by firing keeps its known position when the eye is lost
+    /// (FedSrv.CPP:11120-11126). Native line
+    /// <c>FedSrv.CPP:11168</c>. Sides are independent — updating one side
     /// never touches another's flags. No <c>ShowObject</c>/<c>HideObject</c>
     /// side effects and no station-territory refresh are fired; see class doc.
     /// </summary>
     public void SetSideVisibility(short sideId, bool visible)
     {
-        _visible[sideId] = visible;
+        _visible[sideId] = visible || _revealedPredictable.Contains(sideId);
         _currentEye[sideId] = visible;
     }
 }

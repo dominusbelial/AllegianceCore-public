@@ -39,7 +39,7 @@ namespace Allegiance.Core.Sim;
 /// immediately folded into velocity, matching the observable behaviour.</item>
 /// </list>
 /// </remarks>
-public sealed class Ship : Model, IShipIgc
+public sealed partial class Ship : Model, IShipIgc
 {
     /// <summary>
     /// P424 — the real-player queued-order auto-reject timeout, the port of
@@ -2831,6 +2831,8 @@ public sealed class Ship : Model, IShipIgc
         if (type.Type is DataPartTypeIGC.MissileLauncher ml && Mission is { } m
             && m.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt))
             part.TimeLoaded = part.MountedFraction >= 1f ? LastUpdate : LastUpdate + 1.0 / MountRate() + mt.LoadTime;
+        if (DispenserLoadTime(part) is { } loadTime)
+            part.TimeLoaded = part.MountedFraction >= 1f ? LastUpdate : LastUpdate + 1.0 / MountRate() + loadTime;
         _parts.Add(part);
         BumpLoadout();
 
@@ -3041,7 +3043,8 @@ public sealed class Ship : Model, IShipIgc
                 ? 1f : Math.Min(1f, part.MountedFraction + dt * MountRate());
             if (part.MountedFraction >= 1f)
             {
-                if (part.EquipmentType is EquipmentType.Weapon or EquipmentType.Cloak or EquipmentType.Shield)
+                if (part.EquipmentType is EquipmentType.Weapon or EquipmentType.Cloak or EquipmentType.Shield
+                    or EquipmentType.Dispenser or EquipmentType.ChaffLauncher)
                     // weaponIGC.h:44-46; cloakigc.cpp:75-76; shieldIGC.cpp:82-83.
                     Mission?.Site.WeaponReady(this, part.Type.Name);
                 RaiseLoadoutChange(part, LoadoutChange.Mounted);
@@ -3444,9 +3447,11 @@ public sealed class Ship : Model, IShipIgc
         Amount = p.Amount,
         MountId = p.MountId,
         FractionMounted = fractionMounted,
-        TimeLoaded = fractionMounted == 0 && p.Type.Type is DataPartTypeIGC.MissileLauncher ml
-            && Mission is { } mission && mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt)
-            ? LastUpdate + 1.0 / MountRate() + mt.LoadTime : p.TimeLoaded,
+        TimeLoaded = fractionMounted == 0 && DispenserLoadTime(p) is { } loadTime
+            ? LastUpdate + 1.0 / MountRate() + loadTime
+            : fractionMounted == 0 && p.Type.Type is DataPartTypeIGC.MissileLauncher ml
+                && Mission is { } mission && mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt)
+                ? LastUpdate + 1.0 / MountRate() + mt.LoadTime : p.TimeLoaded,
         Type = p.Type,
         FunctionalWeapon = p.FunctionalWeapon,
         FreeSpawn = p.FreeSpawn,
@@ -4303,14 +4308,28 @@ public sealed class Ship : Model, IShipIgc
     /// <c>Missile.cs:205-208</c>) already handles a chaff target that leaves the
     /// cluster.
     /// </remarks>
-    public DeployChaffResult DeployChaff(DataChaffTypeIGC chaffType, double now, Random? rng = null)
+    public DeployChaffResult DeployChaff(DataChaffTypeIGC chaffType, double now, Random? rng = null, bool useHullEmission = false)
     {
         var sector = Sector
             ?? throw new InvalidOperationException("a placed ship must be in a sector before it can deploy chaff");
         var mission = Mission
             ?? throw new InvalidOperationException("cannot deploy chaff on a ship that has not been placed (no mission/core/site)");
 
-        var chaff = new Chaff(mission.NextObjectId(), sector, chaffType, Position, Velocity, now, this);
+        var position = Position;
+        var velocity = Velocity;
+        if (useHullEmission)
+        {
+            var hull = Hull ?? sector.CollisionHulls?.Resolve(HullType.ModelName);
+            if (hull is { Radius: > 0 })
+                foreach (var frame in hull.Frames)
+                    if (frame.Name == "chaff")
+                    {
+                        position += HullLandingBay.Transform(frame).Position * (.5f * HullType.Length / hull.Radius) * Orientation;
+                        break;
+                    }
+            velocity += Orientation.GetUp() * 5;
+        }
+        var chaff = new Chaff(mission.NextObjectId(), sector, chaffType, position, velocity, now, this);
         sector.Add(chaff);
 
         var r = rng ?? Random.Shared;
@@ -6966,14 +6985,8 @@ public sealed class Ship : Model, IShipIgc
 
     private void TryDeployRepairMine(double now)
     {
-        // dispenserigc.cpp:103-119: amount, mount and load-time gates.
-        var part = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0);
-        if (IsRipcordActive || part is not { Amount: > 0, MountedFraction: >= 1f, Type.Type: DataPartTypeIGC.MineLauncher launcher } ||
-            now <= part.TimeLoaded || Mission is not { } mission ||
-            !mission.Core.MineTypes.TryGetValue(launcher.ExpendableTypeId, out var type)) return;
-        part.TimeLoaded = now + type.LoadTime;
-        DeployMine(type, now);
-        SetPartAmount(part, (short)(part.Amount - 1));
+        var part = _parts.FirstOrDefault(p => p.Type.Type is DataPartTypeIGC.MineLauncher && p.MountId == 0);
+        if (part is not null) UpdateDispenser(part, now);
     }
 
     /// <summary>
@@ -7914,6 +7927,7 @@ public sealed class Ship : Model, IShipIgc
         // runs for every ship that carries the bit in its local StateM (an NPC
         // driver or a test) and is inert otherwise — it does NOT touch the
         // wingman's weapon-only UpdateWingmanCombat combat leg.
+        UpdateDispensers(now);
         UpdateMountedMissileLock((float)dt);
         if ((StateM & ShipControlState.MissileFire) != 0)
             TryFireMissile(now);

@@ -92,6 +92,9 @@ public sealed partial class Mission
     /// <summary>FedSrv/FedSrv.CPP:13387-13417: permit allied ripcord anchors.</summary>
     public bool AllowAlliedRip { get; set; }
 
+    /// <summary>Native bAllowAlliedViz (probeigc.cpp:459), firing reveal only.</summary>
+    public bool AllowAlliedViz { get; set; }
+
     /// <summary>Allied side pairs for native AlliedSides damage immunity
     /// (shipIGC.cpp:1224). Either ordering represents the same alliance.</summary>
     public HashSet<(short, short)> AlliedSidePairs { get; } = [];

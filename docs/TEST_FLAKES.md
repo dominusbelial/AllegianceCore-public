@@ -777,3 +777,19 @@ The final unfiltered Core, ClientCore (including the enabled local 15v15 next-ma
 | `Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer` | Assert.DoesNotContain() Failure: Filter matched in collection | 3/3 pass |
 
 See [P690_RESULTS.json](reports/P690_RESULTS.json) for commands, raw counts, messages, and artifact paths. Isolated passes do not establish a fix for the underlying timing/transport behavior.
+
+
+## P692 observation (2026-10-15)
+
+The final unfiltered sequential suites reported Core **4,615 pass / 2 fail / 0 skip**, ClientCore **1,014 pass / 0 fail / 0 skip**, and MonoGame **2,187 pass / 0 fail / 3 existing private Meshy-pack skips**. The enabled local P660 15v15 bots/humans next-match showcase passed (21.753 seconds). The affected cohort passed **399 individual exact-method invocations / 651 case executions**, with zero failures or skips.
+
+After all three full suites completed, both failed Core methods passed **3/3 exact-method isolated reruns**, satisfying P692's explicit load-flake classification rule:
+
+| Test | Full-suite symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | `Assert.Single`: abort receipt collection was empty. | 3/3 pass |
+| `Allegiance.Core.Tests.LiveP388DebugNoGameOverTests.Debug_mode_disconnect_does_not_end_mission_and_miners_keep_cycling` | Side-0 miner 8096 completed only one counted mine/sell cycle within 240,000 ticks. | 3/3 pass |
+
+No assertions, deadlines, quarantine traits, or product behavior were changed for these observations. The isolated passes do not establish the underlying cause or a fix for the receipt/cycle observation. The real loopback mining/sale and MCP purchase/death/pod/relaunch/refire checks separately passed 3/3 alone, and the controlled real bot TCP battle recorded one credited kill per isolated run.
+
+See the [P692 report](reports/P692_PARITY_WAVE10.md) and [invocation ledger](reports/P692_RESULTS.json) for raw counts, exact filters, failure messages/stacks, and per-run TRX/log paths. Preliminary overlapping runs were discarded from certification; the complete affected cohort was subsequently rerun serially under a verifier lock.

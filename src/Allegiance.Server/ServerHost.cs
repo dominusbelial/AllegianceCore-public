@@ -608,6 +608,30 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <see cref="MineCreated"/>; joins the same host bridges out of the seam,
     /// everything else keeps the interface default.
     /// </summary>
+    // Igc/igc.h:4870; dispenserigc.cpp:118-121. A concrete host executes
+    // deployment even without a network server attached.
+    public Action<Ship, MountedPart, double>? ExpendableFired;
+    public void FireExpendable(IShipIgc ship, IDispenserIgc dispenser, double timeFired)
+    {
+        if (ship is not Ship s || dispenser is not MountedPart p) return;
+        if (ExpendableFired is { } fire) fire(s, p, timeFired);
+        else s.FireDispenser(p, timeFired);
+    }
+
+    // Igc/probeigc.cpp:151-154,226-230,341-349. The native server leaves
+    // these client notifications at defaults; this host exposes the events
+    // so the authoritative simulation can supply the managed client's feedback.
+    public Action<Probe>? TeleportProbeActivated;
+    public Action<Probe>? TeleportProbeDestroyed;
+    public void ActivateTeleportProbe(IProbeIgc probe)
+    {
+        if (probe is Probe p) TeleportProbeActivated?.Invoke(p);
+    }
+    public void DestroyTeleportProbe(IProbeIgc probe)
+    {
+        if (probe is Probe p) TeleportProbeDestroyed?.Invoke(p);
+    }
+
     public Action<Probe>? ProbeCreated;
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.ProbeCreatedEvent"/>: raise the
