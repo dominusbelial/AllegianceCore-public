@@ -444,9 +444,9 @@ public sealed class ProfilerConfig
 
 /// <summary>
 /// P603 — the parallel per-peer broadcast-build configuration (top-level
-/// <c>broadcast</c> section). OFF by default (an absent section, or
-/// <c>parallelBuild:false</c>, preserves today's serial, byte-for-byte
-/// behaviour). When on, <c>BroadcastShipStates</c> splits into a serial
+/// <c>broadcast</c> section). Parallel building is OFF by default. P659's
+/// independent <c>minUpdateHz</c> pose floor defaults to 2 Hz (0 restores the
+/// pre-floor ranked budget). When parallel building is on, <c>BroadcastShipStates</c> splits into a serial
 /// snapshot phase + a parallel per-peer build phase + a serial enqueue phase,
 /// and <c>BroadcastShipsUpdate</c> parallelises across sectors (within-sector
 /// peer order — and the per-ship Deviation staleness accumulator — stay
@@ -454,10 +454,15 @@ public sealed class ProfilerConfig
 /// </summary>
 public sealed class BroadcastConfig
 {
+    /// <summary>P659 — minimum remote visible-ship pose frequency per viewer.
+    /// Default 2 Hz; 0 preserves the existing ranked budget. Rounded up to a
+    /// whole broadcast tick, capped by UpdatesPerSecond. LIGHT records carry
+    /// no pose and do not satisfy this floor. Measured in wall time, not sim time.</summary>
+    public double MinUpdateHz { get; set; } = 2;
+
     /// <summary>
-    /// Master switch. <c>false</c> (the default, and the meaning of an absent
-    /// <c>broadcast</c> section) leaves both broadcast builders running exactly
-    /// as they did before P603 — the same serial code path, byte-for-byte.
+    /// Parallel-build switch. <c>false</c> (the default) uses the serial builders.
+    /// Serial and parallel modes apply the same independent pose floor.
     /// <c>true</c> enables the parallel per-peer build path (gated per build).
     /// </summary>
     public bool ParallelBuild { get; set; }
@@ -659,9 +664,8 @@ public sealed class ServerConfig
     public ProfilerConfig? Profiler { get; init; }
 
     /// <summary>
-    /// P603 — the parallel per-peer broadcast-build settings. Null/absent (the
-    /// default) = OFF: both broadcast builders keep today's serial, byte-for-byte
-    /// behaviour. See <see cref="BroadcastConfig"/>.
+    /// Per-peer broadcast settings. Null/absent uses serial building, the port
+    /// ship-update model and P659's 2 Hz pose floor. See <see cref="BroadcastConfig"/>.
     /// </summary>
     public BroadcastConfig? Broadcast { get; init; }
 

@@ -60,6 +60,9 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
+        // Reject invalid cadence before any other subsystem registers profiler
+        // callbacks: a failed boot must not leave a partially initialized host.
+        InitUpdateCadence();
         bool crowdingEnabled = _config.Sim.CrowdingEnabled; // validate before binding/listening
         Console.WriteLine($"[boot] sim.crowdingPenalty = {(crowdingEnabled ? "native" : "off")}");
         _period = _config.UpdatesPerSecond > 0 ? 1.0 / _config.UpdatesPerSecond : 0.05;
@@ -1549,6 +1552,7 @@ public sealed partial class Server
         _lastClusterInfoTick.Remove(id);
         _lastPingQuery.Remove(id);
         _peerRequests.Remove(id);   // P480 — forget the retained LogonRequest with the peer
+        RetireViewerUpdateCadence(id);
         _peerShipUpdate.Remove(id); // P507 — release the per-peer ship-update cookie/counters with the peer
         if (!_peerShips.Remove(id, out var live))
         {
@@ -1763,6 +1767,7 @@ public sealed partial class Server
         }
         Console.WriteLine($"[shutdown] clean: {LoopIterations} ticks, {Overruns} overruns");
         // P600 — flush + release the profiler's CSV handle (best-effort).
+        ShutdownUpdateCadence();
         ShutdownProfiler();
     }
 
