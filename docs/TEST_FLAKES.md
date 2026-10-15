@@ -411,6 +411,23 @@ No assertion, deadline, fixture or quarantine trait was changed for these two
 observations. No additional test failed 3/3 alone. See the
 [P655b report](reports/P655_GAME_STATE_INTEGRITY.md#p655b) and
 [per-run evidence](reports/P655B_RESULTS.json).
+## P643 observation (2026-10-14)
+
+After a clean desktop build, Core, ClientCore and MonoGame were run sequentially,
+including every live/loopback test (no LiveTiming filter). Core: 4167 passed / 2
+failed; ClientCore: 868 passed / 1 failed; MonoGame: 1986 passed / 3 optional
+private-Meshy-pack skips / 0 failed. Every failure then passed **3/3 in isolation**:
+
+| test | isolation | verdict |
+|---|---|---|
+| `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | 3/3 pass | existing ripcord-abort receipt timing flake |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | 3/3 pass | existing surviving-peer game-over receipt flake |
+| `ShipDeleteGoneLiveTests.CrossSide_WarperLeavesSector_WatcherLatchesGone` | 3/3 pass | cross-side sector-transition receipt load flake (`bravo ship transited` assertion) |
+
+P643 changes the client renderer/settings/telemetry, not these Core/ClientCore
+wire paths. No timing test or deadline was changed to hide these failures. The
+report and local measurement evidence are in
+[`P643_GPU_MEASURE_FSR1.md`](reports/P643_GPU_MEASURE_FSR1.md).
 
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
@@ -437,6 +454,8 @@ timing-sensitive at the margins.
 | `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback` | load-flake | positional relaunch-fallback drift during wire round-trip |
 | `LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | 1/10 | live-wire ripcord-energy receipt |
 | `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | load-flake | live-wire ripcord abort receipt |
+| `LiveRipcordTests.Re_target_activates_to_requester_only` | 2/3 under load | live-wire ripcord re-target receipt (P667 run 2; same ripcord-wire family) |
+| `StationUnderAttackAlertLiveTests.Sub_30_percent_fraction_produces_critical_alert_once_throttle_reopens` | 2/3 under load (cold-start) | live-wire station under-attack alert throttle receipt (P667 run 2; same family as the `Defending_side…` entry) |
 | `LiveWinConditionTests.Board_refused_once_mission_over` | 1/10 | live-wire board-handshake control leg |
 | `SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone` | 2/10 | live-wire side-only game-over receipt |
 | `LiveChatSectorWireTests.Individual_AllSector_and_FriendlySector_relay_to_real_peers_over_the_wire` | 2/10 | live-wire chat sector relay (flaky even isolated) |

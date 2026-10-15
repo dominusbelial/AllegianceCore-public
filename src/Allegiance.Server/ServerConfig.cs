@@ -454,6 +454,7 @@ public sealed class ProfilerConfig
     public double SlowTickMs { get; set; } = 250;
 }
 
+
 /// <summary>
 /// P603 — the parallel per-peer broadcast-build configuration (top-level
 /// <c>broadcast</c> section). Parallel building is OFF by default. P659's

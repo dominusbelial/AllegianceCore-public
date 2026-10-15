@@ -999,6 +999,20 @@ public sealed class Sector : IClusterIgc
                 ships.Add(s);
         if (ships.Count < 2) return;
 
+        // P667 — parallel detection path. The expensive part is the read-only
+        // O(n²) per-pair qualification (side / lifepod↔rescue capability /
+        // proximity). Qualifying (i,j) pairs are collected in parallel, sorted
+        // back into the serial scan order, then the one-rescue-per-ship latch
+        // (which decides WHICH pair wins and mutates _pendingRescues) runs serially
+        // in that exact order — so the result is byte-identical to the serial loop
+        // below for any thread count. Ships' positions are not mutated during
+        // qualification, so the concurrent reads are safe.
+        if (ParallelSectorSim.Enabled && ParallelSectorSim.ThreadCount > 1)
+        {
+            ResolveRescueEventsParallel(ships);
+            return;
+        }
+
         var done = new HashSet<Ship>();              // one rescue per ship per tick
         for (int i = 0; i < ships.Count; i++)
         {
@@ -1041,6 +1055,76 @@ public sealed class Sector : IClusterIgc
                 done.Add(a);
                 done.Add(b);
             }
+        }
+    }
+
+    /// <summary>
+    /// P667 — the parallel form of <see cref="ResolveRescueEvents"/>' detection
+    /// phase. Qualifies every (i,j) ship pair (read-only) on up to
+    /// <see cref="ParallelSectorSim.ThreadCount"/> workers, collects the
+    /// qualifying pairs, sorts them back into the exact serial scan order
+    /// (ascending i, ascending j), then applies the one-rescue-per-ship latch
+    /// and <c>_pendingRescues</c> accumulation serially in that order. The
+    /// accepted rescue set — and the order they land in <c>_pendingRescues</c> —
+    /// is therefore identical to the serial loop for any thread count, satisfying
+    /// the P667 determinism gate. Ship positions are never mutated during
+    /// qualification (a rescue only latches and drains later), so the concurrent
+    /// reads are safe.
+    /// </summary>
+    private void ResolveRescueEventsParallel(List<Ship> ships)
+    {
+        int n = ships.Count;
+        var qualifying = new System.Collections.Concurrent.ConcurrentBag<(int I, int J)>();
+        Parallel.For(0, n, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, ParallelSectorSim.ThreadCount) }, i =>
+        {
+            var a = ships[i];
+            for (int j = i + 1; j < n; j++)
+            {
+                var b = ships[j];
+                if (a.SideId != b.SideId) continue;              // friendly gate (shipIGC.cpp:1023-1026)
+
+                // Symmetric capability match (shipIGC.cpp:1027-1035).
+                if (a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                    && b.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
+                { }
+                else if (b.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                    && a.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
+                { }
+                else continue;
+
+                float ra = 0.5f * a.HullType.Length;
+                float rb = 0.5f * b.HullType.Length;
+                float threshold = ra + rb;
+                float dx = a.Position.X - b.Position.X;
+                float dy = a.Position.Y - b.Position.Y;
+                float dz = a.Position.Z - b.Position.Z;
+                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+
+                qualifying.Add((i, j));
+            }
+        });
+
+        // Serial latch in the identical (i,j) scan order the serial loop uses.
+        var done = new HashSet<Ship>();
+        foreach (var (i, j) in qualifying.OrderBy(p => p.I).ThenBy(p => p.J))
+        {
+            var a = ships[i];
+            var b = ships[j];
+            if (done.Contains(a) || done.Contains(b)) continue;
+
+            Ship rescuee, rescuer;
+            if (a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                && b.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
+            {
+                rescuee = a; rescuer = b;
+            }
+            else
+            {
+                rescuee = b; rescuer = a;
+            }
+            _pendingRescues.Add((rescuee, rescuer));
+            done.Add(a);
+            done.Add(b);
         }
     }
 
@@ -1734,7 +1818,7 @@ public sealed class Sector : IClusterIgc
                 hull: CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt);
+        var events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
         var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
         {
@@ -2268,7 +2352,7 @@ public sealed class Sector : IClusterIgc
                 Orientation.Identity, CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt);
+        var events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
         foreach (var ev in events)
         {
             var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;
@@ -2492,7 +2576,7 @@ public sealed class Sector : IClusterIgc
                 CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt);
+        var events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
         foreach (var ev in events)
         {
             var ship1 = ev.A.Data as Ship;
@@ -2720,7 +2804,7 @@ public sealed class Sector : IClusterIgc
                 Orientation.Identity, CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
-        var events = detector.Detect(dt);
+        var events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
         foreach (var ev in events)
         {
             var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;

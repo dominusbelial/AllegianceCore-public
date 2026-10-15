@@ -249,6 +249,9 @@ public sealed partial class Game1
 
     protected override void Update(GameTime gameTime)
     {
+        using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
+        _flightGc.SetFlying(_state == ClientState.Flying && !_dockedActive
+            && !_graphicsSettingsVisible && !_keyBindVisible);
         // Also runs in dock/lobby/disconnect states, so the loop cannot linger.
         lock (_session.Gate)
             _sound?.UpdateShipWarnings(_session.World.ShipWarnings.Mask, _session.World.ShipWarnings.TakeRisingEdges());
@@ -286,6 +289,18 @@ public sealed partial class Game1
             && world.Mission?.Stage is (int)MissionStage.NotStarted or (int)MissionStage.Starting)
             _state = ClientState.ReadyCheck;
         var ks = Keyboard.GetState();
+        if (UpdateGraphicsSettings(ks))
+        {
+            // A modal settings panel must release the last movement/fire command.
+            if (_state == ClientState.Flying && !_dockedActive)
+            {
+                var neutral = new ControlData(0f, 0f, 0f, -1f);
+                if (IsTurretGunner()) UpdateTurretGunner(neutral, 0, (float)gameTime.ElapsedGameTime.TotalSeconds);
+                else _session.CommandControls(neutral);
+            }
+            base.Update(gameTime);
+            return;
+        }
 
         // P320 — session-loss detection (see ConnectionSession.SessionLost). The
         // transport reports the established connection to the server dropped
