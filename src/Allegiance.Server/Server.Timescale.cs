@@ -257,6 +257,7 @@ public sealed partial class Server
     /// auto").</summary>
     private void SetTimeScale(double value)
     {
+        if (!double.IsFinite(value)) return;
         double clamped = LiveSettingsConfig.ClampTimeScale(value);
         if (_tidiController is { } c)
         {
@@ -300,7 +301,7 @@ public sealed partial class Server
     /// </summary>
     private void HandleTimescaleCheat(ConnectionId from, Ship ship, string rest)
     {
-        if (!double.TryParse(rest.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
+        if (!double.TryParse(rest.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) || !double.IsFinite(v))
         {
             SendAdminReply(from, ship.Id, $"timescale: expected a number in [{LiveSettingsConfig.MinTimeScale:R},{LiveSettingsConfig.MaxTimeScale:R}] — got '{rest.Trim()}'");
             return;

@@ -122,7 +122,16 @@ public sealed class ConquestTerritoryLiveTests
         try
         {
             string[] names = { "mA0", "mB0", "mA1" };
-            for (int i = 0; i < 3; i++) { bots[i].Connect(port, names[i]); bots[i].SendLogonRequest(Request(names[i])); }
+            // The spawner assigns mission/side by spawn slot. Finish each join
+            // before opening the next so receive-thread scheduling cannot swap
+            // the named mission-A and mission-B peers.
+            for (int i = 0; i < 3; i++)
+            {
+                bots[i].Connect(port, names[i]);
+                bots[i].SendLogonRequest(Request(names[i]));
+                Assert.True(PumpUntil(server, () => bots[i].ShipAssignment is not null, 4000) < 4000,
+                    $"peer {names[i]} must seat in its intended spawn slot");
+            }
             int got = PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(got < 4000, "no assignments");
             foreach (var s in server.Ships) s.Ship.Velocity = Vector3.Zero;
@@ -149,7 +158,8 @@ public sealed class ConquestTerritoryLiveTests
             // wire packets; condition-wait until mission A's peer has actually
             // ingested both before asserting on them (mission B stays untouched).
             int seenPackets = PumpUntil(server,
-                () => a0.GameStates.Count > 0 && a0.GameOvers.Count > 0, 20000);
+                () => a0.GameStates.Count > 0 && a0.GameOvers.Count > 0
+                    && a1.GameStates.Count > 0 && a1.GameOvers.Count > 0, 20000);
             Assert.True(seenPackets < 20000, "mission A peers must see GAME_STATE + GAME_OVER");
 
             // Mission A ended with the right winner...
@@ -295,6 +305,9 @@ public sealed class ConquestTerritoryLiveTests
                 seat.Bots[i] = new FltBot();
                 seat.Bots[i].Connect(port, names[i]);
                 seat.Bots[i].SendLogonRequest(Request(names[i]));
+                Assert.True(PumpUntil(seat.Server, () => seat.Bots[i].ShipAssignment is not null, 4000) < 4000,
+                    $"peer {names[i]} must seat in spawn slot {i}");
+                Assert.Equal(seat.Ships[i].Id, seat.Bots[i].ShipAssignment!.Ship.ShipId);
             }
             PumpUntil(seat.Server, () => seat.Bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(seat.Bots.All(b => b.ShipAssignment is not null), "all bots must be assigned a ship");

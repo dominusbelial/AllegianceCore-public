@@ -215,7 +215,7 @@ public sealed class GameOverPlayersWireTests
 
         b.Dispose();                                    // empties Bee's side → Ace's side wins
         int seen = PumpUntil(server, () => mission0.Stage == MissionStage.Over
-                                           && a.GameOverPlayerBroadcasts.Count > 0, 900);
+                                           && a.GameOvers.Count > 0 && a.GameOverPlayerBroadcasts.Count > 0, 900);
         Assert.True(seen < 900, "elimination win must broadcast GAME_OVER_PLAYERS");
 
         Assert.Equal(MissionStage.Over, mission0.Stage);
@@ -272,7 +272,7 @@ public sealed class GameOverPlayersWireTests
         capturer.Position = AtTarget;
         int seen = PumpUntil(seat.Server,
             () => mission.Stage == MissionStage.Over
-                  && seat.Bots.All(b => b.GameOverPlayerBroadcasts.Count > 0), 9000);
+                  && seat.Bots.All(b => b.GameOvers.Count > 0 && b.GameOverPlayerBroadcasts.Count > 0), 9000);
         Assert.True(seen < 9000, "conquest win must broadcast GAME_OVER_PLAYERS to every peer");
         Assert.Equal(MissionStage.Over, mission.Stage);
 
@@ -350,7 +350,16 @@ public sealed class GameOverPlayersWireTests
         try
         {
             string[] names = { "mA0", "mB0", "mA1" };
-            for (int i = 0; i < 3; i++) { bots[i].Connect(port, names[i]); bots[i].SendLogonRequest(Request(names[i])); }
+            // The spawner assigns mission/side by spawn slot. Finish each join
+            // before opening the next so receive-thread scheduling cannot swap
+            // the named mission-A and mission-B peers.
+            for (int i = 0; i < 3; i++)
+            {
+                bots[i].Connect(port, names[i]);
+                bots[i].SendLogonRequest(Request(names[i]));
+                Assert.True(PumpUntil(server, () => bots[i].ShipAssignment is not null, 4000) < 4000,
+                    $"peer {names[i]} must seat in its intended spawn slot");
+            }
             int got = PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(got < 4000, "no assignments");
             foreach (var s in server.Ships) s.Ship.Velocity = Vector3.Zero;
@@ -365,7 +374,11 @@ public sealed class GameOverPlayersWireTests
             DropShield(target);
             capturer.Position = new Vector3(0, 0, -1000);   // at the side-1 flag target in mission A
 
-            int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over, 9000);
+            // Server stage precedes transport delivery. Wait for the complete
+            // result at BOTH mission-A peers before asserting its audience.
+            int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over
+                && a0.GameOvers.Count > 0 && a0.GameOverPlayerBroadcasts.Count > 0
+                && a1.GameOvers.Count > 0 && a1.GameOverPlayerBroadcasts.Count > 0, 9000);
             Assert.True(seen < 9000, "mission A did not end by conquest");
             Assert.Equal(MissionStage.Over, missionA.Stage);
             Assert.Equal(MissionStage.Started, server.Missions[1].Stage);
@@ -484,6 +497,10 @@ public sealed class GameOverPlayersWireTests
                 seat.Bots[i] = new FltBot();
                 seat.Bots[i].Connect(port, $"p194_{i}");
                 seat.Bots[i].SendLogonRequest(Request($"p194_{i}"));
+                // Preserve the documented bot[i] == spawn-slot[i] contract.
+                Assert.True(PumpUntil(seat.Server, () => seat.Bots[i].ShipAssignment is not null, 4000) < 4000,
+                    $"peer p194_{i} must seat in spawn slot {i}");
+                Assert.Equal(seat.Ships[i].Id, seat.Bots[i].ShipAssignment!.Ship.ShipId);
             }
             PumpUntil(seat.Server, () => seat.Bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(seat.Bots.All(b => b.ShipAssignment is not null), "all bots must be assigned a ship");

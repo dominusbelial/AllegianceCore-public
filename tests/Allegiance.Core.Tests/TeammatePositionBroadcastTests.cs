@@ -81,6 +81,10 @@ public class TeammatePositionBroadcastTests
             PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(bots.All(b => b.ShipAssignment is not null), "all three bots must be assigned a ship");
 
+            foreach (var bot in bots) bot.SendDocked();
+            Assert.True(PumpUntil(server, () => server.Ships.All(l => l.Ship.StationId is null), 4000) < 4000,
+                "movement fixtures must launch before sending controls");
+
             var ships = server.Ships.ToDictionary(s => s.Ship.Id, s => s.Ship.SideId);
             short[] ids = bots.Select(b => b.ShipAssignment!.Ship.ShipId).ToArray();
 

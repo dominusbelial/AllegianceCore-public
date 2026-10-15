@@ -6,19 +6,9 @@ namespace Allegiance.ClientCore.Tests;
 /// P517 — pure tests pinning the <b>units</b> of the turret-gunner ACTIVE_TURRET_UPDATE
 /// timestamp and the reason the shared PING-fed server clock is required.
 ///
-/// <para>The server's turret staleness gate is
-/// <c>deltaT = gunner.LastUpdate − atu.time</c> compared against ±1.5 s
-/// (<c>Server.ShipCommands.cs:212-213</c>), with <c>Ship.LastUpdate</c> in server
-/// sim-<b>seconds</b> — so <c>atu.time</c> must be server sim-seconds. P464 tried to
-/// derive those seconds from the peer-pose slot <c>ServerShipUpdate.Time</c>, but that
-/// slot is the server <b>tick index</b> (loop iterations, ~20/s) not seconds
-/// (<c>Server.Broadcast.cs:247,286</c> pass <c>_loopIterations</c>; noted at
-/// <c>ShipDeadReckoner.cs:128</c>). <see cref="WrongTimeIfTickIndexReadAsSeconds"/>
-/// pins that trap: interpreting the tick slot as seconds is ~20× off and every update
-/// is dropped as stale. P517 instead stamps <c>atu.time</c> from the shared PING-fed
-/// <see cref="OwnShipServerClock"/> (ms) converted to the gate's seconds;
-/// <see cref="PingMsConvertedToGateSecondsStaysInsideTheGate"/> pins that conversion
-/// keeps <c>deltaT</c> inside ±1.5 s under realistic echo jitter.</para>
+/// <para>P655: the wire carries server milliseconds. The server divides by
+/// 1000 for its ±1.5 second replay window. The shared PING-fed clock supplies
+/// the correct epoch and units; the peer-pose tick index cannot replace it.</para>
 /// </summary>
 public sealed class TurretServerClockTests
 {
@@ -78,14 +68,14 @@ public sealed class TurretServerClockTests
 
             // Stamp an ACTIVE update shortly after this echo, at the gate's seconds.
             double probeLocalMs = localRecvMs + 8.0 + rng.NextDouble() * 40.0;
-            uint atuSeconds = (uint)Math.Floor(clock.ServerTimeMs((long)probeLocalMs) / 1000.0);
+            uint atuMilliseconds = clock.ServerTimeMs((long)probeLocalMs);
 
             // True server sim-seconds at the probe instant (epoch offset ≈ rtt, negligible here).
             double trueServerSeconds = (probeLocalMs - rtt) / 1000.0;
-            double deltaT = trueServerSeconds - atuSeconds;     // gunner.LastUpdate − atu.time
+            double deltaT = trueServerSeconds - atuMilliseconds / 1000.0;     // gunner.LastUpdate − atu.time
 
             Assert.True(deltaT > -GateSeconds && deltaT < GateSeconds,
-                $"atu.time {atuSeconds}s vs true {trueServerSeconds:F3}s → deltaT {deltaT:F3}s escaped ±{GateSeconds}s gate");
+                $"atu.time {atuMilliseconds}ms vs true {trueServerSeconds:F3}s → deltaT {deltaT:F3}s escaped ±{GateSeconds}s gate");
             // Floor normally leaves deltaT in [0,1]: never stale-high, always < 1.5.
             Assert.True(deltaT < GateSeconds - 0.2,
                 $"floor-of-ms conversion should keep deltaT ~[0,1]s, got {deltaT:F3}s");

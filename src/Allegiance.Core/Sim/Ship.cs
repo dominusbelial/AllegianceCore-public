@@ -3915,12 +3915,7 @@ public sealed class Ship : Model, IShipIgc
     /// (<paramref name="dt"/> seconds) against the current
     /// <see cref="CommandTarget"/>, porting native <c>CmagazineIGC::Update</c>'s
     /// lock-build block (<c>Igc/magazineigc.cpp:104-176</c>) as a
-    /// directly-callable capability. <b>Not wired</b> into any control-input /
-    /// live-fire path (there is no <c>missileFireIGC</c>-equivalent bit in
-    /// <see cref="ShipControlState"/>, and the native state bit is documented as
-    /// not transmitted in the wire mask, <c>Igc/igc.h:829-834</c>) — exactly the
-    /// "caller supplies the type directly" precedent of
-    /// <see cref="FireMissile"/>.
+    /// capability shared by the mounted-launcher tick and live missile-fire path.
     /// </summary>
     /// <remarks>
     /// <para><b>Flow (in native order):</b> ripcord active ⇒ lock <c>0</c>; no
@@ -3931,14 +3926,9 @@ public sealed class Ship : Model, IShipIgc
     /// <c>magazineigc.cpp:145-146</c>); otherwise the real angle-off-bow
     /// buildup/decay (see the derivation in <c>docs/MISSILE_LOCK_P181.md</c>),
     /// clamped to <c>[0,1]</c>.</para>
-    /// <para><b>Explicit, verified omissions</b> (each confirmed to have no
-    /// equivalent in this port, per the P181 task brief): the <c>CanSee</c> gate
-    /// (no visibility/sensor model — every valid target is treated as visible),
-    /// the <c>AlliedSides</c> half of the hostility test (no alliance system —
-    /// hostile is a bare <c>SideId</c> inequality, the P159/P162 idiom), and the
-    /// warp-bomb targeting branch (no warp-bomb capability flag is decoded on
-    /// <see cref="DataMissileTypeIGC"/> — only the "damageable, non-warp" target
-    /// case applies; the port's separate <c>WarpBomb</c> feature is unrelated).
+    /// <para>P655 applies the sector's current side visibility and alliance
+    /// state (native CanSee/AlliedSides, Igc/magazineigc.cpp:127-132). This method
+    /// handles living ship targets; warp-bomb target selection is separate.
     /// The ECM multiplier, by contrast, IS applied: the brief asserted "no ECM
     /// field anywhere in this port", but <see cref="DataHullTypeIGC.Ecm"/> is in
     /// fact decoded (Data/DataHullTypeIGC.cs:33,220), so native's
@@ -3963,13 +3953,17 @@ public sealed class Ship : Model, IShipIgc
         //    sector/cluster (this ship's own sector's model-list membership —
         //    the same primitive Stage 1's Missile.cs homing code uses via
         //    `_sector.Models.Contains(t)`, Missile.cs:191), on a hostile side
-        //    (bare SideId inequality; no alliance system), and damageable (a
+        //    (including mission alliances), and damageable (a
         //    living ship — the combat-pass "can take damage" notion, which a
-        //    dead ship has left). CanSee and AlliedSides omitted (no port
-        //    equivalents, above).
+        //    dead ship has left). CanSee uses the sector's side visibility;
+        //    alliances use mission side relationships (P655).
         if (Sector is not { } sector || !sector.Models.Contains(target)) { MissileLock = 0f; return; }
         if (SideId is not { } sideId) { MissileLock = 0f; return; }
-        if (target.SideId is not { } otherSide || otherSide == sideId || target.Dead) { MissileLock = 0f; return; }
+        if (target.SideId is not { } otherSide || otherSide == sideId || target.Dead
+            || target.StationId is not null || !target.SeenBySide(sideId)
+            || Mission?.AreSidesFriendly(sideId, otherSide) == true) { MissileLock = 0f; return; }
+        // Native requires CanSee(ptarget): Igc/magazineigc.cpp:132. Visibility
+        // includes scanner detection of cloaked ships; cloak alone is not a ban.
 
         // 4. Range gate (magazineigc.cpp:134-143): 1.0 < |dP|² < maxRange² where
         //    maxRange = InitialSpeed·Lifespan + 0.5·Acceleration·Lifespan².
@@ -4060,10 +4054,17 @@ public sealed class Ship : Model, IShipIgc
         if (launcher.Amount <= 0 || launcher.FractionMounted < ExpandedPartData.FullyMounted) return false;
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return false;
 
+        if (StationId is not null || ParentShip is not null) return false;
+        // Recheck at fire time too: visibility may change after the last lock tick
+        // (native Igc/magazineigc.cpp:127-134 CanSee).
+        bool visibleTarget = CommandTarget is Ship target && SideId is { } side
+            && target.SeenBySide(side) && ReferenceEquals(target.Sector, Sector)
+            && target.StationId is null && !target.Dead && !mission.AreSidesFriendly(side, target.SideId);
+        if (!visibleTarget && missileType.MaxLock != 0f) { MissileLock = 0; return false; }
         bool lockReady = missileType.MaxLock == 0f || MissileLock >= 1f;
         if (!lockReady) return false;
 
-        FireMissile(missileType, now, CommandTarget, MissileLock);
+        FireMissile(missileType, now, visibleTarget ? CommandTarget : null, MissileLock);
         MissileLock = 0f;                                              // lock consumed (FedSrv.CPP:5507)
         SetPartAmount(launcher, (short)(launcher.Amount - 1));         // ammo decrement (FedSrv.CPP:5744-5745)
         return true;
@@ -4826,15 +4827,24 @@ public sealed class Ship : Model, IShipIgc
         Velocity = velocity;
     }
 
+    /// <summary>P655 movement envelope. Cruise drag/thrust and afterburner boost
+    /// use the same effective inputs as ExecuteMove (Igc/shipIGC.cpp:2922-2957).
+    /// The 10% margin covers discrete integration and wire quantisation. Server
+    /// collision/launch impulses are accounted for separately by the caller.</summary>
+    public float MovementSpeedLimit()
+    {
+        float thrust = EffectiveThrust();
+        float boost = _mountedAfterburner is { FractionMounted: >= ExpandedPartData.FullyMounted, Type.Type: DataPartTypeIGC.Afterburner ab }
+            && (((StateM & ShipControlState.AfterburnerButton) != 0 && Fuel > 0f)
+                || _afterburnerPower > 0f) ? ab.MaxThrust : 0f;
+        float ratio = thrust > 0 ? boost / thrust : 0;
+        return MathF.Max(0, EffectiveMaxSpeed()) * (1 + MathF.Max(0, ratio)) * 1.1f + 1f;
+    }
+
     /// <summary>
-    /// Build the <see cref="ShipKinematics.Inputs"/> this ship's flight step
-    /// consumes from its current controls/stateM, effective (GA-scaled) hull
-    /// stats, mounted afterburner and ripcord state — the shared input-holder
-    /// used by <see cref="ExecuteMove"/> (the server tick) and
-    /// <see cref="CalculateShipPose"/> (the P507 client-pose replay). Behaviour-
-    /// identical to the inline construction ExecuteMove previously performed
-    /// (same field-for-field source); the golden ShipKinematics equivalence
-    /// tests pin that identity.
+    /// Build the shared effective flight inputs used by ExecuteMove and
+    /// CalculateShipPose. The golden ShipKinematics equivalence tests pin
+    /// identity with the original inline construction.
     /// </summary>
     private ShipKinematics.Inputs BuildKinematicsInputs()
     {
@@ -7642,6 +7652,19 @@ public sealed class Ship : Model, IShipIgc
 
     protected override void OnUpdate(double now, double dt)
     {
+        // P655 / H-12: native docked ships have no cluster and never run flight
+        // or weapons (FedSrv/FedSrv.CPP:4857,5428,5634). The port retains Sector
+        // for hangar/launch lookup, so enforce the equivalent invariant here.
+        // Keep docked NPC management: stay/launch orders run in server handlers;
+        // automatic drone launch remains in the host's docked-NPC pass.
+        if (StationId is not null || ParentShip?.StationId is not null)
+        {
+            Controls = ControlData.Neutral;
+            StateM = 0;
+            Velocity = Vector3.Zero;
+            return;
+        }
+
         // P279 — the drifting Lifepod's oxygen timer. Direct port of native
         // shipIGC.cpp:361-363: `if (lifepod hull && (now > m_timeToDie))
         // KillShipEvent(now, this, NULL, 1.0f, GetPosition(), Vector::GetZero())`.

@@ -244,6 +244,9 @@ public sealed class ClientWarpApproachLiveTests
         bot.SendPlayerReady(fReady: true, shipId: bot.World.MyShipId!.Value);
         int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
         Assert.True(started < 2000, $"mission never reached Started (stage={server.Missions[0].Stage})");
+        bot.SendDocked();
+        Assert.True(PumpUntil(server, () => server.Ships.Single(l => l.Ship.Id == bot.World.MyShipId).Ship.StationId is null, 4000) < 4000,
+            "the flight fixture must launch from the debug hangar");
 
         short goal = 1060;                                         // Plato — 2 hops from Omega via Alderan
         var (finalSector, log) = FlyToward(server, bot, goal, arrival: 200f, brake: 450f, maxTicks: 30000);

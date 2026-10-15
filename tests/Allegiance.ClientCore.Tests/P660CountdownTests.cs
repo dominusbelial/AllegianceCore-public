@@ -43,4 +43,24 @@ public sealed class P660CountdownTests
         Assert.NotNull(world.GameOverResult);
         Assert.False(world.IsIntermission);
     }
+
+    [Fact]
+    public void Game_over_roster_accumulates_native_chunks_and_resets_for_the_next_result()
+    {
+        var world = new ClientWorld();
+        var entries = Enumerable.Range(0, 51)
+            .Select(i => new GameOverPlayerEntry($"player-{i}", (short)(i % 2), 0, i)).ToArray();
+        world.Apply(new GameOver { SideWinner = 0 });
+        world.Apply(new GameOverPlayers { Entries = entries[1..] });
+        world.Apply(new GameOverPlayers { Entries = entries[..1] });
+        Assert.Equal(entries.OrderBy(e => e.CharacterName), world.GameOverPlayersList.OrderBy(e => e.CharacterName));
+        world.BeginNextMission();
+        Assert.Equal(51, world.GameOverPlayersList.Count); // retain the end screen during intermission
+        world.Apply(new GameOver { SideWinner = 1 });
+        Assert.Empty(world.GameOverPlayersList);
+        world.Apply(new GameOverPlayers { Entries = entries[..1] });
+        Assert.Single(world.GameOverPlayersList);
+        world.Reset();
+        Assert.Empty(world.GameOverPlayersList);
+    }
 }

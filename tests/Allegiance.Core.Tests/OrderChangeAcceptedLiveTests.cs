@@ -109,11 +109,11 @@ public sealed class OrderChangeAcceptedLiveTests
             var sector = mission.Sectors[0];
             seat.Sector = sector;
             seat.Mission = mission;
-            var hull = mission.Core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
+            var hull = mission.Core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First() with { Signature = 100, ScannerRange = 20000 };
             var ship = placed switch
             {
-                0 => new Ship(id, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity),                     // side A at origin
-                _ => new Ship(id, hull, new Vector3(500f, 0f, 0f), Vector3.Zero, Orientation.Identity),        // side B, same cluster
+                0 => new Ship(id, hull, new Vector3(5000, 5000, 5000), Vector3.Zero, Orientation.Identity),                     // side A at origin
+                _ => new Ship(id, hull, new Vector3(5500f, 5000f, 5000f), Vector3.Zero, Orientation.Identity),        // side B, same cluster
             };
             if (mission.Sides.Count > 0)
                 ship.SideId = mission.Sides[placed % mission.Sides.Count].Id;   // round-robin A,B
@@ -143,6 +143,8 @@ public sealed class OrderChangeAcceptedLiveTests
             Assert.True(seat.A.SideId != seat.B.SideId, "A and B must be on different sides (cross-side resolution)");
             seat.A.Velocity = Vector3.Zero;
             seat.B.Velocity = Vector3.Zero;
+            seat.Sector.ResolveCrossSideVisibility();
+            Assert.True(seat.B.SeenBySide(seat.A.SideId!.Value), $"target must be visible: A={seat.A.Position} B={seat.B.Position}, dock={seat.A.StationId}/{seat.B.StationId}, sig={seat.B.EffectiveSignature}, scan={seat.A.EffectiveScannerRange()}");
             return seat;
         }
         catch
@@ -234,6 +236,10 @@ public sealed class OrderChangeAcceptedLiveTests
 
         var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.B.SideId!.Value, new Vector3(910f, 890f, 860f));
         Assert.True(npc.IsNpc, "spawned NPC must carry the IsNpc marker");
+        npc.ChangeHull(npc.HullType with { Signature = 100 });
+        npc.Position = seat.A.Position + new Vector3(500, 0, 0);
+        PumpUntil(seat.Server, () => npc.SeenBySide(seat.A.SideId!.Value), 1000);
+        Assert.True(npc.SeenBySide(seat.A.SideId!.Value), "target must be detected before commanding it");
         Assert.False(seat.Server.Ships.Any(s => ReferenceEquals(s.Ship, npc)), "NPC must have no _peerShips entry (P147)");
 
         seat.ABot.SendOrderChange(seat.A.Id, OrderChange.CidGoto, OrderChange.CmdAccepted, IgcObjectType.Ship, npc.Id);

@@ -15,24 +15,10 @@ namespace Allegiance.ClientCore.MonoGame;
 /// the control cadence. The flight <c>SHIP_UPDATE</c> send is gated off by the
 /// caller in its place.
 ///
-/// <para><b>P517 — server clock.</b> The <c>ACTIVE_TURRET_UPDATE</c> carries a
-/// <c>time</c> the server compares against the gunner's own
-/// <c>LastUpdate</c> (<c>deltaT = LastUpdate − atu.time</c>, dropping the whole
-/// message outside ±1.5 s, <c>Server.ShipCommands.cs:212-213</c>). That slot is
-/// server sim-<b>seconds</b> (uint), the units the gate compares directly
-/// against the seconds-valued <c>Ship.LastUpdate</c> — same convention the Core
-/// turret tests feed (<c>Math.Floor(Boarder.LastUpdate)</c>). P464 tried to
-/// derive it from the peer pose slot <c>ServerShipUpdate.Time</c>, but that
-/// slot is the server <b>tick index</b> (loop iterations, ~20/s), not seconds —
-/// a seconds-interpreting feed is ~20× off and every ACTIVE update is dropped
-/// as stale. P517 therefore uses the <b>same PING-fed</b>
-/// <see cref="Allegiance.ClientCore.Flight.OwnShipServerClock"/> as the own
-/// ship (fed in <c>PumpServerClock</c>, which runs every frame): it estimates
-/// server sim <b>milliseconds</b> from <c>FM_CS_PING(35)</c> echoes (the server
-/// stamps <c>timeServer = SimNow·1000</c>), and this turret path converts that
-/// to the seconds the gate expects via <see cref="TurretServerTimeSeconds"/>.
-/// The P464 seconds-estimator (the tick-slot-as-seconds
-/// <c>ServerClockEstimator</c>) is retired.</para>
+/// <para>P655: ACTIVE_TURRET_UPDATE uses uint server milliseconds, as native
+/// clintlib/clintlib.cpp:1892 and Igc/shipIGC.h:1206-1212 do. The shared
+/// PING-fed clock already estimates those units; the server converts to seconds
+/// for its ±1.5s replay window and enforces monotonic timestamps.</para>
 /// </summary>
 public sealed partial class Game1
 {
@@ -53,21 +39,11 @@ public sealed partial class Game1
     private readonly Flight.TurretGunnerCadence _turretCadence = new();
 
     /// <summary>
-    /// P517 — the <c>time</c> to stamp into an <c>ACTIVE_TURRET_UPDATE</c>:
-    /// server sim <b>seconds</b> (uint), the units the server's staleness gate
-    /// compares directly against <c>Ship.LastUpdate</c> (also seconds). The
-    /// shared PING-fed <see cref="Allegiance.ClientCore.Flight.OwnShipServerClock"/>
-    /// estimates server sim <b>milliseconds</b>, so convert by dividing by 1000
-    /// and flooring to the whole second — the same <c>Math.Floor(LastUpdate)</c>
-    /// convention the Core turret tests use. Since the estimate tracks real
-    /// server time (the server stamps <c>timeServer = SimNow·1000</c>), the
-    /// floor leaves <c>deltaT = LastUpdate − atu.time</c> in [0, ~1] s, safely
-    /// inside the ±1.5 s gate. Returns 0 until the clock is ready (callers gate
-    /// ACTIVE sends on <see cref="Allegiance.ClientCore.Flight.OwnShipServerClock.Ready"/>).
+    /// Wire timestamp from the shared PING-fed clock, in milliseconds.
     /// </summary>
-    private uint TurretServerTimeSeconds()
+    private uint TurretServerTimeMilliseconds()
     {
-        return (uint)Math.Floor(_ownServerClock.ServerTimeMs(Environment.TickCount64) / 1000.0);
+        return _ownServerClock.ServerTimeMs(Environment.TickCount64);
     }
 
     /// <summary>
@@ -124,7 +100,7 @@ public sealed partial class Game1
         {
             case Flight.TurretSendAction.Active:
             {
-                uint t = TurretServerTimeSeconds();
+                uint t = TurretServerTimeMilliseconds();
                 var atu = ClientActiveTurretUpdate.From(t, turretControls, _turretOrientation);
                 _session.SendActiveTurret(t, atu);
                 Console.WriteLine($"[monogame] turret fire -> ACTIVE_TURRET_UPDATE(99) time={t} " +

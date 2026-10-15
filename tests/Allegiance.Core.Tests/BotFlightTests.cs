@@ -264,6 +264,9 @@ public class BotFlightTests
         Assert.False(Near(shipA.Ship.Position, shipB.Ship.Position, 0.001f),
             "distinct spawns for distinct ships");
 
+        a.SendDocked();
+        Assert.True(PumpUntil(server, () => shipA.Ship.StationId is null, 3000) < 3000);
+        shipA.Ship.Velocity = Vector3.Zero; // isolate commanded thrust from the launch impulse
         Vector3 aStart = shipA.Ship.Position, bStart = shipB.Ship.Position;
         a.CommandControls(FullForward, 0);
         b.CommandControls(ControlData.Neutral, 0);
@@ -359,6 +362,8 @@ public class BotFlightTests
 
             // all flying → every ship is dirty → BroadcastShipStates targets all
             // of _peerShips on every tick. Establish a flowing feed first.
+            foreach (var b in bots) b.SendDocked();
+            Assert.True(PumpUntil(server, () => server.Ships.All(l => l.Ship.StationId is null), 3000) < 3000);
             foreach (var b in bots) b.CommandControls(FullForward, 0);
             PumpUntil(server, () => bots.All(b => b.Observations.Count > 0), 1500);
             bots[1].ResetObservations(); bots[2].ResetObservations();

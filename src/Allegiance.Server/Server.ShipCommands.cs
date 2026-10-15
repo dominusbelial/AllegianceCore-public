@@ -67,7 +67,8 @@ public sealed partial class Server
     /// </summary>
     private void HandleViewCluster(ConnectionId from, LiveShip live, ViewClusterRequest req)
     {
-        var mission = _missions[0];
+        var mission = live.Ship.Mission;
+        if (mission is null) return;
 
         // clusterID == NA → native resolves pcluster = NULL and sends NO reply
         // (the whole reply block sits inside the `!= NA` guard). Mirror exactly.
@@ -88,7 +89,7 @@ public sealed partial class Server
         bool bUsePosition = false;
         Vector3 targetPos = Vector3.Zero;
         if (req.OtTarget != -1 && pcluster is not null
-            && TryResolveViewTarget((IgcObjectType)req.OtTarget, req.OidTarget, out targetPos, out var objectSector, out var objectSide)
+            && TryResolveViewTarget(mission, (IgcObjectType)req.OtTarget, req.OidTarget, out targetPos, out var objectSector, out var objectSide)
             && objectSector == pcluster
             && SeenByRequesterSide(objectSide, requesterSide))
         {
@@ -203,26 +204,39 @@ public sealed partial class Server
     /// real call sites, <c>shipIGC.cpp:3371-3384</c>), then
     /// <c>SetOrientation(orientation)</c>.</item>
     /// </list>
-    /// The <c>CFSPlayer</c> monotonic gate (<c>atu.time &gt; m_timeUpdate</c>,
-    /// <c>fsship.cpp:1208-1218</c>) that normally sits above this in the native
-    /// is subsumed here: the port has no per-player last-turret-time bookkeeping,
-    /// and the <c>deltaT</c> bound already rejects grossly stale frames, so the
-    /// step's own staleness check is sufficient for this slice.
+    /// Uses native's per-player monotonic gate (FedSrv/fsship.cpp:1208-1218)
+    /// with wire milliseconds converted to simulation seconds.
     /// </summary>
-    private void HandleActiveTurretUpdate(Ship gunner, ClientActiveTurretUpdate atu)
+    private bool ShouldLogTurret(ConnectionId from)
+    {
+        if (!ConsoleLog.Verbose) return false;
+        var ticket = _turretLog.Ticket(from.Value);
+        if (ticket.Summarize)
+            ConsoleLog.Write($"[turret] {from}: {ticket.Suppressed} turret diagnostics suppressed");
+        return ticket.Emit;
+    }
+
+    private void HandleActiveTurretUpdate(ConnectionId from, Ship gunner, ClientActiveTurretUpdate atu)
     {
         // FedSrv.CPP:4873-4875 — the gate that precedes SetActiveTurretUpdate.
-        if (gunner.Sector is null || gunner.ParentShip is null || gunner.TurretId is null)
+        if (gunner.Mission?.Stage != MissionStage.Started || gunner.StationId is not null || gunner.Sector is null || gunner.ParentShip is not { StationId: null } || gunner.TurretId is null)
         {
-            ConsoleLog.Write($"[turret] ship {gunner.Id}: ACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4873-4875)");
+            if (ShouldLogTurret(from)) ConsoleLog.Write($"[turret] ship {gunner.Id}: ACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4873-4875)");
             return;
         }
 
         // ProcessShipUpdate(const ClientActiveTurretUpdate&), shipIGC.cpp:3349-3392.
-        double deltaT = gunner.LastUpdate - atu.Time;          // shipIGC.cpp:3353
+        // Native monotonic gate: FedSrv/fsship.cpp:1208-1218. Shared with
+        // pilot updates so boarding/promoting cannot replay old input.
+        var pu = EnsurePeerUpdate(from);
+        if (pu.HasClientTime && atu.Time <= pu.LastClientTime) return;
+        double updateTime = atu.Time / 1000.0;
+        double deltaT = gunner.LastUpdate - updateTime; // Igc/shipIGC.cpp:3353
         if ((deltaT < 1.5) && (deltaT > -1.5))                 // shipIGC.cpp:3354
         {
             // "If we got this ... we're shooting." (shipIGC.cpp:3358-3359)
+            pu.HasClientTime = true;
+            pu.LastClientTime = atu.Time;
             gunner.StateM = ShipControlState.WeaponsMask;      // SetStateM(weaponsMaskIGC)
             gunner.Controls = atu.Controls;                    // Export(&m_controls), shipIGC.cpp:3361
             Orientation orientation = atu.Orientation;         // Export(&orientation), shipIGC.cpp:3363-3364
@@ -230,21 +244,21 @@ public sealed partial class Server
             // Snapshot catch-up, never advancing more than c_fTimeIncrement
             // (0.25 s) per step (shipIGC.cpp:3366-3384).
             int n = 1 + (int)(MathF.Abs((float)deltaT) / 0.25f);
-            double thisTime = atu.Time;
+            double thisTime = updateTime;
             for (int i = 1; i <= n; i++)
             {
-                double nextTime = atu.Time + (deltaT * ((float)i / (float)n));
+                double nextTime = updateTime + (deltaT * ((float)i / (float)n));
                 gunner.ExecuteTurretMove(thisTime, nextTime, orientation);
                 thisTime = nextTime;
             }
             gunner.SetOrientation(orientation);                // SetOrientation(orientation), shipIGC.cpp:3386
 
-            Console.WriteLine($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE time={atu.Time} deltaT={deltaT:F3} -> " +
+            if (ShouldLogTurret(from)) ConsoleLog.Write($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE time={atu.Time} deltaT={deltaT:F3} -> " +
                               $"StateM=weaponsMaskIGC controls={atu.Controls} orientForward={orientation.GetForward()}");
         }
         else
         {
-            Console.WriteLine($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE stale (deltaT={deltaT:F3} outside ±1.5) — dropped (shipIGC.cpp:3354)");
+            if (ShouldLogTurret(from)) ConsoleLog.Write($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE stale (deltaT={deltaT:F3} outside ±1.5) — dropped (shipIGC.cpp:3354)");
         }
     }
 
@@ -326,8 +340,8 @@ public sealed partial class Server
         // side-group fallback (FedSrv.CPP:6377) is unreachable here — an in-game
         // ship always has a sector — so SendSectorWide is the faithful route.
         var msg = new Promote { ShipidPromoted = promoted.Id };
-        SendSectorWide(ship.Sector!.Id, msg.Encode());
-        Console.WriteLine($"[promote] {from} ship {ship.Id}: promoted gunner {promoted.Id} at mount {req.MountidPromoted} -> PROMOTE(189) shipidPromoted={promoted.Id} sector {ship.Sector.Id} wide; old parent {ship.Id} demoted to its own seat");
+        SendSectorWide(ship.Sector!, msg.Encode());
+        Console.WriteLine($"[promote] {from} ship {ship.Id}: promoted gunner {promoted.Id} at mount {req.MountidPromoted} -> PROMOTE(189) shipidPromoted={promoted.Id} sector {ship.Sector!.Id} wide; old parent {ship.Id} demoted to its own seat");
     }
 
     /// <summary>
@@ -415,8 +429,8 @@ public sealed partial class Server
             MountOld = req.MountOld,
             MountNew = req.MountNew,
         };
-        SendSectorWide(ship.Sector!.Id, msg.Encode());
-        Console.WriteLine($"[swappart] {from} ship {ship.Id}: {req.EtOld} mount {req.MountOld} -> {req.MountNew} -> SWAP_PART(34) shipID={ship.Id} sector {ship.Sector.Id} wide");
+        SendSectorWide(ship.Sector!, msg.Encode());
+        Console.WriteLine($"[swappart] {from} ship {ship.Id}: {req.EtOld} mount {req.MountOld} -> {req.MountNew} -> SWAP_PART(34) shipID={ship.Id} sector {ship.Sector!.Id} wide");
     }
 
     /// <summary>
@@ -530,8 +544,8 @@ public sealed partial class Server
         // ForwardMessage(GetGroupSectorFlying(pcluster), pfmReload),
         // FedSrv.CPP:6651-6652).
         var msg = new Reload { Entries = req.Entries, ShipID = ship.Id };
-        SendSectorWide(ship.Sector.Id, msg.Encode());
-        Console.WriteLine($"[reload] {from} ship {ship.Id}: {nReloads} cargo entry/entries applied -> RELOAD(129) shipID={ship.Id} sector {ship.Sector.Id} wide");
+        SendSectorWide(ship.Sector, msg.Encode());
+        Console.WriteLine($"[reload] {from} ship {ship.Id}: {nReloads} cargo entry/entries applied -> RELOAD(129) shipID={ship.Id} sector {ship.Sector!.Id} wide");
     }
 
     /// <summary>
@@ -644,8 +658,8 @@ public sealed partial class Server
             Et = req.Et,
             Mount = req.Mount,
         };
-        SendSectorWide(ship.Sector!.Id, msg.Encode());
-        Console.WriteLine($"[droppart] {from} ship {ship.Id}: dropped {req.Et}@{req.Mount} -> DROP_PART(33) shipID={ship.Id} sector {ship.Sector.Id} wide");
+        SendSectorWide(ship.Sector!, msg.Encode());
+        Console.WriteLine($"[droppart] {from} ship {ship.Id}: dropped {req.Et}@{req.Mount} -> DROP_PART(33) shipID={ship.Id} sector {ship.Sector!.Id} wide");
 
         // Conditional treasure: native's guard is
         // ((type != OT_pack) && !IsLauncher(type)) || (amount != 0)
@@ -660,8 +674,8 @@ public sealed partial class Server
         }
 
         var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)TickIndex);
-        SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
-        Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector.Id} wide");
+        SendSectorWide(ship.Sector!, new TreasureSpawn { Data = treasure.Data }.Encode());
+        Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector!.Id} wide");
     }
 
     /// <summary>
@@ -711,6 +725,8 @@ public sealed partial class Server
     private void HandleFireExpendable(ConnectionId from, LiveShip live, FireExpendableRequest req)
     {
         var ship = live.Ship;
+        // Native requires GetCluster() (FedSrv/FedSrv.CPP:5428,5634).
+        if (ship.StationId is not null || ship.Sector is null) return;
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
@@ -847,7 +863,7 @@ public sealed partial class Server
             // OBJECT creation same-side only (no cross-side EXPORT exists), so a
             // cross-side FE(87) without the object would be incoherent.
             foreach (var kv in _peerShips)
-                if (kv.Value.Sector.Id == ship.Sector!.Id) { SendPeer(kv.Key, packet); n++; }
+                if (ReferenceEquals(kv.Value.Ship.Sector, ship.Sector)) { SendPeer(kv.Key, packet); n++; }
         }
         else
         {
@@ -899,6 +915,8 @@ public sealed partial class Server
     private void HandleFireMissile(ConnectionId from, LiveShip live, FireMissile req)
     {
         var ship = live.Ship;
+        // Native requires GetCluster() (FedSrv/FedSrv.CPP:5428,5634).
+        if (ship.StationId is not null || ship.Sector is null) return;
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
@@ -977,7 +995,7 @@ public sealed partial class Server
         // (Server.cs:3626-3637). NOT the sector group.
         var sideId = ship.SideId;
         var targets = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
         foreach (var t in targets) SendPeer(t, packet);
@@ -1359,6 +1377,11 @@ public sealed partial class Server
             return;
         }
 
+        // H-25: another player owns their current/accepted slots. Native's
+        // trusted-client lookup (FedSrv/FedSrv.CPP:7271-7278,7335-7339) needs
+        // this server authority check; same-side NPC orders above stay native.
+        if (!ReferenceEquals(target, ship)) return;
+
         if (!target.IsNpc && (accepted || current))
         {
             // P422 — the real player-issuable Build command (native
@@ -1394,9 +1417,17 @@ public sealed partial class Server
             }
             else if (req.ObjectType == IgcObjectType.Ship)
             {
-                // Cross-side target-accept/lock. found null (unknown id) =
+                // Resolve the command target across sides within this mission.
+                // found null (unknown id) =
                 // native GetModel NULL -> SetCommand(command, NULL, cid) clears.
                 var found = FindShipAnySide(req.ObjectID, mission);
+                // Command selection/acceptance does not require current detection:
+                // native resolves the mission model and calls SetCommand directly
+                // (FedSrv/FedSrv.CPP:7335-7339; Igc/shipIGC.h:725-790).
+                // AcceptQueuedCommand likewise permits a known target before it
+                // is visible (WinTrek/WinTrek.cpp:10650-10696). CanSee belongs to
+                // missile lock/firing (Igc/magazineigc.cpp:127-132), which recheck
+                // visibility independently. Keep the player-slot ownership gate above.
                 if (accepted)
                 {
                     target.AcceptedShipTarget = found;
@@ -2519,8 +2550,8 @@ public sealed partial class Server
                 ShipID = ship.Id,
                 NewPartData = new PartData(offer.PartTypeId, offer.Amount, mount),
             };
-            SendSectorWide(ship.Sector!.Id, add.Encode());
-            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: -> ADD_PART(164) shipID={ship.Id} part={offer.PartTypeId} amount={offer.Amount} mount={mount} sector {ship.Sector.Id} wide");
+            SendSectorWide(ship.Sector!, add.Encode());
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: -> ADD_PART(164) shipID={ship.Id} part={offer.PartTypeId} amount={offer.Amount} mount={mount} sector {ship.Sector!.Id} wide");
         }
         else
         {
@@ -2529,8 +2560,8 @@ public sealed partial class Server
             // ppt, GetPosition(), 25.0f, 120.0f), FedSrv.CPP:6127-6129) — a NEW
             // treasure (not the original, which was destroyed on touch).
             var treasure = ship.CreateDropTreasure(partType, offer.Amount, _simNow, (uint)TickIndex);
-            SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
-            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: declined part {offer.PartTypeId} amount {offer.Amount} -> re-created treasure obj={treasure.Data.ObjectId} -> TREASURE(28) sector {ship.Sector.Id} wide");
+            SendSectorWide(ship.Sector!, new TreasureSpawn { Data = treasure.Data }.Encode());
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: declined part {offer.PartTypeId} amount {offer.Amount} -> re-created treasure obj={treasure.Data.ObjectId} -> TREASURE(28) sector {ship.Sector!.Id} wide");
         }
 
     }
@@ -2820,7 +2851,7 @@ public sealed partial class Server
         {
             live.Wallet.Money = checked((int)(live.Wallet.Money - actualCost));
             if (ship.SideId is { } buyerSide)
-                BroadcastMoneyChangeSideWide(buyerSide, checked((int)-actualCost), ship.Id);
+                BroadcastMoneyChangeSideWide(ship.Mission!, buyerSide, checked((int)-actualCost), ship.Id);
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: {(actualCost < 0 ? "refunded" : "debited")} {(-actualCost < 0 ? -actualCost : actualCost)} (wallet now {live.Wallet.Money}) + MONEY_CHANGE(60) dMoney={-actualCost} side-wide");
         }
         else

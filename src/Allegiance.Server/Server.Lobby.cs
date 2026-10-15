@@ -402,8 +402,12 @@ public sealed partial class Server
     {
         mission.Stage = MissionStage.Over;
 
-        var gameOver = GameOver.ForMission(mission, winnerId, reason);
-        byte[] packet = FedPacket.Pack(new[] { gameOver.Encode() });
+        // Native finalizes scores, queues GAME_OVER + GAME_OVER_PLAYERS and
+        // flushes the mission group before resetting any player/world state
+        // (FedSrv/fsmission.cpp:3225-3263,3427-3454). Freeze one result frame
+        // and one audience before migration can replace their mission/ships.
+        FinalizeMissionScores(mission, winnerId);
+        byte[] packet = EncodeGameOverResult(mission, winnerId, reason);
 
         // Whole-mission audience, scoped to THIS mission: every peer whose ship
         // belongs to it (the mission-scoped sibling of the whole-mission idiom
@@ -418,18 +422,6 @@ public sealed partial class Server
                           $"{targets.Length} peer(s)");
         foreach (var t in targets)
             SendPeer(t, packet);
-
-        // P583 — finalize every seated peer's score for this mission (rank
-        // ratio, win ×2, dtPlayed, repair sync) via the full CalculateScore,
-        // BEFORE the game-over roster is built so the end screen shows the real
-        // numbers. Native does this in ProcessGameOver (fsmission.cpp:3225-3263).
-        FinalizeMissionScores(mission, winnerId);
-
-        // P194 — GAME_OVER_PLAYERS(63): per-player endgame broadcast, an
-        // addition fired at the exact same shared hook, not a replacement. It
-        // rides the same whole-mission audience and reports P193's PlayerScore
-        // for every currently-connected peer on a REAL side.
-        BroadcastGameOverPlayers(mission);
 
         // P439 — rotate the finished mission to a freshly-assembled NotStarted
         // one so the server is joinable again (the only way it ever leaves Over
@@ -836,7 +828,7 @@ public sealed partial class Server
     /// <c>QueueGameoverMessage</c>, fsmission.cpp:3094-3141): one
     /// <see cref="GameOverPlayerEntry"/> per currently-connected peer on a real
     /// side of the mission, in <c>_peerShips</c> order. Shared by the full
-    /// whole-mission game-over (<see cref="BroadcastGameOverPlayers"/>) and the
+    /// whole-mission game-over (<see cref="EncodeGameOverResult"/>) and the
     /// P455b side-only game-over (<see cref="SendSideOnlyGameOver"/>), whose
     /// only difference is the recipient set — native builds the SAME full player
     /// list in both cases (fsmission.cpp:3115-3141), addressing it to whoever
@@ -884,64 +876,40 @@ public sealed partial class Server
     /// is not over for the other sides.</summary>
     private void SendSideOnlyGameOver(Mission mission, short winnerId, string reason, IReadOnlyList<ConnectionId> targets)
     {
-        var gameOver = GameOver.ForMission(mission, winnerId, reason);
-        byte[] goPacket = FedPacket.Pack(new[] { gameOver.Encode() });
-        var players = new GameOverPlayers { Entries = BuildGameOverPlayerEntries(mission) };
-        byte[] gpPacket = FedPacket.Pack(new[] { players.Encode() });
+        // Native side-only results use the same queue + guaranteed flush,
+        // addressed only to the eliminated side (fsmission.cpp:5420-5426).
+        byte[] packet = EncodeGameOverResult(mission, winnerId, reason);
 
         Console.WriteLine($"[sidegameover] mission #{_missions.IndexOf(mission)} -> side-only GAME_OVER(62) \"{reason}\" + " +
                           $"GAME_OVER_PLAYERS(63) to {targets.Count} peer(s) on the eliminated side (mission NOT ended, no rotation)");
         foreach (var t in targets)
-        {
-            SendPeer(t, goPacket);
-            SendPeer(t, gpPacket);
-        }
+            SendPeer(t, packet);
     }
 
-    /// <summary>
-    /// P194 — broadcast <see cref="Wire.GameOverPlayers"/>(63) to every peer
-    /// still connected to <paramref name="mission"/> (the same whole-mission
-    /// audience <see cref="DeclareGameOver"/> already addresses GAME_OVER(62)
-    /// to), carrying each connected player's name/side/P193 <c>PlayerScore</c>.
-    /// This is the port of native's per-player endgame loop
-    /// (<c>FedSrv/fsmission.cpp:3094-3141</c>, inside
-    /// <c>CFSMission::QueueGameoverMessage</c>, itself invoked from
-    /// <c>ProcessGameOver</c>).
-    /// <para><b>Player filters (native's real ones, ported).</b> Native includes
-    /// only players who have actually played (<c>GetTimePlayed() &gt; 0</c>) and
-    /// are on a real side (<c>GetSide()-&gt;GetObjectID() != SIDE_TEAMLOBBY</c>,
-    /// fsmission.cpp:3103). This port has no time-played counter at all (nothing
-    /// in P193's <c>PlayerScore</c> tracks play time), so the "has actually
-    /// played" filter collapses to "is a seated connection" — the task's allowed
-    /// fallback when no equivalent concept exists. The real-side filter is
-    /// ported: a peer whose ship has <c>SideId == null</c> is the closest
-    /// analogue of native's team-lobby membership (this port has no explicit
-    /// lobby side), and is excluded exactly as native excludes
-    /// <c>SIDE_TEAMLOBBY</c>.</para>
-    /// <para><b>Simplification, stated plainly:</b> native's second loop over
-    /// <c>m_oldPlayers</c> (recently-disconnected-but-still-tracked players,
-    /// fsmission.cpp:3115-3128) is out of scope — this port has no
-    /// "keep a disconnected player's stats around briefly" mechanism, so a
-    /// disconnected player simply isn't in the list here, whereas native would
-    /// still include them if they'd played and disconnected recently.</para>
-    /// <para><b>Chunking:</b> native splits the list into ≤50-player messages
-    /// (fsmission.cpp:3131-3141); this port sends one message (judged unneeded
-    /// at this port's scale — missions seat a handful of peers).</para>
+    /// <summary>Queue the mission result and full player roster into one
+    /// guaranteed frame, as native QueueGameoverMessage + FM_FLUSH does
+    /// (FedSrv/fsmission.cpp:3094-3141,3427-3429). Both full-mission and
+    /// side-only results use this builder; the caller owns the audience.
+    /// The port retains its connected-real-side roster policy (no old-player
+    /// tracking or time-played filter). Native's 50-player message chunks are
+    /// preserved within the frame so large rosters use the same wire shape.
     /// </summary>
-    private void BroadcastGameOverPlayers(Mission mission)
+    private byte[] EncodeGameOverResult(Mission mission, short winnerId, string reason)
     {
+        var messages = new List<byte[]> { GameOver.ForMission(mission, winnerId, reason).Encode() };
         var entries = BuildGameOverPlayerEntries(mission);
-        var players = new GameOverPlayers { Entries = entries };
-        byte[] packet = FedPacket.Pack(new[] { players.Encode() });
-
-        var targets = _peerShips
-            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
-            .Select(kv => kv.Key)
-            .ToArray();
-
-        Console.WriteLine($"[gameover-players] mission #{_missions.IndexOf(mission)} -> {entries.Length} player(s) to {targets.Length} peer(s)");
-        foreach (var t in targets)
-            SendPeer(t, packet);
+        // Keep the existing empty-roster notification for connected spectators.
+        if (entries.Length == 0)
+            messages.Add(new GameOverPlayers { Entries = [] }.Encode());
+        // Native queues chunks from the end of the roster (fsmission.cpp:3131-3141).
+        for (int remaining = entries.Length; remaining > 0;)
+        {
+            int count = Math.Min(remaining, 50);
+            remaining -= count;
+            messages.Add(new GameOverPlayers { Entries = entries[remaining..(remaining + count)] }.Encode());
+        }
+        Console.WriteLine($"[gameover-players] mission #{_missions.IndexOf(mission)} -> {entries.Length} player(s) queued with GAME_OVER");
+        return FedPacket.Pack(messages);
     }
 
 /// <summary>
@@ -2314,7 +2282,9 @@ private void CompleteStartCountdown(Mission mission, double now)
             _pendingJoinRequests.Remove(targetConn);   // removed regardless of outcome
             if (_peerShips.TryGetValue(targetConn, out var live) && ReferenceEquals(live.Ship.Mission, mission))
             {
-                TryJoinSide(live.Ship, sideId);
+                if (CheckPositionRequest(mission, sideId, live.Ship) is { } refusal)
+                    SendPeer(targetConn, FedPacket.Pack([new DelPositionReq { ShipId = live.Ship.Id, SideId = sideId, Reason = refusal }.Encode()]));
+                else TryJoinSide(live.Ship, sideId);
                 seated++;
             }
             else
@@ -2828,6 +2798,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (!_pendingSideSelect.Remove(from, out var pend))
             return;   // not pending (already seated/launched) — nothing to do
         var mission = _missions[0];
+        bool autoSelection = requestedSideId == -1;
 
         // Validate an explicit side before touching anything; refuse with
         // DPR_SideGone to the requester only (native FedSrv.CPP:6692-6704) and
@@ -2843,6 +2814,23 @@ private void CompleteStartCountdown(Mission mission, double now)
             return;
         }
 
+        // Validate both explicit and auto-assigned initial picks, before spawning.
+        // Choose the least populated eligible side for auto-pick; no full-side
+        // fallback can bypass the cap when the timeout seats a silent peer.
+        if (requestedSideId == -1)
+        {
+            var eligible = mission.Sides.Where(s => CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, s.Id) is null)
+                .OrderBy(s => _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == s.Id)).FirstOrDefault();
+            if (eligible is not null) requestedSideId = eligible.Id;
+        }
+        var selectionRefusal = requestedSideId == -1 ? DelPositionReqReason.TeamFull : CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, requestedSideId);
+        if (selectionRefusal is { } denied)
+        {
+            SendPeer(from, FedPacket.Pack([new DelPositionReq { ShipId = pend.ShipId, SideId = requestedSideId, Reason = denied }.Encode()]));
+            _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq);
+            return;
+        }
+
         // Create the ship. The default spawn seats it in its final side's
         // home sector (P368: the requested side is threaded in BEFORE
         // placement so a single correct PlaceShip puts the ship in that side's
@@ -2854,8 +2842,9 @@ private void CompleteStartCountdown(Mission mission, double now)
         // TryJoinSide (leader + mission-owner election, native AddPlayerToSide);
         // that only sets SideId/leadership/roster — the ship is already in the
         // correct sector, so no relocation is needed.
-        LiveShip live = AssignShip(pend.Request, pend.ShipId, requestedSideId != -1 ? requestedSideId : null);
-        if (requestedSideId != -1)
+        LiveShip live = AssignShip(pend.Request, pend.ShipId,
+            autoSelection && ShipSpawner is not null ? null : requestedSideId);
+        if (!autoSelection)
         {
             TryJoinSide(live.Ship, requestedSideId);
             Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' chose side {requestedSideId} (ship {pend.ShipId})");

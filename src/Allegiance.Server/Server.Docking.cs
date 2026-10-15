@@ -407,9 +407,9 @@ public sealed partial class Server
             if (current is not null)
             {
                 ship.SetRipcordModel(null);
-                SendRipcordSectorWide(ship.Sector!.Id,
+                SendRipcordSectorWide(ship.Sector!,
                     new RipcordAborted { ShipidRipcord = ship.Id }.Encode());
-                Console.WriteLine($"[ripcord] ship {ship.Id} cancels -> RIPCORD_ABORTED(187) sector {ship.Sector.Id} wide");
+                Console.WriteLine($"[ripcord] ship {ship.Id} cancels -> RIPCORD_ABORTED(187) sector {ship.Sector!.Id} wide");
             }
             return;
         }
@@ -433,8 +433,8 @@ public sealed partial class Server
             };
             if (firstActivation)
             {
-                SendRipcordSectorWide(ship.Sector!.Id, msg.Encode());
-                Console.WriteLine($"[ripcord] ship {ship.Id} FIRST activation anchor (ot={anchor.Ot} oid={anchor.Oid}) -> sector {target.Id} RIPCORD_ACTIVATE(185) sector {ship.Sector.Id} wide");
+                SendRipcordSectorWide(ship.Sector!, msg.Encode());
+                Console.WriteLine($"[ripcord] ship {ship.Id} FIRST activation anchor (ot={anchor.Ot} oid={anchor.Oid}) -> sector {target.Id} RIPCORD_ACTIVATE(185) sector {ship.Sector!.Id} wide");
             }
             else
             {
@@ -465,15 +465,15 @@ public sealed partial class Server
         => RequestRipcordCore(ship, target, null);
 
     /// <summary>Send a pre-encoded server message to every peer currently
-    /// flying in <paramref name="sectorId"/> — the port's
+    /// flying in <paramref name="sector"/> — the port's
     /// <c>GetGroupSectorFlying(pclusterShip)</c> (<c>FedSrv.CPP:13338</c>), the
     /// sector-wide broadcast both the ripcord slices and the P117 relaunch
     /// (<c>FedSrv.CPP:13019</c>) use.</summary>
-    private void SendSectorWide(short sectorId, byte[] encoded)
+    private void SendSectorWide(Sector sector, byte[] encoded)
     {
         var packet = FedPacket.Pack(new[] { encoded });
         foreach (var kv in _peerShips)
-            if (kv.Value.Sector.Id == sectorId)
+            if (ReferenceEquals(kv.Value.Ship.Sector, sector))
                 SendPeer(kv.Key, packet);
     }
 
@@ -588,7 +588,7 @@ public sealed partial class Server
                 // retried when the target later regains energy.
                 var ripSec = rip.Sector;
                 if (ripSec is not null)
-                    SendRipcordSectorWide(ripSec.Id,
+                    SendRipcordSectorWide(ripSec,
                         new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
                 rip.SetRipcordModel(null);
                 Console.WriteLine($"[ripcord] ship {rip.Id} ripcord to ship-anchor {target.Id} ABORTED — target energy {target.Energy} < RipcordCost {ripcordCost}; attempt consumed (RIPCORD_ABORTED(187) -> ripper sector {ripSec?.Id.ToString() ?? "?"} wide)");
@@ -997,7 +997,7 @@ public sealed partial class Server
             var targetLive = LiveOf(target) ?? pickerLive;
             targetLive.Wallet.Money = (int)Math.Clamp((long)targetLive.Wallet.Money + amount, 0, int.MaxValue);                          // pfsDonate->SetMoney(+amount), FedSrv.CPP:13609
             Console.WriteLine($"[treasure] ship {ship.Id} (player) picked cash treasure {treasure.Id} amount={amount} -> wallet of ship {target.Id} now {targetLive.Wallet.Money}");
-            BroadcastMoneyChangeSideWide(sideId, amount, target.Id);    // sidTo = target, sidFrom = NA (FedSrv.CPP:13605-13606, side group)
+            BroadcastMoneyChangeSideWide(ship.Mission!, sideId, amount, target.Id);    // sidTo = target, sidFrom = NA (FedSrv.CPP:13605-13606, side group)
         }
         else
         {
@@ -1271,7 +1271,7 @@ public sealed partial class Server
             Parts = lander.Parts.Select(p => p.ToExpandedPartData()).ToList(),
         };
         byte[] encoded = relaunch.Encode();
-        SendSectorWide(lander.Sector!.Id, encoded);
+        SendSectorWide(lander.Sector!, encoded);
 
         var note = $"[relaunch] ship {lander.Id} relaunched off carrier {carrier.Id} (bay '{carrier.HullType.ModelName}', {launchSlots} launch slots{(selectedSlot >= 0 ? $", slot {selectedSlot}" : "")}) -> RELAUNCH_SHIP(192) sector-wide; energy={lander.Energy:F0}/{lander.HullType.MaxEnergy:F0} ammo={lander.Ammo}/{lander.HullType.MaxAmmo}; pos=({position.X:F1},{position.Y:F1},{position.Z:F1}) vel=({velocity.X:F1},{velocity.Y:F1},{velocity.Z:F1})";
         Console.WriteLine(note);
@@ -1434,7 +1434,7 @@ public sealed partial class Server
         ship.ClearLoadout(); // consume all hardware before any outward send can throw
         if (refund == 0) return;
         live.Wallet.Money = checked(live.Wallet.Money + refund);
-        if (ship.SideId is { } side) BroadcastMoneyChangeSideWide(side, refund, ship.Id);
+        if (ship.SideId is { } side) BroadcastMoneyChangeSideWide(ship.Mission!, side, refund, ship.Id);
     }
 
     /// <summary>P494 — an expendable launcher part (native <c>ET_Magazine /
@@ -1589,7 +1589,7 @@ public sealed partial class Server
         if (cost > 0)
         {
             live.Wallet.Money = checked((int)(live.Wallet.Money - cost));
-            if (sd is { } bs) BroadcastMoneyChangeSideWide(bs, checked((int)-cost), ship.Id);
+            if (sd is { } bs) BroadcastMoneyChangeSideWide(ship.Mission!, bs, checked((int)-cost), ship.Id);
             Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock charged {cost} (wallet now {live.Wallet.Money}) + MONEY_CHANGE(60) dMoney={-cost} side-wide");
         }
         Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock done — {upgraded} successor upgrade(s), pools refilled, net cost {cost}");
@@ -1664,7 +1664,7 @@ public sealed partial class Server
     private Ship? FindSameSideShip(short id, short? sideId, Mission? mission)
     {
         foreach (var kv in _peerShips)
-            if (kv.Value.Ship.Id == id && kv.Value.Ship.SideId == sideId)
+            if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.Id == id && kv.Value.Ship.SideId == sideId)
                 return kv.Value.Ship;
 
         // P148: also search the mission's full ship set (catches NPC/drones
@@ -1700,7 +1700,7 @@ public sealed partial class Server
     private Ship? FindShipAnySide(short id, Mission? mission)
     {
         foreach (var kv in _peerShips)
-            if (kv.Value.Ship.Id == id)
+            if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.Id == id)
                 return kv.Value.Ship;
 
         // NPC/drone ships placed via Mission.PlaceShip live in a sector's
@@ -1797,14 +1797,14 @@ public sealed partial class Server
     /// then emits a bare-cluster reply. This matches the practical reality of a
     /// spectator target (another player's ship, or a station).
     /// </summary>
-    private bool TryResolveViewTarget(IgcObjectType ot, short oid, out Vector3 position, out Sector? sector, out short? side)
+    private bool TryResolveViewTarget(Mission mission, IgcObjectType ot, short oid, out Vector3 position, out Sector? sector, out short? side)
     {
         switch (ot)
         {
             case IgcObjectType.Ship:
                 foreach (var kv in _peerShips)
                 {
-                    if (kv.Value.Ship.Id == oid)
+                    if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.Id == oid)
                     {
                         position = kv.Value.Ship.Position;
                         sector = kv.Value.Ship.Sector;
@@ -1815,7 +1815,7 @@ public sealed partial class Server
                 break;
 
             case IgcObjectType.Station:
-                foreach (var s in _missions[0].Sectors)
+                foreach (var s in mission.Sectors)
                 {
                     foreach (var st in s.Stations)
                     {
@@ -1908,6 +1908,10 @@ public sealed partial class Server
     {
         var station = ship.StationId!.Value;
         ship.StationId = null;
+        // Native ChangeStation propagates station state to every child
+        // (FedSrv/FedSrv.CPP:13165-13175). Otherwise a gunner remains marked
+        // docked forever after its parent launches, blocking valid turret input.
+        foreach (var child in ship.ChildShips) child.StationId = null;
 
         // Push the ship physically clear of DockRadius and start the undock
         // debounce (Ship.LastLaunchTime / P75). Without the position push,

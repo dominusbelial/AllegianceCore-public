@@ -100,7 +100,7 @@ public sealed partial class Server
         if (live.TestHarness is { Enabled: true } th)
             Console.WriteLine("[boot] *** TEST-HARNESS ECONOMY GRANT ACTIVE (liveSettings.testHarness.enabled=true) *** "
                               + $"prefix '{th.CharacterNamePrefix}' money={th.Money} ignoreTechGate={th.IgnoreTechGate} "
-                              + "— applies ONLY to matching char names; real players NEVER affected ***");
+                              + "— requires matching prefix AND configured bearer (or verified loopback when unset) ***");
 
         // P509 — the test-unlock grant is a port extension (native has no
         // "unlock all", see TestUnlockConfig) that must never be silently on:
@@ -1486,6 +1486,7 @@ public sealed partial class Server
         // P315 — drop this peer's unsupported-fmid log-gate state so the
         // rate-limit table stays bounded by the live peer set.
         _unsupportedLog.Remove(id.Value);
+        _turretLog.Remove(id.Value);
         _duplicateLogonLog.Remove(id.Value);   // P646 — trim with the peer (same rationale)
         // M1 — release every remaining connection-scoped cache keyed by this
         // peer. The original ReleasePeer only freed _pendingSideSelect /
@@ -1499,6 +1500,9 @@ public sealed partial class Server
         _lastClusterInfoTick.Remove(id);
         _lastPingQuery.Remove(id);
         _peerRequests.Remove(id);   // P480 — forget the retained LogonRequest with the peer
+        _adminAuthenticated.Remove(id);
+        _harnessAuthenticated.Remove(id);
+        _spectateSector.Remove(id);
         _peerShipUpdate.Remove(id); // P507 — release the per-peer ship-update cookie/counters with the peer
         if (!_peerShips.Remove(id, out var live))
         {

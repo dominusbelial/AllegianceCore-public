@@ -368,7 +368,6 @@ public class LiveWinConditionTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(ConfigThreeSides());
-        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var clients = new[] { new WireClient(), new WireClient(), new WireClient() };
         try
         {
@@ -376,6 +375,9 @@ public class LiveWinConditionTests
             for (int i = 0; i < 3; i++) clients[i].Logon(Request($"P{i}"));
             int got = PumpUntil(server, () => clients.All(c => c.ShipAssignment is not null), 4000);
             Assert.True(got < 4000, "no assignments");
+            // XXV_simple has bases for two sides. Join the three-side win-condition
+            // fixture in the lobby, before native NoBase gates started joins.
+            foreach (var mission in server.Missions) mission.Stage = MissionStage.Started;
 
             clients[2].Dispose();                            // side 2 empties; sides 0 & 1 remain
             int settled = PumpUntil(server,

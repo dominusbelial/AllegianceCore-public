@@ -178,7 +178,10 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
     {
         Require.Artwork();
         var server = new Srv();
-        server.Boot(Config());
+        var config = Config();
+        config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
+            { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
+        server.Boot(config);
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // bypass the ready-up lobby (P180 pattern)
 
         Ship? anchor = null;      // the obeyer (a scenario-spawned combat bot)

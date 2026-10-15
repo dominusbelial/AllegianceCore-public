@@ -126,6 +126,10 @@ public class TeammateMovementLiveTests
             int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
             Assert.True(started < 2000, $"mission never reached Started after all-three ready-up (stage={server.Missions[0].Stage})");
 
+            foreach (var session in sessions) session.SendDocked();
+            Assert.True(PumpUntil(server, () => server.Ships.All(l => l.Ship.StationId is null), 4000) < 4000,
+                "movement fixtures must launch before sending controls");
+
             // Command real, sustained thrust on both the teammate and the enemy,
             // so both are genuinely "dirty" every tick.
             sessions[subject].CommandControls(new ControlData(0f, 0f, 0f, 0.7f), ShipControlState.ForwardButton);

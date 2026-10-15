@@ -486,10 +486,10 @@ public sealed partial class Server
     /// <c>FedSrv.CPP:2435-2441</c>, <c>7202-7206</c>). <c>sidFrom = NA</c>
     /// marks the server-initiated pooled-treasury credit, matching the native
     /// convention (<c>Messages.h:444</c>) for this port's refunds.</summary>
-    private void BroadcastMoneyChangeSideWide(short sideId, int dMoney, short sidTo)
+    private void BroadcastMoneyChangeSideWide(Mission mission, short sideId, int dMoney, short sidTo)
     {
         var targets = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
         if (targets.Length == 0) return;   // no peers on the side — nothing to tell
@@ -571,7 +571,7 @@ public sealed partial class Server
 
             // MONEY_CHANGE(60) to the whole side: negative delta, sidTo == sidFrom ==
             // the donating player's own ship (native FedSrv.CPP:7162-7168).
-            BroadcastBucketDonateSpendSideWide(sideId, -(int)spent, live.Ship.Id);
+            BroadcastBucketDonateSpendSideWide(mission, sideId, -(int)spent, live.Ship.Id);
 
             // BUCKET_STATUS(65) — to the whole mission when the bucket's buyable
             // is the c_didTeamMoney development ("Everyone knows about anyone's
@@ -581,9 +581,9 @@ public sealed partial class Server
                 && bucket.Development is { } dev
                 && dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
             if (teamMoney)
-                BroadcastBucketStatusMissionWide(sideId, bucket);
+                BroadcastBucketStatusMissionWide(mission, sideId, bucket);
             else
-                BroadcastBucketStatusSideWide(sideId, bucket);
+                BroadcastBucketStatusSideWide(mission, sideId, bucket);
         }
         else
         {
@@ -614,10 +614,10 @@ public sealed partial class Server
     /// donating player's own ship — matching native's
     /// <c>pfmMoneyChange-&gt;sidFrom = pfmMoneyChange-&gt;sidTo</c>.
     /// </summary>
-    private void BroadcastBucketDonateSpendSideWide(short sideId, int dMoney, short shipId)
+    private void BroadcastBucketDonateSpendSideWide(Mission mission, short sideId, int dMoney, short shipId)
     {
         var targets = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
         if (targets.Length == 0) return;   // no peers on the side — nothing to tell
@@ -635,10 +635,10 @@ public sealed partial class Server
     /// <c>FedSrv.CPP:7183-7196</c>). timeTotal = invested build ms,
     /// moneyTotal = invested money (bucketigc.h:264-272).
     /// </summary>
-    private void BroadcastBucketStatusSideWide(short sideId, Bucket bucket)
+    private void BroadcastBucketStatusSideWide(Mission mission, short sideId, Bucket bucket)
     {
         var targets = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
         if (targets.Length == 0) return;   // no peers on the side — nothing to tell
@@ -662,9 +662,9 @@ public sealed partial class Server
     /// <c>c_didTeamMoney</c> development, the send group is
     /// <c>pfsMission->GetGroupMission()</c> (everyone), not the side group,
     /// because it is the game-winning economic development.</summary>
-    private void BroadcastBucketStatusMissionWide(short sideId, Bucket bucket)
+    private void BroadcastBucketStatusMissionWide(Mission mission, short sideId, Bucket bucket)
     {
-        var targets = _peerShips.Select(kv => kv.Key).ToArray();   // whole mission, every side
+        var targets = _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)).Select(kv => kv.Key).ToArray();   // whole mission, every side
         if (targets.Length == 0) return;
         var msg = new BucketStatus
         {

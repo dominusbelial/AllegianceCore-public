@@ -87,6 +87,7 @@ public sealed partial class Server : IDisposable
     // PerPeerRateLimiter). Trimmed in ReleasePeer on peer leave to stay bounded
     // by the live peer set.
     private readonly PerPeerRateLimiter _unsupportedLog = new();
+    private readonly PerPeerRateLimiter _turretLog = new();
 
     // P646 (review finding H3) — rate-limits the "DUPLICATE LOGONREQ from a
     // seated peer" refusal log so a duplicate-logon flood cannot force
@@ -227,7 +228,17 @@ public sealed partial class Server : IDisposable
     /// Counter values are deliberately the native unsigned counter mod 256 (the
     /// wire cookie is one byte).
     /// </summary>
-    private byte NextCookie(PeerShipUpdate p) => p.Cookie = (byte)(p.Cookie + 1);
+    private byte NextCookie(PeerShipUpdate p, bool reposition = true)
+    {
+        if (reposition)
+        {
+            // SET_CLUSTER/respawn/launch is server-authorized motion, not a
+            // client teleport. Rebase travel credit but retain monotonic time.
+            p.HasMovementAnchor = false;
+            p.LastPoseAt = double.NegativeInfinity;
+        }
+        return p.Cookie = (byte)(p.Cookie + 1);
+    }
 
     /// <summary>Fetch or create the P507 per-peer ship-update state for <paramref name="id"/>.</summary>
     private PeerShipUpdate EnsurePeerUpdate(ConnectionId id)
@@ -244,6 +255,13 @@ public sealed partial class Server : IDisposable
     {
         /// <summary>The current cookie the client must echo (native <c>m_cookie</c>).</summary>
         public byte Cookie;
+        public bool HasClientTime, HasMovementAnchor;
+        public uint LastClientTime;
+        public double LastPoseAt = double.NegativeInfinity, MovementBudgetAt;
+        public float MovementCredit;
+        public Vector3 LastPosePosition;
+        public long DroppedReplay, DroppedSameTick;
+        public long TotalCorrections;
 
         /// <summary>Rolling acceptance counters (P507 summary log).</summary>
         public long Accepted, Rejected, OutOfDate, Invalid;
@@ -995,7 +1013,7 @@ public sealed partial class Server : IDisposable
 
     /// <summary>Legacy name for <see cref="SendSectorWide"/> retained by the
     /// ripcord call sites; delegates to the canonical generic helper.</summary>
-    private void SendRipcordSectorWide(short sectorId, byte[] encoded) => SendSectorWide(sectorId, encoded);
+    private void SendRipcordSectorWide(Sector sector, byte[] encoded) => SendSectorWide(sector, encoded);
 
     /// <summary>A per-axis uniform-jitter helper for the relaunch's small
     /// <c>random(-0.5f, 0.5f)</c> positional wobble (FedSrv.CPP:12965-12967).
@@ -1159,23 +1177,11 @@ public sealed partial class Server : IDisposable
     private void OnNotable(string text) => Notify(text);
 
     /// <summary>
-    /// P473 — resolve the <see cref="TestHarnessConfig"/> that applies to the
-    /// connection <paramref name="from"/>, or <c>null</c> when the grant is
-    /// off / absent (byte-identical to P441) or the connection's character
-    /// name does not start with the configured prefix. A non-prefixed
-    /// (human) connection ALWAYS gets <c>null</c>, so the grant can never
-    /// touch a real player. Reads <see cref="_peerNames"/> (populated at the
-    /// same point the peer seats), so it is sim-thread only like its sibling
-    /// maps — call it from the seat path and the BUY_LOADOUT handler, both on
-    /// the sim thread.
+    /// Resolve a harness grant only after checking both configured name prefix
+    /// and server-verifiable connection provenance (P655).
     /// </summary>
     private TestHarnessConfig? HarnessGrantFor(ConnectionId from)
-    {
-        var th = _config.LiveSettings?.TestHarness;
-        if (th is null || !th.Enabled) return null;
-        if (string.IsNullOrEmpty(th.CharacterNamePrefix)) return null;
-        if (!_peerNames.TryGetValue(from, out var name)) return null;
-        return name.StartsWith(th.CharacterNamePrefix, StringComparison.Ordinal) ? th : null;
-    }
+        => IsHarnessPeer(from, _peerNames.GetValueOrDefault(from)) ? _config.LiveSettings!.TestHarness : null;
+
 
 }

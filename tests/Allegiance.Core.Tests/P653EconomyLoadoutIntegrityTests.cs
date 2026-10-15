@@ -561,7 +561,8 @@ public sealed class P653EconomyLoadoutIntegrityTests
         w.Send(new Suicide());
         Assert.Equal(1, w.Kills);
         w.Buyer.ParentShip = null;
-        w.Server.Config.LiveSettings.AdminCheats = new AdminCheatsConfig { Enabled = true, AllowNames = ["seed-1"] };
+        w.Server.Config.LiveSettings.AdminCheats = new AdminCheatsConfig { Enabled = true, AllowNames = ["seed-1"], Secret = "p653-test-secret" };
+        w.Call("AuthenticatePrivileges", w.Conn, new LogonRequest { CDKey = "p653-test-secret" });
         w.Send(new Suicide());
         Assert.Equal(2, w.Kills);
     }
