@@ -394,3 +394,15 @@ Every failure below passed **3/3 exact-method isolated reruns after all three fu
 | --- | --- | --- |
 | `Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only` | Assert.Single() Failure: The collection was empty | 3/3 pass |
 | `Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | System.InvalidOperationException : logon drain order diverged from connection order — peer2 side 0 not cross-side (0, 1, 0); determinism broken | 3/3 pass |
+
+
+## P681 observation (2026-10-15)
+
+The final unfiltered sequential Core, ClientCore (including the opt-in local 15v15 next-match showcase), and MonoGame suites produced the raw counts in [P681 report](reports/P681_PARITY_WAVE7.md). All 2 full-pass failures passed **3/3 exact-method isolated reruns after all three suites completed**, qualifying as load/receipt flakes under the Codex lane rule. No assertions, deadlines, quarantine tags, or product behavior were changed for them. The affected cohort passed three individual invocations each; exact counts are in the report.
+
+| Test | Full-pass symptom | Isolation |
+| --- | --- | --- |
+| Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking | healthy bot 0 must keep receiving per-tick updates during the flood (had 0, now 0) | 3/3 pass |
+| Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy | Assert.Contains() Failure: Filter not matched in collection; Collection: [] | 3/3 pass |
+
+See [P681_RESULTS.json](reports/P681_RESULTS.json) for the complete invocation ledger.
