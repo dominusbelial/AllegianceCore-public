@@ -1498,6 +1498,10 @@ public sealed partial class ClientWorld
     /// CountdownRemainingSeconds uses the absolute server-time target.</summary>
     public long? CountdownStartLocalMs { get; private set; }
     private uint? _countdownTargetMs;
+    private uint? _missionTimeStartMs;
+    /// <summary>Native OnMissionCountdown event serial (appmsg.cpp:2330-2334).
+    /// SET_START_TIME changes only the epoch, not the audio change detector.</summary>
+    public long CountdownVersion { get; private set; }
     private double _countdownClockServerMs;
     private long? _countdownClockLocalMs;
 
@@ -1508,6 +1512,23 @@ public sealed partial class ClientWorld
         if (_countdownTargetMs is not { } target || _countdownClockLocalMs is not { } anchor) return null;
         double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
         return Math.Max(0, (int)Math.Ceiling((target - now) / 1000.0));
+    }
+
+    /// <summary>Native CheckCountdownSound (WinTrek.cpp:11135-11156). The
+    /// announcer lags by one second; Starting adds one AFTER truncation,
+    /// whereas Started adds it BEFORE truncation. Keep this separate from HUD
+    /// ceiling arithmetic. MISSIONDEF supplies late joiners' duration/epoch;
+    /// SET_START_TIME replaces the epoch for the briefing and ensuing game.</summary>
+    public int? MissionCountdownSoundSeconds(long? localMs = null)
+    {
+        if (_missionTimeStartMs is not { } start || _countdownClockLocalMs is not { } anchor) return null;
+        double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+        double untilStart = (start - now) / 1000.0;
+        if (_mission?.Stage == MissionStageMessage.StageStarting)
+            return Math.Max(0, (int)untilStart + 1);
+        if (_mission?.Stage == MissionStageMessage.StageStarted && _mission.GameLengthSeconds != 0f)
+            return Math.Max(0, (int)(_mission.GameLengthSeconds + untilStart + 1));
+        return null;
     }
 
     public bool IsIntermission => _countdownTargetMs is not null
@@ -1558,6 +1579,7 @@ public sealed partial class ClientWorld
         Graph = null;
         CountdownStartLocalMs = null;
         _countdownTargetMs = null;
+        _missionTimeStartMs = null;
         _countdownClockLocalMs = null;
         _mission = null;
         _gameOver = null;
@@ -3669,7 +3691,8 @@ public sealed partial class ClientWorld
     }
 
     // ── Mission info (persistent mission state, distinct from any ship) ────
-    private void Apply(MissionDef def) =>
+    private void Apply(MissionDef def)
+    {
         // Both MISSIONDEF(38) and MISSION_STAGE(37) can carry a Stage. The
         // server sends MISSIONDEF first (twice, in fact, at stage 0) and
         // MISSION_STAGE last (StageStarted) in the join burst, but rather than
@@ -3684,9 +3707,12 @@ public sealed partial class ClientWorld
             StaticCoreFile = def.SzIGCStaticFile,
             StaticCoreVersion = def.VerIgcCore,
             Cookie = def.DwCookie,
+            GameLengthSeconds = def.GameLengthSeconds,
             SideMissionOwner = def.ISideMissionOwner,
             Stage = def.Stage,
         };
+        _missionTimeStartMs = def.TimeStart;
+    }
 
     private void Apply(MissionStageMessage stage)
     {
@@ -3713,6 +3739,7 @@ public sealed partial class ClientWorld
             StaticCoreFile = _mission?.StaticCoreFile ?? "",
             StaticCoreVersion = _mission?.StaticCoreVersion ?? 0,
             Cookie = _mission?.Cookie ?? 0,
+            GameLengthSeconds = _mission?.GameLengthSeconds ?? 0,
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = stage.Stage,
         };
@@ -3722,7 +3749,10 @@ public sealed partial class ClientWorld
         // Native gameoverscreen.cpp:638-645 advances the game-over screen on Starting
         // to the new mission. Keep scoreboard during NotStarted intermission.
         if (stage.Stage == MissionStageMessage.StageStarting)
+        {
+            CountdownVersion++;
             ClearGameOver();
+        }
         if (stage.Stage == MissionStageMessage.StageStarted)
         {
             if (previousStage != MissionStageMessage.StageStarted) ClearGameOver();
@@ -3764,6 +3794,7 @@ public sealed partial class ClientWorld
         Graph = null;
         CountdownStartLocalMs = null;
         _countdownTargetMs = null;
+        _missionTimeStartMs = null;
         _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
@@ -3828,6 +3859,7 @@ public sealed partial class ClientWorld
     private void Apply(SetStartTime startTime)
     {
         _countdownTargetMs = startTime.TimeStart;
+        _missionTimeStartMs = startTime.TimeStart;
         CountdownStartLocalMs = Environment.TickCount64;
     }
 

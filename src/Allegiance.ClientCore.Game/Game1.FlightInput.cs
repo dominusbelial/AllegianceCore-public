@@ -275,8 +275,7 @@ public sealed partial class Game1
         {
             _nextMatchGeneration = world.MissionGeneration;
             _briefingDismissed = false;
-            _countdownStartCuePlayed = false;
-            _countdownLastSecond = 0;
+            _missionCountdownSound.Reset();
             _gameOverCuePlayed = false;
             _ownReady = false;
         }
@@ -2993,27 +2992,17 @@ public sealed partial class Game1
     // briefing holds the player on the team screen, as well as in flight.
     private void UpdateMissionCountdownSound(Allegiance.ClientCore.State.ClientWorld world)
     {
-        if (world.Mission?.Stage == (int)MissionStage.Starting && world.CountdownStartLocalMs is { } cdStart)
+        Audio.MissionCountdownCue cue;
+        lock (_session.Gate) cue = _missionCountdownSound.Update(world);
+        if (cue.Start)
         {
-            if (!_countdownStartCuePlayed)
-            {
-                _sound?.PlayCountdownStart();
-                _countdownStartCuePlayed = true;
-                _countdownLastSecond = 0;
-                Console.WriteLine("[monogame] audio: countdown-start");
-            }
-
-            int remaining = world.CountdownRemainingSeconds() ?? (int)Math.Ceiling(
-                Audio.CountdownSound.BriefingCountdownSeconds - (Environment.TickCount64 - cdStart) / 1000.0);
-            if (remaining != _countdownLastSecond)
-            {
-                _countdownLastSecond = remaining;
-                if (Audio.CountdownSound.TickAssetFor(remaining) is { })
-                {
-                    _sound?.PlayCountdownSecond(remaining);
-                    Console.WriteLine($"[monogame] audio: countdown tick {remaining}");
-                }
-            }
+            _sound?.PlayCountdownStart();
+            Console.WriteLine("[monogame] audio: countdown-start");
+        }
+        if (cue.Second is { } second)
+        {
+            _sound?.PlayCountdownSecond(second);
+            Console.WriteLine($"[monogame] audio: countdown tick {second}");
         }
     }
 

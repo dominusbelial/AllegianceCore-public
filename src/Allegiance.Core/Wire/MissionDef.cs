@@ -69,6 +69,8 @@ public sealed class MissionDef : IFedMessage
     private const int MisparmsOffset = 4;                       // offsetof(FMD_S_MISSIONDEF, misparms)
     private const int SzIGCStaticFileOffset = MisparmsOffset + 65;  // + offsetof(MissionParams, szIGCStaticFile)
     private const int VerIgcCoreOffset = MisparmsOffset + 120;     // + offsetof(MissionParams, verIGCcore)
+    private const int GameLengthOffset = MisparmsOffset + 132;    // igc.h:1159-1162: version, two rates, duration
+    private const int TimeStartOffset = MisparmsOffset + 156;     // P29 MSVC probe; igc.h:1169
     private const int RgCivIdOffset = MisparmsOffset + 168;        // + offsetof(MissionParams, rgCivID)   (P29 probe)
     private const int NTemsOffset = MisparmsOffset + 218;          // + offsetof(MissionParams, nTeams)    (P29 probe)
     private const int DwCookieOffset = 460;
@@ -93,6 +95,14 @@ public sealed class MissionDef : IFedMessage
 
     /// <summary><c>MISSIONDEF.stage</c> (enum STAGE, int) — not read by the join flow, zeroed.</summary>
     public int Stage;
+
+    /// <summary>MissionParams.dtGameLength, seconds; zero disables the timed game
+    /// (igc.h:1162,1526-1529,1557-1560).</summary>
+    public float GameLengthSeconds;
+
+    /// <summary>MissionParams.timeStart, server-clock milliseconds (igc.h:1169).
+    /// Also replaced by SET_START_TIME (clintlib/appmsg.cpp:2702-2711).</summary>
+    public uint TimeStart;
 
     /// <summary><c>MissionParams.nTeams</c> — number of sides; drives the client's
     /// <c>UpdateSides</c> loop (missionigc.cpp:3749) that creates the real sides
@@ -129,6 +139,10 @@ public sealed class MissionDef : IFedMessage
         // set the version.
         w.Advance(VerIgcCoreOffset - w.Position);   // 78 -> 124 (gap: custom map + password + bitfields + money etc.)
         w.WriteI32(VerIgcCore);                     // verIGCcore (int) at 124
+        w.Advance(GameLengthOffset - w.Position);
+        w.WriteI32(BitConverter.SingleToInt32Bits(GameLengthSeconds));
+        w.Advance(TimeStartOffset - w.Position);
+        w.WriteU32(TimeStart);
         // rgCivID (short[6]) at 172; nTeams (short) at 222. Skip the gap, write
         // the civ ids, then the team count, then finish the MissionParams block.
         w.Advance(RgCivIdOffset - w.Position);      // 124 -> 172
@@ -192,6 +206,8 @@ public sealed class MissionDef : IFedMessage
             DwCookie = cookie,
             ISideMissionOwner = owner,
             Stage = stage,
+            GameLengthSeconds = BitConverter.ToSingle(buf.Slice(GameLengthOffset)),
+            TimeStart = BitConverter.ToUInt32(buf.Slice(TimeStartOffset)),
             NTems = nTems,
             RgCivId = rgCivId,
         };

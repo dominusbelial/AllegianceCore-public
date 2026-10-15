@@ -382,3 +382,15 @@ The final build completed with zero warnings/errors; 71 affected methods (86 cas
 | `Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking` | healthy bot 0 must keep receiving per-tick updates during the flood (had 0, now 0) | 3/3 pass |
 
 The treasure-pickup check initially passed 2/3 alone and then passed 3/3 in the final triplet; both triplets are recorded.
+
+
+## P680 observation (2026-10-15)
+
+The simulation countdown sound bundle completed 53 affected methods (80 data cases), each **3/3 individual runs**. The final unfiltered Core, ClientCore (including the opt-in local P660 15v15 showcase), and MonoGame passes reported the raw counts in [P680 report](reports/P680_PARITY_WAVE6.md); [P680_RESULTS.json](reports/P680_RESULTS.json) preserves every invocation.
+
+Every failure below passed **3/3 exact-method isolated reruns after all three full suites finished**, qualifying as a load/receipt flake under the Codex lane rule. No assertion, timeout, quarantine, or product change was made for it.
+
+| Test | Full-pass symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | System.InvalidOperationException : logon drain order diverged from connection order — peer2 side 0 not cross-side (0, 1, 0); determinism broken | 3/3 pass |

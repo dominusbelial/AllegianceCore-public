@@ -851,15 +851,8 @@ public sealed partial class Game1 : Game
     private Rendering.InvestmentPaneModel? _investModel;
     private short? _investAsteroidAabm;
 
-    // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
-    // the single countdown-start callout; _countdownLastSecond mirrors native's
-    // m_nLastCountdown change-detection (WinTrek.cpp:11150) so each second's
-    // per-second tick plays exactly once, not every frame it happens to still be
-    // true; _gameOverCuePlayed fires the game-over callout exactly once on the
-    // real Stage → Over transition.
     private long _nextMatchGeneration;
-    private bool _countdownStartCuePlayed;
-    private int _countdownLastSecond;
+    private readonly Audio.MissionCountdownSound _missionCountdownSound = new();
     private readonly Audio.RipcordCountdownSound _ripcordCountdownSound = new();
     private bool _gameOverCuePlayed;
 
