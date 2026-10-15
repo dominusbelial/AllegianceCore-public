@@ -103,8 +103,9 @@ public sealed class P655ProbeWorkersLiveTests
         };
         foreach (var arg in new[] { typeof(BotManager).Assembly.Location, "127.0.0.1", server.BoundPort.ToString(), "--workers", "2" }) info.ArgumentList.Add(arg);
         info.Environment["ALLEGIANCE_PRIVILEGE_SECRET"] = authenticatedHarness ? secret : "wrong-bearer";
-        if (authenticatedHarness) info.Environment["ALLEGIANCE_MCP_PROBE_SIDE_IDX"] = "0";
-        else info.Environment.Remove("ALLEGIANCE_MCP_PROBE_SIDE_IDX");
+        // Native lobby rank mode balances authenticated peers as well. Let
+        // both probes auto-pick; the numeric bot exception does not override it.
+        info.Environment.Remove("ALLEGIANCE_MCP_PROBE_SIDE_IDX");
         using var process = new Process { StartInfo = info };
         ticker.Start();
         Task<string>? stderr = null;
@@ -140,10 +141,9 @@ public sealed class P655ProbeWorkersLiveTests
             Assert.All(probes, p => { Assert.StartsWith("mcp-probe-w", p.Name); Assert.True(p.Ready); Assert.NotNull(p.Side); Assert.True(Srv.AdminNameMatches("mcp-*", p.Name)); });
             Assert.Equal(2, probes.Select(p => p.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count());
             Assert.Equal(MissionStage.Started, server.Missions[0].Stage);
-            if (!authenticatedHarness) Assert.Equal(new short?[] { 0, 1 }, probes.Select(p => p.Side).Order());
+            Assert.Equal(new short?[] { 0, 1 }, probes.Select(p => p.Side).Order());
             if (authenticatedHarness)
             {
-                Assert.All(probes, p => Assert.Equal((short)0, p.Side));
                 for (int i = 0; i < 2; i++)
                 {
                     var spawn = await Rpc(3 + i, "tools/call", new { name = "spawn_bot", arguments = new { hull = "Adv Scout", side = 0, behavior = "idle" } });

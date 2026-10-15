@@ -795,7 +795,7 @@ public sealed partial class Server
                         }
                         else if (CheckPositionRequest(mission, pr.SideId, reqLive.Ship) is { } refusal)
                         {
-                            SendPeer(from, FedPacket.Pack([new DelPositionReq { ShipId = reqLive.Ship.Id, SideId = pr.SideId, Reason = refusal }.Encode()]));
+                            RefuseSideSelection(from, reqLive.Ship.Id, pr.SideId, refusal);
                         }
                         else if (mission.LockSides)
                         {
@@ -892,7 +892,7 @@ public sealed partial class Server
                                     // Still exists + request still there → seat them.
                                     var targetShip = _peerShips[targetConn.Value].Ship;
                                     if (CheckPositionRequest(mission, pa.SideId, targetShip) is { } refusal)
-                                        SendPeer(targetConn.Value, FedPacket.Pack([new DelPositionReq { ShipId = targetShip.Id, SideId = pa.SideId, Reason = refusal }.Encode()]));
+                                        RefuseSideSelection(targetConn.Value, targetShip.Id, pa.SideId, refusal);
                                     else TryJoinSide(targetShip, pa.SideId);
                                 }
                                 else

@@ -8,7 +8,7 @@ namespace Allegiance.Server;
 public sealed partial class Server
 {
     // Native CheckPositionRequest: FedSrv/fsmission.cpp:4575-4649.
-    // Unported invitations, rank, bans and squads have no corresponding state.
+    // Unported invitations, bans and squads have no corresponding state.
     private DelPositionReqReason? CheckPositionRequest(Mission mission, short sideId, Ship? ship)
         => CheckPositionRequestCore(mission, sideId, ship,
             ship is not null && ConnOf(ship) is { } conn && HarnessGrantFor(conn) is not null);
@@ -29,17 +29,44 @@ public sealed partial class Server
         int Count(short sid) => _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission)
             && !ReferenceEquals(l.Ship, ship) && l.Ship.SideId == sid);
         int count = Count(sideId);
-        if (count >= Math.Max(1, game.MaxPlayersPerTeam)) return DelPositionReqReason.TeamFull;
+        // Native checks loss of base before capacity (fsmission.cpp:4626-4635).
+        if (mission.Stage != MissionStage.NotStarted &&
+            !mission.Sectors.Any(s => s.Stations.Any(st => st.SideId == sideId)))
+            return DelPositionReqReason.NoBase;
+        if (count >= game.MaxPlayersPerTeam) return DelPositionReqReason.TeamFull;
         if (mission.Stage != MissionStage.NotStarted)
         {
-            if (!mission.Sectors.Any(s => s.Stations.Any(st => st.SideId == sideId))) return DelPositionReqReason.NoBase;
-            // Native bots bypass the imbalance gate using the server's bot
-            // authentication GUID (FedSrv/fsmission.cpp:4637-4642). Our equivalent
-            // requires authenticated harness provenance, never a name alone.
-            if (!authenticatedBot && game.MaxTeamImbalance != 32767 && mission.Sides.Where(s => s.Active)
-                .Any(s => (long)count >= (long)Count(s.Id) + Math.Max(1, game.MaxTeamImbalance)))
+            var active = mission.Sides.Where(s => s.Active).ToArray();
+            long maxPlayers = game.MaxPlayersPerTeam;
+            if (game.MaxTeamImbalance != 0x7fff)
+                foreach (var other in active)
+                    maxPlayers = Math.Min(maxPlayers, (long)Count(other.Id) + game.MaxTeamImbalance);
+            int rank = _peerShips.Values.FirstOrDefault(l => ReferenceEquals(l.Ship, ship))?.PlayerScore.Rank ?? 0;
+            // Native allows two extra low-rank players (default MaxNewbRank=4,
+            // FedSrv.H:246); authenticated bots bypass this numeric gate only
+            // (fsmission.cpp:4637-4642), never capacity or rank balance.
+            if (count >= maxPlayers && !(rank <= 4 && count < maxPlayers + 2) && !authenticatedBot)
                 return DelPositionReqReason.TeamBalance;
+            if (game.MaxTeamImbalance == 0x7ffe)
+            {
+                // GetSideRankSum floors each player's rank at one, including
+                // bots (fsmission.cpp:1352-1369). Rank mode accepts only a side
+                // with the lowest current sum (fsmission.cpp:4646-4671).
+                long RankSum(short sid) => _peerShips.Values
+                    .Where(l => ReferenceEquals(l.Ship.Mission, mission) && !ReferenceEquals(l.Ship, ship) && l.Ship.SideId == sid)
+                    .Sum(l => (long)Math.Max(1, (int)l.PlayerScore.Rank));
+                if (active.Any(other => RankSum(sideId) > RankSum(other.Id)))
+                    return DelPositionReqReason.TeamBalance;
+            }
         }
         return null;
+    }
+
+    // Native RequestPosition replies to the requester only with the reason
+    // from CheckPositionRequest (FedSrv/fsmission.cpp:4734-4747).
+    private void RefuseSideSelection(ConnectionId peer, short shipId, short sideId, DelPositionReqReason reason, string? name = null)
+    {
+        SendPeer(peer, FedPacket.Pack([new DelPositionReq { ShipId = shipId, SideId = sideId, Reason = reason }.Encode()]));
+        Console.WriteLine($"[sideselect] refused peer {peer} '{Allegiance.Core.ConsoleLog.Sanitize(name ?? _peerNames.GetValueOrDefault(peer))}' ship {shipId} side {sideId}: {reason}");
     }
 }

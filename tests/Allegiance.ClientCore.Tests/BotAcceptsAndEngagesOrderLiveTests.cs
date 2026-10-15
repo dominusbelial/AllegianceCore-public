@@ -123,8 +123,10 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
         config.LiveSettings.DebugMode = true;
         config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
             { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
+        // Both eligible sides use Iron Coalition so a native balance retry
+        // still exercises the hull-444 pod lifecycle this regression targets.
         config.Games[0] = new Gm { Name = "P653c MCP lifecycle", Map = "m2xspiderw.igc", Teams = 2,
-            CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] };
+            CivIds = [25, 25], SideNames = ["Alpha", "Bravo"] };
         server.Boot(config);
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
         var mission = server.Missions[0];
@@ -178,8 +180,10 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
             Assert.Single(spawn.Granted.Parts);
             fighter = Ships(server).Single(ship => ship.Id == spawn.ShipId);
             Assert.Null(fighter.StationId);
+            // A native team-balance refusal can seat the MCP bot on the other
+            // side. Keep the combat target hostile to its confirmed actual side.
             target = new Ship((short)(30000 + botIndex), hull, fighter.Position + fighter.Orientation.GetForward() * 180f,
-                Vector3.Zero, Orientation.Identity) { SideId = 1 };
+                Vector3.Zero, Orientation.Identity) { SideId = (short)(spawn.Side == 0 ? 1 : 0) };
             mission.PlaceShip(target, fighter.Sector!);
             Assert.True(Wait(() => Volatile.Read(ref hits) > beforeFight, 15000), "MCP bot must deal real projectile damage after initial buy");
             var active = ((System.Collections.IEnumerable)typeof(BotManager)

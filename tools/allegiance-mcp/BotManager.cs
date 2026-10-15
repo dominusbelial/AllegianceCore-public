@@ -341,6 +341,37 @@ internal sealed partial class BotManager : IDisposable
         return done();
     }
 
+    /// <summary>Consume the bot's own native refusal immediately. A fleet peer
+    /// can ask the server for an eligible side; a commander keeps its requested
+    /// side and waits for balancing instead. Retries share one bounded deadline.</summary>
+    private static void SeatWithRetry(string name, short side, Func<bool> seated, Func<bool> connected,
+        Func<DelPositionReq?> refusal, Action<short> send, bool allowAutoPick = true)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(15000);
+        short pick = side;
+        DelPositionReq? lastRefusal = null;
+        while (true)
+        {
+            send(pick);
+            int remaining = Math.Max(0, (int)(deadline - DateTime.UtcNow).TotalMilliseconds);
+            if (!WaitUntil(() => seated() || refusal() is not null || !connected(), remaining))
+                throw new InvalidOperationException(lastRefusal is { } last
+                    ? $"bot '{name}' side {last.SideId} refused: {last.Reason}; balancing retry deadline expired"
+                    : $"bot '{name}' was never seated (no ship assigned) on side {side}");
+            if (seated()) return;
+            if (!connected()) throw new InvalidOperationException($"bot '{name}' disconnected while selecting side {pick}");
+            lastRefusal = refusal();
+            if (lastRefusal is not { } denied) continue;
+            if (denied.Reason is not (DelPositionReqReason.TeamBalance or DelPositionReqReason.TeamFull)
+                || pick == -1 || DateTime.UtcNow >= deadline)
+                throw new InvalidOperationException($"bot '{name}' side {denied.SideId} refused: {denied.Reason}");
+            Console.WriteLine($"[sideselect] bot '{name}' side {denied.SideId} refused: {denied.Reason}; "
+                + (allowAutoPick ? "requesting an eligible side" : "waiting for balance on the requested side"));
+            if (allowAutoPick) pick = -1;
+            else Thread.Sleep(200);
+        }
+    }
+
     private short ProbeSidePref()
     {
         lock (Probe.Gate)
@@ -518,12 +549,13 @@ internal sealed partial class BotManager : IDisposable
             b.SendLogonRequest(Request(name));
             if (!WaitUntil(() => b.Ack is { FValidated: true }, 12000))
                 throw new InvalidOperationException($"spawn_bot: bot '{name}' never got a validated LOGONACK from {_host}:{_port}");
-            b.SendPositionReq(chosenSide);
-            if (!WaitUntil(() => b.ShipAssignment is not null, 15000))
-                throw new InvalidOperationException($"spawn_bot: bot '{name}' was never seated (no ship assigned) on side {chosenSide}");
+            int refusalCursor = b.DelPositionReqs.Count;
+            SeatWithRetry(name, chosenSide, () => b.ShipAssignment is not null, () => b.Connected,
+                () => b.DelPositionReqs.Skip(refusalCursor).LastOrDefault(r => r.ShipId == b.Ack?.ShipID),
+                pick => { refusalCursor = b.DelPositionReqs.Count; b.SendPositionReq(pick); });
 
             shipId = b.ShipAssignment!.Ship.ShipId;
-            actualSide = ActualSide(b, shipId, chosenSide);
+            actualSide = ActualSide(b, shipId);
             // P485 — ready this bot's own seat so a normal-map mission can
             // auto-start (see ConnectProbe's ready-up comment).
             b.SendPlayerReady(true, shipId);
@@ -700,9 +732,8 @@ internal sealed partial class BotManager : IDisposable
         cs.SendLogonRequest(Request(name));
         if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
             throw new InvalidOperationException($"combat client '{name}' never got a validated LOGONACK from {_host}:{_port}");
-        cs.SendPositionReq(side);
-        if (!WaitUntil(() => cs.World.MyShipId is not null, 15000))
-            throw new InvalidOperationException($"combat client '{name}' was never seated (no ship assigned) on side {side}");
+        SeatWithRetry(name, side, () => cs.World.MyShipId is not null, () => cs.Connected && !cs.Lost,
+            () => cs.LastPositionRefusal, cs.SendPositionReq);
 
         shipId = cs.World.MyShipId!.Value;
         actualSide = cs.World.MySideId ?? side;
@@ -1078,9 +1109,9 @@ internal sealed partial class BotManager : IDisposable
             cs.SendLogonRequest(Request(name));
             if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
                 throw new InvalidOperationException($"commander: side {side} peer '{name}' never got a validated LOGONACK from {_host}:{_port}");
-            cs.SendPositionReq(side);
-            if (!WaitUntil(() => cs.World.MyShipId is not null, 15000))
-                throw new InvalidOperationException($"commander: side {side} peer '{name}' was never seated (no ship assigned)");
+            // A commander must retain the side whose wallet it will manage.
+            SeatWithRetry(name, side, () => cs.World.MyShipId is not null, () => cs.Connected && !cs.Lost,
+                () => cs.LastPositionRefusal, cs.SendPositionReq, allowAutoPick: false);
             cs.SendPlayerReady(true, cs.World.MyShipId!.Value);
             Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — P473 grant money in wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
             _commanders[side] = cs;
@@ -1516,12 +1547,14 @@ internal sealed partial class BotManager : IDisposable
     }
 
     /// <summary>The side the server actually seated the ship on (from the real
-    /// JOIN_SIDE broadcast for this ship), falling back to the requested side.</summary>
-    private static short ActualSide(BotClass b, short shipId, short requested)
+    /// JOIN_SIDE broadcast, or the initial own PLAYERINFO snapshot).</summary>
+    private static short ActualSide(BotClass b, short shipId)
     {
-        foreach (var js in b.JoinSides)
+        foreach (var js in b.JoinSides.Reverse())
             if (js.ShipId == shipId) return js.SideId;
-        return requested;
+        foreach (var info in b.PlayerInfos.Reverse())
+            if (info.ShipId == shipId) return info.ISide;
+        throw new InvalidOperationException($"spawn_bot: ship {shipId} seated without an own-side snapshot");
     }
 
     /// <summary>The real core, resolved once (PCore001 — the same core the
@@ -5307,17 +5340,19 @@ bool isThreat =
         double start = Now();
         try
         {
+            // The probe already contributes one rank to its side. Seat the
+            // opposite side first so each pair retains its requested sides
+            // under native lobby rank balance, just like scenario batches.
+            short firstSide = ProbeSide == sideA ? sideB : sideA;
+            short secondSide = firstSide == sideA ? sideB : sideA;
             for (int i = 0; i < size; i++)
-            {
-                var ra = SpawnBot(hullId, hullName, sideA, parts, "combat", targetSector, launcherPartId, launcherRequestName);
-                roster.Add((ra.Name, ra.ShipId, ra.Side));
-                grantedHulls.Add(ra.Granted.HullId);
-                if (ra.Warning is not null) partialGrants++;
-                var rb = SpawnBot(hullId, hullName, sideB, parts, "combat", targetSector, launcherPartId, launcherRequestName);
-                roster.Add((rb.Name, rb.ShipId, rb.Side));
-                grantedHulls.Add(rb.Granted.HullId);
-                if (rb.Warning is not null) partialGrants++;
-            }
+                foreach (short side in new[] { firstSide, secondSide })
+                {
+                    var result = SpawnBot(hullId, hullName, side, parts, "combat", targetSector, launcherPartId, launcherRequestName);
+                    roster.Add((result.Name, result.ShipId, result.Side));
+                    grantedHulls.Add(result.Granted.HullId);
+                    if (result.Warning is not null) partialGrants++;
+                }
         }
         catch (Exception ex)
         {
