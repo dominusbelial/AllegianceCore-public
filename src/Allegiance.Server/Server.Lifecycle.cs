@@ -562,23 +562,6 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// P382 — the per-side initial-miner count at mission start. The native
-    /// value comes from <c>MissionParams.nInitialMinersPerTeam</c>
-    /// (<c>src/Igc/igc.h:1214</c>, default 1 at igc.h:1330), consumed at
-    /// <c>fsmission.cpp:2205</c>. This port treats the whole <c>misparms</c>
-    /// block as an opaque 252-byte blob (<c>Wire/MissionDef.cs:63</c>) and
-    /// carries no real per-mission param data into it (the port's MISSIONDEF
-    /// encode only populates the join-path fields; everything else is
-    /// zero-filled), so reading the real byte offset would always yield 0 and
-    /// spawn no miners. Rather than decode the full native
-    /// <c>MissionParams</c> struct field-by-field (explicitly out of scope for
-    /// P382), this documented default — 1, matching native's own default — is
-    /// used instead. Tune here (or promote to a config field) to change the
-    /// initial per-team miner count.
-    /// </summary>
-    private const int DefaultInitialMinersPerTeam = 1;
-
-    /// <summary>
     /// P382 — test-facing opt-out for the boot-time initial-miner spawn. Default
     /// <c>true</c> (every real game spawns its stock miners, per the brief); a
     /// narrowly-scoped live fixture that spawns its own NPCs into a pristine
@@ -627,16 +610,9 @@ public sealed partial class Server
     /// </summary>
     private void SpawnInitialMiners(Mission mission)
     {
-        // Resolve the real miner drone type (deterministic lowest-id pick).
-        DataDroneTypeIGC? minerType = null;
-        foreach (var dt in mission.Core.DroneTypes.Values.OrderBy(d => d.DroneTypeId))
-            if (dt.PilotType == Ship.PilotTypeMiner) { minerType = dt; break; }
-        if (minerType is null)
-        {
-            Console.WriteLine("[initial-miner] core has no Miner-pilot drone type — spawning no initial miners");
-            return;
-        }
-
+        // Native fsmission.cpp:2196-2205: developments enabled, then the first
+        // miner type buyable at this side's home station (not a core-wide pick).
+        if (!mission.AllowDevelopments) return;
         foreach (var side in mission.Sides)
         {
             var home = ResolveSideHomeStation(mission, side.Id);
@@ -653,13 +629,24 @@ public sealed partial class Server
                 continue;
             }
 
-            for (int i = 0; i < DefaultInitialMinersPerTeam; i++)
+            var homeType = mission.Core.StationTypes[hs.StationTypeId];
+            var minerType = mission.Core.DroneTypes.Values.OrderBy(d => d.DroneTypeId)
+                .Where(d => d.PilotType == Ship.PilotTypeMiner
+                    && TechTreeBitMask.RequiredTechsBuyable(d.TtbmRequired, homeType.TtbmLocal, side.Techs))
+                .Select(d => (DataDroneTypeIGC?)d).FirstOrDefault();
+            if (minerType is null)
+            {
+                Console.WriteLine($"[initial-miner] side {side.Id} has no buyable miner type — spawning none");
+                continue;
+            }
+
+            for (int i = 0; i < mission.Research.InitialMinersPerTeam; i++)
             {
                 var pos = new Vector3(hs.Position[0], hs.Position[1], hs.Position[2]);
                 var ship = SpawnNpcShip(mission, sector, side.Id, pos, minerType.Value.DroneTypeId);
                 ship.StationId = hs.StationId;      // docked at home — native SetStation(pstation)
                 ship.LastDockTime = _simNow;          // P381: docked-from-birth, so the auto-launch cooldown applies
-                Console.WriteLine($"[initial-miner] side {side.Id} spawned initial miner #{i + 1}/{DefaultInitialMinersPerTeam} ship {ship.Id} (hull '{ship.HullType.Name}', droneType {minerType.Value.DroneTypeId}) docked at station {hs.StationId} '{hs.Name}' in '{sector.Name}'");
+                Console.WriteLine($"[initial-miner] side {side.Id} spawned initial miner #{i + 1}/{mission.Research.InitialMinersPerTeam} ship {ship.Id} (hull '{ship.HullType.Name}', droneType {minerType.Value.DroneTypeId}) docked at station {hs.StationId} '{hs.Name}' in '{sector.Name}'");
             }
         }
     }
@@ -1047,7 +1034,22 @@ public sealed partial class Server
         for (int t = 0; t < g.Teams; t++)
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
-        var mission = Mission.Assemble(core, map, sides, _host, _simNow);  // preserve next-match clock
+        var mission = Mission.Assemble(core, map, sides, _host, _simNow, new ResearchSettings
+        {
+            AllowDevelopments = g.AllowDevelopments,
+            AllowShipyardPath = g.AllowShipyardPath, AllowExpansionPath = g.AllowExpansionPath,
+            AllowTacticalPath = g.AllowTacticalPath, AllowSupremacyPath = g.AllowSupremacyPath,
+            InitialMinersPerTeam = g.InitialMinersPerTeam,
+        });
+        if (g.ResearchPlanDirectory is not null)
+            foreach (var side in mission.Sides)
+            {
+                var selection = ResearchPlanCatalog.Select(core, Path.GetFileNameWithoutExtension(_config.StaticCore),
+                    side.Civilization.CivilizationId, g.ResearchPlanDirectory,
+                    g.ResearchPlans.GetValueOrDefault(side.Id, "auto"), mission.Research);
+                mission.ResearchPlans[side.Id] = selection.Plan;
+                Console.WriteLine($"[research-plan] side {side.Id}: {selection.Message}");
+            }
         mission.AllowDevelopments = g.AllowDevelopments;
         mission.AllowAlliedRip = g.AllowAlliedRip;
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;

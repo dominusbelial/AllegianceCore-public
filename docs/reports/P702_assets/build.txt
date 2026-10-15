@@ -1,0 +1,9 @@
+Command: NUGET_HTTP_CACHE_PATH=/tmp/p702-nuget-cache dotnet build AllegianceCore.slnx --nologo
+
+  Allegiance.Core.Tests -> /home/domingo/allegiance-codex-p702/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:15.50

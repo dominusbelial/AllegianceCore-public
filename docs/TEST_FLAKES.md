@@ -4,6 +4,47 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P702 observation (2026-10-15)
+
+The first unfiltered Core run reported **4,570 pass / 5 fail / 0 skip**.
+Three network failures passed **3/3 exact-method isolated retries** on the
+rebuilt working tree:
+
+- `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`: raw-peer join timeout.
+- `Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses`: expected 50 ordered frames, observed 35 under load.
+- `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy`: empty notification receipt collection.
+
+The rebuilt Core pass reported **4,574 pass / 1 fail / 0 skip**, with a single empty-receipt failure in
+`MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts`;
+it passed **3/3 exact-method isolated retries**, recorded in
+[rotation-retries.json](reports/P702_assets/rotation-retries.json).
+
+The ClientCore run reported **1,059 pass / 1 fail / 0 skip**. Its
+`ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume`
+sector assertion passed **3/3 isolated retries**; see
+[client-retries.json](reports/P702_assets/client-retries.json).
+
+The MonoGame pod-docking gather timeout failed **3/3** and is **not** a flake.
+The fixture used a station-center placement rather than a native landing bay.
+It now uses `DockTestPlacement.Inside`, retaining the original timeout and gather
+assertion. All three scenarios passed in each of three isolated reruns; see
+[mono-final-focused.json](reports/P702_assets/mono-final-focused.json).
+
+The final standalone MonoGame run completed with **2,208 pass / 0 fail / 3
+existing optional Meshy-pack skips**, including its 605s human-flight soak.
+The earlier MonoGame invocation had no TRX summary and is treated as incomplete.
+
+These satisfy P702's load-flake rule. Assertions, timeouts and transport code
+were not relaxed. The other two first-run failures were deterministic and
+fixed: the constructor fixture now chooses a currently buyable station bucket,
+and join sync sends the actual stable initial-tech snapshot, including native
+path permissions. They are **not** classified as flakes. The JSON-default guard
+also needed a numeric-key fixture correction before the full run.
+
+See the [P702 report](reports/P702_TECH_TREE_PLANS.md),
+[isolated retries](reports/P702_assets/retries.json), and
+[verification artifacts](reports/P702_assets/).
+
 ## P697 observation (2026-10-15)
 
 The final unfiltered runs reported Core **4555 pass / 3 fail**, ClientCore

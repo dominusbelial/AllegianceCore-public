@@ -107,7 +107,7 @@ public sealed class P656cFinaleLiveTests(Xunit.Abstractions.ITestOutputHelper ou
             rig.Client.World.DevelopmentTechsFor(side));
         var serverSide = rig.Mission.Sides.Single(s => s.Id == side);
         var initial = rig.Client.World.InitialTechsFor(side);
-        Assert.Equal(TechTreeBitMask.FromBytes(serverSide.Civilization.TtbmBaseTechs), initial);
+        Assert.Equal(serverSide.InitialTechs, initial);
         Assert.NotEqual(rig.Client.World.DevelopmentTechsFor(side), initial);
         // P560's layer-drone investment ids must survive the shop-tech fix.
         var views = BucketCatalog.Describe(rig.Mission.Core, initial!.Value,

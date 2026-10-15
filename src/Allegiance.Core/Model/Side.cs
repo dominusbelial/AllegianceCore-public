@@ -84,6 +84,10 @@ public sealed class Side : ISideIgc
     /// <c>SIDE_TECH_CHANGE(75)</c>.</summary>
     public TechTreeBitMask DevelopmentTechs { get; set; }
 
+    /// <summary>Stable catalog seed, native UpdateInitialTechs (Igc/sideigc.h:219-222).
+    /// Captured after mission path permissions and before any research/test grants.</summary>
+    public TechTreeBitMask InitialTechs { get; internal set; }
+
     /// <summary>
     /// P444 — the side's <b>building</b> techs, the port of the native
     /// per-side <c>m_data.ttbmBuildingTechs</c> (<c>sideigc.h:172-185</c>), the
@@ -499,6 +503,7 @@ public sealed class Side : ISideIgc
         // (sideigc.cpp:102) and the side's gas sourced from the civ's
         // `gasBaseAttributes` (civilizationigc.h:73).
         DevelopmentTechs = TechTreeBitMask.FromBytes(civilization.TtbmBaseTechs);
+        InitialTechs = DevelopmentTechs;
         GlobalAttributes = GlobalAttributeSet.FromArray(civilization.GasBaseAttributes);
     }
 

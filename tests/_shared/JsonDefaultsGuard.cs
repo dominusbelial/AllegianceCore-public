@@ -88,9 +88,24 @@ internal static class JsonDefaultsGuard
     {
         JsonTypeInfoKind.Object => new JsonObject(),
         JsonTypeInfoKind.Enumerable => new JsonArray(EmptyValue(info.Options.GetTypeInfo(ElementType(info.Type, info.Kind)))),
-        JsonTypeInfoKind.Dictionary => new JsonObject { ["guard"] = EmptyValue(info.Options.GetTypeInfo(ElementType(info.Type, info.Kind))) },
+        JsonTypeInfoKind.Dictionary => EmptyDictionary(info),
         _ => throw new InvalidOperationException($"No object fixture for {info.Type}")
     };
+
+    private static JsonObject EmptyDictionary(JsonTypeInfo info)
+    {
+        var dictionaryType = info.Type.GetInterfaces().Append(info.Type)
+            .First(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+        var types = dictionaryType.GetGenericArguments();
+        // Let the production key converter choose its property-name encoding.
+        // A literal "guard" key is invalid for numeric side-id dictionaries.
+        var fixture = (IDictionary)Activator.CreateInstance(typeof(Dictionary<,>).MakeGenericType(types))!;
+        var key = types[0] == typeof(string) ? "guard" : Activator.CreateInstance(types[0])!;
+        fixture.Add(key, types[1].IsValueType ? Activator.CreateInstance(types[1]) : null);
+        var json = (JsonObject)JsonSerializer.SerializeToNode(fixture, info)!;
+        json[json.First().Key] = EmptyValue(info.Options.GetTypeInfo(types[1]));
+        return json;
+    }
 
     private static JsonNode? EmptyValue(JsonTypeInfo info) => info.Kind == JsonTypeInfoKind.None
         ? JsonSerializer.SerializeToNode(info.Type.IsValueType ? Activator.CreateInstance(info.Type) : null, info)

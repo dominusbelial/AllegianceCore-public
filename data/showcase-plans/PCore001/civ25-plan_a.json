@@ -1,0 +1,2291 @@
+{
+  "schemaVersion": 1,
+  "core": "PCore001",
+  "coreVersion": 990051329,
+  "civId": 25,
+  "name": "plan_a",
+  "steps": [
+    {
+      "action": "develop",
+      "id": 222,
+      "name": "Weedcore 03",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "drone",
+      "id": 441,
+      "name": ".TowerAC",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "drone",
+      "id": 200,
+      "name": ".Caltrop",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 54,
+      "name": "Retro Booster",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 188,
+          "name": "Retro Booster",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 90,
+      "name": "MRM Seeker 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 154,
+          "name": "MRM Seeker 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 109,
+      "name": "Med Shield 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 43,
+          "name": "Med Shield 2",
+          "role": "Shield"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 116,
+      "name": "Lt Booster 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 26,
+          "name": "Lt Booster 1",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 131,
+      "name": "Counter 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 85,
+          "name": "Counter 2",
+          "role": "ChaffLauncher"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 236,
+      "name": "MRM Quickfire 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 104,
+          "name": "MRM Quickfire 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "station",
+      "id": 147,
+      "name": "Teleport (Hvy)",
+      "asteroidClass": 8,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "drone",
+      "id": 432,
+      "name": ".Miner",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "drone",
+      "id": 425,
+      "name": ".Carrier",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 58,
+      "name": "Enh Constructor",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 417,
+          "name": "Lg Enh Constructor",
+          "role": "capabilities=0x8080; group=-1"
+        },
+        {
+          "kind": "hull",
+          "id": 471,
+          "name": "Sm Enh Constructor",
+          "role": "capabilities=0x8080; group=-1"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 64,
+      "name": "Enh Miner",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 437,
+          "name": "Enh Miner",
+          "role": "capabilities=0x4080; group=-1"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 87,
+      "name": "ER Nanite 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 190,
+          "name": "ER Nanite 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 97,
+      "name": "SRM Seismic",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 121,
+      "name": "Hvy Sig Cloak 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 41,
+          "name": "Hvy Cloak 1",
+          "role": "Cloak"
+        }
+      ]
+    },
+    {
+      "action": "station",
+      "id": 102,
+      "name": "Outpost (Hvy)",
+      "asteroidClass": 8,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 223,
+      "name": "Enh Carrier Drone",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 102,
+          "name": "Enh Carrier [SR]",
+          "role": "capabilities=0x1D02; group=-1"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 37,
+      "name": "Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 404,
+          "name": "Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    },
+    {
+      "action": "station",
+      "id": 111,
+      "name": "Supremacy",
+      "asteroidClass": 64,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 414,
+          "name": "Enh Fighter",
+          "role": "capabilities=0x2092; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 151,
+      "name": "GA: Missile Track 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 155,
+      "name": "GA: Ripcord 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 157,
+      "name": "GA: Ship Sensors 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 159,
+      "name": "GA: Ship Hull 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 161,
+      "name": "GA: Ship Shield 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 53,
+      "name": "Cruise Booster",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 187,
+          "name": "Crs Booster",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 71,
+      "name": "PW Gattling Gun 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 71,
+          "name": "PW Gat Gun 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 74,
+      "name": "EW Disruptor 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 93,
+          "name": "EW Disruptor 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 81,
+      "name": "PW Auto-Cannon 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 88,
+          "name": "PW Mini-AC 2",
+          "role": "Weapon"
+        },
+        {
+          "kind": "part",
+          "id": 131,
+          "name": "PW AutoCan 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 88,
+      "name": "SRM Dumbfire 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 151,
+          "name": "SRM Dumbfire 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 96,
+      "name": "SRM Anti-Base 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 158,
+          "name": "SRM Anti-Base 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 107,
+      "name": "Sm Shield 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 40,
+          "name": "Sm Shield 2",
+          "role": "Shield"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 113,
+      "name": "Booster 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 27,
+          "name": "Booster 2",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 129,
+      "name": "Mine Pack 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 13,
+          "name": "Mine Pack 1",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 123,
+      "name": "EWS Probe 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 15,
+          "name": "EWS Probe 2",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 253,
+      "name": "XRM Anti-Base 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 126,
+          "name": "XRM Anti-Base 1",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "station",
+      "id": 112,
+      "name": "Expansion",
+      "asteroidClass": 16,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 412,
+          "name": "Interceptor",
+          "role": "capabilities=0xB2; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 135,
+      "name": "GA: Ship Acceleration 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 143,
+      "name": "GA: PW\u0026EW Damage 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 145,
+      "name": "GA: Faster He3 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 147,
+      "name": "GA: He3 Yield 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 153,
+      "name": "GA: PW Range 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 163,
+      "name": "GA: Ship Signature 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 167,
+      "name": "GA: Station Hull 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 169,
+      "name": "GA: Station Shield 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 46,
+      "name": "Afterburner 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 175,
+          "name": "Afterburner 2",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 77,
+      "name": "PW Mini-Gun 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 121,
+          "name": "PW Mini-Gun 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 79,
+      "name": "PW EMP Cannon 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 100,
+          "name": "PW EMP Can 1",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 98,
+      "name": "SRM EMP Missile",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 192,
+          "name": "SRM EMP",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 124,
+      "name": "Pulse Probe",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 17,
+          "name": "Pulse Probe",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 127,
+      "name": "Prox Mine 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 58,
+          "name": "Prox Mine 2",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "station",
+      "id": 113,
+      "name": "Tactical",
+      "asteroidClass": 32,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 411,
+          "name": "Stealth Fighter",
+          "role": "capabilities=0x2892; group=0"
+        },
+        {
+          "kind": "part",
+          "id": 18,
+          "name": "SRM Seismic",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 137,
+      "name": "GA: Ship Agility 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 139,
+      "name": "GA: Ship Energy 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 141,
+      "name": "GA: EW Range 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 149,
+      "name": "GA: Missile Damage 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 165,
+      "name": "GA: Ship Speed 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 67,
+      "name": "EW Utl Cannon 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 51,
+          "name": "EW Utl Can 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 68,
+      "name": "EW Sniper Rifle 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 60,
+          "name": "EW Sniper 1",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 93,
+      "name": "LRM Hunter 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 159,
+          "name": "LRM Hunter 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 95,
+      "name": "LRM Killer 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 20,
+          "name": "LRM Killer 1",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 118,
+      "name": "Sig Cloak 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 39,
+          "name": "Sig Cloak 2",
+          "role": "Cloak"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 246,
+      "name": "EMP Mine 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 113,
+          "name": "EMP Mine 1",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 281,
+      "name": "Tower SC Drone",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 181,
+          "name": "Tower SC Drone",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "drone",
+      "id": 20,
+      "name": ".TowerSC",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 7,
+      "name": "Upgrade Garrison",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "station",
+      "id": 103,
+      "name": "Shipyard",
+      "asteroidClass": 8,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 36,
+          "name": "Corvette",
+          "role": "capabilities=0x802; group=4"
+        },
+        {
+          "kind": "hull",
+          "id": 80,
+          "name": "Attack Carrier [SR]",
+          "role": "capabilities=0x1D02; group=0"
+        },
+        {
+          "kind": "part",
+          "id": 64,
+          "name": "Lrg Shield 1",
+          "role": "Shield"
+        },
+        {
+          "kind": "part",
+          "id": 160,
+          "name": "SRM Tactical Nuke 1",
+          "role": "Magazine"
+        },
+        {
+          "kind": "part",
+          "id": 163,
+          "name": "XRM Hunter Klr 1",
+          "role": "Magazine"
+        },
+        {
+          "kind": "part",
+          "id": 180,
+          "name": "Hvy Counter 1",
+          "role": "ChaffLauncher"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 50,
+      "name": "XRM Torpedo 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 193,
+          "name": "XRM Torpedo 1",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 83,
+      "name": "PW SkyCap 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 141,
+          "name": "PW SkyCap 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 100,
+      "name": "XRM Hunter Killer 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 164,
+          "name": "XRM Hunter Klr 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 104,
+      "name": "XRM Cruise 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 10,
+          "name": "XRM Cruise 1",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 105,
+      "name": "MRM Seismic",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 162,
+          "name": "MRM Seismic",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 111,
+      "name": "Large Shield 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 45,
+          "name": "Lrg Shield 2",
+          "role": "Shield"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 133,
+      "name": "Hvy Counter 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 53,
+          "name": "Hvy Counter 2",
+          "role": "ChaffLauncher"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 177,
+      "name": "LRM Killer Swarm 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 95,
+          "name": "LRM Killer Swarm 1",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 225,
+      "name": "Upgrade Medium Class",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 421,
+          "name": "Frigate",
+          "role": "capabilities=0xA22; group=4"
+        },
+        {
+          "kind": "hull",
+          "id": 487,
+          "name": "Assault Ship",
+          "role": "capabilities=0x962; group=0"
+        }
+      ]
+    },
+    {
+      "action": "station",
+      "id": 110,
+      "name": "Garrison (Str)",
+      "asteroidClass": 8,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 91,
+      "name": "MRM Seeker 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 156,
+          "name": "MRM Seeker 3",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 108,
+      "name": "Med Shield 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 44,
+          "name": "Med Shield 3",
+          "role": "Shield"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 115,
+      "name": "Lt Booster 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 28,
+          "name": "Lt Booster 2",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 130,
+      "name": "Counter 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 86,
+          "name": "Counter 3",
+          "role": "ChaffLauncher"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 173,
+      "name": "LRM Aleph Res 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 5,
+          "name": "LRM Aleph Res 1",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 233,
+      "name": "LRM Aleph Res 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 90,
+          "name": "LRM Aleph Res 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 234,
+      "name": "LRM Aleph Res 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 97,
+          "name": "LRM Aleph Res 3",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 237,
+      "name": "MRM Quickfire 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 105,
+          "name": "MRM Quickfire 3",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 120,
+      "name": "Hvy Sig Cloak 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 35,
+          "name": "Hvy Cloak 2",
+          "role": "Cloak"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 125,
+      "name": "Teleport Probe 1",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 1,
+          "name": "Teleport Probe 1",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 315,
+      "name": "ER Nanite 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 223,
+          "name": "ER Nanite 3",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 15,
+      "name": "Adv Scout",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 485,
+          "name": "Adv Scout",
+          "role": "capabilities=0x2092; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 35,
+      "name": "Hvy Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 489,
+          "name": "Hvy Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 39,
+      "name": "Gunship",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 490,
+          "name": "Gunship",
+          "role": "capabilities=0x892; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 231,
+      "name": "Hvy Scout",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 87,
+          "name": "Hvy Scout",
+          "role": "capabilities=0x2092; group=0"
+        },
+        {
+          "kind": "part",
+          "id": 98,
+          "name": "MRM Seek 1 QL",
+          "role": "Magazine"
+        },
+        {
+          "kind": "part",
+          "id": 99,
+          "name": "MRM Seek 2 QL",
+          "role": "Magazine"
+        },
+        {
+          "kind": "part",
+          "id": 102,
+          "name": "MRM Seek 3 QL",
+          "role": "Magazine"
+        },
+        {
+          "kind": "part",
+          "id": 106,
+          "name": "SRM Dumb 1 QL",
+          "role": "Magazine"
+        },
+        {
+          "kind": "part",
+          "id": 107,
+          "name": "SRM Dumb 2 QL",
+          "role": "Magazine"
+        },
+        {
+          "kind": "part",
+          "id": 208,
+          "name": "Retro Booster",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 8,
+      "name": "Upgrade Heavy Class",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 67,
+          "name": "EW SkyRip",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "station",
+      "id": 101,
+      "name": "Shipyard (Dry)",
+      "asteroidClass": 8,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 422,
+          "name": "Cruiser",
+          "role": "capabilities=0xA02; group=4"
+        },
+        {
+          "kind": "hull",
+          "id": 491,
+          "name": "Devastator",
+          "role": "capabilities=0xA02; group=4"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 51,
+      "name": "XRM Torpedo 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 194,
+          "name": "XRM Torpedo 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 82,
+      "name": "PW SkyCap 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 142,
+          "name": "PW SkyCap 3",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 99,
+      "name": "XRM Hunter Killer 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 32,
+          "name": "XRM Hunter Klr 3",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 101,
+      "name": "SRM Tactical Nuke 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 161,
+          "name": "SRM Tactical Nuke 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 103,
+      "name": "XRM Cruise 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 11,
+          "name": "XRM Cruise 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 110,
+      "name": "Large Shield 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 46,
+          "name": "Lrg Shield 3",
+          "role": "Shield"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 132,
+      "name": "Hvy Counter 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 54,
+          "name": "Hvy Counter 3",
+          "role": "ChaffLauncher"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 176,
+      "name": "LRM Killer Swarm 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 96,
+          "name": "LRM Killer Swarm 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 6,
+      "name": "Upgrade Expansion",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "station",
+      "id": 108,
+      "name": "Expansion (Adv)",
+      "asteroidClass": 16,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 481,
+          "name": "Hvy Interceptor",
+          "role": "capabilities=0xB2; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 136,
+      "name": "GA: Ship Acceleration 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 144,
+      "name": "GA: PW\u0026EW Damage 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 146,
+      "name": "GA: Faster He3 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 148,
+      "name": "GA: He3 Yield 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 154,
+      "name": "GA: PW Range 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 164,
+      "name": "GA: Ship Signature 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 168,
+      "name": "GA: Station Hull 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 170,
+      "name": "GA: Station Shield 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 47,
+      "name": "Afterburner 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 224,
+          "name": "Afterburner 3",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 76,
+      "name": "PW Mini-Gun 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 122,
+          "name": "PW Mini-Gun 3",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 78,
+      "name": "PW EMP Cannon 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 101,
+          "name": "PW EMP Can 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 126,
+      "name": "Prox Mine 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 57,
+          "name": "Prox Mine 3",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 43,
+      "name": "Troop Transport",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 495,
+          "name": "Troop Transport",
+          "role": "capabilities=0x293; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 59,
+      "name": "Adv Constructor",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 416,
+          "name": "Lg Adv Constructor",
+          "role": "capabilities=0x8080; group=-1"
+        },
+        {
+          "kind": "hull",
+          "id": 472,
+          "name": "Sm Adv Constructor",
+          "role": "capabilities=0x8080; group=-1"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 62,
+      "name": "Adv Miner",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 436,
+          "name": "Adv Miner",
+          "role": "capabilities=0x4080; group=-1"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 41,
+      "name": "Hvy Troop Transport",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 493,
+          "name": "Hvy Troop Transport",
+          "role": "capabilities=0x293; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 9,
+      "name": "Upgrade Supremacy",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "station",
+      "id": 107,
+      "name": "Supremacy (Adv)",
+      "asteroidClass": 64,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 488,
+          "name": "Adv Fighter",
+          "role": "capabilities=0x2092; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 70,
+      "name": "PW Gattling Gun 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 72,
+          "name": "PW Gat Gun 3",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 72,
+      "name": "EW Galvonic Blaster",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 111,
+          "name": "EW Galv Blstr",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 73,
+      "name": "EW Disruptor 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 94,
+          "name": "EW Disruptor 3",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 80,
+      "name": "PW Auto-Cannon 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 89,
+          "name": "PW Mini-AC 3",
+          "role": "Weapon"
+        },
+        {
+          "kind": "part",
+          "id": 132,
+          "name": "PW AutoCan 3",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 89,
+      "name": "SRM Dumbfire 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 108,
+          "name": "SRM Dumb 3 QL",
+          "role": "Magazine"
+        },
+        {
+          "kind": "part",
+          "id": 152,
+          "name": "SRM Dumbfire 3",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 106,
+      "name": "Sm Shield 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 42,
+          "name": "Sm Shield 3",
+          "role": "Shield"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 112,
+      "name": "Booster 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 29,
+          "name": "Booster 3",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 128,
+      "name": "Mine Pack 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 14,
+          "name": "Mine Pack 2",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 152,
+      "name": "GA: Missile Track 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 156,
+      "name": "GA: Ripcord 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 158,
+      "name": "GA: Ship Sensors 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 160,
+      "name": "GA: Ship Hull 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 162,
+      "name": "GA: Ship Shield 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 192,
+      "name": "SRM Anti-Base 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 601,
+          "name": "SRM Anti-Base 3",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 221,
+      "name": "Hvy Booster",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 174,
+          "name": "Hvy Booster",
+          "role": "Afterburner"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 122,
+      "name": "EWS Probe 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 16,
+          "name": "EWS Probe 3",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 175,
+      "name": "Fighter/Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 158,
+          "name": "Fighter/Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 194,
+      "name": "Teleport Probe 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 600,
+          "name": "Teleport Probe 2",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 254,
+      "name": "XRM Anti-Base 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 127,
+          "name": "XRM Anti-Base 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 10,
+      "name": "Upgrade Tactical Lab",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "station",
+      "id": 109,
+      "name": "Tactical (Adv)",
+      "asteroidClass": 32,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 486,
+          "name": "Adv Stl Fighter",
+          "role": "capabilities=0x2892; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 138,
+      "name": "GA: Ship Agility 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 140,
+      "name": "GA: Ship Energy 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 142,
+      "name": "GA: EW Range 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 150,
+      "name": "GA: Missile Damage 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 66,
+      "name": "EW Utl Cannon 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 52,
+          "name": "EW Utl Can 3",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 69,
+      "name": "EW Sniper Rifle 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 61,
+          "name": "EW Sniper 2",
+          "role": "Weapon"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 92,
+      "name": "LRM Hunter 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 31,
+          "name": "LRM Hunter 3",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 94,
+      "name": "LRM Killer 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 30,
+          "name": "LRM Killer 2",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 117,
+      "name": "Sig Cloak 3",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 34,
+          "name": "Sig Cloak 3",
+          "role": "Cloak"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 166,
+      "name": "GA: Ship Speed 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 195,
+      "name": "SRM Nerve Gas",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 115,
+          "name": "SRM Nerve Gas",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 247,
+      "name": "EMP Mine 2",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 114,
+          "name": "EMP Mine 2",
+          "role": "Dispenser"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 33,
+      "name": "Stealth Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 150,
+          "name": "Stealth Bomber [NG]",
+          "role": "capabilities=0x89A; group=0"
+        },
+        {
+          "kind": "hull",
+          "id": 420,
+          "name": "Stealth Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    }
+  ]
+}

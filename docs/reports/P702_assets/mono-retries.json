@@ -1,0 +1,74 @@
+[
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+    "run": 1,
+    "exit": 1,
+    "seconds": 4.81,
+    "counters": {
+      "total": "3",
+      "executed": "3",
+      "passed": "2",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    }
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+    "run": 2,
+    "exit": 1,
+    "seconds": 4.78,
+    "counters": {
+      "total": "3",
+      "executed": "3",
+      "passed": "2",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    }
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+    "run": 3,
+    "exit": 1,
+    "seconds": 4.77,
+    "counters": {
+      "total": "3",
+      "executed": "3",
+      "passed": "2",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    }
+  }
+]

@@ -2913,8 +2913,9 @@ private void CompleteStartCountdown(Mission mission, double now)
         // separately (fsmission.cpp:4255-4258; appmsg.cpp:2385-2387).
         // P560 sent base techs in both fields to preserve bucket ids, hiding
         // testUnlock/research from late joiners' shop. Keep that stable bucket
-        // seed in TtbmInitial; buyability must use the actual development mask.
-        var initial = TechTreeBitMask.FromBytes(side.Civilization.TtbmBaseTechs);
+        // seed (including native path permissions) in TtbmInitial; buyability
+        // must use the actual development mask.
+        var initial = side.InitialTechs;
         SendPeer(to, FedPacket.Pack(new[]
         {
             new CreateBuckets
