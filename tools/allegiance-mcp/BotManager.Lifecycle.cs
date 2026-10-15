@@ -209,20 +209,31 @@ internal sealed partial class BotManager
             // purchase retries against an empty wallet during briefing.
             if (!cs.World.WorldReady || cs.World.Mission?.Stage != MissionStageMessage.StageStarted
                 || !cs.World.Ships.TryGetValue(bot.ShipId, out var me)) return true;
+            HandleRelaunchAck(bot, cs);
+            var ack = cs.BuyLoadoutAcks.LastOrDefault();
+            bool isPod = Catalog.IsLifepodHull(me.HullId);
+            // A partial parts grant can still launch the requested hull (the
+            // same warning-only policy as initial spawn). Do not let that one
+            // purchase hide every subsequent death and pod relaunch. The receive
+            // thread may also have consumed an eject/dock after SET_CLUSTER and
+            // before this pass; the launch ACK still completes the initial life.
+            if (bot.RelaunchAttempts > 0 && ack is { FLaunch: true }
+                && IsSuccessorOf(bot.HullId, ack.HullId)
+                && (me.StationId < 0 || isPod) && (me.HullId == ack.HullId || isPod))
+            {
+                bot.MissionLaunchPending = false;
+                bot.RelaunchAttempts = 0;
+                bot.RelaunchAt = double.NegativeInfinity;
+                bot.RelaunchAckHandled = bot.RelaunchExhausted = false;
+                Console.WriteLine($"[p682] bot '{bot.Name}' ship {bot.ShipId} bought and launched next-match hull {ack.HullId}");
+                return false;
+            }
             if (me.StationId >= 0)
             {
                 RelaunchDockedPod(bot, cs, now, prepareFinale: false);
                 return true;
             }
-            HandleRelaunchAck(bot, cs);
-            var ack = cs.BuyLoadoutAcks.LastOrDefault();
-            if (bot.RelaunchAttempts == 0 || ack is null || !ack.FBoughtEverything
-                || !ack.FLaunch || me.HullId != bot.HullId) return true;
-            bot.MissionLaunchPending = false;
-            bot.RelaunchAttempts = 0;
-            bot.RelaunchAt = double.NegativeInfinity;
-            Console.WriteLine($"[p682] bot '{bot.Name}' ship {bot.ShipId} bought and launched next-match hull {me.HullId}");
-            return false;
+            return true;
         }
     }
 

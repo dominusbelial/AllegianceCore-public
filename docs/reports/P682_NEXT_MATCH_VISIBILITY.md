@@ -84,3 +84,124 @@ The checks include each new/changed regression method three times in isolation, 
 The build uses `NUGET_HTTP_CACHE_PATH=/tmp/p682-nuget-cache`, `-p:UseSharedCompilation=false` and `-nodeReuse:false`: the sandbox cannot write the default NuGet cache or use another sandbox's compiler server. No dependency or repository configuration was changed for this.
 
 This is loopback evidence. The clash44b archive and the rig/221/200v200 validation remain in Claude's lane as instructed; they were not run here.
+
+## P682b — maturity after the second match's initial launch
+
+Base: `integ8`, `86770578`. Changes remain in the working tree; no commit or push.
+
+### Reproduction and cause
+
+The final regression was built and run with both production files restored to their
+unmodified `integ8` contents, then with the fix restored. On the original code,
+match 1 completes its three pod cycles and launches a verified finale bomber.
+Match 2 starts, the server buys and launches the original hull, the bots receive
+their ejections, and the server rescues, buys and launches them again. The test
+then fails at **“match 2 cycle 1 counted real pod to relaunch; counters=0,0”**.
+The server relaunch assertion passed before this counter assertion. The focused
+wire/controller tests also fail for partial grants, immediate ejection after a
+complete grant, and the retained finale restoration record; the ordinary complete
+grant control case passes. See [before/after evidence](P682b_assets/proof.json).
+
+`LaunchNextMission` left `MissionLaunchPending` set until `FBoughtEverything`
+was true and the latest own hull still equalled the requested hull. Those tests
+were stricter than the existing spawn policy and actual server launch evidence:
+
+- The real catalogue's Stealth Bomber preferred loadout produces a partial parts
+  grant in this fixture. The server nevertheless sends `FLaunch=true` and actually
+  undocks it. The marker never cleared, so `DriveCombat` returned before
+  `UpdatePodState` on every subsequent pod life. Later purchases still happened
+  through the initial-launch path, which intentionally excludes pod maturity.
+- Even a complete grant can be followed by launch, ejection and docking on the
+  receive thread before the next decision pass. Requiring the latest hull to
+  remain the purchased fighter/bomber can leave the same marker stuck.
+
+The fix consumes the initial launch once its own purchase ACK confirms launch of
+the requested hull or a legitimate successor, and the authoritative own state is
+flying that hull or has already become a pod. An ACK alone while still seated in
+the combat hull's hangar does not complete launch. Refused ACKs remain rejected;
+grant warnings, bounded docked retries and strict finale strike-grant validation
+remain in use. The initial purchase never calls `ResetNewLife` as a reinforcement
+and never increases maturity. Subsequent observed pod → dock → launch cycles use
+the existing normal lifecycle and each increase `CompletedPodCycles` once.
+
+### Rotation audit
+
+| State | Evidence / disposition |
+| --- | --- |
+| Per-bot pod counter and initial-launch marker | All four loopback configurations check zero cycles on each match's initial launch, then exactly 1, 2 and 3 completed cycles per bot in matches 1 and 2. Maturity counts distinct relaunched bots, so its per-side numerator remains 1/1 after the first cycle rather than increasing to 3/1. Wire tests cover complete/partial grants and immediate ejection/docking, including a refused ACK and an ACK arriving before SET_CLUSTER. |
+| Bot identity / run membership | The same MCP bots and TCP sessions survive both rotations. Each match uses a new mission object and a new `FinaleRun`; its existing generation guard rearms only after fresh objectives resolve. Counters are read from those current bots, rather than an old ship-ID set. |
+| Kill window and leader baseline | `RegisterFinale` already creates a fresh kill queue and captures fresh `InitialKills`. Every new run, including match 3, starts with zero recent kills. Real server damage/ejection messages in the common combat sector refill the current run's kill window and satisfy the configured combat floor. |
+| Selected sides / timestamps | Every new run starts armed with no selected sides and null trigger, strike and game-over timestamps. Matches 1 and 2 select the configured side 0, trigger, launch a verified strike and observe game over. |
+| Bomber and escort wings | **Additional bug fixed:** `RestoreFinaleForNextMission` restored the scenario but retained `FinaleOriginal`. `PrepareFinaleRelaunch` therefore returned early on later runs, preventing fresh bomber/escort assignment. Clear that saved record immediately after restoration. The controller regression assigns and restores both roles across two runs; the loopback requires a verified bomber launch in match 2. New-run reservation, assignment and escort counts start at zero. |
+| Station objectives | Each run resolves its target side, station and sector against the current mission. This map legitimately reuses station IDs across rotations, so the loopback checks fresh mission/run objects and current station membership rather than assuming IDs change. The existing rearm regression separately replaces the station IDs and requires the new objectives. New-run target-death timestamps start empty. |
+
+The loopback extends the P682 fixture: real `McpTools.Handle("spawn_scenario")`,
+`BotManager`, TCP clients and P660 automatic intermission/reseat/ready/countdown.
+It uses two real bomber bots, all-tech shop visibility for a fully verified strike
+loadout, a 100% relaunch threshold and a one-kill floor. For repeatability it holds
+both combatants far apart in the same sector, applies lethal enemy ship damage
+through `Ship.ReceiveDamage`, and accelerates pod travel by invoking the production
+station-rescue path. It does not set maturity counters, bot pod flags, run trigger
+timestamps or finale wings. After the controller triggers and launches the strike,
+the existing P682 lethal-base-damage helper follows station removal, site events,
+conquest and elimination to game over. The test never calls `DeclareGameOver`.
+Both match endings are accelerated this way; match 3 must start automatically
+and rearm with empty run state. This is lifecycle/rotation evidence, not a timed
+full-map bomber flight or a rig battle.
+
+### Native source rules
+
+All native references below were read locally and are relative to
+`~/Development/Allegiance/src/`. Finale maturity and wing selection are MCP policy.
+
+| Native rule | Native file:line |
+| --- | --- |
+| BUY_LOADOUT requires a docked, non-ghost player with a valid side and no parent. | `FedSrv/FedSrv.CPP:6153`, `FedSrv/FedSrv.CPP:6160`, `FedSrv/FedSrv.CPP:6172` |
+| PurchaseShipLoadout returns whether everything was bought; the ACK separately carries bought-everything and actual launch flags. Native computes launch as requested AND fully bought, then clears the station on launch. | `FedSrv/FedSrv.CPP:6189`, `FedSrv/FedSrv.CPP:6247`, `FedSrv/FedSrv.CPP:6258`, `FedSrv/FedSrv.CPP:6282`, `FedSrv/FedSrv.CPP:6291` |
+| Ejection swaps the same player's ship to the civilization lifepod; true death can restart the pod docked at a friendly restart station. | `FedSrv/FedSrv.CPP:11917`, `FedSrv/FedSrv.CPP:11942`, `FedSrv/FedSrv.CPP:12034`, `FedSrv/FedSrv.CPP:12052`, `FedSrv/FedSrv.CPP:12064` |
+| Rescue resolves a friendly restart station and docks the rescued player. | `FedSrv/FedSrv.CPP:13066`, `FedSrv/FedSrv.CPP:13076` |
+| Lethal station damage raises KillStationEvent; game over resets side readiness/activity/money and mission state, then arms automatic restart. | `Igc/stationIGC.cpp:189`, `FedSrv/FedSrv.CPP:12237`, `FedSrv/fsmission.cpp:3493`, `FedSrv/fsmission.cpp:3524`, `FedSrv/fsmission.cpp:3539` |
+
+The port already permits a partially bought loadout to launch in
+`Server.ShipCommands.cs` (`ApplyLoadout`, ACK construction and `PerformUndock`).
+That differs from native's bought-everything launch gate above. P682b does not
+change that server policy: the MCP now honors its own launch ACK plus actual own
+state, consistently with the existing partial-grant warning policy at spawn.
+It does not claim that native launches partial purchases.
+
+### Verification
+
+Final results are recorded in [the invocation ledger](P682b_assets/results.json),
+with concise before/after lifecycle evidence in [proof.json](P682b_assets/proof.json).
+Raw build/test logs and TRX files are retained under `/tmp/p682b-validation/`.
+The final solution build passed with **0 warnings and 0 errors**.
+
+| Final check | Result |
+| --- | --- |
+| Solution build | 0 warnings, 0 errors |
+| New/affected methods, each three times in isolation | 19 methods / 32 parameter cases × 3 = **96 passed**, zero failures or skips |
+| Additional enabled local P660 15v15 MCP showcase | **3/3 isolated passes**, also passed in the full ClientCore run |
+| Core, unfiltered | **4,555 passed**, zero failures or skips |
+| ClientCore, unfiltered, local P660 15v15 showcase enabled | **1,010 passed**, zero failures or skips |
+| MonoGame, unfiltered | **2,186 passed**, zero failures; 3 existing optional Meshy-pack skips |
+
+That is **99 passing focused case executions** and **7,751 passing full-suite
+cases**. There were no suite failures to isolate or classify as load flakes, so
+`docs/TEST_FLAKES.md` did not need an entry. The 19 directly affected methods ran
+before the three sequential suites; the additional isolated showcase repetitions
+ran afterward, on the same built production/test tree. The reproduction runner
+includes that showcase with the other focused methods before the suites.
+
+Reproduce after building the solution:
+
+```sh
+NUGET_HTTP_CACHE_PATH=/tmp/p682b-nuget-cache dotnet build AllegianceCore.slnx \
+  -p:UseSharedCompilation=false -nodeReuse:false
+python3 docs/reports/P682b_assets/validate.py
+```
+
+The runner executes each new/affected method three times in isolation, including
+all port/native × pipeline off/on cases, then unfiltered Core, ClientCore and
+MonoGame sequentially. It enables the local P660 15v15 showcase. Any suite failure
+is rerun three times by exact method for the brief's load-flake classification.
+Rig/221/200v200 checks remain in Claude's lane and were not run here.
