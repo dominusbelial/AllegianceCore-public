@@ -77,6 +77,7 @@ public sealed partial class Server
             bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
             bool isVisibleTeammate = !isShooter
                                      && kv.Value.Ship.SideId == shooterSide
+                                     && kv.Value.Sector == p.OwnerSector   // 2026-10-15 — sector-scoped (see PeerInSector)
                                      && _teammateExportSent.Contains((kv.Key, shooter.Id));
             if (isShooter || isVisibleTeammate)
             {
@@ -94,12 +95,24 @@ public sealed partial class Server
         // opponent now sees the bullet fire in real time, not just its damage.
         foreach (var (conn, _) in CrossSideViewers(shooter, p.OwnerSector))
         {
+            if (!PeerInSector(conn, p.OwnerSector)) continue;   // 2026-10-15 — sector-scoped (see PeerInSector)
             SendPeer(conn, packet);
             n++;
         }
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
                                                   $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} peer(s) (same-side + cross-side)");
     }
+
+    /// <summary>2026-10-15 — fire and hit relays are scoped to the shooter's sector.
+    /// Native has no server projectile broadcast at all (FM_CS_PROJECTILE_INSTANCE is
+    /// client→server, Inc/Messages.h:131): each native client simulated fire for the
+    /// ships of its OWN cluster. The port's relay used side-wide audiences (every
+    /// teammate holding the shooter's export; every connection of a side with any
+    /// peer in the sector), so a peer in another sector received the shots too and the
+    /// distance-only client draw put them at the same coordinates in the viewer's
+    /// sector — the "ghost battles" seen in every sector (Domingo, clash51).</summary>
+    private bool PeerInSector(ConnectionId conn, Sector sector)
+        => _peerShips.TryGetValue(conn, out var ps) && ps.Sector == sector;
 
     /// <summary>
     /// Handle a projectile that just struck a damagable target
@@ -152,6 +165,7 @@ public sealed partial class Server
             bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
             bool isVisibleTeammate = !isShooter
                                      && kv.Value.Ship.SideId == shooterSide
+                                     && kv.Value.Sector == p.OwnerSector   // 2026-10-15 — sector-scoped (see PeerInSector)
                                      && _teammateExportSent.Contains((kv.Key, shooter.Id));
             if (isShooter || isVisibleTeammate)
             {
@@ -164,6 +178,7 @@ public sealed partial class Server
         // same sector now sees the impact spark at the real point/normal too.
         foreach (var (conn, _) in CrossSideViewers(shooter, p.OwnerSector))
         {
+            if (!PeerInSector(conn, p.OwnerSector)) continue;   // 2026-10-15 — sector-scoped (see PeerInSector)
             SendPeer(conn, packet);
             n++;
         }
@@ -383,6 +398,7 @@ public sealed partial class Server
             bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
             bool isVisibleTeammate = !isShooter
                                      && kv.Value.Ship.SideId == shooterSide
+                                     && kv.Value.Sector == m.OwnerSector   // 2026-10-15 — sector-scoped (see PeerInSector)
                                      && _teammateExportSent.Contains((kv.Key, shooter.Id));
             if (isShooter || isVisibleTeammate)
             {
@@ -399,6 +415,7 @@ public sealed partial class Server
         // spawn.
         foreach (var (conn, _) in CrossSideViewers(shooter, m.OwnerSector))
         {
+            if (!PeerInSector(conn, m.OwnerSector)) continue;   // 2026-10-15 — sector-scoped (see PeerInSector)
             SendPeer(conn, packet);
             n++;
         }
@@ -451,6 +468,7 @@ public sealed partial class Server
             bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
             bool isVisibleTeammate = !isShooter
                                      && kv.Value.Ship.SideId == shooterSide
+                                     && kv.Value.Sector == m.OwnerSector   // 2026-10-15 — sector-scoped (see PeerInSector)
                                      && _teammateExportSent.Contains((kv.Key, shooter.Id));
             if (isShooter || isVisibleTeammate)
             {
@@ -465,6 +483,7 @@ public sealed partial class Server
         // leftover entity.
         foreach (var (conn, _) in CrossSideViewers(shooter, m.OwnerSector))
         {
+            if (!PeerInSector(conn, m.OwnerSector)) continue;   // 2026-10-15 — sector-scoped (see PeerInSector)
             SendPeer(conn, packet);
             targets.Add(conn);
             n++;

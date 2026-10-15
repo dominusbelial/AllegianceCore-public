@@ -412,4 +412,68 @@ public sealed class CrossSideCombatVisibilityLiveTests
         Console.WriteLine($"P375-WARP: cross-side bravo {bravoId} SectorId stayed correct across warp " +
                           $"(re-stamped to {View.Of(alpha).Ships[bravoId].SectorId} on return, IsGone cleared)");
     }
+
+    /// <summary>2026-10-15 — "ghost battles in every sector" (Domingo, clash51): fire and
+    /// missile relays must be scoped to the shooter's sector. A same-side teammate and a
+    /// cross-side watcher in ANOTHER sector must receive none of the shooter's projectiles
+    /// or missiles, while the cross-side target in the shooter's own sector still does.
+    /// Native has no server projectile broadcast (FM_CS_PROJECTILE_INSTANCE is client→server,
+    /// Inc/Messages.h:131); each client simulated fire for its own cluster only.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Fire_is_not_relayed_to_peers_in_other_sectors()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        int placed = 0;
+        SetShipSpawner(server, (core, mission, id) =>
+        {
+            var hull = core.HullTypes.Values.First(h => h.MaxAmmo > 0 && h.CapacityMagazine >= 100);
+            var s0 = mission.Sectors[0];
+            var s1 = mission.Sectors[1];
+            var (side, pos, sector) = placed switch
+            {
+                0 => (mission.Sides[0].Id, Vector3.Zero, s0),                    // Alpha shooter
+                1 => (mission.Sides[1].Id, new Vector3(250f, 0f, 0f), s0),      // Bravo target, same sector
+                2 => (mission.Sides[0].Id, Vector3.Zero, s1),                    // Alpha teammate, OTHER sector
+                _ => (mission.Sides[1].Id, new Vector3(250f, 0f, 0f), s1),      // Bravo watcher, OTHER sector
+            };
+            placed++;
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity) { SideId = side };
+            mission.PlaceShip(ship, sector);
+            return (ship, sector);
+        });
+
+        server.Boot(Config("Sector-scoped fire"));
+        foreach (var m in server.Missions) m.Stage = MissionStage.Started;
+
+        using var shooter = Connect(server, "AlphaShooter", 90000000000000011ul);
+        using var target = Connect(server, "BravoTarget", 90000000000000012ul);
+        using var mate = Connect(server, "AlphaMateElsewhere", 90000000000000013ul);
+        using var watcher = Connect(server, "BravoWatcherElsewhere", 90000000000000014ul);
+        int seated = PumpUntil(server, () => shooter.World.MyShipId is { } && target.World.MyShipId is { }
+            && mate.World.MyShipId is { } && watcher.World.MyShipId is { }, 4000);
+        Assert.True(seated < 4000, "all four peers seated");
+
+        var shooterServer = ServerShip(server, shooter.World.MyShipId!.Value)!;
+        var targetServer = ServerShip(server, target.World.MyShipId!.Value)!;
+        Assert.NotSame(ServerShip(server, mate.World.MyShipId!.Value)!.Sector, shooterServer.Sector);
+        ArmShooter(shooterServer, shooterServer.Mission!.Core, targetServer);
+        shooter.SendFireMissile();
+
+        int sawProjectile = PumpUntil(server, () => View.Of(target).Projectiles.Count > 0, 4000);
+        Assert.True(sawProjectile < 4000, "positive control: the target in the shooter's sector sees the fire");
+        PumpUntil(server, () => false, 200);   // keep firing for a while
+
+        Assert.Empty(View.Of(mate).Projectiles);
+        Assert.Empty(View.Of(watcher).Projectiles);
+        // Missile tracking (MISSILE_UPDATE) is side-wide by design and carries ClusterId;
+        // the client draws only its own sector's missiles. None may be in the viewer's sector.
+        foreach (var peer in new[] { mate, watcher })
+        {
+            var v = View.Of(peer);
+            short own = v.Ships[peer.World.MyShipId!.Value].SectorId;
+            Assert.DoesNotContain(v.Missiles.Values, mm => mm.ClusterId == own);
+        }
+    }
 }
