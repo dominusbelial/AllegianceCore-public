@@ -94,12 +94,13 @@ public class DockLoadoutLiveTests
     private static (Ship Ship, Sector Sector) SpawnDocked(
         StaticCore core, Mission mission, short shipId, out short stationId)
     {
-        var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        // H-07: the fixture purchases a real gun at hardpoint zero.
+        var hull = EconomyLoadoutTestSetup.WeaponHull(core);
         var st = mission.Sectors.SelectMany(s => s.Stations).First(s => s.SideId >= 0);
         var sector = mission.Sectors.First(s => s.Stations.Contains(st));
         var ship = new Ship(shipId, hull, StationPos(st) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
         {
-            SideId = st.SideId,
+            SideId = st.SideId, StationId = st.StationId,
         };
         mission.PlaceShip(ship, sector);
         stationId = st.StationId;
@@ -277,6 +278,7 @@ public class DockLoadoutLiveTests
 
         // A genuinely non-empty request: a real weapon part on mount 0.
         var requested = RealWeaponPart();
+        EconomyLoadoutTestSetup.Sell(server.Missions[0], server.Missions[0].Core.PartTypes[requested.PartId]);
         session.SendBuyLoadout(hull, fLaunch: false, parts: new[] { requested });
 
         // The ACK mounts the real part, so ShipEntity.Loadout becomes non-empty.

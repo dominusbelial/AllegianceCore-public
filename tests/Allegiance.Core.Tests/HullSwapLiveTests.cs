@@ -64,19 +64,16 @@ public class HullSwapLiveTests
     private static Vector3 StationPos(DataStationIGC st) =>
         new(st.Position[0], st.Position[1], st.Position[2]);
 
-    private static (Ship Ship, Sector Sector) SpawnUndocked(Mission mission, short shipId, out DataStationIGC station)
+    private static (Ship Ship, Sector Sector) SpawnDocked(Mission mission, short shipId, out DataStationIGC station)
     {
-        // P441: the hull-swap tests exercise swap MECHANICS (in-place hull
-        // change, physics, part-drop), not shop/tech legality — so the ship is
-        // spawned UNDOCKED in a station-less sector (no station ⇒ no tech gate),
-        // and the wallet is funded so the unconditional P441 pricing never
-        // refuses the swap. Seat it on the garrison's side so it's a real member.
+        // H-06: physics/loadout tests buy at a real station. Selected shop
+        // records below are made sellable explicitly instead of bypassing tech in flight.
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var st = mission.Sectors.SelectMany(s => s.Stations).First(s => s.SideId >= 0);
-        var sector = mission.Sectors.First(s => !s.Stations.Any(ss => ss.SideId >= 0));
-        var ship = new Ship(shipId, hull, new Vector3(0f, 942f, 968f), Vector3.Zero, Orientation.Identity)
+        var sector = mission.Sectors.First(s => s.Stations.Contains(st));
+        var ship = new Ship(shipId, hull, StationPos(st), Vector3.Zero, Orientation.Identity)
         {
-            SideId = st.SideId,
+            SideId = st.SideId, StationId = st.StationId,
         };
         mission.PlaceShip(ship, sector);
         station = st;
@@ -97,7 +94,7 @@ public class HullSwapLiveTests
     {
         Require.Artwork();
         using var server = new Srv();
-        server.ShipSpawner = (core, mission, shipId) => SpawnUndocked(mission, shipId, out _);
+        server.ShipSpawner = (core, mission, shipId) => SpawnDocked(mission, shipId, out _);
 
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
@@ -113,7 +110,7 @@ public class HullSwapLiveTests
 
         // Pick a genuinely different hull (highest HullId vs the spawn's lowest).
         var mission = ship.Mission!;
-        var targetHull = mission.Core.HullTypes.Values.OrderByDescending(h => h.HullId).First();
+        var targetHull = EconomyLoadoutTestSetup.Sell(mission, mission.Core.HullTypes.Values.Where(h => h.GroupId >= 0).OrderByDescending(h => h.HullId).First());
         Assert.NotEqual(ship.HullType.HullId, targetHull.HullId);
         Assert.NotEqual(ship.Mass, targetHull.Mass);   // sanity: the two hulls really differ physically
 
@@ -171,7 +168,7 @@ public class HullSwapLiveTests
     {
         Require.Artwork();
         using var server = new Srv();
-        server.ShipSpawner = (core, mission, shipId) => SpawnUndocked(mission, shipId, out _);
+        server.ShipSpawner = (core, mission, shipId) => SpawnDocked(mission, shipId, out _);
 
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
@@ -197,9 +194,9 @@ public class HullSwapLiveTests
         foreach (var p in mission.Core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon))
         {
             DataHullTypeIGC? a = null, b = null;
-            foreach (var h in mission.Core.HullTypes.Values)
+            foreach (var h in mission.Core.HullTypes.Values.Where(h => h.GroupId >= 0))
             {
-                if (h.CanMountPart(p)) a ??= h;
+                if (h.CanMountPart(p, 0)) a ??= h;
                 else b ??= h;
             }
             if (a.HasValue && b.HasValue)
@@ -212,6 +209,10 @@ public class HullSwapLiveTests
             }
         }
         Assert.True(found, "no (part, fits-hull, nonfits-hull) triple exists in PCore001");
+
+        fitHull = EconomyLoadoutTestSetup.Sell(mission, fitHull);
+        incompatibleHull = EconomyLoadoutTestSetup.Sell(mission, incompatibleHull);
+        droppingPart = EconomyLoadoutTestSetup.Sell(mission, droppingPart);
 
         // (1) Swap onto fitHull with the part in the request — it mounts
         //     (that hull CanMount it): the ACK tail has it.

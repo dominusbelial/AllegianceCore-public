@@ -176,7 +176,8 @@ public sealed class CrossSideCombatVisibilityLiveTests
         Sector? s0 = null; Vector3 bravoSpawn = default;
         SetShipSpawner(server, (core, mission, id) =>
         {
-            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // H-08: this combat fixture needs gun ammo and missile capacity.
+            var hull = core.HullTypes.Values.First(h => h.MaxAmmo > 0 && h.CapacityMagazine >= 100);
             s0 = mission.Sectors[0];
             if (placed == 0)   // Alpha watcher at the origin
             {
@@ -266,7 +267,8 @@ public sealed class CrossSideCombatVisibilityLiveTests
         Sector? s0 = null;
         SetShipSpawner(server, (core, mission, id) =>
         {
-            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // H-08: this combat fixture needs gun ammo and missile capacity.
+            var hull = core.HullTypes.Values.First(h => h.MaxAmmo > 0 && h.CapacityMagazine >= 100);
             s0 = mission.Sectors[0];
             short side = mission.Sides[0].Id;   // BOTH on Alpha
             var pos = new Vector3(placed * 250f, 0f, 0f);
@@ -320,7 +322,8 @@ public sealed class CrossSideCombatVisibilityLiveTests
 
         SetShipSpawner(server, (core, mission, id) =>
         {
-            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // H-08: this combat fixture needs gun ammo and missile capacity.
+            var hull = core.HullTypes.Values.First(h => h.MaxAmmo > 0 && h.CapacityMagazine >= 100);
             hullLen = hull.Length;
             var s0 = mission.Sectors[0];
             sec0 = s0;

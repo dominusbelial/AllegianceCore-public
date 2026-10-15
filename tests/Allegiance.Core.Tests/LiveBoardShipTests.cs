@@ -354,7 +354,7 @@ public class LiveBoardShipTests
 
     /// <summary>⭐ Scenario 1+4 together: a docked ship boards another's real,
     /// equipped turret slot — ParentShip/TurretId set, appears in the target's
-    /// child list, money refunded to the side treasury, and <b>no dedicated ack
+    /// child list, paid hardware refunded to the personal wallet, and <b>no dedicated ack
     /// message</b> (no BOARD_NACK, no LEAVE_SHIP) — the boarded state arrives
     /// only via the existing SHIP_STATUS(90) refresh (State=c_ssTurret,
     /// ParentId=carrier). Then it leaves (sidParent=NA): parent/turret cleared,
@@ -370,6 +370,10 @@ public class LiveBoardShipTests
 
         var side = sp.Boarder.Mission!.Sides.First(s => s.Id == sp.Boarder.SideId!.Value);
         long moneyBefore = side.Money;
+        // H-03: explicitly paid fixture; free spawn hulls cannot be sold.
+        sp.Boarder.RefundableHullValue = sp.Boarder.HullType.Price;
+        var live = server.Ships.Single(l => l.Ship == sp.Boarder);
+        int walletBefore = live.Wallet.Money;
 
         // ── board ──
         boarder.SendBoard(cId);
@@ -380,13 +384,14 @@ public class LiveBoardShipTests
         Assert.Equal((short)2, sp.Boarder.TurretId);          // slot 2 (the equipped one)
         Assert.Contains(sp.Carrier.ChildShips, c => ReferenceEquals(c, sp.Boarder));
 
-        // Money refunded: the boarder surrenders hull 504 = 500 credits, deposited
-        // into the side treasury. Read inside a tight tick window (the board pump
+        // H-03: the paid boarder hull refunds 500 credits to its owner.
+        // The side treasury is unchanged. Read inside a tight tick window (the board pump
         // above returns the moment ParentShip is set, well before the 60 s = 1200
         // tick payday accrual), so the only writer to side.Money here is the refund.
         long moneyAfter = side.Money;
         Assert.True(moneyAfter >= moneyBefore, "money went backwards");
-        Assert.Equal(moneyBefore + 500, moneyAfter);          // hull 504 price (no parts on the boarder)
+        Assert.Equal(moneyBefore, moneyAfter);
+        Assert.Equal(walletBefore + 500, live.Wallet.Money);          // hull 504 price (no parts on the boarder)
 
         // Negative proof: NO dedicated success ack. Neither a BOARD_NACK(178)
         // nor a LEAVE_SHIP(94) nor any other frame arrives at the boarder as a
@@ -417,7 +422,7 @@ public class LiveBoardShipTests
         Assert.Contains(carrier.Leaves, l => l.SidChild == bId);
         Assert.Contains(boarder.Leaves, l => l.SidChild == bId);
 
-        Console.WriteLine($"BOARD-LIVE: ship {bId} boarded {cId} slot 2 (refund 500 to side {side.Id}), then left -> LEAVE_SHIP(94) sidChild={bId} on both peers");
+        Console.WriteLine($"BOARD-LIVE: ship {bId} boarded {cId} slot 2 (refund 500 to personal wallet on side {side.Id}), then left -> LEAVE_SHIP(94) sidChild={bId} on both peers");
     }
 
     /// <summary>⭐ Scenario 2: boarding a ship with turret slots but NO free

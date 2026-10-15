@@ -140,9 +140,14 @@ public class P641FlightPartsSimTests
         Require.Artwork();
         var m = Mission();
         var ship = Ship(m, 100, 0);
+        var chaff = m.Core.ChaffTypes.Values.First();
+        if (launcher)
+            // This test transfers ten real rounds; native launcher quantities
+            // obey hull capacity / expendable size (launchertypeigc.h:130-145).
+            ship.ChangeHull(ship.HullType with { CapacityChaffLauncher = checked((short)(10 * Math.Max(1, (int)chaff.LauncherExpendableSize))) });
         var weapon = m.Core.PartTypes.Values.First(p => p.Type is DataPartTypeIGC.Weapon { CAmmoPerShot: > 0 }
             && InFlightPartRules.CanMount(ship.HullType, p, 0));
-        var part = launcher ? weapon with { Type = new DataPartTypeIGC.ChaffLauncher(m.Core.ChaffTypes.Values.First().ExpendableTypeId), PartMask = 0 } : weapon;
+        var part = launcher ? weapon with { Type = new DataPartTypeIGC.ChaffLauncher(chaff.ExpendableTypeId), PartMask = 0 } : weapon;
         ship.MountPart(part, 2, 0, 255);
         var cargo = launcher ? part : weapon with { PartId = 904, Type = new DataPartTypeIGC.Pack(0, 10) };
         Assert.True(ship.TryMountCargoPart(cargo, 10, -1, 0));

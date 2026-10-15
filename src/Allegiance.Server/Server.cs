@@ -579,6 +579,9 @@ public sealed partial class Server : IDisposable
     /// known hull + spawn so the independent trajectory reference shares them.
     /// </summary>
     internal Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)>? ShipSpawner;
+    // Built-in debug arenas are production spawn policies too. Keep the
+    // delegate identity so a test replacing the hook still controls placement.
+    private Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)>? _hangarShipSpawner;
 
     /// <summary>The game worlds, in config order.</summary>
     public IReadOnlyList<Mission> Missions => _missions ?? throw new InvalidOperationException("Boot() first");

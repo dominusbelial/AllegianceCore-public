@@ -28,14 +28,9 @@ namespace Allegiance.Core.Tests;
 ///   (3b) a tech-gated part is skipped (FBoughtEverything false) while a
 ///       sellable part is still mounted;
 ///   (4) a downgrade refunds the buyer (dMoney > 0).
-/// COST CONTROL against PCore001: the garage's default (base-tech) garrison
-/// sells only PRICE-0 starter equipment (PCore001: the six garrison-sellable
-/// hulls and all fifteen garrison-sellable parts are free). A positive-cost
-/// purchase therefore requires an item the tech gate would refuse while
-/// docked — so scenarios (1),(2),(4) run the buyer UNDOCKED (no station ⇒ no
-/// tech gate; pricing/funds are unconditional), while the tech-gate scenarios
-/// (3a),(3b) run the buyer DOCKED at the garrison. All prices are read from
-/// the LIVE core at run time, never hard-coded.
+/// Pricing fixtures buy DOCKED (H-06, FedSrv.CPP:6153-6172), with selected
+/// shop records explicitly sellable. Launcher pricing is per clamped round
+/// (H-08, magazineigc.h:85-88); downgrade credit is explicitly paid (H-03).
 ///
 /// IMPORTANT harness detail: the two bots seat in NON-deterministic order
 /// (async logon), so the spawner's call order does NOT map to buyer-vs-mate.
@@ -114,7 +109,7 @@ public sealed class BuyLoadoutPricingLiveTests
     private static int ValueOf(Srv server, short shipId)
     {
         var ship = LiveShip(server, shipId);
-        return ship.HullType.Price + ship.Parts.Sum(p => p.Type.Price);
+        return ship.RefundableHullValue + ship.Parts.Sum(p => p.FreeSpawn ? 0 : p.Type.Price * (p.EquipmentType is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher ? p.Amount : 1));
     }
 
     private static void ConnectAndIdentify(Harness h)
@@ -160,7 +155,7 @@ public sealed class BuyLoadoutPricingLiveTests
     /// <summary>Spawn on the PRICIEST hull so a strictly cheaper hull always
     /// exists for the downgrade test.</summary>
     private static Func<Mission, short> PriciestHull =>
-        m => m.Core.HullTypes.Values.OrderByDescending(h => h.Price).First().HullId;
+        m => m.Core.HullTypes.Values.Where(h => h.GroupId >= 0).OrderByDescending(h => h.Price).First().HullId;
 
     /// <summary>Both bots on the friendly side, BOTH DOCKED inside the garrison's
     /// DockRadius (the P441 tech gate runs on a docked buyer). Whichever bot is
@@ -179,7 +174,7 @@ public sealed class BuyLoadoutPricingLiveTests
             var sector = mission.Sectors.First(s => s.Stations.Contains(station));
             var ship = new Ship(id, core.HullTypes[hullId],
                 StationPos(station) + new Vector3(25f + 20f * n++, 0f, 0f), Vector3.Zero, Orientation.Identity)
-            { SideId = station.SideId };
+            { SideId = station.SideId, StationId = station.StationId };
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };
@@ -191,35 +186,6 @@ public sealed class BuyLoadoutPricingLiveTests
         return h;
     }
 
-    /// <summary>Both bots UNDOCKED in a station-less sector on the friendly side
-    /// (no tech gate). MONEY_CHANGE is side-scoped, so the undocked mate still
-    /// receives it. Used for the pricing scenarios.</summary>
-    private static Harness BootUndocked(Func<Mission, short> chooseHull)
-    {
-        var h = new Harness { Server = new Srv() };
-        h.Server.Boot(Config());
-        foreach (var m in h.Server.Missions) m.Stage = MissionStage.Started;
-        StopPayday(h.Server);
-        short hullId = chooseHull(h.Server.Missions[0]);
-        int n = 0;
-        h.Server.ShipSpawner = (core, mission, id) =>
-        {
-            var garrison = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
-            var lonerSector = mission.Sectors.First(s => !s.Stations.Any(st => st.SideId >= 0));
-            var ship = new Ship(id, core.HullTypes[hullId],
-                new Vector3(0f + 40f * n++, 956f, 978f), Vector3.Zero, Orientation.Identity)
-            { SideId = garrison.SideId };
-            mission.PlaceShip(ship, lonerSector);
-            return (ship, lonerSector);
-        };
-        ConnectAndIdentify(h);
-        // Both must stay undocked (station-less sector ⇒ no dock-radius latch).
-        int settle = PumpUntil(h.Server,
-            () => LiveShip(h.Server, h.BuyerId).StationId is null && LiveShip(h.Server, h.MateId).StationId is null, 2000);
-        if (settle >= 2000) throw new InvalidOperationException("buyer/mate unexpectedly docked");
-        return h;
-    }
-
     /// <summary>A paid hull, optionally paired with a real paid launcher it
     /// can mount (proving the launcher's real price flows through ShipValue).</summary>
     private static (DataHullTypeIGC hull, DataPartTypeIGC? launcher) PaidHullPair(StaticCore core)
@@ -228,11 +194,11 @@ public sealed class BuyLoadoutPricingLiveTests
         {
             if (!core.TryBuildExpendableLauncher(launcherId, out var lp) || lp.Price <= 0) continue;
             var hull = core.HullTypes.Values
-                .Where(h => h.Price > 0 && h.CanMountPart(lp))
+                .Where(h => h.GroupId >= 0 && h.Price > 0 && h.CanMountPart(lp, 0))
                 .OrderBy(h => h.Price).FirstOrDefault();
             if (hull.HullId != 0) return (hull, lp);
         }
-        var anyPaid = core.HullTypes.Values.Where(h => h.Price > 0).OrderBy(h => h.Price).First();
+        var anyPaid = core.HullTypes.Values.Where(h => h.GroupId >= 0 && h.Price > 0).OrderBy(h => h.Price).First();
         return (anyPaid, null);
     }
 
@@ -272,14 +238,17 @@ public sealed class BuyLoadoutPricingLiveTests
     public void Funded_Paid_Purchase_Charges_Exact_Delta_And_Broadcasts_SideWide()
     {
         Require.Artwork();
-        using var h = BootUndocked(FreeHull);
+        using var h = BootDocked(FreeHull);
         short buyerId = h.BuyerId;
-        Assert.Null(LiveShip(h.Server, buyerId).StationId);   // undocked → no tech gate
+        Assert.NotNull(LiveShip(h.Server, buyerId).StationId);
         var core = h.Server.Missions[0].Core;
 
         int oldVal = ValueOf(h.Server, buyerId);   // = free hull's price (0)
         var (hull, launcher) = PaidHullPair(core);
-        int launcherPrice = launcher?.Price ?? 0;
+        hull = EconomyLoadoutTestSetup.Sell(h.Server.Missions[0], hull);
+        if (launcher is { } lp) launcher = EconomyLoadoutTestSetup.Sell(h.Server.Missions[0], lp);
+        int rounds = launcher is { } ammo ? Ship.ClampPartAmount(hull, core, ammo, 5) : 0;
+        int launcherPrice = (launcher?.Price ?? 0) * rounds;
         int expectedCost = (hull.Price + launcherPrice) - oldVal;
         Assert.True(expectedCost > 0, $"expected a positive cost, got {expectedCost}");
 
@@ -317,13 +286,13 @@ public sealed class BuyLoadoutPricingLiveTests
     public void Unfunded_Buyer_Refused_ShipUnchanged_NoMoneyChange()
     {
         Require.Artwork();
-        using var h = BootUndocked(FreeHull);
+        using var h = BootDocked(FreeHull);
         short buyerId = h.BuyerId;
         var core = h.Server.Missions[0].Core;
 
         short beforeHull = LiveShip(h.Server, buyerId).HullType.HullId;
         int beforeVal = ValueOf(h.Server, buyerId);
-        var paidHull = core.HullTypes.Values.Where(hh => hh.Price > 0).OrderBy(hh => hh.Price).First();   // cost > 0
+        var paidHull = EconomyLoadoutTestSetup.Sell(h.Server.Missions[0], core.HullTypes.Values.Where(hh => hh.GroupId >= 0 && hh.Price > 0).OrderBy(hh => hh.Price).First());   // cost > 0
         Assert.True(paidHull.Price > beforeVal, "need a paid hull strictly above the free spawn hull");
 
         Assert.Equal(0, WalletOf(h.Server, buyerId));
@@ -438,12 +407,13 @@ public sealed class BuyLoadoutPricingLiveTests
     public void Downgrade_Refunds_Buyer()
     {
         Require.Artwork();
-        using var h = BootUndocked(PriciestHull);
+        using var h = BootDocked(PriciestHull);
         short buyerId = h.BuyerId;
         var core = h.Server.Missions[0].Core;
 
-        int oldVal = ValueOf(h.Server, buyerId);   // priciest hull's price
-        var cheapest = core.HullTypes.Values.OrderBy(hh => hh.Price).First();
+        LiveShip(h.Server, buyerId).RefundableHullValue = LiveShip(h.Server, buyerId).HullType.Price;
+        int oldVal = ValueOf(h.Server, buyerId);   // explicitly paid trade-in
+        var cheapest = EconomyLoadoutTestSetup.Sell(h.Server.Missions[0], core.HullTypes.Values.Where(hh => hh.GroupId >= 0).OrderBy(hh => hh.Price).First());
         Assert.True(cheapest.Price < oldVal, "need a hull strictly cheaper than the priciest");
 
         int expectedRefund = oldVal - cheapest.Price;   // = -cost

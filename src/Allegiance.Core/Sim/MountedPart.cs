@@ -27,6 +27,10 @@ public sealed class MountedPart : IPartIgc
     /// <summary>The wire <c>partID</c> — copied from <see cref="Type"/>.PartId at mount time.</summary>
     public required short PartId { get; init; }
 
+    /// <summary>Server-granted spawn hardware has no purchase cost to refund.
+    /// This provenance follows the part through cargo moves and quantity edits.</summary>
+    public bool FreeSpawn { get; init; }
+
     /// <summary>The wire <c>amount</c> the owner requested for this part (copied from the request). For a realized weapon this is bookkeeping only; the live ammo lives on <see cref="Ship.Ammo"/>.</summary>
     public required short Amount { get; init; }
 

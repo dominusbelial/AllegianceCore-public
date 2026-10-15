@@ -143,8 +143,11 @@ public class LiveChatSectorWireTests
         Assert.Equal(2, inCeto.Length);     // one Alpha + one Beta
         Assert.Equal(3, inFarout.Length);   // two Alpha + one Beta
 
-        var faroutOpponent = inFarout.First(t => t.live.Ship.SideId != inFarout[0].live.Ship.SideId); // the lone Beta
-        var alphas = inFarout.Where(t => t.live.Ship.SideId != faroutOpponent.live.Ship.SideId).ToArray();
+        // Socket receipt order need not match InjectLayout's spawn order.
+        // Resolve the declared two-Alpha/one-Beta layout by authoritative side.
+        var mission = server.Missions[0];
+        var faroutOpponent = Assert.Single(inFarout, t => t.live.Ship.SideId == mission.Sides[1].Id);
+        var alphas = inFarout.Where(t => t.live.Ship.SideId == mission.Sides[0].Id).ToArray();
         Assert.Equal(2, alphas.Length);
         var sender = alphas[0];                                        // a Farout Alpha
         short senderId = sender.live.Ship.Id;

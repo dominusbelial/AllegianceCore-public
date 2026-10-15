@@ -137,7 +137,16 @@ public class AddPartTests
 
     private static FltBot[] Seat(Srv server, params string[] names)
     {
-        var bots = names.Select(name => { var b = new FltBot(); b.Connect(server.BoundPort, name); b.SendLogonRequest(Request(name)); return b; }).ToArray();
+        // The pickup spawner assigns roles by arrival order. Seat each peer
+        // before connecting the next so bots[0] is always the actual picker.
+        var bots = names.Select(name =>
+        {
+            var b = new FltBot();
+            b.Connect(server.BoundPort, name);
+            b.SendLogonRequest(Request(name));
+            Assert.True(PumpUntil(server, () => b.ShipAssignment is not null, 6000) < 6000);
+            return b;
+        }).ToArray();
         PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 6000);
         return bots;
     }

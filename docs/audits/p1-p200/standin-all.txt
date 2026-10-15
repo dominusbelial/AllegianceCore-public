@@ -1,0 +1,619 @@
+src/Allegiance.ClientCore.Game/ServerListing.cs:34:    /// guessed port; override with <c>--lobby &lt;url&gt;</c>.</summary>
+src/Allegiance.ClientCore.Explorer/Program.cs:495:    // an honest placeholder instead of computing garbage. Style follows `who`'s
+src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs:139:    /// <summary>Client approximation of native <c>pSide-&gt;CanBuy(pBucket)</c>:
+src/Allegiance.ClientCore.Game/Game1.Lifecycle.cs:376:        // P293 — the shared procedural gold-gem treasure placeholder (no art
+src/Allegiance.ClientCore.Game/Game1.Lifecycle.cs:493:        // placeholder-generated-fallback (see Audio.Music remarks).
+src/Allegiance.ClientCore.Game/Rendering/StationRenderer.cs:21:/// tint is deliberately enough for this temporary placeholder.</para>
+src/Allegiance.ClientCore.Game/Rendering/StationRenderer.cs:54:    /// vanishing or exploding to an arbitrary size.</summary>
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1026:                // placeholder, scaled by the native pickup radius 5.0
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1468:    /// value is real (no placeholders), with zero extra wire work.
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1600:                    // (SET_MONEY/MONEY_CHANGE/AUTODONATE/PAYDAY). Null until the
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:2141:    /// reliable per-ship part/loadout table for arbitrary ships (P448a §5), and a null
+src/Allegiance.ClientCore.Game/Rendering/RadarBracketRenderer.cs:80:    // white so no per-side blip colour (arbitrary rosters) or the teal/gold/
+src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:10:/// hack (Game1 sent <c>SendPlayerReady(true)</c> the instant it had a ship)
+src/Allegiance.ClientCore.Game/Game1.cs:529:    // hack: the player toggles their own ready with Y (the server holds the
+src/Allegiance.ClientCore.Game/Rendering/TreasureMeshFactory.cs:30:/// Generates a deterministic, procedurally-built treasure placeholder mesh — a
+src/Allegiance.ClientCore.Game/Rendering/TreasureMeshFactory.cs:39:/// <para><b>Why a placeholder at all.</b> Native represents a treasure with a
+src/Allegiance.ClientCore.Game/Rendering/TreasureMeshFactory.cs:50:/// were already in). So, exactly as P289's station placeholder framed it, this
+src/Allegiance.ClientCore.Game/Rendering/TreasureMeshFactory.cs:51:/// is a procedural stand-in for a model we cannot load — deliberately not
+src/Allegiance.ClientCore.Game/Rendering/DamageDebrisParticles.cs:151:    /// stand-in for native <c>m_radius</c>).</param>
+src/Allegiance.ClientCore.Game/Rendering/DamageDebrisParticles.cs:166:            // Deterministic local-space placement for this vent (stand-in for
+src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1772:        // P282 — ready-up is NO LONGER automatic here. The old hack sent
+src/Allegiance.ClientCore.Game/Game1.Session.cs:802:    /// chat (index 0, arbitrary text that never equals a caption). This same
+src/Allegiance.ClientCore.Game/Flight/DamageFlashTracker.cs:36:/// window from now" simplification: it is barely more code, keeps every stage of
+src/Allegiance.ClientCore.Game/Rendering/PilotInfoLayout.cs:49:    /// the renderer draws nothing in that case rather than a placeholder.
+src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs:23:/// conduits — so the overlay reads as part of this ship rather than an arbitrary
+src/Allegiance.ClientCore/State/ExplosionPreset.cs:100:        // hack), no shock wave — trekigc.cpp:115-119.
+src/Allegiance.ClientCore.Game/Rendering/GameOverPanelInfo.cs:69:        // string, or native's "<bug>" placeholder that GameOver.ForMission
+src/Allegiance.ClientCore.Game/Rendering/ShieldFlareParticles.cs:56:/// the ported shape. (3) The arbitrary perpendicular orientation axes native
+src/Allegiance.ClientCore.Game/Rendering/ShipRenderScale.cs:10:/// real-world scale instead of whatever arbitrary per-model size the P287
+src/Allegiance.ClientCore.Game/Rendering/WarpMeshFactory.cs:216:        // triangles. Winding is arbitrary here: WarpRenderer renders with
+src/Allegiance.ClientCore.Game/Rendering/MissileTrailParticles.cs:31:/// backed implementation; tests inject a fixed-value stub.</summary>
+src/Allegiance.ClientCore.Game/Rendering/MissileTrailParticles.cs:79:/// <para><b>Deliberate simplifications.</b> (1) The client wire carries only
+src/Allegiance.ClientCore.Game/Rendering/MissileTrailParticles.cs:114:    /// <summary>Port stand-in for the missile's radius in the smoke-size formula
+src/Allegiance.ClientCore.Game/Rendering/MissileTrailParticles.cs:119:    /// −Forward, in world units — the port's stand-in for the real (unported)
+src/Allegiance.Server/ServerHost.cs:851:    /// Faithfulness notes (this repo's honesty-about-simplifications style —
+src/Allegiance.Server/ServerHost.cs:899:        //    + world-up (zero wobble simplification; see remarks).
+src/Allegiance.ClientCore.Game/Rendering/WarpCoreMeshFactory.cs:122:        // band fans the innermost disk closed. Winding is arbitrary — the renderer
+src/Allegiance.ClientCore.Game/Rendering/ChaseCamera.cs:60:    /// simplification of native's turn-rate-sample delay system.</param>
+src/Allegiance.ClientCore.Game/Rendering/ChaseCamera.cs:131:    /// <b>Chosen simplification (stated honestly):</b> native delays the camera
+src/Allegiance.ClientCore.Game/Rendering/StationMeshFactory.cs:36:/// around it. It is an explicitly TEMPORARY placeholder (P289): real
+src/Allegiance.ClientCore.Game/Rendering/StationMeshFactory.cs:75:    /// rings. 32 keeps the placeholder smooth at flight distances while the
+src/Allegiance.ClientCore.Game/Audio/Music.cs:22:/// <para><b>Track loading is real-asset-first, placeholder-fallback.</b>
+src/Allegiance.ClientCore.Game/Audio/Music.cs:26:/// <see cref="PlaceholderMusicFactory"/> tone. So when the planned ComfyUI
+src/Allegiance.ClientCore.Game/Audio/Music.cs:29:/// <b>zero code change</b> — the placeholder is swapped by replacing the asset,
+src/Allegiance.ClientCore.Game/Audio/Music.cs:41:    /// (register in Content.mgcb) and it replaces the placeholder with no code
+src/Allegiance.ClientCore.Game/Audio/Music.cs:85:    /// Load both beds: real assets if present, generated placeholders
+src/Allegiance.ClientCore.Game/Audio/Music.cs:86:    /// otherwise (see <see cref="PlaceholderMusicFactory"/>). Does not start
+src/Allegiance.ClientCore.Game/Audio/Music.cs:94:            _flight = Loop(Track(FlightAsset, PlaceholderMusicFactory.Flight));
+src/Allegiance.ClientCore.Game/Audio/Music.cs:95:            _station = Loop(Track(StationAsset, PlaceholderMusicFactory.Station));
+src/Allegiance.ClientCore.Game/Audio/Music.cs:97:                "(placeholder-generated tones — drop real .ogg at " +
+src/Allegiance.ClientCore.Game/Audio/Music.cs:171:    /// asset if it exists, otherwise the generated placeholder PCM. The
+src/Allegiance.ClientCore.Game/Audio/Music.cs:173:    private SoundEffect Track(string asset, Func<byte[]> placeholder)
+src/Allegiance.ClientCore.Game/Audio/Music.cs:178:            return new SoundEffect(placeholder(), PlaceholderMusicFactory.SampleRate, AudioChannels.Mono);
+src/Allegiance.Server/Server.Lifecycle.cs:55:    /// §4): static core first, then sides / sectors, then the tick. Stubbed step
+src/Allegiance.Server/Server.Lifecycle.cs:97:        StubFileLists();                             // checklist item 5 (stub — cores/maps; ranks now real, see below)
+src/Allegiance.Server/Server.Lifecycle.cs:157:    ///        <see cref="LivePlayerCount"/>. Documented simplification.</item>
+src/Allegiance.Server/Server.Lifecycle.cs:525:    /// simplification — hull 1 'Adv Miner' here, itself a valid miner hull with
+src/Allegiance.Server/Server.Lifecycle.cs:649:    /// <summary>BOOT_PATH.md step 5 — cores.txt/maps.txt are stubbed (dropped)
+src/Allegiance.Server/Server.Lifecycle.cs:650:    /// and we say so rather than silently ignoring. ranks.txt is NOT stubbed
+src/Allegiance.Server/Server.Lifecycle.cs:654:        Console.WriteLine("[boot] (stub) cores.txt / maps.txt NOT loaded — download list out of scope (rank list IS loaded from ranks.txt, see above)");
+src/Allegiance.ClientCore/State/TreasureEntity.cs:37:/// visual from it. The renderer draws a single gold-gem placeholder for every
+src/Allegiance.ClientCore/State/TreasureEntity.cs:38:/// code (P289 station-placeholder framing), but the fields are carried so a
+src/Allegiance.ClientCore/Session/ConnectionSession.cs:765:                    case AutoDonateUpdate.Fmid:
+src/Allegiance.ClientCore/Session/ConnectionSession.cs:768:                        _world.Apply(AutoDonateUpdate.Decode(m));
+src/Allegiance.ClientCore/State/TeamRoster.cs:32:    /// Empty until the first PLAYER_READY relay lands; a later toggle for the
+src/Allegiance.Server/Server.Broadcast.cs:538:            // it already accepts an arbitrary (shipId, live) pair, not just the
+src/Allegiance.Server/Server.Broadcast.cs:601:                    // (native source, not guessed): a ship's "private data" — the
+src/Allegiance.Server/Server.Broadcast.cs:819:    /// fixed per the simplification documented at the join-burst send site.
+src/Allegiance.Server/Server.Broadcast.cs:878:    /// binding), matching the port's single-<c>IsNpc</c>-bool simplification.</summary>
+src/Allegiance.Server/Server.Broadcast.cs:2388:    /// the allied leg collapses to own-side, the established simplification).
+src/Allegiance.Server/PlayerWallet.cs:10:/// <see cref="AutoDonateTarget"/> that payday income is redirected to.
+src/Allegiance.Server/PlayerWallet.cs:16:/// <c>GetAutoDonate/SetAutoDonate</c>) — the same per-connection lifetime as
+src/Allegiance.Server/PlayerWallet.cs:25:/// connection is the same one-ship-per-connection simplification this port
+src/Allegiance.Server/PlayerWallet.cs:35:/// <para><b>AutoDonateTarget is a <see cref="Ship"/> reference</b>, mirroring
+src/Allegiance.Server/PlayerWallet.cs:37:/// <c>GetIGCShip()->GetAutoDonate()</c> relationship). Resolving the target
+src/Allegiance.Server/PlayerWallet.cs:56:    /// <c>GetIGCShip()->GetAutoDonate()</c>, <c>null</c> for a leader / opted
+src/Allegiance.Server/PlayerWallet.cs:58:    public Ship? AutoDonateTarget { get; set; }
+src/Allegiance.ClientCore.Game/Game1.Panes.cs:961:    /// — the exact thing the old auto-ready hack faked. The mission owner can
+src/Allegiance.ClientCore/State/ClientWorld.cs:255:    /// <c>AUTODONATE(116)</c> one-time gifts and <c>PAYDAY(114)</c> credits; a
+src/Allegiance.ClientCore/State/ClientWorld.cs:261:    /// <c>AUTODONATE(116)</c> (<c>NA</c> is stored as absent). A ship with no
+src/Allegiance.ClientCore/State/ClientWorld.cs:265:    public IReadOnlyDictionary<short, short> AutoDonateTargetByShipId => _autoDonateTargetByShipId;
+src/Allegiance.ClientCore/State/ClientWorld.cs:281:    private readonly Dictionary<short, short> _autoDonateTargetByShipId = new();
+src/Allegiance.ClientCore/State/ClientWorld.cs:296:    /// and <c>AUTODONATE(116)</c> are the join-sync messages the server sends
+src/Allegiance.ClientCore/State/ClientWorld.cs:299:    /// client-side stand-in for native's <c>GetSide()-&gt;GetShips()</c> player
+src/Allegiance.ClientCore/State/ClientWorld.cs:304:        foreach (var k in _autoDonateTargetByShipId.Keys) seen.Add(k);
+src/Allegiance.ClientCore/State/ClientWorld.cs:920:        _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
+src/Allegiance.ClientCore/State/ClientWorld.cs:1013:            case AutoDonateUpdate autoDonateUpdate:
+src/Allegiance.ClientCore/State/ClientWorld.cs:1016:                Apply(autoDonateUpdate);
+src/Allegiance.ClientCore/State/ClientWorld.cs:1469:        // the native client's placeholder dummy ship (see Server.cs's OwnShipExportId).
+src/Allegiance.ClientCore/State/ClientWorld.cs:2091:    // ── P442 money: SET_MONEY / MONEY_CHANGE / AUTODONATE / PAYDAY ─────────
+src/Allegiance.ClientCore/State/ClientWorld.cs:2105:    /// <summary>P442 — <c>FM_S_AUTODONATE(116)</c>: set
+src/Allegiance.ClientCore/State/ClientWorld.cs:2112:    /// never applies gifts locally, and this <c>AUTODONATE</c> is the ONLY wire
+src/Allegiance.ClientCore/State/ClientWorld.cs:2113:    /// carrier of the transfer (the server's <c>SetAutoDonate</c> moves the
+src/Allegiance.ClientCore/State/ClientWorld.cs:2116:    private void Apply(AutoDonateUpdate m)
+src/Allegiance.ClientCore/State/ClientWorld.cs:2119:        if (m.SidDonateTo == Na) _autoDonateTargetByShipId.Remove(m.SidDonateBy);
+src/Allegiance.ClientCore/State/ClientWorld.cs:2120:        else _autoDonateTargetByShipId[m.SidDonateBy] = m.SidDonateTo;
+src/Allegiance.ClientCore/State/ClientWorld.cs:2170:            var target = _autoDonateTargetByShipId.TryGetValue(ship, out var t) ? t : ship;
+src/Allegiance.ClientCore/State/ClientWorld.cs:2276:        // the core fields stay their defaults until a MISSIONDEF lands).
+src/Allegiance.ClientCore/State/ClientWorld.cs:2349:        _autoDonateTargetByShipId.Clear();
+src/Allegiance.ClientCore.Game/Rendering/PartInfoLayout.cs:20:/// <para><b>Real stats, not placeholders.</b> Every figure comes from the
+src/Allegiance.Server/Server.Lobby.cs:499:    /// (logged, never guessed). Runs on the sim thread (same one that owns
+src/Allegiance.Server/Server.Lobby.cs:647:    /// stand-in for native's per-player <c>GAME_OVER_PLAYERS</c> list inside
+src/Allegiance.Server/Server.Lobby.cs:725:    /// <para><b>Simplification, stated plainly:</b> native's second loop over
+src/Allegiance.Server/Server.Lobby.cs:964:    /// a deliberate stand-in for native's full <c>FAllReady</c> (whose
+src/Allegiance.Server/Server.Lobby.cs:1463:        // AUTODONATE(116) side-wide). Native retargets ONLY the deposed leader
+src/Allegiance.Server/Server.Lobby.cs:1474:            SetAutoDonate(newLeaderLive, null, 0, bSend: false);   // clear the new leader's own target, silent
+src/Allegiance.Server/Server.Lobby.cs:1476:            SetAutoDonate(oldLeaderLive, initiator, money, bSend: true);  // gift + re-point the old leader
+src/Allegiance.Server/Server.Lobby.cs:1478:            // the AUTODONATE amount, which the client applies to the recipient,
+src/Allegiance.Server/Server.Lobby.cs:1538:            var t = LiveOf(s)?.Wallet.AutoDonateTarget;
+src/Allegiance.Server/Server.Lobby.cs:1824:    /// SET_MISSION_OWNER) — no new broadcast shape is invented. Simplifications
+src/Allegiance.Server/Server.Lobby.cs:1920:    /// changed" guard, contrary to the task brief's guess. (2) The final
+src/Allegiance.Server/Server.Lobby.cs:2128:    /// Stated simplifications (per P183 scope, never silent): leader-succession
+src/Allegiance.Server/Server.Lobby.cs:2170:            // reproduces the identical net AUTODONATE(116) side-group broadcast.)
+src/Allegiance.Server/Server.Lobby.cs:2285:                SetAutoDonate(joinerLive, leader, 0, bSend: true);
+src/Allegiance.Server/Server.Lobby.cs:2288:            // relationship + wallet (native SendMissionInfo's money/autodonate
+src/Allegiance.Server/Server.Lobby.cs:2322:    /// the correct simplification (matching Team's precedent); the
+src/Allegiance.Server/Server.Lobby.cs:2334:    /// and yields no targets — we refuse to guess a routing behavior for the
+src/Allegiance.Server/Server.Lobby.cs:2366:                    .Where(kv => kv.Value.Ship.SideId == senderSideId)   // same-side-only simplification
+src/Allegiance.Server/Server.Lobby.cs:2531:                : Vector3.Zero;   // no resolvable owned station — arbitrary spot, still in the side's home
+src/Allegiance.Server/Server.Lobby.cs:2865:        // nParts=0 simplification (unchanged from P26): the
+src/Allegiance.Server/Server.Lobby.cs:2881:            // read/log evidence, not guessed): the client's OWN placeholder
+src/Allegiance.Server/Server.Lobby.cs:2907:            // its own internal placeholder ship the identical way
+src/Allegiance.Server/Server.Lobby.cs:2940:            // (guessing would put the bot on a fake side).
+src/Allegiance.Server/Server.Lobby.cs:2945:            Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping EXPORT (finding, not guessed)");
+src/Allegiance.Server/Server.Lobby.cs:3050:                // P105's FindFriendlyStation stand-in for the native
+src/Allegiance.Server/Server.Lobby.cs:3247:        // nParts=0 simplification (unchanged from P26/P27): the
+src/Allegiance.Server/Server.Lobby.cs:3321:        // Simplifications (this repo's honesty-about-simplifications
+src/Allegiance.ClientCore.Game/Rendering/ShipEngineTrailParticles.cs:64:/// ship noses point +Z, this port's content models nose-at-−Z) plus arbitrary
+src/Allegiance.ClientCore.Game/Rendering/TrailRandomSource.cs:9:/// deterministic stub.</summary>
+src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs:51:    // simplification in the P374 report).
+src/Allegiance.Server/Server.Combat.cs:264:    /// copied exactly. The lock/target fields are placeholders (this slice fires
+src/Allegiance.Server/Server.Combat.cs:295:            TargetType = 0,                          // OT_* placeholder — no target this slice
+src/Allegiance.Server/Server.Combat.cs:1334:        //   → port simplifications: no boarded/child ships yet (cluster E), so the
+src/Allegiance.Server/Server.Combat.cs:1415:        // to be real peers (stated simplification of native, which carries a
+src/Allegiance.Server/Server.Combat.cs:1532:        //      stand-in for native's nearest-search + GetBase fallback);
+src/Allegiance.Server/Server.Combat.cs:1828:    /// P105's deliberately simplified stand-in for the native
+src/Allegiance.Server/Server.Combat.cs:1952:        // port's faithful stand-in for native's behaviour: native keeps an ejected
+src/Allegiance.Server/Server.Docking.cs:57:    /// <c>shipIGC.h:396-406</c>). <b>Simplification:</b> the native credits the
+src/Allegiance.Server/Server.Docking.cs:673:    /// (<c>Server.cs:4177</c>), the port's established stand-in for the native
+src/Allegiance.Server/Server.Docking.cs:677:    /// (any friendly match, first-found — the port's documented simplification
+src/Allegiance.Server/Server.Docking.cs:817:    /// <para><b>Pooled-money simplification — confirmed and applied.</b> The
+src/Allegiance.Server/Server.Docking.cs:819:    /// a player credits its autodonate target's per-player wallet and
+src/Allegiance.Server/Server.Docking.cs:825:    /// no autodonate mechanism — it tracks ONE pooled number per side
+src/Allegiance.Server/Server.Docking.cs:831:    /// ship</c> (the autodonate target degenerates to the ship itself since
+src/Allegiance.Server/Server.Docking.cs:832:    /// there is no autodonate), <c>sidFrom = NA</c> (server-initiated pooled
+src/Allegiance.Server/Server.Docking.cs:1143:    /// simplification <c>Eject.ForSurvivor</c> and <c>Server.cs:3289,4616</c>
+src/Allegiance.Server/Server.Docking.cs:1421:    /// convention where native's BUY_LOADOUT would TrapHackBoot.</para>
+src/Allegiance.Server/Server.Docking.cs:1763:    /// <summary>The port's stand-in for native <c>ImodelIGC::SeenBySide(side)</c> —
+src/Allegiance.Server/Server.Docking.cs:2035:            // primitive. State the simplification, not a silent drop.
+src/Allegiance.Server/Server.Docking.cs:2120:    /// <para><b>Deliberately not ported.</b> The <c>OkToLaunch</c> feasibility
+src/Allegiance.Server/Server.Docking.cs:2125:    /// <c>!bDocked</c>, which <c>true</c> makes false — so it is not ported either;
+src/Allegiance.ClientCore.Game/Game1.Targeting.cs:142:    /// join (a deliberate simplification from an earlier task, not something to
+src/Allegiance.ClientCore.Game/Game1.Audio.cs:282:    /// this port's distance-scaled approximation of native's per-warp
+src/Allegiance.ClientCore.Game/Rendering/TreasureRenderer.cs:9:/// placeholder (see <see cref="TreasureMeshFactory"/>). One
+src/Allegiance.ClientCore.Game/Rendering/HullHitSparkParticles.cs:49:/// small debris bits" the task names), and the decal is documented (not ported)
+src/Allegiance.ClientCore.Game/Rendering/WarpTransitParticles.cs:146:    /// stand-in for native <c>m_radius</c>).</param>
+src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs:16:/// placeholder. Lay out here, derive there.
+src/Allegiance.ClientCore.Game/Rendering/RockTextureSource.cs:14:/// the old procedural stand-in for the types that have a real asset.
+src/Allegiance.ClientCore.Game/Rendering/RockTextureSource.cs:19:/// source, NOT guessed): plain/buildable → <c>bgrnd03</c>/<c>bgrnd05</c>,
+src/Allegiance.ClientCore.Game/Rendering/HudColor.cs:15:    /// as belonging to this ship rather than as an arbitrary palette choice.</summary>
+src/Allegiance.ClientCore.Game/Rendering/WarpRenderer.cs:262:            toCam = Vector3.Backward;                       // camera exactly on the warp — arbitrary facing
+src/Allegiance.ClientCore.Game/Audio/PlaceholderMusicFactory.cs:4:/// P304 — generates the placeholder background-music beds as raw 16-bit mono
+src/Allegiance.ClientCore.Game/Audio/PlaceholderMusicFactory.cs:14:/// <para><b>Honest placeholder.</b> This is explicitly a stand-in, never passed
+src/Allegiance.ClientCore.Game/Audio/PlaceholderMusicFactory.cs:35:public static class PlaceholderMusicFactory
+src/Allegiance.Server/Server.Dispatch.cs:544:                // worth guessing at when a verbatim echo already satisfies
+src/Allegiance.Server/Server.Dispatch.cs:870:                // deliberate simplification, stated in the P188 writeup). On
+src/Allegiance.Server/Server.Dispatch.cs:918:                // permanent simplification — see docs/RANDOMIZE_TEAMS_P195.md).
+src/Allegiance.Server/Server.Dispatch.cs:954:            else if (fmid == AutoDonate.Fmid)   // FM_C_AUTODONATE (Messages.h:738-741)
+src/Allegiance.Server/Server.Dispatch.cs:960:                // FedSrv.CPP:5516-5658 case FM_C_AUTODONATE.
+src/Allegiance.Server/Server.Dispatch.cs:963:                    var autoDonate = AutoDonate.Decode(m);
+src/Allegiance.Server/Server.Dispatch.cs:966:                        ConsoleLog.Write($"[autodonate] {from}: AUTODONATE from a peer with no ship — ignored");
+src/Allegiance.Server/Server.Dispatch.cs:970:                        HandleAutoDonate(from, adLive, autoDonate);
+src/Allegiance.Server/Server.Dispatch.cs:975:                    Console.WriteLine($"[wire] bad AUTODONATE from {from}: {e.Message}");
+src/Allegiance.Server/Server.Dispatch.cs:1216:                // TrapHackBoot(iSide == sid)). The iSide == NA mission-owner-level
+src/Allegiance.Server/Server.Dispatch.cs:1275:                // native TrapHackBoot(pciv)), and set the side's civilization. The
+src/Allegiance.Server/Server.cs:426:    /// re-latch it. Arbitrary but generous relative to <c>DirtyEpsilon</c>-scale
+src/Allegiance.Server/Server.cs:651:    /// (the hangar/loadout plan's own deferred "Stage 4"). For now, pick the
+src/Allegiance.Server/Server.cs:655:    /// pretending to guess a side's civilization.</para>
+src/Allegiance.Server/Server.Economy.cs:21:/// <summary>Port of <c>CFSPlayer::SetAutoDonate</c>
+src/Allegiance.Server/Server.Economy.cs:24:    /// <see cref="PlayerWallet.AutoDonateTarget"/> to <paramref name="target"/>
+src/Allegiance.Server/Server.Economy.cs:28:    /// broadcasting <c>AUTODONATE(116)</c> to the donor's side group. Every
+src/Allegiance.Server/Server.Economy.cs:34:    private void SetAutoDonate(LiveShip donor, Ship? target, int amount, bool bSend)
+src/Allegiance.Server/Server.Economy.cs:40:            var targetDonatesTo = targetLive?.Wallet.AutoDonateTarget;   // who THEY currently donate to
+src/Allegiance.Server/Server.Economy.cs:55:                    if (targetLive is not null) targetLive.Wallet.AutoDonateTarget = null;
+src/Allegiance.Server/Server.Economy.cs:67:            // (amount == 0 means no gift; separate from the AUTODONATE(112)
+src/Allegiance.Server/Server.Economy.cs:82:        donor.Wallet.AutoDonateTarget = resolved;
+src/Allegiance.Server/Server.Economy.cs:85:            BroadcastAutoDonate(donor.Ship, donor.Ship.Id, resolved?.Id ?? Na, amount);
+src/Allegiance.Server/Server.Economy.cs:88:/// <summary>Broadcast <c>AUTODONATE(116)</c> to the donor's <em>side</em>
+src/Allegiance.Server/Server.Economy.cs:91:    private void BroadcastAutoDonate(Ship donor, short sidDonateBy, short sidDonateTo, int amount)
+src/Allegiance.Server/Server.Economy.cs:94:        var msg = new AutoDonateUpdate { SidDonateBy = sidDonateBy, SidDonateTo = sidDonateTo, Amount = amount };
+src/Allegiance.Server/Server.Economy.cs:101:        Console.WriteLine($"[autodonate] ship {sidDonateBy} side {sideId} -> AUTODONATE(116) target={sidDonateTo} amount={amount} to {targets.Length} peer(s)");
+src/Allegiance.Server/Server.Economy.cs:105:    /// <c>AUTODONATE(112)</c>) to a live <em>same-side</em> player ship, or
+src/Allegiance.Server/Server.Economy.cs:121:    /// P197 — the <c>FM_C_AUTODONATE(112)</c> dispatch, port of
+src/Allegiance.Server/Server.Economy.cs:122:    /// <c>FedSrv.CPP:5516-5658</c> <c>case FM_C_AUTODONATE</c>: a two-mode
+src/Allegiance.Server/Server.Economy.cs:128:    private void HandleAutoDonate(ConnectionId from, LiveShip live, AutoDonate req)
+src/Allegiance.Server/Server.Economy.cs:134:            ConsoleLog.Write($"[autodonate] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — AUTODONATE(112) refused (FedSrv.CPP:5517-5518)");
+src/Allegiance.Server/Server.Economy.cs:147:            ConsoleLog.Write($"[autodonate] {from} ship {ship.Id}: AUTODONATE amount=-1 toggle from a non-leader — refused (FedSrv.CPP:5531-5532)");
+src/Allegiance.Server/Server.Economy.cs:158:                ConsoleLog.Write($"[autodonate] {from} ship {ship.Id}: toggle target {req.SidDonateTo} not a live same-side player — ignored (FedSrv.CPP:5548)");
+src/Allegiance.Server/Server.Economy.cs:164:            if (donateLive.Wallet.AutoDonateTarget is not null)
+src/Allegiance.Server/Server.Economy.cs:165:                SetAutoDonate(donateLive, null, 0, bSend: true);
+src/Allegiance.Server/Server.Economy.cs:167:                SetAutoDonate(donateLive, ship, 0, bSend: true);
+src/Allegiance.Server/Server.Economy.cs:172:            SetAutoDonate(live, pfsDonate, req.Amount, bSend: true);
+src/Allegiance.Server/Server.Economy.cs:185:        if (leader is null || ReferenceEquals(changed.Wallet.AutoDonateTarget, leader)) return;
+src/Allegiance.Server/Server.Economy.cs:191:            var t = l.Wallet.AutoDonateTarget;
+src/Allegiance.Server/Server.Economy.cs:207:                Console.WriteLine($"[autodonate] donation-confidence: side {csid} leadership passed to ship {newLeader.Id}");
+src/Allegiance.Server/Server.Economy.cs:225:    /// with its own follow-up (e.g. an <c>AUTODONATE(112)</c> gift). Runs on the
+src/Allegiance.Server/Server.Economy.cs:239:        // Native uses TrapHackBoot(req.Amount > 0) here (FedSrv.CPP:5368), which
+src/Allegiance.Server/Server.Economy.cs:255:        Ship? pshipAD = live.Wallet.AutoDonateTarget;
+src/Allegiance.Server/Server.Economy.cs:297:    /// <c>AUTODONATE(112)</c>'s standing relationship. Runs on the sim thread,
+src/Allegiance.Server/Server.Economy.cs:315:        // Softened TrapHackBoot(moneyGiven > 0) (FedSrv.CPP:7220) — log-and-ignore,
+src/Allegiance.Server/Server.Economy.cs:322:        // Softened TrapHackBoot(sender money >= moneyGiven) (FedSrv.CPP:7221) — the
+src/Allegiance.Server/Server.Economy.cs:339:        // against a race where the sender's wallet changed between the TrapHackBoot
+src/Allegiance.Server/Server.Economy.cs:418:/// <summary>P197 — send <c>AUTODONATE(116)</c> + <c>SET_MONEY(115)</c> together,
+src/Allegiance.Server/Server.Economy.cs:420:    /// native <c>SendMissionInfo</c> money/autodonate loop
+src/Allegiance.Server/Server.Economy.cs:433:            var ad = new AutoDonateUpdate
+src/Allegiance.Server/Server.Economy.cs:436:                SidDonateTo = live.Wallet.AutoDonateTarget?.Id ?? Na,
+src/Allegiance.Server/Server.Economy.cs:442:        Console.WriteLine($"[syncmoney] side {sideId} -> AUTODONATE(116)+SET_MONEY(115) per teammate to joining peer");
+src/Allegiance.Server/Server.Economy.cs:452:    /// is broadcast as <c>AUTODONATE(116)</c> to the side group (native gathers
+src/Allegiance.Server/Server.Economy.cs:458:        if (newLeaderLive is not null && ReferenceEquals(newLeaderLive.Wallet.AutoDonateTarget, departing))
+src/Allegiance.Server/Server.Economy.cs:459:            SetAutoDonate(newLeaderLive, null, 0, bSend: true);
+src/Allegiance.Server/Server.Economy.cs:466:            if (ReferenceEquals(l.Wallet.AutoDonateTarget, departing))
+src/Allegiance.Server/Server.Economy.cs:467:                SetAutoDonate(l, newLeader, 0, bSend: true);
+src/Allegiance.Server/Server.Economy.cs:703:    /// the completed station type, the port's stand-in for native
+src/Allegiance.Server/Server.Economy.cs:882:        // station-type buckets (P458). Log and ignore, the port's stand-in for
+src/Allegiance.Server/Server.Economy.cs:1123:        // deliberately no MONEY_CHANGE at payday (see PLAYER_MONEY_AUTODONATE_P197.md).
+src/Allegiance.Server/Server.Economy.cs:1127:            var donate = kv.Value.Wallet.AutoDonateTarget;
+src/Allegiance.Core/IgcReader.cs:17:    /// carry a leading version word, the map files do not. Rather than guess
+src/Allegiance.Server/Server.ShipCommands.cs:32:    /// but that persistence is deliberately not ported — see finding below).</item>
+src/Allegiance.Server/Server.ShipCommands.cs:49:    /// same-side is the faithful stand-in for native <c>SeenBySide</c>.</item>
+src/Allegiance.Server/Server.ShipCommands.cs:367:        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+src/Allegiance.Server/Server.ShipCommands.cs:422:    /// lifepod hack — <c>GetParts()-&gt;n() != 0</c> with a real cluster
+src/Allegiance.Server/Server.ShipCommands.cs:427:    /// the connection via <c>TrapHackBoot(!bBoot)</c> (<c>FedSrv.CPP:6531-6648</c>).
+src/Allegiance.Server/Server.ShipCommands.cs:428:    /// This port's established TrapHackBoot convention (P182/P184/P186, cf.
+src/Allegiance.Server/Server.ShipCommands.cs:453:        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+src/Allegiance.Server/Server.ShipCommands.cs:462:        // non-empty part list (the NYI lifepod hack, FedSrv.CPP:6516).
+src/Allegiance.Server/Server.ShipCommands.cs:469:        // Native TrapHackBoot((nReloads > 0) && (nReloads <= 5))
+src/Allegiance.Server/Server.ShipCommands.cs:474:            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: {nReloads} entries outside [1,5] — refused (native TrapHackBoot, FedSrv.CPP:6523)");
+src/Allegiance.Server/Server.ShipCommands.cs:493:            // Native: TrapHackBoot(!bBoot) — a hard disconnect. This port's
+src/Allegiance.Server/Server.ShipCommands.cs:496:            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: malformed entry, refusing remaining reloads (softened TrapHackBoot, FedSrv.CPP:6645-6648)");
+src/Allegiance.Server/Server.ShipCommands.cs:574:        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+src/Allegiance.Server/Server.ShipCommands.cs:635:    /// <item><b>Self-targeting-only (deliberate simplification).</b> Native lets
+src/Allegiance.Server/Server.ShipCommands.cs:644:    /// <item><b>Wing-id range check.</b> Native <c>TrapHackBoot(pfmSW-&gt;wingID
+src/Allegiance.Server/Server.ShipCommands.cs:675:        // Native TrapHackBoot(pShip->GetParentShip() == NULL) (FedSrv.CPP:5644):
+src/Allegiance.Server/Server.ShipCommands.cs:677:        // graceful log-and-return refusal every other TrapHackBoot-guarded C→S
+src/Allegiance.Server/Server.ShipCommands.cs:695:        // Native TrapHackBoot(pdispenser->GetAmount() > 0) (FedSrv.CPP:5656).
+src/Allegiance.Server/Server.ShipCommands.cs:697:        // must-fail-if-removed guard. (This port does not throw on a hack-flagged
+src/Allegiance.Server/Server.ShipCommands.cs:701:            ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: dispenser {req.Et}@0 has Amount {part.Amount} — refused, no fire (native TrapHackBoot, FedSrv.CPP:5656)");
+src/Allegiance.Server/Server.ShipCommands.cs:835:    /// (<c>FedSrv.CPP:5416</c>), the launcher unboarded (<c>TrapHackBoot(parent
+src/Allegiance.Server/Server.ShipCommands.cs:875:            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: launcher has Amount {part.Amount} — refused, no fire (native TrapHackBoot amount>0, FedSrv.CPP:5426)");
+src/Allegiance.Server/Server.ShipCommands.cs:900:        // Self-targeting-only simplification: without a team-leader system the
+src/Allegiance.Server/Server.ShipCommands.cs:909:        // Native TrapHackBoot(pfmSW->wingID < c_widMax) (FedSrv.CPP:5319);
+src/Allegiance.Server/Server.ShipCommands.cs:1042:    /// return-to-base gates is <b>logged and no-oped</b>, not guessed at.</para>
+src/Allegiance.Server/Server.ShipCommands.cs:1267:                    // not an accept of THIS order. Log and no-op (do not guess).
+src/Allegiance.Server/Server.ShipCommands.cs:1346:        // guess at behavior for the deferred branches.
+src/Allegiance.Server/Server.ShipCommands.cs:1956:    /// (this port's P146 self-targeting-only simplification; no team-leader
+src/Allegiance.Server/Server.ShipCommands.cs:1961:    /// faithful stand-in for "Builder-role" is the Constructor hull capability
+src/Allegiance.Server/Server.ShipCommands.cs:2033:    /// (P285), so the faithful stand-in for "Builder-role" is the Constructor
+src/Allegiance.Server/Server.ShipCommands.cs:2050:    /// the port's stand-in for native "the builder reaches the asteroid's
+src/Allegiance.Server/Server.ShipCommands.cs:2072:        // P285/P422 stand-in for a player's Builder-class hull, since player
+src/Allegiance.Server/Server.ShipCommands.cs:2119:        // otherwise — the port's stand-in for native "the builder is in the
+src/Allegiance.Server/Server.ShipCommands.cs:2166:    /// value) rather than guessing.
+src/Allegiance.Server/Server.ShipCommands.cs:2195:                // value likewise. Log and no-op — never guess at the slot's meaning.
+src/Allegiance.Server/Server.ShipCommands.cs:2230:    /// <c>TrapHackBoot(GetParentShip() == NULL)</c> (<c>FedSrv.CPP:6099</c>) is
+src/Allegiance.Server/Server.ShipCommands.cs:2235:    /// <item><b>Bad mount = native TrapHackBoot abort.</b> A mount out of the
+src/Allegiance.Server/Server.ShipCommands.cs:2237:    /// type (native <c>TrapHackBoot(!CanMount(ppt, pfmTA-&gt;mountID))</c>,
+src/Allegiance.Server/Server.ShipCommands.cs:2238:    /// <c>FedSrv.CPP:6100</c>), is a hack: this port's TrapHackBoot analogue is
+src/Allegiance.Server/Server.ShipCommands.cs:2284:                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mount {mount} cannot mount part {offer.PartTypeId} — dropped (native TrapHackBoot !CanMount, FedSrv.CPP:6100)");
+src/Allegiance.Server/Server.ShipCommands.cs:2390:        // the port's log-and-refuse way instead of TrapHackBoot's disconnect).
+src/Allegiance.Server/Server.ShipCommands.cs:2513:            // simplification, same spirit as the treasureack CanMount gate,
+src/Allegiance.Server/Server.ShipCommands.cs:2533:        // P441 — FUNDS gate. Native TrapHackBoot disconnects here; the port's
+src/Allegiance.Core/Model/DockStation.cs:22:/// <see cref="DataStationIGC"/> — keeping the marker seam's "empty placeholder"
+src/Allegiance.Core/Model/GlobalAttributeSet.cs:16:/// (read from the live native source, not guessed). The native <c>Apply</c>
+src/Allegiance.Core/Model/Side.cs:16:/// is a recording stub: the C++ <c>CsideIGC::Update</c> (<c>sideigc.h:41</c>)
+src/Allegiance.Core/Model/Side.cs:411:    /// P119 this was a counting stub; the bucket advance is the economy-slice
+src/Allegiance.Core/Model/Bucket.cs:72:/// <c>bucketigc.h</c>, not guessed): the time threshold is
+src/Allegiance.Core/Model/Bucket.cs:293:    /// a real hull in PCore001.igc (measured in P108, not guessed; name
+src/Allegiance.Core/Data/DataBuoyIGC.cs:46:    /// <summary><c>c_buoyCluster = 1</c> — a stand-in for "go to this OTHER sector",
+src/Allegiance.Core/Sim/Chaff.cs:27:/// only deliberate simplifications are the two already named on
+src/Allegiance.Core/Sim/IgcMarkers.cs:5:// when the object model arrives. Deliberately EMPTY placeholders — no invented
+src/Allegiance.Core/Sim/IgcMarkers.cs:9:/// <summary>Placeholder for <c>ImodelIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:11:/// <summary>Placeholder for <c>IclusterIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:13:/// <summary>Placeholder for <c>IshipIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:15:/// <summary>Placeholder for <c>IstationIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:17:/// <summary>Placeholder for <c>IasteroidIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:19:/// <summary>Placeholder for <c>ItreasureIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:21:/// <summary>Placeholder for <c>IpartIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:23:/// <summary>Placeholder for <c>IbucketIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:25:/// <summary>Placeholder for <c>IdevelopmentIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:27:/// <summary>Placeholder for <c>IstationTypeIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:29:/// <summary>Placeholder for <c>IhullTypeIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:31:/// <summary>Placeholder for <c>IsideIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:33:/// <summary>Placeholder for <c>IpartTypeIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:35:/// <summary>Placeholder for <c>IdroneTypeIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:37:/// <summary>Placeholder for <c>IprobeIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:39:/// <summary>Placeholder for <c>ImissileIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:41:/// <summary>Placeholder for <c>IbuildingEffectIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:43:/// <summary>Placeholder for <c>ImineIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:45:/// <summary>Placeholder for <c>IwarpIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:47:/// <summary>Placeholder for <c>ImagazineIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:49:/// <summary>Placeholder for <c>IdispenserIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:51:/// <summary>Placeholder for <c>IlauncherIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:53:/// <summary>Placeholder for <c>IexpendableTypeIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/IgcMarkers.cs:55:/// <summary>Placeholder for <c>ImissionIGC</c>. Empty — do not invent members.</summary>
+src/Allegiance.Core/Sim/Asteroid.cs:23:/// Behaviour is ported from the reference engine and every simplification is
+src/Allegiance.Core/Sim/Asteroid.cs:278:        // Assume amount >= 0 — the repair (negative-amount) branch is not ported
+src/Allegiance.Core/Sim/Station.cs:36:/// simplification is stated openly (the same honest-simplification style as
+src/Allegiance.Core/Sim/Station.cs:419:                            // is native rendering debris, not ported.
+src/Allegiance.Core/Sim/Station.cs:448:    /// simplification. Armor fraction is exactly halved from its current value.</item>
+src/Allegiance.Core/Sim/Explosion.cs:38:/// an honest simplification of the same category as P95's "no swept
+src/Allegiance.Core/Model/Mission.cs:296:    /// honesty-about-simplifications convention — we use the fixed value and
+src/Allegiance.Core/Model/Mission.cs:388:    /// payday to the first Started tick is the faithful stand-in for
+src/Allegiance.Core/Model/Mission.cs:916:    /// stand-in for native's iteration over every mission station with a
+src/Allegiance.Core/Sim/Missile.cs:189:        // Deliberate simplifications vs native, stated plainly (both are the
+src/Allegiance.Core/Sim/ShipKinematics.cs:135:        // port's established no-GA simplification) sets thrustRatio when the
+src/Allegiance.Core/Sim/Probe.cs:20:/// the identical simplification <see cref="Mine"/> (P94) documents for mines
+src/Allegiance.Core/Sim/Probe.cs:278:    /// which dispatches here. Two real simplifications fall out of the native
+src/Allegiance.Core/Sim/Probe.cs:314:    /// <item><b>Repair branch not ported.</b> Native's negative-<c>amount</c>
+src/Allegiance.Core/Sim/Probe.cs:320:    /// <item><b>Achievement-mask side effect not ported</b>
+src/Allegiance.Core/Sim/Probe.cs:348:        // Assume amount >= 0 — the repair (negative-amount) branch is not ported
+src/Allegiance.Core/Sim/Probe.cs:351:        // (probeigc.h:74-89) is deliberately NOT ported — see the remarks'
+src/Allegiance.Core/Sim/Probe.cs:582:            // (probeigc.cpp:444-465) is deliberately NOT ported — probe
+src/Allegiance.Core/Sim/Mine.cs:160:    /// (<c>mineigc.cpp:91-95</c>) — a simplification this slice does not chase
+src/Allegiance.Core/Sim/Weapon.cs:406:            : true;   // out-of-range mount treated as fixed (documented simplification)
+src/Allegiance.Core/Wire/AsteroidDestroyed.cs:47:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/SideTechChange.cs:60:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Docked.cs:24:/// obsolete half is deliberately not ported, per task scope).
+src/Allegiance.Core/Wire/Docked.cs:45:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/TeamReady.cs:42:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/DockedNotify.cs:9:/// Mechanics (traced in the reference tree, not guessed): when a player
+src/Allegiance.Core/Wire/DockedNotify.cs:44:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ChangeTeamCiv.cs:52:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Sim/VisibilityMath.cs:111:    /// simplification (it is already self-contained); no raycasting against
+src/Allegiance.Core/Sim/VisibilityMath.cs:112:    /// arbitrary geometry, exactly the bounded native algorithm.
+src/Allegiance.Core/Wire/SetMissionOwner.cs:37:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Suicide.cs:25:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ExportAsteroid.cs:62:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ViewClusterRequest.cs:50:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/QueuedCommandUpdate.cs:72:        w.WriteU16(0);                                  // cbmsg placeholder
+src/Allegiance.Core/Wire/MissileUpdate.cs:142:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/SetStartTime.cs:41:        w.WriteU16(0);               // cbmsg placeholder
+src/Allegiance.Core/Wire/CreateChaff.cs:60:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/GainFlag.cs:82:        w.WriteU16(0);                       // cbmsg placeholder
+src/Allegiance.Core/Wire/SwapPart.cs:82:        w.WriteU16(0);                       // cbmsg placeholder
+src/Allegiance.Core/Wire/NewShipInstance.cs:26:///    35   char   nParts        0  (simplification — no PartData[] appended)
+src/Allegiance.Core/Wire/NewShipInstance.cs:74:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/NewShipInstance.cs:87:        w.WriteByte(0);             // nParts (simplification: no PartData[])
+src/Allegiance.Core/Wire/PlayerInfo.cs:51:/// Field rationale (grep-verified, not guessed):
+src/Allegiance.Core/Wire/PlayerInfo.cs:165:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/AcquireTreasure.cs:57:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Payday.cs:42:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/LeaveShip.cs:35:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/EndSpoofing.cs:39:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/SingleShipUpdate.cs:32:        w.WriteU16(0);            // cbmsg placeholder
+src/Allegiance.Core/Wire/DevCompleted.cs:37:        w.WriteU16(0);          // cbmsg placeholder
+src/Allegiance.Core/Wire/EnterGame.cs:38:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/PlayerReady.cs:47:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/MineDestroyed.cs:44:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/StationDestroyed.cs:48:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/SideAttributeChange.cs:64:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Ping.cs:56:        w.WriteU16(0);               // cbmsg placeholder
+src/Allegiance.Core/Wire/ClusterInfo.cs:46:/// (null) edges are <b>skipped, not guessed</b> — the ship-against-map
+src/Allegiance.Core/Wire/ClusterInfo.cs:118:        w.WriteU16(0);        // cbmsg placeholder
+src/Allegiance.Core/Wire/JoinSide.cs:36:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/OrderChange.cs:208:        w.WriteU16(0);                       // cbmsg placeholder
+src/Allegiance.Core/Wire/HighlightCluster.cs:54:        w.WriteU16(0);                                    // cbmsg placeholder
+src/Allegiance.Core/Wire/ExportMine.cs:96:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/EnterLifepod.cs:48:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ReqPingData.cs:35:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/KillShip.cs:55:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/FedMessageDumper.cs:38:        [112]="AUTODONATE", [113]="MISSIONPARAMS", [114]="PAYDAY", [115]="SET_MONEY",
+src/Allegiance.Core/Wire/FedMessageDumper.cs:39:        [116]="AUTODONATE", [117]="MUTE", [121]="SET_TEAM_LEADER", [122]="SET_TEAM_INVESTOR",
+src/Allegiance.Core/Wire/ExportStation.cs:111:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/SetMoney.cs:71:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/QuitMission.cs:51:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/GameOverPlayers.cs:154:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/RipcordRequest.cs:39:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ExportBuildingEffect.cs:74:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Vote.cs:36:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ProjectileHullHit.cs:115:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/RequestMoney.cs:26:/// Unlike <see cref="AutoDonate"/> (ShipID then Money ⇒ pad between them),
+src/Allegiance.Core/Wire/RequestMoney.cs:39:/// <see cref="Allegiance.Server.PlayerWallet.AutoDonateTarget"/> when that
+src/Allegiance.Core/Wire/RequestMoney.cs:44:/// with an <c>AUTODONATE(112)</c> gift).
+src/Allegiance.Core/Wire/RequestMoney.cs:73:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ExportWarp.cs:58:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/StationCapture.cs:56:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ExplosionEvent.cs:89:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Model/Sector.cs:451:    /// honest stand-in for native's then-qsort'd array until the budget task
+src/Allegiance.Core/Model/Sector.cs:537:    /// accepted simplification.</para>
+src/Allegiance.Core/Model/Sector.cs:551:    /// the unconditional-traversal simplification.</para>
+src/Allegiance.Core/Model/Sector.cs:851:    /// alongside the other per-tick passes. The port's stand-in for the native
+src/Allegiance.Core/Model/Sector.cs:857:    /// <c>// Point-in-sphere</c> simplification, <c>Sector.cs:1269</c>).
+src/Allegiance.Core/Model/Sector.cs:874:    /// collapses unconditionally (the same simplification P112's
+src/Allegiance.Core/Model/Sector.cs:949:    /// stand-in for the native station-rescue branch of
+src/Allegiance.Core/Model/Sector.cs:977:    /// so the allied leg collapses to same-side (the same simplification the
+src/Allegiance.Core/Model/Sector.cs:1035:    /// alongside the other per-tick passes. The port's stand-in for the carrier
+src/Allegiance.Core/Model/Sector.cs:1149:    /// stand-in for <c>CtreasureIGC::HandleCollision</c>'s ship branch
+src/Allegiance.Core/Model/Sector.cs:1154:    /// <c>// Point-in-sphere</c> simplification, <c>Sector.cs:1269</c>).
+src/Allegiance.Core/Model/Sector.cs:1313:    /// <c>if</c> is dropped unconditionally — the same simplification precedent
+src/Allegiance.Core/Model/Sector.cs:1487:    /// stands in for it. It is chosen large enough to comfortably encompass a
+src/Allegiance.Core/Model/Sector.cs:1499:    /// stated plainly per this repo's honesty-about-simplifications convention.
+src/Allegiance.Core/Model/Sector.cs:2537:    /// capability-agnostic simplification of native's land-capability + friendly
+src/Allegiance.Core/Model/Sector.cs:2736:    /// simplification), so "would dock" collapses to "same side". Because a base's
+src/Allegiance.Core/Model/Sector.cs:2879:    /// simplification (the port has no swept position feed here, exactly the
+src/Allegiance.Core/Model/Sector.cs:3048:    /// <para><b>Immediate-resolution simplification (stated plainly).</b> The
+src/Allegiance.Core/Model/Sector.cs:3054:    /// honest simplification category as P95's "no swept dwell-time math." With
+src/Allegiance.Core/Model/Sector.cs:3318:    /// <c>Power</c>, not <c>BlastPower</c></b> — the task's framing guessed
+src/Allegiance.Core/Model/Sector.cs:3471:                // stand-in for native's collision bounce — so it neither captures
+src/Allegiance.Core/Model/Sector.cs:3490:                    // non-board hull — no capture, no dock (the port's stand-in for
+src/Allegiance.Core/Model/Sector.cs:3576:    /// repo's established P53 simplification for docking ("arrival-triggered,
+src/Allegiance.Core/Model/Sector.cs:3757:    /// <para><b>Alliance simplification.</b> The native allied-leg
+src/Allegiance.Core/Model/Sector.cs:3760:    /// alliance/<c>AlliedSides</c> concept, the same simplification every
+src/Allegiance.Core/Wire/DestroyTreasure.cs:46:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ShipDelete.cs:98:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ShipStatus.cs:34:///                 is 0xc3; verified, not guessed)
+src/Allegiance.Core/Wire/ShipStatus.cs:42:/// ordering (confirmed by reading igc.h, not guessed).
+src/Allegiance.Core/Wire/ShipStatus.cs:44:/// Simplifications, matching this repo's honesty-about-simplifications style:
+src/Allegiance.Core/Wire/ShipStatus.cs:84:        w.WriteU16(0);            // cbmsg placeholder
+src/Allegiance.Core/Wire/GameOver.cs:225:    /// with that id exists, otherwise the native "<c>&lt;bug&gt;</c>" placeholder
+src/Allegiance.Core/Wire/GameOver.cs:227:    /// with all per-side stat counters zeroed (P178 simplification). The side
+src/Allegiance.Core/Wire/GameOver.cs:263:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/TreasureSets.cs:125:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/RipcordAborted.cs:36:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/DelPositionReq.cs:48:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/BuyLoadoutAck.cs:83:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/MissileSpoofed.cs:38:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/BucketStatus.cs:69:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ExportProbe.cs:64:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/RipcordActivate.cs:46:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ObjectSpotted.cs:56:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Ballot.cs:80:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/JoinedMission.cs:83:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ChangeAlliance.cs:48:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ActiveTurretUpdate.cs:73:        w.WriteU16(0);                 // cbmsg placeholder
+src/Allegiance.Core/Wire/PlayerDonate.cs:35:/// one-shot gift — deliberately independent of <c>AUTODONATE(112)</c>'s
+src/Allegiance.Core/Wire/PlayerDonate.cs:63:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/PositionAck.cs:51:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/DropPart.cs:33:/// simplification the P61 loadout work established. So <c>mount</c> is decoded
+src/Allegiance.Core/Wire/DropPart.cs:68:        w.WriteU16(0);                       // cbmsg placeholder
+src/Allegiance.Core/Wire/ChangeAlliances.cs:50:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/LoadoutChange.cs:80:    /// mount order — the ship's <b>current whole</b> loadout (the port's stand-in for
+src/Allegiance.Core/Wire/LoadoutChange.cs:100:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/OwnShipMiningUpdate.cs:76:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/OwnShipKillBonusUpdate.cs:70:        w.WriteU16(0);                                            // cbmsg placeholder
+src/Allegiance.Core/Wire/StationsUpdate.cs:136:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Eject.cs:60:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Reload.cs:78:/// (<c>TrapHackBoot((nReloads &gt; 0) &amp;&amp; (nReloads &lt;= 5))</c>,
+src/Allegiance.Core/Wire/Reload.cs:106:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/InactiveTurretUpdate.cs:27:        w.WriteU16(0);                 // cbmsg placeholder
+src/Allegiance.Core/Wire/ForceTeamReady.cs:47:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/PositionReqBroadcast.cs:45:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/BuildingEffectDestroyed.cs:50:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/SetTeamLeader.cs:38:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/RelaunchShip.cs:55:/// <para><b>Cookie simplification</b> (established precedent): native sets
+src/Allegiance.Core/Wire/RelaunchShip.cs:59:/// — \"same simplification OnShipWarped already uses\" / \"no per-peer cookie
+src/Allegiance.Core/Wire/RelaunchShip.cs:93:    /// ship-level stand-in for the native's <c>ExportShipLoadout</c>). May be
+src/Allegiance.Core/Wire/RelaunchShip.cs:106:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/PingData.cs:52:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/MoneyChange.cs:66:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ExportCluster.cs:58:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ScoreRosterUpdate.cs:154:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/MissileTrackWarningUpdate.cs:79:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/LockLobby.cs:37:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/FireMissile.cs:97:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/BoardShip.cs:40:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ProbesUpdate.cs:152:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/WarpBomb.cs:58:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/RipcordDenied.cs:23:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/RankInfo.cs:103:/// simplification, but native's own behavior for this build shape.</para>
+src/Allegiance.Core/Wire/RankInfo.cs:161:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/BoardNack.cs:37:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Logoff.cs:27:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/LogonAck.cs:45:        w.WriteU16(0); // cbmsg placeholder
+src/Allegiance.Core/Wire/PlayerRescued.cs:45:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/SetBriefingText.cs:79:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/MissionStage.cs:55:        w.WriteU16(0);            // cbmsg placeholder
+src/Allegiance.Core/Wire/AutoAccept.cs:52:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ShipReset.cs:36:        w.WriteU16(0);            // cbmsg placeholder
+src/Allegiance.Core/Wire/LightShipsUpdate.cs:106:/// simply includes every supplied ship (cited simplification; the real budget
+src/Allegiance.Core/Wire/LightShipsUpdate.cs:141:    /// every supplied ship is included (cited simplification).</summary>
+src/Allegiance.Core/Wire/LightShipsUpdate.cs:156:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/BuyLoadoutRequest.cs:58:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/PositionReq.cs:39:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/AutoDonate.cs:4:/// <c>FM_C_AUTODONATE</c> (id 112), the client's auto-donate request
+src/Allegiance.Core/Wire/AutoDonate.cs:7:///   DEFINE_FEDMSG(C, AUTODONATE, 112)
+src/Allegiance.Core/Wire/AutoDonate.cs:12:/// Layout (default MSVC packing — AUTODONATE sits outside Messages.h's
+src/Allegiance.Core/Wire/AutoDonate.cs:22:///   = 12 B fixed → cbmsg = 12 = sizeof(FMD_C_AUTODONATE)
+src/Allegiance.Core/Wire/AutoDonate.cs:38:public sealed class AutoDonate : IFedMessage
+src/Allegiance.Core/Wire/AutoDonate.cs:60:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/AutoDonate.cs:66:        if (w.Position != FixedSize) throw new InvalidOperationException($"AUTODONATE(C) internal layout drift: {w.Position} != {FixedSize}");
+src/Allegiance.Core/Wire/AutoDonate.cs:70:    public static AutoDonate Decode(ReadOnlySpan<byte> buf)
+src/Allegiance.Core/Wire/AutoDonate.cs:73:            throw new ArgumentException($"AUTODONATE(C) needs >= {FixedSize} bytes, got {buf.Length}");
+src/Allegiance.Core/Wire/AutoDonate.cs:75:        if (hdr.Fmid != Fmid) throw new ArgumentException($"expected AUTODONATE(C) fmid={Fmid}, got {hdr.Fmid}");
+src/Allegiance.Core/Wire/AutoDonate.cs:80:        var msg = new AutoDonate { SidDonateTo = r.ReadI16() };
+src/Allegiance.Core/MapGen/MapGenType.cs:126:    /// is a vestigial NULL stub (the old players-per-team check was commented
+src/Allegiance.Core/MapGen/MapGenType.cs:143:    /// its own <c>IsValid</c> is a vestigial NULL stub (the old
+src/Allegiance.Core/Wire/SideInactive.cs:71:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/MissileDestroyed.cs:37:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/HeavyShipsUpdate.cs:38:/// exact shape. The simplification the task did endorse — dropping the
+src/Allegiance.Core/Wire/HeavyShipsUpdate.cs:404:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/TeleportAck.cs:48:        w.WriteU16(0);                    // cbmsg placeholder
+src/Allegiance.Core/Wire/QuitSideReason.cs:12:/// intentionally absent as named members — a deliberate simplification, not a
+src/Allegiance.Core/Wire/SideRoster.cs:58:        w.WriteU16(0);               // cbmsg placeholder
+src/Allegiance.Core/Wire/CancelBallot.cs:40:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/StartGame.cs:33:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ChatBuoy.cs:73:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/SetCluster.cs:43:        w.WriteU16(0);            // cbmsg placeholder
+src/Allegiance.Core/Wire/GameState.cs:104:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/CollisionEvent.cs:107:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs:7:/// from the much larger "not yet ported" set (tracked in the wiki
+src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs:21:/// gets a real, cited answer instead of silence or a stale guess. See
+src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs:80:        /// impossible without guessing a layout with no way to verify
+src/Allegiance.Core/Wire/ProbeDestroyed.cs:44:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ViewClusterReply.cs:49:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/Promote.cs:36:        w.WriteU16(0);                // cbmsg placeholder
+src/Allegiance.Core/Wire/Promote.cs:99:        w.WriteU16(0);                          // cbmsg placeholder
+src/Allegiance.Core/Wire/BucketDonate.cs:35:/// traps hack boots, then — if the side can still build the bucket — calls
+src/Allegiance.Core/Wire/BucketDonate.cs:65:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/CreateBuckets.cs:69:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ShipUpdate.cs:41:        w.WriteU16(0);            // cbmsg placeholder
+src/Allegiance.Core/Wire/FireExpendable.cs:46:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ChatMessage.cs:85:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/RandomizeTeams.cs:34:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:4:/// <c>FM_S_AUTODONATE</c> (id 116), the server's broadcast of a player's
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:7:///   DEFINE_FEDMSG(S, AUTODONATE, 116)
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:13:/// Layout (default MSVC packing — AUTODONATE sits outside Messages.h's
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:22:///   = 12 B fixed → cbmsg = 12 = sizeof(FMD_S_AUTODONATE)
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:29:/// <c>CFSPlayer::SetAutoDonate</c>, <c>fsship.cpp:1343-1352</c>): tells the
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:36:public sealed class AutoDonateUpdate : IFedMessage
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:62:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:68:        if (w.Position != FixedSize) throw new InvalidOperationException($"AUTODONATE(S) internal layout drift: {w.Position} != {FixedSize}");
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:72:    public static AutoDonateUpdate Decode(ReadOnlySpan<byte> buf)
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:75:            throw new ArgumentException($"AUTODONATE(S) needs >= {FixedSize} bytes, got {buf.Length}");
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:77:        if (hdr.Fmid != Fmid) throw new ArgumentException($"expected AUTODONATE(S) fmid={Fmid}, got {hdr.Fmid}");
+src/Allegiance.Core/Wire/AutoDonateUpdate.cs:82:        var msg = new AutoDonateUpdate { SidDonateBy = r.ReadI16() };
+src/Allegiance.Core/Wire/AsteroidMined.cs:66:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/LogonRequest.cs:65:        w.WriteU16(0); // cbmsg placeholder
+src/Allegiance.ClientCore.MonoGame/Program.cs:17://   lobby on another address/port; do not guess.
+src/Allegiance.Core/Wire/SetWingId.cs:61:    /// simplification (no team-leader system), the server requires this to be
+src/Allegiance.Core/Wire/SetWingId.cs:73:    /// self-targeting-only simplification it is always <c>false</c>
+src/Allegiance.Core/Wire/SetWingId.cs:83:        w.WriteU16(0);                       // cbmsg placeholder
+src/Allegiance.Core/Wire/AsteroidsUpdate.cs:97:/// <item><b><c>co</c> — identity (confirmed simplification).</b> Native sends
+src/Allegiance.Core/Wire/AsteroidsUpdate.cs:204:    /// identity (see the entry doc for the cited simplification).</summary>
+src/Allegiance.Core/Wire/AsteroidsUpdate.cs:223:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/FireExpendableRequest.cs:49:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/QuitSide.cs:47:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ProjectileInstance.cs:90:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/LockSides.cs:39:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/TreasureSpawn.cs:65:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/TreasureAck.cs:62:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/MapGen/MissionMapGenerator.cs:26:/// <para><b>Scope simplifications, stated plainly:</b> (1) the cosmetic
+src/Allegiance.Core/MapGen/MissionMapGenerator.cs:496:            Position: [0f, 0f, rad1],                      // placeholder; PlaceWarps rewrites
+src/Allegiance.Core/MapGen/MissionMapGenerator.cs:1067:    // treasure list) — documented simplification.
+src/Allegiance.Core/MapGen/MissionMapGenerator.cs:1094:        // the successor leg is skipped (documented simplification).
+src/Allegiance.Core/MapGen/MissionMapGenerator.cs:1248:    // simplification.
+src/Allegiance.Core/MapGen/MissionMapGenerator.cs:1341:    /// starbase sits at the origin) — the simplified stand-in for native's
+src/Allegiance.Core/Wire/MissionDef.cs:48:/// <b>Field rationale (grep-verified, not guessed):</b> the only fields the
+src/Allegiance.Core/Wire/MissionDef.cs:115:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Wire/ExportShip.cs:51:/// <c>nParts=0</c>, a documented simplification) is what makes an already-
+src/Allegiance.Core/Wire/ExportShip.cs:109:        w.WriteU16(0);              // cbmsg placeholder
+src/Allegiance.Core/Sim/Ship.cs:17:/// simplification that this slice deliberately does not attempt, documented
+src/Allegiance.Core/Sim/Ship.cs:475:    /// machine — a documented simplification for this server's simplified
+src/Allegiance.Core/Sim/Ship.cs:589:    /// is a placeholder 0 (the slot is implicit in the array position) — this
+src/Allegiance.Core/Sim/Ship.cs:1100:    /// is the port's stand-in for the C++ <c>m_pmodelRipcord</c> pointer
+src/Allegiance.Core/Sim/Ship.cs:1203:    /// <b>Explicit, sourced simplification:</b> the native test drives the
+src/Allegiance.Core/Sim/Ship.cs:1238:        var landerRadius = 0.5f * lander.HullType.Length;        // documented sphere simplification
+src/Allegiance.Core/Sim/Ship.cs:1294:    /// simplification native has, and is replicated faithfully.</para>
+src/Allegiance.Core/Sim/Ship.cs:1558:    /// configured to construct. This port's honest stand-in for native's
+src/Allegiance.Core/Sim/Ship.cs:1565:    /// or by the test), not discovered — the stated applied simplification
+src/Allegiance.Core/Sim/Ship.cs:1679:    /// <b>fewest hops, not true geodesic distance</b> — the same simplification
+src/Allegiance.Core/Sim/Ship.cs:1756:    /// (<c>shipIGC.cpp:2153-2202</c>) is not ported — this search has no idea
+src/Allegiance.Core/Sim/Ship.cs:1859:    /// first-found precedent P159 uses, and the port's honest stand-in for
+src/Allegiance.Core/Sim/Ship.cs:1864:    /// <para><b>Applied simplification vs native's counting rule.</b> Native
+src/Allegiance.Core/Sim/Ship.cs:2003:    /// <paramref name="radius"/> world units of an <b>arbitrary</b> center
+src/Allegiance.Core/Sim/Ship.cs:2026:    /// call; a focused sibling that centers on an arbitrary position (radius in,
+src/Allegiance.Core/Sim/Ship.cs:2070:    /// <para><b>Accepted simplification — no secret-location buoy
+src/Allegiance.Core/Sim/Ship.cs:2309:    /// Amount of mined ore this ship currently carries, in arbitrary ore units.
+src/Allegiance.Core/Sim/Ship.cs:2421:    /// Mount an arbitrary part subtype on this ship and remember it in the
+src/Allegiance.Core/Sim/Ship.cs:2498:        // a stated simplification, not a silent gap).
+src/Allegiance.Core/Sim/Ship.cs:2643:    /// cargo slot (as a placeholder-<see cref="MountedPart.MountId"/> 0 copy);
+src/Allegiance.Core/Sim/Ship.cs:2657:    /// quantities, <c>MountId</c> forced to the placeholder 0 (slot implicit in
+src/Allegiance.Core/Sim/Ship.cs:2676:    /// <c>TrapHackBoot</c> disconnect to a log-and-stop, matching its established
+src/Allegiance.Core/Sim/Ship.cs:3270:    /// deliberate simplification of native, which for non-consumable types
+src/Allegiance.Core/Sim/Ship.cs:3707:    /// the identical <see cref="DeployMine"/> simplification
+src/Allegiance.Core/Sim/Ship.cs:3755:    /// the ship's <b>plain</b> <see cref="Position"/> — deliberate simplifications,
+src/Allegiance.Core/Sim/Ship.cs:4437:    /// Same accepted-simplification caveat as the arrival radius.</summary>
+src/Allegiance.Core/Sim/Ship.cs:4604:    /// <para>This is a deliberate radical simplification of native
+src/Allegiance.Core/Sim/Ship.cs:4619:    /// <c>ClusterId</c>; otherwise does nothing (does not guess) — the same
+src/Allegiance.Core/Sim/Ship.cs:4641:    /// the "turn then burn" simplification of native's velocity-managed
+src/Allegiance.Core/Sim/Ship.cs:4642:    /// <c>GotoPlan</c>. An accepted simplification — a drone may overshoot or
+src/Allegiance.Core/Sim/Ship.cs:4858:    /// <para><b>Radical simplification (the arc's stated strategy).</b> Native
+src/Allegiance.Core/Sim/Ship.cs:4876:    /// by each dodging the other forever, <c>:1661-1667</c> — not ported here,
+src/Allegiance.Core/Sim/Ship.cs:4877:    /// an accepted further simplification, stated not silent); for a
+src/Allegiance.Core/Sim/Ship.cs:4957:        // symmetric tie-break (:1661-1667) is not ported (accepted, stated
+src/Allegiance.Core/Sim/Ship.cs:4958:        // simplification). Radius is other.GetRadius() (common.cpp:1731).
+src/Allegiance.Core/Sim/Ship.cs:5176:        // "turn then burn" simplification of native's velocity-managed
+src/Allegiance.Core/Sim/Ship.cs:5199:    /// <c>Speed · Lifespan</c> is the honest reach — not a guessed constant.
+src/Allegiance.Core/Sim/Ship.cs:5300:    /// as the applied simplification in NPC_RIPCORD_TRAVEL_P172.md.</para>
+src/Allegiance.Core/Sim/Ship.cs:5603:    /// <para><b>Fallbacks are silent stand-bys, never guesses.</b> If the
+src/Allegiance.Core/Sim/Ship.cs:5722:    /// every NPC in this port does when idle — the established simplification,
+src/Allegiance.Core/Sim/Ship.cs:5835:    /// consistent stand-in for native's <c>bDocked</c> gate (this port's NPCs
+src/Allegiance.Core/Sim/Ship.cs:5844:    /// <para><b>Stated simplifications vs the native combat block.</b> Native's
+src/Allegiance.Core/Sim/Ship.cs:5910:    /// deliberate, consistent stand-in for native's <c>bDocked</c> gate (this
+src/Allegiance.Core/Sim/Ship.cs:5917:    /// simplification above; a Builder here always starts a real build when it
+src/Allegiance.Core/Sim/Ship.cs:6086:    /// <item><b>Every-tick re-evaluation (200-tick-cooldown simplification).</b>
+src/Allegiance.Core/Sim/Ship.cs:6424:        // separate notification-only concern not ported here). The docked/parent/
+src/Allegiance.Core/Content/HullModelResolver.cs:36:/// Server.cs:6214-6218), so the runtime never guesses a ship's civ — see the
+src/Allegiance.Core/Wire/AddPart.cs:63:        w.WriteU16(0);                       // cbmsg placeholder
+src/Allegiance.Bot/Bot.cs:101:    private readonly List<AutoDonateUpdate> _autoDonateUpdates = new();
+src/Allegiance.Bot/Bot.cs:626:    /// fixed lock/time/target placeholders). Test/observer instrumentation, the
+src/Allegiance.Bot/Bot.cs:929:    /// <summary>The <c>FM_S_AUTODONATE</c>(116) frames received since connect
+src/Allegiance.Bot/Bot.cs:931:    /// Locked, snapshot-on-read, cleared via <see cref="ResetAutoDonateUpdates"/>.</summary>
+src/Allegiance.Bot/Bot.cs:932:    public IReadOnlyList<AutoDonateUpdate> AutoDonateUpdates { get { lock (_gate) return _autoDonateUpdates.ToArray(); } }
+src/Allegiance.Bot/Bot.cs:933:    public void ResetAutoDonateUpdates() { lock (_gate) _autoDonateUpdates.Clear(); }
+src/Allegiance.Bot/Bot.cs:1179:    /// <summary>Send a real <c>FM_C_AUTODONATE(112)</c> (P197) — the client's
+src/Allegiance.Bot/Bot.cs:1184:    public void SendAutoDonate(short sidDonateTo, int amount)
+src/Allegiance.Bot/Bot.cs:1186:        var msg = new AutoDonate { SidDonateTo = sidDonateTo, Amount = amount };
+src/Allegiance.Bot/Bot.cs:1521:    /// the server's self-targeting-only simplification rejects any other target.
+src/Allegiance.Bot/Bot.cs:1876:                    case AutoDonateUpdate.Fmid:
+src/Allegiance.Bot/Bot.cs:1877:                        _autoDonateUpdates.Add(AutoDonateUpdate.Decode(m));

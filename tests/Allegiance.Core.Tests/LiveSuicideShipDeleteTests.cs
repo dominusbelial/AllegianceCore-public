@@ -339,6 +339,11 @@ public class LiveSuicideShipDeleteTests
         var set = client.ShipAssignment ?? throw new InvalidOperationException("no ship assignment");
         short myId = set.Ship.ShipId;
 
+        // P653 H-26 restores native's child-or-CAN_CHEAT suicide gate (FedSrv.CPP:6338):
+        // a lone pod may no longer suicide. Enable the configured admin predicate for the
+        // test connection (native's CanCheat escape hatch).
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig { Enabled = true, AllowNames = ["SUICIDER"] };
+
         client.SendSuicide();
         int ticks = PumpUntil(server,
             () => client.Deletes.Any(d => d.ShipId == myId) && client.Kills.Any(k => k.ShipId == myId),

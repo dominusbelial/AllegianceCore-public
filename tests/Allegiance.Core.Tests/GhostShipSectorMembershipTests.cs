@@ -148,6 +148,10 @@ public class GhostShipSectorMembershipTests
         // Baseline: the victim starts in the station-less sector's list.
         AssertMembershipConsistent(server.Ships.First(s => s.Ship.Id == victimId).Ship, origSector, "baseline");
 
+        // P653 H-26 restores native's child-or-CAN_CHEAT suicide gate (FedSrv.CPP:6338);
+        // enable the configured admin predicate for the test connection.
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig { Enabled = true, AllowNames = ["GM_VICTIM"] };
+
         // Real death via the suicide wire message (the P105 path), with a real
         // friendly station present -> bKilled -> the BroadcastKillShip respawn.
         victim.SendSuicide();
