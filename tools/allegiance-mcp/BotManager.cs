@@ -1147,14 +1147,14 @@ internal sealed partial class BotManager : IDisposable
         var commander = EnsureCommander(side);
         var core = Catalog.RepresentativeCore();
 
-        // Wait for the side's development-tech mask (CREATE_BUCKETS join sync)
+        // Wait for the side's initial bucket mask (CREATE_BUCKETS join sync)
         // so the synthesized catalog ids line up bucket-for-bucket with the
         // server's (P487's exact premise).
-        if (!WaitUntil(() => commander.World.DevelopmentTechsFor(side) is not null, 8000))
+        if (!WaitUntil(() => commander.World.InitialTechsFor(side) is not null, 8000))
             throw new InvalidOperationException(
                 $"invest: side {side}'s bucket/tech sync (CREATE_BUCKETS) never arrived — cannot resolve real bucket ids yet");
 
-        var techs = commander.World.DevelopmentTechsFor(side)!.Value;
+        var techs = commander.World.InitialTechsFor(side)!.Value;
         var ga = commander.World.GlobalAttributesFor(side);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         var view = ResolveBucket(views, bucketQuery);
@@ -1328,9 +1328,9 @@ internal sealed partial class BotManager : IDisposable
             throw new InvalidOperationException("invest: server probe not connected/validated");
         var commander = EnsureCommander(side);
         var core = Catalog.RepresentativeCore();
-        if (!WaitUntil(() => commander.World.DevelopmentTechsFor(side) is not null, 8000))
+        if (!WaitUntil(() => commander.World.InitialTechsFor(side) is not null, 8000))
             return null;
-        var techs = commander.World.DevelopmentTechsFor(side)!.Value;
+        var techs = commander.World.InitialTechsFor(side)!.Value;
         var ga = commander.World.GlobalAttributesFor(side);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         (string, uint)? layerAny = null;

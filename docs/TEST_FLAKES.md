@@ -35,6 +35,19 @@ quarantine pass, not the parallel CI run).
 | Before (4 measurement runs, master 22d024b8) | **0/4** (no clean run; 3/7/7/6 Core fails + 0/2/2/0 ClientCore) | n/a (no lane existed) | ~20 unique failing tests |
 | After (verification on final tree) | **3/3 clean MAIN runs** (V4, V7, V11; V11 EXIT 0) | not expected 4/4 (residual isolation-flaky live-timing tests) | 21 quarantined; each of V5–V10 surfaced 1–2 new load-flakes, quarantined on the spot |
 
+## P656c observation (2026-10-14)
+
+The unfiltered sequential suites reported Core **4301 pass / 1 fail**,
+ClientCore **939 pass / 0 fail / 1 opt-in showcase skip**, and MonoGame
+**2125 pass / 0 fail / 3 optional Meshy-pack skips**. Core's
+`Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking`
+failed with the healthy peer still at zero received updates when the flood-log
+condition completed, matching the P666 observation below. After all three
+assemblies finished, the exact method passed **3/3 isolated reruns**. No
+transport code, timing threshold, assertion or trait changed. See the
+[P656c report](reports/P656_SHOWCASE_FINALE.md#p656c--restore-the-servers-actual-buyability-at-join)
+for the six new allTech/finale regressions and focused verification record.
+
 ## P659 observation (2026-10-14)
 
 The initial Core suite pass during the cadence work hit three existing wire-timing
