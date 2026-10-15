@@ -33,6 +33,9 @@ public sealed class Sector : IClusterIgc
     /// <summary>The sector's id (<c>ClusterId</c>).</summary>
     public short Id => Cluster.ClusterId;
 
+    /// <summary>Fractional payday treasure accrual (FedSrv/fsmission.cpp:2563-2580).</summary>
+    public double PendingTreasures { get; internal set; }
+
     /// <summary>The sector's name.</summary>
     public string Name => Cluster.Name;
 
@@ -803,7 +806,7 @@ public sealed class Sector : IClusterIgc
         // the (ship, treasure) pair; the host credits the ship's side, broadcasts
         // MONEY_CHANGE side-wide and DESTROY_TREASURE whole-mission, and removes
         // the treasure. See ResolveTreasurePickups for the spec.
-        { using (TickProfiler.Enter("sim.economy")) ResolveTreasurePickups(); }
+        { using (TickProfiler.Enter("sim.economy")) ResolveTreasurePickups((float)dt); }
 
         // Cross-side visibility sweep — P132. Every ship/station/probe in the
         // sector has its SeenBySide state recomputed against every side's
@@ -1259,7 +1262,7 @@ public sealed class Sector : IClusterIgc
     /// use. A dead or docked ship is excluded (a docked ship is not in the
     /// flight sim), mirroring the rescue pass's latches.</para>
     /// </remarks>
-    private void ResolveTreasurePickups()
+    private void ResolveTreasurePickups(float dt)
     {
         if (_models.Count < 2) return;                 // nothing to pair
         var treasures = new List<Treasure>();
@@ -1304,10 +1307,15 @@ public sealed class Sector : IClusterIgc
                 }
 
                 float threshold = Treasure.PickupRadius + shipR;
-                float dx = ship.Position.X - tr.Position.X;
-                float dy = ship.Position.Y - tr.Position.Y;
-                float dz = ship.Position.Z - tr.Position.Z;
-                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+                // Native uses the average trajectory velocity for the collision sweep
+                // (treasureIGC.cpp:239-259). Test the relative segment, including
+                // a treasure crossing a ship between endpoints.
+                var end = ship.Position - tr.Position;
+                var start = ship.Position - ship.CollisionVelocity * dt - tr.PreviousPosition;
+                var travel = end - start;
+                float length2 = travel.LengthSquared();
+                float fraction = length2 == 0 ? 0 : Math.Clamp(-(start * travel) / length2, 0, 1);
+                if ((start + travel * fraction).LengthSquared() > threshold * threshold) continue;
 
                 _pendingTreasurePickups.Add((ship, tr));
                 done.Add(tr);

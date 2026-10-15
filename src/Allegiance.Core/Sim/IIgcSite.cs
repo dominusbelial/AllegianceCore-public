@@ -154,6 +154,9 @@ public interface IIgcSite
     /// </summary>
     void TreasureDestroyedEvent(Treasure t) { }
 
+    /// <summary>New ambient treasure / artifact (Igc/missionigc.cpp:4207-4213).</summary>
+    void TreasureGeneratedEvent(Treasure t) { }
+
     // ── text (console messages to clients) ────────────────────────────────
     // igc.h:4847. (PostText / PostNotificationText variadic wrappers skipped.)
     void PostPlainText(bool bCritical, string pszText) { }

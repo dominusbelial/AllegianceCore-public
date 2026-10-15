@@ -768,7 +768,14 @@ public sealed partial class Server
         _host.MineHit = BroadcastMineHit;                       // P574: wire the site's MineHitEvent (per-hit pop at P2) to the wire broadcast
         _host.ProbeCreated = BroadcastExportProbe;             // P99: wire the site's ProbeCreatedEvent to the wire broadcast
         _host.ProbeDestroyed = BroadcastProbeDestroyed;        // P99: wire the site's ProbeDestroyedEvent to the wire broadcast
-        _host.TreasureDestroyed = BroadcastTreasureDestroyed;  // P586: wire the site's TreasureDestroyedEvent (expiry) to the whole-mission DESTROY_TREASURE
+        _host.TreasureGenerated = BroadcastGeneratedTreasure;
+        _host.TreasureDestroyed = treasure =>
+        {
+            BroadcastTreasureDestroyed(treasure);
+            // Expiry, unlike pickup, retains the flag payload (FedSrv.CPP:12504-12506).
+            if (treasure.Code == TreasureCode.Flag && treasure.OwnerMission is { } owner)
+                RespawnCarriedFlag(owner, treasure.Data.TreasureId);
+        };  // P586: wire the site's TreasureDestroyedEvent (expiry) to the whole-mission DESTROY_TREASURE
         _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast
         _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
@@ -1025,7 +1032,14 @@ public sealed partial class Server
         for (int t = 0; t < g.Teams; t++)
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
-        var mission = Mission.Assemble(core, map, sides, _host, _simNow);  // site bound; core resolved
+        var mission = Mission.Assemble(core, map, sides, _host, _simNow);
+        g.Treasure.Validate();
+        mission.TreasureParameters = g.Treasure;
+        if (mg is not null)
+        {
+            mission.PopulateTreasures(_simNow, mg.PlayerSectorTreasures ?? 0,
+                mg.NeutralSectorTreasures ?? 0, mg.ArtifactsGame ?? false);
+        }  // site bound; core resolved
         // P402 — remember whether this mission's map came from MapGen so the
         // debug-topology machinery below (and the join/death/respawn paths that
         // share its station helpers) can tell a generated arena from the real

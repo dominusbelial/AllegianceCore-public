@@ -40,6 +40,9 @@ public sealed class GameConfig
     /// </summary>
     public MapGenConfig? MapGen { get; init; }
 
+    /// <summary>Mission treasure rates and loaded-core set IDs, with native defaults.</summary>
+    public Allegiance.Core.Model.TreasureParameters Treasure { get; init; } = new();
+
     /// <summary>
     /// P598 — the port of native's <c>bAutoRestart</c> (igc.h:1154, default
     /// <c>false</c> at igc.h:1268): whether the mission restarts automatically

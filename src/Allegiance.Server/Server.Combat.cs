@@ -1822,7 +1822,7 @@ public sealed partial class Server
         var sector = victim.Sector;
         var mission = victim.Mission;
         if (sector is null || mission is null) return;
-        uint time0 = (uint)TickIndex;
+        uint time0 = (uint)(now * 1000);
 
         // (1) PARTS — 1-in-5 per still-mounted part (FedSrv.CPP:11686-11696):
         //     `if (randomInt(0,4) == 0) CreateTreasure(..., p, p->GetPartType(), p1, 100.0f, 60.0f)`
@@ -1943,16 +1943,14 @@ public sealed partial class Server
     /// flag's own side (capability <c>c_sabmPedestal</c>, with no flag of that side
     /// already within native's 300-unit "spitting distance", FedSrv.CPP:13883-13905)
     /// and spawn a c_tcFlag treasure above it (FedSrv.CPP:13921-13941). The
-    /// SIDE_TEAMLOBBY artifact (-2) leg (FedSrv.CPP:13847-13869) delegates to
-    /// <c>GenerateTreasure</c> in a random neutral cluster — the DECLARED-OUT-OF-SCOPE
-    /// ambient treasure system (P397, per this task's brief) — so it is logged and
-    /// left unspawned here, not silently dropped.
+    /// SIDE_TEAMLOBBY artifact (-2) delegates to GenerateTreasure in a random
+    /// neutral cluster (FedSrv.CPP:13847-13868).
     /// </summary>
     private void RespawnCarriedFlag(Mission mission, short sidFlag)
     {
         if (sidFlag == Side.ArtifactSentinelFlag)   // SIDE_TEAMLOBBY = -2 (igc.h:514)
         {
-            Console.WriteLine("[loot] flag artifact (SIDE_TEAMLOBBY) respawn needs the deferred ambient treasure generator (P397 out of scope) — not spawned");
+            mission.RespawnArtifact(_simNow);
             return;
         }
 
@@ -1988,7 +1986,7 @@ public sealed partial class Server
             P0: [p0.X, p0.Y, p0.Z],
             V0: [0f, 0f, 0f],
             Lifespan: 10.0f * 24.0f * 3600.0f,           // 10 days (FedSrv.CPP:13927)
-            Time0: (uint)TickIndex,
+            Time0: (uint)(_simNow * 1000.0),
             ObjectId: mission.NextObjectId(),            // GenerateNewTreasureID() (FedSrv.CPP:13930)
             TreasureId: sidFlag,
             ClusterId: st.ClusterId,                     // pstation->GetCluster()->GetObjectID() (FedSrv.CPP:13926)
@@ -2422,6 +2420,7 @@ public sealed partial class Server
                 Cookie = NextCookie(EnsurePeerUpdate(kv.Key)),   // P507 — native's NewCookie() on warp SET_CLUSTER (fsship.cpp:767)
             };
             SendPeer(kv.Key, FedPacket.Pack(new[] { set.Encode() }));
+            SendTreasureSnapshot(kv.Key, newSector);
             Console.WriteLine($"[warp] peer {kv.Key} ship {ship.Id} -> SET_CLUSTER sector {newSector.Id} (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)");
             return;
         }
@@ -2572,6 +2571,8 @@ public sealed partial class Server
                         mission.Site.FlagsKillsComputed(mission, fChanged, fWinner);
                 }
             }
+            if (sidFlag == Side.ArtifactSentinelFlag)
+                RespawnCarriedFlag(mission, sidFlag); // FedSrv.CPP:13161
             ship.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:13149
 
             // Whole-mission announce with sideidFlag = NA (FedSrv.CPP:13150-13157).

@@ -3684,12 +3684,8 @@ public sealed class Ship : Model, IShipIgc
     /// P113's ripcord / P116's landing probes use (<c>Ship.cs:411-415</c>).</item>
     /// <item><b>Velocity:</b> <c>v0 = direction × 25.0f + ship velocity</c>
     /// (<c>dv = 25.0f</c> is the DROP_PART call's argument,
-    /// <c>FedSrv.CPP:6326</c>). A real value is computed and stored on the wire
-    /// for fidelity, but — per the task's explicit scope and <see cref="Treasure"/>
-    ///'s own remarks — <b>no velocity integration</b> is added to the sim: the
-    /// treasure rests statically at <c>P0</c> exactly as cash treasures do. The
-    /// deceleration-to-stop of <c>treasureIGC.cpp:95-116</c> is a known,
-    /// accepted gap.</item>
+    /// <c>FedSrv.CPP:6326</c>). Treasure integrates this initial velocity with
+    /// native deceleration (Igc/treasureIGC.cpp:18,221-259).</item>
     /// <item><b>Amount:</b> set to the dropped part's own <c>Amount</c> per this
     /// task's spec (the verification demands the treasure's
     /// <c>TreasureId</c>/<c>Amount</c> match the dropped part). This is a
@@ -3703,9 +3699,7 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="part">The just-removed mounted part (already out of the
     /// ship's <c>_parts</c>).</param>
     /// <param name="now">Current sim time (seeds the treasure's clock).</param>
-    /// <param name="time0">Wire <c>time0</c> — the server tick index, this
-    /// port's uint-Time convention (cf. <c>ProjectileInstance</c> stamps its
-    /// create-time as <c>(uint)TickIndex</c>, Server.cs:4676).</param>
+    /// <param name="time0">Wire creation epoch in server simulation milliseconds.</param>
     public Treasure CreateDropTreasure(MountedPart part, double now, uint time0, float dv = 25.0f, float lifespan = 120.0f) =>
         CreateDropTreasure(part.Type, part.Amount, now, time0, dv, lifespan);
 
@@ -3732,8 +3726,7 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="amount">The buffered offered quantity (the treasure's
     /// <c>Amount</c>).</param>
     /// <param name="now">Current sim time (seeds the treasure's clock).</param>
-    /// <param name="time0">Wire <c>time0</c> — the server tick index, this
-    /// port's uint-Time convention.</param>
+    /// <param name="time0">Wire creation epoch in server simulation milliseconds.</param>
     public Treasure CreateDropTreasure(DataPartTypeIGC type, short amount, double now, uint time0, float dv = 25.0f, float lifespan = 120.0f)
     {
         var sector = Sector
@@ -3787,7 +3780,7 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="sidFlag">The carried flag's original side id (becomes the
     /// treasure's <c>TreasureId</c>).</param>
     /// <param name="now">Current sim time (seeds the treasure's clock).</param>
-    /// <param name="time0">Wire <c>time0</c> — the server tick index.</param>
+    /// <param name="time0">Wire creation epoch in server simulation milliseconds.</param>
     public Treasure CreateFlagTreasure(short sidFlag, double now, uint time0)
     {
         var sector = Sector

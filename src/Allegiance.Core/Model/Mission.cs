@@ -23,7 +23,7 @@ using Allegiance.Core.Sim;
 /// destination is the sector containing its partner warp (or the sector named
 /// directly), matching <c>warpIGC.h:129-141</c> and the corpus validator.
 /// </remarks>
-public sealed class Mission
+public sealed partial class Mission
 {
     /// <summary>The type universe the mission draws on.</summary>
     public StaticCore Core { get; }
@@ -298,12 +298,8 @@ public sealed class Mission
     /// <summary>The flat seconds between paydays, ported from
     /// <c>c_dtBetweenPaydays = 60.0f</c> (<c>missionigc.cpp:2691</c>) and the
     /// mission constant <c>c_fcidSecondsBetweenPaydays</c> it is stored under
-    /// (<c>missionigc.cpp:2746</c>). The reference mission <em>overrides</em>
-    /// whatever the core's <c>DataConstantsIGC.FloatConstants[6]</c> holds with
-    /// this fixed value at init (<c>missionigc.cpp:2773-2774</c>), so — like
-    /// <see cref="ServerHost.ExitWarpSpeedBonus"/> and per this repo's
-    /// honesty-about-simplifications convention — we use the fixed value and
-    /// say so, rather than reading the (overridden) core slot.</summary>
+    /// (<c>missionigc.cpp:2746</c>). PaydayInterval reads the loaded-core slot 6;
+    /// this constant supplies the native fallback.</summary>
     public const double SecondsBetweenPaydays = 60.0;
 
     /// <summary>The per-payday income before civilization adjustment, ported
@@ -663,17 +659,22 @@ public sealed class Mission
         // lives in the host's PaydayEvent handler, mirroring the split between
         // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
         if (NextPaydayTime == 0)
-            NextPaydayTime = now + SecondsBetweenPaydays;     // fsmission.cpp:2253 (seeded at start + 60)
+            NextPaydayTime = now + PaydayInterval;     // fsmission.cpp:2253 (seeded at start + 60)
         if (now >= NextPaydayTime)
         {
-            foreach (var side in Sides)
+            double treasureElapsed = PaydayInterval + now - NextPaydayTime;
+            if (TreasureParameters.AllowDevelopments) // native fsmission.cpp:2520
             {
-                long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
-                            + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
-                side.Money += income;                          // fsmission.cpp:2536
-                Site.PaydayEvent(side, income);                // site seam → host payout
+                foreach (var side in Sides)
+                {
+                    long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
+                                + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
+                    side.Money += income;                          // fsmission.cpp:2536
+                    Site.PaydayEvent(side, income);                // site seam → host payout
+                }
             }
-            NextPaydayTime += SecondsBetweenPaydays;           // keep phase (fsmission.cpp:2519)
+            RegenerateTreasures(now, treasureElapsed);
+            NextPaydayTime += PaydayInterval;           // keep phase (fsmission.cpp:2519)
         }
 
         double deltaT = now - LastUpdate;
@@ -744,7 +745,7 @@ public sealed class Mission
             side.Money = seed;                 // assignment, fsmission.cpp:2004 (fresh side starts at 0)
             Site.PaydayEvent(side, seed);      // fsmission.cpp:2278 — immediate payout via the existing seam
         }
-        NextPaydayTime = now + SecondsBetweenPaydays;   // fsmission.cpp:2253 — cadence anchored at the real start
+        NextPaydayTime = now + PaydayInterval;   // fsmission.cpp:2253 — cadence anchored at the real start
     }
 
     /// <summary>P443 — the starting-treasury seed for one side:

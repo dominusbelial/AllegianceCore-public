@@ -3479,9 +3479,9 @@ private void CompleteStartCountdown(Mission mission, double now)
         // exported (P64) — the map is m2xspiderw.igc, 134 real
         // rocks — since the client's UndockMinersAndStartMining
         // (CommanderResearchAndExpand.cs:1563-1568) searches
-        // GetAsteroids() for He3-named rocks. Treasure, mines and
-        // probes are intentionally skipped (none exist in this
-        // map / this codebase's scope), matching the task.
+        // GetAsteroids() for He3-named rocks. Runtime treasures in the
+        // entered sector are exported below, after SET_CLUSTER; they
+        // are not part of this static, all-sectors map export.
         //
         // Unconditional — no SeenBySide()/fog-of-war gate, exactly
         // as P30 reasoned for clusters (Server.cs:742-747): this
@@ -3508,6 +3508,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             Cookie = NextCookie(EnsurePeerUpdate(from)),   // P507 — native's NewCookie(): the client echoes this in SHIP_UPDATE (fsship.cpp:767)
         };
         SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+        SendTreasureSnapshot(from, live.Sector);
 
         // FM_S_BUY_LOADOUT_ACK(5): after the client has been told
         // its object (EXPORT 26) and its launch (SET_CLUSTER 7),

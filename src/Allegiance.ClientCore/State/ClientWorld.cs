@@ -326,6 +326,11 @@ public sealed partial class ClientWorld
         get => _timeScale;
         set
         {
+            if (_treasureClockSeeded)
+            {
+                _treasureServerSeconds = TreasureServerSeconds();
+                _treasureLocalSeconds = NowSeconds();
+            }
             // Integrate the previous rate before applying a new dilation rate.
             long now = Environment.TickCount64;
             if (_countdownClockLocalMs is { } last)
@@ -1053,8 +1058,8 @@ public sealed partial class ClientWorld
     /// <summary>P293 — live treasures keyed by TreasureId, from the creation
     /// <c>FM_S_TREASURE(28)</c> (the DROP_PART part-treasure and treasure-ack
     /// re-spawn broadcasts) and removed by <c>FM_S_DESTROY_TREASURE(30)</c>
-    /// (on pickup/expiry). A treasure is static (fixed P0), so no per-tick
-    /// stream updates it (see <see cref="TreasureEntity"/>).</summary>
+    /// (on pickup/expiry). Position follows the exported trajectory
+    /// (see <see cref="TreasureEntity"/>).</summary>
     public IReadOnlyDictionary<short, TreasureEntity> Treasures => _treasures;
 
     /// <summary>P292 — live deployed chaff in arrival order, pruned by expiry
@@ -1500,8 +1505,17 @@ public sealed partial class ClientWorld
     public bool IsIntermission => _countdownTargetMs is not null
         && _mission?.Stage == MissionStageMessage.StageNotStarted;
 
+    private bool _treasureClockSeeded;
+    private double _treasureServerSeconds;
+    private double _treasureLocalSeconds;
+    private double TreasureServerSeconds() => _treasureServerSeconds
+        + (NowSeconds() - _treasureLocalSeconds) * TimeScale;
+
     public void ObserveServerTime(uint serverMs, long localMs)
     {
+        _treasureClockSeeded = true;
+        _treasureServerSeconds = serverMs / 1000.0;
+        _treasureLocalSeconds = NowSeconds();
         _countdownClockServerMs = serverMs;
         _countdownClockLocalMs = localMs;
     }
@@ -1571,6 +1585,7 @@ public sealed partial class ClientWorld
         _mines.Clear();
         _buildingEffects.Clear();
         _treasures.Clear();
+        _treasureClockSeeded = false;
         _chaff.Clear();
         _explosions.Clear();
         _explosionSoundEvents.Clear();
@@ -1954,6 +1969,7 @@ public sealed partial class ClientWorld
 
     private void Apply(SetCluster set)
     {
+        _treasures.Clear();
         MarkSnapshotDirty();
         // On first arrival this is the "here is your ship" assignment.
         MyShipId ??= set.Ship.ShipId;
@@ -2656,17 +2672,17 @@ public sealed partial class ClientWorld
                 _buildingEffects.Remove(kv.Key);
     }
 
-    /// <summary>P293 — <c>FM_S_TREASURE(28)</c>: a freshly-created treasure (this
-    /// port's real first sends are the DROP_PART(33) part-treasure path,
-    /// <c>Server.cs:7014</c>, and the treasure-ack decline re-spawn,
-    /// <c>Server.cs:7817</c>) enters the table keyed by its real
-    /// <c>ObjectId</c>. A treasure is static in this port, so this is the only
-    /// write it ever gets (no per-tick stream); its P0 is final for its
-    /// lifetime. The code/payload/amount ride along for faithful parity with the
-    /// wire record (see <see cref="TreasureEntity"/>).</summary>
+    /// <summary>Retain TREASURE's original trajectory and predict its motion,
+    /// just as native CtreasureIGC does after export/import.</summary>
     private void Apply(TreasureSpawn spawn)
     {
         var d = spawn.Data;
+        if (!_treasureClockSeeded)
+        {
+            _treasureClockSeeded = true;
+            _treasureServerSeconds = d.Time0 / 1000.0;
+            _treasureLocalSeconds = NowSeconds();
+        }
         _treasures[d.ObjectId] = new TreasureEntity
         {
             TreasureId = d.ObjectId,
@@ -2674,6 +2690,9 @@ public sealed partial class ClientWorld
             PayloadId = d.TreasureId,
             Amount = d.Amount,
             Code = d.TreasureCode,
+            InitialVelocity = Allegiance.Core.Sim.TreasureMotion.Vector(d.V0),
+            CreatedAt = d.CreateNow ? TreasureServerSeconds() : d.Time0 / 1000.0,
+            ServerClock = TreasureServerSeconds,
             Position = d.P0 is { Length: 3 } p
                 ? new Vector3(p[0], p[1], p[2])
                 : Vector3.Zero,
@@ -3715,6 +3734,7 @@ public sealed partial class ClientWorld
         _mines.Clear();
         _buildingEffects.Clear();
         _treasures.Clear();
+        _treasureClockSeeded = false;
         _chaff.Clear();
         _explosions.Clear();
         _explosionSoundEvents.Clear();
