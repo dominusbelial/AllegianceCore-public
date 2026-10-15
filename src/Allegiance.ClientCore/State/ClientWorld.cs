@@ -507,6 +507,7 @@ public sealed partial class ClientWorld
     // parts the hangar offers: an item is offered iff its TtbmRequired ⊆
     // (stationLocal | mySideDev) — the exact P283 containment.
     private readonly Dictionary<short, TechTreeBitMask> _developmentTechsBySideId = new();
+    private readonly Dictionary<short, TechTreeBitMask> _initialTechsBySideId = new();
 
     // P446 — each side's live global-attribute multiplier set (native
     // <c>Side::GetGlobalAttributeSet()</c>, the 25-factor <c>GlobalAttributeSet</c>),
@@ -1349,6 +1350,11 @@ public sealed partial class ClientWorld
     public TechTreeBitMask? DevelopmentTechsFor(short sideId) =>
         _developmentTechsBySideId.TryGetValue(sideId, out var m) ? m : null;
 
+    /// <summary>The stable bucket-catalog seed from CREATE_BUCKETS.TtbmInitial
+    /// (native appmsg.cpp:2386-2387), independent of current shop/research techs.</summary>
+    public TechTreeBitMask? InitialTechsFor(short sideId) =>
+        _initialTechsBySideId.TryGetValue(sideId, out var m) ? m : null;
+
     /// <summary>P446 — the live global-attribute multiplier set
     /// (<c>GlobalAttributeSet</c>, native <c>Side::GetGlobalAttributeSet()</c>)
     /// per side id, from SIDE_ATTRIBUTE_CHANGE(76) whole-mission broadcasts as
@@ -1585,6 +1591,7 @@ public sealed partial class ClientWorld
         AllowEmptyTeams = null;          // P455b — AET bit resets on reconnect
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
+        _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();                    // P442 — per-player wallet state
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
         _soundEvents.Clear();
@@ -3735,6 +3742,7 @@ public sealed partial class ClientWorld
         AllowEmptyTeams = null;
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
+        _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();
         _autoDonateTargetByShipId.Clear();
         _soundEvents.Clear();
@@ -3849,6 +3857,8 @@ public sealed partial class ClientWorld
     {
         if (MySideId is not { } side || buckets.TtbmDevelopments is not { Length: TechTreeBitMask.ByteCount } mask) return;
         _developmentTechsBySideId[side] = TechTreeBitMask.FromBytes(mask);
+        if (buckets.TtbmInitial is { Length: TechTreeBitMask.ByteCount } initial)
+            _initialTechsBySideId[side] = TechTreeBitMask.FromBytes(initial);
     }
 
     /// <summary>P487 — <c>FM_S_BUCKET_STATUS(65)</c>: the server's per-bucket

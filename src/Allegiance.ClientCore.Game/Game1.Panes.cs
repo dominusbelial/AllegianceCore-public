@@ -500,7 +500,7 @@ public sealed partial class Game1
     /// P487 — synthesize the local side's bucket definitions via
     /// <see cref="Allegiance.Core.Model.BucketCatalog.Describe"/> — the SAME id
     /// numbering the server baked into its list at <c>Mission.Assemble</c> (same
-    /// core + same initial techs) — fed the side's development-tech mask and GA.
+    /// core + same initial techs) — fed the side's initial-tech mask and GA.
     /// Returns null when the core is unavailable or the side's techs aren't
     /// observed yet, so the caller (<c>_investDefs ??= BuildInvestDefs()</c>)
     /// retries on a later dock instead of caching a wrong list.
@@ -511,7 +511,7 @@ public sealed partial class Game1
         if (core is null) return null;
         var world = _session.World;
         short mySide = world.MySideId ?? -1;
-        if (world.DevelopmentTechsFor(mySide) is not { } techs) return null;   // techs unknown — retry later
+        if (world.InitialTechsFor(mySide) is not { } techs) return null;   // bucket seed unknown — retry later
         var ga = world.GlobalAttributesFor(mySide);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         var list = new List<Rendering.InvestmentBucket>(views.Count);

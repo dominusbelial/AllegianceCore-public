@@ -73,8 +73,6 @@ internal sealed partial class BotManager
             var observer = bots.First(b => b.Side == side);
             var loadout = SelectFinaleLoadout(observer, core.StationTypes[target.StationTypeId], stations);
             plans[side] = new(target.StationId, target.SideId, target.ClusterId, target.StationTypeId, loadout);
-            if (loadout is null)
-                Console.WriteLine($"[finale] side {side}: no buyable bomber strike loadout; keeping existing bombers and their current loadouts");
         }
         var run = new FinaleRun(settings, Now(), bots, plans);
         run.Maturity = plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
@@ -100,23 +98,48 @@ internal sealed partial class BotManager
     {
         var core = Catalog.RepresentativeCore();
         var techs = TechTreeBitMask.Empty;
+        bool knownTech = false;
         short? dock = null;
         if (bot.Cs is { } cs)
         lock (cs.Gate)
         {
-            techs = cs.World.DevelopmentTechsFor(bot.Side) ?? TechTreeBitMask.Empty;
+            var developments = cs.World.DevelopmentTechsFor(bot.Side);
+            knownTech = developments is not null;
+            techs = developments ?? TechTreeBitMask.Empty;
             observedStations ??= cs.World.Stations.Values.ToArray();
             if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.StationId >= 0) dock = me.StationId;
         }
+        int developmentBits = techs.PopCount;
         var owned = (observedStations ?? []).Where(s => s.SideId == bot.Side
             && core.StationTypes.ContainsKey(s.StationTypeId)).ToArray();
         // Side.Techs also includes the effects of all owned buildings.
         foreach (var station in owned)
             techs = techs.Or(TechTreeBitMask.FromBytes(core.StationTypes[station.StationTypeId].TtbmEffects));
-        var shop = owned.OrderByDescending(s => s.StationId == dock)
+        var shop = owned.Where(s => dock is null || s.StationId == dock)
+            .OrderByDescending(s => s.StationId == dock)
             .ThenByDescending(s => core.StationTypes[s.StationTypeId].HasCapability(DataStationTypeIGC.SabmRestart))
             .ThenBy(s => s.StationId).Select(s => (DataStationTypeIGC?)core.StationTypes[s.StationTypeId]).FirstOrDefault();
-        return ShowcaseFinale.SelectLoadout(core, target, techs, shop?.TtbmLocal);
+        if (shop is null) return Failed("no shop: no owned station type resolves for the current dock/home");
+        var selected = ShowcaseFinale.SelectLoadout(core, target, techs, shop.Value.TtbmLocal);
+        if (selected is not null) return selected;
+        var bombers = core.HullTypes.Values.Where(h => Showcase.IsPlayerBuyable(core, h)
+            && Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber).ToArray();
+        var buyable = bombers.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, shop.Value.TtbmLocal, techs)).ToArray();
+        return Failed(bombers.Length == 0 ? "no player-buyable bomber hull in catalogue"
+            : buyable.Length == 0 ? "no bomber hull passes the side + station tech gate"
+            : buyable.All(h => SuccessorUpgrade.HullIsObsolete(core, h, shop.Value.TtbmLocal, techs)) ? "all buyable bomber hulls are obsolete"
+            : "no fitting, buyable, nonobsolete fixed gun can damage the target within the bomber's energy/ammo budget");
+
+        ShowcaseFinale.StrikeLoadout? Failed(string reason)
+        {
+            var stationTypes = string.Join(",", (observedStations ?? []).Where(s => s.SideId == bot.Side)
+                .Select(s => $"{s.StationId}:{s.StationTypeId}"));
+            Console.WriteLine($"[finale] side {bot.Side}, {bot.Name}: no buyable bomber strike loadout: {reason}; "
+                + $"developmentTechs={(knownTech ? developmentBits.ToString() : "unknown (no CREATE_BUCKETS/SIDE_TECH_CHANGE)")}, "
+                + $"sideTechBits={techs.PopCount}, shopType={shop?.StationTypeId}, dock={dock}, "
+                + $"ownedStations(id:type)=[{stationTypes}], targetType={target.StationTypeId}; keeping existing bomber loadout");
+            return null;
+        }
     }
 
     private static object FinaleView(FinaleRun run, double now)
@@ -304,8 +327,6 @@ internal sealed partial class BotManager
                     bot.MineDispenserPartId = null;
                     bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
                 }
-                else
-                    Console.WriteLine($"[finale] side {bot.Side}, {bot.Name}: no buyable bomber strike loadout; keeping hull {bot.HullId} ('{bot.HullName}') and current loadout");
                 bot.Role = "bomber";
                 bot.FinaleBomberActive = true;
             }

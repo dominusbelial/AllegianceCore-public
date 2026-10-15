@@ -2910,28 +2910,21 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// (ClientWorld.Apply(JoinSide), P438).</para></summary>
     private void SendSideTechToPeer(ConnectionId to, Side side)
     {
-        // P560 — broadcast the mask the side's buckets were actually BUILT from
-        // (the civ's base techs, Mission.Assemble → Side ctor → ForSide), NOT
-        // the possibly-testUnlock-inflated `side.DevelopmentTechs`. The P487
-        // id-alignment contract is: CREATE_BUCKETS must equal the bucket-build
-        // mask, so a client that synthesizes its bucket catalog from this mask
-        // (BucketCatalog.Describe) reproduces the server's exact bucket ids.
-        // liveSettings.testUnlock inflates DevelopmentTechs to the required-tech
-        // union AFTER Assemble but leaves the buckets built from base techs; if
-        // we broadcast the inflated mask the client's synthesized ids drift from
-        // the server's and an id-addressed invest targets the WRONG bucket (the
-        // P560 live finding: the 221 layer-drone id resolved to a different
-        // server bucket, so the invest never funded the layer drone).
-        var techs = TechTreeBitMask.FromBytes(side.Civilization.TtbmBaseTechs);
+        // P656c — native sends CURRENT developments and INITIAL bucket techs
+        // separately (fsmission.cpp:4255-4258; appmsg.cpp:2385-2387).
+        // P560 sent base techs in both fields to preserve bucket ids, hiding
+        // testUnlock/research from late joiners' shop. Keep that stable bucket
+        // seed in TtbmInitial; buyability must use the actual development mask.
+        var initial = TechTreeBitMask.FromBytes(side.Civilization.TtbmBaseTechs);
         SendPeer(to, FedPacket.Pack(new[]
         {
             new CreateBuckets
             {
-                TtbmDevelopments = techs.ToBytes(),
-                TtbmInitial = techs.ToBytes(),
+                TtbmDevelopments = side.DevelopmentTechs.ToBytes(),
+                TtbmInitial = initial.ToBytes(),
             }.Encode(),
         }));
-        Console.WriteLine($"[createbuckets] peer {to} -> CREATE_BUCKETS(191) ttbmDevelopments={techs.PopCount} bits ttbmInitial={techs.PopCount} bits (side {side.Id}, bucket-build mask)");
+        Console.WriteLine($"[createbuckets] peer {to} -> CREATE_BUCKETS(191) ttbmDevelopments={side.DevelopmentTechs.PopCount} bits ttbmInitial={initial.PopCount} bits (side {side.Id})");
         foreach (var bkt in side.Buckets)
         {
             SendPeer(to, FedPacket.Pack(new[]
