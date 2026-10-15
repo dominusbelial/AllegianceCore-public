@@ -83,15 +83,19 @@ internal static class ShowcaseFinale
     internal static Damage Volley(StaticCore core, IEnumerable<ExpandedPartData> parts, DataStationTypeIGC target)
         => parts.Aggregate(default(Damage), (sum, p) => sum + PartDamage(core, p.PartId, target));
 
-    // allTech is the showcase's existing station tech unlock, not a purchase bypass:
-    // every hull/part remains player-buyable, mount compatible, priced and ACK checked.
-    internal static StrikeLoadout SelectLoadout(StaticCore core, DataStationTypeIGC target)
+    // Catalogue callers can evaluate the showcase's all-tech unlock. Live callers
+    // supply the observed side/station techs; unknown tech must not imply all-tech.
+    // No legal bomber loadout means keep the existing bombers' current loadouts.
+    internal static StrikeLoadout? SelectLoadout(StaticCore core, DataStationTypeIGC target,
+        TechTreeBitMask? sideTechs = null, byte[]? stationLocal = null)
     {
         var options = new List<StrikeLoadout>();
-        var allTech = core.ComputeRequiredTechUnion();
+        var techs = sideTechs ?? core.ComputeRequiredTechUnion();
+        bool Buyable(byte[] required) => TechTreeBitMask.RequiredTechsBuyable(required, stationLocal, techs);
         foreach (var hull in core.HullTypes.Values.Where(h => Showcase.IsPlayerBuyable(core, h)
                      && Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber
-                     && !SuccessorUpgrade.HullIsObsolete(core, h, null, allTech)).OrderBy(h => h.HullId))
+                     && Buyable(h.TtbmRequired)
+                     && !SuccessorUpgrade.HullIsObsolete(core, h, stationLocal, techs)).OrderBy(h => h.HullId))
         {
             // Pareto search across hardpoints: greedy per-gun selection can waste
             // the shared energy/ammo pool and miss a stronger complete volley.
@@ -99,7 +103,8 @@ internal static class ShowcaseFinale
             foreach (var (hp, index) in hull.Hardpoints.Select((h, i) => (h, i)).Where(x => x.h.Fixed))
             {
                 var guns = core.PartTypes.Values.Where(p => p.GroupId != byte.MaxValue
-                        && !SuccessorUpgrade.PartIsObsolete(core, p, null, allTech)
+                        && Buyable(p.TtbmRequired)
+                        && !SuccessorUpgrade.PartIsObsolete(core, p, stationLocal, techs)
                         && p.Type is DataPartTypeIGC.Weapon && (p.PartMask & ~hp.PartMask) == 0)
                     .OrderBy(p => p.PartId).Select(p => (Part: p, Damage: PartDamage(core, p.PartId, target)))
                     .Where(p => p.Damage.Hull > 0).ToArray();
@@ -121,7 +126,8 @@ internal static class ShowcaseFinale
             }
             var missiles = core.Launchers.Keys.Order().Where(id => core.TryBuildExpendableLauncher(id, out var p)
                     && p.EquipmentType == EquipmentType.Magazine && p.GroupId != byte.MaxValue
-                    && hull.CanMountPart(p) && !SuccessorUpgrade.PartIsObsolete(core, p, null, allTech)
+                    && Buyable(p.TtbmRequired)
+                    && hull.CanMountPart(p) && !SuccessorUpgrade.PartIsObsolete(core, p, stationLocal, techs)
                     && p.Type is DataPartTypeIGC.MissileLauncher ml
                     && core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt)
                     && hull.CapacityMagazine >= Math.Max(1, (int)mt.LauncherExpendableSize))
@@ -150,7 +156,8 @@ internal static class ShowcaseFinale
             {
                 var fitting = core.PartTypes.Values.Where(p => p.GroupId != byte.MaxValue
                     && p.EquipmentType == equipment && hull.CanMountPart(p)
-                    && !SuccessorUpgrade.PartIsObsolete(core, p, null, allTech))
+                    && Buyable(p.TtbmRequired)
+                    && !SuccessorUpgrade.PartIsObsolete(core, p, stationLocal, techs))
                     .OrderByDescending(p => p.Type switch
                     {
                         DataPartTypeIGC.Shield s => s.MaxStrength,
@@ -171,8 +178,7 @@ internal static class ShowcaseFinale
                 parts, Volley(core, parts, target), dps, price, names));
         }
         return options.OrderByDescending(o => o.Volley.Score(target)).ThenByDescending(o => o.PerSecond.Score(target))
-            .ThenBy(o => o.HullId).FirstOrDefault()
-            ?? throw new ArgumentException("spawn_scenario: core has no legal bomber strike loadout against this station");
+            .ThenBy(o => o.HullId).FirstOrDefault();
     }
 
     private sealed record GunSet(IReadOnlyList<ExpandedPartData> Parts, Damage Volley,

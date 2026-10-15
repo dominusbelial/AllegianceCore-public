@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.Tools.McpSpawner;
@@ -31,10 +32,11 @@ internal sealed partial class BotManager
     }
 
     private sealed class FinalePlan(short targetId, short targetSide, short sector,
-        ShowcaseFinale.StrikeLoadout loadout)
+        short targetTypeId, ShowcaseFinale.StrikeLoadout? loadout)
     {
         internal readonly short TargetId = targetId, TargetSide = targetSide, Sector = sector;
-        internal readonly ShowcaseFinale.StrikeLoadout Loadout = loadout;
+        internal readonly short TargetTypeId = targetTypeId;
+        internal ShowcaseFinale.StrikeLoadout? Loadout = loadout;
         internal double? KilledAt;
         internal int BomberBudget, EscortBudget;
     }
@@ -68,8 +70,11 @@ internal sealed partial class BotManager
                 .ThenBy(s => s.StationId).ToArray();
             if (targets.Length == 0) throw new ArgumentException("spawn_scenario: finale needs an observed enemy home station");
             var target = targets[0];
-            plans[side] = new(target.StationId, target.SideId, target.ClusterId,
-                ShowcaseFinale.SelectLoadout(core, core.StationTypes[target.StationTypeId]));
+            var observer = bots.First(b => b.Side == side);
+            var loadout = SelectFinaleLoadout(observer, core.StationTypes[target.StationTypeId], stations);
+            plans[side] = new(target.StationId, target.SideId, target.ClusterId, target.StationTypeId, loadout);
+            if (loadout is null)
+                Console.WriteLine($"[finale] side {side}: no buyable bomber strike loadout; keeping existing bombers and their current loadouts");
         }
         var run = new FinaleRun(settings, Now(), bots, plans);
         run.Maturity = plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
@@ -88,6 +93,30 @@ internal sealed partial class BotManager
         FinaleRun[] runs;
         lock (_gate) runs = _finales?.ToArray() ?? [];
         return runs.Select(r => FinaleView(r, Now())).ToArray();
+    }
+
+    private static ShowcaseFinale.StrikeLoadout? SelectFinaleLoadout(ActiveBot bot,
+        DataStationTypeIGC target, IReadOnlyList<DataStationIGC>? observedStations = null)
+    {
+        var core = Catalog.RepresentativeCore();
+        var techs = TechTreeBitMask.Empty;
+        short? dock = null;
+        if (bot.Cs is { } cs)
+        lock (cs.Gate)
+        {
+            techs = cs.World.DevelopmentTechsFor(bot.Side) ?? TechTreeBitMask.Empty;
+            observedStations ??= cs.World.Stations.Values.ToArray();
+            if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.StationId >= 0) dock = me.StationId;
+        }
+        var owned = (observedStations ?? []).Where(s => s.SideId == bot.Side
+            && core.StationTypes.ContainsKey(s.StationTypeId)).ToArray();
+        // Side.Techs also includes the effects of all owned buildings.
+        foreach (var station in owned)
+            techs = techs.Or(TechTreeBitMask.FromBytes(core.StationTypes[station.StationTypeId].TtbmEffects));
+        var shop = owned.OrderByDescending(s => s.StationId == dock)
+            .ThenByDescending(s => core.StationTypes[s.StationTypeId].HasCapability(DataStationTypeIGC.SabmRestart))
+            .ThenBy(s => s.StationId).Select(s => (DataStationTypeIGC?)core.StationTypes[s.StationTypeId]).FirstOrDefault();
+        return ShowcaseFinale.SelectLoadout(core, target, techs, shop?.TtbmLocal);
     }
 
     private static object FinaleView(FinaleRun run, double now)
@@ -117,6 +146,7 @@ internal sealed partial class BotManager
                 gameOverAt = Relative(run.GameOverAt), winner = run.Winner, gameOverReason = run.EndReason,
                 wings = run.Plans.Select(kv => new { side = kv.Key, targetStation = kv.Value.TargetId,
                     targetSide = kv.Value.TargetSide, targetSector = kv.Value.Sector, loadout = kv.Value.Loadout,
+                    usingExistingBomberLoadouts = kv.Value.Loadout is null,
                     reservedBombers = kv.Value.BomberBudget, escortBudget = kv.Value.EscortBudget,
                     requestedBombers = config.Bombers,
                     bomberShortfall = run.Sides.Contains(kv.Key) ? Math.Max(0, config.Bombers - kv.Value.BomberBudget) : 0,
@@ -126,7 +156,9 @@ internal sealed partial class BotManager
                     targetKilledAt = Relative(kv.Value.KilledAt),
                     timeToKillSeconds = kv.Value.KilledAt is { } kill && run.StrikeStartedAt is { } start ? (double?)(kill - start) : null,
                     grants = run.Bots.Where(b => b.Side == kv.Key && b.FinaleBomberActive)
-                        .Select(b => new { b.Name, grantedHull = b.Granted.HullId, verified = b.FinaleGrantVerified, isPod = b.IsPod, docked = b.PodDocked, warning = b.GrantWarning }).ToArray(),
+                        .Select(b => new { b.Name, requestedHull = b.HullId, requestedHullName = b.HullName,
+                            requestedParts = b.Parts, grantedHull = b.Granted.HullId,
+                            verified = b.FinaleGrantVerified, isPod = b.IsPod, docked = b.PodDocked, warning = b.GrantWarning }).ToArray(),
                 }).ToArray(),
                 escortCohesionAverageDistance = run.CohesionSamples > 0 ? (double?)(run.CohesionDistance / run.CohesionSamples) : null,
                 escortCohesionSamples = run.CohesionSamples,
@@ -235,9 +267,9 @@ internal sealed partial class BotManager
         }
     }
 
-    private static bool IsFinaleBomber(ActiveBot bot) => bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase)
-        || (Catalog.RepresentativeCore().HullTypes.TryGetValue(bot.HullId, out var hull)
-            && Showcase.ClassifyHull(hull) == Showcase.HullRole.Bomber);
+    private static bool IsFinaleBomber(ActiveBot bot) =>
+        Catalog.RepresentativeCore().HullTypes.TryGetValue(bot.HullId, out var hull)
+        && Showcase.ClassifyHull(hull) == Showcase.HullRole.Bomber;
 
     private static bool IsFinaleFighter(ActiveBot bot) =>
         (bot.Role.Equals("fighter", StringComparison.OrdinalIgnoreCase) || bot.Role.Equals("interceptor", StringComparison.OrdinalIgnoreCase))
@@ -260,14 +292,20 @@ internal sealed partial class BotManager
                 bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Arena, bot.Role);
             if (bot.FinaleBomberReserved)
             {
-                var loadout = plan.Loadout;
-                bot.HullId = loadout.HullId; bot.HullName = loadout.HullName; bot.Parts = loadout.Parts;
-                bot.WeaponPartId = Catalog.FirstWeaponPartId(loadout.Parts);
-                bot.LauncherPartId = loadout.Parts.Where(p => Catalog.RepresentativeCore().Launchers.TryGetValue(p.PartId, out var l)
-                    && Catalog.RepresentativeCore().MissileTypes.ContainsKey(l.ExpendabletypeId)).Select(p => (short?)p.PartId).FirstOrDefault();
-                bot.MissileReadyTime = bot.LauncherPartId is { } id ? Catalog.LauncherReadyTime(id) : 0;
-                bot.MineDispenserPartId = null;
-                bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
+                var loadout = SelectFinaleLoadout(bot, Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId]);
+                plan.Loadout = loadout;
+                if (loadout is not null)
+                {
+                    bot.HullId = loadout.HullId; bot.HullName = loadout.HullName; bot.Parts = loadout.Parts;
+                    bot.WeaponPartId = Catalog.FirstWeaponPartId(loadout.Parts);
+                    bot.LauncherPartId = loadout.Parts.Where(p => Catalog.RepresentativeCore().Launchers.TryGetValue(p.PartId, out var l)
+                        && Catalog.RepresentativeCore().MissileTypes.ContainsKey(l.ExpendabletypeId)).Select(p => (short?)p.PartId).FirstOrDefault();
+                    bot.MissileReadyTime = bot.LauncherPartId is { } id ? Catalog.LauncherReadyTime(id) : 0;
+                    bot.MineDispenserPartId = null;
+                    bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
+                }
+                else
+                    Console.WriteLine($"[finale] side {bot.Side}, {bot.Name}: no buyable bomber strike loadout; keeping hull {bot.HullId} ('{bot.HullName}') and current loadout");
                 bot.Role = "bomber";
                 bot.FinaleBomberActive = true;
             }

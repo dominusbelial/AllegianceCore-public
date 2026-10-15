@@ -72,11 +72,12 @@ internal static class Showcase
     /// capability bits (<see cref="DataHullTypeIGC.HasCapability"/>) with the
     /// hull's own name, exactly the cues the game's own targeting/alert systems
     /// use (e.g. c_amEnemyBomber keys on c_habmThreatToStation, igc.h:5390).
-    /// The rule (documented in the P557 report):
-    ///   Bomber   — name contains "bomber", OR carries c_habmThreatToStation
+    /// The role rule (P557, with P656b capital exclusion):
+    ///   Heavy    — name contains heavy/gunship/capital/destroyer/flagship/
+    ///              carrier/cruiser/frigate/corvette, or carries c_habmCarrier.
+    ///              Takes precedence over station threat: capitals threaten bases too.
+    ///   Bomber   — remaining hulls named "bomber", OR carrying c_habmThreatToStation
     ///              (native's own bomber-threat classifier, igc.h:5390-5394);
-    ///   Heavy    — name contains "heavy"/"gunship"/"capital"/"destroyer",
-    ///              or carries c_habmCarrier (a big hull);
     ///   Scout    — name contains "scout";
     ///   Interceptor — name contains "interceptor";
     ///   Fighter  — everything else that is a c_habmFighter hull (igc.h:733)
@@ -89,6 +90,17 @@ internal static class Showcase
     public static HullRole ClassifyHull(DataHullTypeIGC h)
     {
         string n = h.Name;
+        if (n.Contains("heavy", StringComparison.OrdinalIgnoreCase)
+            || n.Contains("gunship", StringComparison.OrdinalIgnoreCase)
+            || n.Contains("capital", StringComparison.OrdinalIgnoreCase)
+            || n.Contains("destroyer", StringComparison.OrdinalIgnoreCase)
+            || n.Contains("flagship", StringComparison.OrdinalIgnoreCase)
+            || n.Contains("carrier", StringComparison.OrdinalIgnoreCase)
+            || n.Contains("cruiser", StringComparison.OrdinalIgnoreCase)
+            || n.Contains("frigate", StringComparison.OrdinalIgnoreCase)
+            || n.Contains("corvette", StringComparison.OrdinalIgnoreCase)
+            || h.HasCapability(DataHullTypeIGC.HabmCarrier))
+            return HullRole.Heavy;
         if (n.Contains("bomber", StringComparison.OrdinalIgnoreCase)
             || h.HasCapability(DataHullTypeIGC.HabmThreatToStation))
             return HullRole.Bomber;
@@ -96,12 +108,6 @@ internal static class Showcase
             return HullRole.Scout;
         if (n.Contains("interceptor", StringComparison.OrdinalIgnoreCase))
             return HullRole.Interceptor;
-        if (n.Contains("heavy", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("gunship", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("capital", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("destroyer", StringComparison.OrdinalIgnoreCase)
-            || h.HasCapability(DataHullTypeIGC.HabmCarrier))
-            return HullRole.Heavy;
         return HullRole.Fighter;
     }
 
