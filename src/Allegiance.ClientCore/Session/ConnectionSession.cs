@@ -40,6 +40,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     // any outside ±1.5 s of SimNow), and these echoes feed the client's
     // OwnShipServerClock. Locked via _gate like _ack.
     private readonly List<(uint ServerMs, long LocalMs)> _pingEchoes = new();
+    private long _connectionGeneration;
+
+    /// <summary>Changes only when Connect starts a new server connection, not on mission rotation.</summary>
+    public long ConnectionGeneration { get { lock (_gate) return _connectionGeneration; } }
 
     // P633 — cumulative inbound wire bytes delivered to OnReceive (fed + crc +
     // framing overhead). Used by get_perf_stats to report the bot's real decode
@@ -210,6 +214,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             _lastPositionRefusal = null;
             _lost = false;               // a new session is not lost (was latched true by a dropped one)
             _world.Reset();
+            _pingEchoes.Clear();
+            _connectionGeneration++;
         }
 
         _transport = new TcpTransport(this);

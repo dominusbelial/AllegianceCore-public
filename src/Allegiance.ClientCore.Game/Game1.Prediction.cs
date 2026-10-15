@@ -2,6 +2,7 @@ using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.State;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.MonoGame;
@@ -203,25 +204,36 @@ public sealed partial class Game1
     private void SeedSimFrom(ServerShipUpdate up)
         => _ownSim.Seed(up.Position, up.Velocity, up.Orientation, up.TurnRates);
 
-    /// <summary>
-    /// P508 — feed the own-ship server clock from received FM_CS_PING echoes and send
-    /// a ~1 Hz ping while connected. Called every frame from <c>Game1.Update</c> (any
-    /// state) so a server-converted SHIP_UPDATE time is ready by undock. The server
-    /// stamps <c>timeServer = SimNow·1000</c> on each echo, so the clock needs no
-    /// tick-rate assumption (see <see cref="Flight.OwnShipServerClock"/>).
-    /// </summary>
+    // Own and remote ships must advance on the same simulation clock under TiDi.
+    private void StepOwnShipSimulation(double wallSeconds, ControlData controls, int stateM)
+        => _ownSim.Step((float)(wallSeconds * _session.World.TimeScale), controls, stateM);
+
+    private long _ownClockConnectionGeneration = -1;
+    private bool _ownClockInitialPingSent;
+
+    /// <summary>Consume session PING echoes and follow the live simulation rate.
+    /// A new connection requires a new clock epoch; a rotated mission does not.</summary>
     private void PumpServerClock()
     {
-        // P508 — feed the own-ship server clock from received FM_CS_PING echoes.
-        // P671 — the SESSION's native keep-alive now sends the CS_PING (every
-        // 6 s, every state — see ConnectionSession), so this pump no longer sends
-        // its own ~1 Hz ping; sending both would double-ping. It only CONSUMES
-        // the echoes, which arrive for whichever of the session's pings the
-        // server answered. The clock extrapolates at ~1:1 (OwnShipServerClock),
-        // so a 6 s sample cadence stays well inside the server's ±1.5 s gate —
-        // exactly the cadence the native client's CheckServerLag runs at.
-        foreach (var (serverMs, localMs) in _session.TakePingEchoes())
-            _ownServerClock.AddSample(serverMs, localMs);
+        lock (_session.Gate)
+        {
+            if (_ownClockConnectionGeneration != _session.ConnectionGeneration)
+            {
+                _ownClockConnectionGeneration = _session.ConnectionGeneration;
+                _ownServerClock.Reset();
+                _ownClockInitialPingSent = false;
+            }
+            // Bootstrap immediately instead of waiting up to six seconds for the
+            // native keep-alive. All subsequent pings remain session-owned.
+            if (!_ownClockInitialPingSent && _session.Connected)
+            {
+                _session.SendPing();
+                _ownClockInitialPingSent = true;
+            }
+            foreach (var (serverMs, localMs) in _session.TakePingEchoes())
+                _ownServerClock.AddSample(serverMs, localMs);
+            _ownServerClock.SetTimeScale(_session.World.TimeScale, Environment.TickCount64);
+        }
     }
 
     /// <summary>
