@@ -4,6 +4,22 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P700 observation (2026-10-15)
+
+The unfiltered Core pass reported **4,557 pass / 1 fail / 0 skip**.
+`Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`
+failed with `TimeoutException: no OnPeerJoined for raw peer`. After Core,
+ClientCore and MonoGame finished, it passed **3/3 exact-method isolated retries**,
+meeting P700's load-flake rule. No transport implementation, assertion, timeout
+or quarantine setting was changed; these retries do not claim a transport fix.
+
+The first ClientCore pass's constructor-free `get_perf_stats` fixture failure
+was deterministic, not a flake. The fixture omitted the new idle metric and
+manager clock. It was corrected and passed 3/3 after a clean build; the final
+unfiltered ClientCore rerun passed **1,042/1,042**. Complete outcomes are recorded in the
+[P700 report](reports/P700_STUCK_DEFENDERS.md) and
+[invocation ledger](reports/P700_assets/results.json).
+
 ## P695 observation (2026-10-15)
 
 The final unfiltered workspace-output suites reported Core **4557 pass / 1 fail**,

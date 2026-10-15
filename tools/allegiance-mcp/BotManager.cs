@@ -1800,6 +1800,7 @@ bool isThreat =
                 // server re-seats it on the rebuilt mission with a fresh ship
                 // id; re-propagate its ready intent so the next wave starts.
                 try { ReReadyProbe(); } catch { }
+                SampleIdleTargets(snap, now);
                 if (Partition is not null) PublishCoordination(snap, now, coordinationEpoch);
 
             }
@@ -2640,7 +2641,9 @@ bool isThreat =
         if (PickDefenseDutyTarget(bot, myCluster, myPos) is { } duty)
         {
             bot.TargetId = duty;
-            EngageShipAt(bot, cs, duty, now, 0, 0);
+            int count = (_tickEngagers.TryGetValue(duty, out var engaged) ? engaged : 0) + 1;
+            _tickEngagers[duty] = count;
+            EngageShipAt(bot, cs, duty, now, count, count);
             return;
         }
 
@@ -2962,8 +2965,18 @@ bool isThreat =
         // P539b — hold fire when a FRIENDLY (same-side) ship lies in the line of
         // fire ahead (kept: native wingmen don't shoot through a teammate; the
         // server suppresses friendly damage anyway, shipIGC.cpp:1222-1228).
-        bool friendlyBlocked = weaponRange > 0f
-            && FriendlyInCone(myPos, aimDir, weaponRange, SameSideShipsInLine(cs, bot, myPos, weaponRange), bot.Side);
+        float shotReach = Math.Min(weaponRange, Math.Max(0, (targetPos - myPos).Length() - targetR));
+        bool friendlyBlocked = shotReach > 0f
+            && FriendlyInCone(myPos, aimDir, shotReach, SameSideShipsInLine(cs, bot, myPos, shotReach), bot.Side);
+
+        // Native close-band speed matching (shipIGC.cpp:2504-2511) can stop
+        // opposite fleets indefinitely when the harness's friendly-line gate
+        // prevents firing. Clear the line laterally, and bound even an unblocked
+        // zero-speed hold to two seconds. This is a harness liveness policy using
+        // native strafe controls (shipIGC.cpp:2590-2591), not a new attack band.
+        if (myVel.LengthSquared() < IdleSpeedMps * IdleSpeedMps
+            && (friendlyBlocked || now - bot.LastMoveAt >= CombatStationarySeconds))
+            state |= (bot.ShipId & 1) == 0 ? ShipControlState.LeftButton : ShipControlState.RightButton;
 
         // Fire gate (shipIGC.cpp:2600): allWeapons iff angleToLead ≤ c_fMaxOffAngle
         // AND t ≤ lifespan·openFireDistPercentage, plus the kept friendly-line check.
@@ -2991,6 +3004,9 @@ bool isThreat =
     {
         float facing = -orient.TimesInverse(dir).Z;                // forward·dir
         float angle = MathF.Acos(Math.Clamp(facing, -1f, 1f));
+        // Native common.cpp:169-176: the cross product is zero directly behind;
+        // choose a yaw direction so the ship can actually turn to its target.
+        if (facing <= -.999f) return (1f, 0f, angle);
         var body = orient.TimesInverse(Vector3.CrossProduct(orient.GetForward(), dir));
         float yaw = Math.Clamp(2f * body.Y, -1f, 1f);
         float pitch = Math.Clamp(2f * -body.X, -1f, 1f);
@@ -3139,6 +3155,15 @@ bool isThreat =
                     && (tgtSide == bot.Side || (cs.World.Stations.TryGetValue(h.TargetId, out var station) && station.SideId == bot.Side)))
                     bot.RecentAssetAttackers[h.SourceId] = now;
 
+                if (h.SourceId >= 0 && cs.World.Ships.TryGetValue(h.SourceId, out var stationAttacker)
+                    && stationAttacker.SideId >= 0 && stationAttacker.SideId != bot.Side
+                    // The port hit extension has no object-type discriminator.
+                    // Ambiguous ship/station IDs rely on the native station alert.
+                    && !cs.World.Ships.ContainsKey(h.TargetId)
+                    && cs.World.Stations.TryGetValue(h.TargetId, out var attackedStation)
+                    && attackedStation.SideId == bot.Side && attackedStation.ClusterId == h.ClusterId)
+                    bot.RecentStationAttackers[(attackedStation.StationId, h.SourceId)] = now;
+
                 // P556 — TTK: record the FIRST damaging enemy hit on this victim
                 // (our own hit on a different-side ship; shield- or hull-absorbed —
                 // a shielded victim soaks hits from first contact, so a stronger
@@ -3183,6 +3208,8 @@ bool isThreat =
                 bot.LastAttackersPruneAt = now;
                 foreach (var id in bot.RecentAssetAttackers.Where(a => now - a.Value > ThreatWindowSeconds).Select(a => a.Key).ToArray())
                     bot.RecentAssetAttackers.Remove(id);
+                foreach (var key in bot.RecentStationAttackers.Where(a => now - a.Value > ThreatWindowSeconds).Select(a => a.Key).ToArray())
+                    bot.RecentStationAttackers.Remove(key);
                 if (bot.RecentAttackers.Count > 0)
                 {
                     var stale = bot.RecentAttackers
@@ -4037,7 +4064,7 @@ bool isThreat =
         var points = new List<BotSpatialIndex.ShipPoint>();
         lock (cs.Gate)
             foreach (var ship in cs.World.Ships.Values)
-                if (ship.SideId == bot.Side && ship.SectorId == sector && ship.Latest is { } pose)
+                if (ship.SideId == bot.Side && ship.SectorId == sector && !ship.IsDead && !ship.IsGone && ship.Latest is { } pose)
                     points.Add(new(ship.ShipId, pose.Position));
         return points.Where(s => s.Id != bot.ShipId
             && (s.Position - myPos).LengthSquared() <= reach * reach)
@@ -4054,7 +4081,7 @@ bool isThreat =
             lock (cs.Gate)
                 foreach (var ship in cs.World.Ships.Values)
                 {
-                    if (ship.SideId != side.Key || ship.Latest is not { } pose) continue;
+                    if (ship.SideId != side.Key || ship.IsDead || ship.IsGone || ship.Latest is not { } pose) continue;
                     if (!points.TryGetValue(ship.SectorId, out var list)) points[ship.SectorId] = list = new();
                     list.Add(new(ship.ShipId, pose.Position));
                 }
@@ -4386,8 +4413,31 @@ bool isThreat =
 
         short defenseSector = CsSector(cs);
         if (!bot.Arena && defenseSector >= 0) RecordCombatSectorTransition(bot, cs, defenseSector, now);
+        // Leave the arrival volume before any engagement (including local
+        // defence). Otherwise close-band matching can park the whole wing here.
+        if (bot.ExitClearFrom is { } exit && TryCsPose(cs, bot.ShipId, out var exitPos, out var exitOrient)
+            && !IsClearOfAleph(exitPos, exit, bot.ExitClearRadius, ExitClearMargin))
+        {
+            bot.TargetId = null;
+            if (TryDodgeGoal(cs, bot, exitPos, out var dodge)) CombatFlyTo(bot, dodge, 15f, 200f, 0);
+            else cs.CommandControls(AutopilotSteering.Pursue(exitPos, exitOrient,
+                ExitClearGoal(exitPos, exit, bot.ExitClearRadius, ExitClearMargin)), 0);
+            bot.LastCluster = defenseSector;
+            return;
+        }
+        bot.ExitClearFrom = null;
         if (TryDriveFinaleEscort(bot, now)) return;
         if (defenseSector >= 0 && TryDriveDefense(bot, defenseSector, now)) return;
+        // Fight what hits us or a friendly ship while travelling, without
+        // manufacturing a station-defence incident in an empty battle sector.
+        if (DefenseConfig.Enabled && !bot.Arena && !bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase)
+            && CombatTargetSelector.ClassifyTargetId(ActualHullId(bot)) is not (BotTargetClass.MinerDrone or BotTargetClass.Bomber)
+            && HasVisibleAssetAttacker(bot, cs, defenseSector, now))
+        {
+            EngageCombat(bot, now, null);
+            bot.LastCluster = defenseSector;
+            return;
+        }
         // Clear a temporary combat target before resuming travel.
         if (bot.TargetSector is { } objective && defenseSector != objective)
             bot.TargetId = null;
@@ -4412,25 +4462,6 @@ bool isThreat =
             bot.Arrived = true;
             bot.ArrivedAt ??= now;
         }
-
-        // P610 — EXIT CLEAR-OUT: right after crossing an aleph keep flying along
-        // the exit direction (the full-throttle Pursue; dodge still pre-empts an
-        // imminent rock) until past the arrival aleph's radius + margin, THEN let
-        // staging/loiter/engagement resume. Clears the crowded arrival cluster
-        // (Juniper/Rigel/Alderan) the same way native's exit velocity
-        // `-(speed + exitWarpSpeed)` carries emergent ships clear (fsship.cpp:111-112).
-        if (bot.ExitClearFrom is { } ecf && TryCsPose(cs, bot.ShipId, out var clearPos, out var clearOrient)
-            && !IsClearOfAleph(clearPos, ecf, bot.ExitClearRadius, ExitClearMargin))
-        {
-            var eg = ExitClearGoal(clearPos, ecf, bot.ExitClearRadius, ExitClearMargin);
-            if (TryDodgeGoal(cs, bot, clearPos, out var dg))
-                CombatFlyTo(bot, dg, 15f, 200f, 0);
-            else
-                cs.CommandControls(AutopilotSteering.Pursue(clearPos, clearOrient, eg), 0);
-            bot.LastCluster = cur;
-            return;
-        }
-        bot.ExitClearFrom = null;   // cleared (or never set) — normal logic resumes
 
         if (bot.Arrived && cur == goal) { EngageCombat(bot, now, prep); return; }
 
@@ -4747,6 +4778,25 @@ bool isThreat =
     // ── P637 — idle detection ─────────────────────────────────────────────
     /// <summary>Below this scalar speed (m/s) a bot counts as "not moving".</summary>
     public const double IdleSpeedMps = 1.0;
+    internal const double CombatStationarySeconds = 2.0;
+    private readonly IdleTargetMetrics _idleTargetMetrics = new();
+
+    private void SampleIdleTargets(ActiveBot[] bots, double now)
+    {
+        if (!_idleTargetMetrics.Due(now)) return;
+        var idle = new List<string>();
+        foreach (var bot in bots)
+        {
+            if (!IsParticipating(bot) || bot.SpawnPending || bot.TargetId is null) continue;
+            bool docked = bot.PodDocked;
+            if (bot.Cs is { } cs)
+                lock (cs.Gate)
+                    docked |= cs.World.Ships.TryGetValue(bot.ShipId, out var ship) && ship.StationId >= 0;
+            if (TryBotOwnLiveMotion(bot, out _, out var velocity, out _)
+                && IsBotIdle(docked, now, bot.LastMoveAt, velocity.Length())) idle.Add(bot.Name);
+        }
+        _idleTargetMetrics.Observe(now, idle);
+    }
     /// <summary>A bot whose speed has been below the idle threshold (or with no
     /// observed movement) for this long, while NOT docked, is reported idle.</summary>
     public const double IdleWindowSec = 5.0;
@@ -5126,7 +5176,8 @@ bool isThreat =
             decode,
             snapAge,
             (snapPubPerSec, snapPubMsPerSec, dlMean, dlP95, dlMax),
-            _stallTelemetry.Snapshot());
+            _stallTelemetry.Snapshot(),
+            _idleTargetMetrics.Snapshot(Now(), botFilter));
     }
 
     // ── P539: real per-bot combat stats (shots / ship hits / kills / pods) ──
@@ -5512,6 +5563,7 @@ bool isThreat =
         // combat ships or miners.
         public readonly Dictionary<short, double> RecentAttackers = new();
         public readonly Dictionary<short, double> RecentAssetAttackers = new();
+        public readonly Dictionary<(short Station, short Attacker), double> RecentStationAttackers = new();
         public long DefenseChatCursor;
         public short? DefenseSector;
         public bool DefendingInPlace;
@@ -5735,7 +5787,8 @@ public readonly record struct BotPerfReport(
     double DecodeMbPerSec,
     (double MeanMs, double P95Ms, double MaxMs) SnapAgeMs,
     (double PublishPerSec, double PublishMsPerSec, double DecodeLagMean, double DecodeLagP95, double DecodeLagMax) SnapshotStats,
-    StallReport Stall);
+    StallReport Stall,
+    IdleTargetReport IdleWithTarget);
 
 /// <summary>P431 — one bot tick's accept-and-translate decision (see
 /// <see cref="BotManager.DecideAcceptTranslate"/>): whether the bot must send a

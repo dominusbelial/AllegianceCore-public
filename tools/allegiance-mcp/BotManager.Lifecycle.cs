@@ -75,6 +75,7 @@ internal sealed partial class BotManager
         bot.DecisionFrame = null;
         bot.RecentAttackers.Clear();
         bot.RecentAssetAttackers.Clear();
+        bot.RecentStationAttackers.Clear();
         EndDefense(bot);
         bot.LastAttackersPruneAt = bot.LastTargetAt = bot.LastFireAt = bot.LastMineAt = double.NegativeInfinity;
         bot.LastBoostAt = bot.LastCloakAt = double.NegativeInfinity;

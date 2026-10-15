@@ -1096,6 +1096,13 @@ internal static class McpTools
                 max = ps.DecisionPass.MaxMs,
             },
             decisionRateHz = ps.DecisionRateHz,
+            idleWithTarget = new
+            {
+                currentCount = ps.IdleWithTarget.CurrentCount,
+                botsLastMinute = ps.IdleWithTarget.BotsLastMinute,
+                sampleAgeSeconds = ps.IdleWithTarget.SampleAgeSeconds,
+                units = "Distinct active undocked bots idle with a target, sampled each second; botsLastMinute counts each bot once over 60 seconds. Idle means speed < 1 m/s and no movement for > 5 seconds.",
+            },
             finale = mgr.FinaleStatus(),
             decisionOverruns = mgr.DecisionOverruns,
             stall = StallWatchdog.JsonSnapshot(ps.Stall),

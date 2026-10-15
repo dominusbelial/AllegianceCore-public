@@ -84,7 +84,7 @@ internal static class SupervisorResults
         if (present[0] is JsonValue value && value.TryGetValue<double>(out _))
         {
             var numbers = present.Select(v => v!.GetValue<double>()).ToArray();
-            if (key is "mean" or "p50" or "p95" or "max" or "worstValue" || key.Contains("Max", StringComparison.Ordinal)
+            if (key is "mean" or "p50" or "p95" or "max" or "worstValue" or "sampleAgeSeconds" || key.Contains("Max", StringComparison.Ordinal)
                 || key.EndsWith("AgeMs", StringComparison.Ordinal) || key is "watchdogLateMs" or "threadPoolNoProgressMs" or "decisionPassInProgressMs" or "durationMs" or "maxGateHoldMs") return JsonValue.Create(numbers.Max());
             if (key is "decisionRateHz" or "startMonotonicMs") return JsonValue.Create(numbers.Min());
             return JsonValue.Create(numbers.Sum());

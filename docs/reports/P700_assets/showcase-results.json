@@ -1,0 +1,59 @@
+[
+  {
+    "label": "focused-165-7b8ccb783e-1",
+    "summary": "P700 local 15v15: 94.8s, samples=947, reached=25/30, longest speed<1 with target=3.206s, shots=3982, hits=2288, kills=14",
+    "idleWithTarget": {
+      "CurrentCount": 0,
+      "BotsLastMinute": 0,
+      "SampleAgeSeconds": 0.24140280000000303
+    },
+    "decisionRateHz": 20.09912890375274,
+    "trx": "/tmp/p700-results/focused-165-7b8ccb783e-1.trx"
+  },
+  {
+    "label": "focused-165-7b8ccb783e-2",
+    "summary": "P700 local 15v15: 94.8s, samples=947, reached=25/30, longest speed<1 with target=4.910s, shots=4019, hits=2419, kills=16",
+    "idleWithTarget": {
+      "CurrentCount": 0,
+      "BotsLastMinute": 0,
+      "SampleAgeSeconds": 0.28295749999999487
+    },
+    "decisionRateHz": 20.104099024744567,
+    "trx": "/tmp/p700-results/focused-165-7b8ccb783e-2.trx"
+  },
+  {
+    "label": "focused-165-7b8ccb783e-3",
+    "summary": "P700 local 15v15: 94.2s, samples=941, reached=24/30, longest speed<1 with target=3.408s, shots=4174, hits=2064, kills=13",
+    "idleWithTarget": {
+      "CurrentCount": 0,
+      "BotsLastMinute": 0,
+      "SampleAgeSeconds": 0.5102706999999924
+    },
+    "decisionRateHz": 20.135714717193697,
+    "trx": "/tmp/p700-results/focused-165-7b8ccb783e-3.trx"
+  },
+  {
+    "label": "suite-ClientCore",
+    "outcome": "Passed",
+    "summary": "P700 local 15v15: 94.9s, samples=948, reached=25/30, longest speed<1 with target=3.909s, shots=3701, hits=1879, kills=10",
+    "idleWithTarget": {
+      "CurrentCount": 0,
+      "BotsLastMinute": 0,
+      "SampleAgeSeconds": 0.3500666000000052
+    },
+    "decisionRateHz": 20.053382103161173,
+    "trx": "/tmp/p700-results/suite-ClientCore.trx"
+  },
+  {
+    "label": "suite-ClientCore-final",
+    "outcome": "Passed",
+    "summary": "P700 local 15v15: 97.2s, samples=971, reached=25/30, longest speed<1 with target=4.208s, shots=4516, hits=2589, kills=14",
+    "idleWithTarget": {
+      "CurrentCount": 0,
+      "BotsLastMinute": 0,
+      "SampleAgeSeconds": 0.739160499999997
+    },
+    "decisionRateHz": 20.1023208129419,
+    "trx": "/tmp/p700-results/suite-ClientCore-final.trx"
+  }
+]
