@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.MonoGame.Flight;
+using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
@@ -45,6 +47,128 @@ public sealed class P695HumanShipUpdatesLiveTests(ITestOutputHelper output)
         Set(game, "_ownShipSendArmed", true);
         Set(game, "_ownClockConnectionGeneration", -1L);
         return game;
+    }
+
+    // Keep the ten-minute duration in the real suite too. A short straight-line
+    // flight never reached the stale-anchor failure seen after minutes of play.
+    [SkippableFact]
+    public void Human_flies_for_ten_minutes_with_turns_boost_tidi_and_recovers_from_correction()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.SpawnInitialMinersAtBoot = false;
+        var art = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
+        var catalog = ShopCatalog.TryLoad(art)!;
+        var booster = catalog.Parts.First(p => p.Type is DataPartTypeIGC.Afterburner && p.GroupId >= 0);
+        Ship? player = null;
+        Set(server, "ShipSpawner", (Func<StaticCore, Mission, short, (Ship, Sector)>)((core, mission, id) =>
+        {
+            var hull = core.HullTypes[15]; // the human's real hull in clash54
+            var sector = mission.Sectors[0];
+            var orientation = new Orientation();
+            orientation.Set(new Vector3(0, -1, 0), new Vector3(0, 0, 1));
+            player = new Ship(id, hull, new Vector3(500, 620, 10), Vector3.Zero, orientation) { SideId = 0 };
+            mission.PlaceShip(player, sector);
+            Assert.NotNull(player.MountPart(booster with { PartMask = 0 }, 1, 0, 255));
+            return (player, sector);
+        }));
+        server.Boot(new ServerConfig
+        {
+            Port = 0, UpdatesPerSecond = 20, ArtPath = art, StaticCore = "PCore001.igc",
+            LiveSettings = new() { TimeDilation = "off" },
+            Games = [new() { Name = "P695b-soak", Map = "XXV_simple.igc", Teams = 2,
+                CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
+        });
+        server.Missions[0].Stage = MissionStage.Started;
+        var attributes = Enumerable.Repeat(1f, GlobalAttributeSet.Count).ToArray();
+        attributes[GlobalAttributeSet.Thrust] = 2;
+        server.Missions[0].Sides[0].GlobalAttributes = new GlobalAttributeSet(attributes);
+        using var session = new ConnectionSession();
+        session.Connect(server.BoundPort, "P695b-human");
+        session.SendLogonRequest(new()
+        {
+            CharacterName = "P695b-human", FedsrvVer = LogonRequest.MsgVer,
+            ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
+            SteamAuthTicket = new byte[16], CrcFileList = -1,
+        });
+        var sim = new OwnShipSimulator();
+        var game = HeadlessFlight(session, sim, new OwnShipServerClock());
+        Set(game, "_shopCatalog", catalog);
+        Set(game, "_flashTracker", new DamageFlashTracker());
+        Set(game, "_ownSimLastSectorId", (short)-1);
+        var startup = Stopwatch.StartNew();
+        bool seated = false;
+        while (startup.Elapsed.TotalSeconds < 5)
+        {
+            Call(game, "PumpServerClock");
+            server.Tick();
+            lock (session.Gate)
+                seated = player is not null && session.World.MyShipId is { } id
+                    && session.World.Ships.TryGetValue(id, out var own) && own.Latest is not null;
+            if (seated) break;
+            if (session.Ack is not null && player is null) session.SendPositionReq(-1);
+        }
+        Assert.True(seated);
+        var ship = player!;
+        var peers = (IDictionary)typeof(Srv).GetField("_peerShipUpdate", Private)!.GetValue(server)!;
+        var peer = peers.Keys.Cast<object>().Single();
+        // Deliver the fixture's mounted booster through the real owner loadout
+        // wire path; Game1 resolves its physics and reset power/fuel normally.
+        typeof(Srv).GetMethod("SendPeer", Private, [peer.GetType(), typeof(byte[])])!.Invoke(server,
+            [peer, FedPacket.Pack([new BuyLoadoutAck
+        {
+            HullId = ship.HullType.HullId, Parts = [new(booster.PartId, 1, 0, 255)],
+        }.Encode()])]);
+        bool injected = false;
+        long lastAccepted = 0, lastRejected = 0;
+        int stagnantFrames = 0, boostedFrames = 0, resets = 0;
+        double wall = 0;
+        double previousScale = 1;
+        var flight = Stopwatch.StartNew();
+        while (flight.Elapsed.TotalSeconds < 605)
+        {
+            int phase = (int)(wall / 200);
+            double scale = phase == 0 ? 1 : phase == 1 ? .85 : .5;
+            if (scale != previousScale) { Call(server, "SetTimeScale", scale); previousScale = scale; }
+            Call(game, "PumpServerClock");
+            lock (session.Gate)
+            {
+                var own = session.World.Ships[session.World.MyShipId!.Value];
+                if (own.HasPendingReset) resets++;
+                Call(game, "UpdateOwnShipSimulation", session.World, own, own.Latest!);
+            }
+            if (!injected && wall >= 30)
+            {
+                sim.Seed(sim.Position + new Vector3(500, 0, 0), sim.Velocity, sim.Orientation, sim.TurnRates);
+                injected = true;
+            }
+            // Continuous curved flight stays away from stations/rocks/warps;
+            // throttle changes and periodic boost exercise real fuel exhaustion.
+            var controls = new ControlData(.6f, 0, 0, wall % 40 < 30 ? 1 : -.8f);
+            int state = wall % 30 < 5 ? ShipControlState.AfterburnerButton : 0;
+            Call(game, "StepOwnShipSimulation", .05, controls, state);
+            if (sim.Power > .1) boostedFrames++;
+            wall += .05;
+            Set(game, "_nowSeconds", wall);
+            Call(game, "MaybeSendOwnShipUpdate");
+            server.Tick();
+            var counters = Counters(server);
+            long accepted = Count(counters, "Accepted"), rejected = Count(counters, "Rejected");
+            stagnantFrames = accepted == lastAccepted ? stagnantFrames + 1 : 0;
+            Assert.True(stagnantFrames < 100, $"acceptance stalled at {wall:F1}s: accepted={accepted} rejected={rejected}");
+            Assert.True(rejected < 20, $"runaway corrections at {wall:F1}s: accepted={accepted} rejected={rejected}");
+            if ((int)(wall * 20) % 1200 == 0)
+                output.WriteLine($"wall={wall:F1}s sim={server.SimNow:F1}s scale={scale} accepted={accepted} rejected={rejected} resets={resets}");
+            lastAccepted = accepted;
+            lastRejected = rejected;
+        }
+        output.WriteLine($"P695b soak: real-wall={flight.Elapsed.TotalSeconds:F1}s flight-wall={wall:F1}s accepted={lastAccepted} rejected={lastRejected} resets={resets} boost-frames={boostedFrames}");
+        Assert.True(injected && resets > 0, "the real Game1 correction path must be exercised");
+        Assert.True(boostedFrames > 20, "the fitted afterburner must actually fire");
+        Assert.True(lastAccepted > 3000 && lastAccepted > lastRejected * 100);
+        Assert.Equal(0, Count(Counters(server), "OutOfDate"));
+        Assert.Equal(0, Count(Counters(server), "Invalid"));
+        Assert.Equal(0, server.SimPassStageFailures);
     }
 
     [SkippableTheory]

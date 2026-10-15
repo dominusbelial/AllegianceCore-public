@@ -4821,7 +4821,8 @@ public sealed class Ship : Model, IShipIgc
         float thrust = EffectiveThrust();
         float boost = _mountedAfterburner is { FractionMounted: >= ExpandedPartData.FullyMounted, Type.Type: DataPartTypeIGC.Afterburner ab }
             && (((StateM & ShipControlState.AfterburnerButton) != 0 && Fuel > 0f)
-                || _afterburnerPower > 0f) ? ab.MaxThrust : 0f;
+                || _afterburnerPower > 0f)
+            ? ab.MaxThrust * SideGlobalAttributes().Get(GlobalAttributeSet.Thrust) : 0f;
         float ratio = thrust > 0 ? boost / thrust : 0;
         return MathF.Max(0, EffectiveMaxSpeed()) * (1 + MathF.Max(0, ratio)) * 1.1f + 1f;
     }

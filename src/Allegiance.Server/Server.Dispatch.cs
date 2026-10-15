@@ -2288,6 +2288,16 @@ public sealed partial class Server
             pu.LastPoseAt = SimNow;
             pu.RejectDistanceSum += MathF.Sqrt(dSq);
             pu.RejectCount++;
+            if (!legalVelocity || velocity.Length() > maxSpeed) pu.RejectedSpeed++;
+            if (!FiniteVector(position) || !(dSq < envelope * envelope)) pu.RejectedEnvelope++;
+            if (!(travel <= pu.MovementCredit)) pu.RejectedTravel++;
+            // The reset tells the client to resume from this authoritative pose
+            // (FedSrv/fsship.cpp:1192-1200). Measure its next travel from there
+            // too: the server keeps flying during rejected/lost updates, so the
+            // last accepted client pose can become arbitrarily stale. Retain
+            // the remaining credit and budget clock; cookie renewal must never
+            // grant another 20m allowance for a hostile teleport chain.
+            pu.LastPosePosition = ship.Position;
             byte newCookie = NextCookie(pu, reposition: false);
             var reset = new ShipReset
             {

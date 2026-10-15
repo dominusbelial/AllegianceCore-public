@@ -264,6 +264,9 @@ public sealed partial class Server : IDisposable
 
         /// <summary>Rolling acceptance counters (P507 summary log).</summary>
         public long Accepted, Rejected, OutOfDate, Invalid;
+        // Non-exclusive rejection reasons: a small mean position error alone
+        // cannot distinguish a speed violation from a stale travel anchor.
+        public long RejectedSpeed, RejectedEnvelope, RejectedTravel;
         /// <summary>P518 — rolling DROPPED counters, by reason. A silent drop is
         /// what hid P518 (the server's ship froze parked while the client flew on),
         /// so every drop the dispatch takes before the accept/reject pipeline is

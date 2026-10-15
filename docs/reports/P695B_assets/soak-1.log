@@ -1,0 +1,16 @@
+Test run for /home/domingo/allegiance-codex-p695b/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.50]     Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_flies_for_ten_minutes_with_turns_boost_tidi_and_recovers_from_correction [FAIL]
+  Failed Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_flies_for_ten_minutes_with_turns_boost_tidi_and_recovers_from_correction [240 ms]
+  Error Message:
+   System.Reflection.AmbiguousMatchException : Ambiguous match found for 'Allegiance.Server.Server Void SendPeer(Allegiance.Core.Transport.ConnectionId, Allegiance.Server.BroadcastPacket)'.
+  Stack Trace:
+     at System.RuntimeType.GetMethodImplCommon(String name, Int32 genericParameterCount, BindingFlags bindingAttr, Binder binder, CallingConventions callConv, Type[] types, ParameterModifier[] modifiers)
+   at System.Type.GetMethod(String name, BindingFlags bindingAttr)
+   at Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Call(Object target, String name, Object[] args) in /home/domingo/allegiance-codex-p695b/tests/Allegiance.ClientCore.MonoGame.Tests/P695HumanShipUpdatesLiveTests.cs:line 29
+   at Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_flies_for_ten_minutes_with_turns_boost_tidi_and_recovers_from_correction() in /home/domingo/allegiance-codex-p695b/tests/Allegiance.ClientCore.MonoGame.Tests/P695HumanShipUpdatesLiveTests.cs:line 116
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /tmp/p695b/soak-1.trx
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 245 ms - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
