@@ -1,0 +1,67 @@
+[monogame] lobby mode: browsing http://127.0.0.1:5000/api/servers (pass [host] [port] [name] to skip the lobby)
+[client] aleph glimpse/transit-flare: ON (--aleph-glimpse off to disable the glimpse + flare; the native arrival swell stays on either way)
+[client] VFX: VOLUMETRIC requested (raymarch A) — resolving in LoadContent
+[client] soft particles: ON; bloom: OFF (default)
+[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models) (NO Meshy pack — native only; see ALLEGIANCE_MESHY_PACK_PATH)
+[client] asteroids: NATIVE per-rock .mdl meshes + native textures (--asteroids imported to use the shared imported variants)
+[client] ambient space dust: density=1 (native Debris pref)
+[inspect] --inspect: offline hull inspector (no server connect)
+MESA: error: Failed to query drm device.
+glx: failed to create dri3 screen
+failed to load driver: iris
+[client] ship-art override: 0 entries from <repo>/assets/ships/ship-art.json
+[client] ship catalogue: 0 public entries (no Meshy pack)
+[monogame] lock sprite 'Partial': 64x64 'plockbmp.mdl'
+[monogame] lock sprite 'Full': 64x64 'lockedbmp.mdl'
+[monogame] feedback art 'conejectpoddisplaybmp': 172x44 'conejectpoddisplaybmp.mdl'
+[monogame] feedback art 'deathbannerbmp': 136x25 'deathbannerbmp.mdl'
+[monogame] feedback art 'ejectpodbmp': 16x16 'ejectpodbmp.mdl'
+[monogame] quick-chat: 310 voices, 13 menus, mainMenu ok
+[keymap] Controls popup ready (open: F6)
+[monogame] shop catalogue: 447 hulls, 117 parts, 123 launchers (56 missile, 8 mine, 6 chaff, 53 probe)
+[monogame] P607 ship-model audit: 447 hull(s), 0 unresolved native
+[monogame] rock surface 'Plain': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] rock surface 'Helium': 2048x2048 'bgrnd55bmp.mdl'
+[monogame] rock surface 'Uranium': 2048x2048 'bgrnd51bmp.mdl'
+[monogame] rock surface 'Silicon': 2048x2048 'bgrnd52bmp.mdl'
+[monogame] rock surface 'Carbon': 2048x2048 'bgrnd53bmp.mdl'
+[monogame] rock surface 'Buildable': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] P593 projectile-model audit: 4 model(s), 0 lit-solid fallback(s)
+[monogame] P593b missile-model audit: 20 model(s), 0 lit-solid fallback(s)
+[monogame] P593b render-model audit: 0-lit-solid guarantee -> 0 model fallback(s), 0 treasure fallback(s)
+[p643] telemetry enabled; serverGC=False; latency=Interactive
+[p643] GPU timer: GL_TIME_ELAPSED scene/post, asynchronous
+[monogame] P547: soft particles ACTIVE (linear-depth shader + target ready)
+[monogame] vfx atlas Explosion01-light: 25 frames 128x128
+[monogame] vfx atlas Explosion01: 25 frames 128x128
+[monogame] vfx atlas Cloud01: 64 frames 96x96 (feathered)
+[monogame] vfx atlas WispySmoke01: 64 frames 96x96 (feathered)
+[monogame] vfx atlas DiscSmoke01: 64 frames 96x96 (feathered)
+[monogame] explosion film 'exp20' = 20 frames 1280x64
+[monogame] explosion film 'exp22' = 30 frames 15360x512
+[monogame] explosion film 'exp23' = 38 frames 2432x64
+[monogame] explosion film 'exp24' = 16 frames 1024x64
+[monogame] explosion film 'exp25' = 32 frames 2048x64
+[monogame] explosion shockwave fx18 = 2048x2048
+[monogame] P546: enhanced explosions + smoke active (CC0 atlases loaded)
+[monogame] P573: VOLUMETRIC tier ACTIVE (raymarch A)
+[volumetric] pre-warmed shader LODs + half-res target
+[monogame] ambient dust decal: 32x32 'debris1bmp.mdl'
+[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact/sector-threat cues
+[monogame] music: loaded flight + station beds (placeholder-generated tones — drop real .ogg at 'Sounds/flightmusic'/'Sounds/stationmusic' to replace)
+[inspect] ship-art override: 0 entries from <repo>/assets/ships/ship-art.json
+[inspect] catalogue: 0 replacement models from <repo>/assets/ships/catalogue.json
+[inspect] hull 1/295: id=13 name="Adv Scout" civ=dreg model=quizscoutv2 length=17 native=True meshy=dreg-scout2 fallback=False
+[inspect] READY: 295 hulls; F11 screenshot, Enter=mark bad, ?=help
+[client] The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable — or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root — to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.
+[p643] p50 4.64 p99 18.05 max 187.33 ms | CPU u/d/p 3.16/181.06/0.02 GPU 1.18 ms (async scene+post) | present 6.01 ms | draws 12 1920x1080->1920x1080 GC gen0/1/2 1/1/1 pause 0.40 ms | 137605 B/frame | heap 33.5 MiB p99 #2: GC 0.00 GPU 2.70 | max #1: GC 0.40 GPU 177.41 ms
+[p643] p50 4.73 p99 7.47 max 11.66 ms | CPU u/d/p 0.02/8.55/0.00 GPU 1.28 ms (async scene+post) | present 3.07 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 1/1/0 pause 7.71 ms | 18994 B/frame | heap 32.5 MiB p99 #359: GC 0.00 GPU 3.18 | max #210: GC 7.71 GPU 8.74 ms
+[p643] p50 5.04 p99 10.96 max 11.22 ms | CPU u/d/p 0.02/0.79/0.00 GPU 2.58 ms (async scene+post) | present 8.99 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 19030 B/frame | heap 36.0 MiB p99 #387: GC 0.00 GPU 2.75 | max #390: GC 0.00 GPU 3.84 ms
+[p643] p50 4.36 p99 7.58 max 7.96 ms | CPU u/d/p 0.02/1.08/0.00 GPU 1.85 ms (async scene+post) | present 6.81 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 19030 B/frame | heap 40.1 MiB p99 #689: GC 0.00 GPU 0.78 | max #659: GC 0.00 GPU 3.14 ms
+[p643] p50 4.88 p99 8.61 max 9.96 ms | CPU u/d/p 0.03/1.12/0.00 GPU 1.87 ms (async scene+post) | present 8.75 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 19029 B/frame | heap 43.8 MiB p99 #877: GC 0.00 GPU 2.84 | max #911: GC 0.00 GPU 6.31 ms
+[p643] p50 4.48 p99 6.90 max 9.06 ms | CPU u/d/p 0.02/2.67/0.00 GPU 2.16 ms (async scene+post) | present 6.31 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 1/0/0 pause 0.39 ms | 19012 B/frame | heap 29.8 MiB p99 #1116: GC 0.00 GPU 2.15 | max #1089: GC 0.00 GPU 2.66 ms
+[p643] p50 4.62 p99 7.20 max 8.69 ms | CPU u/d/p 0.02/2.24/0.00 GPU 2.60 ms (async scene+post) | present 6.39 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 19021 B/frame | heap 33.8 MiB p99 #1234: GC 0.00 GPU 2.55 | max #1302: GC 0.00 GPU 1.87 ms
+[p643] p50 4.44 p99 6.66 max 7.09 ms | CPU u/d/p 0.02/0.70/0.00 GPU 1.21 ms (async scene+post) | present 6.32 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 19025 B/frame | heap 37.8 MiB p99 #1635: GC 0.00 GPU 3.32 | max #1454: GC 0.00 GPU 2.61 ms
+[p643] p50 4.40 p99 7.59 max 8.81 ms | CPU u/d/p 0.02/0.80/0.00 GPU 2.26 ms (async scene+post) | present 7.94 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 19054 B/frame | heap 41.8 MiB p99 #1781: GC 0.00 GPU 2.75 | max #1747: GC 0.00 GPU 5.11 ms
+[p643] p50 4.77 p99 7.07 max 9.13 ms | CPU u/d/p 0.02/1.03/0.00 GPU 1.65 ms (async scene+post) | present 8.02 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 19043 B/frame | heap 45.7 MiB p99 #1985: GC 0.00 GPU 3.98 | max #2025: GC 0.00 GPU 5.75 ms
+[p643] p50 4.76 p99 7.67 max 8.61 ms | CPU u/d/p 0.02/2.30/0.00 GPU 0.97 ms (async scene+post) | present 6.27 ms | draws 8 1920x1080->1920x1080 GC gen0/1/2 2/1/1 pause 1.38 ms | 19098 B/frame | heap 17.6 MiB p99 #2187: GC 1.38 GPU 2.45 | max #2278: GC 0.00 GPU 3.99 ms

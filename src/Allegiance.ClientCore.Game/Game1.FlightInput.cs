@@ -259,6 +259,9 @@ public sealed partial class Game1
 
     protected override void Update(GameTime gameTime)
     {
+        using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
+        _flightGc.SetFlying(_state == ClientState.Flying && !_dockedActive
+            && !_graphicsSettingsVisible && !_keyBindVisible);
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
         // P618 — advance the sim-scaled game clock (wall × live server time
         // scale), clamped to [0,∞) so a scale=0 edge (never produced server-side;
@@ -277,6 +280,18 @@ public sealed partial class Game1
         // undock. Cheap: only drains received echoes + sends a ~1 Hz ping.
         PumpServerClock();
         var ks = Keyboard.GetState();
+        if (UpdateGraphicsSettings(ks))
+        {
+            // A modal settings panel must release the last movement/fire command.
+            if (_state == ClientState.Flying && !_dockedActive)
+            {
+                var neutral = new ControlData(0f, 0f, 0f, -1f);
+                if (IsTurretGunner()) UpdateTurretGunner(neutral, 0, (float)gameTime.ElapsedGameTime.TotalSeconds);
+                else _session.CommandControls(neutral);
+            }
+            base.Update(gameTime);
+            return;
+        }
 
         // P320 — session-loss detection (see ConnectionSession.SessionLost). The
         // transport reports the established connection to the server dropped

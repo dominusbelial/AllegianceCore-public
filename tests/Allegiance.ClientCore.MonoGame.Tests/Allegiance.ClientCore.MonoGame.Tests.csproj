@@ -31,6 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../tools/fsr-proof/fsr-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
     <ProjectReference Include="../../src/Allegiance.Server/Allegiance.Server.csproj" />
     <ProjectReference Include="../../src/Allegiance.Bot/Allegiance.Bot.csproj" />

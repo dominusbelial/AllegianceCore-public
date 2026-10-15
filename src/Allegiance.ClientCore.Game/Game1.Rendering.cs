@@ -278,6 +278,9 @@ public sealed partial class Game1
 
     protected override void Draw(GameTime gameTime)
     {
+        _gpuTimer?.Poll(_receiveGpu!);
+        _frameTelemetry?.BeginDraw();
+        _scaledThisFrame = false;
         // P306 — headless capture: once Flying, after a short settle grace (so
         // the client has received teammate exports/positions for every bot and
         // the overview camera framing is stable), redirect the WHOLE frame into
@@ -484,6 +487,10 @@ public sealed partial class Game1
                 // so the HUD/SpriteBatch UI (drawn after the composite below)
                 // never blooms. Soft particles are active only in Enhanced with
                 // the depth shader + target ready.
+                var outputViewport = GraphicsDevice.Viewport;
+                bool fsr = PrepareUpscaling(outputViewport.Width, outputViewport.Height);
+                bool sceneTarget = fsr || (_bloomEnabled && _post is { BloomReady: true });
+                var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
                 bool bloom = _bloomEnabled && _post is { BloomReady: true };
                 bool soft = _softEnabled && _post is { SoftReady: true };
 
@@ -493,6 +500,7 @@ public sealed partial class Game1
                 // share identical geometry. Depth-gather lists are reset here so
                 // each frame re-collects exactly its own geometry.
                 PrepareSceneGeometry(me, cameraEye, dtSec);
+                _gpuTimer?.Start(_frameTelemetry!.FrameId, post: false);
 
                 // P559 — run the linear-depth pass BEFORE the opaque color pass.
                 // P547 placed it mid-frame (after the treasure draw), switching
@@ -519,7 +527,7 @@ public sealed partial class Game1
                     GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer,
                         Rendering.VfxPostProcessor.DepthClearFar, 1f, 0);
                     DrawSceneDepth(view, proj, cameraEye);
-                    GraphicsDevice.SetRenderTarget(bloom ? _post.SceneRT : (capThis ? _capTarget : (RenderTarget2D?)null));
+                    GraphicsDevice.SetRenderTarget(sceneTarget ? sceneRt : (capThis ? _capTarget : (RenderTarget2D?)null));
                     GraphicsDevice.BlendState = BlendState.Opaque;
                     GraphicsDevice.DepthStencilState = DepthStencilState.Default;
                 }
@@ -528,9 +536,9 @@ public sealed partial class Game1
                     _softContext = null;
                 }
 
-                if (bloom)
+                if (sceneTarget)
                 {
-                    GraphicsDevice.SetRenderTarget(_post!.SceneRT);
+                    GraphicsDevice.SetRenderTarget(sceneRt);
                     GraphicsDevice.Clear(Color.Black);
                 }
 
@@ -1653,11 +1661,20 @@ public sealed partial class Game1
                 // FINAL target (backbuffer or the capture target), then the
                 // radar + HUD + SpriteBatch overlays below draw on top of it so
                 // they never bloom. When bloom is off nothing here runs.
+                _gpuTimer?.Stop();
+                _gpuTimer?.Start(_frameTelemetry!.FrameId, post: true);
+                _frameTelemetry?.BeginPost();
+                RenderTarget2D? finalTarget = capThis ? _capTarget : null;
+                Texture2D? upscaleSource = sceneRt;
                 if (bloom && _post is { BloomReady: true })
                 {
-                    GraphicsDevice.SetRenderTarget(capThis ? _capTarget : (RenderTarget2D?)null);
-                    _post.Bloom!.Render(_post.SceneRT!);
+                    GraphicsDevice.SetRenderTarget(fsr ? _fsr!.Bloomed : finalTarget);
+                    _post.Bloom!.Render(sceneRt!);
+                    if (fsr) upscaleSource = _fsr!.Bloomed;
                 }
+                if (fsr) _fsr!.Render(upscaleSource!, finalTarget, _upscaling.Sharpness);
+                _frameTelemetry?.EndPost();
+                _gpuTimer?.Stop();
 
                 // P250 — local current-sector tactical radar. Drawn here (inside
                 // the camera block, so view/proj/cameraEye are live) over the 3D
@@ -2002,6 +2019,8 @@ public sealed partial class Game1
         if (post is null || depth is null || _softContext is null)
             return false;                                  // no fresh depth this frame
         int w = depth.Width, h = depth.Height;
+        sx = (int)(sx * (double)w / GraphicsDevice.Viewport.Width);
+        sy = (int)(sy * (double)h / GraphicsDevice.Viewport.Height);
         if (sx < 0 || sy < 0 || sx >= w || sy >= h) return false;
         // OpenGL render targets are bottom-left origin; screen coords are
         // top-left, so flip Y before sampling.
