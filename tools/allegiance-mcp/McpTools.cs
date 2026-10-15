@@ -1139,6 +1139,7 @@ internal static class McpTools
                 enemyHullHits = cs.EnemyHullHits,        // enemy hull-or-worse hits
                 podsCreated = cs.PodsCreated,
                 podsDocked = cs.PodsDocked,
+                podsRestarted = cs.PodsRestarted,
                 podsLingering = cs.PodsLingering,
                 // P556 — mean time-to-kill per side (first DAMAGING enemy hit on a
                 // victim → its death, from the MCP's real wire events), the
@@ -1157,6 +1158,7 @@ internal static class McpTools
                     enemyShieldHits = b.EnemyShieldHits, enemyHullHits = b.EnemyHullHits,
                     friendlyHits = b.FriendlyHits, noneHits = b.NoneHits,
                     isPod = b.IsPod, podDocked = b.PodDocked,
+                    podRestarts = b.PodRestarts,
                 }),
             },
             // P635 — per-route (wing) arrival counts, so the multi-route split is

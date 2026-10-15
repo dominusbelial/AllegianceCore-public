@@ -140,7 +140,7 @@ public class DockDockingTests
     {
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var sector = mission.Sectors.First(s => s.Stations.Contains(station));
-        var ship = new Ship(shipId, hull, StationPos(station) + offset, Vector3.Zero, Orientation.Identity);
+        var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull) + offset, Vector3.Zero, Orientation.Identity);
         // Friendlies sit on the station's side; hostiles sit on the other
         // (team 2's side id differs on this 2-team map). A side-less ship would
         // never dock either, but we seat a real opposing side so the friendly
@@ -266,7 +266,8 @@ public class DockDockingTests
         bot.ResetDockedNotices();
         bot.SendDocked();   // FM_C_DOCKED(48), stationID == NA
         PumpUntil(server, () => server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId is null, 4000);
-        server.Ships.First(s => s.Ship.Id == shipId).Ship.Position = StationPos(friendly) + new Vector3(20f, 0f, 0f);
+        var returning = server.Ships.First(s => s.Ship.Id == shipId).Ship;
+        returning.Position = DockTestPlacement.Inside(returning.Mission!, friendly, returning.HullType);
         server.Ships.First(s => s.Ship.Id == shipId).Ship.Velocity = Vector3.Zero;
         PumpUntil(server, () => bot.DockedNotices.Count >= 1, 8000);
         Assert.Single(bot.DockedNotices);
@@ -303,8 +304,9 @@ public class DockDockingTests
         // The ship is genuinely inside the hostile radius (geometry is not the
         // blocker), yet the dock pass must not fire.
         var sh = server.Ships.First(s => s.Ship.Id == shipId).Ship;
-        Assert.True((sh.Position - StationPos(hostile)).Length() <= Sector.DockRadius,
-            "test must be inside the hostile dock radius for the gate to be what is proven");
+        var target = sh.Sector!.StationRuntimes.Single(s => s.StationId == hostile.StationId);
+        Assert.True(target.InGarage(sh, sh.Position, sh.Sector.StationLandingBays!.Bay(target.Type)!),
+            "the hostile-side gate must be tested from inside a real bay");
 
         PumpUntil(server, () => server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId is not null, 120);
         Assert.Null(server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId);   // never docked

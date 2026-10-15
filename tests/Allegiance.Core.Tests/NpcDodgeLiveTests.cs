@@ -488,7 +488,8 @@ public sealed class NpcDodgeLiveTests
         var g = new Vector3(150f, 838f, 846f);
 
         // The ONLY station in play — the NPC's own docking goal.
-        var goalStation = PlaceStationAt(seat.Mission, sector, npcSide, id: 4511, LandType(), x: g.X, y: g.Y, z: g.Z);
+        // Isolate dodge exclusion from the legitimate real-bay staging detour.
+        var goalStation = PlaceStationAt(seat.Mission, sector, npcSide, id: 4511, LandType() with { ModelName = "P699_DODGE_NO_BAYS" }, x: g.X, y: g.Y, z: g.Z);
 
         var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
         npc.PlanTarget = goalStation.Data;               // docking here — must NOT be dodged

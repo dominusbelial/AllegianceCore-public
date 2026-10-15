@@ -27,8 +27,9 @@ public sealed class P656cFinaleLiveTests(Xunit.Abstractions.ITestOutputHelper ou
                 {
                     var station = mission.Sectors.SelectMany(s => s.Stations).First(s => s.SideId == side);
                     var sector = mission.Sectors.First(s => s.Stations.Contains(station));
-                    var ship = new Ship(id, core.HullTypes.Values.OrderBy(h => h.HullId).First(),
-                        new Vector3(station.Position[0] + 20, station.Position[1], station.Position[2]),
+                    var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+                    var ship = new Ship(id, hull,
+                        DockTestPlacement.Inside(mission, station, hull),
                         Vector3.Zero, Orientation.Identity) { SideId = side };
                     mission.PlaceShip(ship, sector);
                     return (ship, sector);

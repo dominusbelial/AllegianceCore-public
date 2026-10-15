@@ -1,0 +1,48 @@
+[
+  {
+    "project": "Core",
+    "filter": "(unfiltered)",
+    "exit": 1,
+    "seconds": 564.53,
+    "log": "/tmp/p699-validation/final-aborted-000-Core.log",
+    "trx": "/tmp/p699-validation/final-early-000-Core.trx",
+    "passed": 4563,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+        "outcome": "Failed",
+        "error": "System.TimeoutException : no OnPeerJoined for raw peer"
+      }
+    ],
+    "skipped": [],
+    "archive": "Core-early.trx.gz"
+  },
+  {
+    "project": "ClientCore",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "seconds": 524.21,
+    "log": "/tmp/p699-validation/final-early-001-ClientCore.log",
+    "trx": "/tmp/p699-validation/final-early-001-ClientCore.trx",
+    "passed": 1019,
+    "failed": [],
+    "skipped": [],
+    "archive": "ClientCore-early.trx.gz"
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "seconds": 327.07,
+    "log": "/tmp/p699-validation/final-early-002-ClientCore.MonoGame.log",
+    "trx": "/tmp/p699-validation/final-early-002-ClientCore.MonoGame.trx",
+    "passed": 2200,
+    "failed": [],
+    "skipped": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before"
+    ],
+    "archive": "ClientCore.MonoGame-early.trx.gz"
+  }
+]

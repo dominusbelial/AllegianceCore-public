@@ -1,0 +1,10 @@
+[
+  [
+    "ClientCore",
+    "Allegiance.ClientCore.Tests.BotFixRegressionTests.Pod_outcome_counts_a_true_death_restart_separately_from_flying_home"
+  ],
+  [
+    "ClientCore",
+    "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.GetPerfStatsExposesMinuteAndLiveStallFields_AndReadsDoNotResetThem"
+  ]
+]

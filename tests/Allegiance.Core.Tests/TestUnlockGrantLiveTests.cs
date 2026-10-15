@@ -177,7 +177,7 @@ public sealed class TestUnlockGrantLiveTests
         h.Server.ShipSpawner = (core, mission, id) =>
         {
             var ship = new Ship(id, core.HullTypes[spawnHullId],
-                StationPos(station) + new Vector3(25f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+                DockTestPlacement.Inside(mission, station, core.HullTypes[spawnHullId]), Vector3.Zero, Orientation.Identity)
             { SideId = station.SideId };
             mission.PlaceShip(ship, sector);
             return (ship, sector);

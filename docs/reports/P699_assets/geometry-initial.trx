@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="8e37bd71-7b9d-4ee5-9e15-cdc40cd8ac5a" name="@domingo-MS-02-Ultra 2026-10-15 13:40:45" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-15T13:40:45.5455182-05:00" queuing="2026-10-15T13:40:45.5455183-05:00" start="2026-10-15T13:40:44.4333317-05:00" finish="2026-10-15T13:40:45.5495857-05:00" />
+  <TestSettings name="default" id="f882d682-a0c6-47bc-8841-63b07ffbc29e">
+    <Deployment runDeploymentRoot="_domingo-MS-02-Ultra_2026-10-15_13_40_45" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="023f8ab2-c731-4ade-8a1b-f02557275d26" testId="e83e8e1f-245b-9917-f547-a5939a520bc1" testName="Allegiance.Core.Tests.P699StationBayTests.Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline(typeId: 115)" computerName="domingo-MS-02-Ultra" duration="00:00:00.0347771" startTime="2026-10-15T13:40:45.3618476-05:00" endTime="2026-10-15T13:40:45.4012976-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="023f8ab2-c731-4ade-8a1b-f02557275d26" />
+    <UnitTestResult executionId="70fda21e-71dc-49e9-925d-a32f3d123f64" testId="64e5c3ec-4c63-c9c5-e433-18cc2fee0d05" testName="Allegiance.Core.Tests.P699StationBayTests.Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay" computerName="domingo-MS-02-Ultra" duration="00:00:00.0086801" startTime="2026-10-15T13:40:45.4300725-05:00" endTime="2026-10-15T13:40:45.4513681-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70fda21e-71dc-49e9-925d-a32f3d123f64">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.True() Failure
+Expected: True
+Actual:   False</Message>
+          <StackTrace>   at Allegiance.Core.Tests.P699StationBayTests.Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay() in /home/domingo/allegiance-codex-p699/tests/Allegiance.Core.Tests/P699StationBayTests.cs:line 56
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e842dac2-244e-47bb-a104-494c6474bbbd" testId="ae068e11-adc9-46d1-0e48-eed0fe56aa3d" testName="Allegiance.Core.Tests.P699StationBayTests.Station_appends_fighter_bays_after_capital_prefix_using_native_slot_numbers" computerName="domingo-MS-02-Ultra" duration="00:00:00.0036390" startTime="2026-10-15T13:40:45.4266790-05:00" endTime="2026-10-15T13:40:45.4299682-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e842dac2-244e-47bb-a104-494c6474bbbd" />
+    <UnitTestResult executionId="86ea3980-cd61-4f93-82a4-08808152924b" testId="7b2d5feb-6763-f606-fda1-8a72d9cb518f" testName="Allegiance.Core.Tests.P699StationBayTests.Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline(typeId: 18)" computerName="domingo-MS-02-Ultra" duration="00:00:00.0043070" startTime="2026-10-15T13:40:45.4064968-05:00" endTime="2026-10-15T13:40:45.4065537-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="86ea3980-cd61-4f93-82a4-08808152924b" />
+    <UnitTestResult executionId="2020d3e4-22ea-4471-b98b-543057a17cf3" testId="9cb9ffdf-8a52-94b9-2c37-b7191dd8ff9d" testName="Allegiance.Core.Tests.P699StationBayTests.Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline(typeId: 15)" computerName="domingo-MS-02-Ultra" duration="00:00:00.0205599" startTime="2026-10-15T13:40:45.4069085-05:00" endTime="2026-10-15T13:40:45.4260408-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2020d3e4-22ea-4471-b98b-543057a17cf3" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Allegiance.Core.Tests.P699StationBayTests.Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay" storage="/home/domingo/allegiance-codex-p699/tests/allegiance.core.tests/bin/debug/net10.0/allegiance.core.tests.dll" id="64e5c3ec-4c63-c9c5-e433-18cc2fee0d05">
+      <Execution id="70fda21e-71dc-49e9-925d-a32f3d123f64" />
+      <TestMethod codeBase="/home/domingo/allegiance-codex-p699/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Allegiance.Core.Tests.P699StationBayTests" name="Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay" />
+    </UnitTest>
+    <UnitTest name="Allegiance.Core.Tests.P699StationBayTests.Station_appends_fighter_bays_after_capital_prefix_using_native_slot_numbers" storage="/home/domingo/allegiance-codex-p699/tests/allegiance.core.tests/bin/debug/net10.0/allegiance.core.tests.dll" id="ae068e11-adc9-46d1-0e48-eed0fe56aa3d">
+      <Execution id="e842dac2-244e-47bb-a104-494c6474bbbd" />
+      <TestMethod codeBase="/home/domingo/allegiance-codex-p699/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Allegiance.Core.Tests.P699StationBayTests" name="Station_appends_fighter_bays_after_capital_prefix_using_native_slot_numbers" />
+    </UnitTest>
+    <UnitTest name="Allegiance.Core.Tests.P699StationBayTests.Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline(typeId: 18)" storage="/home/domingo/allegiance-codex-p699/tests/allegiance.core.tests/bin/debug/net10.0/allegiance.core.tests.dll" id="7b2d5feb-6763-f606-fda1-8a72d9cb518f">
+      <Execution id="86ea3980-cd61-4f93-82a4-08808152924b" />
+      <TestMethod codeBase="/home/domingo/allegiance-codex-p699/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Allegiance.Core.Tests.P699StationBayTests" name="Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline" />
+    </UnitTest>
+    <UnitTest name="Allegiance.Core.Tests.P699StationBayTests.Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline(typeId: 15)" storage="/home/domingo/allegiance-codex-p699/tests/allegiance.core.tests/bin/debug/net10.0/allegiance.core.tests.dll" id="9cb9ffdf-8a52-94b9-2c37-b7191dd8ff9d">
+      <Execution id="2020d3e4-22ea-4471-b98b-543057a17cf3" />
+      <TestMethod codeBase="/home/domingo/allegiance-codex-p699/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Allegiance.Core.Tests.P699StationBayTests" name="Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline" />
+    </UnitTest>
+    <UnitTest name="Allegiance.Core.Tests.P699StationBayTests.Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline(typeId: 115)" storage="/home/domingo/allegiance-codex-p699/tests/allegiance.core.tests/bin/debug/net10.0/allegiance.core.tests.dll" id="e83e8e1f-245b-9917-f547-a5939a520bc1">
+      <Execution id="023f8ab2-c731-4ade-8a1b-f02557275d26" />
+      <TestMethod codeBase="/home/domingo/allegiance-codex-p699/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Allegiance.Core.Tests.P699StationBayTests" name="Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="e83e8e1f-245b-9917-f547-a5939a520bc1" executionId="023f8ab2-c731-4ade-8a1b-f02557275d26" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="64e5c3ec-4c63-c9c5-e433-18cc2fee0d05" executionId="70fda21e-71dc-49e9-925d-a32f3d123f64" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ae068e11-adc9-46d1-0e48-eed0fe56aa3d" executionId="e842dac2-244e-47bb-a104-494c6474bbbd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7b2d5feb-6763-f606-fda1-8a72d9cb518f" executionId="86ea3980-cd61-4f93-82a4-08808152924b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9cb9ffdf-8a52-94b9-2c37-b7191dd8ff9d" executionId="2020d3e4-22ea-4471-b98b-543057a17cf3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="5" executed="5" passed="4" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.11)
+[xUnit.net 00:00:00.09]   Discovering: Allegiance.Core.Tests
+[xUnit.net 00:00:00.64]   Discovered:  Allegiance.Core.Tests
+[xUnit.net 00:00:00.66]   Starting:    Allegiance.Core.Tests
+[xUnit.net 00:00:00.77]       Assert.True() Failure
+[xUnit.net 00:00:00.77]       Expected: True
+[xUnit.net 00:00:00.77]       Actual:   False
+[xUnit.net 00:00:00.77]       Stack Trace:
+[xUnit.net 00:00:00.77]         /home/domingo/allegiance-codex-p699/tests/Allegiance.Core.Tests/P699StationBayTests.cs(56,0): at Allegiance.Core.Tests.P699StationBayTests.Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay()
+[xUnit.net 00:00:00.77]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:00.77]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.77]   Finished:    Allegiance.Core.Tests
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="domingo-MS-02-Ultra" outcome="Error" timestamp="2026-10-15T13:40:45.4528644-05:00">
+        <Text>[xUnit.net 00:00:00.77]     Allegiance.Core.Tests.P699StationBayTests.Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

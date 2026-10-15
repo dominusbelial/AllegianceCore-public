@@ -3240,6 +3240,12 @@ bool isThreat =
             if (!cs.World.Ships.TryGetValue(bot.ShipId, out var me)) return bot.IsPod;
             hull = me.HullId;
             stationId = me.StationId;
+            // True death sends KILL_SHIP before the restart's dock notification.
+            // An oxygen respawn is safe to relaunch, but did not fly home.
+            foreach (var killed in cs.World.Events.KillsAfter(bot.PodOutcomeCursor))
+                if (killed.ShipId == bot.ShipId && killed.BDeathCredit)
+                    bot.PodRestarted = true;
+            bot.PodOutcomeCursor = cs.World.Events.KillSequence;
         }
         bool isPod = Catalog.IsLifepodHull(hull);
         if (isPod)
@@ -3268,9 +3274,17 @@ bool isThreat =
             if (!bot.PodDocked && stationId != -1)
             {
                 bot.PodDocked = true;
-                bot.PodsDockedTotal++;
                 bot.PodDockStationId = stationId;
-                Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) DOCKED at station {stationId} — pod reached home");
+                if (bot.PodRestarted)
+                {
+                    bot.PodsRestartedTotal++;
+                    Console.WriteLine($"[p699] pod bot {bot.Name} (ship {bot.ShipId}) RESTARTED at station {stationId} after true death — not a home dock");
+                }
+                else
+                {
+                    bot.PodsDockedTotal++;
+                    Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) DOCKED at station {stationId} — pod reached home");
+                }
             }
             return true;
         }
@@ -3310,7 +3324,7 @@ bool isThreat =
         if (!core.StationTypes.TryGetValue(st.StationTypeId, out var stype)) return false;
 
         // Ability gate — same need the server's dock dispatch applies
-        // (Sector.cs:3563-3566): fighters SabmLand, others (a lifepod) SabmCapLand.
+        // (Igc/shipIGC.cpp:727-729): fighters (including pods) SabmLand, others SabmCapLand.
         short need = hull.HasCapability(DataHullTypeIGC.HabmFighter)
             ? DataStationTypeIGC.SabmLand
             : DataStationTypeIGC.SabmCapLand;
@@ -3344,7 +3358,7 @@ bool isThreat =
         if (st.Forward is { Length: 3 } f && st.Up is { Length: 3 } u) so.Set(Vec3(f), Vec3(u));
         Vector3 center = Vec3(st.Position);
 
-        // World-rotated bays from the capgarage plane-0 slots
+        // World-rotated bays from the landing slots (capital prefix, then fighters)
         // (native centers[i] = GetLandPosition(i,0)*itsOrientation).
         var bays = new List<DockApproach.DockBay>(geom.LandSlots.Count);
         foreach (var slot in geom.LandSlots)
@@ -3353,7 +3367,7 @@ bool isThreat =
             bays.Add(new DockApproach.DockBay(p0.Position * so, p0.Direction.Normalize() * so));
         }
         int nLand = DockApproach.StationBaysForClass(
-            hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.LandSlots.Count);
+            hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.CapLandSlots);
 
         float speed = vel.Length();
         float decel = hull.Mass > 0f ? hull.Thrust / hull.Mass : 55f;
@@ -3549,7 +3563,7 @@ bool isThreat =
     /// <summary>
     /// P539 — fly a lifepod HOME to dock, as a human pilot would: route (real
     /// warps, the same P496 warp-approach law) to the nearest friendly station's
-    /// sector, then fly at the station centre with no weapons (a pod doesn't
+    /// sector, then enter its landing bay with no weapons (a pod doesn't
     /// fight) until docked. Once docked the server's normal dock/relaunch path
     /// takes over; when the bot relaunches into a fresh fighter
     /// (<see cref="UpdatePodState"/> clears <c>IsPod</c>) combat resumes.
@@ -3614,10 +3628,12 @@ bool isThreat =
                 cs.CommandControls(dockCtrl, 0);
                 return;
             }
-            // In-sector fallback: fly at the station centre to reach the dock
-            // footprint, no weapons. Arrival/brake straddle the station hull (the
-            // P497 law).
-            CombatFlyTo(bot, bot.PodStationCenter, 120f, 400f, 0);
+            // Native no-bay power glide (Igc/common.cpp:1517-1524): fly THROUGH
+            // the target, with no arrival brake or dodge of the station itself.
+            // CombatFlyTo treated home as an obstacle and stranded pods outside it.
+            if (TryCsPose(cs, bot.ShipId, out var podPos, out var podOrient))
+                cs.CommandControls(Allegiance.ClientCore.Flight.AutopilotSteering.Pursue(
+                    podPos, podOrient, bot.PodStationCenter), 0);
             return;
         }
         EnsureCombatPath(bot, cur, bot.PodStationSector, now);
@@ -5139,7 +5155,10 @@ bool isThreat =
     public readonly record struct BotCombatRow(
         string Name, short Side, long ShotsFired, long ShipHits,
         long EnemyShieldHits, long EnemyHullHits, long FriendlyHits, long NoneHits,
-        long Kills, double HitRate, bool IsPod, bool PodDocked);
+        long Kills, double HitRate, bool IsPod, bool PodDocked)
+    {
+        public int PodRestarts { get; init; }
+    }
 
     /// <summary>P539b — the per-side / overall aggregate of the combat stats and
     /// the lifepod outcome counts (pods that ever formed, reached a station, or
@@ -5148,7 +5167,10 @@ bool isThreat =
         IReadOnlyList<BotCombatRow> Bots,
         long ShotsFired, long ShipHits, long Kills, double OverallHitRate,
         long FriendlyHits, long EnemyShieldHits, long EnemyHullHits,
-        int PodsCreated, int PodsDocked, int PodsLingering);
+        int PodsCreated, int PodsDocked, int PodsLingering)
+    {
+        public int PodsRestarted { get; init; }
+    }
 
     /// <summary>P539 — snapshot every bot's real combat stats (and per-side /
     /// overall aggregates + lifepod outcome counts) for get_perf_stats / the
@@ -5168,7 +5190,7 @@ bool isThreat =
                 rows.Add(new BotCombatRow(
                     bot.Name, bot.Side, bot.ShotsFired, bot.ShipHits,
                     bot.EnemyShieldHits, bot.EnemyHullHits, bot.FriendlyHits, bot.NoneHits,
-                    bot.Kills, hr, bot.IsPod, bot.PodDocked));
+                    bot.Kills, hr, bot.IsPod, bot.PodDocked) { PodRestarts = bot.PodsRestartedTotal });
             }
         }
         long shots = rows.Sum(r => r.ShotsFired), hits = rows.Sum(r => r.ShipHits), kills = rows.Sum(r => r.Kills);
@@ -5180,7 +5202,7 @@ bool isThreat =
             rows.Sum(r => r.EnemyHullHits),
             podsCreated,
             podsDocked,
-            rows.Count(r => r.IsPod && !r.PodDocked));
+            rows.Count(r => r.IsPod && !r.PodDocked)) { PodsRestarted = rows.Sum(r => r.PodRestarts) };
     }
 
     /// <summary>Pure, unit-testable aggregation of a set of bots' rolling cadence
@@ -5538,6 +5560,9 @@ bool isThreat =
         public bool RelaunchAckHandled;
         public bool RelaunchExhausted;
         public int PodsDockedTotal;
+        public int PodsRestartedTotal;
+        public long PodOutcomeCursor;
+        public bool PodRestarted;
         public bool SpawnPending = true;
         public bool Inactive;
         public Dictionary<short, BotSpatialIndex>? FriendlyGrids;

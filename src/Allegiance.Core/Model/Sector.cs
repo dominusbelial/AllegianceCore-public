@@ -324,7 +324,7 @@ public sealed class Sector : IClusterIgc
     /// <see cref="Collision.StationLandingBayCache"/>). When set, the per-tick
     /// <see cref="ResolveDockCollisions"/> pass runs the real
     /// <see cref="Sim.Station.InGarage"/> geometric test against genuine
-    /// <c>capgarage</c> bay data from the station's own model — the native
+    /// landing-bay data from the station's own model — the native
     /// station docking gate (<c>shipIGC.cpp:843,853</c> → <c>CstationIGC::InGarage</c>,
     /// <c>stationIGC.cpp:385-436</c>) — instead of a crude 200-unit dock sphere.
     /// When <c>null</c> (unattached) or a station type has no resolvable bay,
@@ -3714,17 +3714,12 @@ public sealed class Sector : IClusterIgc
     /// <c>SideId</c>) or a station with no side (<c>-1</c>) can never satisfy
     /// that, so both are skipped. A hostile (different-side) station simply
     /// never triggers a dock — the ship flies on (out of scope: capture).</para>
-    /// <para><b>Geometry: a point-in-sphere test, like the warp pass, not a
-    /// swept collision.</b> Stations are stationary; <c>|ship − station| ≤
-    /// <see cref="DockRadius"/></c> each tick, the <b>simplified</b> stand-in
-    /// for the native slot-based <c>InGarage</c> (documented at
-    /// <see cref="DockRadius"/>). No <see cref="CollisionDetector"/> is used.
-    /// Distance-only (no near-zero-velocity clause): arrival in the reference
-    /// is decided by geometry on the collision tick (<c>InGarage</c> is a
-    /// position test), not by the ship having slowed — so requiring low velocity
-    /// would diverge from the native semantics for no benefit, and it would make
-    /// the loopback proof need a throttle choreography instead of a deterministic
-    /// position check.</para>
+    /// <para><b>Geometry.</b> When artwork bays are available, require collision
+    /// range and the hull-class-specific <c>Station.InGarage</c> half-spaces.
+    /// Native calls InGarage only from a collision (Igc/shipIGC.cpp:843), so
+    /// an unbounded entry half-space alone must not dock a distant ship.
+    /// Without bay data the documented <see cref="DockRadius"/> fallback applies.
+    /// Neither path requires low velocity: native arrival is geometric.</para>
     /// <para><b>Gates.</b> The dead cannot dock; an unplaced ship has no host
     /// to route to; an already-docked ship is skipped (the latch, so a ship that
     /// stays in the sphere does not re-fire every tick); and the native
@@ -3781,8 +3776,8 @@ public sealed class Sector : IClusterIgc
 
                 // P550 — the native station-ability gate (shipIGC.cpp:725-727):
                 // a fighter hull (c_habmFighter) requires the station to carry
-                // c_sabmLand; any non-fighter hull (a capital; also a lifepod,
-                // which has no c_habmFighter bit) requires c_sabmCapLand. A
+                // c_sabmLand; a non-fighter hull requires c_sabmCapLand.
+                // Real player lifepods (including hull 444) carry c_habmFighter. A
                 // station lacking the required ability is simply not dockable by
                 // this hull, whatever its side. Applies in BOTH the geometry
                 // path and the corpus-gap fallback below.
@@ -3793,13 +3788,13 @@ public sealed class Sector : IClusterIgc
 
                 // P550 — the native landing GEOMETRY gate (shipIGC.cpp:843,853 →
                 // CstationIGC::InGarage, stationIGC.cpp:385-436): when the
-                // station type's real capgarage geometry is resolvable (the
+                // station type's real landing geometry is resolvable (the
                 // corpus supplies its model), the definitive arrival test is the
                 // geometric <c>InGarage</c> predicate (reused from the carrier
                 // bays) — the old 200-unit DockRadius sphere alone is no longer
                 // sufficient. When the geometry is NOT resolvable (no
                 // StationLandingBays cache attached, or the type's model lacks
-                // capgarage frames — a corpus gap native never has, since its
+                // landing frames — a corpus gap native never has, since its
                 // art always ships), the port falls back to the classic
                 // <see cref="DockRadius"/> proximity stand-in, the documented
                 // substitute for the unavailable InGarage; the capability gate
@@ -3814,6 +3809,11 @@ public sealed class Sector : IClusterIgc
                     if (bay is not null)
                     {
                         geometryAvailable = true;
+                        // InGarage is called FROM a native collision, not for any
+                        // point on a bay's unbounded entry half-space (Igc/clusterIGC.cpp:298-315;
+                        // _Utility/HitTest.cpp:130). Keep the collision-sphere prerequisite.
+                        float contactRadius = rt.Radius + 0.5f * ship.HullType.Length;
+                        if (dx * dx + dy * dy + dz * dz > contactRadius * contactRadius) continue;
                         // Native passes the SHIP's predicted position to InGarage
                         // (shipIGC.cpp:843,853: GetPosition()+GetVelocity()*tCollision),
                         // not the station centre.

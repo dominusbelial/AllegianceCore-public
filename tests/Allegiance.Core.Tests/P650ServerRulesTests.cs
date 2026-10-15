@@ -43,7 +43,7 @@ public sealed class P650ServerRulesTests
             var sector = mission.Sectors.First(s => s.Stations.Any(st => st.SideId >= 0));
             var st = sector.Stations.First(st => st.SideId >= 0);
             var hull = core.HullTypes.Values.First() with { Thrust = 0.01f, Speed = 1000, Mass = 100 };
-            var ship = new Ship(id, hull, new Vector3(st.Position[0] + 20, st.Position[1], st.Position[2]), Vector3.Zero, Orientation.Identity) { SideId = st.SideId };
+            var ship = new Ship(id, hull, DockTestPlacement.Inside(mission, st, hull), Vector3.Zero, Orientation.Identity) { SideId = st.SideId };
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };

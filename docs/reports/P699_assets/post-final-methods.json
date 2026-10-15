@@ -1,0 +1,14 @@
+[
+  [
+    "Core",
+    "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide"
+  ],
+  [
+    "Core",
+    "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy"
+  ],
+  [
+    "Core",
+    "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+  ]
+]

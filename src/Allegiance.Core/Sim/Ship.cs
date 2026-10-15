@@ -5609,7 +5609,7 @@ public sealed class Ship : Model, IShipIgc
                 p0.Direction.Normalize() * rt.Orientation));
         }
         int nLand = DockApproach.StationBaysForClass(
-            HullType.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.LandSlots.Count);
+            HullType.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.CapLandSlots);
 
         // Kill-throttle rest position (native computes this from the drag solve,
         // common.cpp:1890-1905; the port uses its braking capability Thrust/Mass).

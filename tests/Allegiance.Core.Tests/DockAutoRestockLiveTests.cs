@@ -204,7 +204,7 @@ public sealed class DockAutoRestockLiveTests
 
         // Cross the dock radius → the next tick's dock pass raises the dock
         // event → RestockOnDock refills the pools.
-        ship.Position = StationPos(garrison) + new Vector3(15f, 0f, 0f);
+        ship.Position = DockTestPlacement.Inside(ship.Mission!, garrison, ship.HullType);
         PumpUntil(server, () => LiveShip(server, shipId).StationId is not null, 200);
 
         var after = LiveShip(server, shipId);
@@ -260,7 +260,7 @@ public sealed class DockAutoRestockLiveTests
         // Dock #1 — the side has NOT researched the successor: the mounted part
         // must stay the base and the wallet must be untouched (P441 differential
         // 0). This is the fail-first "before the research" baseline.
-        ship.Position = StationPos(garrison) + new Vector3(15f, 0f, 0f);
+        ship.Position = DockTestPlacement.Inside(ship.Mission!, garrison, ship.HullType);
         PumpUntil(server, () => LiveShip(server, shipId).StationId is not null, 200);
         Assert.Equal(basePt.PartId, LiveShip(server, shipId).Parts.Single().Type.PartId);
         Assert.Equal(wallet0, WalletOf(server, shipId));
@@ -354,7 +354,7 @@ public sealed class DockAutoRestockLiveTests
         // Dock → the restock re-buys the missing paid launcher (upgraded to its
         // same-priced successor) as a mounted part → ShipValue rises by its price
         // → the player is debited that exact P441 differential.
-        ship.Position = StationPos(garrison) + new Vector3(15f, 0f, 0f);
+        ship.Position = DockTestPlacement.Inside(ship.Mission!, garrison, ship.HullType);
         PumpUntil(server, () => LiveShip(server, shipId).StationId is not null, 200);
 
         var after = LiveShip(server, shipId);

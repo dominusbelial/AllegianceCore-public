@@ -236,6 +236,8 @@ public sealed class ConquestTerritoryLiveTests
         var baseType = core.StationTypes.Values.First();
         var type = baseType with
         {
+            ModelName = "P699_SYNTHETIC_CONQUEST", // synthetic 40-unit base, no artwork bay
+
             // P550 — a real land-capable base. The dock pass now enforces the
             // native land-ability gate (shipIGC.cpp:725-727) before capture, so
             // a flag base granted only SabmFlag could no longer be docked at or

@@ -290,7 +290,9 @@ public sealed class Station : IStationIgc, ISideVisible
         var landerRadius = 0.5f * lander.HullType.Length;    // documented sphere simplification
         var orientationStation = Orientation;                // stationIGC.cpp:410
 
-        for (var i = bay.LandSlots.Count - 1; i >= 0; i--)   // stationIGC.cpp:390,413 (slot loop, descending)
+        int slots = lander.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+            ? bay.LandSlots.Count : bay.CapLandSlots;
+        for (var i = slots - 1; i >= 0; i--)   // stationIGC.cpp:390,413 (slot loop, descending)
         {
             var slot = bay.LandSlots[i];
             var j = slot.Planes.Count - 1;
