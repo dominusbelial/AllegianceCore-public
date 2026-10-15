@@ -3035,11 +3035,15 @@ public sealed class Ship : Model, IShipIgc
         foreach (var part in _parts.ToArray())
         {
             if (part.EquipmentType == EquipmentType.Afterburner || part.MountedFraction >= 1f) continue;
-            part.MountedFraction = Math.Min(1f, part.MountedFraction + dt * MountRate());
+            // Igc/cloakigc.cpp:68-77 deliberately forces readiness on its
+            // first update, even with a zero mount rate. Other parts ramp.
+            part.MountedFraction = part.EquipmentType == EquipmentType.Cloak
+                ? 1f : Math.Min(1f, part.MountedFraction + dt * MountRate());
             if (part.MountedFraction >= 1f)
             {
-                if (part.EquipmentType == EquipmentType.Weapon)
-                    Mission?.Site.WeaponReady(this, part.Type.Name); // weaponIGC.h:44-46
+                if (part.EquipmentType is EquipmentType.Weapon or EquipmentType.Cloak or EquipmentType.Shield)
+                    // weaponIGC.h:44-46; cloakigc.cpp:75-76; shieldIGC.cpp:82-83.
+                    Mission?.Site.WeaponReady(this, part.Type.Name);
                 RaiseLoadoutChange(part, LoadoutChange.Mounted);
             }
         }
@@ -4703,7 +4707,9 @@ public sealed class Ship : Model, IShipIgc
     private void UpdateShield(float dt)
     {
         if (_parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield && p.MountId == 0)
-            is { MountedFraction: < 1f }) { _shieldFraction = 0f; return; }
+            // Igc/shieldIGC.cpp:67-79: wait without overwriting a fraction
+            // received from the server while local mounting is still behind.
+            is { MountedFraction: < 1f }) return;
         if (MountedShieldType() is not { } st) return;
         // shieldIGC.cpp:88: m_fraction += GetRegeneration()*dt/GetMaxStrength();
         // clamped to [0,1] (SetFraction, shieldIGC.h:126-147); the defensive clamp
@@ -7661,6 +7667,9 @@ public sealed class Ship : Model, IShipIgc
             if (useFuel && StationId is null && ParentShip is null)
                 ab.MountedFraction = Math.Min(1f, ab.MountedFraction + dt * MountRate());
             if (ab.MountedFraction < 1f) return;
+            // Igc/afterburnerIGC.cpp:117-121: one owner notification at the
+            // float boundary; the prediction pass neither advances nor repeats it.
+            Mission?.Site.WeaponReady(this, ab.Type.Name);
             RaiseLoadoutChange(ab, LoadoutChange.Mounted);
         }
 

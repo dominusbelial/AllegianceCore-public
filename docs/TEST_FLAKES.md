@@ -745,3 +745,15 @@ After all four full suites completed, every failed Core method passed **3/3 exac
 | `Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup` | Cleanup hit `ThreadStateException: Thread has not been started` in `TcpTransport.Shutdown`, line 533. The allocation assertion did not fail. | 3/3 pass |
 
 These match previously recorded receipt/shutdown flake symptoms; the isolated passes do not establish a fix for the underlying races. No assertions, deadlines, quarantine traits, or transport behavior were changed for these observations. See the [P688 report](reports/P688_MERGE_P655D.md) and [invocation ledger](reports/P688_RESULTS.json) for raw full-suite counts, filters, stack traces and individual rerun results.
+
+
+## P690 observation (2026-10-15)
+
+The final unfiltered Core, ClientCore (including the enabled local 15v15 next-match showcase), and MonoGame suites produced the raw counts in [P690 report](reports/P690_PARITY_WAVE8.md). After all three suites finished, every failed method below passed **3/3 exact-method isolated runs**, satisfying the task's load-flake rule. No assertions, deadlines, quarantine traits, or product behavior were changed for these observations.
+
+| Test | Full-pass symptom | Isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer` | Assert.DoesNotContain() Failure: Filter matched in collection | 3/3 pass |
+
+See [P690_RESULTS.json](reports/P690_RESULTS.json) for commands, raw counts, messages, and artifact paths. Isolated passes do not establish a fix for the underlying timing/transport behavior.

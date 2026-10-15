@@ -513,8 +513,10 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastWeaponReady(Ship ship, string partName)
     {
-        // Native weaponIGC.h:44-46 is local IGC audio/text; reuse this port's
-        // owner-directed chat transport to carry both without a new FMID.
+        // Native weaponIGC.h:44-46, cloakigc.cpp:75-76, shieldIGC.cpp:82-83,
+        // afterburnerIGC.cpp:119-120 use local IGC audio/text. Carry them over
+        // the existing chat transport. WinTrek/trekigc.cpp:2994-2996 limits
+        // text to the owner; :4975-4982 also lets a boarded crew hear its source.
         var message = new ChatMessage
         {
             SidSender = -1, ChatTarget = (int)ChatTarget.Individual,
@@ -524,7 +526,16 @@ public sealed partial class Server
         };
         var packet = FedPacket.Pack(new[] { message.Encode() });
         foreach (var (connection, peer) in _peerShips)
+        {
             if (ReferenceEquals(peer.Ship, ship)) _host.Send(connection, packet);
+            else if (ReferenceEquals(peer.Ship.ParentShip, ship))
+            {
+                // The recipient identifier belongs to this individual crew member.
+                message.OidRecipient = peer.Ship.Id;
+                message.Message = string.Empty;
+                _host.Send(connection, FedPacket.Pack(new[] { message.Encode() }));
+            }
+        }
     }
 
     private void BroadcastLoadoutChange(IShipIgc pship, IPartIgc ppart, LoadoutChange lc)
