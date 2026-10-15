@@ -197,6 +197,9 @@ public class P640CommandCameraTests
         world.Apply(new ShipStatusMessage { ShipId = 2, ParentId = 99, SectorId = 1 });
         Assert.Null(CommandCamera.FollowSubject(world, 2, 1));
         world = World();
+        world.Apply(new ShipDelete { ShipId = 2, Sdr = ShipDelete.SdrLeftSector });
+        Assert.Null(CommandCamera.FollowSubject(world, 2, 1)); // no carrier: departed hull stays excluded
+        world = World();
         world.Apply(new KillShip { ShipId = 2, BDeathCredit = true });
         Assert.Null(CommandCamera.FollowSubject(world, 2, 1));
         world.Apply(new ExportShip { ShipId = 4, SideId = 0 });

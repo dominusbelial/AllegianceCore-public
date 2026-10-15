@@ -58,6 +58,19 @@ public sealed class ShipEntity
     /// where a dead ship already is.</summary>
     public bool IsNotVisible => IsDead || IsGone;
 
+    /// <summary>The sector confirmed by in-view telemetry, separate from the
+    /// last-known strategic SHIP_STATUS sector. Identity/loadout refreshes and
+    /// cross-sector teammate poses cannot establish cluster membership.</summary>
+    public short? PoseSectorId { get; internal set; }
+
+    /// <summary>Shared hull/effect gather gate. Native caches departed ships in
+    /// the null cluster (clintlib/appmsg.cpp:475-488) and renders only current
+    /// scanner visibility (WinTrek/trekigc.cpp:2167-2169).</summary>
+    public bool CanDrawInSector(short sectorId) =>
+        !IsNotVisible && !Unknown && State != ShipStatusMessage.StateDocked
+        && ParentId < 0 && PoseSectorId == sectorId && SectorId == sectorId
+        && Latest is not null;
+
     /// <summary>P373 — transient latch recording that the one-shot
     /// "new contact" sound cue has already been played for this ship for its
     /// current visibility episode. It starts false, is set true by

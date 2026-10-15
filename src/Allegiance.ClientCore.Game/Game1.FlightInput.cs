@@ -1867,6 +1867,18 @@ public sealed partial class Game1
         float updateDt = (float)gameTime.ElapsedGameTime.TotalSeconds;   // P358 — powers the afterburner ramp
         lock (_session.Gate)
         {
+            short? viewSector = world.MyShipId is { } viewId && world.Ships.TryGetValue(viewId, out var viewShip)
+                ? RenderSector(viewShip.SectorId) : null;
+            if (_flightEffects.BeginView(world.SectorGeneration, viewSector))
+            {
+                _debrisGeo.Clear();
+                _shipThrustPower.Clear();
+                _lastShipSector.Clear();
+                _warpRenderer?.ResetTransits();
+                _pendingTeleportBurst = null;
+                _pendingHullHits.Clear();
+            }
+
             // P373 — drain the one-shot "new contact" (first-sighting) cues
             // into the audio manager. They were recorded on the wire-presence
             // edge under this same gate, so each genuine new contact plays
@@ -1994,7 +2006,8 @@ public sealed partial class Game1
                 // top-level guard also covers the damage-emitter gather,
                 // cloak-visual tracking and model/texture/scale resolution that
                 // share this loop body.
-                if (id == world.MyShipId || ship.IsNotVisible || ship.Latest is not { } up) continue;
+                if (id == world.MyShipId || viewSector is not { } sector
+                    || !ship.CanDrawInSector(sector) || ship.Latest is not { } up) continue;
                 // P448b — resolve this ship's RENDER pose: dead-reckon it to "now"
                 // (P448a ShipDeadReckoner, native CalculateShip replay) unless the
                 // kill switch is off or the reckoner isn't seeded (falls back to the

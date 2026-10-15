@@ -123,7 +123,8 @@ public sealed partial class Game1 : Game
     // surface) plus the camera-facing billboard renderer. _trailNowSec is the
     // pool's monotonic clock, advanced by real elapsed time each frame in Draw
     // (feeds both the per-missile velocity estimate and particle aging).
-    private readonly MissileTrailParticles _trailParticles = new();
+    private readonly Rendering.FlightEffectPools _flightEffects = new();
+    private MissileTrailParticles _trailParticles => _flightEffects.Missiles;
     private readonly ITrailRandom _trailRandom = new RandomTrailSource();
     private MissileTrailRenderer _trailRenderer = null!;
     private double _trailNowSec;
@@ -131,7 +132,7 @@ public sealed partial class Game1 : Game
     // P296 — warp-transit teleport spark spray (native AddTeleportParticles).
     // The pure particle pool + camera-facing billboard renderer; the burst fires
     // once per transit reusing WarpTransitFlash's one-shot edge (see DrawHud).
-    private readonly Rendering.WarpTransitParticles _warpParticles = new();
+    private Rendering.WarpTransitParticles _warpParticles => _flightEffects.Warp;
     private Rendering.WarpTransitParticleRenderer _warpParticleRenderer = null!;
     // Transit-instant ship state (position/velocity/axes) buffered in DrawHud
     // when WarpTransitFlash.JustTransited arms, consumed on the next frame's 3D
@@ -146,7 +147,7 @@ public sealed partial class Game1 : Game
     // visible ship (driven by each ship's real hull fraction via
     // Flight.DamageDebrisTracker), then ages + draws them. See the emit block
     // in Draw for how the per-ship emission inputs are gathered under the Gate.
-    private readonly Rendering.DamageDebrisParticles _damageDebris = new();
+    private Rendering.DamageDebrisParticles _damageDebris => _flightEffects.Damage;
     private Rendering.DamageDebrisRenderer _damageDebrisRenderer = null!;
     // Per-frame emission inputs for every currently-damaged visible ship,
     // rebuilt under the Gate lock in the same pass that gathers _poses.
@@ -173,7 +174,7 @@ public sealed partial class Game1 : Game
     // 133-146) tracked here from the real StateM.AfterburnerButton bit already
     // on the wire — so the trail appears when a ship boosts and thins/stops as
     // the power decays once it stops (matching native's m_fThrustPower > 0 gate).
-    private readonly Rendering.ShipEngineTrailParticles _engineTrail = new();
+    private Rendering.ShipEngineTrailParticles _engineTrail => _flightEffects.Engines;
     private Rendering.ShipEngineTrailRenderer _engineTrailRenderer = null!;
     // Per-frame emission inputs for every currently-thrusting visible ship +
     // the native-style afterburner power ramp, both rebuilt under the Gate lock
@@ -212,7 +213,7 @@ public sealed partial class Game1 : Game
     // and is tinted by the ship's real side colour at half intensity. Fed
     // every visible ship's anchor/right/colour in the pose-gather (Update)
     // and advanced+drawn additively in Draw.
-    private readonly Rendering.ShipMotionTrailRibbons _motionTrail = new();
+    private Rendering.ShipMotionTrailRibbons _motionTrail => _flightEffects.Motion;
     private Rendering.ShipMotionTrailRenderer _motionTrailRenderer = null!;
 
     // P364 — the projectile-impact spark (native AddHullHit debris bits,
@@ -220,7 +221,7 @@ public sealed partial class Game1 : Game
     // renderer; each frame's 3D pass drains the buffered PROJECTILE_HULL_HIT(213)
     // hits (gathered under the Gate), emits the two bits per own-sector hit at
     // the real impact point/normal, then ages + draws them.
-    private readonly Rendering.HullHitSparkParticles _hullHitParticles = new();
+    private Rendering.HullHitSparkParticles _hullHitParticles => _flightEffects.HullHits;
     private Rendering.HullHitSparkRenderer _hullHitSparkRenderer = null!;
     // Hits drained this frame (world.TakeNewHullHits), filtered to the local
     // ship's own sector, emitted into the pool exactly once.
@@ -236,7 +237,7 @@ public sealed partial class Game1 : Game
     // spark, but only the AbsorbedByShield=true case (a shield-absorbed strike
     // spawns no hull spark — Game1.Rendering.cs); a flare is emitted on the
     // struck ship's shield toward the hit, aged, and drawn additively.
-    private readonly Rendering.ShieldFlareParticles _shieldFlareParticles = new();
+    private Rendering.ShieldFlareParticles _shieldFlareParticles => _flightEffects.Shields;
     private Rendering.ShieldFlareRenderer _shieldFlareRenderer = null!;
     private readonly List<ShieldFlareView> _drawShieldFlares = new();
 
@@ -469,7 +470,7 @@ public sealed partial class Game1 : Game
     // the viewer's sector (ClientWorld's AlephTransitSignals) the affected warp
     // briefly brightens, its glimpse opens wide and a lens-flare bursts. Drives
     // both the warp funnel boost and the glimpse/flare draw; idle = no cost.
-    private readonly Rendering.WarpPulseController _warpPulses = new();
+    private Rendering.WarpPulseController _warpPulses => _flightEffects.WarpPulses;
     // P588 — the black sky tier renderer (point stars + native planet, no
     // dome), the new DEFAULT. Constructed alongside the other tiers; the
     // active tier is dispatched in DrawSkyP576.
@@ -671,7 +672,7 @@ public sealed partial class Game1 : Game
     // P462 — the local own-shot echo: emits a visual tracer (and fire one-shot)
     // at the trigger frame and de-dupes the server's PROJECTILE_INSTANCE echo so
     // each shot renders/sounds exactly once. See Flight.OwnShotEcho.
-    private readonly Flight.OwnShotEcho _ownShotEcho = new();
+    private Flight.OwnShotEcho _ownShotEcho => _flightEffects.OwnShots;
     // P465 — own-shot burst-loop lifecycle: which mounts are in sustained fire
     // (a looping burst wave is playing) and which mounts fired last frame (the
     // rising-edge discriminator that keeps a tap a single-shot, not a burst).

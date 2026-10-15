@@ -1581,6 +1581,7 @@ public sealed partial class ClientWorld
     /// </summary>
     public void Reset()
     {
+        SectorGeneration++;
         ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
@@ -2062,6 +2063,13 @@ public sealed partial class ClientWorld
 
     private void Apply(SetCluster set)
     {
+        // Native treats EVERY SET_CLUSTER as a delete for every remote ship,
+        // even when re-entering the same sector (appmsg.cpp:1009-1023).
+        SectorGeneration++;
+        foreach (var ship in _ships.Values)
+            if (ship.ShipId != set.Ship.ShipId && ship.ShipId != MyShipId)
+                RetireSectorPose(ship);
+        ClearSectorEffects();
         ShipWarnings.Reset();
         _treasures.Clear();
         MarkSnapshotDirty();
@@ -2078,6 +2086,9 @@ public sealed partial class ClientWorld
         // before the seat below overwrites SectorId.
         bool ownSectorChanged = e.SectorId != set.SectorId && set.Ship.ShipId == (MyShipId ?? set.Ship.ShipId);
         e.SectorId = set.SectorId;   // top-level SET_CLUSTER sectorID
+        e.PoseSectorId = set.SectorId;
+        e.Unknown = false;
+        e.State = ShipStatusMessage.StateFlying;
         e.Latest = set.Ship;         // store verbatim, don't re-flatten
         e.LastUpdateTick = set.Ship.Time;
         // P508 — the ship cookie the server stamped on this SET_CLUSTER (a fresh
@@ -2342,6 +2353,16 @@ public sealed partial class ClientWorld
         // sector-correct "it is back in OUR view" signal is HeavyShipsUpdate
         // (176, only ships in the recipient's own cluster) plus SetCluster/
         // ExportShip, which is where IsGone is cleared.
+        // A docked commander's explicit sector preview is the exception: its
+        // fresh same-side pose plus flying status identifies the viewed object.
+        if (MyShipId is { } viewer && _ships.TryGetValue(viewer, out var own)
+            && own.State == ShipStatusMessage.StateDocked
+            && ViewedClusterId == e.SectorId && e.SideId == own.SideId
+            && e.State == ShipStatusMessage.StateFlying && !e.Unknown && !e.IsDead)
+        {
+            e.PoseSectorId = e.SectorId;
+            e.IsGone = false;
+        }
     }
 
     private void Apply(ShipStatusMessage status)
@@ -2356,6 +2377,12 @@ public sealed partial class ClientWorld
         e.Unknown = status.Unknown;
         e.Detected = status.Detected;
         e.StateTime = status.StateTime;
+        // SHIP_STATUS is strategic last-known information, not a pose. The
+        // hidden/docked/other-sector transitions retire the old local object.
+        if (!e.IsMine && (status.Unknown || status.State == ShipStatusMessage.StateDocked
+            || status.State is ShipStatusMessage.StateObserver or ShipStatusMessage.StateTurret
+            || (e.PoseSectorId is { } posedSector && posedSector != status.SectorId)))
+            RetireSectorPose(e);
     }
 
     /// <summary>
@@ -2411,6 +2438,12 @@ public sealed partial class ClientWorld
             bool wasGone = e.IsGone;
             bool hadPose = e.Latest is not null;
             e.SectorId = ownSector;   // P375 — every 176 entry is in our own cluster (see above)
+            e.PoseSectorId = ownSector;
+            // Native sends in-cluster telemetry even for undetected ships.
+            // Only a spotted SHIP_STATUS may clear the scanner-hidden bit.
+            e.StationId = -1;
+            e.ParentId = -1;
+            e.State = ShipStatusMessage.StateFlying;
             e.Latest = ServerShipUpdate.FromValues(
                 entry.ShipId, entry.StateM, entry.Controls,
                 entry.Time(heavy.TimeReference),
@@ -3492,6 +3525,7 @@ public sealed partial class ClientWorld
             // The victim stays in the entity table (that's the point of keying by
             // id — "did ship X die" stays answerable) but gains the death flag.
             e.IsDead = true;
+            e.PoseSectorId = null;
             e.IsGone = true;   // P370 — a dead ship is also out of view (unified render exclusion)
             e.NewContactSounded = false;   // P373 — a corpse does NOT cue while dead (IsDead guards AnnounceNewContactIfNew); if it GENUINELY respawns (P521 clears IsDead on the real re-presence signal) re-entering view is a fresh sighting and cues again.
             // P448b — a dead ship stops being dead-reckoned (its extrapolation would walk
@@ -3693,7 +3727,7 @@ public sealed partial class ClientWorld
         if (m.ShipId == MyShipId) ShipWarnings.Reset();
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
         MarkSnapshotDirty();
-        e.IsGone = true;
+        RetireSectorPose(e);
         // P448b — a ship that left view (warped/docked/logged off) stops being
         // dead-reckoned; if it returns, the next pose update re-seeds fresh.
         _remoteReckoners.Remove(m.ShipId);
@@ -3708,6 +3742,34 @@ public sealed partial class ClientWorld
         // pulse can flare that aleph. (Docking/logger are not warp crossings.)
         if (m.Sdr == ShipDelete.SdrLeftSector)
             MaybeSignalDeparture(e);
+    }
+
+    /// <summary>Changes on every SET_CLUSTER, including same-sector re-seats,
+    /// and reconnect. Render pools use this to discard old cluster effects.</summary>
+    public long SectorGeneration { get; private set; }
+
+    private void RetireSectorPose(ShipEntity ship)
+    {
+        ship.PoseSectorId = null;
+        ship.IsGone = true;
+        ship.NewContactSounded = false;
+        _remoteReckoners.Remove(ship.ShipId);
+    }
+
+    private void ClearSectorEffects()
+    {
+        _projectiles.Clear();
+        _projectileDrainCursor = 0;
+        _missiles.Clear();
+        _lastMissileFiredByShip.Clear();
+        _chaff.Clear();
+        _lastChaffPosition = null;
+        _explosions.Clear();
+        _hullHits.Clear();
+        _hitSoundEvents.Clear();
+        _collisionEvents.Clear();
+        _explosionSoundEvents.Clear();
+        _alephTransits.Clear();
     }
     
     private void Apply(PlayerReady m)
@@ -3811,6 +3873,7 @@ public sealed partial class ClientWorld
 
     public void BeginNextMission()
     {
+        SectorGeneration++;
         MissionGeneration++;
         ShipWarnings.Reset();
         MyShipId = null;

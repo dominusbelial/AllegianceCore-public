@@ -150,6 +150,9 @@ public sealed class WarpRenderer : IDisposable
     /// </summary>
     public void TriggerTransit(short warpId) => _swellTrigger[warpId] = _time;
 
+    /// <summary>Old-sector arrival swells must not survive a cluster reset.</summary>
+    public void ResetTransits() => _swellTrigger.Clear();
+
     /// <summary>
     /// Draw the shared warp vortex at <paramref name="world"/> under the
     /// provided view/projection, animating the native inward UV flow each
