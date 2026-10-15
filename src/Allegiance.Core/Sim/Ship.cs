@@ -436,6 +436,9 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     public float Fraction => _fraction;
 
+    /// <summary>Native igc.h:635-637; the current environmental warnings.</summary>
+    public ShipWarningMask WarningMask { get; private set; }
+
     /// <summary>The mounted shield's charge fraction (0..1); 0 when no shield is
     /// mounted. Port of the C++ <c>CshieldIGC::GetFraction()</c>
     /// (<c>shieldIGC.h:122-125</c>). Written by <see cref="ReceiveDamage"/>
@@ -7482,6 +7485,7 @@ public sealed class Ship : Model, IShipIgc
         Vector3 p = Position;
         float r2 = p.X * p.X + p.Y * p.Y + p.Z * p.Z / (lens * lens);
         if (r2 <= bound) return;
+        WarningMask |= ShipWarningMask.OutOfBounds; // shipIGC.cpp:386
         float damage = dt * (r2 - bound) / (50f * bound);
         float old = _fraction;
         _fraction = Math.Max(0f, _fraction - damage);
@@ -7493,6 +7497,7 @@ public sealed class Ship : Model, IShipIgc
 
     protected override void OnUpdate(double now, double dt)
     {
+        WarningMask = ShipWarningMask.None; // shipIGC.cpp:271-273
         // P279 — the drifting Lifepod's oxygen timer. Direct port of native
         // shipIGC.cpp:361-363: `if (lifepod hull && (now > m_timeToDie))
         // KillShipEvent(now, this, NULL, 1.0f, GetPosition(), Vector::GetZero())`.
@@ -7679,6 +7684,21 @@ public sealed class Ship : Model, IShipIgc
         UpdateAfterburner((float)dt);
 
         ApplyOutOfBoundsDamage(now, (float)dt);
+
+        // shipIGC.cpp:408-423. No extra dt: Sector.Cost already includes it.
+        // Boarded ships do not update natively; only their cost is counted.
+        if (ParentShip is null && StationId is null && !Dead &&
+            PilotType >= PilotTypePlayer && Sector is { Cost: > 0f } sector &&
+            Mission is { CrowdingPenaltyEnabled: true })
+        {
+            WarningMask |= ShipWarningMask.CrowdedSector;
+            float maximum = EffectiveMaxHitPoints();
+            // Native counts an installed shield even while it is mounting.
+            if (_parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield && p.MountId == 0)?.Type.Type
+                is DataPartTypeIGC.Shield shield)
+                maximum += EffectiveMaxShieldStrength(shield);
+            ReceiveDamage(0, sector.Cost * maximum, now, Position, Vector3.Zero, null);
+        }
 
         // P151 — NPC self-preservation (the per-tick trigger at
         // shipIGC.cpp:1934-1945): when the Plan slot holds no legal command,

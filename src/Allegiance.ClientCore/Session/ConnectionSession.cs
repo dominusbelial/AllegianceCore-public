@@ -1102,6 +1102,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // world stores the level + queues the sound/status cues.
                         _world.Apply(ClusterWarningUpdate.Decode(m));
                         break;
+                    case ShipWarningUpdate.Fmid:
+                        _world.Apply(ShipWarningUpdate.Decode(m));
+                        break;
                     case CreateBuckets.Fmid:
                         // P284 — the join-sync CREATE_BUCKETS preface; the world
                         // seeds the joining side's development-tech mask from it.

@@ -294,6 +294,20 @@ public sealed class HudRenderer
             ("POWER",  f.Power),
         };
 
+        // Native warning family (igc.h:635-637), adjacent beneath the gauges.
+        // Keep clear of the kill-bonus readout above the panel.
+        float warningX = panelX;
+        foreach (var (bit, text) in new[]
+        {
+            (Allegiance.Core.Sim.ShipWarningMask.OutOfBounds, "OUT OF BOUNDS"),
+            (Allegiance.Core.Sim.ShipWarningMask.CrowdedSector, "SECTOR CROWDED")
+        })
+        {
+            if ((f.WarningMask & bit) == 0) continue;
+            _sb.DrawString(_small, text, new Vector2(warningX, panelTop + rows.Length * rowHeight + 24f), Warning);
+            warningX += _small.MeasureString(text).X + 28f;
+        }
+
         // Glass panel backing behind the whole column.
         float panelBottom = panelTop + rows.Length * rowHeight + 12f;
         FillRect(panelX - 10f, panelTop - 14f, labelW + barW + 30f, panelBottom - (panelTop - 14f), PanelBg);

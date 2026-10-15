@@ -259,6 +259,9 @@ public sealed partial class Game1
 
     protected override void Update(GameTime gameTime)
     {
+        // Also runs in dock/lobby/disconnect states, so the loop cannot linger.
+        lock (_session.Gate)
+            _sound?.UpdateShipWarnings(_session.World.ShipWarnings.Mask, _session.World.ShipWarnings.TakeRisingEdges());
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
         // P618 — advance the sim-scaled game clock (wall × live server time
         // scale), clamped to [0,∞) so a scale=0 edge (never produced server-side;

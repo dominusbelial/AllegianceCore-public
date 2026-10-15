@@ -31,5 +31,6 @@
     <Project Path="tools/shieldflare-proof/shieldflare-proof.csproj" />
     <Project Path="tools/allegiance-mcp/allegiance-mcp.csproj" />
     <Project Path="tools/p605synth/p605synth.csproj" />
+    <Project Path="tools/p629-proof/p629-proof.csproj" />
   </Folder>
 </Solution>

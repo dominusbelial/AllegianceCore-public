@@ -466,6 +466,8 @@ public sealed class ClientWorld
     // clears them after the drain.
     private readonly List<ClientClusterWarningCue> _clusterWarningCues = new();
     private const int MaxClusterWarningCues = 64;
+
+    public ShipWarningState ShipWarnings { get; } = new();
     // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
     // per real-side player) streamed by the periodic owner-only
     // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
@@ -1499,6 +1501,7 @@ public sealed class ClientWorld
     /// </summary>
     public void Reset()
     {
+        ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
         MySideId = null;
@@ -1838,6 +1841,9 @@ public sealed class ClientWorld
                 // P438 — whole-mission side-join broadcast.
                 Apply(joinSide);
                 break;
+            case ShipWarningUpdate warning:
+                if (warning.ShipId == MyShipId) ShipWarnings.Apply(warning.Mask);
+                break;
             case ClusterWarningUpdate clusterWarning:
                 // P374 — a side's per-sector threat state changed.
                 Apply(clusterWarning);
@@ -1898,6 +1904,7 @@ public sealed class ClientWorld
 
     private void Apply(SetCluster set)
     {
+        ShipWarnings.Reset();
         MarkSnapshotDirty();
         // On first arrival this is the "here is your ship" assignment.
         MyShipId ??= set.Ship.ShipId;
@@ -3512,6 +3519,7 @@ public sealed class ClientWorld
     /// warps back, or is re-exported to us).</summary>
     private void Apply(ShipDelete m)
     {
+        if (m.ShipId == MyShipId) ShipWarnings.Reset();
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
         MarkSnapshotDirty();
         e.IsGone = true;
@@ -3615,6 +3623,7 @@ public sealed class ClientWorld
     public void BeginNextMission()
     {
         MissionGeneration++;
+        ShipWarnings.Reset();
         MyShipId = null;
         Graph = null;
         CountdownStartLocalMs = null;

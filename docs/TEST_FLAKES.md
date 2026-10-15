@@ -77,6 +77,24 @@ See [P651 report](reports/P651_EQUIPMENT_RULES.md) for native citations and the
 complete verification record. No new quarantine tags or timing-only product
 changes were introduced.
 
+## P629 observation (2026-10-14)
+
+The required unfiltered sequential assembly passes on the P629 sector-penalty
+tree reported Core **4208 pass / 2 fail**, ClientCore **886 pass / 0 fail**, and
+MonoGame **1974 pass / 0 fail / 3 optional Meshy-pack skips**. After all three
+assemblies finished, each failure passed **3/3 exact-method isolated reruns**,
+qualifying as a load flake under the task lane rule:
+
+| test | full-pass symptom | isolation |
+|---|---|---|
+| `Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking` | healthy bot receipt count still zero in the short packet-rejection window | 3/3 pass |
+| `LiveWinConditionTests.Board_refused_once_mission_over` | Started-stage control boarding did not complete; already `Lane=LiveTiming` | 3/3 pass |
+
+All 31 new P629 test cases and 15 affected existing classes passed three focused
+repetitions. No tags or timing-only product changes were made. See the
+[P629 report](reports/P629_NATIVE_SECTOR_PENALTIES.md) for native references,
+local TCP/bot proof, real-window HUD/audio evidence and durable verification ledgers.
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition

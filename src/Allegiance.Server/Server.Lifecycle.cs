@@ -60,6 +60,8 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
+        bool crowdingEnabled = _config.Sim.CrowdingEnabled; // validate before binding/listening
+        Console.WriteLine($"[boot] sim.crowdingPenalty = {(crowdingEnabled ? "native" : "off")}");
         _period = _config.UpdatesPerSecond > 0 ? 1.0 / _config.UpdatesPerSecond : 0.05;
         _simNow = 0.0;
         ConsoleLog.Verbose = _config.ConsoleVerbose;   // P318: gate the high-frequency per-tick lines
@@ -1020,6 +1022,7 @@ public sealed partial class Server
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
         var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
+        mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
         // P402 — remember whether this mission's map came from MapGen so the
         // debug-topology machinery below (and the join/death/respawn paths that
         // share its station helpers) can tell a generated arena from the real

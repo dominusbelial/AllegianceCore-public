@@ -1,0 +1,3 @@
+P629-WINDOW phase=0 warnings=CrowdedSector hull=0.9996 loop=Playing audioLoaded=True
+P629-WINDOW phase=1 warnings=OutOfBounds, CrowdedSector hull=0.9220 loop=Playing audioLoaded=True
+P629-WINDOW phase=2 warnings=None hull=0.2504 loop=Stopped audioLoaded=True

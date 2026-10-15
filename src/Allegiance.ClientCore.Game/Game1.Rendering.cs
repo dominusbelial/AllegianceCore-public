@@ -2408,7 +2408,8 @@ public sealed partial class Game1
                     // P618 — the live sim time scale as a percent (100 = full
                     // speed). Hidden by the renderer at full speed; shown as
                     // "TIME DILATION nn%" when the server slows the game clock.
-                    TimeDilationPercent: 100f * (float)_session.World.TimeScale);
+                    TimeDilationPercent: 100f * (float)_session.World.TimeScale,
+                    WarningMask: world.ShipWarnings.Mask);
             }
         }
         if (!_hideHud && !_directorActive && !_hudHidden)   // P572 --hide-hud; P580 the director always hides the HUD; P612 F1 HUD toggle

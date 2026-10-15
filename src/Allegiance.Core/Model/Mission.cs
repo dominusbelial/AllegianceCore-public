@@ -25,6 +25,9 @@ using Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Mission
 {
+    /// <summary>P629 stress-test override. Native sector crowding is enabled by default.</summary>
+    public bool CrowdingPenaltyEnabled { get; set; } = true;
+
     /// <summary>The type universe the mission draws on.</summary>
     public StaticCore Core { get; }
 

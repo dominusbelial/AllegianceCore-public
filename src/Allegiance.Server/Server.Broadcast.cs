@@ -352,6 +352,7 @@ public sealed partial class Server
         // computes this client-side each frame; this renderer-only client has no
         // static core, so the server streams it (see ClusterWarningUpdate).
         Step("clusterWarnings", () => BroadcastSectorThreats());
+        Step("shipWarnings", () => BroadcastShipWarnings());
         // P230 — per-tick, OWNER-ONLY MissileLockUpdate(204) of each armed peer's
         // missile-lock quality + target, so the MonoGame client can render the
         // lock tone/tips/target-box (native's client computed the lock locally and

@@ -64,6 +64,9 @@ public sealed class Sector : IClusterIgc
     /// <summary>Number of times <see cref="Update"/> has been called.</summary>
     public long UpdateCount { get; private set; }
 
+    /// <summary>Native clusterIGC.cpp:162-198,231: cost for this chunk, including dt.</summary>
+    public float Cost { get; private set; }
+
     /// <summary>
     /// The mission's full side set, when this sector is mission-bound — the
     /// port of the native <c>pcluster-&gt;GetMission()-&gt;GetSides()</c> iteration
@@ -629,10 +632,8 @@ public sealed class Sector : IClusterIgc
 
     /// <summary>
     /// Per-chunk sector tick (<c>CclusterIGC::Update</c>, <c>clusterIGC.cpp:97</c>).
-    /// Ports exactly the models loop — <c>l-&gt;data()-&gt;Update(now)</c>
-    /// (<c>clusterIGC.cpp:241-253</c>). Everything else in the C++ function
-    /// (station drone launch, ship plot/execute, cost, the <c>activeF</c>
-    /// collision block) is out of scope and deliberately absent.
+    /// Calculates the native crowding cost before the models loop
+    /// (<c>clusterIGC.cpp:162-198,241-253</c>), then resolves collisions.
     /// </summary>
     /// <remarks>
     /// The whole body is gated on <c>now &gt; m_lastUpdate</c> (<c>clusterIGC.cpp:99</c>).
@@ -663,6 +664,25 @@ public sealed class Sector : IClusterIgc
         double dt = timeUpdate - LastUpdate;    // chunk length — the collision sweep width
         UpdateCount++;
         LastUpdate = timeUpdate;
+
+        // clusterIGC.cpp:162-198,231. The native inactive reset is the
+        // !bStarted branch, independent of the later activeF collision gate.
+        Cost = 0f;
+        if (Mission is { Stage: MissionStage.Started, CrowdingPenaltyEnabled: true } mission)
+        {
+            var fc = mission.Core.Constants.FloatConstants;
+            Cost = fc[37];
+            foreach (var ship in _models.OfType<Ship>())
+            {
+                // Docked ships are absent from native GetShips(). Parent
+                // occupants remain members and contribute their turret weight.
+                if (ship.StationId is not null) continue;
+                Cost += ship.PilotType < Ship.PilotTypePlayer ? fc[35]
+                    : ship.ParentShip is not null ? fc[34]
+                    : ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod) ? fc[33] : fc[36];
+            }
+            if (Cost > 0f) Cost *= (float)dt / fc[38];
+        }
 
         // Snapshot: the models loop must survive a model that self-terminates
         // during its own Update (C++ capture-next, clusterIGC.cpp:243-250).
