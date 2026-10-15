@@ -900,7 +900,11 @@ public sealed partial class Game1
             }
         }
 
+        bool fsr = PrepareUpscaling(gd.Viewport.Width, gd.Viewport.Height);
         bool bloom = _inspectBloom && _post is { BloomReady: true };
+        bool sceneTarget = fsr || bloom;
+        var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
+        _gpuTimer?.Start(_frameTelemetry!.FrameId, post: false);
         bool soft = _inspectSoft && _post is { SoftReady: true };
         float aspect = gd.Viewport.AspectRatio;
         float fov = MathHelper.ToRadians(_flightFovDeg);
@@ -928,13 +932,13 @@ public sealed partial class Game1
             gd.SetRenderTarget(_post.DepthRT);
             gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, VfxPostProcessor.DepthClearFar, 1f, 0);
             DrawInspectDepth(view, proj, cameraEye);
-            gd.SetRenderTarget(bloom ? _post.SceneRT : (RenderTarget2D?)null);
+            gd.SetRenderTarget(sceneTarget ? sceneRt : (RenderTarget2D?)null);
             gd.BlendState = BlendState.Opaque;
             gd.DepthStencilState = DepthStencilState.Default;
         }
         else _softContext = null;
 
-        if (bloom) { gd.SetRenderTarget(_post!.SceneRT); gd.Clear(Color.Black); }
+        if (sceneTarget) { gd.SetRenderTarget(sceneRt); gd.Clear(Color.Black); }
         else gd.Clear(Color.Black);
 
         _sectorLighting = InspectSectorLighting();
@@ -951,11 +955,19 @@ public sealed partial class Game1
         if (!_inspectStations)
             DrawInspectVfx(view, proj, cameraEye, dt, effDt);
 
+        _gpuTimer?.Stop();
+        _gpuTimer?.Start(_frameTelemetry!.FrameId, post: true);
+        _frameTelemetry?.BeginPost();
+        Texture2D? upscaleSource = sceneRt;
         if (bloom)
         {
-            gd.SetRenderTarget(null);
-            _post!.Bloom!.Render(_post.SceneRT!);
+            gd.SetRenderTarget(fsr ? _fsr!.Bloomed : null);
+            _post!.Bloom!.Render(sceneRt!);
+            if (fsr) upscaleSource = _fsr!.Bloomed;
         }
+        if (fsr) _fsr!.Render(upscaleSource!, null, _upscaling.Sharpness);
+        _frameTelemetry?.EndPost();
+        _gpuTimer?.Stop();
 
         DrawInspectHud(gd.Viewport);
 

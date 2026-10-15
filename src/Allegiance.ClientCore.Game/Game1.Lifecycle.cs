@@ -734,12 +734,13 @@ public sealed partial class Game1
         // constructed in Enhanced mode; the native-art trail renderers below
         // get it as their optional smoke source and the enhanced explosion
         // renderer reuses it so the on-screen budget spans all smoke sources.
+        _shaders = Rendering.ShaderAssetCache.ForDevice(GraphicsDevice);
+        InitializeGpuBudget();
         if (_enhancedVfx)
         {
             // P547 — the shader cache + post-processor (linear-depth target,
             // scene target, soft-particle + bloom effects). Constructed before
             // the smoke field so its soft-particle renderer can be handed in.
-            _shaders = Rendering.ShaderAssetCache.ForDevice(GraphicsDevice);
             _post = new Rendering.VfxPostProcessor(GraphicsDevice, _shaders);
             if (_softEnabled && _post.SoftReady)
                 Console.WriteLine("[monogame] P547: soft particles ACTIVE (linear-depth shader + target ready)");

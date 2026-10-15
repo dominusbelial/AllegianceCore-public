@@ -56,6 +56,24 @@ lifepod hull-change. Fixed by gating the revive on a confirmed NON-lifepod hull;
 after the fix all three pass in isolation AND in the clean Run B.
 
 
+## P643 observation (2026-10-14)
+
+After a clean desktop build, Core, ClientCore and MonoGame were run sequentially,
+including every live/loopback test (no LiveTiming filter). Core: 4167 passed / 2
+failed; ClientCore: 868 passed / 1 failed; MonoGame: 1986 passed / 3 optional
+private-Meshy-pack skips / 0 failed. Every failure then passed **3/3 in isolation**:
+
+| test | isolation | verdict |
+|---|---|---|
+| `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | 3/3 pass | existing ripcord-abort receipt timing flake |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | 3/3 pass | existing surviving-peer game-over receipt flake |
+| `ShipDeleteGoneLiveTests.CrossSide_WarperLeavesSector_WatcherLatchesGone` | 3/3 pass | cross-side sector-transition receipt load flake (`bravo ship transited` assertion) |
+
+P643 changes the client renderer/settings/telemetry, not these Core/ClientCore
+wire paths. No timing test or deadline was changed to hide these failures. The
+report and local measurement evidence are in
+[`P643_GPU_MEASURE_FSR1.md`](reports/P643_GPU_MEASURE_FSR1.md).
+
 ## Quarantined tests (Lane = LiveTiming), with root cause
 
 Tagged in P647. Each flaked in **isolation** (10× class runs), so no deadline/condition

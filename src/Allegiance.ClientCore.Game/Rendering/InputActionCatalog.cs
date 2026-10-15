@@ -278,6 +278,7 @@ public static class InputActionCatalog
         // Deviation from native's default is documented in P639 report.
         new("TeamPane", "CAMERA / VIEW", "Team roster: pilots, rank, status, kills", C(Keys.T), null),
         new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.F1), K(Keys.F1)),
+        new("OpenGraphicsSettings", "CAMERA / VIEW", "Graphics / FSR1 settings [P643]", C(Keys.F6), null),
         new("OpenKeyBindings", "CAMERA / VIEW", "Open Controls (rebind keys) [P625]", K(Keys.F6), null),
         new("ScreenShot", "CAMERA / VIEW", "Take a screen shot [TK_ScrnShot]", K(Keys.PrintScreen), K(Keys.PrintScreen)),
         new("Quit", "CAMERA / VIEW", "Quit game", new KeyBinding(Keys.F4, InputModifiers.Alt), null),
