@@ -2837,6 +2837,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (selectionRefusal is { } denied)
         {
             SendPeer(from, FedPacket.Pack([new DelPositionReq { ShipId = pend.ShipId, SideId = requestedSideId, Reason = denied }.Encode()]));
+            ConsoleLog.Write($"[sideselect] {from} '{pend.Request.CharacterName}' -> side {requestedSideId} DENIED ({denied}); still pending, choose another side or auto-pick");
             _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq);
             return;
         }

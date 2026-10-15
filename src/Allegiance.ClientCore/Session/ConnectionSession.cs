@@ -28,6 +28,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private readonly object _gate = new();
     private readonly ClientWorld _world = new();
     private LogonAck? _ack;
+    private DelPositionReq? _lastPositionRefusal;
     // P473 — every FM_S_BUY_LOADOUT_ACK(5) received, in arrival order: the raw
     // server answer to SendBuyLoadout, mirrored from Bot so the combat/spawn
     // harness paths can compare the granted hull/parts with the requested ones
@@ -131,6 +132,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// <summary>The last LOGONACK (or rejection) received; null until one arrives.</summary>
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
 
+    /// <summary>The server's latest refusal of this session's side request;
+    /// cleared on connect and before a new request.</summary>
+    public DelPositionReq? LastPositionRefusal { get { lock (_gate) return _lastPositionRefusal; } }
+
     /// <summary>Every <c>FM_S_BUY_LOADOUT_ACK(5)</c> received, in arrival order —
     /// the raw server answer to <see cref="SendBuyLoadout"/> (P473), mirrored
     /// from Bot. Locked snapshot-on-read via <see cref="Gate"/>.</summary>
@@ -202,6 +207,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         lock (_gate)
         {
             _ack = null;                 // a fresh session has no ack yet
+            _lastPositionRefusal = null;
             _lost = false;               // a new session is not lost (was latched true by a dropped one)
             _world.Reset();
         }
@@ -547,6 +553,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// in SET_CLUSTER (which sets <see cref="ClientWorld.MyShipId"/>).</summary>
     public void SendPositionReq(short sideId)
     {
+        lock (_gate) _lastPositionRefusal = null;
         var msg = new PositionReq { SideId = sideId };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
@@ -1045,7 +1052,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _world.Apply(PositionReqBroadcast.Decode(m));
                         break;
                     case DelPositionReq.Fmid:
-                        _world.Apply(DelPositionReq.Decode(m));
+                        var refusal = DelPositionReq.Decode(m);
+                        if (_ack is { } ack && refusal.ShipId == ack.ShipID)
+                            _lastPositionRefusal = refusal;
+                        _world.Apply(refusal);
                         break;
                     case LockLobby.Fmid:
                         _world.Apply(LockLobby.Decode(m));

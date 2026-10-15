@@ -701,3 +701,47 @@ The final unfiltered sequential Core, ClientCore (including the opt-in local 15v
 | Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy | Assert.Contains() Failure: Filter not matched in collection; Collection: [] | 3/3 pass |
 
 See [P681_RESULTS.json](reports/P681_RESULTS.json) for the complete invocation ledger.
+
+## P655d observation (2026-10-15)
+
+Full unfiltered suites after the P655d build: Core **4,242 pass / 2 fail**,
+ClientCore **900 pass / 0 fail / 1 existing opt-in skip**, MonoGame
+**2,120 pass / 0 fail / 3 existing private-pack skips**, Lobby **19 pass / 0 fail**.
+After all four suites completed, both failed methods passed **3/3 alone**:
+
+| Test | Full-run observation | Isolated result |
+| --- | --- | --- |
+| `Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join` | `TcpTransport.Shutdown` called `Thread.Join` before the thread started (`ThreadStateException`). Same shutdown symptom as the earlier P655 entry, in a different transport test. | 3/3 pass |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Expected loadout-change receipt collection was empty at the assertion. | 3/3 pass |
+
+These satisfy the brief's explicit load-flake classification rule. Neither
+assertions nor quarantine traits were changed. This classification does not
+claim that the underlying transport shutdown race has been fixed.
+
+The P655d startup regression is **not a flake**: omitted JSON limit fields
+became zero through the generated init-only constructor, reducing effective
+capacity to one. The original two-worker executable fails after 15 s even with
+a correct bearer; adding just the two explicit limit values seats both original
+same-name probes. See the [P655d report](reports/P655_GAME_STATE_INTEGRITY.md#p655d)
+and [results](reports/P655D_RESULTS.json) for the failing-first evidence,
+native duplicate-login decision, config fix and real two-worker MCP checks.
+
+The routine ClientCore showcase skip was subsequently enabled with
+`ALLEGIANCE_LIVE_P660_SHOWCASE=1` and passed **3/3 alone** (local 15v15 MCP,
+30/30 bots and 2/2 humans migrated each time). Only the three unavailable
+private Meshy-pack cases remain unexecuted.
+
+
+## P688 observation (2026-10-15)
+
+The P655d/integ8 merge's unfiltered sequential suites reported Core **4552 pass / 3 fail / 0 skip**, ClientCore **1001 pass / 0 fail / 0 skip**, MonoGame **2186 pass / 0 fail / 3 existing private-pack skips**, and Lobby **19 pass / 0 fail / 0 skip**. The opt-in local P660 showcase passed. All 82 focused case executions passed, including the rig-style JSON boot and three repetitions of the P682 two-match and P655d identity/worker scenarios.
+
+After all four full suites completed, every failed Core method passed **3/3 exact-method isolated reruns**:
+
+| Test | Full-run symptom | Isolation |
+| --- | --- | --- |
+| `LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission` | Peer a1's SET_START_TIME collection was still empty at the immediate assertion. | 3/3 pass |
+| `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | B had not received HEAVY_SHIPS_UPDATE. | 3/3 pass |
+| `Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup` | Cleanup hit `ThreadStateException: Thread has not been started` in `TcpTransport.Shutdown`, line 533. The allocation assertion did not fail. | 3/3 pass |
+
+These match previously recorded receipt/shutdown flake symptoms; the isolated passes do not establish a fix for the underlying races. No assertions, deadlines, quarantine traits, or transport behavior were changed for these observations. See the [P688 report](reports/P688_MERGE_P655D.md) and [invocation ledger](reports/P688_RESULTS.json) for raw full-suite counts, filters, stack traces and individual rerun results.

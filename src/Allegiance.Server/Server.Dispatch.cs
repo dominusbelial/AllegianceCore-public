@@ -147,7 +147,19 @@ public sealed partial class Server
                     continue;
                 }
 
-                var validated = req.VersionMatches;
+                // Native private standalone joins refuse duplicate names, case
+                // insensitively (FedSrv/FedSrv.CPP:600-624). USEAUTH instead
+                // removes the old player (:629; fsmission.cpp:1248-1276).
+                // Refuse the newcomer explicitly: an untrusted name must never
+                // evict an existing player. Reserve names during side selection
+                // too, before allocating ids or authenticating privileges.
+                var duplicateName = req.VersionMatches && _missions.Count > 0
+                    && (_pendingSideSelect.Values.Any(p => string.Equals(p.Request.CharacterName ?? "", req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase))
+                        || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])
+                            && _peerNames.TryGetValue(p.Key, out var name)
+                            && string.Equals(name, req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase)));
+                var validated = req.VersionMatches && !duplicateName;
+                var failureReason = duplicateName ? "character name already in use in this mission" : "wrong client version";
                 if (validated) AuthenticatePrivileges(from, req);
                 // P619c — grant a connected HUMAN client (a character name NOT
                 // under the MCP harness prefix) the longer transport liveness
@@ -187,11 +199,11 @@ public sealed partial class Server
 
                 var ack = new LogonAck
                 {
-                    CharNameOrFailureReason = validated ? $"Welcome {req.CharacterName}" : "wrong client version",
+                    CharNameOrFailureReason = validated ? $"Welcome {req.CharacterName}" : failureReason,
                     TimeServer = (uint)req.Time + 1,
                     ShipID = validated ? shipId : (short)0,
                     FValidated = validated,
-                    FRetry = !validated,
+                    FRetry = !req.VersionMatches,
                     Cookie = (byte)(req.DwCookie & 0xFF),
                 };
                 SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));

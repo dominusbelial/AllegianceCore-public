@@ -1,0 +1,1312 @@
+[
+  {
+    "label": "json-core-and-rig",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/json-core-and-rig.trx",
+      "--filter",
+      "FullyQualifiedName~ConfigDefaultsJsonTests|FullyQualifiedName~P655GameConfigDefaultsTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.542,
+    "log": "/tmp/p688-validation/json-core-and-rig.log",
+    "trx": "/tmp/p688-validation/json-core-and-rig.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "11",
+      "executed": "11",
+      "passed": "11",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 11,
+      "executed": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "json-client",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/json-client.trx",
+      "--filter",
+      "FullyQualifiedName~ConfigDefaultsJsonTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.948,
+    "log": "/tmp/p688-validation/json-client.log",
+    "trx": "/tmp/p688-validation/json-client.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "json-monogame",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.MonoGame.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/json-monogame.trx",
+      "--filter",
+      "FullyQualifiedName~ConfigDefaultsJsonTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.995,
+    "log": "/tmp/p688-validation/json-monogame.log",
+    "trx": "/tmp/p688-validation/json-monogame.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "dispatch-and-lobby",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/dispatch-and-lobby.trx",
+      "--filter",
+      "FullyQualifiedName~FedMsgDispatchCoverageTests|FullyQualifiedName~P655PositionRefusalTests|FullyQualifiedName~P678LobbyMessageTests|FullyQualifiedName~P678LobbyRelayLiveTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.16,
+    "log": "/tmp/p688-validation/dispatch-and-lobby.log",
+    "trx": "/tmp/p688-validation/dispatch-and-lobby.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "18",
+      "executed": "18",
+      "passed": "18",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 18,
+      "executed": 18,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p682-two-match-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p682-two-match-1.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 29.868,
+    "log": "/tmp/p688-validation/p682-two-match-1.log",
+    "trx": "/tmp/p688-validation/p682-two-match-1.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 4,
+      "executed": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p655-same-name-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p655-same-name-1.trx",
+      "--filter",
+      "FullyQualifiedName~P655DuplicateIdentityTests|FullyQualifiedName~LiveDuplicateLogonTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.695,
+    "log": "/tmp/p688-validation/p655-same-name-1.log",
+    "trx": "/tmp/p688-validation/p655-same-name-1.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "10",
+      "executed": "10",
+      "passed": "10",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 10,
+      "executed": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p655-two-worker-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p655-two-worker-1.trx",
+      "--filter",
+      "FullyQualifiedName~P655ProbeWorkersLiveTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 17.266,
+    "log": "/tmp/p688-validation/p655-two-worker-1.log",
+    "trx": "/tmp/p688-validation/p655-two-worker-1.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 3,
+      "executed": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p682-two-match-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p682-two-match-2.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 29.864,
+    "log": "/tmp/p688-validation/p682-two-match-2.log",
+    "trx": "/tmp/p688-validation/p682-two-match-2.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 4,
+      "executed": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p655-same-name-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p655-same-name-2.trx",
+      "--filter",
+      "FullyQualifiedName~P655DuplicateIdentityTests|FullyQualifiedName~LiveDuplicateLogonTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.708,
+    "log": "/tmp/p688-validation/p655-same-name-2.log",
+    "trx": "/tmp/p688-validation/p655-same-name-2.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "10",
+      "executed": "10",
+      "passed": "10",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 10,
+      "executed": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p655-two-worker-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p655-two-worker-2.trx",
+      "--filter",
+      "FullyQualifiedName~P655ProbeWorkersLiveTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 17.182,
+    "log": "/tmp/p688-validation/p655-two-worker-2.log",
+    "trx": "/tmp/p688-validation/p655-two-worker-2.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 3,
+      "executed": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p682-two-match-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p682-two-match-3.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 29.798,
+    "log": "/tmp/p688-validation/p682-two-match-3.log",
+    "trx": "/tmp/p688-validation/p682-two-match-3.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 4,
+      "executed": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p655-same-name-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p655-same-name-3.trx",
+      "--filter",
+      "FullyQualifiedName~P655DuplicateIdentityTests|FullyQualifiedName~LiveDuplicateLogonTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.709,
+    "log": "/tmp/p688-validation/p655-same-name-3.log",
+    "trx": "/tmp/p688-validation/p655-same-name-3.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "10",
+      "executed": "10",
+      "passed": "10",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 10,
+      "executed": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "p655-two-worker-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/p655-two-worker-3.trx",
+      "--filter",
+      "FullyQualifiedName~P655ProbeWorkersLiveTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 17.169,
+    "log": "/tmp/p688-validation/p655-two-worker-3.log",
+    "trx": "/tmp/p688-validation/p655-two-worker-3.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 3,
+      "executed": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "full-Allegiance.Core.Tests",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/full-Allegiance.Core.Tests.trx"
+    ],
+    "exit_code": 1,
+    "wall_seconds": 539.339,
+    "log": "/tmp/p688-validation/full-Allegiance.Core.Tests.log",
+    "trx": "/tmp/p688-validation/full-Allegiance.Core.Tests.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "4555",
+      "executed": "4555",
+      "passed": "4552",
+      "failed": "3",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [
+      {
+        "test_name": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+        "message": "Assert.Single() Failure: The collection was empty",
+        "stack": "   at Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission() in /home/domingo/.claude/jobs/82c1509b/tmp/integ8/tests/Allegiance.Core.Tests/LiveCountdownStartPingTests.cs:line 414\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+      },
+      {
+        "test_name": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+        "message": "B must receive HEAVY_SHIPS_UPDATE",
+        "stack": "   at Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self() in /home/domingo/.claude/jobs/82c1509b/tmp/integ8/tests/Allegiance.Core.Tests/ShipsUpdateLiveTests.cs:line 183\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+      },
+      {
+        "test_name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup",
+        "message": "System.Threading.ThreadStateException : Thread has not been started.",
+        "stack": "   at System.Threading.Thread.<Join>g____PInvoke|56_0(ObjectHandleOnStack __thread_native, Int32 __millisecondsTimeout_native)\n   at System.Threading.Thread.<Join>g____PInvoke|56_0(ObjectHandleOnStack __thread_native, Int32 __millisecondsTimeout_native)\n   at System.Threading.Thread.Join(Int32 millisecondsTimeout)\n   at Allegiance.Core.Transport.TcpTransport.Shutdown() in /home/domingo/.claude/jobs/82c1509b/tmp/integ8/src/Allegiance.Core/Transport/TcpTransport.cs:line 533\n   at Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup() in /home/domingo/.claude/jobs/82c1509b/tmp/integ8/tests/Allegiance.Core.Tests/Transport/P670SendStallTests.cs:line 266\n   at Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup() in /home/domingo/.claude/jobs/82c1509b/tmp/integ8/tests/Allegiance.Core.Tests/Transport/P670SendStallTests.cs:line 243\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+      }
+    ],
+    "skips": [],
+    "counts": {
+      "total": 4555,
+      "executed": 4555,
+      "passed": 4552,
+      "failed": 3,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "full-Allegiance.ClientCore.Tests",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/full-Allegiance.ClientCore.Tests.trx"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 415.705,
+    "log": "/tmp/p688-validation/full-Allegiance.ClientCore.Tests.log",
+    "trx": "/tmp/p688-validation/full-Allegiance.ClientCore.Tests.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1001",
+      "executed": "1001",
+      "passed": "1001",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1001,
+      "executed": 1001,
+      "passed": 1001,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "full-Allegiance.ClientCore.MonoGame.Tests",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.MonoGame.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/full-Allegiance.ClientCore.MonoGame.Tests.trx"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 266.151,
+    "log": "/tmp/p688-validation/full-Allegiance.ClientCore.MonoGame.Tests.log",
+    "trx": "/tmp/p688-validation/full-Allegiance.ClientCore.MonoGame.Tests.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "2189",
+      "executed": "2186",
+      "passed": "2186",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [
+      {
+        "test_name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "outcome": "NotExecuted",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.",
+        "stack": ""
+      },
+      {
+        "test_name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "outcome": "NotExecuted",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.",
+        "stack": ""
+      },
+      {
+        "test_name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "outcome": "NotExecuted",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.",
+        "stack": ""
+      }
+    ],
+    "counts": {
+      "total": 2189,
+      "executed": 2186,
+      "passed": 2186,
+      "failed": 0,
+      "skipped": 3
+    }
+  },
+  {
+    "label": "full-Allegiance.Lobby.Tests",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Lobby.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/full-Allegiance.Lobby.Tests.trx"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.945,
+    "log": "/tmp/p688-validation/full-Allegiance.Lobby.Tests.log",
+    "trx": "/tmp/p688-validation/full-Allegiance.Lobby.Tests.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "19",
+      "executed": "19",
+      "passed": "19",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 19,
+      "executed": 19,
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-1-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-1.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.877,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-1.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-1.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-1-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-2.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.891,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-2.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-2.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-1-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-3.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.883,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-3.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-1-3.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-2-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-1.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.429,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-1.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-1.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-2-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-2.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.419,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-2.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-2.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-2-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-3.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.442,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-3.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-2-3.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-3-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-1.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.248,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-1.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-1.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-3-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-2.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.327,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-2.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-2.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "label": "isolate-Allegiance.Core.Tests-3-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-3.trx",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.285,
+    "log": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-3.log",
+    "trx": "/tmp/p688-validation/isolate-Allegiance.Core.Tests-3-3.trx",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    },
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": [],
+    "counts": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  }
+]

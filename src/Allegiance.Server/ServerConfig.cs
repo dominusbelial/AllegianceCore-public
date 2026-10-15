@@ -28,7 +28,9 @@ public sealed class GameConfig
     /// <summary>Number of sides. Sides are built for ids 0..Teams-1.</summary>
     public int Teams { get; set; }
 
-    /// <summary>P655: native nMaxPlayersPerTeam; supports the 200v200 lane.</summary>
+    /// <summary>P655: native nMaxPlayersPerTeam; supports the 200v200 lane.
+    /// Use a setter so source-generated JSON retains the initializer when omitted;
+    /// init-only members are assigned zero by its generated constructor.</summary>
     public int MaxPlayersPerTeam { get; set; } = 256;
 
     /// <summary>Native iMaxImbalance; 32767 disables balance; default 1 matches native.

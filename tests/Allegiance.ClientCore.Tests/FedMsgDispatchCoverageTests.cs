@@ -276,6 +276,12 @@ public class FedMsgDispatchCoverageTests
         Assert.True(unexpected.Count == 0,
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
+        // Registry entries must be unique; otherwise a duplicate can mask stale counts.
+        Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
+        Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
+        Assert.Equal(84, consumed.Count(f => supportedNativeServerSent.Contains(f)));
+        Assert.Equal(17, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
+
         // Sanity: the executable counts match the audited numbers.
         Assert.Equal(101, ExpectedConsumedServerSent.Length);
         Assert.Equal(18, KnownUnconsumedServerSent.Length);
