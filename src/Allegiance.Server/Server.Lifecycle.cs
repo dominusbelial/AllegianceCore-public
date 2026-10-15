@@ -782,7 +782,12 @@ public sealed partial class Server
         _host.FlagsKillsComputedHook = OnFlagsKillsComputed;  // P303: wire the flags/kills recompute to GAME_STATE(155) + P178 GameOver
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
-        var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers); // site set; assign the back-ref next
+        var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers)
+        {
+            Egress = TickProfiler.Instance is not null ? new EgressAccounting() : null,
+        }; // site set; assign the back-ref next
+        LastEgressWindow = null;
+        TickProfiler.WindowReported += EmitEgressWindow;
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
@@ -1743,6 +1748,7 @@ public sealed partial class Server
     /// background threads), then drop the host. Idempotent.</summary>
     public void Shutdown()
     {
+        TickProfiler.WindowReported -= EmitEgressWindow;
         // Heartbeat constructed last in Boot → torn down first, so its best-effort
         // deregister DELETE fires before the process tears down. Independent of the
         // transport shutdown (either order is fine) — kept first for reverse-of-boot clarity.
