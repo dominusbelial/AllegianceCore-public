@@ -141,14 +141,12 @@ public sealed class CapturePngSaver : IDisposable
         s.Write(len);
         s.Write(typeBytes);
         s.Write(data);
-        uint crc = Crc32(typeBytes);
-        crc = Crc32(crc, data);
+        uint crc = Crc32(0xFFFFFFFFu, typeBytes);
+        crc = Crc32(crc, data) ^ 0xFFFFFFFFu;
         Span<byte> crcBytes = stackalloc byte[4];
         BinaryPrimitives.WriteUInt32BigEndian(crcBytes, crc);
         s.Write(crcBytes);
     }
-
-    private static uint Crc32(ReadOnlySpan<byte> data) => Crc32(0xFFFFFFFFu, data) ^ 0xFFFFFFFFu;
 
     private static uint Crc32(uint crc, ReadOnlySpan<byte> data)
     {

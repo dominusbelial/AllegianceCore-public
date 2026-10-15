@@ -81,6 +81,10 @@ bool inspectRepaired = false;
 int inspectAngles = 0;
 float inspectDist = 0;
 bool inspectStations = false;
+string? inspectStation = null;
+float? inspectLightTime = null;
+float inspectPitch = 22f;
+bool inspectNativeOnly = false;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -393,6 +397,30 @@ for (int i = 0; i < args.Length; i++)
         // P565 — the offline hull inspector (no server connect).
         inspectRequested = true;
     }
+    else if (a == "--inspect-native-only")
+    {
+        inspectNativeOnly = true;
+    }
+    else if (a == "--inspect-station" && i + 1 < args.Length)
+    {
+        inspectRequested = true;
+        inspectStations = true;
+        inspectStation = args[++i];
+    }
+    else if (a == "--inspect-pitch" && i + 1 < args.Length)
+    {
+        if (float.TryParse(args[++i], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var pitch)
+            && float.IsFinite(pitch))
+            inspectPitch = Math.Clamp(pitch, -89f, 89f);
+    }
+    else if (a == "--inspect-light-time" && i + 1 < args.Length)
+    {
+        if (float.TryParse(args[++i], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var lightTime)
+            && float.IsFinite(lightTime) && lightTime >= 0f)
+            inspectLightTime = lightTime;
+    }
     else if (a == "--inspect-stations")
     {
         // P615 — the offline STATION inspector: walk the core's 143 station
@@ -525,6 +553,10 @@ var opts = new Game1.LaunchOptions
     InspectAngles = inspectAngles,
     InspectDist = inspectDist,
     InspectStations = inspectStations,
+    InspectStation = inspectStation,
+    InspectLightTime = inspectLightTime,
+    InspectPitch = inspectPitch,
+    InspectNativeOnly = inspectNativeOnly,
     InspectCatalogue = inspectCatalogue,
     // P572 — live-proof automation plan (null when no --auto-* flag was given).
     AutoProof = autoPlan.AnyActive ? autoPlan : null,
