@@ -200,6 +200,7 @@ public sealed partial class BotFixRegressionTests
         cs.World.BeginNextMission(); Seat(cs.World, 2);
         Assert.False((bool)Call("RefreshLife", mgr, bot, cs, 1.0)!); // map is not ready yet
         Assert.False(Get<bool>(bot, "Arrived")); Assert.Null(Get<List<short>?>(bot, "RoutePath"));
+        Assert.True(Get<bool>(bot, "MissionLaunchPending"));
         cs.World.Apply(new ClusterInfo { Clusters = [new(1, true), new(44, false)], Warps = [new(1, 44)] });
         cs.World.Apply(new ExportCluster { Cluster = new(0, [0, 1, 0], 0, 0, 0, 44, 0, 0, "Alderan", "", "", 0, 0, 0, true, false) });
         Assert.True((bool)Call("RefreshLife", mgr, bot, cs, 2.0)!);

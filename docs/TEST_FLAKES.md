@@ -35,6 +35,27 @@ quarantine pass, not the parallel CI run).
 | Before (4 measurement runs, master 22d024b8) | **0/4** (no clean run; 3/7/7/6 Core fails + 0/2/2/0 ClientCore) | n/a (no lane existed) | ~20 unique failing tests |
 | After (verification on final tree) | **3/3 clean MAIN runs** (V4, V7, V11; V11 EXIT 0) | not expected 4/4 (residual isolation-flaky live-timing tests) | 21 quarantined; each of V5–V10 surfaced 1–2 new load-flakes, quarantined on the spot |
 
+## P682 observation (2026-10-15)
+
+The unfiltered Core run reported **4355 pass / 1 fail**. The existing quarantined
+`Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join`
+failed during cleanup with `ThreadStateException: Thread has not been started`
+at `TcpTransport.Shutdown` (`TcpTransport.cs:526`). The exact method then passed
+**3/3 separate isolated runs**. Transport implementation, timeout thresholds and
+traits were unchanged. This meets P682's load-flake rule.
+
+An intermediate ClientCore run reported **952 pass / 1 fail** in
+`CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return`
+(`bravo transited to another sector`). That exact method passed **3/3 separate
+isolated reruns** on the final tree, and the final unfiltered ClientCore run
+passed **953/953**. Its test, timeouts and trait were unchanged.
+
+ClientCore's initial finale fixture failure was reproducible **3/3** and was
+**not** classified as a flake: its route assertion skipped the newly required
+next-match purchase/launch. The fixture now verifies that routing waits for the
+purchase and resumes after a successful ACK plus SET_CLUSTER. See the
+[P682 report](reports/P682_NEXT_MATCH_VISIBILITY.md) and its verification record.
+
 ## P656c observation (2026-10-14)
 
 The unfiltered sequential suites reported Core **4301 pass / 1 fail**,

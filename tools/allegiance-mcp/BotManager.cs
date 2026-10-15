@@ -4366,6 +4366,9 @@ bool isThreat =
         // wire/world events each tick.
         SampleCombatStats(bot, cs, my, now);
 
+        // A reseated ship must buy and launch before combat or pod routing.
+        if (LaunchNextMission(bot, cs, now)) return;
+
         // P539 — a lifepod stops fighting and flies home to dock.
         if (UpdatePodState(bot, cs, now))
         {
@@ -5478,6 +5481,7 @@ bool isThreat =
         // after a game-over rotation with a fresh ship id), the MCP re-readies
         // the bot so bot-driven showcases keep auto-starting.
         public short ReadyShipId = -1;
+        public bool MissionLaunchPending;
         public bool Launched;
         public bool Arrived;                       // reached the target sector
         // P634 — world-sync backoff + measurement. The cluster GRAPH is the

@@ -494,6 +494,11 @@ public sealed partial class Server
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
         _scoreRosterStates.Remove(mission);
+        // Clients discard the old warning state on Over. An unchanged station
+        // layout must be announced again in the new world (trekigc.cpp:327-383
+        // computes warnings from each fresh cluster's assets).
+        foreach (var side in mission.Sides) _lastSectorAssetMaskBySide.Remove(side.Id);
+        if (idx == 0) _clusterInfoBytes = null; // MapGen can rebuild a different graph.
 
         // Rebuild the world from the SAME config that made the original (native
         // regenerates on the next start; this port assembles now). _config.Games
@@ -721,6 +726,9 @@ public sealed partial class Server
     /// silence a new-world identity send.</summary>
     private void ClearPeerJoinLatches(ConnectionId conn, short oldShipId)
     {
+        // Drop old Ship/Sector references immediately while preserving this
+        // connection's current P659/P661 byte/age accounting window.
+        RetireViewerUpdateCadence(conn);
         _teammateExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);

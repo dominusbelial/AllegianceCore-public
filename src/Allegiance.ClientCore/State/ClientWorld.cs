@@ -1606,6 +1606,8 @@ public sealed partial class ClientWorld
         AllowEmptyTeams = null;          // P455b — AET bit resets on reconnect
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
+        _globalAttributesBySideId.Clear();
+        _bucketFundingBySideId.Clear();
         _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();                    // P442 — per-player wallet state
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
@@ -3762,6 +3764,8 @@ public sealed partial class ClientWorld
         AllowEmptyTeams = null;
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
+        _globalAttributesBySideId.Clear();
+        _bucketFundingBySideId.Clear();
         _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();
         _autoDonateTargetByShipId.Clear();

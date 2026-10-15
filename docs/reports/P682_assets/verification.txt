@@ -1,0 +1,160 @@
+P682 verification — base 1d862740, no commits/pushes.
+
+Build: dotnet build AllegianceCore.slnx --nologo -v quiet -p:UseSharedCompilation=false -nodeReuse:false
+NUGET_HTTP_CACHE_PATH=/tmp/p682-nuget-cache
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.81
+
+Failing-first evidence:
+p682-before:
+  Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: "native") => Failed
+    match 2 combat hulls bought and launched timed out
+    native match 1: enemy live poses on both sides; shots +10, hits +5, kills +2
+  Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: "port") => Failed
+    match 2 combat hulls bought and launched timed out
+    port match 1: enemy live poses on both sides; shots +4, hits +4, kills +2
+p682-conquest-before:
+  Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: "port") => Failed
+    match 2 combat hulls bought and launched timed out
+    port match 1: enemy live poses on both sides; shots +6, hits +4, kills +2
+p682-state-before:
+  Allegiance.ClientCore.Tests.P682MissionStateTests.New_mission_discards_research_attributes_and_bucket_funding(reconnect: True) => Failed
+    Assert.Empty() Failure: Collection was not empty
+  Allegiance.ClientCore.Tests.P682MissionStateTests.New_mission_discards_research_attributes_and_bucket_funding(reconnect: False) => Failed
+    Assert.Empty() Failure: Collection was not empty
+  Allegiance.ClientCore.Tests.P682MissionStateTests.Rotation_retires_viewer_references_preserves_accounting_and_invalidates_world_sync => Failed
+    Assert.Empty() Failure: Collection was not empty
+
+Focused runs (each method filter executed separately three times; showcase explicitly enabled):
+p682-isolated-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-1: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-2: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-3: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-New_mission_discards_research_attributes_and_bucket_funding-1: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-New_mission_discards_research_attributes_and_bucket_funding-2: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-New_mission_discards_research_attributes_and_bucket_funding-3: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-Rotation_retires_viewer_references_preserves_accounting_and_invalidates_world_sync-1: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Rotation_retires_viewer_references_preserves_accounting_and_invalidates_world_sync-2: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Rotation_retires_viewer_references_preserves_accounting_and_invalidates_world_sync-3: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-1: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-2: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-3: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries-1: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries-2: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries-3: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump-1: pass=4 fail=0 skipped=0 exit=0
+p682-isolated-Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump-2: pass=4 fail=0 skipped=0 exit=0
+p682-isolated-Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump-3: pass=4 fail=0 skipped=0 exit=0
+p682-isolated-Unready_players_wait_when_disabled_and_auto_start_when_enabled-1: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-Unready_players_wait_when_disabled_and_auto_start_when_enabled-2: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-Unready_players_wait_when_disabled_and_auto_start_when_enabled-3: pass=2 fail=0 skipped=0 exit=0
+p682-isolated-Native_restart_deadline_is_replaced_by_briefing_and_tracks_dilation-1: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Native_restart_deadline_is_replaced_by_briefing_and_tracks_dilation-2: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Native_restart_deadline_is_replaced_by_briefing_and_tracks_dilation-3: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Side_elimination_preserves_result_until_a_real_next_match_stage-1: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Side_elimination_preserves_result_until_a_real_next_match_stage-2: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Side_elimination_preserves_result_until_a_real_next_match_stage-3: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-1: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-2: pass=1 fail=0 skipped=0 exit=0
+p682-isolated-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-3: pass=1 fail=0 skipped=0 exit=0
+
+Two-match combat output:
+run 1: port match 1: enemy live poses on both sides; shots +4, hits +4, kills +2
+run 1: port match 2: enemy live poses on both sides; shots +8, hits +4, kills +2
+run 1: native match 1: enemy live poses on both sides; shots +10, hits +4, kills +1
+run 1: native match 2: enemy live poses on both sides; shots +4, hits +2, kills +1
+run 2: port match 1: enemy live poses on both sides; shots +8, hits +4, kills +2
+run 2: port match 2: enemy live poses on both sides; shots +10, hits +7, kills +2
+run 2: native match 1: enemy live poses on both sides; shots +6, hits +5, kills +2
+run 2: native match 2: enemy live poses on both sides; shots +8, hits +4, kills +2
+run 3: port match 1: enemy live poses on both sides; shots +4, hits +4, kills +2
+run 3: port match 2: enemy live poses on both sides; shots +9, hits +4, kills +2
+run 3: native match 1: enemy live poses on both sides; shots +6, hits +6, kills +2
+run 3: native match 2: enemy live poses on both sides; shots +8, hits +4, kills +2
+
+Final builds after fixture/timing review:
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:05.56
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:05.13
+
+Unfiltered sequential suite results (P660 showcase enabled):
+p682-full-Core: pass=4355 fail=1 skipped=0 exit=1
+  Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join: System.Threading.ThreadStateException : Thread has not been started.
+p682-full-ClientCore: pass=952 fail=1 skipped=0 exit=1
+  Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset: Assert.NotEmpty() Failure: Collection was empty
+p682-full-ClientCore.MonoGame: pass=2143 fail=0 skipped=3 exit=0
+p682-full-ClientCore-final: pass=953 fail=0 skipped=0 exit=0
+p682-full-ClientCore-started: pass=952 fail=1 skipped=0 exit=1
+  Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return: bravo transited to another sector
+p682-full-ClientCore-complete: pass=953 fail=0 skipped=0 exit=0
+
+Suite failure triage (each exact method alone, no concurrent suite):
+p682-flake-TcpTransportGreetTimeoutPoolTests-Silent_connection_does_not_block_a_second_client_join-1: pass=1 fail=0 skipped=0 exit=0
+p682-flake-TcpTransportGreetTimeoutPoolTests-Silent_connection_does_not_block_a_second_client_join-2: pass=1 fail=0 skipped=0 exit=0
+p682-flake-TcpTransportGreetTimeoutPoolTests-Silent_connection_does_not_block_a_second_client_join-3: pass=1 fail=0 skipped=0 exit=0
+p682-flake-BotFixRegressionTests-P656_StatusIncludesGatesOutcomeAndNextMissionReset-1: pass=0 fail=1 skipped=0 exit=1
+p682-flake-BotFixRegressionTests-P656_StatusIncludesGatesOutcomeAndNextMissionReset-2: pass=0 fail=1 skipped=0 exit=1
+p682-flake-BotFixRegressionTests-P656_StatusIncludesGatesOutcomeAndNextMissionReset-3: pass=0 fail=1 skipped=0 exit=1
+p682-final-triage-CrossSide_sector_stays_correct_across_warp_return-1: pass=1 fail=0 skipped=0 exit=0
+p682-final-triage-CrossSide_sector_stays_correct_across_warp_return-2: pass=1 fail=0 skipped=0 exit=0
+p682-final-triage-CrossSide_sector_stays_correct_across_warp_return-3: pass=1 fail=0 skipped=0 exit=0
+Core transport and intermediate ClientCore warp-return: 3/3 pass each => load flakes; documented in docs/TEST_FLAKES.md.
+P656 fixture: 3/3 fail => fixed the obsolete immediate-routing setup; NOT a flake.
+
+Updated finale fixture, before additional Started timing guard:
+p682-finale-fixed-1: pass=1 fail=0 skipped=0
+p682-finale-fixed-2: pass=1 fail=0 skipped=0
+p682-finale-fixed-3: pass=1 fail=0 skipped=0
+
+Final lifecycle: each affected method separately 3x:
+p682-complete-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-1: pass=1 fail=0 skipped=0 exit=0
+p682-complete-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-2: pass=1 fail=0 skipped=0 exit=0
+p682-complete-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-3: pass=1 fail=0 skipped=0 exit=0
+p682-complete-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-1: pass=2 fail=0 skipped=0 exit=0
+p682-complete-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-2: pass=2 fail=0 skipped=0 exit=0
+p682-complete-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-3: pass=2 fail=0 skipped=0 exit=0
+p682-complete-P656_StatusIncludesGatesOutcomeAndNextMissionReset-1: pass=1 fail=0 skipped=0 exit=0
+p682-complete-P656_StatusIncludesGatesOutcomeAndNextMissionReset-2: pass=1 fail=0 skipped=0 exit=0
+p682-complete-P656_StatusIncludesGatesOutcomeAndNextMissionReset-3: pass=1 fail=0 skipped=0 exit=0
+p682-complete-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-1: pass=1 fail=0 skipped=0 exit=0
+p682-complete-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-2: pass=1 fail=0 skipped=0 exit=0
+p682-complete-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-3: pass=1 fail=0 skipped=0 exit=0
+
+Final two-match combat evidence:
+run 1: native match 1: enemy live poses on both sides; shots +6, hits +6, kills +2
+run 1: native match 2: enemy live poses on both sides; shots +10, hits +4, kills +2
+run 1: port match 1: enemy live poses on both sides; shots +4, hits +4, kills +2
+run 1: port match 2: enemy live poses on both sides; shots +8, hits +4, kills +2
+run 2: native match 1: enemy live poses on both sides; shots +6, hits +6, kills +2
+run 2: native match 2: enemy live poses on both sides; shots +12, hits +4, kills +2
+run 2: port match 1: enemy live poses on both sides; shots +4, hits +4, kills +2
+run 2: port match 2: enemy live poses on both sides; shots +8, hits +4, kills +2
+run 3: native match 1: enemy live poses on both sides; shots +5, hits +2, kills +1
+run 3: native match 2: enemy live poses on both sides; shots +12, hits +4, kills +2
+run 3: port match 1: enemy live poses on both sides; shots +4, hits +4, kills +2
+run 3: port match 2: enemy live poses on both sides; shots +8, hits +4, kills +2
+
+Final 15v15 MCP showcase proof:
+run 1: intermission timer A=12s B=12s
+run 1: MCP showcase: 30/30 bots migrated, 2/2 humans connected, sim elapsed=27.100s, wall total=20.336s, exceptions=0
+run 2: intermission timer A=12s B=12s
+run 2: MCP showcase: 30/30 bots migrated, 2/2 humans connected, sim elapsed=27.250s, wall total=20.338s, exceptions=0
+run 3: intermission timer A=12s B=12s
+run 3: MCP showcase: 30/30 bots migrated, 2/2 humans connected, sim elapsed=27.150s, wall total=20.347s, exceptions=0
+
+MonoGame skips (optional Meshy pack absent):
+Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before
+Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set
+Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists
+
+No rig/221/200v200 runs. No commits or pushes.
+Raw .trx and runner logs were written under /tmp/p682-*.

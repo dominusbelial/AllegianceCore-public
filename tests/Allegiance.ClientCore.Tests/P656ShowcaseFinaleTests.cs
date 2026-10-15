@@ -517,9 +517,27 @@ public sealed partial class BotFixRegressionTests
         Call("ReReadyBot", rig.Manager, bot);
         Assert.Equal((short)40, Get<short>(bot, "ReadyShipId"));
         Assert.False(Get<bool>(bot, "ObjectivesPending"));
-        Set(bot, "Launched", true);
+        cs.World.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarting });
+        cs.World.Apply(new DockedNotify { StationId = 100 });
+        Call("DriveCombat", rig.Manager, bot, rig.Started + 1811.5, null);
+        Assert.True(Get<bool>(bot, "MissionLaunchPending"));
+        Assert.Equal(0, Get<int>(bot, "RelaunchAttempts")); // wait for the starting-money payday
+        cs.World.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarted });
         Call("DriveCombat", rig.Manager, bot, rig.Started + 1812, null);
-        Assert.NotEmpty(Get<List<short>>(bot, "Path")); // resumes a real route into the new map
+        Assert.True(Get<bool>(bot, "MissionLaunchPending"));
+        Assert.Equal(1, Get<int>(bot, "RelaunchAttempts"));
+        Assert.Empty(Get<List<short>>(bot, "Path")); // a hangar seat cannot start the march
+        var hull = Get<short>(bot, "HullId");
+        var parts = Get<List<ExpandedPartData>>(bot, "Parts");
+        ((Allegiance.Core.Transport.ITransportSite)cs).OnReceive(Allegiance.Core.Transport.ConnectionId.Server,
+            FedPacket.Pack([new BuyLoadoutAck { HullId = hull, Parts = parts,
+                FBoughtEverything = true, FLaunch = true }.Encode(),
+                new SetCluster { Ship = Pose(40), SectorId = 1 }.Encode()]));
+        Call("DriveCombat", rig.Manager, bot, rig.Started + 1813, null);
+        Assert.False(Get<bool>(bot, "MissionLaunchPending"));
+        Assert.Equal(0, Get<int>(bot, "CompletedPodCycles"));
+        Assert.False(Get<bool>(bot, "FinaleBomberActive"));
+        Assert.NotEmpty(Get<List<short>>(bot, "Path")); // resumes the route after purchase + launch
     }
 
     [SkippableFact]
