@@ -201,7 +201,7 @@ public class RepairAndRefuelTests
 
         ship.RepairAndRefuel(Garrison());
 
-        Assert.Equal((byte)255, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon).FractionMounted);
+        Assert.Equal(ExpandedPartData.FullyMounted, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon).FractionMounted);
         Assert.Equal(expectPack, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Pack).Amount);
         Assert.Equal((short)100, ship.Ammo);
     }

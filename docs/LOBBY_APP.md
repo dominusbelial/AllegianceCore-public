@@ -149,3 +149,18 @@ Lobby itself needs no config file or external assets.
 
 **HTTPS/TLS** is out of scope for both apps; the recommended way to add it in production
 is a terminating reverse proxy (Caddy/nginx) in front of the Lobby.
+
+### P655 directory integrity
+
+Listings advertise the registering socket's source IP; the submitted `address`
+is ignored. Heartbeats require both the ownership token and the same source IP.
+Each source can hold four listings (`Lobby:MaxEntriesPerAddress`); registration
+caps are atomic, and expired entries disappear from reads before the sweep.
+The body limit is 16 KiB. All requests have a 120/minute source budget, and
+registration/heartbeat additionally has its existing 30/minute budget.
+
+Behind a proxy, configure `Lobby:KnownProxies` with the immediate proxy's IPs,
+for example `{"Lobby":{"KnownProxies":["127.0.0.1"]}}`. Only those proxies may
+supply one `X-Forwarded-For` hop. With no configured proxies, forwarded headers
+are ignored. Do not add arbitrary networks to this list. Names remain public,
+unverified labels; control and Unicode format characters are stripped.

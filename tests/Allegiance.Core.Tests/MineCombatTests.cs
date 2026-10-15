@@ -433,6 +433,9 @@ public sealed class MineCombatTests
     private static Domain2 AssembleTwoSide(DataHullTypeIGC hull)
     {
         var core = RepresentativeCore();
+        // Remote isolates mine attrition from map geometry. Keep that fixture
+        // inside its loaded universe so unrelated OOB damage cannot enter the math.
+        core.Constants.FloatConstants[1] = 1_000_000f;
         var site = new CountingSite();
         var civ = core.Civilizations.Values.OrderBy(c => c.CivilizationId).First().CivilizationId;
         var mission = Mission.Assemble(core, SomeMap(),

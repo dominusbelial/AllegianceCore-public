@@ -44,7 +44,7 @@ public sealed class TeamPaneRenderer
     }
 
     /// <summary>Draw the team-pane roster for the given <see cref="TeamPaneLayout"/> lines.</summary>
-    public void Draw(Viewport viewport, IReadOnlyList<TeamPaneLayout.Line> lines)
+    public void Draw(Viewport viewport, IReadOnlyList<TeamPaneLayout.Line> lines, bool compact = false)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -63,8 +63,8 @@ public sealed class TeamPaneRenderer
 
         float panelW = MathF.Min(maxLine + 2f * Padding, w * 0.985f);
         float panelH = MathF.Min(totalH + 2f * Padding - LineGap, h * 0.94f);
-        float panelX = MathF.Max(8f, (w - panelW) / 2f);
-        float panelY = MathF.Max(8f, (h - panelH) / 2f);
+        float panelX = MathF.Max(8f, compact ? w - panelW - 8 : (w - panelW) / 2f);
+        float panelY = MathF.Max(8f, compact ? 80 : (h - panelH) / 2f);
 
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try

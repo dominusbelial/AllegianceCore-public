@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Reflection;
+using Allegiance.ClientCore.Session;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
@@ -107,6 +109,101 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
         return done();
     }
 
+    // P653d: real MCP purchase/relaunch; cover ejected pods reaching home
+    // and lethal pod damage restarting several bots at home (Iron Coalition 444).
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
+    [InlineData(false, 1)]
+    [InlineData(true, 3)]
+    public void Mcp_debug_bot_buys_relaunches_and_fights(bool killPod, int botCount)
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        var config = Config();
+        config.LiveSettings.DebugMode = true;
+        config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
+            { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
+        config.Games[0] = new Gm { Name = "P653c MCP lifecycle", Map = "m2xspiderw.igc", Teams = 2,
+            CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] };
+        server.Boot(config);
+        foreach (var m in server.Missions) m.Stage = MissionStage.Started;
+        var mission = server.Missions[0];
+        var hull = EconomyLoadoutTestSetup.WeaponHull(mission.Core);
+        var gun = mission.Core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon)
+            .OrderBy(p => p.PartId).First();
+        Ship? fighter = null;
+        Ship? target = null;
+        int hits = 0, killRequested = 0, killHandled = 0;
+        using var ticker = new ServerTicker(server, _ =>
+        {
+            if (fighter is not { } f) return;
+            if (Interlocked.Exchange(ref killRequested, 0) == 1)
+            {
+                // Use lethal damage, not a direct kill callback: the callback
+                // alone never zeroed health and hid the restart regression.
+                f.ReceiveDamage(0, 1_000_000, mission.LastUpdate, f.Position, f.Position, target);
+                Assert.Equal((short)444, f.HullType.HullId);
+                if (killPod)
+                {
+                    // Production true-death restart docks the replacement pod.
+                    f.ReceiveDamage(0, 1_000_000, mission.LastUpdate, f.Position, f.Position, target);
+                }
+                else
+                {
+                    // Place the ejected pod home; let the real sector pass dock it.
+                    var station = f.Sector!.Stations.First(st => st.SideId == f.SideId);
+                    f.Position = new Vector3(station.Position[0], station.Position[1], station.Position[2]);
+                    f.Velocity = Vector3.Zero;
+                }
+                Volatile.Write(ref killHandled, 1);
+            }
+            if (target is { } t && f.StationId is null && !f.HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
+            {
+                if (t.Fraction < 1f) Interlocked.Increment(ref hits);
+                t.SetFraction(1f);
+                t.Position = f.Position + f.Orientation.GetForward() * 180f;
+                t.Velocity = f.Velocity;
+            }
+        });
+        using var mgr = new BotManager("127.0.0.1", server.BoundPort);
+        Assert.True(mgr.ServerReady);
+        var spawns = Enumerable.Range(0, botCount).Select(_ => mgr.SpawnBot(hull.HullId, hull.Name, 0,
+            [new ExpandedPartData(gun.PartId, 1, 0, 255)], "combat")).ToArray();
+        for (int botIndex = 0; botIndex < spawns.Length; botIndex++)
+        {
+            var spawn = spawns[botIndex];
+            Volatile.Write(ref killHandled, 0);
+            int beforeFight = Volatile.Read(ref hits);
+            Assert.Equal(hull.HullId, spawn.Granted.HullId);
+            Assert.Single(spawn.Granted.Parts);
+            fighter = Ships(server).Single(ship => ship.Id == spawn.ShipId);
+            Assert.Null(fighter.StationId);
+            target = new Ship((short)(30000 + botIndex), hull, fighter.Position + fighter.Orientation.GetForward() * 180f,
+                Vector3.Zero, Orientation.Identity) { SideId = 1 };
+            mission.PlaceShip(target, fighter.Sector!);
+            Assert.True(Wait(() => Volatile.Read(ref hits) > beforeFight, 15000), "MCP bot must deal real projectile damage after initial buy");
+            var active = ((System.Collections.IEnumerable)typeof(BotManager)
+                .GetField("_bots", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(mgr)!)
+                .Cast<object>().Single(b => (short)b.GetType().GetField("ShipId")!.GetValue(b)! == spawn.ShipId);
+            var client = (ConnectionSession)active.GetType().GetField("Cs")!.GetValue(active)!;
+            client.ResetBuyLoadoutAcks();
+            Interlocked.Exchange(ref killRequested, 1);
+            Assert.True(Wait(() => Volatile.Read(ref killHandled) == 1, 5000));
+            Assert.True(Wait(() => fighter.StationId is null && fighter.HullType.HullId == hull.HullId
+                && fighter.Parts.Any(p => p.PartId == gun.PartId), 20000), "MCP bot must buy and relaunch after pod docking");
+            Assert.True(Wait(() => client.BuyLoadoutAcks.Any(a => a.HullId == hull.HullId
+                && a.FBoughtEverything && a.FLaunch), 5000), "MCP relaunch ACK must grant the whole loadout and launch");
+            Assert.False(fighter.Dead);
+            Assert.Null(fighter.ParentShip);
+            int afterRelaunch = Volatile.Read(ref hits);
+            Assert.True(Wait(() => Volatile.Read(ref hits) > afterRelaunch, 15000), "relaunched MCP bot must fight again");
+            Console.WriteLine($"P653D-MCP: ship {fighter.Id} bought, dealt damage, died, docked as pod, re-bought, relaunched and dealt damage again");
+            target.Sector!.Remove(target);
+            target = null;
+        }
+
+    }
+
     /// <summary>⭐ The live proof.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
@@ -114,7 +211,10 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
     {
         Require.Artwork();
         var server = new Srv();
-        server.Boot(Config());
+        var config = Config();
+        config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
+            { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
+        server.Boot(config);
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // bypass the ready-up lobby (P180 pattern)
 
         Ship? anchor = null;      // the obeyer (a scenario-spawned combat bot)

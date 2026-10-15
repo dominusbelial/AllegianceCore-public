@@ -1,5 +1,7 @@
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -208,14 +210,9 @@ public sealed class TcpTransport : ITransport
     internal static int SendTimeoutMs { get; set; } = 10_000;
     private const int SendBufferSize = 8 * 1024;
 
-    // P605 — pool mode: a much tighter per-write socket timeout than the 10 s
-    // thread-per-peer default. Each peer's whole-frame write runs on a SHARED
-    // worker, so a stalled peer must give up its blocking write almost
-    // immediately (and be dropped) rather than tying up the worker (and every
-    // neighbour behind it) for up to 10 s. Healthy writes are instantaneous, so
-    // this budget never bites a normal peer. Steady-state protection is the
-    // not-writable skip in <see cref="PeerSender.TryWriteHead"/>; this bounds
-    // only the rare write-already-started-then-stalled transient.
+    // P670 — pooled sockets are NON-BLOCKING (P645). SendTimeout does not
+    // bound normal pool turns; Socket.Send returns partial progress / WouldBlock.
+    // Retain the historical defensive timeout; it is not the pool's fairness budget.
     private const int PoolSendTimeoutMs = 250;
 
     // P312: the default greeting-read timeout on an accepted socket (10 s). A
@@ -300,6 +297,16 @@ public sealed class TcpTransport : ITransport
     private readonly TransportMode _mode;
     private readonly int _poolWorkerCount;
     private SendWorkerPool? _pool;
+    private readonly SendCounters _sendCounters = new();
+    private readonly SendStallDetector _sendStallDetector = new();
+    private long _sendWindowStarted = Stopwatch.GetTimestamp();
+    private long _lastEnqueued, _lastWritten, _lastQueued;
+
+    /// <summary>Lifetime host bytes actually accepted by Socket.Send / NetworkStream.Write,
+    /// including outer framing. Does not imply receipt by the remote application.</summary>
+    public long TotalWrittenBytes => Interlocked.Read(ref _sendCounters.Written);
+    public long TotalEnqueuedBytes => Interlocked.Read(ref _sendCounters.Enqueued);
+
     // P605 test seam (InternalsVisibleTo): the mode a transport constructed
     // without an explicit mode argument falls back to. Lets the transport test
     // suite run the SAME body under both modes. Default thread-per-peer =
@@ -352,6 +359,10 @@ public sealed class TcpTransport : ITransport
     public bool IsConnected { get; private set; }
     public ConnectionId LocalId { get; private set; } = ConnectionId.Me;
     public ushort BoundPort => _boundPort;
+
+    /// <summary>P661: optional host-only accounting. Set before Host; client
+    /// transports retain the null fast path. No send policy depends on it.</summary>
+    public EgressAccounting? Egress { get; init; }
 
     public void Host(ushort port = 0)
     {
@@ -452,7 +463,7 @@ public sealed class TcpTransport : ITransport
         }
         // Enqueue-and-return: never blocks on socket I/O. A dead/disconnected
         // peer's sender no-ops its enqueue internally.
-        ps.Enqueue(BuildFrame(FrameType.Data, data), guaranteed, coalesceKey);
+        ps.EnqueueData(data, guaranteed, coalesceKey);
     }
 
     /// <summary>
@@ -471,6 +482,12 @@ public sealed class TcpTransport : ITransport
     /// stays bounded). See <see cref="ITransport.SendGuaranteedCoalescing"/>.</summary>
     public void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
         => Send(target, data, guaranteed: true, coalesceKey);
+
+    /// <summary>Server-observed socket provenance; never uses greeting/name data.</summary>
+    public bool IsPeerLoopback(ConnectionId id)
+    {
+        lock (_gate) return _peers.TryGetValue(id, out var peer) && peer.IsLoopback;
+    }
 
     /// <summary>
     /// P619c — mark a connection as a connected HUMAN client (the server calls
@@ -639,7 +656,12 @@ public sealed class TcpTransport : ITransport
             // never produce the same id. (_nextPeerId starts at 0 and
             // Interlocked.Increment yields 1 for the first peer.)
             id = new ConnectionId(unchecked((uint)Interlocked.Increment(ref _nextPeerId)));
-            var sender = new PeerSender(stream, client, r => DropPeer(id, r));
+            var sender = new PeerSender(stream, client, r => DropPeer(id, r))
+            {
+                Counters = _sendCounters,
+                Egress = Egress,
+                EgressHarness = name.StartsWith("mcp-", StringComparison.Ordinal),
+            };
             lock (_gate)
             {
                 _peers[id] = sender;
@@ -852,6 +874,41 @@ public sealed class TcpTransport : ITransport
         int total = 0;
         foreach (var v in _disconnectCounts.Values) total += v;
         return total;
+    }
+
+    /// <summary>P670: allocation-free, single-consumer profiler sample into reusable storage.
+    /// Buffers must cover the configured connection and worker caps; aggregate totals also
+    /// include peers that departed during the window. No send policy depends on this.</summary>
+    public SendWindow DrainSendWindow(Span<PeerSendWindow> peers, Span<SendWorkerWindow> workers)
+    {
+        long now = Stopwatch.GetTimestamp();
+        double seconds = (now - _sendWindowStarted) / (double)Stopwatch.Frequency;
+        _sendWindowStarted = now;
+        long queued = 0;
+        int peerCount = 0, workerCount = _pool?.WorkerCount ?? 0;
+        lock (_gate)
+        {
+            if (peers.Length < _peers.Count || workers.Length < workerCount)
+                throw new ArgumentException("send diagnostic buffers must cover live peers and pool workers");
+            foreach (var (id, sender) in _peers)
+            {
+                var row = sender.DrainSendWindow(id);
+                peers[peerCount++] = row;
+                queued += row.QueuedBytes;
+            }
+        }
+        if (_pool is { } pool)
+            for (int i = 0; i < workerCount; i++) workers[i] = pool._workers[i].Diagnostics.Drain(i);
+        long enqueued = Interlocked.Read(ref _sendCounters.Enqueued);
+        long written = TotalWrittenBytes;
+        long growth = queued - _lastQueued;
+        var window = new SendWindow(seconds, enqueued - _lastEnqueued, written - _lastWritten,
+            queued, growth, peerCount, workerCount,
+            _sendStallDetector.Observe(seconds, enqueued - _lastEnqueued, written - _lastWritten, growth));
+        _lastEnqueued = enqueued;
+        _lastWritten = written;
+        _lastQueued = queued;
+        return window;
     }
 
     /// <summary>
@@ -1225,6 +1282,7 @@ public sealed class TcpTransport : ITransport
 
         private readonly NetworkStream _stream;
         private readonly TcpClient _tcpClient;
+        public bool IsLoopback { get; }
         private readonly Action<DisconnectReason> _onDead;
         private readonly CancellationTokenSource _cts = new();
         // P634 — TWO per-peer send lanes instead of one shared FIFO. Join and
@@ -1248,6 +1306,29 @@ public sealed class TcpTransport : ITransport
         private readonly LinkedList<QueuedFrame> _orderedQueue = new();
         private readonly LinkedList<QueuedFrame> _streamQueue = new();
         private readonly object _sync = new();
+        private readonly Stack<LinkedListNode<QueuedFrame>> _freeNodes = new();
+        // A peer's frames return on a different thread from their producer.
+        // A private pool retains its recurring status bursts without competing
+        // for the shared pool's small cross-thread bucket capacity.
+        private readonly ArrayPool<byte> _framePool = ArrayPool<byte>.Create(
+            maxArrayLength: 1 << 20, maxArraysPerBucket: 512);
+        private LinkedListNode<QueuedFrame> RentNode(QueuedFrame frame)
+        {
+            if (!_freeNodes.TryPop(out var node)) return new(frame);
+            node.Value = frame;
+            return node;
+        }
+        private void RecycleNode(LinkedListNode<QueuedFrame> node)
+        {
+            node.Value = default;
+            // Keep the reusable node cache bounded even after a reliable burst.
+            if (_freeNodes.Count < 512) _freeNodes.Push(node);
+        }
+        private void ReturnFrame(QueuedFrame frame)
+        {
+            if (frame.Pooled) _framePool.Return(frame.Frame);
+        }
+
         // P606 — latest-wins coalescing over the STREAM lane only:
         // coalesceKey -> the stream-queue node holding that key's newest
         // pending frame. Lets Enqueue supersede an older pending stream frame
@@ -1265,7 +1346,15 @@ public sealed class TcpTransport : ITransport
         // connection is closed (unknown progress on a timed-out write), never
         // abandoned-and-continued on the same socket.
         private byte[]? _inflight;
-        private int _inflightOffset;
+        private int _inflightOffset, _inflightLength;
+        private bool _inflightPooled;
+        private bool _inflightStream;
+        internal EgressAccounting? Egress;
+        internal SendCounters? Counters;
+        private long _enqueuedBytes, _writtenBytes, _reportedEnqueued, _reportedWritten;
+        // Classification is diagnostic only, independent of IsHuman (which
+        // controls liveness policy). Greeting classification covers join traffic.
+        internal bool EgressHarness;
         // P611 — the peer's liveness clock, in ticks: the last time the socket
         // accepted ANY bytes (a send completed partially or fully). Updated by
         // the writer/pool worker on every successful write. A peer whose socket
@@ -1306,6 +1395,7 @@ public sealed class TcpTransport : ITransport
 
         public PeerSender(NetworkStream stream, TcpClient tcpClient, Action<DisconnectReason> onDead)
         {
+            IsLoopback = tcpClient.Client.RemoteEndPoint is IPEndPoint ep && IPAddress.IsLoopback(ep.Address);
             _stream = stream;
             _tcpClient = tcpClient;
             _onDead = onDead;
@@ -1327,11 +1417,28 @@ public sealed class TcpTransport : ITransport
         /// place) any older pending frame for the same peer+key — latest-wins —
         /// instead of appending a stale duplicate (P606).</summary>
         public void Enqueue(byte[] frame, bool guaranteed, int coalesceKey)
+            => EnqueueCore(frame, frame.Length, false, guaranteed, coalesceKey);
+
+        internal void EnqueueData(ReadOnlySpan<byte> body, bool guaranteed, int coalesceKey)
+        {
+            if (_disconnected) return;
+            int length = HeaderWidth + body.Length;
+            var frame = _framePool.Rent(length);
+            frame[0] = (byte)FrameType.Data;
+            BinaryPrimitives.WriteUInt32LittleEndian(frame.AsSpan(1), (uint)body.Length);
+            body.CopyTo(frame.AsSpan(HeaderWidth));
+            EnqueueCore(frame, length, true, guaranteed, coalesceKey);
+        }
+
+        private void EnqueueCore(byte[] frame, int length, bool pooled, bool guaranteed, int coalesceKey)
         {
             bool fireDisconnect = false;
             lock (_sync)
             {
-                if (_disconnected) return;
+                if (_disconnected) { if (pooled) _framePool.Return(frame); return; }
+                _enqueuedBytes += length;
+                if (Counters is { } counters) Interlocked.Add(ref counters.Enqueued, length);
+                Egress?.Record(frame.AsSpan(0, length), EgressHarness, coalesceKey != 0, EgressEvent.Offered);
                 // Was the peer's send path fully drained before this enqueue?
                 // If so the peer is current (idle or caught up); its writer
                 // gets a fresh liveness window rather than being judged stale
@@ -1353,9 +1460,11 @@ public sealed class TcpTransport : ITransport
                         // same key is superseded in place, so the collapsed
                         // frame keeps its stream-lane position and the byte
                         // accounting stays exact.
-                        _queuedBytes -= existing.Value.Frame.Length;
-                        existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks);
-                        _queuedBytes += frame.Length;
+                        _queuedBytes -= existing.Value.Length;
+                        Egress?.Record(existing.Value.Frame.AsSpan(0, existing.Value.Length), EgressHarness, true, EgressEvent.Coalesced);
+                        ReturnFrame(existing.Value);
+                        existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled);
+                        _queuedBytes += length;
                     }
                     else
                     {
@@ -1363,10 +1472,11 @@ public sealed class TcpTransport : ITransport
                         // capacity (guaranteed traffic is never dropped here).
                         // Streaming ship-state frames are sent non-guaranteed,
                         // so they are the natural shed candidates.
-                        while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                        var node = _streamQueue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks));
+                        while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                        var node = RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled));
+                        _streamQueue.AddLast(node);
                         _coalesceNodes[coalesceKey] = node;
-                        _queuedBytes += frame.Length;
+                        _queuedBytes += length;
                     }
                 }
                 else
@@ -1377,9 +1487,9 @@ public sealed class TcpTransport : ITransport
                     // before any stream frame — so world data never starves
                     // behind the position stream. Also shed stream traffic if
                     // over capacity so an ordered burst can still land.
-                    while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                    _orderedQueue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks));
-                    _queuedBytes += frame.Length;
+                    while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                    _orderedQueue.AddLast(RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled)));
+                    _queuedBytes += length;
                 }
                 Monitor.Pulse(_sync);
 
@@ -1517,6 +1627,21 @@ public sealed class TcpTransport : ITransport
             return SendInflight();
         }
 
+        internal PeerSendWindow DrainSendWindow(ConnectionId id)
+        {
+            lock (_sync)
+            {
+                long written = Interlocked.Read(ref _writtenBytes);
+                long queued = _queuedBytes + (_inflight is not null ? _inflightLength - _inflightOffset : 0);
+                var row = new PeerSendWindow(id, _enqueuedBytes - _reportedEnqueued,
+                    written - _reportedWritten, queued, queued > 0
+                        ? Math.Max(0, (DateTime.UtcNow.Ticks - Interlocked.Read(ref _lastWriteProgressUtcTicks)) / TimeSpan.TicksPerMillisecond) : 0);
+                _reportedEnqueued = _enqueuedBytes;
+                _reportedWritten = written;
+                return row;
+            }
+        }
+
         /// <summary>P605 — can this peer's socket take a write right now without
         /// blocking? Polls with a zero timeout (select-for-write) so a stalled
         /// client — its OS send buffer full — is reported not-writable and the
@@ -1545,9 +1670,12 @@ public sealed class TcpTransport : ITransport
             {
                 if (!node.Value.Guaranteed)
                 {
-                    _queuedBytes -= node.Value.Frame.Length;
+                    Egress?.Record(node.Value.Frame.AsSpan(0, node.Value.Length), EgressHarness, true, EgressEvent.Dropped);
+                    _queuedBytes -= node.Value.Length;
                     if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                     _streamQueue.Remove(node);
+                    ReturnFrame(node.Value);
+                    RecycleNode(node);
                     return true;
                 }
             }
@@ -1579,8 +1707,12 @@ public sealed class TcpTransport : ITransport
             // pointing at this (now-consumed) node.
             if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
             _inflight = node.Value.Frame;
+            _inflightLength = node.Value.Length;
+            _inflightPooled = node.Value.Pooled;
             _inflightOffset = 0;
-            _queuedBytes -= _inflight.Length;
+            _inflightStream = node.Value.CoalesceKey != 0;
+            _queuedBytes -= _inflightLength;
+            RecycleNode(node);
             if (_orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
             else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
             return true;
@@ -1615,9 +1747,13 @@ public sealed class TcpTransport : ITransport
         /// Caller must NOT hold <c>_sync</c>.</summary>
         private DrainResult SendInflight()
         {
+            var diagnostics = OwnerWorker?.Diagnostics;
             if (SendOverride is { } ov)
             {
-                var o = ov(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset);
+                SendOutcome o;
+                diagnostics?.BeginWrite();
+                try { o = ov(_inflight!, _inflightOffset, _inflightLength - _inflightOffset); }
+                finally { diagnostics?.EndWrite(); }
                 if (o.Timeout) { FailAndClose(DisconnectReason.SendTimeout); return DrainResult.Dead; }
                 if (o.Error) { FailAndClose(DisconnectReason.SendError); return DrainResult.Dead; }
                 if (o.WouldBlock) return DrainResult.Blocked;
@@ -1629,7 +1765,9 @@ public sealed class TcpTransport : ITransport
                 int n;
                 try
                 {
-                    n = sock.Send(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset, SocketFlags.None);
+                    diagnostics?.BeginWrite();
+                    try { n = sock.Send(_inflight!, _inflightOffset, _inflightLength - _inflightOffset, SocketFlags.None); }
+                    finally { diagnostics?.EndWrite(); }
                 }
                 catch (SocketException se)
                 {
@@ -1651,8 +1789,10 @@ public sealed class TcpTransport : ITransport
             // controlled-stream test seam can drive the write behaviour.
             try
             {
-                _stream.Write(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset);
-                return AdvanceInflight(_inflight.Length - _inflightOffset);
+                diagnostics?.BeginWrite();
+                try { _stream.Write(_inflight!, _inflightOffset, _inflightLength - _inflightOffset); }
+                finally { diagnostics?.EndWrite(); }
+                return AdvanceInflight(_inflightLength - _inflightOffset);
             }
             catch (Exception ex) when (IsSocketTimeout(ex))
             {
@@ -1679,17 +1819,25 @@ public sealed class TcpTransport : ITransport
                 // a 0-length result). Keep the in-flight frame; not a dead peer.
                 return DrainResult.Blocked;
             }
-            // Real write progress: the OS accepted these bytes — refresh the
-            // no-progress liveness clock so a slow-but-flowing peer is never cut.
-            Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
-            _inflightOffset += n;
-            if (_inflightOffset >= _inflight!.Length)
+            lock (_sync)
             {
-                _inflight = null;
-                _inflightOffset = 0;
-                return DrainResult.Wrote;   // frame fully on the wire
+                // Real write progress: the OS accepted these bytes — refresh the
+                // no-progress liveness clock so a slow-but-flowing peer is never cut.
+                Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
+                Interlocked.Add(ref _writtenBytes, n);
+                if (Counters is { } counters) Interlocked.Add(ref counters.Written, n);
+                Egress?.Record(_inflight!.AsSpan(0, _inflightLength), EgressHarness, _inflightStream, EgressEvent.Sent, _inflightOffset, n);
+                _inflightOffset += n;
+                if (_inflightOffset >= _inflightLength)
+                {
+                    if (_inflightPooled) _framePool.Return(_inflight!);
+                    _inflight = null;
+                    _inflightPooled = false;
+                    _inflightOffset = 0;
+                    return DrainResult.Wrote;   // frame fully on the wire
+                }
+                return DrainResult.Wrote;       // partial progress — resume next turn
             }
-            return DrainResult.Wrote;       // partial progress — still in flight, next call continues
         }
 
         /// <summary>P645 — stamp the disconnect reason and tear the peer down
@@ -1779,7 +1927,17 @@ public sealed class TcpTransport : ITransport
         public void Close()
         {
             _cts.Cancel();
-            lock (_sync) { _disconnected = true; Monitor.PulseAll(_sync); }
+            lock (_sync)
+            {
+                _disconnected = true;
+                foreach (var frame in _orderedQueue) ReturnFrame(frame);
+                foreach (var frame in _streamQueue) ReturnFrame(frame);
+                _orderedQueue.Clear(); _streamQueue.Clear(); _coalesceNodes.Clear();
+                _queuedBytes = 0;
+                // The sole writer may still be inside Send. It owns the in-flight
+                // lease until completion; Close never returns its buffer early.
+                Monitor.PulseAll(_sync);
+            }
             CloseQuiet(_stream);
             try { _tcpClient.Dispose(); } catch { }
         }
@@ -1791,15 +1949,19 @@ public sealed class TcpTransport : ITransport
         private readonly struct QueuedFrame
         {
             public readonly byte[] Frame;
+            public readonly int Length;
+            public readonly bool Pooled;
             public readonly bool Guaranteed;
             public readonly int CoalesceKey;
             // P634 — enqueue timestamp (Utc ticks) so the transport can report
             // the age of the oldest pending guaranteed frame (join/world
             // head-of-line delay) for the live measurements.
             public readonly long EnqueuedUtcTicks;
-            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey, long enqueuedUtcTicks)
+            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey, long enqueuedUtcTicks, int length = -1, bool pooled = false)
             {
                 Frame = frame;
+                Length = length < 0 ? frame.Length : length;
+                Pooled = pooled;
                 Guaranteed = guaranteed;
                 CoalesceKey = coalesceKey;
                 EnqueuedUtcTicks = enqueuedUtcTicks;
@@ -1846,7 +2008,7 @@ public sealed class TcpTransport : ITransport
     /// </summary>
     private sealed class SendWorkerPool
     {
-        private readonly Worker[] _workers;
+        internal readonly Worker[] _workers;
 
         public SendWorkerPool(int workerCount)
         {
@@ -1895,6 +2057,7 @@ public sealed class TcpTransport : ITransport
             private readonly object _sync = new();
             private Thread? _thread;
             private volatile bool _running = true;
+            internal readonly SendWorkerDiagnostics Diagnostics = new();
 
             public void Assign(PeerSender peer)
             {
@@ -1935,10 +2098,16 @@ public sealed class TcpTransport : ITransport
             {
                 while (_running)
                 {
+                    Diagnostics.State(SendWorkerState.Scanning);
                     PeerSender[] snapshot;
                     lock (_sync)
                     {
-                        if (_peers.Count == 0) { Monitor.Wait(_sync, 200); continue; }
+                        if (_peers.Count == 0)
+                        {
+                            Diagnostics.State(SendWorkerState.Idle);
+                            Monitor.Wait(_sync, 200);
+                            continue;
+                        }
                         snapshot = _peers.ToArray();
                     }
 
@@ -1954,7 +2123,13 @@ public sealed class TcpTransport : ITransport
                     }
 
                     if (progressed) continue;                       // keep pumping
-                    if (anyBlocked) { Thread.Sleep(2); continue; }  // all blocked: re-poll shortly
+                    if (anyBlocked)
+                    {
+                        Diagnostics.State(SendWorkerState.Backpressure);
+                        Thread.Sleep(2);
+                        continue;
+                    }
+                    Diagnostics.State(SendWorkerState.Idle);
                     lock (_sync) { Monitor.Wait(_sync, 50); }       // idle: sleep until a Wake
                 }
             }

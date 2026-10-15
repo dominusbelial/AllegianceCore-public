@@ -36,9 +36,8 @@ public sealed class MapGenParams
     public short PlayerSectorSpecialAsteroids { get; init; } = 2;
     /// <summary>Home-sector generic/buildable asteroid count (<c>nPlayerSectorAsteroids</c>).</summary>
     public short PlayerSectorAsteroids { get; init; } = 10;
-    /// <summary>Home-sector treasure count (<c>nPlayerSectorTreasures</c>) — parsed
-    /// for completeness but treasure <em>creation</em> is deferred (see
-    /// <c>MissionMapGenerator</c>: the port's map universe has no treasure list).</summary>
+    /// <summary>Home-sector treasure count (<c>nPlayerSectorTreasures</c>).
+    /// The server populates these runtime objects after mission assembly.</summary>
     public short PlayerSectorTreasures { get; init; }
 
     /// <summary>Neutral-sector He3 mineable asteroid count (<c>nNeutralSectorMineableAsteroids</c>).</summary>
@@ -47,17 +46,18 @@ public sealed class MapGenParams
     public short NeutralSectorSpecialAsteroids { get; init; } = 2;
     /// <summary>Neutral-sector generic/buildable asteroid count (<c>nNeutralSectorAsteroids</c>).</summary>
     public short NeutralSectorAsteroids { get; init; } = 8;
-    /// <summary>Neutral-sector treasure count (<c>nNeutralSectorTreasures</c>) — deferred, same as above.</summary>
+    /// <summary>Neutral-sector runtime treasure count (<c>nNeutralSectorTreasures</c>).</summary>
     public short NeutralSectorTreasures { get; init; }
 
     /// <summary><c>MissionParams.fHe3Density</c> — scales the per-map He3 total.</summary>
     public float He3Density { get; init; } = 1.0f;
 
-    /// <summary><c>MissionParams.IsFlagsGame()</c> — unused this task (flag pedestal
-    /// generation deferred with treasures). Parsed for config completeness.</summary>
+    /// <summary><c>MissionParams.IsFlagsGame()</c> — flag pedestal generation
+    /// is deferred. Parsed for config completeness.</summary>
     public bool FlagsGame { get; init; }
 
-    /// <summary><c>MissionParams.IsArtifactsGame()</c> — unused this task (see above).</summary>
+    /// <summary><c>MissionParams.IsArtifactsGame()</c> — the server creates one
+    /// artifact per neutral sector after assembly (Igc/common.cpp:3090-3095).</summary>
     public bool ArtifactsGame { get; init; }
 
     /// <summary><c>MissionParams.bShowHomeSector</c> — retained for fidelity; the

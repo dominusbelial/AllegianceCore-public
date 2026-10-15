@@ -872,14 +872,9 @@ public sealed partial class Game1 : Game
     private Rendering.InvestmentPaneModel? _investModel;
     private short? _investAsteroidAabm;
 
-    // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
-    // the single countdown-start callout; _countdownLastSecond mirrors native's
-    // m_nLastCountdown change-detection (WinTrek.cpp:11150) so each second's
-    // per-second tick plays exactly once, not every frame it happens to still be
-    // true; _gameOverCuePlayed fires the game-over callout exactly once on the
-    // real Stage → Over transition.
-    private bool _countdownStartCuePlayed;
-    private int _countdownLastSecond;
+    private long _nextMatchGeneration;
+    private readonly Audio.MissionCountdownSound _missionCountdownSound = new();
+    private readonly Audio.RipcordCountdownSound _ripcordCountdownSound = new();
     private bool _gameOverCuePlayed;
 
     // P271 — mission-briefing popup. _briefingRenderer draws the dismissible
@@ -1019,14 +1014,13 @@ public sealed partial class Game1 : Game
     private LeaderBotCommand? _leaderBotCommand;
     private bool _xKeyWasDown; // edge-detect X (leader bot dock/launch) so holding it doesn't re-fire
     // P424 — edge-detect the accept/reject/clear queued-order keys (Home/End/Delete).
-    private bool _acceptKeyWasDown;
-    private bool _rejectKeyWasDown;
-    private bool _clearKeyWasDown;
+    private bool _viewMissileWasDown;
+    private bool _viewChaseWasDown;
+    private bool _viewTurretWasDown;
     // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.
     private LeadIndicatorView? _leadIndicator;
-    private bool _tKeyWasDown; // edge-detect T so holding it doesn't re-fire
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
@@ -1034,8 +1028,6 @@ public sealed partial class Game1 : Game
     private bool _fCloakWasDown; // edge-detect F (cloak toggle) so holding it doesn't re-fire
     private bool _cloakToggled;  // P413 — latched cloak-engagement state folded into outgoing stateM
     private bool _lKeyWasDown;   // P414 — edge-detect L (ripcord) so holding it doesn't re-fire
-    private bool _uTargetKeyWasDown; // P415 — edge-detect U (nearest enemy/friendly ship) so holding it doesn't re-fire
-    private bool _zTargetKeyWasDown; // P415 — edge-detect Z (nearest enemy/friendly base) so holding it doesn't re-fire
     private bool _semicolonNothingKeyWasDown; // P417 — edge-detect ';' (target nothing) so holding it doesn't re-fire
     private bool _apostropheCenterKeyWasDown; // P417 — edge-detect '\'' (target center) so holding it doesn't re-fire
     private bool _shotKeyWasDown;              // P417 — edge-detect screenshot (PrintScreen, action ScreenShot) so holding it doesn't re-fire
@@ -1104,7 +1096,6 @@ public sealed partial class Game1 : Game
     // independent-flag / edge-detect discipline as the scoreboard/pilot toggles.
     private Rendering.TeamPaneRenderer _teamPaneRenderer = null!;
     private bool _teamPaneVisible;
-    private bool _teamPaneKeyWasDown;
     private long _lastMissileSendMs = 0; // P226 throttle: re-arm so the first hold fires immediately.
     // Was long.MinValue, but Environment.TickCount64 - long.MinValue overflows a
     // long (unchecked arithmetic wraps to an unpredictable/negative value), so the
@@ -1207,7 +1198,7 @@ public sealed partial class Game1 : Game
     private bool _voteYesWasDown, _voteNoWasDown;
     // P626 — in-flight cargo keys (NextCargo/NextPart/PrevPart/DropCargo/Reload).
     // The selected cargo mount is a negative native mount (-1..-5), -1 = none.
-    private int _selectedCargoMount = -1;
+    private int _selectedCargoMount;
     private bool _nextCargoWasDown, _nextPartWasDown, _prevPartWasDown, _dropCargoWasDown, _reloadWasDown;
 
     // P217 — real quick-chat (SonicChat) voice-macro system. The menu tree +
@@ -1740,6 +1731,7 @@ public sealed partial class Game1 : Game
         _treasureRenderer?.Dispose();
         _chaffRenderer?.Dispose();
         _damageDebrisRenderer?.Dispose();
+        _commandGridRenderer?.Dispose();
         _debrisRenderer?.Dispose();
         _engineTrailRenderer?.Dispose();
         _nozzleGlowRenderer?.Dispose();

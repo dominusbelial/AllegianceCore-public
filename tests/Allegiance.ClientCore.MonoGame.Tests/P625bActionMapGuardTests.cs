@@ -39,6 +39,12 @@ public class P625bActionMapGuardTests
         "Game1.Director.cs",
         "Game1.Session.cs",
         "Game1.KeyBind.cs",
+        "Game1.Commanding.cs",
+        "Game1.FlightParts.cs",
+        "Game1.StarmapClick.cs",
+        "Game1.TargetCommands.cs",
+        "Game1.ConsoleModes.cs",
+        "Game1.Targeting.cs",
     };
 
     // Allow-list entries: (fileName, enclosingMethodName, keyLiteral).

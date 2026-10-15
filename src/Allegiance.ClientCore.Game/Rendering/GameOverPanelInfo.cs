@@ -84,6 +84,8 @@ public readonly record struct GameOverPanelInfo(
             AsciiSafe(go.GameoverMessage));
     }
 
+    public static string NextMatchTimer(int seconds) => $"NEXT MATCH IN {Math.Max(0, seconds)}s";
+
     private static string AsciiSafe(string s) =>
         Rendering.ChatLogFormat.AsciiSafe(s ?? "");
 }

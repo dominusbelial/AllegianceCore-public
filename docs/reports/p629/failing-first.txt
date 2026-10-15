@@ -1,0 +1,12 @@
+[xUnit.net 00:00:00.62]     Allegiance.Core.Tests.P629SectorPenaltyTests.Loaded_core_threshold_and_collision_damage(players: 73, lost: 0.000250000012) [FAIL]
+  Failed Allegiance.Core.Tests.P629SectorPenaltyTests.Loaded_core_threshold_and_collision_damage(players: 73, lost: 0.000250000012) [6 ms]
+  Error Message:
+   Assert.Equal() Failure: Values are not within 6 decimal places
+Expected: 0.99975 (rounded from 0.999750018)
+Actual:   1 (rounded from 1)
+  Stack Trace:
+     at Allegiance.Core.Tests.P629SectorPenaltyTests.Loaded_core_threshold_and_collision_damage(Int32 players, Single lost) in /home/domingo/allegiance-codex-sim/tests/Allegiance.Core.Tests/P629SectorPenaltyTests.cs:line 47
+   at InvokeStub_P629SectorPenaltyTests.Loaded_core_threshold_and_collision_damage(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     1, Passed:     2, Skipped:     0, Total:     3, Duration: 85 ms - Allegiance.Core.Tests.dll (net10.0)

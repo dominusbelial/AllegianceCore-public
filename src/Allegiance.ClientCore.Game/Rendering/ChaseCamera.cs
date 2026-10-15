@@ -29,6 +29,7 @@ public sealed class ChaseCamera
     /// </summary>
     public const float ReferenceRadius = 95f;
 
+    public float? DistanceOverride { get; set; }
     private readonly float _distanceBehind;
     private readonly float _heightAbove;
     private readonly float _nearPlane;
@@ -189,8 +190,8 @@ public sealed class ChaseCamera
         // both offsets proportionally to the framed ship's REAL rendered radius
         // (guarded: 0/unknown → scale 1, the old reference framing).
         float scale = shipRadius > 0f ? shipRadius / ReferenceRadius : 1f;
-        float behind = _distanceBehind * scale;
-        float above = _heightAbove * scale;
+        float behind = DistanceOverride is { } distance ? MathF.Max(distance, 5 + 2 * shipRadius) : _distanceBehind * scale;
+        float above = DistanceOverride is { } zoom ? behind * (_heightAbove / _distanceBehind) : _heightAbove * scale;
 
         // Offset direction uses the smoothed full orientation's own up/forward,
         // the same as native positioning the camera along orientationBfr's

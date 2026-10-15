@@ -327,7 +327,7 @@ public class PlayerMoneyAutoDonateTests
         int pumped = PumpTo(server, 65.0, 3000);
         Assert.True(pumped < 3000, "did not reach the first payday boundary");
 
-        long income = (long)(Mission.IncomePerPayday * (1.0f + mission.Sides.Single(s => s.Id == side0).Civilization.IncomeMoney));
+        long income = (long)(mission.IncomePerPayday * (1.0f + mission.Sides.Single(s => s.Id == side0).Civilization.IncomeMoney));
         int delta = (int)(income / 2);   // two players on the side
 
         // B donated his whole share to A ⇒ A pockets both shares, B pockets nothing.

@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.Tools.McpSpawner;
@@ -12,6 +13,8 @@ internal sealed partial class BotManager
         ActiveBot[] bots, Dictionary<short, FinalePlan> plans)
     {
         internal readonly object Sync = new();
+        internal readonly Dictionary<ActiveBot, long> Generations = bots.ToDictionary(b => b, b => b.LifeGeneration);
+        internal readonly Dictionary<ActiveBot, long> InitialKills = bots.ToDictionary(b => b, b => b.Kills);
         internal readonly ShowcaseFinale.Settings Settings = settings;
         internal readonly double Created = created;
         internal readonly ActiveBot[] Bots = bots;
@@ -23,16 +26,17 @@ internal sealed partial class BotManager
         internal short? Winner;
         internal string? EndReason;
         internal double LastUpdate = double.NegativeInfinity;
-        internal bool Rotated;
+        internal bool Rotated, NextRunCreated;
         internal long CohesionSamples, Protected, BombersKilled;
         internal double CohesionDistance;
     }
 
     private sealed class FinalePlan(short targetId, short targetSide, short sector,
-        ShowcaseFinale.StrikeLoadout loadout)
+        short targetTypeId, ShowcaseFinale.StrikeLoadout? loadout)
     {
         internal readonly short TargetId = targetId, TargetSide = targetSide, Sector = sector;
-        internal readonly ShowcaseFinale.StrikeLoadout Loadout = loadout;
+        internal readonly short TargetTypeId = targetTypeId;
+        internal ShowcaseFinale.StrikeLoadout? Loadout = loadout;
         internal double? KilledAt;
         internal int BomberBudget, EscortBudget;
     }
@@ -66,13 +70,14 @@ internal sealed partial class BotManager
                 .ThenBy(s => s.StationId).ToArray();
             if (targets.Length == 0) throw new ArgumentException("spawn_scenario: finale needs an observed enemy home station");
             var target = targets[0];
-            plans[side] = new(target.StationId, target.SideId, target.ClusterId,
-                ShowcaseFinale.SelectLoadout(core, core.StationTypes[target.StationTypeId]));
+            var observer = bots.First(b => b.Side == side);
+            var loadout = SelectFinaleLoadout(observer, core.StationTypes[target.StationTypeId], stations);
+            plans[side] = new(target.StationId, target.SideId, target.ClusterId, target.StationTypeId, loadout);
         }
         var run = new FinaleRun(settings, Now(), bots, plans);
         run.Maturity = plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
             bots.Count(b => b.Side == side), bots.Count(b => b.Side == side && b.CompletedPodCycles > 0),
-            bots.Where(b => b.Side == side).Sum(b => b.Kills))).ToArray();
+            bots.Where(b => b.Side == side).Sum(b => b.Kills - run.InitialKills[b]))).ToArray();
         lock (_gate)
         {
             foreach (var bot in bots) bot.Finale = run;
@@ -86,6 +91,55 @@ internal sealed partial class BotManager
         FinaleRun[] runs;
         lock (_gate) runs = _finales?.ToArray() ?? [];
         return runs.Select(r => FinaleView(r, Now())).ToArray();
+    }
+
+    private static ShowcaseFinale.StrikeLoadout? SelectFinaleLoadout(ActiveBot bot,
+        DataStationTypeIGC target, IReadOnlyList<DataStationIGC>? observedStations = null)
+    {
+        var core = Catalog.RepresentativeCore();
+        var techs = TechTreeBitMask.Empty;
+        bool knownTech = false;
+        short? dock = null;
+        if (bot.Cs is { } cs)
+        lock (cs.Gate)
+        {
+            var developments = cs.World.DevelopmentTechsFor(bot.Side);
+            knownTech = developments is not null;
+            techs = developments ?? TechTreeBitMask.Empty;
+            observedStations ??= cs.World.Stations.Values.ToArray();
+            if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.StationId >= 0) dock = me.StationId;
+        }
+        int developmentBits = techs.PopCount;
+        var owned = (observedStations ?? []).Where(s => s.SideId == bot.Side
+            && core.StationTypes.ContainsKey(s.StationTypeId)).ToArray();
+        // Side.Techs also includes the effects of all owned buildings.
+        foreach (var station in owned)
+            techs = techs.Or(TechTreeBitMask.FromBytes(core.StationTypes[station.StationTypeId].TtbmEffects));
+        var shop = owned.Where(s => dock is null || s.StationId == dock)
+            .OrderByDescending(s => s.StationId == dock)
+            .ThenByDescending(s => core.StationTypes[s.StationTypeId].HasCapability(DataStationTypeIGC.SabmRestart))
+            .ThenBy(s => s.StationId).Select(s => (DataStationTypeIGC?)core.StationTypes[s.StationTypeId]).FirstOrDefault();
+        if (shop is null) return Failed("no shop: no owned station type resolves for the current dock/home");
+        var selected = ShowcaseFinale.SelectLoadout(core, target, techs, shop.Value.TtbmLocal);
+        if (selected is not null) return selected;
+        var bombers = core.HullTypes.Values.Where(h => Showcase.IsPlayerBuyable(core, h)
+            && Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber).ToArray();
+        var buyable = bombers.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, shop.Value.TtbmLocal, techs)).ToArray();
+        return Failed(bombers.Length == 0 ? "no player-buyable bomber hull in catalogue"
+            : buyable.Length == 0 ? "no bomber hull passes the side + station tech gate"
+            : buyable.All(h => SuccessorUpgrade.HullIsObsolete(core, h, shop.Value.TtbmLocal, techs)) ? "all buyable bomber hulls are obsolete"
+            : "no fitting, buyable, nonobsolete fixed gun can damage the target within the bomber's energy/ammo budget");
+
+        ShowcaseFinale.StrikeLoadout? Failed(string reason)
+        {
+            var stationTypes = string.Join(",", (observedStations ?? []).Where(s => s.SideId == bot.Side)
+                .Select(s => $"{s.StationId}:{s.StationTypeId}"));
+            Console.WriteLine($"[finale] side {bot.Side}, {bot.Name}: no buyable bomber strike loadout: {reason}; "
+                + $"developmentTechs={(knownTech ? developmentBits.ToString() : "unknown (no CREATE_BUCKETS/SIDE_TECH_CHANGE)")}, "
+                + $"sideTechBits={techs.PopCount}, shopType={shop?.StationTypeId}, dock={dock}, "
+                + $"ownedStations(id:type)=[{stationTypes}], targetType={target.StationTypeId}; keeping existing bomber loadout");
+            return null;
+        }
     }
 
     private static object FinaleView(FinaleRun run, double now)
@@ -115,6 +169,7 @@ internal sealed partial class BotManager
                 gameOverAt = Relative(run.GameOverAt), winner = run.Winner, gameOverReason = run.EndReason,
                 wings = run.Plans.Select(kv => new { side = kv.Key, targetStation = kv.Value.TargetId,
                     targetSide = kv.Value.TargetSide, targetSector = kv.Value.Sector, loadout = kv.Value.Loadout,
+                    usingExistingBomberLoadouts = kv.Value.Loadout is null,
                     reservedBombers = kv.Value.BomberBudget, escortBudget = kv.Value.EscortBudget,
                     requestedBombers = config.Bombers,
                     bomberShortfall = run.Sides.Contains(kv.Key) ? Math.Max(0, config.Bombers - kv.Value.BomberBudget) : 0,
@@ -124,7 +179,9 @@ internal sealed partial class BotManager
                     targetKilledAt = Relative(kv.Value.KilledAt),
                     timeToKillSeconds = kv.Value.KilledAt is { } kill && run.StrikeStartedAt is { } start ? (double?)(kill - start) : null,
                     grants = run.Bots.Where(b => b.Side == kv.Key && b.FinaleBomberActive)
-                        .Select(b => new { b.Name, grantedHull = b.Granted.HullId, verified = b.FinaleGrantVerified, isPod = b.IsPod, docked = b.PodDocked, warning = b.GrantWarning }).ToArray(),
+                        .Select(b => new { b.Name, requestedHull = b.HullId, requestedHullName = b.HullName,
+                            requestedParts = b.Parts, grantedHull = b.Granted.HullId,
+                            verified = b.FinaleGrantVerified, isPod = b.IsPod, docked = b.PodDocked, warning = b.GrantWarning }).ToArray(),
                 }).ToArray(),
                 escortCohesionAverageDistance = run.CohesionSamples > 0 ? (double?)(run.CohesionDistance / run.CohesionSamples) : null,
                 escortCohesionSamples = run.CohesionSamples,
@@ -142,8 +199,43 @@ internal sealed partial class BotManager
         }
     }
 
+    // The old run remains available as the finished game's report. Re-arm only
+    // after EVERY participating bot has reset and resolved the fresh world; old
+    // station ids and the old maturity/kill window must never drive a new strike.
+    private void RearmRotatedFinales()
+    {
+        FinaleRun[] runs;
+        lock (_gate) runs = _finales?.ToArray() ?? [];
+        foreach (var run in runs)
+        {
+            lock (run.Sync)
+                if (!run.Rotated || run.NextRunCreated) continue;
+            var bots = run.Bots.Where(IsParticipating).ToArray();
+            if (bots.Length == 0 || bots.Any(b => !b.FinaleResetObserved || b.ObjectivesPending
+                || !ReferenceEquals(b.Finale, run) || b.LifeGeneration <= run.Generations[b])) continue;
+            DataStationIGC[] stations = [];
+            bool ready = true;
+            foreach (var bot in bots)
+            {
+                if (bot.Cs is not { } cs) { ready = false; break; }
+                lock (cs.Gate)
+                {
+                    if (!cs.World.WorldReady || cs.World.GameOverResult is not null
+                        || cs.World.Mission?.Stage != MissionStageMessage.StageStarted)
+                    { ready = false; break; }
+                    if (stations.Length == 0) stations = cs.World.Stations.Values.ToArray();
+                }
+            }
+            if (!ready || bots.Any(b => !stations.Any(s => s.SideId >= 0 && s.SideId != b.Side))) continue;
+            RegisterFinale(run.Settings, bots.Select(b => b.Name).ToArray(), stations);
+            lock (run.Sync) run.NextRunCreated = true;
+            Console.WriteLine($"[finale] re-armed for next mission with {bots.Length} bots and fresh station objectives");
+        }
+    }
+
     private void UpdateFinales(double now)
     {
+        RearmRotatedFinales();
         FinaleRun[] runs;
         lock (_gate) runs = _finales?.ToArray() ?? [];
         foreach (var run in runs)
@@ -156,7 +248,7 @@ internal sealed partial class BotManager
             var bots = run.Bots.Where(b => IsParticipating(b) && !b.SpawnPending).ToArray();
             run.Maturity = run.Plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
                 bots.Count(b => b.Side == side), bots.Count(b => b.Side == side && b.CompletedPodCycles > 0),
-                run.Bots.Where(b => b.Side == side).Sum(b => b.Kills))).ToArray();
+                run.Bots.Where(b => b.Side == side).Sum(b => b.Kills - run.InitialKills[b]))).ToArray();
             foreach (var bot in bots)
             {
                 var cs = bot.Cs!;
@@ -198,9 +290,9 @@ internal sealed partial class BotManager
         }
     }
 
-    private static bool IsFinaleBomber(ActiveBot bot) => bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase)
-        || (Catalog.RepresentativeCore().HullTypes.TryGetValue(bot.HullId, out var hull)
-            && Showcase.ClassifyHull(hull) == Showcase.HullRole.Bomber);
+    private static bool IsFinaleBomber(ActiveBot bot) =>
+        Catalog.RepresentativeCore().HullTypes.TryGetValue(bot.HullId, out var hull)
+        && Showcase.ClassifyHull(hull) == Showcase.HullRole.Bomber;
 
     private static bool IsFinaleFighter(ActiveBot bot) =>
         (bot.Role.Equals("fighter", StringComparison.OrdinalIgnoreCase) || bot.Role.Equals("interceptor", StringComparison.OrdinalIgnoreCase))
@@ -223,14 +315,18 @@ internal sealed partial class BotManager
                 bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Arena, bot.Role);
             if (bot.FinaleBomberReserved)
             {
-                var loadout = plan.Loadout;
-                bot.HullId = loadout.HullId; bot.HullName = loadout.HullName; bot.Parts = loadout.Parts;
-                bot.WeaponPartId = Catalog.FirstWeaponPartId(loadout.Parts);
-                bot.LauncherPartId = loadout.Parts.Where(p => Catalog.RepresentativeCore().Launchers.TryGetValue(p.PartId, out var l)
-                    && Catalog.RepresentativeCore().MissileTypes.ContainsKey(l.ExpendabletypeId)).Select(p => (short?)p.PartId).FirstOrDefault();
-                bot.MissileReadyTime = bot.LauncherPartId is { } id ? Catalog.LauncherReadyTime(id) : 0;
-                bot.MineDispenserPartId = null;
-                bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
+                var loadout = SelectFinaleLoadout(bot, Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId]);
+                plan.Loadout = loadout;
+                if (loadout is not null)
+                {
+                    bot.HullId = loadout.HullId; bot.HullName = loadout.HullName; bot.Parts = loadout.Parts;
+                    bot.WeaponPartId = Catalog.FirstWeaponPartId(loadout.Parts);
+                    bot.LauncherPartId = loadout.Parts.Where(p => Catalog.RepresentativeCore().Launchers.TryGetValue(p.PartId, out var l)
+                        && Catalog.RepresentativeCore().MissileTypes.ContainsKey(l.ExpendabletypeId)).Select(p => (short?)p.PartId).FirstOrDefault();
+                    bot.MissileReadyTime = bot.LauncherPartId is { } id ? Catalog.LauncherReadyTime(id) : 0;
+                    bot.MineDispenserPartId = null;
+                    bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
+                }
                 bot.Role = "bomber";
                 bot.FinaleBomberActive = true;
             }
@@ -241,12 +337,18 @@ internal sealed partial class BotManager
         }
     }
 
-    private static void RestoreFinaleForNextMission(ActiveBot bot)
+    private static void RestoreFinaleForNextMission(ActiveBot bot, double now, GameOver? over)
     {
         if (bot.Finale is not { } run) return;
         lock (run.Sync)
         {
             run.Rotated = true;
+            if (over is not null)
+            {
+                run.GameOverAt ??= now;
+                run.Winner = over.SideWinner;
+                run.EndReason = over.GameoverMessage;
+            }
             if (bot.FinaleOriginal is { } original)
             {
                 bot.HullId = original.Hull; bot.HullName = original.Name; bot.Parts = original.Parts;
@@ -256,6 +358,7 @@ internal sealed partial class BotManager
                 bot.RouteIndex = original.RouteIndex; bot.Arena = original.Arena; bot.Role = original.Role;
                 bot.MineDispenserPartId = original.Parts is { } parts ? FindMineDispenser(parts) : null;
             }
+            bot.FinaleOriginal = null;
             bot.FinaleBomberReserved = bot.FinaleBomberActive = bot.FinaleEscort = false;
             bot.FinaleProtectedSince = null;
             bot.FinaleGrantVerified = false;

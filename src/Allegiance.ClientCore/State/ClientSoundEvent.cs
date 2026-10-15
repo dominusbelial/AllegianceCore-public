@@ -37,10 +37,18 @@ public enum ClientSoundEventKind
     /// Mapped to the <c>jumpin</c> one-shot, the same wave native's jumpSound
     /// plays.</summary>
     TeleportArrived,
+
+    /// <summary>Native newCommandMsgSound, appmsg.cpp:1757.</summary>
+    SectorHighlighted,
+
+    /// <summary>POSITIONREQ: salPlayerWaitingSound (appmsg.cpp:2481).</summary>
+    PlayerWaiting,
 }
 
 /// <summary>A single observed sound event.</summary>
 /// <param name="Kind"><see cref="ClientSoundEventKind"/>.</param>
 /// <param name="Id">The subject's id — the station id for station events, the
 /// development id for a dev completion.</param>
-public readonly record struct ClientSoundEvent(ClientSoundEventKind Kind, short Id);
+/// <param name="StationTypeId">Station type at receipt time, before destruction
+/// removes the station or subsequent exports replace it. Other events use NA.</param>
+public readonly record struct ClientSoundEvent(ClientSoundEventKind Kind, short Id, short StationTypeId = -1);

@@ -1,0 +1,6191 @@
+{
+  "task": "P673",
+  "fixture": "390 real-side TCP loopback peers, m2xspiderw, native/parallel updates, pool=4, server/concurrent GC; phase markers in full logs",
+  "synthetic_shape": "3 packets/peer, 65536 packet bytes including CRC, one padded 65532-byte SHIP_UPDATE each; five aligned bursts",
+  "runs": {
+    "off": {
+      "observations": [
+        {
+          "phase": "idle-rosters",
+          "startTick": 70,
+          "endTick": 170,
+          "packets": 0,
+          "rostersPerPeer": [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ],
+          "latestRosterEntries": 390,
+          "latestRosterBytes": 21848
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 170,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4244
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 173,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6648
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 176,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 4.5407
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 179,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6407
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 182,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.7048
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 185,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5564
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 188,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.665
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 191,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 3.337
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 194,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 3.0247
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 197,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 3.002
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 200,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 3.5739
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 203,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5315
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 206,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5565
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 209,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.584
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 212,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5057
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 215,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5903
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 218,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5999
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 221,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4972
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 224,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.476
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 227,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5712
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 230,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6945
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 233,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4945
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 236,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.9354
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 239,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6775
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 242,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.78
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 245,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4504
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 248,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4443
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 251,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5675
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 254,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6435
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 257,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5363
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 260,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5178
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 263,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4835
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 266,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5366
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 269,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.7565
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 270,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 39.8227
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 275,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 34.5146
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 280,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 29.8222
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 285,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 32.4263
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 290,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 38.951
+        },
+        {
+          "phase": "final",
+          "peers": 390,
+          "stageFailures": 0,
+          "packets": 19890,
+          "drained": 20280,
+          "deferred": 0
+        }
+      ],
+      "summary": {
+        "idle-rosters": {
+          "ticks": 100,
+          "messages": 0,
+          "bytes": 0,
+          "all_tick_drain": {
+            "n": 100,
+            "min_ms": 0.001,
+            "median_ms": 0.002,
+            "p95_ms": 0.005,
+            "max_ms": 0.177
+          },
+          "nonempty_tick_drain": null,
+          "fmids": {},
+          "slowticks": 20
+        },
+        "ordinary-controls": {
+          "ticks": 100,
+          "messages": 13260,
+          "bytes": 636480,
+          "all_tick_drain": {
+            "n": 100,
+            "min_ms": 0.003,
+            "median_ms": 0.005,
+            "p95_ms": 0.989,
+            "max_ms": 10.531
+          },
+          "nonempty_tick_drain": {
+            "n": 34,
+            "min_ms": 0.759,
+            "median_ms": 0.908,
+            "p95_ms": 1.525,
+            "max_ms": 10.531
+          },
+          "fmids": {
+            "24": {
+              "messages": 13260,
+              "bytes": 636480
+            }
+          },
+          "slowticks": 0
+        },
+        "seating": {
+          "ticks": 70,
+          "messages": 780,
+          "bytes": 445660,
+          "all_tick_drain": {
+            "n": 70,
+            "min_ms": 0.001,
+            "median_ms": 0.158,
+            "p95_ms": 1.001,
+            "max_ms": 22.357
+          },
+          "nonempty_tick_drain": {
+            "n": 58,
+            "min_ms": 0.023,
+            "median_ms": 0.1745,
+            "p95_ms": 1.008,
+            "max_ms": 22.357
+          },
+          "fmids": {
+            "1": {
+              "messages": 390,
+              "bytes": 443320
+            },
+            "39": {
+              "messages": 390,
+              "bytes": 2340
+            }
+          },
+          "slowticks": 15
+        },
+        "settle": {
+          "ticks": 5,
+          "messages": 0,
+          "bytes": 0,
+          "all_tick_drain": {
+            "n": 5,
+            "min_ms": 0.002,
+            "median_ms": 0.005,
+            "p95_ms": 0.006,
+            "max_ms": 0.006
+          },
+          "nonempty_tick_drain": null,
+          "fmids": {},
+          "slowticks": 0
+        },
+        "synthetic-padded-bursts": {
+          "ticks": 25,
+          "messages": 5850,
+          "bytes": 383362200,
+          "all_tick_drain": {
+            "n": 25,
+            "min_ms": 0.002,
+            "median_ms": 0.003,
+            "p95_ms": 211.477,
+            "max_ms": 220.558
+          },
+          "nonempty_tick_drain": {
+            "n": 5,
+            "min_ms": 190.074,
+            "median_ms": 208.267,
+            "p95_ms": 220.558,
+            "max_ms": 220.558
+          },
+          "fmids": {
+            "24": {
+              "messages": 5850,
+              "bytes": 383362200
+            }
+          },
+          "slowticks": 5
+        }
+      },
+      "tick_columns": [
+        "phase",
+        "tick",
+        "messages",
+        "message_bytes",
+        "drain_ms"
+      ],
+      "ticks": [
+        [
+          "seating",
+          0,
+          20,
+          22710,
+          22.357
+        ],
+        [
+          "seating",
+          1,
+          20,
+          120,
+          0.407
+        ],
+        [
+          "seating",
+          2,
+          19,
+          21584,
+          0.439
+        ],
+        [
+          "seating",
+          3,
+          20,
+          1250,
+          0.121
+        ],
+        [
+          "seating",
+          4,
+          1,
+          6,
+          0.043
+        ],
+        [
+          "seating",
+          5,
+          0,
+          0,
+          0.001
+        ],
+        [
+          "seating",
+          6,
+          18,
+          20448,
+          0.434
+        ],
+        [
+          "seating",
+          7,
+          20,
+          2380,
+          0.178
+        ],
+        [
+          "seating",
+          8,
+          2,
+          12,
+          0.049
+        ],
+        [
+          "seating",
+          9,
+          19,
+          21584,
+          0.508
+        ],
+        [
+          "seating",
+          10,
+          20,
+          1250,
+          0.159
+        ],
+        [
+          "seating",
+          11,
+          1,
+          6,
+          0.067
+        ],
+        [
+          "seating",
+          12,
+          20,
+          22720,
+          0.843
+        ],
+        [
+          "seating",
+          13,
+          20,
+          120,
+          0.144
+        ],
+        [
+          "seating",
+          14,
+          19,
+          21603,
+          0.85
+        ],
+        [
+          "seating",
+          15,
+          20,
+          1251,
+          0.177
+        ],
+        [
+          "seating",
+          16,
+          1,
+          6,
+          0.053
+        ],
+        [
+          "seating",
+          17,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "seating",
+          18,
+          19,
+          21603,
+          0.867
+        ],
+        [
+          "seating",
+          19,
+          20,
+          1251,
+          0.157
+        ],
+        [
+          "seating",
+          20,
+          1,
+          6,
+          0.05
+        ],
+        [
+          "seating",
+          21,
+          19,
+          21603,
+          0.948
+        ],
+        [
+          "seating",
+          22,
+          20,
+          1251,
+          0.165
+        ],
+        [
+          "seating",
+          23,
+          1,
+          6,
+          0.042
+        ],
+        [
+          "seating",
+          24,
+          19,
+          21603,
+          0.872
+        ],
+        [
+          "seating",
+          25,
+          20,
+          1251,
+          0.145
+        ],
+        [
+          "seating",
+          26,
+          1,
+          6,
+          0.045
+        ],
+        [
+          "seating",
+          27,
+          19,
+          21603,
+          0.962
+        ],
+        [
+          "seating",
+          28,
+          20,
+          1251,
+          0.18
+        ],
+        [
+          "seating",
+          29,
+          1,
+          6,
+          0.051
+        ],
+        [
+          "seating",
+          30,
+          19,
+          21603,
+          1.008
+        ],
+        [
+          "seating",
+          31,
+          20,
+          1251,
+          0.165
+        ],
+        [
+          "seating",
+          32,
+          1,
+          6,
+          0.052
+        ],
+        [
+          "seating",
+          33,
+          19,
+          21603,
+          1.019
+        ],
+        [
+          "seating",
+          34,
+          20,
+          1251,
+          0.29
+        ],
+        [
+          "seating",
+          35,
+          1,
+          6,
+          0.05
+        ],
+        [
+          "seating",
+          36,
+          19,
+          21603,
+          1.001
+        ],
+        [
+          "seating",
+          37,
+          20,
+          1251,
+          0.175
+        ],
+        [
+          "seating",
+          38,
+          1,
+          6,
+          0.055
+        ],
+        [
+          "seating",
+          39,
+          16,
+          18192,
+          0.786
+        ],
+        [
+          "seating",
+          40,
+          20,
+          4644,
+          0.285
+        ],
+        [
+          "seating",
+          41,
+          4,
+          24,
+          0.075
+        ],
+        [
+          "seating",
+          42,
+          19,
+          21603,
+          0.943
+        ],
+        [
+          "seating",
+          43,
+          20,
+          1251,
+          0.252
+        ],
+        [
+          "seating",
+          44,
+          1,
+          6,
+          0.051
+        ],
+        [
+          "seating",
+          45,
+          19,
+          21603,
+          0.959
+        ],
+        [
+          "seating",
+          46,
+          20,
+          1251,
+          0.17
+        ],
+        [
+          "seating",
+          47,
+          1,
+          6,
+          0.036
+        ],
+        [
+          "seating",
+          48,
+          12,
+          13644,
+          0.474
+        ],
+        [
+          "seating",
+          49,
+          20,
+          9168,
+          0.389
+        ],
+        [
+          "seating",
+          50,
+          8,
+          48,
+          0.075
+        ],
+        [
+          "seating",
+          51,
+          19,
+          21603,
+          0.686
+        ],
+        [
+          "seating",
+          52,
+          20,
+          1251,
+          0.146
+        ],
+        [
+          "seating",
+          53,
+          1,
+          6,
+          0.027
+        ],
+        [
+          "seating",
+          54,
+          19,
+          21603,
+          0.735
+        ],
+        [
+          "seating",
+          55,
+          20,
+          1251,
+          0.159
+        ],
+        [
+          "seating",
+          56,
+          1,
+          6,
+          0.023
+        ],
+        [
+          "seating",
+          57,
+          9,
+          10233,
+          0.37
+        ],
+        [
+          "seating",
+          58,
+          10,
+          1191,
+          0.174
+        ],
+        [
+          "seating",
+          59,
+          1,
+          6,
+          0.038
+        ],
+        [
+          "seating",
+          60,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "seating",
+          61,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          62,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "seating",
+          63,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          64,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          65,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "seating",
+          66,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          67,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "seating",
+          68,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "seating",
+          69,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          70,
+          0,
+          0,
+          0.012
+        ],
+        [
+          "idle-rosters",
+          71,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          72,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          73,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          74,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          75,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "idle-rosters",
+          76,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "idle-rosters",
+          77,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          78,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          79,
+          0,
+          0,
+          0.177
+        ],
+        [
+          "idle-rosters",
+          80,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          81,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          82,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          83,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          84,
+          0,
+          0,
+          0.001
+        ],
+        [
+          "idle-rosters",
+          85,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          86,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          87,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          88,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          89,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          90,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          91,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          92,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          93,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          94,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          95,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          96,
+          0,
+          0,
+          0.001
+        ],
+        [
+          "idle-rosters",
+          97,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          98,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          99,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          100,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          101,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          102,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          103,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          104,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          105,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          106,
+          0,
+          0,
+          0.001
+        ],
+        [
+          "idle-rosters",
+          107,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          108,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          109,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          110,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          111,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          112,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          113,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          114,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          115,
+          0,
+          0,
+          0.001
+        ],
+        [
+          "idle-rosters",
+          116,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          117,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          118,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          119,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          120,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          121,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          122,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          123,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          124,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          125,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          126,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          127,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          128,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          129,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          130,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          131,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          132,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          133,
+          0,
+          0,
+          0.017
+        ],
+        [
+          "idle-rosters",
+          134,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          135,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          136,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          137,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          138,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          139,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          140,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          141,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          142,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          143,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          144,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          145,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          146,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          147,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          148,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          149,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          150,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          151,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          152,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "idle-rosters",
+          153,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          154,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          155,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          156,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          157,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          158,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          159,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          160,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          161,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          162,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          163,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          164,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          165,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          166,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          167,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          168,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          169,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          170,
+          390,
+          18720,
+          1.119
+        ],
+        [
+          "ordinary-controls",
+          171,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          172,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          173,
+          390,
+          18720,
+          0.958
+        ],
+        [
+          "ordinary-controls",
+          174,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          175,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          176,
+          390,
+          18720,
+          0.907
+        ],
+        [
+          "ordinary-controls",
+          177,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          178,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          179,
+          390,
+          18720,
+          0.989
+        ],
+        [
+          "ordinary-controls",
+          180,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          181,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          182,
+          390,
+          18720,
+          0.997
+        ],
+        [
+          "ordinary-controls",
+          183,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          184,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          185,
+          390,
+          18720,
+          0.942
+        ],
+        [
+          "ordinary-controls",
+          186,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          187,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          188,
+          390,
+          18720,
+          10.531
+        ],
+        [
+          "ordinary-controls",
+          189,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          190,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          191,
+          390,
+          18720,
+          0.909
+        ],
+        [
+          "ordinary-controls",
+          192,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          193,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          194,
+          390,
+          18720,
+          0.895
+        ],
+        [
+          "ordinary-controls",
+          195,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          196,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          197,
+          390,
+          18720,
+          0.913
+        ],
+        [
+          "ordinary-controls",
+          198,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          199,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          200,
+          390,
+          18720,
+          0.872
+        ],
+        [
+          "ordinary-controls",
+          201,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          202,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          203,
+          390,
+          18720,
+          0.837
+        ],
+        [
+          "ordinary-controls",
+          204,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          205,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          206,
+          390,
+          18720,
+          0.879
+        ],
+        [
+          "ordinary-controls",
+          207,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          208,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          209,
+          390,
+          18720,
+          0.856
+        ],
+        [
+          "ordinary-controls",
+          210,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          211,
+          0,
+          0,
+          0.007
+        ],
+        [
+          "ordinary-controls",
+          212,
+          390,
+          18720,
+          0.862
+        ],
+        [
+          "ordinary-controls",
+          213,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          214,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          215,
+          390,
+          18720,
+          0.81
+        ],
+        [
+          "ordinary-controls",
+          216,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          217,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          218,
+          390,
+          18720,
+          0.762
+        ],
+        [
+          "ordinary-controls",
+          219,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          220,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          221,
+          390,
+          18720,
+          0.759
+        ],
+        [
+          "ordinary-controls",
+          222,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          223,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          224,
+          390,
+          18720,
+          0.939
+        ],
+        [
+          "ordinary-controls",
+          225,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          226,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          227,
+          390,
+          18720,
+          0.976
+        ],
+        [
+          "ordinary-controls",
+          228,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          229,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          230,
+          390,
+          18720,
+          0.916
+        ],
+        [
+          "ordinary-controls",
+          231,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          232,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          233,
+          390,
+          18720,
+          1.122
+        ],
+        [
+          "ordinary-controls",
+          234,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          235,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          236,
+          390,
+          18720,
+          0.988
+        ],
+        [
+          "ordinary-controls",
+          237,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          238,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          239,
+          390,
+          18720,
+          0.932
+        ],
+        [
+          "ordinary-controls",
+          240,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          241,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          242,
+          390,
+          18720,
+          0.869
+        ],
+        [
+          "ordinary-controls",
+          243,
+          0,
+          0,
+          0.007
+        ],
+        [
+          "ordinary-controls",
+          244,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          245,
+          390,
+          18720,
+          1.525
+        ],
+        [
+          "ordinary-controls",
+          246,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          247,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          248,
+          390,
+          18720,
+          0.884
+        ],
+        [
+          "ordinary-controls",
+          249,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          250,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          251,
+          390,
+          18720,
+          0.906
+        ],
+        [
+          "ordinary-controls",
+          252,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          253,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          254,
+          390,
+          18720,
+          0.931
+        ],
+        [
+          "ordinary-controls",
+          255,
+          0,
+          0,
+          0.007
+        ],
+        [
+          "ordinary-controls",
+          256,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          257,
+          390,
+          18720,
+          0.95
+        ],
+        [
+          "ordinary-controls",
+          258,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          259,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          260,
+          390,
+          18720,
+          0.864
+        ],
+        [
+          "ordinary-controls",
+          261,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          262,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          263,
+          390,
+          18720,
+          0.877
+        ],
+        [
+          "ordinary-controls",
+          264,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          265,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          266,
+          390,
+          18720,
+          0.828
+        ],
+        [
+          "ordinary-controls",
+          267,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          268,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          269,
+          390,
+          18720,
+          0.837
+        ],
+        [
+          "synthetic-padded-bursts",
+          270,
+          1170,
+          76672440,
+          208.267
+        ],
+        [
+          "synthetic-padded-bursts",
+          271,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          272,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          273,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          274,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          275,
+          1170,
+          76672440,
+          220.558
+        ],
+        [
+          "synthetic-padded-bursts",
+          276,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          277,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          278,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "synthetic-padded-bursts",
+          279,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          280,
+          1170,
+          76672440,
+          190.074
+        ],
+        [
+          "synthetic-padded-bursts",
+          281,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          282,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          283,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          284,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          285,
+          1170,
+          76672440,
+          211.477
+        ],
+        [
+          "synthetic-padded-bursts",
+          286,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          287,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          288,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          289,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          290,
+          1170,
+          76672440,
+          198.261
+        ],
+        [
+          "synthetic-padded-bursts",
+          291,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          292,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          293,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          294,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "settle",
+          295,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "settle",
+          296,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "settle",
+          297,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "settle",
+          298,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "settle",
+          299,
+          0,
+          0,
+          0.004
+        ]
+      ],
+      "histograms": [
+        "[inbound-window] tick:messages/bytes/drainMs[0:20/22710/22.357,1:20/120/0.407,2:19/21584/0.439,3:20/1250/0.121,4:1/6/0.043,5:0/0/0.001,6:18/20448/0.434,7:20/2380/0.178,8:2/12/0.049,9:19/21584/0.508,10:20/1250/0.159,11:1/6/0.067,12:20/22720/0.843,13:20/120/0.144,14:19/21603/0.850,15:20/1251/0.177,16:1/6/0.053,17:0/0/0.004,18:19/21603/0.867,19:20/1251/0.157,20:1/6/0.050,21:19/21603/0.948,22:20/1251/0.165,23:1/6/0.042,24:19/21603/0.872,25:20/1251/0.145,26:1/6/0.045,27:19/21603/0.962,28:20/1251/0.180,29:1/6/0.051,30:19/21603/1.008,31:20/1251/0.165,32:1/6/0.052,33:19/21603/1.019,34:20/1251/0.290,35:1/6/0.050,36:19/21603/1.001,37:20/1251/0.175,38:1/6/0.055,39:16/18192/0.786,40:20/4644/0.285,41:4/24/0.075,42:19/21603/0.943,43:20/1251/0.252,44:1/6/0.051,45:19/21603/0.959,46:20/1251/0.170,47:1/6/0.036,48:12/13644/0.474,49:20/9168/0.389,50:8/48/0.075,51:19/21603/0.686,52:20/1251/0.146,53:1/6/0.027,54:19/21603/0.735,55:20/1251/0.159,56:1/6/0.023,57:9/10233/0.370,58:10/1191/0.174,59:1/6/0.038,60:0/0/0.004,61:0/0/0.003,62:0/0/0.004,63:0/0/0.003,64:0/0/0.003,65:0/0/0.005,66:0/0/0.003,67:0/0/0.004,68:0/0/0.004,69:0/0/0.004,70:0/0/0.012,71:0/0/0.003,72:0/0/0.004,73:0/0/0.004,74:0/0/0.004,75:0/0/0.005,76:0/0/0.005,77:0/0/0.004,78:0/0/0.004,79:0/0/0.177,80:0/0/0.003,81:0/0/0.002,82:0/0/0.003,83:0/0/0.002,84:0/0/0.001,85:0/0/0.002,86:0/0/0.003,87:0/0/0.002,88:0/0/0.002,89:0/0/0.003,90:0/0/0.003,91:0/0/0.002,92:0/0/0.002,93:0/0/0.002,94:0/0/0.002,95:0/0/0.002,96:0/0/0.001,97:0/0/0.002,98:0/0/0.002,99:0/0/0.003]",
+        "[inbound-window] tick:messages/bytes/drainMs[100:0/0/0.002,101:0/0/0.002,102:0/0/0.002,103:0/0/0.002,104:0/0/0.002,105:0/0/0.002,106:0/0/0.001,107:0/0/0.003,108:0/0/0.003,109:0/0/0.002,110:0/0/0.002,111:0/0/0.002,112:0/0/0.002,113:0/0/0.002,114:0/0/0.002,115:0/0/0.001,116:0/0/0.002,117:0/0/0.002,118:0/0/0.002,119:0/0/0.002,120:0/0/0.002,121:0/0/0.002,122:0/0/0.003,123:0/0/0.002,124:0/0/0.002,125:0/0/0.002,126:0/0/0.002,127:0/0/0.002,128:0/0/0.003,129:0/0/0.002,130:0/0/0.002,131:0/0/0.003,132:0/0/0.002,133:0/0/0.017,134:0/0/0.002,135:0/0/0.004,136:0/0/0.003,137:0/0/0.004,138:0/0/0.002,139:0/0/0.003,140:0/0/0.002,141:0/0/0.002,142:0/0/0.004,143:0/0/0.003,144:0/0/0.003,145:0/0/0.002,146:0/0/0.003,147:0/0/0.004,148:0/0/0.002,149:0/0/0.002,150:0/0/0.002,151:0/0/0.003,152:0/0/0.005,153:0/0/0.003,154:0/0/0.002,155:0/0/0.002,156:0/0/0.002,157:0/0/0.003,158:0/0/0.003,159:0/0/0.003,160:0/0/0.004,161:0/0/0.002,162:0/0/0.003,163:0/0/0.002,164:0/0/0.003,165:0/0/0.002,166:0/0/0.003,167:0/0/0.003,168:0/0/0.003,169:0/0/0.003,170:390/18720/1.119,171:0/0/0.005,172:0/0/0.004,173:390/18720/0.958,174:0/0/0.005,175:0/0/0.005,176:390/18720/0.907,177:0/0/0.004,178:0/0/0.004,179:390/18720/0.989,180:0/0/0.004,181:0/0/0.004,182:390/18720/0.997,183:0/0/0.003,184:0/0/0.004,185:390/18720/0.942,186:0/0/0.006,187:0/0/0.004,188:390/18720/10.531,189:0/0/0.004,190:0/0/0.004,191:390/18720/0.909,192:0/0/0.005,193:0/0/0.004,194:390/18720/0.895,195:0/0/0.004,196:0/0/0.004,197:390/18720/0.913,198:0/0/0.004,199:0/0/0.003]",
+        "[inbound-window] tick:messages/bytes/drainMs[200:390/18720/0.872,201:0/0/0.004,202:0/0/0.004,203:390/18720/0.837,204:0/0/0.004,205:0/0/0.004,206:390/18720/0.879,207:0/0/0.004,208:0/0/0.004,209:390/18720/0.856,210:0/0/0.004,211:0/0/0.007,212:390/18720/0.862,213:0/0/0.005,214:0/0/0.006,215:390/18720/0.810,216:0/0/0.005,217:0/0/0.005,218:390/18720/0.762,219:0/0/0.004,220:0/0/0.005,221:390/18720/0.759,222:0/0/0.005,223:0/0/0.004,224:390/18720/0.939,225:0/0/0.005,226:0/0/0.004,227:390/18720/0.976,228:0/0/0.004,229:0/0/0.004,230:390/18720/0.916,231:0/0/0.004,232:0/0/0.003,233:390/18720/1.122,234:0/0/0.004,235:0/0/0.004,236:390/18720/0.988,237:0/0/0.004,238:0/0/0.004,239:390/18720/0.932,240:0/0/0.004,241:0/0/0.004,242:390/18720/0.869,243:0/0/0.007,244:0/0/0.004,245:390/18720/1.525,246:0/0/0.004,247:0/0/0.004,248:390/18720/0.884,249:0/0/0.006,250:0/0/0.006,251:390/18720/0.906,252:0/0/0.005,253:0/0/0.004,254:390/18720/0.931,255:0/0/0.007,256:0/0/0.005,257:390/18720/0.950,258:0/0/0.004,259:0/0/0.006,260:390/18720/0.864,261:0/0/0.006,262:0/0/0.003,263:390/18720/0.877,264:0/0/0.004,265:0/0/0.006,266:390/18720/0.828,267:0/0/0.004,268:0/0/0.004,269:390/18720/0.837,270:1170/76672440/208.267,271:0/0/0.003,272:0/0/0.003,273:0/0/0.002,274:0/0/0.002,275:1170/76672440/220.558,276:0/0/0.003,277:0/0/0.003,278:0/0/0.004,279:0/0/0.002,280:1170/76672440/190.074,281:0/0/0.003,282:0/0/0.003,283:0/0/0.002,284:0/0/0.002,285:1170/76672440/211.477,286:0/0/0.003,287:0/0/0.002,288:0/0/0.002,289:0/0/0.003,290:1170/76672440/198.261,291:0/0/0.002,292:0/0/0.003,293:0/0/0.003,294:0/0/0.003,295:0/0/0.002,296:0/0/0.005,297:0/0/0.006,298:0/0/0.005,299:0/0/0.004]"
+      ],
+      "slowticks": [
+        {
+          "phase": "seating",
+          "line": "[slowtick] #2 wall=67ms (\u226550ms) top8[ step:sideSelection=41ms, step:broadcastShipStates=12ms, bss.build=6ms, step:broadcastShipsUpdate=5ms, bss.apply=4ms, step:broadcastStations=2ms, step:broadcastScoreRoster=2ms, bss.snapshot=2ms ] bucketSum=75ms unaccounted=-8ms gc(gen0+7,gen1+1,gen2+1,pause+9ms) parallel-worker max=4ms (workers=20)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #14 wall=52ms (\u226550ms) top8[ step:sideSelection=26ms, step:broadcastShipStates=20ms, bss.apply=15ms, step:broadcastShipsUpdate=5ms, bss.build=5ms, step:broadcastMissileTrackWarning=0ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=71ms unaccounted=-19ms gc(gen0+2,gen1+1,gen2+1,pause+16ms) parallel-worker max=1ms (workers=100)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #26 wall=51ms (\u226550ms) top8[ step:sideSelection=27ms, step:broadcastShipsUpdate=11ms, step:broadcastShipStates=11ms, bss.build=6ms, bss.apply=5ms, step:broadcastMissileTrackWarning=0ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=61ms unaccounted=-10ms gc(gen0+1,gen1+0,gen2+0,pause+8ms) parallel-worker max=0ms (workers=179)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #29 wall=69ms (\u226550ms) top8[ step:broadcastShipsUpdate=19ms, step:broadcastShipStates=19ms, step:sideSelection=16ms, step:shipWarnings=14ms, bss.build=11ms, bss.apply=7ms, step:broadcastMissileTrackWarning=0ms, step:broadcastOwnShipMining=0ms ] bucketSum=87ms unaccounted=-18ms gc(gen0+1,gen1+1,gen2+0,pause+12ms) parallel-worker max=0ms (workers=199)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #32 wall=55ms (\u226550ms) top8[ step:broadcastShipsUpdate=21ms, step:sideSelection=17ms, step:broadcastShipStates=15ms, bss.build=8ms, bss.apply=7ms, step:broadcastMissileTrackWarning=0ms, step:broadcastLeadIndicator=0ms, step:drain=0ms ] bucketSum=69ms unaccounted=-14ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=1ms (workers=219)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #35 wall=62ms (\u226550ms) top8[ step:broadcastShipsUpdate=25ms, step:sideSelection=19ms, step:broadcastShipStates=16ms, bss.build=9ms, bss.apply=7ms, step:broadcastMissileTrackWarning=1ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=77ms unaccounted=-15ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=239)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #38 wall=70ms (\u226550ms) top8[ step:broadcastShipsUpdate=29ms, step:sideSelection=22ms, step:broadcastShipStates=17ms, bss.build=10ms, bss.apply=7ms, step:broadcastMissileTrackWarning=0ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=86ms unaccounted=-16ms gc(gen0+1,gen1+0,gen2+0,pause+6ms) parallel-worker max=0ms (workers=259)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #41 wall=79ms (\u226550ms) top8[ step:broadcastShipsUpdate=34ms, step:sideSelection=24ms, step:broadcastShipStates=20ms, bss.apply=10ms, bss.build=10ms, step:broadcastMissileTrackWarning=1ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=98ms unaccounted=-19ms gc(gen0+1,gen1+0,gen2+0,pause+7ms) parallel-worker max=0ms (workers=276)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #44 wall=95ms (\u226550ms) top8[ step:broadcastShipsUpdate=38ms, step:broadcastShipStates=38ms, bss.apply=27ms, step:sideSelection=16ms, bss.build=12ms, step:broadcastMissileTrackWarning=1ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=132ms unaccounted=-37ms gc(gen0+1,gen1+1,gen2+0,pause+16ms) parallel-worker max=0ms (workers=299)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #47 wall=69ms (\u226550ms) top8[ step:broadcastShipsUpdate=28ms, step:broadcastShipStates=21ms, step:sideSelection=18ms, bss.apply=11ms, bss.build=10ms, step:broadcastMissileTrackWarning=1ms, step:broadcastLeadIndicator=0ms, step:drain=0ms ] bucketSum=90ms unaccounted=-20ms gc(gen0+1,gen1+0,gen2+0,pause+7ms) parallel-worker max=0ms (workers=319)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #53 wall=58ms (\u226550ms) top8[ step:broadcastShipsUpdate=21ms, step:broadcastShipStates=20ms, step:sideSelection=14ms, bss.apply=11ms, bss.build=9ms, step:broadcastMissileTrackWarning=1ms, step:broadcastLeadIndicator=0ms, step:broadcastOwnShipMining=0ms ] bucketSum=77ms unaccounted=-19ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=359)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #56 wall=61ms (\u226550ms) top8[ step:broadcastShipsUpdate=23ms, step:broadcastShipStates=22ms, step:sideSelection=13ms, bss.build=11ms, bss.apply=11ms, step:broadcastMissileTrackWarning=1ms, step:broadcastLeadIndicator=0ms, step:shipWarnings=0ms ] bucketSum=82ms unaccounted=-21ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=379)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #61 wall=663ms (\u226550ms) top8[ step:crossSideExportSweep=288ms, step:update=283ms, sector:1050=281ms, step:broadcastShipsUpdate=81ms, sim.visibility=12ms, sim.collision=11ms, sim.rescue=7ms, step:broadcastShipStates=6ms ] bucketSum=969ms unaccounted=-307ms gc(gen0+5,gen1+2,gen2+1,pause+93ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #68 wall=54ms (\u226550ms) top8[ step:broadcastShipsUpdate=31ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, step:crossSideExportSweep=6ms, bss.build=6ms, step:podPickupAssign=1ms ] bucketSum=71ms unaccounted=-16ms gc(gen0+1,gen1+0,gen2+0,pause+6ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #70 wall=52ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, step:crossSideExportSweep=6ms, sim.rescue=6ms, bss.build=5ms, step:broadcastStations=2ms ] bucketSum=66ms unaccounted=-14ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #71 wall=58ms (\u226550ms) top8[ step:broadcastShipsUpdate=27ms, step:update=15ms, sector:1050=15ms, sim.visibility=8ms, step:broadcastShipStates=7ms, sim.rescue=6ms, bss.build=5ms, step:crossSideExportSweep=5ms ] bucketSum=87ms unaccounted=-30ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #72 wall=54ms (\u226550ms) top8[ step:broadcastShipsUpdate=30ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, step:crossSideExportSweep=6ms, sim.rescue=6ms, bss.build=5ms, step:podPickupAssign=1ms ] bucketSum=70ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #74 wall=89ms (\u226550ms) top8[ step:broadcastShipsUpdate=66ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=6ms, step:crossSideExportSweep=6ms, sim.rescue=6ms, bss.build=5ms, step:podPickupAssign=1ms ] bucketSum=105ms unaccounted=-16ms gc(gen0+1,gen1+1,gen2+1,pause+42ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #81 wall=67ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=15ms, sector:1050=15ms, step:broadcastOwnShipMining=9ms, sim.visibility=8ms, step:broadcastShipStates=7ms, bss.build=6ms, sim.rescue=6ms ] bucketSum=92ms unaccounted=-25ms gc(gen0+1,gen1+0,gen2+0,pause+8ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #82 wall=58ms (\u226550ms) top8[ step:broadcastShipsUpdate=27ms, step:update=8ms, sector:1050=7ms, step:broadcastScoreRoster=7ms, step:broadcastShipStates=6ms, step:crossSideExportSweep=6ms, sim.rescue=6ms, bss.build=6ms ] bucketSum=72ms unaccounted=-15ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #88 wall=58ms (\u226550ms) top8[ step:broadcastShipsUpdate=34ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, step:crossSideExportSweep=6ms, sim.rescue=6ms, bss.build=6ms, step:podPickupAssign=1ms ] bucketSum=74ms unaccounted=-16ms gc(gen0+1,gen1+0,gen2+0,pause+9ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #91 wall=56ms (\u226550ms) top8[ step:broadcastShipsUpdate=25ms, step:update=14ms, sector:1050=14ms, sim.visibility=7ms, step:broadcastShipStates=7ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=4ms ] bucketSum=84ms unaccounted=-28ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #94 wall=65ms (\u226550ms) top8[ step:broadcastShipsUpdate=43ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=81ms unaccounted=-15ms gc(gen0+1,gen1+1,gen2+0,pause+17ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #97 wall=56ms (\u226550ms) top8[ step:broadcastShipsUpdate=33ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=71ms unaccounted=-16ms gc(gen0+1,gen1+0,gen2+0,pause+7ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #100 wall=51ms (\u226550ms) top8[ step:broadcastShipsUpdate=25ms, step:update=8ms, sector:1050=7ms, step:broadcastShipStates=6ms, step:crossSideExportSweep=6ms, sim.rescue=6ms, bss.build=6ms, step:broadcastMissileTrackWarning=1ms ] bucketSum=65ms unaccounted=-14ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #101 wall=57ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=14ms, sector:1050=14ms, sim.visibility=7ms, step:broadcastShipStates=7ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=5ms ] bucketSum=84ms unaccounted=-27ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #107 wall=58ms (\u226550ms) top8[ step:broadcastShipsUpdate=35ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=5ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=73ms unaccounted=-15ms gc(gen0+1,gen1+0,gen2+0,pause+8ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #111 wall=57ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=14ms, sector:1050=14ms, sim.visibility=7ms, step:broadcastShipStates=7ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=5ms ] bucketSum=84ms unaccounted=-27ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #113 wall=55ms (\u226550ms) top8[ step:broadcastShipsUpdate=32ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=6ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=70ms unaccounted=-15ms gc(gen0+1,gen1+0,gen2+0,pause+6ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #117 wall=51ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=7ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=66ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #119 wall=53ms (\u226550ms) top8[ step:broadcastShipsUpdate=27ms, step:broadcastShipStates=9ms, step:update=7ms, sector:1050=7ms, bss.build=7ms, sim.rescue=6ms, step:crossSideExportSweep=5ms, bss.apply=2ms ] bucketSum=70ms unaccounted=-17ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #120 wall=50ms (\u226550ms) top8[ step:broadcastShipsUpdate=25ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, step:crossSideExportSweep=6ms, bss.build=6ms, sim.rescue=6ms, step:podPickupAssign=1ms ] bucketSum=67ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #121 wall=74ms (\u226550ms) top8[ step:broadcastShipsUpdate=40ms, step:update=14ms, sector:1050=14ms, step:broadcastShipStates=8ms, bss.build=7ms, sim.visibility=7ms, sim.rescue=6ms, step:crossSideExportSweep=5ms ] bucketSum=101ms unaccounted=-27ms gc(gen0+2,gen1+1,gen2+1,pause+9ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #122 wall=51ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=6ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=6ms, step:podPickupAssign=1ms ] bucketSum=64ms unaccounted=-14ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #125 wall=236ms (\u226550ms) top8[ step:update=223ms, sector:1050=223ms, step:broadcastShipStates=7ms, bss.build=6ms, step:broadcastShipsUpdate=2ms, step:crossSideShipStatusSweep=1ms, bss.apply=1ms, step:broadcastMissileTrackWarning=1ms ] bucketSum=465ms unaccounted=-229ms gc(gen0+1,gen1+0,gen2+0,pause+9ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "synthetic-padded-bursts",
+          "line": "[slowtick] #271 wall=218ms (\u226550ms) top8[ step:drain=208ms, step:broadcastShipStates=6ms, bss.build=6ms, step:update=1ms, step:broadcastMissileTrackWarning=1ms, sector:1050=1ms, bss.apply=1ms, step:broadcastShipsUpdate=1ms ] bucketSum=224ms unaccounted=-6ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "synthetic-padded-bursts",
+          "line": "[slowtick] #276 wall=230ms (\u226550ms) top8[ step:drain=221ms, step:broadcastShipStates=6ms, bss.build=6ms, step:update=1ms, step:broadcastMissileTrackWarning=1ms, bss.apply=1ms, sector:1050=1ms, step:broadcastShipsUpdate=1ms ] bucketSum=236ms unaccounted=-6ms gc(gen0+1,gen1+1,gen2+0,pause+24ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "synthetic-padded-bursts",
+          "line": "[slowtick] #281 wall=201ms (\u226550ms) top8[ step:drain=190ms, step:broadcastShipStates=7ms, bss.build=6ms, step:update=1ms, step:broadcastMissileTrackWarning=1ms, sector:1050=1ms, bss.apply=1ms, step:broadcastShipsUpdate=1ms ] bucketSum=207ms unaccounted=-6ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "synthetic-padded-bursts",
+          "line": "[slowtick] #286 wall=222ms (\u226550ms) top8[ step:drain=211ms, step:broadcastShipStates=7ms, bss.build=6ms, step:update=1ms, step:broadcastMissileTrackWarning=1ms, sector:1050=1ms, step:broadcastShipsUpdate=1ms, bss.apply=0ms ] bucketSum=228ms unaccounted=-6ms gc(gen0+1,gen1+0,gen2+0,pause+8ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "synthetic-padded-bursts",
+          "line": "[slowtick] #291 wall=209ms (\u226550ms) top8[ step:drain=198ms, step:broadcastShipStates=7ms, bss.build=6ms, step:update=1ms, step:broadcastMissileTrackWarning=1ms, sector:1050=1ms, step:broadcastShipsUpdate=1ms, sector:1051=1ms ] bucketSum=215ms unaccounted=-6ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        }
+      ],
+      "raw_log": "P673_OFF_SERVER.log.gz",
+      "verified_burst_peer_attribution": {
+        "ticks": [
+          270,
+          275,
+          280,
+          285,
+          290
+        ],
+        "fmid": 24,
+        "peer_ids": [
+          1,
+          390
+        ],
+        "messages_per_peer_per_burst": 3,
+        "message_bytes_per_peer_per_burst": 196596,
+        "boot_receive_decouple": false,
+        "boot_gc": "server/concurrent"
+      }
+    },
+    "on": {
+      "observations": [
+        {
+          "phase": "idle-rosters",
+          "startTick": 74,
+          "endTick": 174,
+          "packets": 0,
+          "rostersPerPeer": [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ],
+          "latestRosterEntries": 390,
+          "latestRosterBytes": 21848
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 174,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5558
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 177,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.599
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 180,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.8119
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 183,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4483
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 186,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6067
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 189,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5116
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 192,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.515
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 195,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5955
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 198,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.436
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 201,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 3.5742
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 204,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5077
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 207,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6965
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 210,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5568
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 213,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6127
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 216,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5942
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 219,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6678
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 222,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.6394
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 225,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.7373
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 228,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5523
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 231,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.8436
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 234,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5525
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 237,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 3.4701
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 240,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4826
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 243,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 3.2955
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 246,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.7159
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 249,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5038
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 252,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.9683
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 255,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 5.2206
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 258,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.5704
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 261,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.814
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 264,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.8935
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 267,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4134
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 270,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.9864
+        },
+        {
+          "phase": "ordinary-control-burst",
+          "tick": 273,
+          "bytes": 52,
+          "packets": 390,
+          "receiveWallMs": 2.4494
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 274,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 69.6705
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 279,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 63.5319
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 284,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 77.199
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 289,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 122.2099
+        },
+        {
+          "phase": "synthetic-padded-burst",
+          "tick": 294,
+          "bytes": 65536,
+          "packets": 1170,
+          "receiveWallMs": 31.6019
+        },
+        {
+          "phase": "final",
+          "peers": 390,
+          "stageFailures": 0,
+          "packets": 19890,
+          "drained": 20280,
+          "deferred": 0
+        }
+      ],
+      "summary": {
+        "idle-rosters": {
+          "ticks": 100,
+          "messages": 0,
+          "bytes": 0,
+          "all_tick_drain": {
+            "n": 100,
+            "min_ms": 0.002,
+            "median_ms": 0.002,
+            "p95_ms": 0.005,
+            "max_ms": 0.012
+          },
+          "nonempty_tick_drain": null,
+          "fmids": {},
+          "slowticks": 23
+        },
+        "ordinary-controls": {
+          "ticks": 100,
+          "messages": 13260,
+          "bytes": 636480,
+          "all_tick_drain": {
+            "n": 100,
+            "min_ms": 0.003,
+            "median_ms": 0.004,
+            "p95_ms": 0.718,
+            "max_ms": 0.919
+          },
+          "nonempty_tick_drain": {
+            "n": 34,
+            "min_ms": 0.56,
+            "median_ms": 0.643,
+            "p95_ms": 0.819,
+            "max_ms": 0.919
+          },
+          "fmids": {
+            "24": {
+              "messages": 13260,
+              "bytes": 636480
+            }
+          },
+          "slowticks": 0
+        },
+        "seating": {
+          "ticks": 74,
+          "messages": 780,
+          "bytes": 445660,
+          "all_tick_drain": {
+            "n": 74,
+            "min_ms": 0.001,
+            "median_ms": 0.132,
+            "p95_ms": 0.889,
+            "max_ms": 20.558
+          },
+          "nonempty_tick_drain": {
+            "n": 58,
+            "min_ms": 0.025,
+            "median_ms": 0.1965,
+            "p95_ms": 0.899,
+            "max_ms": 20.558
+          },
+          "fmids": {
+            "1": {
+              "messages": 390,
+              "bytes": 443320
+            },
+            "39": {
+              "messages": 390,
+              "bytes": 2340
+            }
+          },
+          "slowticks": 16
+        },
+        "settle": {
+          "ticks": 1,
+          "messages": 0,
+          "bytes": 0,
+          "all_tick_drain": {
+            "n": 1,
+            "min_ms": 0.003,
+            "median_ms": 0.003,
+            "p95_ms": 0.003,
+            "max_ms": 0.003
+          },
+          "nonempty_tick_drain": null,
+          "fmids": {},
+          "slowticks": 0
+        },
+        "synthetic-padded-bursts": {
+          "ticks": 25,
+          "messages": 5850,
+          "bytes": 383362200,
+          "all_tick_drain": {
+            "n": 25,
+            "min_ms": 0.002,
+            "median_ms": 0.003,
+            "p95_ms": 2.193,
+            "max_ms": 2.22
+          },
+          "nonempty_tick_drain": {
+            "n": 5,
+            "min_ms": 1.859,
+            "median_ms": 2.089,
+            "p95_ms": 2.22,
+            "max_ms": 2.22
+          },
+          "fmids": {
+            "24": {
+              "messages": 5850,
+              "bytes": 383362200
+            }
+          },
+          "slowticks": 0
+        }
+      },
+      "tick_columns": [
+        "phase",
+        "tick",
+        "messages",
+        "message_bytes",
+        "drain_ms"
+      ],
+      "ticks": [
+        [
+          "seating",
+          0,
+          20,
+          22710,
+          20.558
+        ],
+        [
+          "seating",
+          1,
+          20,
+          120,
+          0.336
+        ],
+        [
+          "seating",
+          2,
+          19,
+          21584,
+          0.351
+        ],
+        [
+          "seating",
+          3,
+          20,
+          1250,
+          0.132
+        ],
+        [
+          "seating",
+          4,
+          1,
+          6,
+          0.04
+        ],
+        [
+          "seating",
+          5,
+          0,
+          0,
+          0.001
+        ],
+        [
+          "seating",
+          6,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "seating",
+          7,
+          19,
+          21584,
+          0.362
+        ],
+        [
+          "seating",
+          8,
+          20,
+          1250,
+          0.134
+        ],
+        [
+          "seating",
+          9,
+          1,
+          6,
+          0.046
+        ],
+        [
+          "seating",
+          10,
+          0,
+          0,
+          0.001
+        ],
+        [
+          "seating",
+          11,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          12,
+          0,
+          0,
+          0.001
+        ],
+        [
+          "seating",
+          13,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          14,
+          19,
+          21584,
+          0.467
+        ],
+        [
+          "seating",
+          15,
+          20,
+          1250,
+          0.137
+        ],
+        [
+          "seating",
+          16,
+          1,
+          6,
+          0.048
+        ],
+        [
+          "seating",
+          17,
+          19,
+          21584,
+          0.482
+        ],
+        [
+          "seating",
+          18,
+          20,
+          1250,
+          0.132
+        ],
+        [
+          "seating",
+          19,
+          1,
+          6,
+          0.054
+        ],
+        [
+          "seating",
+          20,
+          19,
+          21603,
+          0.708
+        ],
+        [
+          "seating",
+          21,
+          20,
+          1251,
+          0.145
+        ],
+        [
+          "seating",
+          22,
+          1,
+          6,
+          0.041
+        ],
+        [
+          "seating",
+          23,
+          18,
+          20466,
+          0.707
+        ],
+        [
+          "seating",
+          24,
+          20,
+          2382,
+          0.164
+        ],
+        [
+          "seating",
+          25,
+          2,
+          12,
+          0.063
+        ],
+        [
+          "seating",
+          26,
+          19,
+          21603,
+          0.624
+        ],
+        [
+          "seating",
+          27,
+          20,
+          1251,
+          0.148
+        ],
+        [
+          "seating",
+          28,
+          1,
+          6,
+          0.052
+        ],
+        [
+          "seating",
+          29,
+          13,
+          14781,
+          0.53
+        ],
+        [
+          "seating",
+          30,
+          20,
+          8037,
+          0.376
+        ],
+        [
+          "seating",
+          31,
+          7,
+          42,
+          0.06
+        ],
+        [
+          "seating",
+          32,
+          13,
+          14781,
+          0.562
+        ],
+        [
+          "seating",
+          33,
+          20,
+          8037,
+          0.419
+        ],
+        [
+          "seating",
+          34,
+          7,
+          42,
+          0.094
+        ],
+        [
+          "seating",
+          35,
+          19,
+          21603,
+          0.845
+        ],
+        [
+          "seating",
+          36,
+          20,
+          1251,
+          0.169
+        ],
+        [
+          "seating",
+          37,
+          1,
+          6,
+          0.05
+        ],
+        [
+          "seating",
+          38,
+          19,
+          21603,
+          0.88
+        ],
+        [
+          "seating",
+          39,
+          20,
+          1251,
+          0.231
+        ],
+        [
+          "seating",
+          40,
+          1,
+          6,
+          0.046
+        ],
+        [
+          "seating",
+          41,
+          15,
+          17055,
+          0.769
+        ],
+        [
+          "seating",
+          42,
+          20,
+          5775,
+          0.386
+        ],
+        [
+          "seating",
+          43,
+          5,
+          30,
+          0.083
+        ],
+        [
+          "seating",
+          44,
+          19,
+          21603,
+          0.875
+        ],
+        [
+          "seating",
+          45,
+          20,
+          1251,
+          0.197
+        ],
+        [
+          "seating",
+          46,
+          1,
+          6,
+          0.051
+        ],
+        [
+          "seating",
+          47,
+          19,
+          21603,
+          0.889
+        ],
+        [
+          "seating",
+          48,
+          20,
+          1251,
+          0.196
+        ],
+        [
+          "seating",
+          49,
+          1,
+          6,
+          0.039
+        ],
+        [
+          "seating",
+          50,
+          18,
+          20466,
+          0.899
+        ],
+        [
+          "seating",
+          51,
+          20,
+          2382,
+          0.239
+        ],
+        [
+          "seating",
+          52,
+          2,
+          12,
+          0.04
+        ],
+        [
+          "seating",
+          53,
+          18,
+          20466,
+          0.991
+        ],
+        [
+          "seating",
+          54,
+          20,
+          2382,
+          0.28
+        ],
+        [
+          "seating",
+          55,
+          2,
+          12,
+          0.035
+        ],
+        [
+          "seating",
+          56,
+          12,
+          13644,
+          0.441
+        ],
+        [
+          "seating",
+          57,
+          20,
+          9168,
+          0.335
+        ],
+        [
+          "seating",
+          58,
+          8,
+          48,
+          0.061
+        ],
+        [
+          "seating",
+          59,
+          20,
+          22740,
+          0.72
+        ],
+        [
+          "seating",
+          60,
+          20,
+          120,
+          0.103
+        ],
+        [
+          "seating",
+          61,
+          9,
+          10233,
+          0.367
+        ],
+        [
+          "seating",
+          62,
+          10,
+          1191,
+          0.105
+        ],
+        [
+          "seating",
+          63,
+          1,
+          6,
+          0.025
+        ],
+        [
+          "seating",
+          64,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          65,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          66,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          67,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "seating",
+          68,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          69,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          70,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "seating",
+          71,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          72,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "seating",
+          73,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          74,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          75,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          76,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          77,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          78,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          79,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "idle-rosters",
+          80,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          81,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          82,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "idle-rosters",
+          83,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          84,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          85,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "idle-rosters",
+          86,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          87,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "idle-rosters",
+          88,
+          0,
+          0,
+          0.012
+        ],
+        [
+          "idle-rosters",
+          89,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          90,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          91,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          92,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          93,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          94,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          95,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          96,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          97,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          98,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          99,
+          0,
+          0,
+          0.007
+        ],
+        [
+          "idle-rosters",
+          100,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          101,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          102,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          103,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          104,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          105,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          106,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          107,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          108,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          109,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          110,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          111,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          112,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          113,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          114,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          115,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          116,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          117,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          118,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          119,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          120,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          121,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          122,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "idle-rosters",
+          123,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          124,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          125,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          126,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          127,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          128,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          129,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          130,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          131,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          132,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          133,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          134,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          135,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          136,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          137,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          138,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          139,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          140,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          141,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          142,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          143,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          144,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          145,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          146,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          147,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          148,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          149,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          150,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          151,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          152,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          153,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          154,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          155,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          156,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          157,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          158,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          159,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          160,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          161,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          162,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          163,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          164,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          165,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          166,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          167,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          168,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "idle-rosters",
+          169,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          170,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          171,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "idle-rosters",
+          172,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "idle-rosters",
+          173,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          174,
+          390,
+          18720,
+          0.919
+        ],
+        [
+          "ordinary-controls",
+          175,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          176,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          177,
+          390,
+          18720,
+          0.718
+        ],
+        [
+          "ordinary-controls",
+          178,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          179,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          180,
+          390,
+          18720,
+          0.716
+        ],
+        [
+          "ordinary-controls",
+          181,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          182,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          183,
+          390,
+          18720,
+          0.639
+        ],
+        [
+          "ordinary-controls",
+          184,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          185,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          186,
+          390,
+          18720,
+          0.636
+        ],
+        [
+          "ordinary-controls",
+          187,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          188,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          189,
+          390,
+          18720,
+          0.597
+        ],
+        [
+          "ordinary-controls",
+          190,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          191,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          192,
+          390,
+          18720,
+          0.649
+        ],
+        [
+          "ordinary-controls",
+          193,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          194,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          195,
+          390,
+          18720,
+          0.627
+        ],
+        [
+          "ordinary-controls",
+          196,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          197,
+          0,
+          0,
+          0.005
+        ],
+        [
+          "ordinary-controls",
+          198,
+          390,
+          18720,
+          0.59
+        ],
+        [
+          "ordinary-controls",
+          199,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          200,
+          0,
+          0,
+          0.007
+        ],
+        [
+          "ordinary-controls",
+          201,
+          390,
+          18720,
+          0.673
+        ],
+        [
+          "ordinary-controls",
+          202,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          203,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          204,
+          390,
+          18720,
+          0.624
+        ],
+        [
+          "ordinary-controls",
+          205,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          206,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          207,
+          390,
+          18720,
+          0.63
+        ],
+        [
+          "ordinary-controls",
+          208,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          209,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          210,
+          390,
+          18720,
+          0.669
+        ],
+        [
+          "ordinary-controls",
+          211,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          212,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          213,
+          390,
+          18720,
+          0.703
+        ],
+        [
+          "ordinary-controls",
+          214,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          215,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          216,
+          390,
+          18720,
+          0.765
+        ],
+        [
+          "ordinary-controls",
+          217,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          218,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          219,
+          390,
+          18720,
+          0.721
+        ],
+        [
+          "ordinary-controls",
+          220,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          221,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          222,
+          390,
+          18720,
+          0.743
+        ],
+        [
+          "ordinary-controls",
+          223,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          224,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          225,
+          390,
+          18720,
+          0.698
+        ],
+        [
+          "ordinary-controls",
+          226,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          227,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          228,
+          390,
+          18720,
+          0.61
+        ],
+        [
+          "ordinary-controls",
+          229,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          230,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          231,
+          390,
+          18720,
+          0.63
+        ],
+        [
+          "ordinary-controls",
+          232,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          233,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          234,
+          390,
+          18720,
+          0.642
+        ],
+        [
+          "ordinary-controls",
+          235,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          236,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          237,
+          390,
+          18720,
+          0.619
+        ],
+        [
+          "ordinary-controls",
+          238,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          239,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          240,
+          390,
+          18720,
+          0.687
+        ],
+        [
+          "ordinary-controls",
+          241,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          242,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          243,
+          390,
+          18720,
+          0.61
+        ],
+        [
+          "ordinary-controls",
+          244,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          245,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          246,
+          390,
+          18720,
+          0.62
+        ],
+        [
+          "ordinary-controls",
+          247,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          248,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          249,
+          390,
+          18720,
+          0.659
+        ],
+        [
+          "ordinary-controls",
+          250,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          251,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          252,
+          390,
+          18720,
+          0.673
+        ],
+        [
+          "ordinary-controls",
+          253,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          254,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          255,
+          390,
+          18720,
+          0.819
+        ],
+        [
+          "ordinary-controls",
+          256,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          257,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          258,
+          390,
+          18720,
+          0.687
+        ],
+        [
+          "ordinary-controls",
+          259,
+          0,
+          0,
+          0.006
+        ],
+        [
+          "ordinary-controls",
+          260,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          261,
+          390,
+          18720,
+          0.607
+        ],
+        [
+          "ordinary-controls",
+          262,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          263,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          264,
+          390,
+          18720,
+          0.633
+        ],
+        [
+          "ordinary-controls",
+          265,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "ordinary-controls",
+          266,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          267,
+          390,
+          18720,
+          0.601
+        ],
+        [
+          "ordinary-controls",
+          268,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          269,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          270,
+          390,
+          18720,
+          0.56
+        ],
+        [
+          "ordinary-controls",
+          271,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          272,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "ordinary-controls",
+          273,
+          390,
+          18720,
+          0.644
+        ],
+        [
+          "synthetic-padded-bursts",
+          274,
+          1170,
+          76672440,
+          2.193
+        ],
+        [
+          "synthetic-padded-bursts",
+          275,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          276,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          277,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          278,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          279,
+          1170,
+          76672440,
+          1.885
+        ],
+        [
+          "synthetic-padded-bursts",
+          280,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          281,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          282,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "synthetic-padded-bursts",
+          283,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          284,
+          1170,
+          76672440,
+          2.22
+        ],
+        [
+          "synthetic-padded-bursts",
+          285,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          286,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          287,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          288,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          289,
+          1170,
+          76672440,
+          1.859
+        ],
+        [
+          "synthetic-padded-bursts",
+          290,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          291,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          292,
+          0,
+          0,
+          0.002
+        ],
+        [
+          "synthetic-padded-bursts",
+          293,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          294,
+          1170,
+          76672440,
+          2.089
+        ],
+        [
+          "synthetic-padded-bursts",
+          295,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          296,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "synthetic-padded-bursts",
+          297,
+          0,
+          0,
+          0.004
+        ],
+        [
+          "synthetic-padded-bursts",
+          298,
+          0,
+          0,
+          0.003
+        ],
+        [
+          "settle",
+          299,
+          0,
+          0,
+          0.003
+        ]
+      ],
+      "histograms": [
+        "[inbound-window] tick:messages/bytes/drainMs[0:20/22710/20.558,1:20/120/0.336,2:19/21584/0.351,3:20/1250/0.132,4:1/6/0.040,5:0/0/0.001,6:0/0/0.004,7:19/21584/0.362,8:20/1250/0.134,9:1/6/0.046,10:0/0/0.001,11:0/0/0.003,12:0/0/0.001,13:0/0/0.003,14:19/21584/0.467,15:20/1250/0.137,16:1/6/0.048,17:19/21584/0.482,18:20/1250/0.132,19:1/6/0.054,20:19/21603/0.708,21:20/1251/0.145,22:1/6/0.041,23:18/20466/0.707,24:20/2382/0.164,25:2/12/0.063,26:19/21603/0.624,27:20/1251/0.148,28:1/6/0.052,29:13/14781/0.530,30:20/8037/0.376,31:7/42/0.060,32:13/14781/0.562,33:20/8037/0.419,34:7/42/0.094,35:19/21603/0.845,36:20/1251/0.169,37:1/6/0.050,38:19/21603/0.880,39:20/1251/0.231,40:1/6/0.046,41:15/17055/0.769,42:20/5775/0.386,43:5/30/0.083,44:19/21603/0.875,45:20/1251/0.197,46:1/6/0.051,47:19/21603/0.889,48:20/1251/0.196,49:1/6/0.039,50:18/20466/0.899,51:20/2382/0.239,52:2/12/0.040,53:18/20466/0.991,54:20/2382/0.280,55:2/12/0.035,56:12/13644/0.441,57:20/9168/0.335,58:8/48/0.061,59:20/22740/0.720,60:20/120/0.103,61:9/10233/0.367,62:10/1191/0.105,63:1/6/0.025,64:0/0/0.003,65:0/0/0.003,66:0/0/0.003,67:0/0/0.004,68:0/0/0.003,69:0/0/0.003,70:0/0/0.004,71:0/0/0.003,72:0/0/0.003,73:0/0/0.003,74:0/0/0.004,75:0/0/0.004,76:0/0/0.003,77:0/0/0.004,78:0/0/0.004,79:0/0/0.005,80:0/0/0.003,81:0/0/0.004,82:0/0/0.005,83:0/0/0.004,84:0/0/0.003,85:0/0/0.006,86:0/0/0.004,87:0/0/0.005,88:0/0/0.012,89:0/0/0.002,90:0/0/0.003,91:0/0/0.002,92:0/0/0.002,93:0/0/0.002,94:0/0/0.002,95:0/0/0.002,96:0/0/0.002,97:0/0/0.002,98:0/0/0.002,99:0/0/0.007]",
+        "[inbound-window] tick:messages/bytes/drainMs[100:0/0/0.002,101:0/0/0.002,102:0/0/0.002,103:0/0/0.002,104:0/0/0.002,105:0/0/0.002,106:0/0/0.002,107:0/0/0.002,108:0/0/0.002,109:0/0/0.002,110:0/0/0.002,111:0/0/0.002,112:0/0/0.002,113:0/0/0.002,114:0/0/0.002,115:0/0/0.003,116:0/0/0.002,117:0/0/0.002,118:0/0/0.002,119:0/0/0.002,120:0/0/0.002,121:0/0/0.002,122:0/0/0.006,123:0/0/0.002,124:0/0/0.002,125:0/0/0.002,126:0/0/0.002,127:0/0/0.002,128:0/0/0.002,129:0/0/0.002,130:0/0/0.002,131:0/0/0.002,132:0/0/0.003,133:0/0/0.002,134:0/0/0.003,135:0/0/0.004,136:0/0/0.003,137:0/0/0.002,138:0/0/0.002,139:0/0/0.003,140:0/0/0.002,141:0/0/0.002,142:0/0/0.002,143:0/0/0.002,144:0/0/0.003,145:0/0/0.003,146:0/0/0.002,147:0/0/0.002,148:0/0/0.002,149:0/0/0.003,150:0/0/0.003,151:0/0/0.004,152:0/0/0.002,153:0/0/0.002,154:0/0/0.002,155:0/0/0.002,156:0/0/0.003,157:0/0/0.003,158:0/0/0.003,159:0/0/0.002,160:0/0/0.002,161:0/0/0.003,162:0/0/0.002,163:0/0/0.003,164:0/0/0.002,165:0/0/0.003,166:0/0/0.002,167:0/0/0.002,168:0/0/0.003,169:0/0/0.002,170:0/0/0.002,171:0/0/0.002,172:0/0/0.004,173:0/0/0.004,174:390/18720/0.919,175:0/0/0.004,176:0/0/0.004,177:390/18720/0.718,178:0/0/0.004,179:0/0/0.004,180:390/18720/0.716,181:0/0/0.005,182:0/0/0.004,183:390/18720/0.639,184:0/0/0.004,185:0/0/0.004,186:390/18720/0.636,187:0/0/0.004,188:0/0/0.004,189:390/18720/0.597,190:0/0/0.003,191:0/0/0.004,192:390/18720/0.649,193:0/0/0.004,194:0/0/0.004,195:390/18720/0.627,196:0/0/0.004,197:0/0/0.005,198:390/18720/0.590,199:0/0/0.003]",
+        "[inbound-window] tick:messages/bytes/drainMs[200:0/0/0.007,201:390/18720/0.673,202:0/0/0.003,203:0/0/0.006,204:390/18720/0.624,205:0/0/0.006,206:0/0/0.004,207:390/18720/0.630,208:0/0/0.004,209:0/0/0.004,210:390/18720/0.669,211:0/0/0.004,212:0/0/0.004,213:390/18720/0.703,214:0/0/0.004,215:0/0/0.004,216:390/18720/0.765,217:0/0/0.006,218:0/0/0.006,219:390/18720/0.721,220:0/0/0.004,221:0/0/0.004,222:390/18720/0.743,223:0/0/0.004,224:0/0/0.004,225:390/18720/0.698,226:0/0/0.003,227:0/0/0.004,228:390/18720/0.610,229:0/0/0.003,230:0/0/0.004,231:390/18720/0.630,232:0/0/0.003,233:0/0/0.004,234:390/18720/0.642,235:0/0/0.003,236:0/0/0.004,237:390/18720/0.619,238:0/0/0.003,239:0/0/0.004,240:390/18720/0.687,241:0/0/0.004,242:0/0/0.004,243:390/18720/0.610,244:0/0/0.004,245:0/0/0.006,246:390/18720/0.620,247:0/0/0.004,248:0/0/0.003,249:390/18720/0.659,250:0/0/0.004,251:0/0/0.004,252:390/18720/0.673,253:0/0/0.004,254:0/0/0.003,255:390/18720/0.819,256:0/0/0.004,257:0/0/0.004,258:390/18720/0.687,259:0/0/0.006,260:0/0/0.004,261:390/18720/0.607,262:0/0/0.003,263:0/0/0.004,264:390/18720/0.633,265:0/0/0.003,266:0/0/0.004,267:390/18720/0.601,268:0/0/0.004,269:0/0/0.004,270:390/18720/0.560,271:0/0/0.004,272:0/0/0.004,273:390/18720/0.644,274:1170/76672440/2.193,275:0/0/0.003,276:0/0/0.003,277:0/0/0.003,278:0/0/0.002,279:1170/76672440/1.885,280:0/0/0.003,281:0/0/0.003,282:0/0/0.004,283:0/0/0.003,284:1170/76672440/2.220,285:0/0/0.003,286:0/0/0.002,287:0/0/0.002,288:0/0/0.002,289:1170/76672440/1.859,290:0/0/0.003,291:0/0/0.003,292:0/0/0.002,293:0/0/0.003,294:1170/76672440/2.089,295:0/0/0.003,296:0/0/0.003,297:0/0/0.004,298:0/0/0.003,299:0/0/0.003]"
+      ],
+      "slowticks": [
+        {
+          "phase": "seating",
+          "line": "[slowtick] #2 wall=66ms (\u226550ms) top8[ step:sideSelection=40ms, step:broadcastShipStates=11ms, step:broadcastShipsUpdate=5ms, bss.build=5ms, bss.apply=4ms, step:crossSideExportSweep=2ms, step:broadcastScoreRoster=2ms, bss.snapshot=2ms ] bucketSum=72ms unaccounted=-6ms gc(gen0+7,gen1+1,gen2+1,pause+9ms) parallel-worker max=3ms (workers=20)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #34 wall=51ms (\u226550ms) top8[ step:broadcastShipStates=18ms, step:broadcastShipsUpdate=17ms, step:sideSelection=13ms, bss.build=13ms, bss.apply=5ms, step:drain=0ms, step:broadcastMissileTrackWarning=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=69ms unaccounted=-18ms gc(gen0+1,gen1+0,gen2+0,pause+5ms) parallel-worker max=6ms (workers=193)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #37 wall=61ms (\u226550ms) top8[ step:broadcastShipsUpdate=22ms, step:broadcastShipStates=20ms, step:sideSelection=18ms, bss.build=14ms, bss.apply=6ms, step:broadcastMissileTrackWarning=0ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=80ms unaccounted=-19ms gc(gen0+1,gen1+0,gen2+0,pause+5ms) parallel-worker max=6ms (workers=219)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #40 wall=72ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:broadcastShipStates=24ms, step:sideSelection=20ms, bss.build=18ms, bss.apply=7ms, step:broadcastMissileTrackWarning=0ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=96ms unaccounted=-23ms gc(gen0+1,gen1+0,gen2+0,pause+7ms) parallel-worker max=8ms (workers=239)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #43 wall=59ms (\u226550ms) top8[ step:broadcastShipsUpdate=29ms, step:broadcastShipStates=15ms, step:sideSelection=13ms, bss.build=9ms, bss.apply=6ms, step:broadcastMissileTrackWarning=0ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=73ms unaccounted=-14ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=255)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #44 wall=68ms (\u226550ms) top8[ step:broadcastShipStates=33ms, bss.build=31ms, step:broadcastShipsUpdate=30ms, step:sideSelection=3ms, bss.apply=2ms, step:broadcastMissileTrackWarning=0ms, step:broadcastLeadIndicator=0ms, step:broadcastOwnShipMining=0ms ] bucketSum=100ms unaccounted=-32ms gc(gen0+1,gen1+1,gen2+0,pause+22ms) parallel-worker max=23ms (workers=260)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #46 wall=85ms (\u226550ms) top8[ step:broadcastShipsUpdate=36ms, step:broadcastShipStates=31ms, bss.apply=19ms, step:sideSelection=16ms, bss.build=12ms, step:broadcastMissileTrackWarning=1ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=115ms unaccounted=-30ms gc(gen0+1,gen1+0,gen2+0,pause+8ms) parallel-worker max=0ms (workers=279)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #49 wall=95ms (\u226550ms) top8[ step:broadcastShipsUpdate=42ms, step:broadcastShipStates=27ms, step:sideSelection=23ms, bss.build=17ms, bss.apply=10ms, step:broadcastMissileTrackWarning=1ms, step:broadcastLeadIndicator=0ms, step:drain=0ms ] bucketSum=120ms unaccounted=-24ms gc(gen0+2,gen1+1,gen2+1,pause+9ms) parallel-worker max=3ms (workers=299)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #50 wall=54ms (\u226550ms) top8[ step:broadcastShipsUpdate=43ms, step:broadcastShipStates=8ms, bss.build=7ms, step:sideSelection=1ms, bss.apply=1ms, step:broadcastMissileTrackWarning=1ms, step:broadcastLeadIndicator=0ms, step:broadcastOwnShipMining=0ms ] bucketSum=61ms unaccounted=-7ms gc(gen0+1,gen1+1,gen2+0,pause+13ms) parallel-worker max=0ms (workers=300)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #52 wall=64ms (\u226550ms) top8[ step:broadcastShipsUpdate=22ms, step:sideSelection=20ms, step:broadcastShipStates=20ms, bss.apply=10ms, bss.build=9ms, step:broadcastMissileTrackWarning=1ms, step:broadcastLeadIndicator=0ms, step:drain=0ms ] bucketSum=82ms unaccounted=-18ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=318)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #55 wall=57ms (\u226550ms) top8[ step:broadcastShipsUpdate=22ms, step:broadcastShipStates=17ms, step:sideSelection=16ms, bss.apply=9ms, bss.build=8ms, step:broadcastMissileTrackWarning=1ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=73ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=338)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #58 wall=65ms (\u226550ms) top8[ step:broadcastShipsUpdate=34ms, step:broadcastShipStates=16ms, step:sideSelection=12ms, bss.build=9ms, bss.apply=7ms, step:broadcastMissileTrackWarning=1ms, step:drain=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=80ms unaccounted=-15ms gc(gen0+1,gen1+0,gen2+0,pause+9ms) parallel-worker max=0ms (workers=352)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #61 wall=63ms (\u226550ms) top8[ step:broadcastShipStates=23ms, step:broadcastShipsUpdate=23ms, step:sideSelection=14ms, bss.build=12ms, bss.apply=11ms, step:broadcastMissileTrackWarning=1ms, step:broadcastOwnShipMining=0ms, step:broadcastLeadIndicator=0ms ] bucketSum=85ms unaccounted=-22ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=380)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #63 wall=54ms (\u226550ms) top8[ step:broadcastShipsUpdate=24ms, step:broadcastShipStates=21ms, bss.build=16ms, step:sideSelection=6ms, bss.apply=6ms, step:broadcastMissileTrackWarning=1ms, step:broadcastLeadIndicator=0ms, step:broadcastOwnShipKillBonus=0ms ] bucketSum=74ms unaccounted=-20ms gc(gen0+1,gen1+0,gen2+0,pause+7ms) parallel-worker max=8ms (workers=389)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #65 wall=634ms (\u226550ms) top8[ step:crossSideExportSweep=289ms, step:update=252ms, sector:1050=251ms, step:broadcastShipsUpdate=80ms, sim.visibility=12ms, sim.collision=11ms, sim.rescue=7ms, step:broadcastShipStates=7ms ] bucketSum=910ms unaccounted=-277ms gc(gen0+5,gen1+3,gen2+2,pause+71ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "seating",
+          "line": "[slowtick] #69 wall=54ms (\u226550ms) top8[ step:broadcastShipsUpdate=32ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=4ms, step:podPickupAssign=1ms ] bucketSum=71ms unaccounted=-17ms gc(gen0+1,gen1+0,gen2+0,pause+7ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #75 wall=52ms (\u226550ms) top8[ step:broadcastShipsUpdate=23ms, step:update=15ms, sector:1050=15ms, sim.visibility=8ms, sim.rescue=6ms, step:broadcastShipStates=6ms, bss.build=5ms, step:crossSideExportSweep=4ms ] bucketSum=83ms unaccounted=-31ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #76 wall=57ms (\u226550ms) top8[ step:broadcastShipsUpdate=33ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=6ms, step:podPickupAssign=1ms ] bucketSum=74ms unaccounted=-18ms gc(gen0+1,gen1+0,gen2+0,pause+9ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #82 wall=56ms (\u226550ms) top8[ step:broadcastShipsUpdate=32ms, step:update=8ms, sector:1050=7ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=71ms unaccounted=-15ms gc(gen0+1,gen1+0,gen2+0,pause+9ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #85 wall=68ms (\u226550ms) top8[ step:broadcastShipsUpdate=35ms, step:update=16ms, sector:1050=16ms, sim.visibility=8ms, step:broadcastShipStates=7ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=4ms ] bucketSum=98ms unaccounted=-30ms gc(gen0+1,gen1+0,gen2+0,pause+9ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #88 wall=50ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=6ms, step:podPickupAssign=1ms ] bucketSum=67ms unaccounted=-17ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #92 wall=74ms (\u226550ms) top8[ step:broadcastShipsUpdate=51ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=2ms ] bucketSum=91ms unaccounted=-16ms gc(gen0+1,gen1+1,gen2+0,pause+26ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #95 wall=57ms (\u226550ms) top8[ step:broadcastShipsUpdate=25ms, step:update=15ms, sector:1050=15ms, sim.visibility=7ms, step:broadcastShipStates=7ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=4ms ] bucketSum=86ms unaccounted=-29ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #100 wall=60ms (\u226550ms) top8[ step:broadcastShipsUpdate=33ms, step:broadcastShipStates=8ms, step:update=8ms, sector:1050=8ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=5ms, bss.apply=2ms ] bucketSum=75ms unaccounted=-15ms gc(gen0+1,gen1+0,gen2+0,pause+8ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #105 wall=56ms (\u226550ms) top8[ step:broadcastShipsUpdate=25ms, step:update=15ms, sector:1050=15ms, sim.visibility=7ms, step:broadcastShipStates=6ms, bss.build=6ms, sim.rescue=6ms, step:crossSideExportSweep=5ms ] bucketSum=84ms unaccounted=-27ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #106 wall=50ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=8ms, sector:1050=8ms, sim.rescue=6ms, step:broadcastShipStates=6ms, step:crossSideExportSweep=6ms, bss.build=6ms, step:podPickupAssign=1ms ] bucketSum=66ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #107 wall=60ms (\u226550ms) top8[ step:broadcastShipsUpdate=36ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=76ms unaccounted=-16ms gc(gen0+1,gen1+0,gen2+0,pause+10ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #110 wall=51ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=6ms, step:podPickupAssign=1ms ] bucketSum=67ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #113 wall=50ms (\u226550ms) top8[ step:broadcastShipsUpdate=26ms, step:update=8ms, sector:1050=8ms, sim.rescue=6ms, step:broadcastShipStates=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=67ms unaccounted=-17ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #114 wall=51ms (\u226550ms) top8[ step:broadcastShipsUpdate=27ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, step:crossSideExportSweep=6ms, bss.build=6ms, step:podPickupAssign=1ms ] bucketSum=67ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #115 wall=78ms (\u226550ms) top8[ step:broadcastShipsUpdate=45ms, step:update=15ms, sector:1050=15ms, step:broadcastShipStates=8ms, sim.visibility=7ms, bss.build=7ms, sim.rescue=6ms, step:crossSideExportSweep=5ms ] bucketSum=107ms unaccounted=-29ms gc(gen0+2,gen1+1,gen2+1,pause+13ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #118 wall=51ms (\u226550ms) top8[ step:broadcastShipsUpdate=27ms, step:update=7ms, sector:1050=7ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=67ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #122 wall=73ms (\u226550ms) top8[ step:broadcastShipsUpdate=47ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=6ms, step:podPickupAssign=1ms ] bucketSum=87ms unaccounted=-15ms gc(gen0+1,gen1+1,gen2+0,pause+20ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #123 wall=52ms (\u226550ms) top8[ step:broadcastShipsUpdate=28ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=7ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=69ms unaccounted=-17ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #125 wall=60ms (\u226550ms) top8[ step:broadcastShipsUpdate=29ms, step:update=14ms, sector:1050=14ms, sim.visibility=7ms, step:broadcastShipStates=7ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms ] bucketSum=87ms unaccounted=-27ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #126 wall=53ms (\u226550ms) top8[ step:broadcastShipsUpdate=28ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=7ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=69ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #127 wall=52ms (\u226550ms) top8[ step:broadcastShipsUpdate=28ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=67ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #128 wall=55ms (\u226550ms) top8[ step:broadcastShipsUpdate=30ms, step:update=8ms, sector:1050=8ms, step:broadcastShipStates=6ms, sim.rescue=6ms, bss.build=6ms, step:crossSideExportSweep=5ms, step:podPickupAssign=1ms ] bucketSum=70ms unaccounted=-16ms gc(gen0+0,gen1+0,gen2+0,pause+0ms) parallel-worker max=0ms (workers=390)"
+        },
+        {
+          "phase": "idle-rosters",
+          "line": "[slowtick] #129 wall=246ms (\u226550ms) top8[ step:update=234ms, sector:1050=234ms, step:broadcastShipStates=8ms, bss.build=7ms, step:broadcastShipsUpdate=1ms, step:crossSideShipStatusSweep=1ms, step:broadcastMissileTrackWarning=1ms, bss.apply=1ms ] bucketSum=486ms unaccounted=-240ms gc(gen0+1,gen1+0,gen2+0,pause+8ms) parallel-worker max=0ms (workers=390)"
+        }
+      ],
+      "raw_log": "P673_ON_SERVER.log.gz",
+      "verified_burst_peer_attribution": {
+        "ticks": [
+          274,
+          279,
+          284,
+          289,
+          294
+        ],
+        "fmid": 24,
+        "peer_ids": [
+          1,
+          390
+        ],
+        "messages_per_peer_per_burst": 3,
+        "message_bytes_per_peer_per_burst": 196596,
+        "boot_receive_decouple": true,
+        "boot_gc": "server/concurrent"
+      }
+    }
+  }
+}

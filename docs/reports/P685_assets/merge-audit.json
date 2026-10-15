@@ -1,0 +1,637 @@
+{
+  "simulation_rows": 473,
+  "status_regressions_against_either_side": [],
+  "rows": [
+    {
+      "row_id": "SIM-0001",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0002",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0003",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0004",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0005",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0006",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0007",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0011",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0012",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0013",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0014",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0015",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0031",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0034",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0035",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0036",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0037",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0038",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0039",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0043",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0045",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0048",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0058",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0061",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0069",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0071",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0072",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0073",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0075",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0076",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0081",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0082",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0085",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0086",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0088",
+      "integ": "missing",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0091",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0094",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0095",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0107",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0109",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0111",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0114",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0116",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0119",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0125",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0128",
+      "integ": "implemented",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0129",
+      "integ": "implemented",
+      "wave4": "missing",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0131",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0134",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0135",
+      "integ": "implemented",
+      "wave4": "missing",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0139",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0140",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0141",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0142",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0143",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0145",
+      "integ": "missing",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0151",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0152",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0153",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0154",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0155",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0178",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0195",
+      "integ": "missing",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0208",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0209",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0212",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0213",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0214",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0229",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0234",
+      "integ": "missing",
+      "wave4": "missing",
+      "merged": "missing"
+    },
+    {
+      "row_id": "SIM-0237",
+      "integ": "missing",
+      "wave4": "missing",
+      "merged": "missing"
+    },
+    {
+      "row_id": "SIM-0238",
+      "integ": "missing",
+      "wave4": "missing",
+      "merged": "missing"
+    },
+    {
+      "row_id": "SIM-0239",
+      "integ": "missing",
+      "wave4": "missing",
+      "merged": "missing"
+    },
+    {
+      "row_id": "SIM-0240",
+      "integ": "missing",
+      "wave4": "missing",
+      "merged": "missing"
+    },
+    {
+      "row_id": "SIM-0271",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0277",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0278",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0304",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0305",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0306",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0307",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0308",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0309",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0310",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0311",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0312",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0313",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0351",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0352",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0353",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0354",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0355",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0356",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0357",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0358",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0359",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0360",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0367",
+      "integ": "missing",
+      "wave4": "implemented",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0421",
+      "integ": "implemented",
+      "wave4": "partial",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0422",
+      "integ": "implemented",
+      "wave4": "partial",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0423",
+      "integ": "implemented",
+      "wave4": "partial",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0424",
+      "integ": "implemented",
+      "wave4": "partial",
+      "merged": "implemented"
+    },
+    {
+      "row_id": "SIM-0470",
+      "integ": "partial",
+      "wave4": "partial",
+      "merged": "partial"
+    },
+    {
+      "row_id": "SIM-0473",
+      "integ": "partial",
+      "wave4": "implemented",
+      "merged": "implemented"
+    }
+  ],
+  "content": {
+    "integ_assets": 465,
+    "wave4_assets": 427,
+    "merged_assets": 468,
+    "duplicates": [],
+    "missing": []
+  }
+}

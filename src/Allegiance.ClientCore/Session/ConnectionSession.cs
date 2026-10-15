@@ -28,6 +28,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private readonly object _gate = new();
     private readonly ClientWorld _world = new();
     private LogonAck? _ack;
+    private DelPositionReq? _lastPositionRefusal;
     // P473 — every FM_S_BUY_LOADOUT_ACK(5) received, in arrival order: the raw
     // server answer to SendBuyLoadout, mirrored from Bot so the combat/spawn
     // harness paths can compare the granted hull/parts with the requested ones
@@ -131,6 +132,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// <summary>The last LOGONACK (or rejection) received; null until one arrives.</summary>
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
 
+    /// <summary>The server's latest refusal of this session's side request;
+    /// cleared on connect and before a new request.</summary>
+    public DelPositionReq? LastPositionRefusal { get { lock (_gate) return _lastPositionRefusal; } }
+
     /// <summary>Every <c>FM_S_BUY_LOADOUT_ACK(5)</c> received, in arrival order —
     /// the raw server answer to <see cref="SendBuyLoadout"/> (P473), mirrored
     /// from Bot. Locked snapshot-on-read via <see cref="Gate"/>.</summary>
@@ -202,6 +207,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         lock (_gate)
         {
             _ack = null;                 // a fresh session has no ack yet
+            _lastPositionRefusal = null;
             _lost = false;               // a new session is not lost (was latched true by a dropped one)
             _world.Reset();
         }
@@ -346,6 +352,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// The server streams that sector's ships to an ADMIN spectator (ignoring
     /// side visibility) and ignores it for non-admins (no information leak).
     /// </summary>
+    /// <summary>Native sectormap.cpp:1499-1507, team sector-mark relay.</summary>
+    public void SendHighlightCluster(short clusterId, bool highlight) =>
+        Send(FedPacket.Pack([new HighlightCluster { ClusterId = clusterId, Highlight = highlight }.Encode()]));
+
     public void SendViewClusterRequest(short clusterId)
     {
         var msg = new ViewClusterRequest { ClusterId = clusterId, OtTarget = -1, OidTarget = -1 };
@@ -543,8 +553,16 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// in SET_CLUSTER (which sets <see cref="ClientWorld.MyShipId"/>).</summary>
     public void SendPositionReq(short sideId)
     {
+        lock (_gate) _lastPositionRefusal = null;
         var msg = new PositionReq { SideId = sideId };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Join the target wing (WinTrek.cpp:10659-10662).</summary>
+    public void SendWingId(short shipId, short wingId)
+    {
+        var message = new SetWingId { ShipID = shipId, WingId = wingId };
+        Send(FedPacket.Pack([message.Encode()]));
     }
 
     /// <summary>P281 — send a real <c>FM_C_RANDOMIZE_TEAMS(21)</c>, the mission
@@ -556,6 +574,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         var msg = new RandomizeTeams();
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
+
+    /// <summary>Native lobby controls. Settings change only on the server echo;
+    /// the server checks mission ownership / team leadership.</summary>
+    public void SendLockLobby(bool locked) => Send(FedPacket.Pack([new LockLobby { FLock = locked }.Encode()]));
+    public void SendLockSides(bool locked) => Send(FedPacket.Pack([new LockSides { FLock = locked }.Encode()]));
+    public void SendAutoAccept(short sideId, bool enabled) =>
+        Send(FedPacket.Pack([new AutoAccept { SideId = sideId, FAutoAccept = enabled }.Encode()]));
+    public void SendPositionAck(short shipId, short sideId, bool accepted) =>
+        Send(FedPacket.Pack([new PositionAck { ShipId = shipId, SideId = sideId, FAccepted = accepted }.Encode()]));
+    public void SendDelPositionReq(short shipId, short sideId, DelPositionReqReason reason) =>
+        Send(FedPacket.Pack([new DelPositionReq { ShipId = shipId, SideId = sideId, Reason = reason }.Encode()]));
 
     /// <summary>Send a real <c>FM_C_BOARD_SHIP(103)</c> — the client's
     /// dual-purpose board/leave request, the mirror of <c>Bot.SendBoard</c>.
@@ -640,6 +669,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             CommandId = commandId,
             Command = command,
         };
+        lock (_gate) _world.Apply(msg);
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -699,6 +729,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P641 — guaranteed native in-flight move/swap (clintlib.h:2371-2400).</summary>
+    public void SendSwapPart(EquipmentType type, sbyte oldMount, sbyte newMount)
+    {
+        var msg = new SwapPart { EtOld = type, MountOld = oldMount, MountNew = newMount };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>
     /// P626 — send a real <c>FM_C_VOTE(19)</c> casting <paramref name="agree"/>
     /// on the in-flight ballot <paramref name="ballotId"/> (the server relays
@@ -711,6 +748,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     {
         var msg = new Vote { BallotId = ballotId, Agree = agree };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
+        // Native Vote() pops the answered ballot (clintlib.cpp:2510-2522).
+        lock (_gate) _world.DismissBallot(ballotId);
     }
 
     /// <summary>
@@ -758,13 +797,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// (one launch-data entry, <c>TargetId = NA</c>) and lets the server resolve
     /// the mounted launcher + its lock against the ship's own CommandTarget. Held
     /// callers (the <c>Game1</c> Left-Control fire key) re-send while the button is
-    /// held; the server's lock-rebuild rate-limits actual launches.
+    /// held; the client waits for the server's load-readiness update.
     /// </summary>
     public void SendFireMissile()
     {
+        float lockFraction;
+        lock (_gate) lockFraction = _world.MissileLock.LockFraction;
         var msg = new FireMissile
         {
-            Lock = 0f,                               // server-computed lock governs
+            Lock = lockFraction,    // normalized lock; server applies the type MaxLock
             TimeFired = 0u,                          // server-authoritative time
             MissileTypeId = 0,                       // server overrides from mounted launcher
             LauncherId = 0,                          // server overrides
@@ -830,6 +871,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
+        if (_lost) return; // a rejected core cannot be followed by a partial join burst
         // P633 — count every inbound byte for the decode-throughput metric
         // (atomic; the read side diffs over a wall window).
         Interlocked.Add(ref _decodedBytes, data.Length);
@@ -877,6 +919,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         {
                             var ping = Ping.Decode(m);
                             _pingEchoes.Add((ping.TimeServer, Environment.TickCount64));
+                            _world.Apply(ping);
                         }
                         catch { /* ignore a malformed echo */ }
                         break;
@@ -985,6 +1028,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // no wire-protocol change.
                         _world.Apply(Reload.Decode(m));
                         break;
+                    case ChangeAlliances.Fmid:
+                        _world.Apply(ChangeAlliances.Decode(m));
+                        break;
+                    case SwapPart.Fmid:
+                        _world.Apply(SwapPart.Decode(m));
+                        break;
+                    case DropPart.Fmid:
+                        _world.Apply(DropPart.Decode(m));
+                        break;
                     case ChatMessage.Fmid:
                         _world.Apply(ChatMessage.Decode(m));
                         break;
@@ -992,6 +1044,27 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P626 — a new in-flight ballot was announced (P187); the
                         // world latches it as the ActiveBallot for the vote keys.
                         _world.Apply(Ballot.Decode(m));
+                        break;
+                    case CancelBallot.Fmid:
+                        _world.Apply(CancelBallot.Decode(m));
+                        break;
+                    case PositionReqBroadcast.Fmid:
+                        _world.Apply(PositionReqBroadcast.Decode(m));
+                        break;
+                    case DelPositionReq.Fmid:
+                        var refusal = DelPositionReq.Decode(m);
+                        if (_ack is { } ack && refusal.ShipId == ack.ShipID)
+                            _lastPositionRefusal = refusal;
+                        _world.Apply(refusal);
+                        break;
+                    case LockLobby.Fmid:
+                        _world.Apply(LockLobby.Decode(m));
+                        break;
+                    case LockSides.Fmid:
+                        _world.Apply(LockSides.Decode(m));
+                        break;
+                    case AutoAccept.Fmid:
+                        _world.Apply(AutoAccept.Decode(m));
                         break;
                     case ChatBuoy.Fmid:
                         _world.Apply(ChatBuoy.Decode(m));
@@ -1026,6 +1099,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case PlayerReady.Fmid:
                         _world.Apply(PlayerReady.Decode(m));
+                        break;
+                    case JoinedMission.Fmid:
+                        _world.Apply(JoinedMission.Decode(m));
+                        if (_world.JoinError is not null)
+                        {
+                            _lost = true;
+                            SessionLost?.Invoke();
+                            return;
+                        }
+                        break;
+                    case ObjectSpotted.Fmid:
+                        _world.Apply(ObjectSpotted.Decode(m));
+                        break;
+                    case SetWingId.Fmid:
+                        _world.Apply(SetWingId.Decode(m));
+                        break;
+                    case OrderChange.Fmid:
+                        _world.Apply(OrderChange.Decode(m));
                         break;
                     case MissionDef.Fmid:
                         _world.Apply(MissionDef.Decode(m));
@@ -1161,6 +1252,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // records it so Game1 can drive the warning loop.
                         _world.Apply(MissileTrackWarningUpdate.Decode(m));
                         break;
+                    case ScoreRosterDelta.Fmid:
+                        _world.Apply(ScoreRosterDelta.Decode(m));
+                        break;
                     case ScoreRosterUpdate.Fmid:
                         // P265 — periodic owner-only in-mission scoreboard
                         // snapshot (name/side/kills/deaths); the world keeps the
@@ -1229,6 +1323,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P374 — a side's per-sector threat state changed; the
                         // world stores the level + queues the sound/status cues.
                         _world.Apply(ClusterWarningUpdate.Decode(m));
+                        break;
+                    case ShipWarningUpdate.Fmid:
+                        _world.Apply(ShipWarningUpdate.Decode(m));
                         break;
                     case CreateBuckets.Fmid:
                         // P284 — the join-sync CREATE_BUCKETS preface; the world
@@ -1306,6 +1403,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // reply (appmsg.cpp:1856). Previously unconsumed, so the
                         // real client never heard the denial or the arrival jump.
                         _world.Apply(TeleportAck.Decode(m));
+                        break;
+                    case Promote.Fmid:
+                        _world.Apply(Promote.Decode(m));
+                        break;
+                    case HighlightCluster.Fmid:
+                        _world.Apply(HighlightCluster.Decode(m));
+                        break;
+                    case ViewClusterReply.Fmid:
+                        _world.Apply(ViewClusterReply.Decode(m));
                         break;
                     case BoardNack.Fmid:
                         // P638 — FM_S_BOARD_NACK(178): boarding refusal

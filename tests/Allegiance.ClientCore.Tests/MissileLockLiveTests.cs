@@ -95,13 +95,13 @@ public class MissileLockLiveTests
         string? missileName = null;
         SetShipSpawner(server, (core, mission, shipId) =>
         {
-            var hull = core.HullTypes.Values.First();
-            var ship = new Ship(shipId, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            var hull = core.HullTypes.Values.First() with { ScannerRange = 20000, Signature = 100 };
+            var ship = new Ship(shipId, hull, new Vector3(0f, 5000f, 5000f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
             mission.PlaceShip(ship, mission.Sectors[0]);
 
             // Enemy target, directly ahead at 100 units, in range for a lock.
-            var target = new Ship((short)(shipId + 666), hull, new Vector3(100f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            var target = new Ship((short)(shipId + 666), hull, new Vector3(100f, 5000f, 5000f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 1) target.SideId = mission.Sides[1].Id; else target.SideId = 99;
             mission.PlaceShip(target, mission.Sectors[0]);
             ship.Orientation.Set((target.Position - ship.Position).Normalize());
@@ -132,6 +132,8 @@ public class MissileLockLiveTests
         Assert.True(joined < 4000, "client must be assigned a ship");
         Assert.NotNull(placedShip);
         Assert.NotNull(placedTarget);
+        PumpUntil(server, () => placedTarget!.SeenBySide(placedShip!.SideId!.Value), 1000);
+        Assert.True(placedTarget!.SeenBySide(placedShip.SideId!.Value), "missile target must be detected");
         Assert.NotNull(missileName);
 
         // The lock builds server-side each tick; the owner-only update streams in.

@@ -235,6 +235,13 @@ public class LiveMoneyTests
             () => sp.Carrier.StationId is not null && sp.Boarder.StationId is not null, 6000);
         Assert.True(docked < 6000, "carrier and boarder did not dock before boarding");
 
+        // H-03 / FedSrv.CPP:2426-2443: only paid hardware is refundable.
+        // Model an already purchased hull for this broadcast-focused fixture.
+        sp.Boarder.RefundableHullValue = sp.Boarder.HullType.Price;
+        var boarderLive = server.Ships.Single(l => l.Ship == sp.Boarder);
+        int walletBefore = boarderLive.Wallet.Money;
+        long treasuryBefore = sp.Boarder.Mission!.Sides.First(s => s.Id == sp.Boarder.SideId).Money;
+
         // The boarder boards the carrier (as an observer — no equipped turret,
         // but boarding still succeeds and the refund fires, FedSrv.CPP:2426-2443).
         boarderBot.SendBoard(carrierId);
@@ -248,8 +255,8 @@ public class LiveMoneyTests
             () => boarderBot.MoneyChanges.Count >= 1 && carrierBot.MoneyChanges.Count >= 1, 9000);
         Assert.True(seen < 9000, "MONEY_CHANGE(60) did not reach both same-side peers");
 
-        // Both same-side peers saw the SAME frame: refund of hull 504 = 500,
-        // sidTo = the boarded ship, sidFrom = NA (server-initiated pooled credit).
+        // Both same-side peers saw the SAME frame: refund of the paid hull 504 = 500,
+        // sidTo = the boarded ship, sidFrom = NA (server-initiated personal credit).
         var bmc = Assert.Single(boarderBot.MoneyChanges);
         var cmc = Assert.Single(carrierBot.MoneyChanges);
         Assert.Equal(500, bmc.DMoney);
@@ -259,9 +266,10 @@ public class LiveMoneyTests
         Assert.Equal(bmc.SidTo, cmc.SidTo);
         Assert.Equal(bmc.SidFrom, cmc.SidFrom);
 
-        // The refund actually landed in the side treasury (independent check).
+        // H-03: refund belongs to the buyer's personal wallet, never the treasury.
         var side = sp.Boarder.Mission!.Sides.First(s => s.Id == sp.Boarder.SideId!.Value);
-        Assert.Equal(500L, side.Money);
+        Assert.Equal(treasuryBefore, side.Money);
+        Assert.Equal(walletBefore + 500, boarderLive.Wallet.Money);
 
         // Negative: the other side's peer saw NO MONEY_CHANGE.
         int neg = PumpUntil(server, () => outsiderBot.MoneyChanges.Count >= 1, 1500);

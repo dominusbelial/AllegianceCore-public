@@ -1,0 +1,38 @@
+{
+  "build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "focusedCaseExecutions": 171,
+  "preservedFeatureCases": 85,
+  "suiteCounts": {
+    "Lobby": {
+      "total": 19,
+      "executed": 19,
+      "passed": 19,
+      "failed": 0
+    },
+    "Core": {
+      "total": 4446,
+      "executed": 4446,
+      "passed": 4445,
+      "failed": 1
+    },
+    "ClientCore": {
+      "total": 964,
+      "executed": 964,
+      "passed": 964,
+      "failed": 0
+    },
+    "ClientCore.MonoGame": {
+      "total": 2146,
+      "executed": 2143,
+      "passed": 2143,
+      "failed": 0
+    }
+  },
+  "suiteFailureIsolationPasses": 3,
+  "unclearedFailures": [],
+  "gitWrites": false,
+  "rawResultsFormat": "gzip-compressed TRX"
+}

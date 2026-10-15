@@ -34,6 +34,8 @@ public sealed class EventLog
     private readonly List<Payday> _paydays = new();
     private readonly List<KillShip> _kills = new();
     private readonly List<PlayerReady> _playerReadyEchoes = new();
+    private readonly List<ClientWorld.PositionRequestResult> _positionRequestResults = new();
+    public IReadOnlyList<ClientWorld.PositionRequestResult> PositionRequestResults => _positionRequestResults;
 
     /// <summary>Chat relayed by the server (CHATMESSAGE, 23), in arrival order.</summary>
     public IReadOnlyList<ChatMessage> Chats => _chats;
@@ -68,6 +70,7 @@ public sealed class EventLog
         _paydays.Clear();
         _kills.Clear();
         _playerReadyEchoes.Clear();
+        _positionRequestResults.Clear();
     }
 
     // ── internal append sites, driven by ClientWorld.Apply on the receive thread ──
@@ -76,6 +79,7 @@ public sealed class EventLog
     internal void Record(Payday m) => Append(_paydays, m);
     internal void Record(KillShip m) { KillSequence++; Append(_kills, m); }
     internal void Record(PlayerReady m) => Append(_playerReadyEchoes, m);
+    internal void Record(ClientWorld.PositionRequestResult m) => Append(_positionRequestResults, m);
 
     private static void Append<T>(List<T> list, T item)
     {

@@ -1,0 +1,58 @@
+[
+  {
+    "native": true,
+    "parallel": false,
+    "floor": 2,
+    "ticks": 105,
+    "peers": 144,
+    "packets": 261064,
+    "bytes": 22996941,
+    "offHash": "3C2919674F7E403C06960B4F070B2134C2663DEE79AB4189FBC429FEC74335F6",
+    "onHash": "3C2919674F7E403C06960B4F070B2134C2663DEE79AB4189FBC429FEC74335F6",
+    "sharedHash": "3C2919674F7E403C06960B4F070B2134C2663DEE79AB4189FBC429FEC74335F6",
+    "unsharedHeavyEncodes": 264739,
+    "sharedHeavyEncodes": 15225
+  },
+  {
+    "native": false,
+    "parallel": true,
+    "floor": 2,
+    "ticks": 105,
+    "peers": 144,
+    "packets": 276184,
+    "bytes": 83832573,
+    "offHash": "1C4519215B2B37DFB597F3DFB9EEB79F03F61CF88449F9700E9A47D0D40138BD",
+    "onHash": "1C4519215B2B37DFB597F3DFB9EEB79F03F61CF88449F9700E9A47D0D40138BD",
+    "sharedHash": "1C4519215B2B37DFB597F3DFB9EEB79F03F61CF88449F9700E9A47D0D40138BD",
+    "unsharedHeavyEncodes": 292467,
+    "sharedHeavyEncodes": 15225
+  },
+  {
+    "native": false,
+    "parallel": false,
+    "floor": 0,
+    "ticks": 105,
+    "peers": 144,
+    "packets": 276184,
+    "bytes": 77143800,
+    "offHash": "E9818924260ED254C71902066D533BD620B6C03CCC6EC152F08714E6E1F862D3",
+    "onHash": "E9818924260ED254C71902066D533BD620B6C03CCC6EC152F08714E6E1F862D3",
+    "sharedHash": "E9818924260ED254C71902066D533BD620B6C03CCC6EC152F08714E6E1F862D3",
+    "unsharedHeavyEncodes": 120960,
+    "sharedHeavyEncodes": 15225
+  },
+  {
+    "native": true,
+    "parallel": true,
+    "floor": 3,
+    "ticks": 105,
+    "peers": 144,
+    "packets": 261064,
+    "bytes": 27521994,
+    "offHash": "27B42CC5C6DE7E55C3B5FF84DB7063A2C982278558722EF0E932DE09D74E11BC",
+    "onHash": "27B42CC5C6DE7E55C3B5FF84DB7063A2C982278558722EF0E932DE09D74E11BC",
+    "sharedHash": "27B42CC5C6DE7E55C3B5FF84DB7063A2C982278558722EF0E932DE09D74E11BC",
+    "unsharedHeavyEncodes": 380766,
+    "sharedHeavyEncodes": 15225
+  }
+]

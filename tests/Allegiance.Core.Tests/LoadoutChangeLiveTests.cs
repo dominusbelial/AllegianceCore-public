@@ -132,7 +132,7 @@ public class LoadoutChangeLiveTests
             var subject = server.Ships.First(l => l.Ship.Id == subjectId).Ship;
             var mission = subject.Mission ?? throw new InvalidOperationException("subject must have a mission");
             var weapon = RealWeapon(mission);
-            const byte mount = 200;    // a deliberately unusual slot — deterministic, unoccupied
+            const byte mount = 0;    // H-07: native weapon mount, not a signed cargo index
 
             // Gate precondition: the same-side observer must already hold the
             // subject's EXPORT, else the server (correctly) withholds the teammate send.

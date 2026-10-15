@@ -87,7 +87,7 @@ internal sealed partial class BotManager
     }
 
     private static void RelaunchDockedPod(ActiveBot bot, ConnectionSession cs, double now,
-        Action<short, bool, IReadOnlyList<ExpandedPartData>>? send = null)
+        Action<short, bool, IReadOnlyList<ExpandedPartData>>? send = null, bool prepareFinale = true)
     {
         // The player's shop uses one BUY_LOADOUT(fLaunch:true), not an NPC undock.
         lock (cs.Gate)
@@ -104,7 +104,7 @@ internal sealed partial class BotManager
             }
             return;
         }
-        if (bot.RelaunchAttempts == 0) PrepareFinaleRelaunch(bot, now);
+        if (bot.RelaunchAttempts == 0 && prepareFinale) PrepareFinaleRelaunch(bot, now);
         if (bot.FinaleBomberActive) bot.FinaleGrantVerified = false;
         cs.ResetBuyLoadoutAcks();
         bot.RelaunchAttempts++;
@@ -148,7 +148,12 @@ internal sealed partial class BotManager
             if (bot.ShipId != ship || missionChanged)
             {
                 bool reinforcement = bot.IsPod && !missionChanged;
-                if (missionChanged) { RestoreFinaleForNextMission(bot); bot.CompletedPodCycles = 0; }
+                if (missionChanged)
+                {
+                    RestoreFinaleForNextMission(bot, now, world.GameOverResult);
+                    bot.CompletedPodCycles = 0;
+                    bot.MissionLaunchPending = true;
+                }
                 ResetNewLife(bot, now, reinforcement);
                 if (!reinforcement)
                 {
@@ -189,6 +194,49 @@ internal sealed partial class BotManager
             return true;
         }
     }
+
+    // Native reseats players in a hangar (FedSrv/fsmission.cpp:791-796),
+    // then BUY_LOADOUT(fLaunch) buys and launches (FedSrv/FedSrv.CPP:6189-6190,
+    // 6247-6259, 6282-6303). Ready alone never launches or restores hardware.
+    // Use the existing purchase/ACK/retry path, without counting a pod cycle or
+    // preparing a finale bomber: this is the next match's original combat loadout.
+    private static bool LaunchNextMission(ActiveBot bot, ConnectionSession cs, double now)
+    {
+        if (!bot.MissionLaunchPending) return false;
+        lock (cs.Gate)
+        {
+            // The starting-money payday runs at Started; do not exhaust the
+            // purchase retries against an empty wallet during briefing.
+            if (!cs.World.WorldReady || cs.World.Mission?.Stage != MissionStageMessage.StageStarted
+                || !cs.World.Ships.TryGetValue(bot.ShipId, out var me)) return true;
+            HandleRelaunchAck(bot, cs);
+            var ack = cs.BuyLoadoutAcks.LastOrDefault();
+            bool isPod = Catalog.IsLifepodHull(me.HullId);
+            // A partial parts grant can still launch the requested hull (the
+            // same warning-only policy as initial spawn). Do not let that one
+            // purchase hide every subsequent death and pod relaunch. The receive
+            // thread may also have consumed an eject/dock after SET_CLUSTER and
+            // before this pass; the launch ACK still completes the initial life.
+            if (bot.RelaunchAttempts > 0 && ack is { FLaunch: true }
+                && IsSuccessorOf(bot.HullId, ack.HullId)
+                && (me.StationId < 0 || isPod) && (me.HullId == ack.HullId || isPod))
+            {
+                bot.MissionLaunchPending = false;
+                bot.RelaunchAttempts = 0;
+                bot.RelaunchAt = double.NegativeInfinity;
+                bot.RelaunchAckHandled = bot.RelaunchExhausted = false;
+                Console.WriteLine($"[p682] bot '{bot.Name}' ship {bot.ShipId} bought and launched next-match hull {ack.HullId}");
+                return false;
+            }
+            if (me.StationId >= 0)
+            {
+                RelaunchDockedPod(bot, cs, now, prepareFinale: false);
+                return true;
+            }
+            return true;
+        }
+    }
+
     internal static short? PickEnemyStation(IEnumerable<Allegiance.Core.DataStationIGC> stations,
         short side, short sector, Vector3 pos) => stations
         .Where(s => s.SideId >= 0 && s.SideId != side && s.ClusterId == sector && s.Position is { Length: 3 })

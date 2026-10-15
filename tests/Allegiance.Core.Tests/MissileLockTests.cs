@@ -100,6 +100,7 @@ public class MissileLockTests
         var ship = new Ship(id, hull, position, Vector3.Zero, orientation ?? new Orientation());
         ship.SideId = sideId;
         mission.PlaceShip(ship, sector);
+        ship.SideVisibility.SetSideVisibility(0, true); // detected target; visibility refusal is covered by P655
         return ship;
     }
 

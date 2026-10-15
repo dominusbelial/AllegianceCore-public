@@ -92,6 +92,7 @@ public sealed class InboundFloodSafetyLiveTests
             return (ship, sector);
         };
         server.Boot(Config());
+        foreach (var mission in server.Missions) mission.Stage = MissionStage.Started;
         return server;
     }
 
@@ -108,6 +109,10 @@ public sealed class InboundFloodSafetyLiveTests
         PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
         if (!bots.All(b => b.ShipAssignment is not null))
             throw new TimeoutException("bots did not get seated");
+        foreach (var bot in bots) bot.SendDocked();
+        if (PumpUntil(server, () => server.Ships.All(l => l.Ship.StationId is null), 4000) >= 4000)
+            throw new TimeoutException("healthy peers did not launch");
+        foreach (var bot in bots) bot.CommandControls(new ControlData(0, 0, 0, 1), 0);
         return bots;
     }
 
@@ -182,6 +187,7 @@ public sealed class InboundFloodSafetyLiveTests
             Assert.Equal(0, unsupported);
 
             // Other peers kept ticking throughout the flood.
+            PumpUntil(server, () => bots[0].HeavyShipsUpdates.Count > hBefore, 800);
             Assert.True(bots[0].HeavyShipsUpdates.Count > hBefore,
                 $"healthy bot 0 must keep receiving per-tick updates during the flood (had {hBefore}, now {bots[0].HeavyShipsUpdates.Count})");
             Assert.True(server.SimNow > simBefore, "mission clock must keep advancing while the oversized packet is rejected");
@@ -251,6 +257,7 @@ public sealed class InboundFloodSafetyLiveTests
             Assert.True(unsupported <= 8, $"unsupported-fmid refusal log must be rate-limited (got {unsupported} lines for ~200 messages)");
 
             // Other peers kept ticking throughout.
+            PumpUntil(server, () => bots[0].HeavyShipsUpdates.Count > hBefore, 800);
             Assert.True(bots[0].HeavyShipsUpdates.Count > hBefore,
                 $"healthy bot 0 must keep receiving per-tick updates during the flood (had {hBefore}, now {bots[0].HeavyShipsUpdates.Count})");
             Assert.True(server.SimNow > simBefore, "mission clock must keep advancing during the unsupported-fmid flood");

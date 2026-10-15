@@ -105,4 +105,11 @@ public class GameOverPanelInfoTests
             ch => Assert.True(ch >= 32 && ch <= 126, $"non-ASCII U+{(int)ch:X4}"));
         Assert.DoesNotContain("\u2014", info.Reason);
     }
+    [Theory]
+    [InlineData(30, "NEXT MATCH IN 30s")]
+    [InlineData(0, "NEXT MATCH IN 0s")]
+    [InlineData(-1, "NEXT MATCH IN 0s")]
+    public void Next_match_timer_is_visible_and_never_negative(int seconds, string label) =>
+        Assert.Equal(label, GameOverPanelInfo.NextMatchTimer(seconds));
+
 }

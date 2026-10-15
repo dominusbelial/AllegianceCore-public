@@ -2,6 +2,7 @@ using System.Collections;
 using System.Text.Json;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
 using Allegiance.TestInfra;
 using Allegiance.Tools.McpSpawner;
@@ -70,10 +71,14 @@ public sealed class P656ShowcaseFinaleTests(Xunit.Abstractions.ITestOutputHelper
         var bomber = Showcase.RepresentativeHullOfRole(core, Showcase.HullRole.Bomber)!.Value;
         var original = Catalog.NativePreferredLoadout(bomber.HullId, bomber.Name);
         var chosen = ShowcaseFinale.SelectLoadout(core, target);
+        Assert.NotNull(chosen);
         var baseline = ShowcaseFinale.Volley(core, original.Parts, target);
         Assert.True(chosen.Volley.Hull > baseline.Hull);
         Assert.True(chosen.Volley.Score(target) > baseline.Score(target));
         var hull = core.HullTypes[chosen.HullId];
+        Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(hull));
+        Assert.NotEqual((short)73, chosen.HullId);
+        Assert.DoesNotContain("Flagship", chosen.HullName, StringComparison.OrdinalIgnoreCase);
         Assert.False(Allegiance.Core.Model.SuccessorUpgrade.HullIsObsolete(core, hull, null, core.ComputeRequiredTechUnion()));
         foreach (var part in chosen.Parts)
         {
@@ -122,6 +127,97 @@ public sealed class P656ShowcaseFinaleTests(Xunit.Abstractions.ITestOutputHelper
         Assert.Equal((short?)8, ShowcaseFinale.EscortTarget(Vector3.Zero, Vector3.Zero, [approach], 1500, 2500));
         Assert.Null(ShowcaseFinale.EscortTarget(Vector3.Zero, Vector3.Zero, [approach with { Velocity = new(1, 0, 0) }], 1500, 2500));
     }
+
+    [SkippableFact]
+    public void P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech()
+    {
+        Require.Artwork();
+        var core = Catalog.RepresentativeCore();
+        Assert.Equal(Showcase.HullRole.Heavy, Showcase.ClassifyHull(core.HullTypes[73]));
+        foreach (var hull in core.HullTypes.Values.Where(h => h.Name.Contains("Flagship", StringComparison.OrdinalIgnoreCase)
+                     || h.HasCapability(DataHullTypeIGC.HabmCarrier)))
+            Assert.Equal(Showcase.HullRole.Heavy, Showcase.ClassifyHull(hull));
+        foreach (var target in core.StationTypes.Values)
+        {
+            var chosen = ShowcaseFinale.SelectLoadout(core, target, core.ComputeRequiredTechUnion());
+            Assert.NotNull(chosen);
+            Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(core.HullTypes[chosen.HullId]));
+            Assert.NotEqual((short)73, chosen.HullId);
+            Assert.False(core.HullTypes[chosen.HullId].HasCapability(DataHullTypeIGC.HabmCarrier));
+        }
+    }
+
+    [SkippableTheory]
+    [InlineData("Flagship")] [InlineData("Carrier")] [InlineData("Heavy")]
+    [InlineData("Gunship")] [InlineData("Capital")] [InlineData("Destroyer")]
+    [InlineData("Cruiser")] [InlineData("Frigate")] [InlineData("Corvette")]
+    public void P656b_HeavyNamesOverrideStationThreatAndBomberName(string name)
+    {
+        Require.Artwork();
+        var hull = Catalog.RepresentativeCore().HullTypes[73] with
+        {
+            Name = name + " Bomber", HabmCapabilities = DataHullTypeIGC.HabmThreatToStation,
+        };
+        Assert.Equal(Showcase.HullRole.Heavy, Showcase.ClassifyHull(hull));
+        Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(hull with { Name = "Strike craft" }));
+        Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(hull with { Name = "Bomber", HabmCapabilities = 0 }));
+        Assert.Equal(Showcase.HullRole.Heavy, Showcase.ClassifyHull(hull with
+        {
+            Name = "Strike craft", HabmCapabilities = DataHullTypeIGC.HabmThreatToStation | DataHullTypeIGC.HabmCarrier,
+        }));
+    }
+
+    [SkippableFact]
+    public void P656b_NoBomberCatalogueDoesNotSubstituteCapital()
+    {
+        Require.Artwork();
+        var file = IgcReader.ParseFile(Path.Combine(Catalog.ArtRoot, "PCore001.igc"));
+        var core = StaticCore.Load(new IgcFile
+        {
+            Wrapper = file.Wrapper, Version = file.Version, Body = file.Body,
+            BodyLength = file.BodyLength, BytesConsumed = file.BytesConsumed,
+            Records = file.Records.Where(r => r.Type != IgcObjectType.HullType
+                || Showcase.ClassifyHull(DataHullTypeIGC.Decode(file.Body.Slice(r.PayloadOffset, r.Size).Span))
+                    != Showcase.HullRole.Bomber).ToArray(),
+        });
+        Assert.True(Showcase.IsPlayerBuyable(core, core.HullTypes[73]));
+        Assert.Null(ShowcaseFinale.SelectLoadout(core, core.StationTypes[10]));
+    }
+
+    [SkippableFact]
+    public void P656b_RealCoreSelectionHonorsHullAndPartTechAvailability()
+    {
+        Require.Artwork();
+        var core = Catalog.RepresentativeCore();
+        var target = core.StationTypes[10];
+        Assert.Null(ShowcaseFinale.SelectLoadout(core, target, TechTreeBitMask.Empty));
+        var full = ShowcaseFinale.SelectLoadout(core, target);
+        Assert.NotNull(full);
+        var bomber = core.HullTypes[full.HullId];
+        // Unlock this hull and its gun, leaving other equipment tech-locked.
+        var gun = core.PartTypes[full.Parts.First(p => core.PartTypes.TryGetValue(p.PartId, out var type)
+            && type.EquipmentType == EquipmentType.Weapon).PartId];
+        var techs = TechTreeBitMask.FromBytes(bomber.TtbmRequired).Or(TechTreeBitMask.FromBytes(gun.TtbmRequired));
+        Assert.Contains(full.Parts, part =>
+        {
+            if (!core.PartTypes.TryGetValue(part.PartId, out var type)) core.TryBuildExpendableLauncher(part.PartId, out type);
+            return !TechTreeBitMask.RequiredTechsBuyable(type.TtbmRequired, null, techs);
+        });
+        var chosen = ShowcaseFinale.SelectLoadout(core, target, techs);
+        Assert.NotNull(chosen);
+        Assert.NotEqual(core.ComputeRequiredTechUnion(), techs);
+        Assert.True(TechTreeBitMask.RequiredTechsBuyable(core.HullTypes[chosen.HullId].TtbmRequired, null, techs));
+        foreach (var part in chosen.Parts)
+        {
+            if (!core.PartTypes.TryGetValue(part.PartId, out var type)) Assert.True(core.TryBuildExpendableLauncher(part.PartId, out type));
+            Assert.True(TechTreeBitMask.RequiredTechsBuyable(type.TtbmRequired, null, techs));
+        }
+        // The same requirements supplied by the station's local techs are legal.
+        var local = ShowcaseFinale.SelectLoadout(core, target, TechTreeBitMask.Empty, techs.ToBytes());
+        Assert.NotNull(local);
+        Assert.Equal(chosen.HullId, local.HullId);
+        Assert.Equal(chosen.Parts, local.Parts);
+    }
 }
 
 public sealed partial class BotFixRegressionTests
@@ -135,9 +231,11 @@ public sealed partial class BotFixRegressionTests
         internal readonly BotManager Manager;
         internal readonly DataStationIGC[] Stations;
         internal readonly double Started;
-        internal FinaleRig(ShowcaseFinale.Settings settings, int perSide = 12)
+        internal readonly DataHullTypeIGC Bomber;
+        internal FinaleRig(ShowcaseFinale.Settings settings, int perSide = 12, bool allTech = true)
         {
             var core = Catalog.RepresentativeCore();
+            Bomber = Showcase.RepresentativeHullOfRole(core, Showcase.HullRole.Bomber)!.Value;
             var station = core.StationTypes.Values.OrderBy(s => s.StationTypeId)
                 .First(s => s.Name.Contains("Garrison", StringComparison.OrdinalIgnoreCase));
             Stations = [Station(100, 0, 1) with { StationTypeId = station.StationTypeId },
@@ -155,7 +253,14 @@ public sealed partial class BotFixRegressionTests
                 Set(bot, "Parts", Catalog.NativePreferredLoadout(15, "fighter").Parts);
                 Set(bot, "CompletedPodCycles", 1);
                 DefenseNoSocketSender(bot);
-                if (i % perSide < 2) Set(bot, "Role", "bomber");
+                if (allTech)
+                    cs.World.Apply(new SideTechChange { SideId = (short)(i / perSide),
+                        TtbmDevelopments = core.ComputeRequiredTechUnion().ToBytes() });
+                if (i % perSide < 2)
+                {
+                    Set(bot, "Role", "bomber"); Set(bot, "HullId", Bomber.HullId); Set(bot, "HullName", Bomber.Name);
+                    Set(bot, "Parts", Catalog.NativePreferredLoadout(Bomber.HullId, Bomber.Name).Parts);
+                }
                 return bot;
             }).ToArray();
             Manager = BotFixRegressionTests.Manager(Bots);
@@ -174,6 +279,49 @@ public sealed partial class BotFixRegressionTests
         public void Dispose() { foreach (var cs in Sessions) cs.Dispose(); }
     }
 
+    [SkippableTheory]
+    [InlineData(false)] [InlineData(true)]
+    public void P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(bool knownTech)
+    {
+        Require.Artwork(); using var reads = new DefenseLiveReads(); using var rig = new FinaleRig(new(Bombers: 1), allTech: false);
+        var bot = rig.Bots[0]; var cs = rig.Sessions[0];
+        var hull = Get<short>(bot, "HullId");
+        var parts = Get<IReadOnlyList<ExpandedPartData>>(bot, "Parts");
+        Assert.True(FinaleJson(rig.Manager).GetProperty("wings")[0].GetProperty("usingExistingBomberLoadouts").GetBoolean());
+        if (knownTech)
+            cs.World.Apply(new SideTechChange { SideId = 0, TtbmDevelopments = TechTreeBitMask.Empty.ToBytes() });
+        rig.Mature();
+        cs.World.Apply(new DockedNotify { StationId = 100 });
+        Set(bot, "IsPod", true); Set(bot, "PodDocked", true);
+        var buys = new List<(short Hull, bool Launch, IReadOnlyList<ExpandedPartData> Parts)>();
+        Action<short, bool, IReadOnlyList<ExpandedPartData>> send = (h, l, p) => buys.Add((h, l, p));
+        Call("RelaunchDockedPod", null, bot, cs, rig.Started + 1801, send);
+        var buy = Assert.Single(buys);
+        Assert.True(buy.Launch); Assert.Equal(hull, buy.Hull); Assert.Same(parts, buy.Parts);
+        Assert.True(Get<bool>(bot, "FinaleBomberActive"));
+        Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(Catalog.RepresentativeCore().HullTypes[buy.Hull]));
+        var wing = FinaleJson(rig.Manager).GetProperty("wings")[0];
+        Assert.True(wing.GetProperty("usingExistingBomberLoadouts").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, wing.GetProperty("loadout").ValueKind);
+        Assert.Equal(hull, wing.GetProperty("grants")[0].GetProperty("requestedHull").GetInt16());
+        Assert.Equal(parts.Count, wing.GetProperty("grants")[0].GetProperty("requestedParts").GetArrayLength());
+        ((Allegiance.Core.Transport.ITransportSite)cs).OnReceive(Allegiance.Core.Transport.ConnectionId.Server,
+            FedPacket.Pack([new BuyLoadoutAck { HullId = hull, Parts = parts, FBoughtEverything = true, FLaunch = true }.Encode()]));
+        Call("HandleRelaunchAck", null, bot, cs);
+        Assert.True(Get<bool>(bot, "FinaleGrantVerified"));
+    }
+
+    [SkippableFact]
+    public void P656b_CapitalWithBomberRoleCannotBeReserved()
+    {
+        Require.Artwork(); using var reads = new DefenseLiveReads(); using var rig = new FinaleRig(new(), 2);
+        Assert.Equal("bomber", Get<string>(rig.Bots[0], "Role"));
+        Set(rig.Bots[0], "HullId", (short)73);
+        rig.Mature();
+        Assert.False(Get<bool>(rig.Bots[0], "FinaleBomberReserved"));
+        Assert.True(Get<bool>(rig.Bots[1], "FinaleBomberReserved"));
+    }
+
     [SkippableFact]
     public void P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped()
     {
@@ -184,7 +332,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Single(rig.Bots, b => Get<bool>(b, "FinaleBomberReserved"));
         Assert.All(rig.Bots, b => { Assert.False(Get<bool>(b, "FinaleBomberActive")); Assert.False(Get<bool>(b, "FinaleEscort")); });
         var bomber = rig.Bots[0]; var cs = rig.Sessions[0];
-        Assert.Equal((short)15, Get<short>(bomber, "HullId"));
+        Assert.Equal(rig.Bomber.HullId, Get<short>(bomber, "HullId"));
         cs.World.Apply(new DockedNotify { StationId = 100 });
         Set(bomber, "IsPod", true); Set(bomber, "PodDocked", true);
         var buys = new List<(short Hull, bool Launch, IReadOnlyList<ExpandedPartData> Parts)>();
@@ -360,7 +508,7 @@ public sealed partial class BotFixRegressionTests
         cs.World.BeginNextMission(); Seat(cs.World, 40);
         Call("RefreshLife", rig.Manager, bot, cs, rig.Started + 1811);
         Assert.False(Get<bool>(bot, "FinaleBomberActive")); Assert.False(Get<bool>(bot, "FinaleEscort"));
-        Assert.Equal((short)15, Get<short>(bot, "HullId"));
+        Assert.Equal(rig.Bomber.HullId, Get<short>(bot, "HullId"));
         Assert.False(Get<bool>(bot, "Arrived")); Assert.Equal((short)-1, Get<short>(bot, "ReadyShipId"));
         Assert.Equal("next mission", FinaleJson(rig.Manager).GetProperty("state").GetString());
         Assert.Equal(1, FinaleJson(rig.Manager).GetProperty("nextMission").GetProperty("resetBots").GetInt32());
@@ -369,9 +517,27 @@ public sealed partial class BotFixRegressionTests
         Call("ReReadyBot", rig.Manager, bot);
         Assert.Equal((short)40, Get<short>(bot, "ReadyShipId"));
         Assert.False(Get<bool>(bot, "ObjectivesPending"));
-        Set(bot, "Launched", true);
+        cs.World.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarting });
+        cs.World.Apply(new DockedNotify { StationId = 100 });
+        Call("DriveCombat", rig.Manager, bot, rig.Started + 1811.5, null);
+        Assert.True(Get<bool>(bot, "MissionLaunchPending"));
+        Assert.Equal(0, Get<int>(bot, "RelaunchAttempts")); // wait for the starting-money payday
+        cs.World.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarted });
         Call("DriveCombat", rig.Manager, bot, rig.Started + 1812, null);
-        Assert.NotEmpty(Get<List<short>>(bot, "Path")); // resumes a real route into the new map
+        Assert.True(Get<bool>(bot, "MissionLaunchPending"));
+        Assert.Equal(1, Get<int>(bot, "RelaunchAttempts"));
+        Assert.Empty(Get<List<short>>(bot, "Path")); // a hangar seat cannot start the march
+        var hull = Get<short>(bot, "HullId");
+        var parts = Get<List<ExpandedPartData>>(bot, "Parts");
+        ((Allegiance.Core.Transport.ITransportSite)cs).OnReceive(Allegiance.Core.Transport.ConnectionId.Server,
+            FedPacket.Pack([new BuyLoadoutAck { HullId = hull, Parts = parts,
+                FBoughtEverything = true, FLaunch = true }.Encode(),
+                new SetCluster { Ship = Pose(40), SectorId = 1 }.Encode()]));
+        Call("DriveCombat", rig.Manager, bot, rig.Started + 1813, null);
+        Assert.False(Get<bool>(bot, "MissionLaunchPending"));
+        Assert.Equal(0, Get<int>(bot, "CompletedPodCycles"));
+        Assert.False(Get<bool>(bot, "FinaleBomberActive"));
+        Assert.NotEmpty(Get<List<short>>(bot, "Path")); // resumes the route after purchase + launch
     }
 
     [SkippableFact]
@@ -387,4 +553,41 @@ public sealed partial class BotFixRegressionTests
         manager.ConfigureFinale(new(AfterMinutes: 0), ["probe-bot"]);
         Assert.Empty(manager.FinaleStatus()); Assert.Null(Get<object?>(bot, "Finale"));
     }
+    [SkippableFact]
+    public void P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh()
+    {
+        Require.Artwork(); using var reads = new DefenseLiveReads(); using var rig = new FinaleRig(new(), 1);
+        for (int i = 0; i < rig.Bots.Length; i++)
+            Call("RefreshLife", rig.Manager, rig.Bots[i], rig.Sessions[i], rig.Started);
+        var freshStations = rig.Stations.Select(s => s with { StationId = (short)(s.StationId + 1000) }).ToArray();
+        for (int i = 0; i < rig.Bots.Length; i++)
+        {
+            var world = rig.Sessions[i].World;
+            world.BeginNextMission(); Seat(world, (short)(40 + i));
+            world.Apply(new JoinSide { ShipId = (short)(40 + i), SideId = (short)i });
+            DefenseMap(world);
+            foreach (short stationId in world.Stations.Keys.ToArray())
+                world.Apply(new StationDestroyed { StationId = stationId });
+            foreach (var station in freshStations) world.Apply(new ExportStation { Station = station });
+            world.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarted });
+            Call("RefreshLife", rig.Manager, rig.Bots[i], rig.Sessions[i], rig.Started + 1811);
+            if (i == 0)
+            {
+                rig.Tick(1812);
+                Assert.Single(rig.Manager.FinaleStatus()); // the other bot is still in the old generation
+            }
+        }
+        rig.Tick(1813);
+        var runs = rig.Manager.FinaleStatus().Select(r => JsonSerializer.SerializeToElement(r)).ToArray();
+        Assert.Equal(2, runs.Length);
+        Assert.Equal("armed", runs[1].GetProperty("state").GetString());
+        Assert.Equal(0, runs[1].GetProperty("killsLastFiveMinutes").GetInt32());
+        Assert.All(runs[1].GetProperty("wings").EnumerateArray(), w =>
+            Assert.Contains(freshStations, s => s.StationId == w.GetProperty("targetStation").GetInt16()));
+        Assert.All(runs[1].GetProperty("maturity").EnumerateArray(), m =>
+            Assert.Equal(0, m.GetProperty("relaunched").GetInt32()));
+        rig.Tick(1814);
+        Assert.Equal(2, rig.Manager.FinaleStatus().Length); // no duplicate re-arm
+    }
+
 }

@@ -174,8 +174,10 @@ public sealed class StationUnderAttackAlertLiveTests
             foreach (var bot in new[] { seat.AttackerBot, seat.DefenderBot })
             {
                 var ship = seat.Server.Ships.First(s => s.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Ship;
-                if (ship.SideId == seat.Station.SideId) { seat.Defender = ship; }
-                else { seat.Attacker = ship; }
+                // Socket arrival order is not connection/name order. Bind
+                // both the ship and its peer to the actual assigned side.
+                if (ship.SideId == seat.Station.SideId) { seat.Defender = ship; seat.DefenderBot = bot; }
+                else { seat.Attacker = ship; seat.AttackerBot = bot; }
             }
             Assert.NotNull(seat.Attacker);
             Assert.NotNull(seat.Defender);

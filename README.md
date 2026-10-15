@@ -73,6 +73,10 @@ dotnet run --project src/Allegiance.ClientCore.MonoGame -- 127.0.0.1 6073 "My Pi
 **What you should see:** the client logs on and opens the **READY CHECK** screen. Pick a
 team, press **Y** to ready up — a game starts once every team with a player in it is ready,
 so alone you start right away — and after a 15 s countdown you launch into space.
+After game over, connected players enter the next match automatically: a default
+30-second scoreboard intermission, then the normal 15-second briefing. See
+[automatic next-match configuration](docs/NEXT_MATCH.md) to change or disable it.
+Both timers follow simulation time under dilation.
 **F1** shows every key; **F6** rebinds them. If the log says
 `HD sky asset '…' unavailable`, the sky pack path isn't set (step 3).
 
@@ -121,6 +125,15 @@ dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance
   sector makes ticks run long, the game slows slightly instead of stuttering. In our 200v200
   tests it kept every tick under 150 ms with no disconnects, at about 0.92× speed on
   average (0.73× at the heaviest moment). Set `"off"` to disable.
+
+Inbound decoding can also run on the existing receive workers with
+`"receive": { "decouple": true }` or `ALLEGIANCE_RECEIVE_DECOUPLE=1` (default off;
+the environment overrides config). Commands still apply at tick boundaries in
+peer-id/arrival order, with bounded fair carry-over. For diagnosis, add
+`"measure": true` to that section: `[inbound]` reports each tick's message
+counts/bytes by fmid and peer, and `[inbound-window]` retains a 100-tick histogram
+including drain time. These detailed logs are opt-in. See the
+[P673 report](docs/reports/P673_RECEIVE_DECOUPLE.md) for local A/B evidence.
 
 **Client** — always a Release build; join *before* bots spawn so you see the whole battle:
 

@@ -15,7 +15,7 @@ namespace Allegiance.Core.Tests;
 /// <list type="number">
 /// <item><b>Successful build</b> — a Builder ship starts a build on a real
 /// asteroid with a real station type; the mission is ticked through the full
-/// 40-second completion deadline; the asteroid is gone from
+/// 30-second completion deadline; the asteroid is gone from
 /// <see cref="Sector.Mineable"/>, a new <see cref="Station"/> of the right type
 /// exists at the asteroid's position in <see cref="Sector.StationRuntimes"/> and
 /// <see cref="Sector.Stations"/>, and the Builder ship is gone from the sector's
@@ -32,8 +32,8 @@ namespace Allegiance.Core.Tests;
 /// <para>The build is started explicitly via
 /// <see cref="Sector.StartBuildingEffect"/> — the test-authored trigger point
 /// that Stage 3's Builder AI decision layer will eventually call instead. The
-/// timing is asserted against <see cref="BuildingEffect.BuildDuration"/> = 40
-/// (the native <c>c_dtEnvelope+c_dtGrow+c_dtOpaque+c_dtShrink</c>,
+/// timing is asserted against <see cref="BuildingEffect.BuildDuration"/> = 30
+/// (the native <c>c_dtEnvelope+c_dtGrow+c_dtOpaque</c>,
 /// <c>buildingeffectigc.h:19-22</c>). All assertions are data-derived from the
 /// real core; nothing is hardcoded except the synthetic asteroid/rock geometry
 /// the injected test builds.</para>
@@ -244,17 +244,17 @@ public sealed class BuildingConstructionLiveTests
         var effect = sector.StartBuildingEffect(builder, rock, stationType, start);
 
         Assert.Single(sector.BuildingEffects);
-        Assert.Equal(BuildingEffect.BuildDuration, effect.CompletionTime - start, 6);   // 40 s (buildingeffectigc.h:19-22)
-        Assert.Equal(40.0, effect.CompletionTime - start, 6);
+        Assert.Equal(BuildingEffect.BuildDuration, effect.CompletionTime - start, 6);   // 30 s (buildingeffectigc.h:19-22)
+        Assert.Equal(30.0, effect.CompletionTime - start, 6);
 
-        // ── advance just shy of the 40 s deadline: still in progress ────────
-        mission.Update(mission.LastUpdate + 39.0);
+        // ── advance just shy of the 30 s deadline: still in progress ────────
+        mission.Update(start + 29.99);
         Assert.Contains(rock, sector.Mineable);             // rock untouched
         Assert.Contains(builder, sector.Models);            // builder alive & in sector
         Assert.Contains(effect, sector.BuildingEffects);    // build still pending
 
-        // ── cross the deadline: now = start + 41 ────────────────────────────
-        mission.Update(mission.LastUpdate + 2.0);
+        // ── reach the native transformation boundary: start + 30 ────────────────────────────
+        mission.Update(start + 30.0);
 
         // Asteroid gone.
         Assert.DoesNotContain(rock, sector.Mineable);
@@ -275,7 +275,7 @@ public sealed class BuildingConstructionLiveTests
         Assert.True(PositionsMatch(builtStation.Data.Position, rockPos), "built station must sit at the asteroid's position");
         Assert.Contains(builtStation.Data, sector.Stations);               // static record registered too (AttachStation)
 
-        Console.WriteLine($"P163-LIVE-SUCCESS: build completed at +40s → rock {rock.Data.AsteroidId} gone, station {builtStation.Data.StationId} '{builtStation.Data.Name}' (type {stationType.StationTypeId}, side 0) at {rockPos}, builder {builder.Id} consumed");
+        Console.WriteLine($"P163-LIVE-SUCCESS: build completed at +30s → rock {rock.Data.AsteroidId} gone, station {builtStation.Data.StationId} '{builtStation.Data.Name}' (type {stationType.StationTypeId}, side 0) at {rockPos}, builder {builder.Id} consumed");
     }
 
     /// <summary>⭐ An interrupted build (Builder killed mid-build) aborts
@@ -314,7 +314,7 @@ public sealed class BuildingConstructionLiveTests
         KillShip(builder, mission, core);
         Assert.True(builder.Dead);                                         // the interruption trigger (Ship.cs:118)
 
-        // Tick well past what would have been the 40 s completion.
+        // Tick well past what would have been the 30 s completion.
         mission.Update(mission.LastUpdate + 40.0);                          // now = 50 > 40
 
         // Abort, cleanly: no station created, asteroid untouched, effect cleared.
@@ -324,7 +324,7 @@ public sealed class BuildingConstructionLiveTests
         Assert.DoesNotContain(sector.StationRuntimes, s => PositionsMatch(s.Data.Position, rockPos));
         Assert.DoesNotContain(sector.Stations, sd => PositionsMatch(sd.Position, rockPos));
 
-        Console.WriteLine("P163-LIVE-INTERRUPT: builder killed at +10s → build aborted, asteroid untouched, no station created past +40s");
+        Console.WriteLine("P163-LIVE-INTERRUPT: builder killed at +10s → build aborted, asteroid untouched, no station created past +30s");
     }
 
     /// <summary>⭐ P280 — the construction entry point itself rejects a build

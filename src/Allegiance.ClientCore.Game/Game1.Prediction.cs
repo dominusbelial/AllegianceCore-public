@@ -32,6 +32,24 @@ namespace Allegiance.ClientCore.MonoGame;
 //      pose + _ownShipCookie + _ownServerClock time.
 public sealed partial class Game1
 {
+    private Allegiance.Core.Wire.ExpandedPartData? _ownBoostPart;
+    private short _ownBoostHull = -1;
+
+    private void ConfigureOwnBooster(ShipEntity mine, ServerShipUpdate update)
+    {
+        Allegiance.Core.Wire.ExpandedPartData? mounted = null;
+        foreach (var part in mine.Loadout ?? [])
+            if (ResolveFlightPart(part.PartId)?.EquipmentType == EquipmentType.Afterburner) { mounted = part; break; }
+        if (_ownBoostHull == mine.HullId && mounted == _ownBoostPart && !mine.HasPendingReset) return;
+        _ownBoostPart = mounted;
+        _ownBoostHull = mine.HullId;
+        var hull = _shopCatalog?.Hulls.FirstOrDefault(h => h.HullId == mine.HullId);
+        var constants = _shopCatalog?.Core?.Constants.FloatConstants;
+        float rate = constants is { Length: > 10 } ? constants[10] : 1;
+        var type = mounted is { } p ? ResolveFlightPart(p.PartId)?.Type as DataPartTypeIGC.Afterburner : null;
+        _ownSim.SetAfterburner(type, mounted?.FractionMounted ?? 255, update.FuelFraction * (hull?.MaxFuel ?? 0), rate, mine.HasPendingReset ? update.Power : 0,
+            thrustFactor: _session.World.GlobalAttributesFor(_session.World.MySideId ?? -1).Get(GlobalAttributeSet.Thrust));
+    }
     /// <summary>
     /// P508 — drive the own-ship local simulation from the real client world for
     /// this frame. MUST be called under <c>_session.Gate</c> (with the own ship's
@@ -75,6 +93,8 @@ public sealed partial class Game1
             // the change never false-arms the red damage flash.
             _flashTracker.ResetBaseline();
         }
+
+        ConfigureOwnBooster(mine, up);
 
         // Adopt the current ship cookie every frame (pick up SET_CLUSTER at join and
         // warp, and SHIP_RESET renewals) — the send path echoes this.
@@ -285,7 +305,7 @@ public sealed partial class Game1
                 foreach (var pt in cat.Parts)
                 {
                     if (pt.PartId != p.PartId) continue;
-                    if (pt.Type is DataPartTypeIGC.Afterburner ab) { abMax = ab.MaxThrust; }
+                    if (pt.Type is DataPartTypeIGC.Afterburner ab) { abMax = ab.MaxThrust * gas.Get(GlobalAttributeSet.Thrust); }
                     break;
                 }
             }

@@ -85,6 +85,10 @@ public sealed class AutoProofPlan
     /// <summary>Initial camera mode (<c>--camera mode</c>): cockpit | chase |
     /// flyby | flybytarget | orbit | target | base | station | override.</summary>
     public string Camera = "cockpit";
+    /// <summary>P640: real commander highlight relay, then expanded starmap.</summary>
+    public string AutoHighlightSector = "";
+    public bool AutoFlightParts;
+    public bool AutoParityCommands;
 
     /// <summary>P580 — enable the director b-roll camera at launch
     /// (<c>--director</c>). Mutually the same thing the F2 key toggles; the flag
@@ -225,6 +229,14 @@ public sealed class AutoProofPlan
             {
                 plan.AutoTargetClass = a.Substring("--auto-target-class=".Length);
             }
+            else if (a == "--auto-parity-commands") plan.AutoParityCommands = true;
+            else if (a == "--auto-flight-parts") plan.AutoFlightParts = true;
+            else if (a == "--auto-highlight")
+            {
+                if (i + 1 < args.Count && !args[i + 1].StartsWith('-')) plan.AutoHighlightSector = args[++i];
+            }
+            else if (a.StartsWith("--auto-highlight=", StringComparison.Ordinal))
+                plan.AutoHighlightSector = a.Substring("--auto-highlight=".Length);
             else if (a == "--camera")
             {
                 if (i + 1 < args.Count)
@@ -377,7 +389,7 @@ public sealed class AutoProofPlan
         AutoSide.HasValue || AutoReady || AutoLaunchRequested ||
         AutoCredits || AutoScreen != AutoScreenKind.None ||
         GotoSector.Length > 0 || Target != AutoTargetKind.None || AutoTargetClass.Length > 0 ||
-        HideHud || AutoshotSeconds.Length > 0 ||
+        HideHud || AutoParityCommands || AutoFlightParts || AutoHighlightSector.Length > 0 || AutoshotSeconds.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
         AutoSuicideAt.Length > 0 ||
         Director || FollowShip != -1 || DirectorSeed.HasValue ||
@@ -389,7 +401,7 @@ public sealed class AutoProofPlan
     {
         "cockpit" or "chase" or "flyby" or "flybytarget" or "orbit"
             or "target" or "base" or "station" or "override"
-            or "freecam" or "orbitcam" => true,   // P612 — the spectator cameras
+            or "freecam" or "orbitcam" or "command" or "commandtd" or "dronefollow" or "dronecockpit" => true,   // P612 — the spectator cameras
         _ => false,
     };
 

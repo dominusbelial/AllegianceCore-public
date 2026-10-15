@@ -282,18 +282,37 @@ allow-listed character names may issue the `relocate` cheat on their **own**
 ship (or an MCP-harness bot they launched) only. It is consumed as a chat
 line and never broadcast.
 
-Because trust is **name-based** (self-declared) and the server always binds
-`0.0.0.0` (all interfaces), enabling admin cheats prints a **loud boot
-warning**: never enable admin cheats on a public/shared server. See
-[`SECURITY.md`](../SECURITY.md).
+P655 requires server-verifiable provenance for cheats, spectator visibility,
+and test-harness grants. Names and prefixes are eligibility filters. When a
+secret is configured, present it in `LOGONREQ.CDKey`; the server records the
+authenticated connection id. An allow-listed
+admin can also authenticate with a secret-prefixed command. Without a secret,
+only actual loopback sockets qualify. Remote clients cannot gain privileges by
+choosing a name.
 
-Two ways to raise the bar:
+For the MCP harness, set the same explicit secret in both server sections:
 
-- Set `adminCheats.secret` — when set (non-empty), an allow-listed connection
-  is trusted **only** if its cheat line presents the secret as the leading
-  token (`"<secret> relocate …"`). Name-only remains the default when unset
-  (what the LAN test setup and `allegiance-mcp` rely on).
-- Run the server bound to loopback only (not exposed to the network).
+```json
+{"liveSettings": {
+  "adminCheats": {"enabled": true, "allowNames": ["mcp-*"], "secret": "YOUR_RANDOM_SECRET"},
+  "testHarness": {"enabled": true, "characterNamePrefix": "mcp-", "secret": "YOUR_RANDOM_SECRET", "money": 1000000, "ignoreTechGate": true}
+}}
+```
+
+Start `allegiance-mcp` with `ALLEGIANCE_PRIVILEGE_SECRET` set to that value.
+MCP probes use unique `mcp-probe-w<worker>-<suffix>` names, which match the
+`mcp-*` admin allow-list. Each probe asks the server to pick an eligible side;
+`ALLEGIANCE_MCP_PROBE_SIDE_IDX` still forces a roster side for diagnostics.
+Duplicate character names (case-insensitive within a mission, including pending
+joins) receive a failed LOGONACK with `character name already in use in this mission`.
+MCP startup reports logon and side-selection refusals directly.
+Omitted `games[].maxPlayersPerTeam` and `maxTeamImbalance` retain their defaults
+of 256 and 1 when loading JSON; authenticated harness bots bypass balance but
+still obey capacity.
+
+Its probe and bots present the token at logon; subsequent commands need no
+prefix. Cross-peer relocation additionally requires an authenticated harness
+target. The TCP transport is plaintext, so keep tokens on trusted networks.
 
 **P612 — admin spectator visibility (LAN/demo-grade).** When `adminCheats` is
 enabled, an **allow-listed** player's free-flight spectator camera is
@@ -304,8 +323,8 @@ may view **any** sector. The client names the viewed sector via the existing
 spectator and serves that sector's candidates to that peer with the cloak
 gate relaxed. For everyone else the request is a **no-op** (native's
 flying-ship gate), so a non-admin spectator sees only what its own side
-already sees — **no information leak**. This is name-based and spoofable, so
-it is LAN/demo-only; a public server must keep `adminCheats` disabled. See
+already sees. P655 applies the same authenticated connection requirement to
+this passive visibility privilege. See
 [`SECURITY.md`](../SECURITY.md).
 
 Committed example configs keep `adminCheats` **disabled** (the safe default).

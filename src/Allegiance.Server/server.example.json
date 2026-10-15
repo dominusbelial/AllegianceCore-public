@@ -3,6 +3,10 @@
   "staticCore": "PCore001.igc",
   "port": 6073,
   "updatesPerSecond": 20,
+  "sim": {
+    "comment": "P629 native crowding damage and warnings are on by default. Use off for single-sector stress tests/showcases; out-of-bounds damage remains enabled.",
+    "crowdingPenalty": "native"
+  },
   "games": [
     {
       "name": "Test Mission",
@@ -14,6 +18,7 @@
   ],
   "liveSettings": {
     "comment": "P618 — load-driven EVE-style time dilation. off (default) = only the admin `timescale` cheat / sim.timeScale moves the clock; auto = the server lowers sim.timeScale toward nominal/cost (clamped [0.1,1.0]) when tick cost can't hold real time (e.g. ~390 ships in one sector), easing back as load drops. An admin `timescale` cheat always overrides auto.",
+    "autoNextMatch": { "enabled": true, "intermissionSeconds": 30 },
     "timeDilation": "auto",
     "timeDilationAlpha": 0.07,
     "timeDilationEngageRatio": 1.005,

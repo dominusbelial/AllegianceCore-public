@@ -128,12 +128,20 @@ public class TeammateLoadoutBroadcastTests
             var subjectHull = server.Ships.Single(s => s.Ship.Id == subjectId).Ship.HullType.HullId;
             var enemyHull = server.Ships.Single(s => s.Ship.Id == enemyId).Ship.HullType.HullId;
             var requested = new ExpandedPartData(partId, Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted);
-            bots[subject].SendBuyLoadout(subjectHull, fLaunch: false, parts: new[] { requested });
-            bots[enemy].SendBuyLoadout(enemyHull, fLaunch: false, parts: new[] { requested });
+            // H-06: purchases launch from the initial dock; H-07: use the
+            // actual weapon accepted by each hull's first hardpoint.
+            foreach (int i in new[] { subject, enemy })
+            {
+                var ship = server.Ships.Single(s => s.Ship.Id == ids[i]).Ship;
+                var part = ship.Mission!.Core.PartTypes[partId];
+                Assert.True(ship.HullType.CanMountPart(part, 0));
+                EconomyLoadoutTestSetup.Sell(ship.Mission, part);
+                bots[i].SendBuyLoadout(ship.HullType.HullId, fLaunch: true, parts: new[] { requested });
+            }
 
             // The observer must receive a SECOND export for the subject, this
             // time carrying the real mounted part.
-            PumpUntil(server, () => obsBot.Exports.Count(e => e.ShipId == subjectId) >= 2, 4000);
+            PumpUntil(server, () => obsBot.Exports.Any(e => e.ShipId == subjectId && e.Parts.Count > 0), 4000);
             var loadoutExports = obsBot.Exports.Where(e => e.ShipId == subjectId).ToList();
             Assert.True(loadoutExports.Count >= 2, "subject's loadout change must trigger a re-export, not just the initial one-shot EXPORT");
             var withParts = loadoutExports.Last();

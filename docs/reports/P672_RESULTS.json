@@ -1,0 +1,1062 @@
+{
+  "base": "integ3 6c3e54ad",
+  "build": {
+    "command": "NUGET_HTTP_CACHE_PATH=/tmp/p672-nuget dotnet build AllegianceCore.slnx --nologo -v:q",
+    "warnings": 0,
+    "errors": 0
+  },
+  "environment": {
+    "artwork": true,
+    "nativeSource": true,
+    "loopbackShowcase15v15": true
+  },
+  "focused": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterDeltaTests.Sparse_roundtrip_preserves_all_columns_and_order_even_with_duplicate_names",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterDeltaTests.Joins_interior_leaves_truncation_and_empty_roster_roundtrip",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterDeltaTests.Decoder_rejects_invalid_headers_counts_and_indices",
+      "runs": [
+        {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "total": 7
+        },
+        {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "total": 7
+        },
+        {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "total": 7
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterDeltaTests.Decoder_rejects_every_truncation_and_trailing_data",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterDeltaTests.Codec_rejects_duplicate_indices_missing_appends_and_message_overflow",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterDeltaTests.Full_decoder_rejects_header_overlap_stride_out_of_range_and_unclaimed_bytes",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterWireTests.ScoreRosterUpdate_round_trips_payload",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterWireTests.ScoreRosterUpdate_layout_pins_stride_and_offsets",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterWireTests.ScoreRosterUpdate_empty_list_encodes_fixed_header",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.ScoreRosterLiveTests.Periodic_roster_broadcasts_real_player_scores_with_sides",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P672ScoreRosterTrafficTests.Sixty_four_loopback_peers_measure_steady_refresh_and_heavy_kill_traffic",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ScoreRosterDeltaTests.Real_dispatch_applies_kills_deaths_joins_leaves_and_full_refresh_heals_a_gap",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ScoreRosterDeltaTests.Reset_discards_baseline_and_incompatible_delta_waits_for_full_snapshot",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ScoreRosterLiveTests.Human_scoreboard_tracks_real_damage_joins_leaves_rejoin_and_periodic_healing_harness_receives_none",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.EveryExpectedServerSentMessage_IsConsumed_NotUnknownFmid",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.UnknownFmidDetector_RecordsUnconsumedServerSentMessage",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.SupportedServerSentSet_IsFullyAccountedFor",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.RetryCleanupTests.ClientWorld_Reset_ClearsMyShipIdAndAllEntityTables",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.RetryCleanupTests.ClientWorld_SameSessionSetClusterKeepsFirstAssignment_OnlyResetClearsIt",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.ScoreboardLayoutTests.Build_orders_by_side_then_score_desc_and_numbers_positions",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.ScoreboardLayoutTests.Build_resolves_rank_names_from_table",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.ScoreboardLayoutTests.Build_scrubs_non_ascii_from_names",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.ScoreboardLayoutTests.Build_renders_side_label_and_destroyed_marker",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.ScoreboardLayoutTests.ColumnWidths_accommodate_longest_cells_and_headers",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.PilotInfoLayoutTests.Build_returns_local_players_full_stats_in_order",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.PilotInfoLayoutTests.Build_does_not_confuse_another_player_for_self",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.PilotInfoLayoutTests.Build_returns_null_when_self_not_yet_in_roster",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.PilotInfoLayoutTests.Build_returns_null_when_no_self_name",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.PilotInfoLayoutTests.Build_scrubs_non_ascii_from_name",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_groups_by_side_and_sorts_pilots_by_name",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_derives_ship_status_from_entity",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_puts_rank_name_on_each_row",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_highlights_the_self_row",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_hides_ballot_for_non_leaders",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_output_is_always_pure_ascii",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies",
+      "runs": [
+        {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4
+        },
+        {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4
+        },
+        {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients",
+      "runs": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        },
+        {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "total": 1
+        }
+      ]
+    }
+  ],
+  "fullSuites": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "passed": 4314,
+      "failed": 1,
+      "skipped": 0,
+      "total": 4315,
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+          "message": "Assert.Single() Failure: The collection was empty",
+          "stack": "   at Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown() in /home/domingo/allegiance-codex-p672/tests/Allegiance.Core.Tests/LiveCountdownStartPingTests.cs:line 212\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 937,
+      "failed": 0,
+      "skipped": 0,
+      "total": 937
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 2125,
+      "failed": 0,
+      "skipped": 0,
+      "total": 2128
+    }
+  ],
+  "isolationReruns": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "total": 1,
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+          "message": "Assert.Single() Failure: The collection was empty",
+          "stack": "   at Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown() in /home/domingo/allegiance-codex-p672/tests/Allegiance.Core.Tests/LiveCountdownStartPingTests.cs:line 212\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1
+    }
+  ]
+}

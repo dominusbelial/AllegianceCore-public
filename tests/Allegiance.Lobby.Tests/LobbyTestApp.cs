@@ -39,6 +39,7 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            services.AddSingleton<IStartupFilter, LoopbackSource>();
             // Inject the fake (or system) clock.
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(_time);
@@ -46,7 +47,7 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
             // Re-point the registry at the configured window/cap, backed by that clock.
             services.RemoveAll<ServerRegistry>();
             services.AddSingleton<ServerRegistry>(
-                new ServerRegistry(_time, settings.MaxEntries, TimeSpan.FromSeconds(settings.MaxAgeSeconds)));
+                new ServerRegistry(_time, settings.MaxEntries, TimeSpan.FromSeconds(settings.MaxAgeSeconds), settings.MaxEntriesPerAddress));
 
             // Drop Program's hosted sweep and re-add one honoring the test cadence + our registry.
             services.RemoveAll<IHostedService>();
@@ -56,5 +57,18 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
                 TimeSpan.FromSeconds(settings.SweepIntervalSeconds),
                 TimeSpan.FromSeconds(settings.MaxAgeSeconds)));
         });
+    }
+    private sealed class LoopbackSource : IStartupFilter
+    {
+        public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
+            => app =>
+            {
+                Microsoft.AspNetCore.Builder.UseExtensions.Use(app, async (context, continuation) =>
+                {
+                    context.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+                    await continuation();
+                });
+                next(app);
+            };
     }
 }

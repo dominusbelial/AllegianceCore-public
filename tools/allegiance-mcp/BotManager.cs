@@ -234,7 +234,7 @@ internal sealed partial class BotManager : IDisposable
     /// P554 — the networked arena relocator (installed by default for a standalone
     /// MCP). Given a bot's ship id, target sector and mirrored pose, it sends the
     /// <c>relocate &lt;shipId&gt; &lt;sectorId&gt; &lt;x&gt; &lt;y&gt; &lt;z&gt; [fx fy fz]</c>
-    /// admin cheat through the PROBE connection (the allow-listed <c>mcp-probe</c>
+    /// admin cheat through the PROBE connection (the allow-listed <c>mcp-probe-*</c>
     /// — see the ownership rule <c>Server.MayRelocate</c>: the probe may move its
     /// own ship or any MCP-harness bot), then waits for the BOT's own real
     /// ClientWorld to show the new sector — the authoritative proof the server
@@ -255,7 +255,7 @@ internal sealed partial class BotManager : IDisposable
             }
             string F(double v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
             string cmd = $"relocate {shipId} {sector} {F(pos.X)} {F(pos.Y)} {F(pos.Z)} {F(fwd.X)} {F(fwd.Y)} {F(fwd.Z)}";
-            // Send via the PROBE (the allow-listed 'mcp-probe'), which may move
+            // Send via the PROBE (the allow-listed 'mcp-*' prefix), which may move
             // its own ship or any MCP-harness bot (Server.MayRelocate). On the
             // refusal path (non-privileged / disabled) the unconsumed line is
             // relayed as Individual chat to the target ship — contained, not a
@@ -286,7 +286,7 @@ internal sealed partial class BotManager : IDisposable
     private static LogonRequest Request(string name) => new()
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
-        CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
+        CDKey = Environment.GetEnvironmentVariable("ALLEGIANCE_PRIVILEGE_SECRET") ?? "ABCDEFGHIJKL", MissionPassword = "pw",
         FedsrvVer = LogonRequest.MsgVer, Time = 911u, DwCookie = 0xC0FFEEu,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 76000000000000000ul, DrmHash = "allegiance-mcp",
@@ -298,14 +298,22 @@ internal sealed partial class BotManager : IDisposable
     /// startup therefore fails loudly instead of serving tools against nothing.</summary>
     private void ConnectProbe()
     {
-        _stallTelemetry.Connect(Probe, "mcp-probe", _host, _port);
-        Probe.SendLogonRequest(Request("mcp-probe"));
-        if (!WaitUntil(() => Probe.Ack is { FValidated: true }, 12000))
+        // Native mission names are unique. Include both worker identity and a
+        // fresh suffix so separate supervisors/single managers can coexist.
+        string name = $"mcp-probe-w{(Partition?.Index ?? 0) + 1}-{Guid.NewGuid().ToString("N")[..6]}";
+        _stallTelemetry.Connect(Probe, name, _host, _port);
+        Probe.SendLogonRequest(Request(name));
+        if (!WaitUntil(() => Probe.Ack is not null || Probe.Lost, 12000))
             throw new InvalidOperationException($"startup probe: no validated LOGONACK from {_host}:{_port}");
+        if (Probe.Ack is not { FValidated: true })
+            throw new InvalidOperationException($"startup probe: logon refused: {Probe.Ack?.CharNameOrFailureReason ?? "connection lost"}");
         short side = ProbeSidePref();
         Probe.SendPositionReq(side);
-        if (!WaitUntil(() => Probe.World.MyShipId is not null, 15000))
+        if (!WaitUntil(() => Probe.World.MyShipId is not null && Probe.World.MySideId is not null || Probe.LastPositionRefusal is not null || Probe.Lost, 15000))
             throw new InvalidOperationException("startup probe: never seated (no ship assigned by the server)");
+        if (Probe.LastPositionRefusal is { } refusal)
+            throw new InvalidOperationException($"startup probe: side {refusal.SideId} refused: {refusal.Reason}");
+        if (Probe.Lost) throw new InvalidOperationException("startup probe: connection lost while selecting a side");
         lock (Probe.Gate)
             ProbeSide = Probe.World.MySideId ?? (short)(side >= 0 ? side : 0);
 
@@ -341,13 +349,13 @@ internal sealed partial class BotManager : IDisposable
                 // P539c test seam: ALLEGIANCE_MCP_PROBE_SIDE_IDX forces which
                 // roster side the probe (and thus the "probe's side") seats on,
                 // so the per-side repro can swap the probe's side to test whether
-                // the dominance follows the probe. Unset in production → sides[0].
+                // the dominance follows the probe. Unset → server auto-pick,
+                // respecting P655 capacity/balance without harness privileges.
                 if (int.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_MCP_PROBE_SIDE_IDX"), out var idx)
                     && idx >= 0 && idx < sr.Sides.Length)
                     return sr.Sides[idx].SideId;
-                return sr.Sides[0].SideId;
             }
-        return 0;
+        return -1;
     }
 
     /// <summary>The set of sides this server can seat a bot on: the real positive
@@ -1147,14 +1155,14 @@ internal sealed partial class BotManager : IDisposable
         var commander = EnsureCommander(side);
         var core = Catalog.RepresentativeCore();
 
-        // Wait for the side's development-tech mask (CREATE_BUCKETS join sync)
+        // Wait for the side's initial bucket mask (CREATE_BUCKETS join sync)
         // so the synthesized catalog ids line up bucket-for-bucket with the
         // server's (P487's exact premise).
-        if (!WaitUntil(() => commander.World.DevelopmentTechsFor(side) is not null, 8000))
+        if (!WaitUntil(() => commander.World.InitialTechsFor(side) is not null, 8000))
             throw new InvalidOperationException(
                 $"invest: side {side}'s bucket/tech sync (CREATE_BUCKETS) never arrived — cannot resolve real bucket ids yet");
 
-        var techs = commander.World.DevelopmentTechsFor(side)!.Value;
+        var techs = commander.World.InitialTechsFor(side)!.Value;
         var ga = commander.World.GlobalAttributesFor(side);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         var view = ResolveBucket(views, bucketQuery);
@@ -1328,9 +1336,9 @@ internal sealed partial class BotManager : IDisposable
             throw new InvalidOperationException("invest: server probe not connected/validated");
         var commander = EnsureCommander(side);
         var core = Catalog.RepresentativeCore();
-        if (!WaitUntil(() => commander.World.DevelopmentTechsFor(side) is not null, 8000))
+        if (!WaitUntil(() => commander.World.InitialTechsFor(side) is not null, 8000))
             return null;
-        var techs = commander.World.DevelopmentTechsFor(side)!.Value;
+        var techs = commander.World.InitialTechsFor(side)!.Value;
         var ga = commander.World.GlobalAttributesFor(side);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         (string, uint)? layerAny = null;
@@ -3663,7 +3671,7 @@ bool isThreat =
         if (bot.LauncherPartId is null || bot.MissileReadyTime <= 0) return;
         if (now - bot.LastFireAt < bot.MissileReadyTime) return;
         bool full;
-        lock (cs.Gate) full = cs.World.MissileLock.IsFullLock;
+        lock (cs.Gate) full = cs.World.MissileLock.IsReady && cs.World.MissileLock.IsFullLock;
         if (!full) return;
 
         // P557 — native evasion gate (shipIGC.cpp:2585-2594): fire only when the
@@ -4365,6 +4373,9 @@ bool isThreat =
         // P539 — tally this bot's REAL combat stats (hits/kills) from its own
         // wire/world events each tick.
         SampleCombatStats(bot, cs, my, now);
+
+        // A reseated ship must buy and launch before combat or pod routing.
+        if (LaunchNextMission(bot, cs, now)) return;
 
         // P539 — a lifepod stops fighting and flies home to dock.
         if (UpdatePodState(bot, cs, now))
@@ -5478,6 +5489,7 @@ bool isThreat =
         // after a game-over rotation with a fresh ship id), the MCP re-readies
         // the bot so bot-driven showcases keep auto-starting.
         public short ReadyShipId = -1;
+        public bool MissionLaunchPending;
         public bool Launched;
         public bool Arrived;                       // reached the target sector
         // P634 — world-sync backoff + measurement. The cluster GRAPH is the

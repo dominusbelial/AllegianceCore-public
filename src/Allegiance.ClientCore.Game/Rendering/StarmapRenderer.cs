@@ -87,7 +87,8 @@ public sealed class StarmapRenderer
         float panelW, float panelH,
         IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners = null,
         Func<short, Color?>? sideColor = null,
-        IReadOnlyDictionary<short, int>? knownEnemySectors = null)
+        IReadOnlyDictionary<short, int>? knownEnemySectors = null,
+        IReadOnlySet<short>? highlightedClusters = null)
     {
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
@@ -157,7 +158,7 @@ public sealed class StarmapRenderer
                 // currently-selected sector (native: `pCluster->GetHighlight()
                 // && !m_bFlashFrame`, sectormap.cpp:1044), the blinking
                 // complement to the on-phase threat icon.
-                if (site.Id == selectedSectorId && !flashOn)
+                if (highlightedClusters?.Contains(site.Id) == true && !flashOn)
                     DrawFlashingOutline(pt);
                 // P460 — the ownership rings, drawn FIRST (underneath) so the
                 // cluster icon and the on-phase threat icon always stay visible
@@ -226,7 +227,8 @@ public sealed class StarmapRenderer
         Viewport viewport,
         IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners = null,
         Func<short, Color?>? sideColor = null,
-        IReadOnlyDictionary<short, int>? knownEnemySectors = null)
+        IReadOnlyDictionary<short, int>? knownEnemySectors = null,
+        IReadOnlySet<short>? highlightedClusters = null)
     {
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
@@ -288,6 +290,8 @@ public sealed class StarmapRenderer
                     if (neighbourIds.Contains(site.Id))
                         DrawCenteredLabel(site.Name, pt.X, pt.Y + 8f, NameDim);
                 }
+                if (highlightedClusters?.Contains(site.Id) == true && !flashOn)
+                    DrawRing(new Vector2(pt.X, pt.Y), 8f, 2f, HighlightFlash);
                 // P374 — the compact view flashes a small per-severity threat
                 // marker on the on-flash phase (native's closed sector-info
                 // pane shows the same warnings, sectormap.cpp:1055-1082).

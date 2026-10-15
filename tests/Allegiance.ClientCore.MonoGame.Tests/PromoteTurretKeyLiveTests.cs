@@ -108,6 +108,7 @@ public sealed class PromoteTurretKeyLiveTests
                 // boarder becomes a real turret gunner at a known mount.
                 var weapon = core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon);
                 ship.MountPart(weapon, 1, (byte)ship.HullType.MaxFixedWeapons, 255);
+                ship.MountPart(weapon, 1, (byte)(ship.HullType.MaxFixedWeapons + 1), 255);
                 carrierShip = ship;
             }
             else
@@ -125,6 +126,12 @@ public sealed class PromoteTurretKeyLiveTests
         int seated = PumpUntil(server,
             () => a.World.MyShipId is { } && b.World.MyShipId is { }, 4000);
         Assert.True(seated < 4000, "both peers seated");
+        Assert.True(PumpUntil(server, () =>
+        {
+            lock (a.Gate) lock (b.Gate)
+                return a.World.Mission?.Stage == MissionStageMessage.StageStarted
+                    && b.World.Mission?.Stage == MissionStageMessage.StageStarted;
+        }, 4000) < 4000, "both clients observed Started before flight commands");
 
         // Match each peer to its role by spawned id (robust to socket order).
         ConnectionSession commander, gunner;
@@ -147,11 +154,23 @@ public sealed class PromoteTurretKeyLiveTests
         short slot = gunnerShip.TurretId!.Value;
         Assert.Equal((short)2, slot);   // the equipped first turret slot
 
+        // P642: OccupyNextTurret sends BOARD_SHIP to the CURRENT parent.
+        Assert.True(PumpUntil(server, () => gunner.World.Ships.TryGetValue(gunnerId, out var g)
+            && g.ParentId == commanderId, 4000) < 4000);
+        short parent = Game1.NextTurretParent(gunner.World.Ships[gunnerId].ParentId)!.Value;
+        gunner.SendBoardShip(parent);
+        Assert.True(PumpUntil(server, () => gunnerShip.TurretId == 3, 1200) < 1200, "P642 advance to second equipped turret");
+        Assert.Same(carrierShip, gunnerShip.ParentShip);
+        gunner.SendBoardShip(parent);
+        Assert.True(PumpUntil(server, () => gunnerShip.TurretId == 2, 1200) < 1200, "P642 wrap to first equipped turret");
+
         // The commander presses its Promote-Turret key → PRODUCTION SendPromote
         // with the same mount PromoteTurretKey.MountForSeat(1, MaxFixed, MaxWeapons)
         // resolves (seat 1 → the first turret hardpoint = MaxFixedWeapons).
         short resolvedMount = Flight.PromoteTurretKey.MountForSeat(1, carrierShip.HullType.MaxFixedWeapons, carrierShip.HullType.MaxWeapons)!.Value;
         Assert.Equal(slot, resolvedMount);
+        Assert.True(PumpUntil(server, () => gunner.World.Ships.TryGetValue(gunnerId, out var ship)
+            && ship.ParentId == commanderId, 4000) < 4000, "client observed boarding before promotion");
         commander.SendPromote(resolvedMount);
 
         // Server state reflects the role swap: gunner free on the carrier's hull,
@@ -165,6 +184,29 @@ public sealed class PromoteTurretKeyLiveTests
         Assert.Same(gunnerShip, carrierShip.ParentShip);            // old commander demoted onto the gunner
         Assert.Equal(slot, carrierShip.TurretId!.Value);            // at the exact vacated mount
         Assert.Contains(gunnerShip.ChildShips, s => ReferenceEquals(s, carrierShip));
+
+        Assert.True(PumpUntil(server, () => gunner.World.Ships[gunnerId].ParentId == -1
+            && commander.World.Ships[commanderId].ParentId == gunnerId, 4000) < 4000,
+            "PROMOTE receive must swap both client command seats");
+        Assert.Equal(CarrierHullId, gunner.World.Ships[gunnerId].HullId);
+        Assert.Equal(gunnerId, gunner.World.MyShipId);
+        // Seats can also be refreshed by status snapshots. Require the actual
+        // PROMOTE receive path to post both notices before inspecting the lists.
+        Assert.True(PumpUntil(server, () =>
+        {
+            lock (gunner.Gate) lock (commander.Gate)
+                return gunner.World.Events.Chats.Any(c => c.Message == "You have been promoted to pilot")
+                    && commander.World.Events.Chats.Any(c => c.Message == "You have been demoted to a turret gunner");
+        }, 4000) < 4000, "PROMOTE posts both client role notices");
+        Assert.Contains(gunner.World.Events.Chats, c => c.Message == "You have been promoted to pilot");
+        Assert.Contains(commander.World.Events.Chats, c => c.Message == "You have been demoted to a turret gunner");
+        short highlightedSector = gunnerShip.Sector!.Id;
+        commander.SendHighlightCluster(highlightedSector, true);
+        Assert.True(PumpUntil(server, () => commander.World.HighlightedClusters.Contains(highlightedSector)
+            && gunner.World.HighlightedClusters.Contains(highlightedSector), 4000) < 4000, "highlight relay to teammates");
+        commander.SendHighlightCluster(highlightedSector, false);
+        Assert.True(PumpUntil(server, () => !commander.World.HighlightedClusters.Contains(highlightedSector)
+            && !gunner.World.HighlightedClusters.Contains(highlightedSector), 4000) < 4000, "highlight clear relay");
 
         Console.WriteLine($"PROMOTE-KEY-LIVE: commander {commanderId} pressed PromoteTurret seat 1 (mount {slot}) -> gunner {gunnerId} promoted to command on hull 792; commander demoted to mount {slot}");
     }

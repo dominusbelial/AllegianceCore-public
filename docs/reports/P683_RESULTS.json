@@ -1,0 +1,816 @@
+{
+  "task": "P683",
+  "date": "2026-10-15",
+  "git_writes": false,
+  "raw_artifacts": "/tmp/p683",
+  "build": "\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:02.54\n",
+  "runs": [
+    {
+      "label": "focused-core",
+      "exit_code": 1,
+      "counts": {
+        "total": 141,
+        "executed": 141,
+        "passed": 140,
+        "failed": 1
+      },
+      "skipped": [],
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H25_Teammate_target_overwrite_and_hidden_lock_fail_visible_self_target_works",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   0.5",
+          "stack": "   at Allegiance.Core.Tests.P655GameStateIntegrityTests.H25_Teammate_target_overwrite_and_hidden_lock_fail_visible_self_target_works() in /home/domingo/.claude/jobs/82c1509b/tmp/integ6/tests/Allegiance.Core.Tests/P655GameStateIntegrityTests.cs:line 399\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+        }
+      ],
+      "artifact": "/tmp/p683/focused-core.trx",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName~P655|FullyQualifiedName~P653|FullyQualifiedName~P650|FullyQualifiedName~P651|FullyQualifiedName~P629|FullyQualifiedName~P656|FullyQualifiedName~P671|FullyQualifiedName~MissileFireTests|FullyQualifiedName~MissileLockTests",
+        "--logger",
+        "trx;LogFileName=focused-core.trx",
+        "--results-directory",
+        "/tmp/p683"
+      ]
+    },
+    {
+      "label": "focused-core-final",
+      "exit_code": 0,
+      "counts": {
+        "total": 141,
+        "executed": 141,
+        "passed": 141,
+        "failed": 0
+      },
+      "skipped": [],
+      "failures": [],
+      "artifact": "/tmp/p683/focused-core-final.trx",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName~P655|FullyQualifiedName~P653|FullyQualifiedName~P650|FullyQualifiedName~P651|FullyQualifiedName~P629|FullyQualifiedName~P656|FullyQualifiedName~P671|FullyQualifiedName~MissileFireTests|FullyQualifiedName~MissileLockTests",
+        "--logger",
+        "trx;LogFileName=focused-core-final.trx",
+        "--results-directory",
+        "/tmp/p683"
+      ]
+    },
+    {
+      "label": "focused-client",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=focused-client.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~MissileFireLiveTests|FullyQualifiedName~MissileLockLiveTests|FullyQualifiedName~P671|FullyQualifiedName~P656|FullyQualifiedName~P660CountdownTests|FullyQualifiedName~P660NextMatchLiveTests"
+      ],
+      "exit_code": 0,
+      "seconds": 79.73,
+      "counts": {
+        "total": 57,
+        "executed": 57,
+        "passed": 57,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/focused-client.trx"
+    },
+    {
+      "label": "full-Core",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=full-Core.trx",
+        "--results-directory",
+        "/tmp/p683"
+      ],
+      "exit_code": 0,
+      "seconds": 384.78,
+      "counts": {
+        "total": 4389,
+        "executed": 4389,
+        "passed": 4389,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/full-Core.trx"
+    },
+    {
+      "label": "full-ClientCore",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=full-ClientCore.trx",
+        "--results-directory",
+        "/tmp/p683"
+      ],
+      "exit_code": 1,
+      "seconds": 369.25,
+      "counts": {
+        "total": 955,
+        "executed": 954,
+        "passed": 953,
+        "failed": 1
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Static_target_order_lock_and_not_ready_state_roundtrip_over_TCP(type: Station)",
+          "message": "P651 loopback condition did not arrive",
+          "stack": "   at Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Until(Server server, Func`1 condition, Action drive) in /home/domingo/.claude/jobs/82c1509b/tmp/integ6/tests/Allegiance.ClientCore.Tests/P651EquipmentLiveTests.cs:line 32\n   at Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Static_target_order_lock_and_not_ready_state_roundtrip_over_TCP(IgcObjectType type) in /home/domingo/.claude/jobs/82c1509b/tmp/integ6/tests/Allegiance.ClientCore.Tests/P651EquipmentLiveTests.cs:line 69\n   at InvokeStub_P651EquipmentLiveTests.Static_target_order_lock_and_not_ready_state_roundtrip_over_TCP(Object, Span`1)\n   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)"
+        }
+      ],
+      "skipped": [
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+      ],
+      "artifact": "/tmp/p683/full-ClientCore.trx"
+    },
+    {
+      "label": "full-ClientCore.MonoGame",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=full-ClientCore.MonoGame.trx",
+        "--results-directory",
+        "/tmp/p683"
+      ],
+      "exit_code": 0,
+      "seconds": 265.78,
+      "counts": {
+        "total": 2146,
+        "executed": 2143,
+        "passed": 2143,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+      ],
+      "artifact": "/tmp/p683/full-ClientCore.MonoGame.trx"
+    },
+    {
+      "label": "full-Lobby",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=full-Lobby.trx",
+        "--results-directory",
+        "/tmp/p683"
+      ],
+      "exit_code": 0,
+      "seconds": 0.95,
+      "counts": {
+        "total": 19,
+        "executed": 19,
+        "passed": 19,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/full-Lobby.trx"
+    },
+    {
+      "label": "game-over-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-1.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-1.trx"
+    },
+    {
+      "label": "game-over-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-2.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.54,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-2.trx"
+    },
+    {
+      "label": "game-over-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-3.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.57,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-3.trx"
+    },
+    {
+      "label": "game-over-4",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-4.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.59,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-4.trx"
+    },
+    {
+      "label": "game-over-5",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-5.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.58,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-5.trx"
+    },
+    {
+      "label": "game-over-6",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-6.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.62,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-6.trx"
+    },
+    {
+      "label": "game-over-7",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-7.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-7.trx"
+    },
+    {
+      "label": "game-over-8",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-8.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-8.trx"
+    },
+    {
+      "label": "game-over-9",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-9.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-9.trx"
+    },
+    {
+      "label": "game-over-10",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=game-over-10.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~GameOverPlayersWireTests"
+      ],
+      "exit_code": 0,
+      "seconds": 1.61,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/game-over-10.trx"
+    },
+    {
+      "label": "p682-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=p682-1.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~P682"
+      ],
+      "exit_code": 0,
+      "seconds": 16.85,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/p682-1.trx"
+    },
+    {
+      "label": "p682-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=p682-2.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~P682"
+      ],
+      "exit_code": 0,
+      "seconds": 16.82,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/p682-2.trx"
+    },
+    {
+      "label": "p682-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=p682-3.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~P682"
+      ],
+      "exit_code": 0,
+      "seconds": 16.72,
+      "counts": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/p682-3.trx"
+    },
+    {
+      "label": "bot-orders-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=bot-orders-1.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~BotAcceptsAndEngagesOrderLiveTests"
+      ],
+      "exit_code": 0,
+      "seconds": 7.11,
+      "counts": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/bot-orders-1.trx"
+    },
+    {
+      "label": "bot-orders-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=bot-orders-2.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~BotAcceptsAndEngagesOrderLiveTests"
+      ],
+      "exit_code": 0,
+      "seconds": 5.28,
+      "counts": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/bot-orders-2.trx"
+    },
+    {
+      "label": "bot-orders-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=bot-orders-3.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~BotAcceptsAndEngagesOrderLiveTests"
+      ],
+      "exit_code": 0,
+      "seconds": 5.99,
+      "counts": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/bot-orders-3.trx"
+    },
+    {
+      "label": "bot-orders-4",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=bot-orders-4.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~BotAcceptsAndEngagesOrderLiveTests"
+      ],
+      "exit_code": 0,
+      "seconds": 7.18,
+      "counts": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/bot-orders-4.trx"
+    },
+    {
+      "label": "bot-orders-5",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=bot-orders-5.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName~BotAcceptsAndEngagesOrderLiveTests"
+      ],
+      "exit_code": 0,
+      "seconds": 5.95,
+      "counts": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/bot-orders-5.trx"
+    },
+    {
+      "label": "failure-1-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=failure-1-1.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Static_target_order_lock_and_not_ready_state_roundtrip_over_TCP"
+      ],
+      "exit_code": 0,
+      "seconds": 2.71,
+      "counts": {
+        "total": 2,
+        "executed": 2,
+        "passed": 2,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/failure-1-1.trx"
+    },
+    {
+      "label": "failure-1-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=failure-1-2.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Static_target_order_lock_and_not_ready_state_roundtrip_over_TCP"
+      ],
+      "exit_code": 0,
+      "seconds": 2.73,
+      "counts": {
+        "total": 2,
+        "executed": 2,
+        "passed": 2,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/failure-1-2.trx"
+    },
+    {
+      "label": "failure-1-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=failure-1-3.trx",
+        "--results-directory",
+        "/tmp/p683",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Static_target_order_lock_and_not_ready_state_roundtrip_over_TCP"
+      ],
+      "exit_code": 0,
+      "seconds": 2.77,
+      "counts": {
+        "total": 2,
+        "executed": 2,
+        "passed": 2,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/failure-1-3.trx"
+    },
+    {
+      "label": "full-ClientCore-final",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=full-ClientCore-final.trx",
+        "--results-directory",
+        "/tmp/p683"
+      ],
+      "exit_code": 0,
+      "seconds": 381.68,
+      "counts": {
+        "total": 955,
+        "executed": 955,
+        "passed": 955,
+        "failed": 0
+      },
+      "failures": [],
+      "skipped": [],
+      "artifact": "/tmp/p683/full-ClientCore-final.trx",
+      "environment": {
+        "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+      }
+    }
+  ],
+  "environment": {
+    "artwork": "local.env: ALLEGIANCE_ARTWORK_PATH",
+    "native_source": "local.env: ALLEGIANCE_NATIVE_SRC_PATH",
+    "sdk": "10.0.400",
+    "final_clientcore": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    }
+  },
+  "conflict_resolution": {
+    "files": 12,
+    "blocks": 28,
+    "missing_test_methods_from_either_side": [],
+    "marker_matches": 0,
+    "read_only_diff_check_exit": 0,
+    "index_staged": false
+  }
+}

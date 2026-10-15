@@ -454,11 +454,13 @@ public sealed class MissileCombatTests
         // lifepod, MaxEnergy 0) SURVIVABLE target hull; the native-faithful
         // recharge (P461) clamps the pool to [0, MaxEnergy], so the shooter
         // needs a hull that can actually hold EnergyPerShot to fire.
-        var shooterP = new Ship(9801, pHull with { MaxEnergy = 20000f }, new Vector3(-200f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+        var shooterP = new Ship(9801, pHull with { MaxEnergy = 20000f, MaxAmmo = 1 }, new Vector3(-200f, 0f, 0f), Vector3.Zero, Orientation.Identity);
         mission.PlaceShip(shooterP, sector);                  // must be placed before MountWeapon
         shooterP.StateM |= ShipControlState.AllWeapons;
         // Cover both ammo-based and energy-based weapons: an ammo weapon needs
         // Ammo, an energy weapon needs Energy == cost (mirrors ArmShooter).
+        // H-08 / shipIGC.h:597-601: the survivable target hull may be a
+        // zero-ammo pod. Give the weapon shooter a real one-round magazine.
         shooterP.Ammo = 1;
         shooterP.Energy = (float)weapon.EnergyPerShot;
         shooterP.MountWeapon(weapon);

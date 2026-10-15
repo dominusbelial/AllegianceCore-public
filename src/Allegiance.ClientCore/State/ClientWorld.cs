@@ -23,7 +23,7 @@ namespace Allegiance.ClientCore.State;
 /// <c>Add</c>-fresh anywhere, so every branch preserves the one-entity-per-id
 /// invariant.
 /// </summary>
-public sealed class ClientWorld
+public sealed partial class ClientWorld
 {
     private readonly Dictionary<short, ShipEntity> _ships = new();
 
@@ -320,7 +320,25 @@ public sealed class ClientWorld
     /// on their authoritative (slowed) positions instead of overshooting and
     /// rubber-banding. Lives on the world (written on the receive thread, read on
     /// the render thread under the gate).</summary>
-    public double TimeScale { get; set; } = 1.0;
+    private double _timeScale = 1.0;
+    public double TimeScale
+    {
+        get => _timeScale;
+        set
+        {
+            if (_treasureClockSeeded)
+            {
+                _treasureServerSeconds = TreasureServerSeconds();
+                _treasureLocalSeconds = NowSeconds();
+            }
+            // Integrate the previous rate before applying a new dilation rate.
+            long now = Environment.TickCount64;
+            if (_countdownClockLocalMs is { } last)
+                _countdownClockServerMs += (now - last) * _timeScale;
+            if (_countdownClockLocalMs is not null) _countdownClockLocalMs = now;
+            _timeScale = value;
+        }
+    }
 
     /// <summary>
     /// P540 — resolve the lifepod <c>HullId</c> for an ejected ship's side
@@ -466,9 +484,11 @@ public sealed class ClientWorld
     // clears them after the drain.
     private readonly List<ClientClusterWarningCue> _clusterWarningCues = new();
     private const int MaxClusterWarningCues = 64;
+
+    public ShipWarningState ShipWarnings { get; } = new();
     // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
     // per real-side player) streamed by the periodic owner-only
-    // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
+    // ScoreRosterUpdate(209) snapshots plus ordered ScoreRosterDelta(219) patches.
     private ScoreRosterEntry[] _scoreRoster = [];
     // P639 — the rank-name table from RANK_INFO(13), the server's per-player
     // rank-name sync sent once right after LOGONACK on the valid-connect path
@@ -492,6 +512,7 @@ public sealed class ClientWorld
     // parts the hangar offers: an item is offered iff its TtbmRequired ⊆
     // (stationLocal | mySideDev) — the exact P283 containment.
     private readonly Dictionary<short, TechTreeBitMask> _developmentTechsBySideId = new();
+    private readonly Dictionary<short, TechTreeBitMask> _initialTechsBySideId = new();
 
     // P446 — each side's live global-attribute multiplier set (native
     // <c>Side::GetGlobalAttributeSet()</c>, the 25-factor <c>GlobalAttributeSet</c>),
@@ -545,6 +566,7 @@ public sealed class ClientWorld
     // P230 — the local ship's missile-lock snapshot (from the owner-only
     // MISSILE_LOCK_UPDATE(204)) plus the previous-frame state used to edge-detect
     // the partial/full/lost console tips (native console.cpp:929-946).
+    private IgcObjectType _prevLockTargetType;
     private MissileLockState _missileLock = MissileLockState.None;
     private MissileLockFeedback.LockState _prevLockState = MissileLockFeedback.LockState.None;
     private short _prevLockTargetId = -1;
@@ -565,8 +587,9 @@ public sealed class ClientWorld
     private MissileTrackState _missileTrack = MissileTrackState.Clear;
     private LeadIndicatorState _leadIndicator = LeadIndicatorState.None;
 
-    /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
-    /// assignment; null until the server has told us which ship we are.</summary>
+    /// <summary>The local ship id assigned by SET_CLUSTER(7), with its launch
+    /// pose/cookie. JOINED_MISSION's earlier player identity is JoinedShipId.
+    /// Keeping these separate preserves the launch contract for consumers.</summary>
     public short? MyShipId { get; private set; }
 
     /// <summary>
@@ -984,21 +1007,30 @@ public sealed class ClientWorld
     /// <see cref="Apply(QueuedCommandUpdate)"/>).</summary>
     public QueuedCommandState? MyQueuedCommand => _myQueuedCommand;
 
-    /// <summary>P626 — the most recently announced in-flight ballot, or
-    /// <c>null</c> when none. Populated from the server's BALLOT(17) broadcast
-    /// (P187); the VoteYes/VoteNo keys read it and send a VOTE(19) naming this
-    /// ballot id. A new ballot replaces the previous one; the server resolves
-    /// ballots on expiry/all-votes-in, at which point no further clear message
-    /// arrives, so this is a "latest announced" latch (mirroring how the native
-    /// client surfaces the current ballot, WinTrek.cpp:10377-10387).</summary>
-    public PendingBallotView? ActiveBallot => _activeBallot;
-    private PendingBallotView? _activeBallot;
+    /// <summary>Oldest pending ballot, native clintlib.cpp:2497-2507.
+    /// CANCEL_BALLOT removes every matching id without disturbing other votes.</summary>
+    public PendingBallotView? ActiveBallot => GetActiveBallot();
+    private readonly List<PendingBallotView> _pendingBallots = new();
+
+    public void DismissBallot(short ballotId) => _pendingBallots.RemoveAll(b => b.BallotId == ballotId);
+
+    public PendingBallotView? GetActiveBallot(long? localMs = null)
+    {
+        // clintlib.cpp:2497-2507: strict expiration < now, oldest first.
+        if (_countdownClockLocalMs is { } anchor)
+        {
+            double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+            while (_pendingBallots.Count > 0 && _pendingBallots[0].TimeExpiration < now)
+                _pendingBallots.RemoveAt(0);
+        }
+        return _pendingBallots.FirstOrDefault();
+    }
 
     /// <summary>P626 — a lightweight, client-safe view of an active ballot (the
     /// ballot text + id the server announced), kept deliberately small so the
     /// whole wire object isn't cached client-side. Consumed by the vote keys and
     /// a small HUD hint.</summary>
-    public sealed record PendingBallotView(short BallotId, string BallotText);
+    public sealed record PendingBallotView(short BallotId, string BallotText, uint TimeExpiration = uint.MaxValue);
 
     /// <summary>Transient projectile instances, in arrival order, pruned by
     /// expiry via <see cref="PruneExpiredProjectiles"/>. A projectile carries no
@@ -1040,8 +1072,8 @@ public sealed class ClientWorld
     /// <summary>P293 — live treasures keyed by TreasureId, from the creation
     /// <c>FM_S_TREASURE(28)</c> (the DROP_PART part-treasure and treasure-ack
     /// re-spawn broadcasts) and removed by <c>FM_S_DESTROY_TREASURE(30)</c>
-    /// (on pickup/expiry). A treasure is static (fixed P0), so no per-tick
-    /// stream updates it (see <see cref="TreasureEntity"/>).</summary>
+    /// (on pickup/expiry). Position follows the exported trajectory
+    /// (see <see cref="TreasureEntity"/>).</summary>
     public IReadOnlyDictionary<short, TreasureEntity> Treasures => _treasures;
 
     /// <summary>P292 — live deployed chaff in arrival order, pruned by expiry
@@ -1306,7 +1338,7 @@ public sealed class ClientWorld
 
     /// <summary>P265 — the latest in-mission scoreboard snapshot (name / side /
     /// kills / deaths per real-side player), streamed by the periodic owner-only
-    /// ScoreRosterUpdate(209). Replaced wholesale on each receive; empty until
+    /// ScoreRosterUpdate(209) plus ScoreRosterDelta(219); empty until
     /// the first snapshot lands.</summary>
     public IReadOnlyList<ScoreRosterEntry> ScoreRoster => _scoreRoster;
 
@@ -1332,6 +1364,11 @@ public sealed class ClientWorld
     /// (null when this side has no recorded dev techs yet).</summary>
     public TechTreeBitMask? DevelopmentTechsFor(short sideId) =>
         _developmentTechsBySideId.TryGetValue(sideId, out var m) ? m : null;
+
+    /// <summary>The stable bucket-catalog seed from CREATE_BUCKETS.TtbmInitial
+    /// (native appmsg.cpp:2386-2387), independent of current shop/research techs.</summary>
+    public TechTreeBitMask? InitialTechsFor(short sideId) =>
+        _initialTechsBySideId.TryGetValue(sideId, out var m) ? m : null;
 
     /// <summary>P446 — the live global-attribute multiplier set
     /// (<c>GlobalAttributeSet</c>, native <c>Side::GetGlobalAttributeSet()</c>)
@@ -1467,15 +1504,61 @@ public sealed class ClientWorld
     /// clear). Read under the caller's lock like the other world tables.</summary>
     public LeadIndicatorState LeadIndicator => _leadIndicator;
 
-    /// <summary>Local receipt instant (monotonic ms, <see cref="Environment.TickCount64"/>)
-    /// of the first <c>SET_START_TIME(14)</c> countdown announcement, i.e. the
-    /// moment the mission's visible start countdown began. <c>null</c> until such
-    /// a message arrives. The wire's <c>TimeStart</c> is a server-clock millisecond
-    /// value that shares no epoch with the client, so the port anchors the
-    /// countdown to the moment it learned the countdown had begun (see
-    /// <c>Game1</c>'s wiring), rather than trying to reconstruct absolute time.
-    /// Set once; the countdown is a one-shot per mission in this port.</summary>
+    /// <summary>Local receipt instant of the latest SET_START_TIME announcement.
+    /// Reset when the restart hold is replaced by the briefing deadline.
+    /// CountdownRemainingSeconds uses the absolute server-time target.</summary>
     public long? CountdownStartLocalMs { get; private set; }
+    private uint? _countdownTargetMs;
+    private uint? _missionTimeStartMs;
+    /// <summary>Native OnMissionCountdown event serial (appmsg.cpp:2330-2334).
+    /// SET_START_TIME changes only the epoch, not the audio change detector.</summary>
+    public long CountdownVersion { get; private set; }
+    private double _countdownClockServerMs;
+    private long? _countdownClockLocalMs;
+
+    /// <summary>P660: native SET_START_TIME deadline in server simulation time.
+    /// PING samples provide the epoch; wall extrapolation uses the live scale.</summary>
+    public int? CountdownRemainingSeconds(long? localMs = null)
+    {
+        if (_countdownTargetMs is not { } target || _countdownClockLocalMs is not { } anchor) return null;
+        double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+        return Math.Max(0, (int)Math.Ceiling((target - now) / 1000.0));
+    }
+
+    /// <summary>Native CheckCountdownSound (WinTrek.cpp:11135-11156). The
+    /// announcer lags by one second; Starting adds one AFTER truncation,
+    /// whereas Started adds it BEFORE truncation. Keep this separate from HUD
+    /// ceiling arithmetic. MISSIONDEF supplies late joiners' duration/epoch;
+    /// SET_START_TIME replaces the epoch for the briefing and ensuing game.</summary>
+    public int? MissionCountdownSoundSeconds(long? localMs = null)
+    {
+        if (_missionTimeStartMs is not { } start || _countdownClockLocalMs is not { } anchor) return null;
+        double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+        double untilStart = (start - now) / 1000.0;
+        if (_mission?.Stage == MissionStageMessage.StageStarting)
+            return Math.Max(0, (int)untilStart + 1);
+        if (_mission?.Stage == MissionStageMessage.StageStarted && _mission.GameLengthSeconds != 0f)
+            return Math.Max(0, (int)(_mission.GameLengthSeconds + untilStart + 1));
+        return null;
+    }
+
+    public bool IsIntermission => _countdownTargetMs is not null
+        && _mission?.Stage == MissionStageMessage.StageNotStarted;
+
+    private bool _treasureClockSeeded;
+    private double _treasureServerSeconds;
+    private double _treasureLocalSeconds;
+    private double TreasureServerSeconds() => _treasureServerSeconds
+        + (NowSeconds() - _treasureLocalSeconds) * TimeScale;
+
+    public void ObserveServerTime(uint serverMs, long localMs)
+    {
+        _treasureClockSeeded = true;
+        _treasureServerSeconds = serverMs / 1000.0;
+        _treasureLocalSeconds = NowSeconds();
+        _countdownClockServerMs = serverMs;
+        _countdownClockLocalMs = localMs;
+    }
 
     /// <summary>
     /// P321 — reset the world to the pristine state it had at construction,
@@ -1498,8 +1581,15 @@ public sealed class ClientWorld
     /// </summary>
     public void Reset()
     {
+        ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
+        MyAcceptedCommand = null;
+        _myQueuedCommand = null;
+        JoinedShipId = null;
+        JoinedMissionCookie = null;
+        JoinError = null;
+        MissionCore = null;
         MySideId = null;
         // P636 — a fresh connection starts with an empty published snapshot; a
         // reader holding the pre-reconnect snapshot keeps a valid (stale) object.
@@ -1508,8 +1598,12 @@ public sealed class ClientWorld
         MissionOwnerBroadcast = null;
         Graph = null;
         CountdownStartLocalMs = null;
+        _countdownTargetMs = null;
+        _missionTimeStartMs = null;
+        _countdownClockLocalMs = null;
         _mission = null;
         _gameOver = null;
+        _gameOverPlayers = [];
         _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
@@ -1534,12 +1628,14 @@ public sealed class ClientWorld
         _ownProjectileCount = 0;
         _projectileDrainCursor = 0;
         _missiles.Clear();
+        _lastMissileFiredByShip.Clear();
         MarkSnapshotDirty();
         Diag.Clear();
         _probes.Clear();
         _mines.Clear();
         _buildingEffects.Clear();
         _treasures.Clear();
+        _treasureClockSeeded = false;
         _chaff.Clear();
         _explosions.Clear();
         _explosionSoundEvents.Clear();
@@ -1550,14 +1646,25 @@ public sealed class ClientWorld
         AllowEmptyTeams = null;          // P455b — AET bit resets on reconnect
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
+        _globalAttributesBySideId.Clear();
+        _bucketFundingBySideId.Clear();
+        _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();                    // P442 — per-player wallet state
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
+        _feedbackLines.Clear();
+        _cameraOverrideRequests.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();   // P373 — drop any pending first-sighting cues on disconnect
+        _highlightedClusters.Clear();
+        Array.Fill(_allianceGroups, (sbyte)-1);
+        ViewedClusterId = null;
+        ViewedClusterPosition = null;
+        ViewClusterVersion = 0;
         _clusterWarningBySectorId.Clear();   // P374 — drop per-sector threat state on disconnect
         _clusterWarningCues.Clear();         // P374 — drop any pending threat cues on disconnect
         _events.Clear();
         _roster.Clear();
+        ResetLobby();
     }
 
     /// <summary>Upsert the world state from a decoded message. Switch on the
@@ -1568,6 +1675,27 @@ public sealed class ClientWorld
     {
         switch (msg)
         {
+            case JoinedMission joined:
+                Apply(joined);
+                break;
+            case ObjectSpotted spotted:
+                Apply(spotted);
+                break;
+            case SetWingId wing:
+                Apply(wing);
+                break;
+            case OrderChange order:
+                Apply(order);
+                break;
+            case Promote promote:
+                Apply(promote);
+                break;
+            case HighlightCluster highlight:
+                Apply(highlight);
+                break;
+            case ViewClusterReply viewCluster:
+                Apply(viewCluster);
+                break;
             case SetCluster setCluster:
                 Apply(setCluster);
                 break;
@@ -1613,6 +1741,12 @@ public sealed class ClientWorld
             case Reload reload:
                 Apply(reload);
                 break;
+            case SwapPart swapPart:
+                Apply(swapPart);
+                break;
+            case DropPart dropPart:
+                Apply(dropPart);
+                break;
             case Allegiance.Core.Wire.RankInfo rankInfo:
                 Apply(rankInfo);
                 break;
@@ -1642,6 +1776,25 @@ public sealed class ClientWorld
                 // P626 — a new in-flight ballot was announced (P187); latch it
                 // as ActiveBallot + surface a system chat line.
                 Apply(ballot);
+                break;
+            case CancelBallot cancelBallot:
+                // clintlib/appmsg.cpp:377-392: remove all queued matches.
+                DismissBallot(cancelBallot.BallotId);
+                break;
+            case PositionReqBroadcast positionRequest:
+                Apply(positionRequest);
+                break;
+            case DelPositionReq removeRequest:
+                Apply(removeRequest);
+                break;
+            case LockLobby lockLobby:
+                Apply(lockLobby);
+                break;
+            case LockSides lockSides:
+                Apply(lockSides);
+                break;
+            case AutoAccept autoAccept:
+                Apply(autoAccept);
                 break;
             case ChatBuoy chatBuoy:
                 Apply(chatBuoy);
@@ -1686,6 +1839,9 @@ public sealed class ClientWorld
                 break;
             case MissionStageMessage missionStage:
                 Apply(missionStage);
+                break;
+            case Ping ping:
+                ObserveServerTime(ping.TimeServer, Environment.TickCount64);
                 break;
             case SetStartTime setStartTime:
                 Apply(setStartTime);
@@ -1738,6 +1894,9 @@ public sealed class ClientWorld
                 // P292 — the server's deploy broadcast for a fresh chaff decoy.
                 Apply(createChaff);
                 break;
+            case ChangeAlliances alliances:
+                ApplyAlliances(alliances);
+                break;
             case TreasureSpawn treasureSpawn:
                 // P293 — the server's "a treasure is here" broadcast.
                 Apply(treasureSpawn);
@@ -1754,6 +1913,9 @@ public sealed class ClientWorld
                 break;
             case MissileTrackWarningUpdate missileTrack:
                 Apply(missileTrack);
+                break;
+            case ScoreRosterDelta scoreDelta:
+                _scoreRoster = scoreDelta.ApplyTo(_scoreRoster);
                 break;
             case ScoreRosterUpdate scoreRoster:
                 Apply(scoreRoster);
@@ -1837,6 +1999,9 @@ public sealed class ClientWorld
                 // P438 — whole-mission side-join broadcast.
                 Apply(joinSide);
                 break;
+            case ShipWarningUpdate warning:
+                if (warning.ShipId == MyShipId) ShipWarnings.Apply(warning.Mask);
+                break;
             case ClusterWarningUpdate clusterWarning:
                 // P374 — a side's per-sector threat state changed.
                 Apply(clusterWarning);
@@ -1897,6 +2062,8 @@ public sealed class ClientWorld
 
     private void Apply(SetCluster set)
     {
+        ShipWarnings.Reset();
+        _treasures.Clear();
         MarkSnapshotDirty();
         // On first arrival this is the "here is your ship" assignment.
         MyShipId ??= set.Ship.ShipId;
@@ -2359,9 +2526,9 @@ public sealed class ClientWorld
         // FractionMounted has no wire representation here (PartData is the
         // smaller, requester-agnostic observer struct, see its own doc
         // comment); an already-mounted part is definitionally fully mounted.
-        e.Loadout = export.Parts
-            .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted))
-            .ToArray();
+        var exportedInventory = export.Parts
+            .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted)).ToList();
+        StoreInventory(e, exportedInventory);
         // P370 — an identity EXPORT re-establishes this ship in our view (e.g. a
         // cross-side ship we'd marked gone warped back into our sector, or we
         // re-gained visibility after the server re-sent it); clear the transient
@@ -2599,17 +2766,17 @@ public sealed class ClientWorld
                 _buildingEffects.Remove(kv.Key);
     }
 
-    /// <summary>P293 — <c>FM_S_TREASURE(28)</c>: a freshly-created treasure (this
-    /// port's real first sends are the DROP_PART(33) part-treasure path,
-    /// <c>Server.cs:7014</c>, and the treasure-ack decline re-spawn,
-    /// <c>Server.cs:7817</c>) enters the table keyed by its real
-    /// <c>ObjectId</c>. A treasure is static in this port, so this is the only
-    /// write it ever gets (no per-tick stream); its P0 is final for its
-    /// lifetime. The code/payload/amount ride along for faithful parity with the
-    /// wire record (see <see cref="TreasureEntity"/>).</summary>
+    /// <summary>Retain TREASURE's original trajectory and predict its motion,
+    /// just as native CtreasureIGC does after export/import.</summary>
     private void Apply(TreasureSpawn spawn)
     {
         var d = spawn.Data;
+        if (!_treasureClockSeeded)
+        {
+            _treasureClockSeeded = true;
+            _treasureServerSeconds = d.Time0 / 1000.0;
+            _treasureLocalSeconds = NowSeconds();
+        }
         _treasures[d.ObjectId] = new TreasureEntity
         {
             TreasureId = d.ObjectId,
@@ -2617,6 +2784,9 @@ public sealed class ClientWorld
             PayloadId = d.TreasureId,
             Amount = d.Amount,
             Code = d.TreasureCode,
+            InitialVelocity = Allegiance.Core.Sim.TreasureMotion.Vector(d.V0),
+            CreatedAt = d.CreateNow ? TreasureServerSeconds() : d.Time0 / 1000.0,
+            ServerClock = TreasureServerSeconds,
             Position = d.P0 is { Length: 3 } p
                 ? new Vector3(p[0], p[1], p[2])
                 : Vector3.Zero,
@@ -2746,19 +2916,17 @@ public sealed class ClientWorld
     /// <summary>P267 — <c>FM_S_STATION_DESTROYED(59)</c>: an own/friendly station
     /// plays the <c>DestroyedSound</c> one-shot, an enemy station the
     /// <c>EnemyDestroyedSound</c> (native <c>appmsg.cpp:548-551</c>), decided by
-    /// the destroyed station's side vs <see cref="MySideId"/> (collapsed to
-    /// same-side — the client has no alliance graph; see
-    /// <see cref="StationEventSoundKind"/>). The station then leaves the world
+    /// the destroyed station's side and alliances (appmsg.cpp:548-551).
+    /// The station type is retained in the queued event before it leaves the world
     /// table, which also ends its exterior ambient loop via the station-sound
     /// planner's disappearance pass.</summary>
     private void Apply(StationDestroyed destroyed)
     {
         MarkSnapshotDirty();
-        bool enemy = true;
-        if (_stations.TryGetValue(destroyed.StationId, out var st))
-            enemy = !(MySideId.HasValue && st.SideId == MySideId.Value);
-        RecordSoundEvent(enemy ? ClientSoundEventKind.StationEnemyDestroyed : ClientSoundEventKind.StationDestroyed,
-            destroyed.StationId);
+        if (!_stations.TryGetValue(destroyed.StationId, out var st)) return;
+        bool friendly = IsFriendlyStationSide(st.SideId);
+        RecordSoundEvent(friendly ? ClientSoundEventKind.StationDestroyed : ClientSoundEventKind.StationEnemyDestroyed,
+            destroyed.StationId, st.StationTypeId);
         _stations.Remove(destroyed.StationId);
     }
 
@@ -2770,29 +2938,28 @@ public sealed class ClientWorld
     private void Apply(StationCapture capture)
     {
         MarkSnapshotDirty();
-        ClientSoundEventKind kind;
-        if (MySideId.HasValue && capture.SidOld == MySideId.Value)
-            kind = ClientSoundEventKind.StationCaptured;
-        else if (MySideId.HasValue && capture.SidNew == MySideId.Value)
-            kind = ClientSoundEventKind.StationEnemyCaptured;
-        else
-            kind = ClientSoundEventKind.StationCaptured;   // neither ours — default to the neutral-capture readout
+        if (!_stations.TryGetValue(capture.StationId, out var st)) return;
+        // Native appmsg.cpp:674-679: old friendly side takes precedence;
+        // unrelated captures are silent, but still change ownership.
+        if (IsFriendlyStationSide(capture.SidOld))
+            RecordSoundEvent(ClientSoundEventKind.StationCaptured, capture.StationId, st.StationTypeId);
+        else if (IsFriendlyStationSide(capture.SidNew))
+            RecordSoundEvent(ClientSoundEventKind.StationEnemyCaptured, capture.StationId, st.StationTypeId);
 
-        RecordSoundEvent(kind, capture.StationId);
-
-        // Re-side the station to its new owner (native SetSide).
-        if (_stations.TryGetValue(capture.StationId, out var st))
-            _stations[capture.StationId] = st with { SideId = capture.SidNew };
+        _stations[capture.StationId] = st with { SideId = capture.SidNew };
     }
+
+    private bool IsFriendlyStationSide(short side) =>
+        MySideId is { } mine && (side == mine || AreAllied(mine, side));
 
     /// <summary>P267 — <c>FM_S_DEV_COMPLETED(8)</c>: a development finished
     /// researching → its completion chime (native <c>appmsg.cpp:3326</c>).</summary>
     private void Apply(DevCompleted completed) =>
         RecordSoundEvent(ClientSoundEventKind.DevCompleted, completed.DevId);
 
-    private void RecordSoundEvent(ClientSoundEventKind kind, short id)
+    private void RecordSoundEvent(ClientSoundEventKind kind, short id, short stationTypeId = -1)
     {
-        _soundEvents.Add(new ClientSoundEvent(kind, id));
+        _soundEvents.Add(new ClientSoundEvent(kind, id, stationTypeId));
         if (_soundEvents.Count > MaxSoundEvents) _soundEvents.RemoveAt(0);
     }
 
@@ -2967,17 +3134,29 @@ public sealed class ClientWorld
     private void Apply(FireMissile m)
     {
         if (m.Entries.Count == 0) return;               // degenerate (legal) empty salvo
-        var e = m.Entries[0];
-        _missiles[e.MissileId] = new MissileEntity
+        foreach (var e in m.Entries)
         {
-            MissileId = e.MissileId,
-            TypeId = m.MissileTypeId,
-            ClusterId = m.ClusterId,
-            Position = e.VecPosition,
-            Forward = e.VecForward.LengthSquared() > 1e-6f ? e.VecForward.Normalize() : new Vector3(0f, 0f, -1f),
-            LastUpdatedLocalMs = Environment.TickCount64,
-        };
+            _missiles[e.MissileId] = new MissileEntity
+            {
+                MissileId = e.MissileId,
+                LauncherId = m.LauncherId,
+                TargetType = (IgcObjectType)m.TargetType,
+                TargetId = m.TargetId,
+                TypeId = m.MissileTypeId,
+                ClusterId = m.ClusterId,
+                Position = e.VecPosition,
+                Forward = e.VecForward.LengthSquared() > 1e-6f ? e.VecForward.Normalize() : new Vector3(0f, 0f, -1f),
+                LastUpdatedLocalMs = Environment.TickCount64,
+            };
+            _lastMissileFiredByShip[m.LauncherId] = e.MissileId;
+        }
     }
+
+    // Native GetLastMissileFired (WinTrek.cpp:7237-7268). Expiry of the last
+    // shot falls back to chase; it must never switch to an older or enemy shot.
+    private readonly Dictionary<short, short> _lastMissileFiredByShip = new();
+    public MissileEntity? LastMissileFiredBy(short shipId) =>
+        _lastMissileFiredByShip.TryGetValue(shipId, out short id) && _missiles.TryGetValue(id, out var missile) && missile.LauncherId == shipId ? missile : null;
 
     /// <summary>FM_S_MISSILE_UPDATE(205) — the P234 per-tick ongoing-position
     /// stream. Upsert every carried record by missile id (an id not seen via a
@@ -2989,15 +3168,13 @@ public sealed class ClientWorld
         long now = Environment.TickCount64;
         foreach (var r in m.Records)
         {
-            _missiles[r.MissileId] = new MissileEntity
-            {
-                MissileId = r.MissileId,
-                TypeId = r.TypeId,
-                ClusterId = r.ClusterId,
-                Position = r.Position,
-                Forward = r.Forward.LengthSquared() > 1e-6f ? r.Forward.Normalize() : new Vector3(0f, 0f, -1f),
-                LastUpdatedLocalMs = now,
-            };
+            if (!_missiles.TryGetValue(r.MissileId, out var missile))
+                _missiles[r.MissileId] = missile = new MissileEntity { MissileId = r.MissileId };
+            missile.TypeId = r.TypeId;
+            missile.ClusterId = r.ClusterId;
+            missile.Position = r.Position;
+            missile.Forward = r.Forward.LengthSquared() > 1e-6f ? r.Forward.Normalize() : new Vector3(0f, 0f, -1f);
+            missile.LastUpdatedLocalMs = now;
         }
     }
 
@@ -3039,7 +3216,9 @@ public sealed class ClientWorld
         var e = Upsert(info.ShipId);        // create-if-absent: a ship we only
                                             // heard of via PLAYERINFO
         e.Player = info;
-        if (string.IsNullOrEmpty(e.CharacterName)) e.CharacterName = info.CharacterName;
+        e.SideId = info.ISide;
+        if (info.ShipId == (MyShipId ?? JoinedShipId)) MySideId = info.ISide;
+        if (string.IsNullOrEmpty(e.CharacterName) || e.CharacterName == "<error>") e.CharacterName = info.CharacterName;
     }
 
     private void Apply(ScoreRosterUpdate m) =>
@@ -3288,7 +3467,7 @@ public sealed class ClientWorld
     /// are voting on (the port has no native-style ballot popup).</summary>
     private void Apply(Ballot m)
     {
-        _activeBallot = new PendingBallotView(m.BallotId, m.BallotText);
+        _pendingBallots.Add(new PendingBallotView(m.BallotId, m.BallotText, m.TimeExpiration));
         _events.Record(new ChatMessage
         {
             Message = "[VOTE] " + m.BallotText,
@@ -3511,6 +3690,7 @@ public sealed class ClientWorld
     /// warps back, or is re-exported to us).</summary>
     private void Apply(ShipDelete m)
     {
+        if (m.ShipId == MyShipId) ShipWarnings.Reset();
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
         MarkSnapshotDirty();
         e.IsGone = true;
@@ -3540,7 +3720,8 @@ public sealed class ClientWorld
     }
 
     // ── Mission info (persistent mission state, distinct from any ship) ────
-    private void Apply(MissionDef def) =>
+    private void Apply(MissionDef def)
+    {
         // Both MISSIONDEF(38) and MISSION_STAGE(37) can carry a Stage. The
         // server sends MISSIONDEF first (twice, in fact, at stage 0) and
         // MISSION_STAGE last (StageStarted) in the join burst, but rather than
@@ -3555,9 +3736,12 @@ public sealed class ClientWorld
             StaticCoreFile = def.SzIGCStaticFile,
             StaticCoreVersion = def.VerIgcCore,
             Cookie = def.DwCookie,
+            GameLengthSeconds = def.GameLengthSeconds,
             SideMissionOwner = def.ISideMissionOwner,
             Stage = def.Stage,
         };
+        _missionTimeStartMs = def.TimeStart;
+    }
 
     private void Apply(MissionStageMessage stage)
     {
@@ -3572,6 +3756,7 @@ public sealed class ClientWorld
         // MISSION_STAGE Over, so it never triggers this reset (the mission is
         // still running for the other sides). Guarded on the prior stage so it
         // fires once, not on every identical Over broadcast.
+        int? previousStage = _mission?.Stage;
         bool enteringOver = stage.Stage == MissionStageMessage.StageOver
                             && _mission?.Stage != MissionStageMessage.StageOver;
 
@@ -3583,12 +3768,25 @@ public sealed class ClientWorld
             StaticCoreFile = _mission?.StaticCoreFile ?? "",
             StaticCoreVersion = _mission?.StaticCoreVersion ?? 0,
             Cookie = _mission?.Cookie ?? 0,
+            GameLengthSeconds = _mission?.GameLengthSeconds ?? 0,
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = stage.Stage,
         };
 
         if (enteringOver)
             BeginNextMission();
+        // Native gameoverscreen.cpp:638-645 advances the game-over screen on Starting
+        // to the new mission. Keep scoreboard during NotStarted intermission.
+        if (stage.Stage == MissionStageMessage.StageStarting)
+        {
+            CountdownVersion++;
+            ClearGameOver();
+        }
+        if (stage.Stage == MissionStageMessage.StageStarted)
+        {
+            if (previousStage != MissionStageMessage.StageStarted) ClearGameOver();
+            _countdownTargetMs = null;
+        }
     }
 
     /// <summary>
@@ -3614,9 +3812,18 @@ public sealed class ClientWorld
     public void BeginNextMission()
     {
         MissionGeneration++;
+        ShipWarnings.Reset();
         MyShipId = null;
+        MyAcceptedCommand = null;
+        _myQueuedCommand = null;
+        JoinedShipId = null;
+        JoinedMissionCookie = null;
+        JoinError = null;
+        MissionCore = null;
         Graph = null;
         CountdownStartLocalMs = null;
+        _countdownTargetMs = null;
+        _missionTimeStartMs = null;
         _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
@@ -3641,12 +3848,14 @@ public sealed class ClientWorld
         _ownProjectileCount = 0;
         _projectileDrainCursor = 0;
         _missiles.Clear();
+        _lastMissileFiredByShip.Clear();
         MarkSnapshotDirty();
         Diag.Clear();
         _probes.Clear();
         _mines.Clear();
         _buildingEffects.Clear();
         _treasures.Clear();
+        _treasureClockSeeded = false;
         _chaff.Clear();
         _explosions.Clear();
         _explosionSoundEvents.Clear();
@@ -3657,29 +3866,35 @@ public sealed class ClientWorld
         AllowEmptyTeams = null;
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
+        _globalAttributesBySideId.Clear();
+        _bucketFundingBySideId.Clear();
+        _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();
         _autoDonateTargetByShipId.Clear();
+        _feedbackLines.Clear();
+        _cameraOverrideRequests.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();
+        _highlightedClusters.Clear();
+        Array.Fill(_allianceGroups, (sbyte)-1);
+        ViewedClusterId = null;
+        ViewedClusterPosition = null;
+        ViewClusterVersion = 0;
         _clusterWarningBySectorId.Clear();
         _clusterWarningCues.Clear();
         _events.Clear();
         _roster.Clear();
+        ResetLobby();
     }
 
-    /// <summary>FM_S_SET_START_TIME(14) — the server's visible countdown
-    /// announcement (broadcast whole-mission in Server.StartCountdown). The wire
-    /// carries only the target start time in server-clock milliseconds, which
-    /// shares no epoch with the client; the port treats the RECEIPT of this
-    /// message as the countdown's t=0 and records the local monotonic instant
-    /// once (the countdown is one-shot per mission here). This is the real
-    /// message native's <c>CheckCountdownSound</c> anchors on (it reads
-    /// <c>timeStart</c>, WinTrek.cpp:11144), so it is the faithful "countdown
-    /// began" signal — distinct from <c>Mission.Stage</c>, which the join burst
-    /// pins to <c>StageStarted</c> and therefore cannot distinguish the brief
-    /// STAGE_STARTING window (see the Game1 wiring).</summary>
-    private void Apply(SetStartTime startTime) =>
-        CountdownStartLocalMs ??= Environment.TickCount64;
+    /// <summary>Native SET_START_TIME can be reset for the briefing after the
+    /// restart hold (fsmission.cpp:1931-1938, 3539-3546). Use its absolute deadline.</summary>
+    private void Apply(SetStartTime startTime)
+    {
+        _countdownTargetMs = startTime.TimeStart;
+        _missionTimeStartMs = startTime.TimeStart;
+        CountdownStartLocalMs = Environment.TickCount64;
+    }
 
     /// <summary>FM_S_SET_BRIEFING_TEXT(9) — the server's per-player mission
     /// briefing, sent once in the join-sync burst (P121, Server.cs:2011-2051).
@@ -3713,16 +3928,19 @@ public sealed class ClientWorld
         // for the on-screen result panel. The stage is NOT touched here; see
         // the class remark above (P481).
         _gameOver = gameOver;
+        // A GAME_OVER begins a new result; following native 50-player chunks
+        // update the same roster (clintlib/appmsg.cpp:3048-3111).
+        _gameOverPlayers = [];
     }
 
     /// <summary>FM_S_GAME_OVER_PLAYERS(63) — the per-player endgame roster the
     /// server sends alongside GAME_OVER (P583): each connected player's score
     /// and counter breakdown (kills/deaths/ejections/rescues/baseKills/
-    /// baseCaptures/artifacts/flags). Replace-on-arrival; the game-over screen
-    /// reads <see cref="GameOverPlayersList"/>.</summary>
+    /// baseCaptures/artifacts/flags). Accumulate native's 50-player chunks
+    /// until the next GAME_OVER; the game-over screen reads <see cref="GameOverPlayersList"/>.</summary>
     private void Apply(GameOverPlayers players)
     {
-        _gameOverPlayers = players.Entries;
+        _gameOverPlayers = [.. _gameOverPlayers, .. players.Entries];
     }
 
     /// <summary>P481 — dismiss the game-over result panel (the Back action's
@@ -3772,6 +3990,8 @@ public sealed class ClientWorld
     {
         if (MySideId is not { } side || buckets.TtbmDevelopments is not { Length: TechTreeBitMask.ByteCount } mask) return;
         _developmentTechsBySideId[side] = TechTreeBitMask.FromBytes(mask);
+        if (buckets.TtbmInitial is { Length: TechTreeBitMask.ByteCount } initial)
+            _initialTechsBySideId[side] = TechTreeBitMask.FromBytes(initial);
     }
 
     /// <summary>P487 — <c>FM_S_BUCKET_STATUS(65)</c>: the server's per-bucket
@@ -3856,6 +4076,9 @@ public sealed class ClientWorld
     /// </summary>
     private void Apply(JoinSide join)
     {
+        // clintlib/clintlib.cpp:4133-4135: joining satisfies this side's request.
+        _positionRequests.Remove(new(join.SideId, join.ShipId));
+        if (join.ShipId == (JoinedShipId ?? MyShipId)) MyPositionRequestResult = null;
         // Known ship: update its side. Unknown ship: do not mint a phantom
         // entity (see the doc comment) — its EXPORT will carry the side.
         if (_ships.TryGetValue(join.ShipId, out var e))
@@ -3938,13 +4161,14 @@ public sealed class ClientWorld
     private void Apply(MissileLockUpdate m)
     {
         _missileLock = new MissileLockState(
-            m.LockFraction, m.TargetShipId, m.TargetPosition, m.MissileTypeName);
+            m.LockFraction, m.TargetShipId, m.TargetPosition, m.MissileTypeName, m.TargetType, m.IsReady);
 
         var curr = MissileLockFeedback.Classify(m.LockFraction);
-        bool targetChanged = m.TargetShipId != _prevLockTargetId;
+        bool targetChanged = m.TargetShipId != _prevLockTargetId || m.TargetType != _prevLockTargetType;
         string? tip = MissileLockFeedback.TipFor(_prevLockState, curr, targetChanged, m.MissileTypeName);
         _prevLockState = curr;
         _prevLockTargetId = m.TargetShipId;
+        _prevLockTargetType = m.TargetType;
 
         if (tip is not null)
         {

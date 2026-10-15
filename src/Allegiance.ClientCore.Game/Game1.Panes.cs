@@ -65,6 +65,7 @@ public sealed partial class Game1
             if (!_dockedActive)
             {
                 _dockedActive = true;
+                _hangarOnly = false;
                 // P571 — entering the docked hangar tears down the P540 eject/pod
                 // autopilot (and any autopilot goto/target), so a freshly launched
                 // hull never resumes steering to the garrison after death. Native
@@ -112,6 +113,8 @@ public sealed partial class Game1
                 _investDefs ??= BuildInvestDefs();
                 Console.WriteLine($"[monogame] docked: hangar/loadout screen ({offerCat.Hulls.Count} hulls, {offerCat.Parts.Count} parts, {offerCat.Launchers?.Count ?? 0} launchers offered)");
             }
+
+            if (_cameraMode == CameraMode.Command) return false;
 
             // P273 — T toggles the docked sub-view between the hangar loadout
             // shop and the teleport pane (edge-triggered like every toggle).
@@ -249,11 +252,11 @@ public sealed partial class Game1
                 bool qKey = ActionDown(ks, "ShopCycleHullPrev") || nav.Left;
                 bool eKey = ActionDown(ks, "ShopCycleHullNext") || nav.Right;
 
-                if (up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
-                if (down && !_dockDownWasDown) { shop.MoveCursor(+1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
+                if (!_hangarOnly && up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
+                if (!_hangarOnly && down && !_dockDownWasDown) { shop.MoveCursor(+1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
 
                 // P519 — switch the HULLS/PARTS tab (Tab key or pad shoulders).
-                if ((tabKey || nav.LeftShoulder || nav.RightShoulder) && !_dockTabWasDown)
+                if (!_hangarOnly && (tabKey || nav.LeftShoulder || nav.RightShoulder) && !_dockTabWasDown)
                 {
                     shop.ToggleTab();
                     Console.WriteLine($"[monogame] docked tab -> {shop.Tab}");
@@ -263,7 +266,7 @@ public sealed partial class Game1
                 if (qKey && !_dockQWasDown) { shop.CycleHull(false); Console.WriteLine($"[monogame] hull cycle prev -> {shop.EffectiveHullId}"); }
                 if (eKey && !_dockEWasDown) { shop.CycleHull(true); Console.WriteLine($"[monogame] hull cycle next -> {shop.EffectiveHullId}"); }
 
-                if ((space || enter) && !_dockSpaceWasDown)
+                if (!_hangarOnly && (space || enter) && !_dockSpaceWasDown)
                 {
                     shop.Activate();
                     Console.WriteLine($"[monogame] shop select: page={shop.Page} hull={shop.EffectiveHullId} parts={shop.ChosenParts.Count}");
@@ -497,7 +500,7 @@ public sealed partial class Game1
     /// P487 — synthesize the local side's bucket definitions via
     /// <see cref="Allegiance.Core.Model.BucketCatalog.Describe"/> — the SAME id
     /// numbering the server baked into its list at <c>Mission.Assemble</c> (same
-    /// core + same initial techs) — fed the side's development-tech mask and GA.
+    /// core + same initial techs) — fed the side's initial-tech mask and GA.
     /// Returns null when the core is unavailable or the side's techs aren't
     /// observed yet, so the caller (<c>_investDefs ??= BuildInvestDefs()</c>)
     /// retries on a later dock instead of caching a wrong list.
@@ -508,7 +511,7 @@ public sealed partial class Game1
         if (core is null) return null;
         var world = _session.World;
         short mySide = world.MySideId ?? -1;
-        if (world.DevelopmentTechsFor(mySide) is not { } techs) return null;   // techs unknown — retry later
+        if (world.InitialTechsFor(mySide) is not { } techs) return null;   // bucket seed unknown — retry later
         var ga = world.GlobalAttributesFor(mySide);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         var list = new List<Rendering.InvestmentBucket>(views.Count);
@@ -698,8 +701,8 @@ public sealed partial class Game1
             return false;
         if (world.CountdownStartLocalMs is { } cd)
         {
-            double elapsed = (Environment.TickCount64 - cd) / 1000.0;
-            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
+            int remaining = world.CountdownRemainingSeconds() ?? (int)Math.Ceiling(
+                Audio.CountdownSound.BriefingCountdownSeconds - (Environment.TickCount64 - cd) / 1000.0);
             if (remaining <= 0)
                 return false;      // countdown over → mission live → auto-close
             remainingSeconds = remaining;
@@ -753,7 +756,8 @@ public sealed partial class Game1
             else continue;   // not a weapon system (shield/cloak/pack/afterburner)
 
             slots.Add(new Flight.WeaponSlotDescriptor(
-                p.MountId, Rendering.ShopLayout.AsciiSafe(part.Name), consumes, p.Amount));
+                p.MountId, Rendering.ShopLayout.AsciiSafe(part.Name), consumes, p.Amount,
+                p.FractionMounted == 255 && (part.Type is not DataPartTypeIGC.MissileLauncher || _session.World.MissileLock.IsReady)));
         }
         return _weaponReloadTracker.Update((float)_nowSeconds, ammoFrac, reloadArrived, slots);
     }
@@ -1002,9 +1006,12 @@ public sealed partial class Game1
     /// SIDE_ROSTER snapshot and the highlighted roster index.</summary>
     private void DrawSideSelect()
     {
-        var rows = Rendering.SideSelectLayout.Build(
-            _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner,
-            _session.World.IsSideActive);
+        IReadOnlyList<Rendering.SideSelectLayout.Row> rows;
+        lock (_session.Gate)
+            rows = Rendering.SideSelectLayout.Build(
+                _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner,
+                _session.World.IsSideActive).Concat(Rendering.LobbyStatusLayout.Build(_session.World)
+                .Select(text => new Rendering.SideSelectLayout.Row(Rendering.SideSelectLayout.Kind.Info, text))).ToArray();
         _sideSelectRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 
@@ -1171,13 +1178,16 @@ public sealed partial class Game1
         int? launchCountdown = null;
         if (world.CountdownStartLocalMs is { } cd)
         {
-            double elapsed = (Environment.TickCount64 - cd) / 1000.0;
-            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
+            int remaining = world.CountdownRemainingSeconds() ?? (int)Math.Ceiling(
+                Audio.CountdownSound.BriefingCountdownSeconds - (Environment.TickCount64 - cd) / 1000.0);
             if (remaining > 0) launchCountdown = remaining;
         }
 
         var rows = Rendering.ReadyCheckLayout.Build(
             sideName, _ownReady, players, agg, forced, world.AmMissionOwner, launchCountdown);
+        lock (_session.Gate)
+            rows = rows.Concat(Rendering.LobbyStatusLayout.Build(world)
+                .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToArray();
         _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 

@@ -320,10 +320,13 @@ public sealed partial class Game1
         // core yields an empty catalogue, so the docked screen still renders the
         // current ship and launch/undock stay usable.
         _shopCatalog = Rendering.ShopCatalog.TryLoad(_assets);
+        if (_shopCatalog?.Core is { } startupCore) _assetMissionCores["PCore001"] = startupCore;
+        _session.World.MissionCoreResolver = ResolveAssetMissionCore;
         // P540 — give the ClientWorld a way to resolve an ejected ship's lifepod
         // hull id (it has no core of its own). Wired once the catalogue loads,
         // before the wire receive path starts.
         _session.World.LifepodHullResolver = ResolveLifepodHull;
+        _session.World.PartTypeResolver = ResolveFlightPart;
         // P465b — cache the core's projectile-type table once (from the same
         // loaded core the shop catalogue reads) so the per-frame bolt gather can
         // style each bolt by its real type. Null when the core is missing →

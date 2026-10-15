@@ -1,0 +1,35 @@
+  Allegiance.Core -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll
+  fedmsgdump -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/fedmsgdump/bin/Debug/net10.0/fedmsgdump.dll
+  Allegiance.ClientCore -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.ClientCore/bin/Debug/net10.0/Allegiance.ClientCore.dll
+  p605synth -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/p605synth/bin/Debug/net10.0/p605synth.dll
+  igcdump -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/igcdump/bin/Debug/net10.0/igcdump.dll
+  Allegiance.Lobby -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.Lobby/bin/Debug/net10.0/Allegiance.Lobby.dll
+  Allegiance.Bot -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.Bot/bin/Debug/net10.0/Allegiance.Bot.dll
+  corpusvalidate -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/corpusvalidate/bin/Debug/net10.0/corpusvalidate.dll
+  collision-perf-proof -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/collision-perf-proof/bin/Debug/net10.0/collision-perf-proof.dll
+  Allegiance.Server -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Server.dll
+  missiondump -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/missiondump/bin/Debug/net10.0/missiondump.dll
+  Allegiance.ClientCore.Game -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.ClientCore.Game.dll
+  livecombat -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/livecombat/bin/Debug/net10.0/livecombat.dll
+  chatdemo -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/chatdemo/bin/Debug/net10.0/chatdemo.dll
+  receive-proof -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/receive-proof/bin/Debug/net10.0/receive-proof.dll
+  Allegiance.ClientCore.Explorer -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.ClientCore.Explorer/bin/Debug/net10.0/Allegiance.ClientCore.Explorer.dll
+  Allegiance.Lobby.Tests -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Lobby.Tests/bin/Debug/net10.0/Allegiance.Lobby.Tests.dll
+  Allegiance.ClientCore.MonoGame -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.dll
+  hullhit-proof -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/hullhit-proof/bin/Debug/net10.0/hullhit-proof.dll
+  warp-visual-proof -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/warp-visual-proof/bin/Debug/net10.0/warp-visual-proof.dll
+  roster-capture -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/roster-capture/bin/Debug/net10.0/roster-capture.dll
+  shieldflare-proof -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/shieldflare-proof/bin/Debug/net10.0/shieldflare-proof.dll
+  soft-frame-proof -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/soft-frame-proof/bin/Debug/net10.0/soft-frame-proof.dll
+  hullswap-proof -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/hullswap-proof/bin/Debug/net10.0/hullswap-proof.dll
+  Allegiance.Core.Tests -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll
+  p629-proof -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/p629-proof/bin/Debug/net10.0/p629-proof.dll
+  allegiance-mcp -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tools/allegiance-mcp/bin/Debug/net10.0/allegiance-mcp.dll
+  Allegiance.ClientCore.MonoGame.Tests -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll
+  Allegiance.ClientCore.Tests -> /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:05.71

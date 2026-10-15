@@ -512,6 +512,14 @@ public class MiningTests
         Assert.All(bot.Observations, o => Assert.Equal(0f, o.OreFraction));
         Assert.Equal(0f, live.Ore);
 
+        // P653 H-06: fresh default-spawn ships start DOCKED at the base hangar
+        // (native FedSrv/fsmission.cpp:791-796). Launch the probe so the status
+        // assertions below observe the ordinary FLYING state, not the docked spawn.
+        bot.ResetShipStatuses();
+        bot.SendBuyLoadout(live.HullType.HullId, fLaunch: true);
+        PumpUntil(server, () => bot.ShipStatuses.Any(s => s.ShipId == shipId
+            && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 800);
+
         // Normal SHIP_STATUS still flows (the periodic 40-tick refresh), flying/free.
         // P382: the port now spawns one docked initial miner per side at its home
         // station at boot (a docked NPC's SHIP_STATUS legitimately reaches peers),

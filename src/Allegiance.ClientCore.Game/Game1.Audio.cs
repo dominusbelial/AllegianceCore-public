@@ -403,20 +403,11 @@ public sealed partial class Game1
             switch (ev.Kind)
             {
                 case ClientSoundEventKind.StationDestroyed:
-                    snd.PlayStationEvent(Audio.StationEventSoundKind.Destroyed);
-                    Console.WriteLine($"[monogame] audio: station destroyed (station {ev.Id})");
-                    break;
                 case ClientSoundEventKind.StationEnemyDestroyed:
-                    snd.PlayStationEvent(Audio.StationEventSoundKind.EnemyDestroyed);
-                    Console.WriteLine($"[monogame] audio: enemy station destroyed (station {ev.Id})");
-                    break;
                 case ClientSoundEventKind.StationCaptured:
-                    snd.PlayStationEvent(Audio.StationEventSoundKind.Captured);
-                    Console.WriteLine($"[monogame] audio: station captured (station {ev.Id})");
-                    break;
                 case ClientSoundEventKind.StationEnemyCaptured:
-                    snd.PlayStationEvent(Audio.StationEventSoundKind.EnemyCaptured);
-                    Console.WriteLine($"[monogame] audio: enemy station captured (station {ev.Id})");
+                    snd.PlayStationEvent(ev, _shopCatalog?.StationTypes);
+                    Console.WriteLine($"[monogame] audio: {ev.Kind} (station {ev.Id}, type {ev.StationTypeId})");
                     break;
                 case ClientSoundEventKind.DevCompleted:
                     snd.PlayDevComplete();
@@ -427,6 +418,12 @@ public sealed partial class Game1
                     // cancelled; play the single "ripcord aborted" VO cue.
                     snd.PlayRipcordAborted();
                     Console.WriteLine($"[monogame] audio: ripcord aborted (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SectorHighlighted:
+                    snd.PlayCommandMessage();
+                    break;
+                case ClientSoundEventKind.PlayerWaiting:
+                    snd.PlayVoice(Rendering.LobbyStatusLayout.PlayerWaitingWave);
                     break;
                 case ClientSoundEventKind.TeleportArrived:
                     // P638 — our teleport dock request was accepted; native

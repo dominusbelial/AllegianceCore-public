@@ -13,17 +13,8 @@ namespace Allegiance.Core.Tests;
 /// assembled-mission structure: build a started mission, mount a real missile
 /// launcher (<see cref="DataPartTypeIGC.MissileLauncher"/> on
 /// <c>EquipmentType.Magazine</c>), place a hostile in-range target, and assert
-/// the fire gate behaves faithfully:
-///   • lock insufficient (a <c>MaxLock &gt; 0</c> type with no elapsed lock
-///     build time) ⇒ <see cref="Ship.TryFireMissile"/> refuses — no missile, no
-///     ammo spent;
-///   • lock sufficient (built by the per-tick <see cref="Ship.UpdateMountedMissileLock"/>
-///     leg, or a <c>MaxLock == 0</c> type that needs none — UpdateMissileLock's own
-///     gate 5) ⇒ a real <see cref="Missile"/> is created homing at
-///     <see cref="Ship.CommandTarget"/>, the launcher's ammo decrements, and the
-///     lock is consumed (reset to 0);
-///   • the <see cref="OnUpdate"/> held-bit path (StateM &amp; MissileFire) actually
-///     fires — the magazineigc.cpp:111 auto-fire lever.
+/// a loaded launcher fires with any lock value, consumes one round and resets
+/// its lock. The held-bit path uses the existing lock, including zero.
 /// The wire half (FM_CS_FIRE_MISSILE(70)) is proved in
 /// <see cref="MissileFireLiveTests"/> (ClientCore.Tests).
 /// </summary>
@@ -94,7 +85,11 @@ public class MissileFireTests
     private static (Ship Shooter, Ship Target) PlaceDuo(Mission mission, Sector sector, DataMissileTypeIGC mt)
     {
         var (core, _, _) = Rep.Value;
-        var hull = core.HullTypes.Values.First();
+        // Use a combat hull with a real magazine (P653 H-08 clamps a launcher's
+        // rounds to hull.CapacityMagazine / expendableSize, min 1 —
+        // launchertypeigc.h:130-145). The generic Values.First() is hull 3
+        // 'Miner' with CapacityMagazine=0, which would clamp every mount to 1.
+        var hull = core.HullTypes.Values.Where(h => h.CapacityMagazine >= 10).OrderBy(h => h.HullId).First();
         var shooter = new Ship(901, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
         mission.PlaceShip(shooter, sector);
         shooter.SideId = 0;
@@ -105,6 +100,7 @@ public class MissileFireTests
         target.SideId = 1;
 
         shooter.Orientation.Set((tpos - shooter.Position).Normalize());   // face the target (angle-off-bow 0)
+        target.SideVisibility.SetSideVisibility(0, true); // lock fixture has a detected target
         shooter.CommandTarget = target;
         return (shooter, target);
     }
@@ -115,15 +111,10 @@ public class MissileFireTests
         for (int i = 0; i < ticks; i++) { t += dt; mission.Update(t); }
     }
 
-    /// <summary>⭐ Negative case — the lock gate. A <c>MaxLock &gt; 0</c> missile
-    /// type with no elapsed lock build time (MissileLock is still 0) must be
-    /// refused by <see cref="Ship.TryFireMissile"/>: no missile is created and the
-    /// launcher's ammo is untouched. This is the "fire requested but lock not yet
-    /// sufficient" refusal (the caller-facing half of UpdateMissileLock's gate 5 —
-    /// a MaxLock==0 type needs no lock, a MaxLock&gt;0 type needs a full build).</summary>
+    /// <summary>A loaded launcher fires at zero lock (magazineigc.cpp:111-123).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void TryFireMissile_refuses_when_lock_not_yet_sufficient()
+    public void TryFireMissile_fires_dumbfire_without_lock_after_load_deadline()
     {
         Require.Artwork();
         var (_, _, lockTyp) = Rep.Value;
@@ -134,11 +125,11 @@ public class MissileFireTests
         // No ticks have elapsed → MissileLock is still 0 for a MaxLock>0 type.
         Assert.Equal(0f, shooter.MissileLock);
 
-        bool fired = shooter.TryFireMissile(mission.LastUpdate);
+        bool fired = shooter.TryFireMissile(mission.LastUpdate + 0.001);
 
-        Assert.False(fired, "a MaxLock>0 missile with no elapsed lock build must be refused");
-        Assert.Empty(sector.Models.OfType<Missile>());
-        Assert.Equal(2, shooter.Parts.Single(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0).Amount);
+        Assert.True(fired);
+        Assert.Equal(0f, Assert.Single(sector.Models.OfType<Missile>()).LockFraction);
+        Assert.Equal(1, shooter.Parts.Single(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0).Amount);
     }
 
     /// <summary>⭐ Positive case (lock built by the per-tick OnUpdate leg). Tick the
@@ -194,12 +185,11 @@ public class MissileFireTests
         Assert.Equal(1, shooter.Parts.Single(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0).Amount);
     }
 
-    /// <summary>Negative case for the held-bit path: a <c>MaxLock &gt; 0</c> type
-    /// with the fire bit held but <em>no</em> lock built yet does NOT fire on that
-    /// first tick — the lock gate (not merely the presence of the bit) decides.</summary>
+    /// <summary>Held local fire uses the existing lock, including zero, without
+    /// first building lock on that tick (magazineigc.cpp:111-123).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void OnUpdate_held_bit_does_not_fire_without_built_lock()
+    public void OnUpdate_held_bit_fires_without_waiting_for_lock()
     {
         Require.Artwork();
         var (_, _, lockTyp) = Rep.Value;
@@ -212,7 +202,7 @@ public class MissileFireTests
         Step(mission, 1, 0.005);                          // one short tick: lock far below full
 
         Assert.True(shooter.MissileLock < 1f, "one 5ms tick cannot fully build a MaxLock>0 missile");
-        Assert.Empty(sector.Models.OfType<Missile>());
-        Assert.Equal(2, shooter.Parts.Single(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0).Amount);
+        Assert.Equal(0f, Assert.Single(sector.Models.OfType<Missile>()).LockFraction);
+        Assert.Equal(1, shooter.Parts.Single(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0).Amount);
     }
 }

@@ -332,7 +332,7 @@ public sealed class ConsoleVerbosityLiveTests
 
             ConsoleLog.Verbose = true;                      // worst case: stand-by lines enabled
             Console.SetOut(sw);
-            for (int i = 0; i < Calls; i++) decide.Invoke(ship, null);
+            for (int i = 0; i < Calls; i++) decide.Invoke(ship, [false]); // ordinary (not tapped) decision
             ConsoleLog.Flush();                             // drain emitted lines into sw
             Console.SetOut(oldOut);
             var text = sw.ToString();

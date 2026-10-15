@@ -256,7 +256,7 @@ public class P590PodRescueTests
     public void Pod_pickup_order_streams_queued_order_to_real_player_rescuer()
     {
         Require.Artwork();
-        var server = new Srv();
+        using var server = new Srv();
         Ship pod = null!, rescuer = null!;
         int n = 0;
         server.ShipSpawner = (core, mission, id) =>
@@ -279,9 +279,14 @@ public class P590PodRescueTests
         server.Boot(Config());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
 
-        var podBot = new FltBot(); var rescBot = new FltBot();
-        podBot.Connect(server.BoundPort, "PDPX"); rescBot.Connect(server.BoundPort, "SCUX");
-        podBot.SendLogonRequest(Request("PDPX")); rescBot.SendLogonRequest(Request("SCUX"));
+        using var podBot = new FltBot(); using var rescBot = new FltBot();
+        // Socket logons can drain in either order. Seat the pod before the
+        // rescuer so the spawner's role counter matches the requesting peers.
+        podBot.Connect(server.BoundPort, "PDPX");
+        podBot.SendLogonRequest(Request("PDPX"));
+        Assert.True(PumpUntil(server, () => podBot.ShipAssignment is not null, 4000) < 4000);
+        rescBot.Connect(server.BoundPort, "SCUX");
+        rescBot.SendLogonRequest(Request("SCUX"));
         PumpUntil(server, () => podBot.ShipAssignment is not null && rescBot.ShipAssignment is not null, 4000);
         Assert.NotNull(pod); Assert.NotNull(rescuer);
         Assert.True(pod.HullType.HasCapability(DataHullTypeIGC.HabmLifepod));

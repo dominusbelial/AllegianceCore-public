@@ -267,7 +267,14 @@ public sealed class AsteroidsUpdateLiveTests
         var rock = seat.Rock;
 
         seat.MinerBot.ResetAsteroidsUpdates();
-        PumpUntil(seat.Server, () => seat.MinerBot.AsteroidsUpdates.Count >= 2, 2000);
+        // Two packets can encode the same quantized ore under load. Wait for
+        // the observable this test asserts, rather than a packet count alone.
+        PumpUntil(seat.Server, () =>
+        {
+            var updates = seat.MinerBot.AsteroidsUpdates;
+            return updates.Count >= 2 &&
+                EntryOf(updates[0], rock.Data.AsteroidId).Ore > EntryOf(updates[^1], rock.Data.AsteroidId).Ore;
+        }, 2000);
         Assert.True(seat.MinerBot.AsteroidsUpdates.Count >= 2, "side A must receive a few updates while mining");
 
         // The FIRST received update carries a near-full ore; later ones must show

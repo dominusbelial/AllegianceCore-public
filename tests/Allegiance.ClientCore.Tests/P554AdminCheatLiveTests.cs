@@ -241,7 +241,9 @@ public sealed class P554AdminCheatLiveTests
         // relocate an MCP-harness (mcp-prefixed) bot — the exact population the
         // probe drives in the networked arena proof.
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        server.Boot(Config(new Ac { Enabled = true, AllowNames = ["admin"] }));
+        var config = Config(new Ac { Enabled = true, AllowNames = ["admin"] });
+        config.LiveSettings!.TestHarness = new global::Allegiance.Server.TestHarnessConfig { Enabled = true, IgnoreTechGate = false };
+        server.Boot(config);
         using var admin = Seat(server, "admin");          // allow-listed sender
         using var bot = Seat(server, "mcp-b001-1234");    // an MCP-harness bot
         short botShip = bot.World.MyShipId!.Value;
@@ -289,7 +291,12 @@ public sealed class P554AdminCheatLiveTests
     {
         Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        server.Boot(Config(null));                                     // adminCheats disabled → server refuses
+        var config = Config(null);
+        // H-06: buy in the real debug hangar with an explicit test-harness
+        // tech grant, so this test reaches the intended relocation refusal.
+        config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
+            { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
+        server.Boot(config);                                           // adminCheats disabled → server refuses
         var ticker = new Ticker(server);
         try
         {

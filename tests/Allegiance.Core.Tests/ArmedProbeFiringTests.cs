@@ -80,7 +80,7 @@ public class ArmedProbeFiringTests
     private static DataProbeTypeIGC PlasGen() => Core.Value.ProbeTypes[30];
 
     private static Ship Ship(Mission m, short id, Vector3 pos, short? sideId)
-        => new(id, Hull(), pos, Vector3.Zero, Orientation.Identity) { Mission = m, SideId = sideId };
+        => new(id, Hull(), pos, Vector3.Zero, Orientation.Identity) { Mission = m, Sector = m.Sectors[0], SideId = sideId };
 
     /// <summary>Walk the probe's clock forward in <c>step</c> increments up to
     /// <paramref name="until"/> (sim seconds), calling <see cref="Probe.Update"/>

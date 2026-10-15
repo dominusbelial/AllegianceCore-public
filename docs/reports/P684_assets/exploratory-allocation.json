@@ -1,0 +1,23 @@
+{
+  "producer": 126048,
+  "publisher": 2566,
+  "stages": {
+    "SweepCrossSideExports": 5136,
+    "SweepCrossSideMineExports": 4760,
+    "SweepCrossSideShipStatuses": 80,
+    "step:broadcastShipStates": 53328,
+    "step:broadcastStationsUpdate": 52,
+    "step:broadcastAsteroidsUpdate": 38,
+    "step:broadcastProbesUpdate": 47,
+    "step:broadcastShipsUpdate": 152,
+    "step:broadcastSectorThreats": 504,
+    "step:broadcastShipWarnings": 0,
+    "step:broadcastMissileLock": 0,
+    "step:broadcastMissilesUpdate": 488,
+    "step:broadcastOwnShipMining": 0,
+    "step:broadcastOwnShipKillBonus": 0,
+    "step:broadcastMissileTrackWarning": 0,
+    "step:broadcastScoreRoster": 61462,
+    "step:broadcastLeadIndicator": 0
+  }
+}

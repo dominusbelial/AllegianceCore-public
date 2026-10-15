@@ -162,6 +162,11 @@ public sealed class RecordingIgcSite : IIgcSite
         Wrap(nameof(KillTreasureEvent), () => { }, ptreasure);
 
     // ── text ──────────────────────────────────────────────────────────────
+    public void WeaponReady(Ship ship, string partName) =>
+        Wrap(nameof(WeaponReady), () => _default.WeaponReady(ship, partName), ship, partName);
+
+    public bool QueueRipcordUse => _default.QueueRipcordUse;
+
     public void PostPlainText(bool bCritical, string pszText) =>
         Wrap(nameof(PostPlainText), () => { }, bCritical, pszText is null ? "null" : $"\"{pszText}\"");
 

@@ -1,0 +1,2799 @@
+[
+  {
+    "label": "focused-01-1",
+    "project": "ClientCore",
+    "method": "P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection",
+    "exit": 0,
+    "seconds": 1.005,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-01-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-01-2",
+    "project": "ClientCore",
+    "method": "P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection",
+    "exit": 0,
+    "seconds": 1.032,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-01-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-01-3",
+    "project": "ClientCore",
+    "method": "P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection",
+    "exit": 0,
+    "seconds": 1.031,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-01-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-02-1",
+    "project": "ClientCore",
+    "method": "P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+    "exit": 0,
+    "seconds": 1.137,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-02-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-02-2",
+    "project": "ClientCore",
+    "method": "P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+    "exit": 0,
+    "seconds": 1.151,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-02-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-02-3",
+    "project": "ClientCore",
+    "method": "P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+    "exit": 0,
+    "seconds": 1.167,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-02-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-03-1",
+    "project": "ClientCore",
+    "method": "P682b_second_match_relaunches_mature_and_strike_then_third_match_starts",
+    "exit": 0,
+    "seconds": 51.155,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-03-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-03-2",
+    "project": "ClientCore",
+    "method": "P682b_second_match_relaunches_mature_and_strike_then_third_match_starts",
+    "exit": 0,
+    "seconds": 51.197,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-03-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-03-3",
+    "project": "ClientCore",
+    "method": "P682b_second_match_relaunches_mature_and_strike_then_third_match_starts",
+    "exit": 0,
+    "seconds": 53.306,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-03-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"port\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: \"native\", pipeline: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-04-1",
+    "project": "ClientCore",
+    "method": "Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches",
+    "exit": 0,
+    "seconds": 30.075,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-04-1.trx",
+      "--filter",
+      "FullyQualifiedName~.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-04-2",
+    "project": "ClientCore",
+    "method": "Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches",
+    "exit": 0,
+    "seconds": 30.102,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-04-2.trx",
+      "--filter",
+      "FullyQualifiedName~.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-04-3",
+    "project": "ClientCore",
+    "method": "Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches",
+    "exit": 0,
+    "seconds": 30.013,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-04-3.trx",
+      "--filter",
+      "FullyQualifiedName~.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches"
+    ],
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"native\", pipeline: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: \"port\", pipeline: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-05-1",
+    "project": "ClientCore",
+    "method": "DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries",
+    "exit": 0,
+    "seconds": 1.029,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-05-1.trx",
+      "--filter",
+      "FullyQualifiedName~.DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-05-2",
+    "project": "ClientCore",
+    "method": "DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries",
+    "exit": 0,
+    "seconds": 0.972,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-05-2.trx",
+      "--filter",
+      "FullyQualifiedName~.DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-05-3",
+    "project": "ClientCore",
+    "method": "DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries",
+    "exit": 0,
+    "seconds": 1.007,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-05-3.trx",
+      "--filter",
+      "FullyQualifiedName~.DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-06-1",
+    "project": "ClientCore",
+    "method": "PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+    "exit": 0,
+    "seconds": 1.083,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-06-1.trx",
+      "--filter",
+      "FullyQualifiedName~.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-06-2",
+    "project": "ClientCore",
+    "method": "PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+    "exit": 0,
+    "seconds": 1.085,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-06-2.trx",
+      "--filter",
+      "FullyQualifiedName~.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-06-3",
+    "project": "ClientCore",
+    "method": "PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+    "exit": 0,
+    "seconds": 1.071,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-06-3.trx",
+      "--filter",
+      "FullyQualifiedName~.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-07-1",
+    "project": "ClientCore",
+    "method": "NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+    "exit": 0,
+    "seconds": 1.002,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-07-1.trx",
+      "--filter",
+      "FullyQualifiedName~.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-07-2",
+    "project": "ClientCore",
+    "method": "NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+    "exit": 0,
+    "seconds": 0.974,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-07-2.trx",
+      "--filter",
+      "FullyQualifiedName~.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-07-3",
+    "project": "ClientCore",
+    "method": "NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+    "exit": 0,
+    "seconds": 0.99,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-07-3.trx",
+      "--filter",
+      "FullyQualifiedName~.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-08-1",
+    "project": "ClientCore",
+    "method": "MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving",
+    "exit": 0,
+    "seconds": 0.908,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-08-1.trx",
+      "--filter",
+      "FullyQualifiedName~.MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-08-2",
+    "project": "ClientCore",
+    "method": "MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving",
+    "exit": 0,
+    "seconds": 0.938,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-08-2.trx",
+      "--filter",
+      "FullyQualifiedName~.MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-08-3",
+    "project": "ClientCore",
+    "method": "MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving",
+    "exit": 0,
+    "seconds": 0.917,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-08-3.trx",
+      "--filter",
+      "FullyQualifiedName~.MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-09-1",
+    "project": "ClientCore",
+    "method": "SameShipId_NewMissionGenerationStillResetsLife",
+    "exit": 0,
+    "seconds": 0.917,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-09-1.trx",
+      "--filter",
+      "FullyQualifiedName~.SameShipId_NewMissionGenerationStillResetsLife"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SameShipId_NewMissionGenerationStillResetsLife",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-09-2",
+    "project": "ClientCore",
+    "method": "SameShipId_NewMissionGenerationStillResetsLife",
+    "exit": 0,
+    "seconds": 0.938,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-09-2.trx",
+      "--filter",
+      "FullyQualifiedName~.SameShipId_NewMissionGenerationStillResetsLife"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SameShipId_NewMissionGenerationStillResetsLife",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-09-3",
+    "project": "ClientCore",
+    "method": "SameShipId_NewMissionGenerationStillResetsLife",
+    "exit": 0,
+    "seconds": 0.939,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-09-3.trx",
+      "--filter",
+      "FullyQualifiedName~.SameShipId_NewMissionGenerationStillResetsLife"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SameShipId_NewMissionGenerationStillResetsLife",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-10-1",
+    "project": "ClientCore",
+    "method": "ChangedIdentity_WithSameShipId_ResetsArrival",
+    "exit": 0,
+    "seconds": 0.937,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-10-1.trx",
+      "--filter",
+      "FullyQualifiedName~.ChangedIdentity_WithSameShipId_ResetsArrival"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival(identity: \"session\")",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival(identity: \"cookie\")",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-10-2",
+    "project": "ClientCore",
+    "method": "ChangedIdentity_WithSameShipId_ResetsArrival",
+    "exit": 0,
+    "seconds": 0.881,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-10-2.trx",
+      "--filter",
+      "FullyQualifiedName~.ChangedIdentity_WithSameShipId_ResetsArrival"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival(identity: \"session\")",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival(identity: \"cookie\")",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-10-3",
+    "project": "ClientCore",
+    "method": "ChangedIdentity_WithSameShipId_ResetsArrival",
+    "exit": 0,
+    "seconds": 0.915,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-10-3.trx",
+      "--filter",
+      "FullyQualifiedName~.ChangedIdentity_WithSameShipId_ResetsArrival"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival(identity: \"session\")",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival(identity: \"cookie\")",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-11-1",
+    "project": "ClientCore",
+    "method": "DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber",
+    "exit": 0,
+    "seconds": 0.976,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-11-1.trx",
+      "--filter",
+      "FullyQualifiedName~.DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-11-2",
+    "project": "ClientCore",
+    "method": "DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber",
+    "exit": 0,
+    "seconds": 0.989,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-11-2.trx",
+      "--filter",
+      "FullyQualifiedName~.DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-11-3",
+    "project": "ClientCore",
+    "method": "DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber",
+    "exit": 0,
+    "seconds": 0.965,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-11-3.trx",
+      "--filter",
+      "FullyQualifiedName~.DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-12-1",
+    "project": "ClientCore",
+    "method": "P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch",
+    "exit": 0,
+    "seconds": 1.017,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-12-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-12-2",
+    "project": "ClientCore",
+    "method": "P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch",
+    "exit": 0,
+    "seconds": 1.068,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-12-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-12-3",
+    "project": "ClientCore",
+    "method": "P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch",
+    "exit": 0,
+    "seconds": 1.097,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-12-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-13-1",
+    "project": "ClientCore",
+    "method": "P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+    "exit": 0,
+    "seconds": 1.159,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-13-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-13-2",
+    "project": "ClientCore",
+    "method": "P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+    "exit": 0,
+    "seconds": 1.156,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-13-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-13-3",
+    "project": "ClientCore",
+    "method": "P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+    "exit": 0,
+    "seconds": 1.149,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-13-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-14-1",
+    "project": "ClientCore",
+    "method": "P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled",
+    "exit": 0,
+    "seconds": 1.119,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-14-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1799, mature: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1801, mature: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-14-2",
+    "project": "ClientCore",
+    "method": "P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled",
+    "exit": 0,
+    "seconds": 1.151,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-14-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1799, mature: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1801, mature: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-14-3",
+    "project": "ClientCore",
+    "method": "P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled",
+    "exit": 0,
+    "seconds": 1.158,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-14-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1799, mature: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1801, mature: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-15-1",
+    "project": "ClientCore",
+    "method": "P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+    "exit": 0,
+    "seconds": 1.147,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-15-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-15-2",
+    "project": "ClientCore",
+    "method": "P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+    "exit": 0,
+    "seconds": 1.16,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-15-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-15-3",
+    "project": "ClientCore",
+    "method": "P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+    "exit": 0,
+    "seconds": 1.135,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-15-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-16-1",
+    "project": "ClientCore",
+    "method": "P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes",
+    "exit": 0,
+    "seconds": 1.141,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-16-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-16-2",
+    "project": "ClientCore",
+    "method": "P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes",
+    "exit": 0,
+    "seconds": 1.167,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-16-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-16-3",
+    "project": "ClientCore",
+    "method": "P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes",
+    "exit": 0,
+    "seconds": 1.174,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-16-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes"
+    ],
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-17-1",
+    "project": "ClientCore",
+    "method": "P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+    "exit": 0,
+    "seconds": 1.157,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-17-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_StatusIncludesGatesOutcomeAndNextMissionReset"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-17-2",
+    "project": "ClientCore",
+    "method": "P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+    "exit": 0,
+    "seconds": 1.134,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-17-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_StatusIncludesGatesOutcomeAndNextMissionReset"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-17-3",
+    "project": "ClientCore",
+    "method": "P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+    "exit": 0,
+    "seconds": 1.148,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-17-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_StatusIncludesGatesOutcomeAndNextMissionReset"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-18-1",
+    "project": "ClientCore",
+    "method": "P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+    "exit": 0,
+    "seconds": 1.015,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-18-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-18-2",
+    "project": "ClientCore",
+    "method": "P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+    "exit": 0,
+    "seconds": 1.005,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-18-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-18-3",
+    "project": "ClientCore",
+    "method": "P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+    "exit": 0,
+    "seconds": 1.045,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-18-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-19-1",
+    "project": "ClientCore",
+    "method": "P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+    "exit": 0,
+    "seconds": 1.104,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-19-1.trx",
+      "--filter",
+      "FullyQualifiedName~.P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-19-2",
+    "project": "ClientCore",
+    "method": "P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+    "exit": 0,
+    "seconds": 1.113,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-19-2.trx",
+      "--filter",
+      "FullyQualifiedName~.P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-19-3",
+    "project": "ClientCore",
+    "method": "P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+    "exit": 0,
+    "seconds": 1.104,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-19-3.trx",
+      "--filter",
+      "FullyQualifiedName~.P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "suite-Core",
+    "project": "Core",
+    "method": null,
+    "exit": 0,
+    "seconds": 553.851,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/suite-Core.trx"
+    ],
+    "counts": {
+      "total": "4555",
+      "executed": "4555",
+      "passed": "4555",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": []
+  },
+  {
+    "label": "suite-ClientCore",
+    "project": "ClientCore",
+    "method": null,
+    "exit": 0,
+    "seconds": 468.729,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/suite-ClientCore.trx"
+    ],
+    "counts": {
+      "total": "1010",
+      "executed": "1010",
+      "passed": "1010",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": []
+  },
+  {
+    "label": "suite-ClientCore.MonoGame",
+    "project": "ClientCore.MonoGame",
+    "method": null,
+    "exit": 0,
+    "seconds": 266.692,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.MonoGame.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/suite-ClientCore.MonoGame.trx"
+    ],
+    "counts": {
+      "total": "2189",
+      "executed": "2186",
+      "passed": "2186",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "outcome": "NotExecuted",
+        "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+      },
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "outcome": "NotExecuted",
+        "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+      },
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "outcome": "NotExecuted",
+        "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+      }
+    ]
+  },
+  {
+    "label": "focused-20-1",
+    "project": "ClientCore",
+    "method": "Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+    "exit": 0,
+    "seconds": 23.862,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-20-1.trx",
+      "--filter",
+      "FullyQualifiedName~.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-20-2",
+    "project": "ClientCore",
+    "method": "Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+    "exit": 0,
+    "seconds": 23.328,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-20-2.trx",
+      "--filter",
+      "FullyQualifiedName~.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "focused-20-3",
+    "project": "ClientCore",
+    "method": "Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+    "exit": 0,
+    "seconds": 23.0,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--no-restore",
+      "--logger",
+      "trx;LogFileName=/tmp/p682b-validation/focused-20-3.trx",
+      "--filter",
+      "FullyQualifiedName~.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+    ],
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+        "outcome": "Passed"
+      }
+    ]
+  }
+]

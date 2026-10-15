@@ -355,14 +355,14 @@ public sealed partial class Server
 
         var msg = new FireMissile
         {
-            Lock = 0f,                               // no homing target this slice
+            Lock = m.LockFraction,
             TimeFired = timeFired,
             MissileTypeId = m.MissileType.ExpendableTypeId,
             LauncherId = shooter.Id,
             ClusterId = m.OwnerSector.Id,
-            TargetType = 0,                          // OT_* placeholder — no target this slice
-            TargetId = -1,                           // NA — no target
-            BDud = false,
+            TargetType = (int)EquipmentTarget.TypeOf(m.Target),
+            TargetId = m.Target?.Id ?? -1,
+            BDud = m.IsDud,
             // Exactly one missile per fire — this slice always sends a single
             // missile, never a salvo (see class doc).
             Entries =
@@ -482,6 +482,13 @@ public sealed partial class Server
             SendExplosionEvent(targets, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
     }
 
+    // Explicit PROMOTE/SWAP_PART echoes apply their own mutations on clients.
+    // Publishing intermediate snapshots first would erase PROMOTE's parent or
+    // make SWAP_PART undo an already-applied swap. Sim-thread scoped, with finally
+    // restoration at the command handlers. Native FedSrv.CPP:13530-13555 does
+    // not queue LOADOUT_CHANGE from these low-level site events.
+    private int _loadoutCommandDepth;
+
     /// <summary>
     /// Handle a ship loadout mutation (<see cref="ServerHost.LoadoutChange"/>,
     /// raised from <c>Sim/Ship.cs</c> <c>ChangeHull</c>/<c>MountPart</c>/
@@ -504,6 +511,22 @@ public sealed partial class Server
     /// direct caller of a Ship mutation method), reaching the sim-thread-owned
     /// <c>_peerShips</c> map the same way the other broadcasts do.
     /// </summary>
+    private void BroadcastWeaponReady(Ship ship, string partName)
+    {
+        // Native weaponIGC.h:44-46 is local IGC audio/text; reuse this port's
+        // owner-directed chat transport to carry both without a new FMID.
+        var message = new ChatMessage
+        {
+            SidSender = -1, ChatTarget = (int)ChatTarget.Individual,
+            OidRecipient = ship.Id, VoiceOver = WeaponReadyCue.SoundId,
+            CommandID = OrderChange.CidNone, OidTarget = -1, OtTarget = -1,
+            Message = $"{partName} ready."
+        };
+        var packet = FedPacket.Pack(new[] { message.Encode() });
+        foreach (var (connection, peer) in _peerShips)
+            if (ReferenceEquals(peer.Ship, ship)) _host.Send(connection, packet);
+    }
+
     private void BroadcastLoadoutChange(IShipIgc pship, IPartIgc ppart, LoadoutChange lc)
     {
         if (pship is not Ship ship)
@@ -533,6 +556,8 @@ public sealed partial class Server
         if (lc == LoadoutChange.HullChange)
             _crossSideExportSent.RemoveWhere(e => e.ShipId == ship.Id);
 
+        if (_loadoutCommandDepth > 0) return;
+
         // The changed ship's CURRENT whole loadout (hull + every part), rebuilt
         // fresh at broadcast time (native ExportShipLoadout, FedSrv/fsship.cpp:710),
         // plus one PassengerData per boarded child (fsship.cpp:726-733). sidShip is
@@ -541,8 +566,13 @@ public sealed partial class Server
         {
             HullId = ship.HullType.HullId,
             SidShip = ship.Id,
-            Parts = ship.Parts
-                .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, p.FractionMounted))
+            // Launch repair uses 255 for fully armed runtime parts. Native
+            // ExpandedPartData stores BytePercentage(1) == 240 (Utility.h:1311-
+            // 1327; shipIGC.h:819). Keep the final post-launch inventory,
+            // including refilled packs, but publish its native full-mount byte.
+            Parts = ship.ExportInventoryForAck()
+                .Select(p => p.FractionMounted == byte.MaxValue
+                    ? p with { FractionMounted = ExpandedPartData.FullyMounted } : p)
                 .ToArray(),
             Passengers = ship.ChildShips
                 .Select(c => new PassengerData(c.Id, (byte)(c.TurretId ?? 0)))
@@ -605,7 +635,7 @@ public sealed partial class Server
             return;
         }
         var msg = new Reload { Entries = entries, ShipID = ship.Id };
-        SendSectorWide(ship.Sector.Id, msg.Encode());
+        SendSectorWide(ship.Sector, msg.Encode());
         Console.WriteLine($"[autoreload] ship {ship.Id}: ammo hit zero -> auto-reload {entries.Count} cargo entry/entries applied -> RELOAD(129) shipID={ship.Id} sector {ship.Sector.Id} wide");
     }
 
@@ -1776,6 +1806,12 @@ public sealed partial class Server
 
         MoveShipToSector(victim, destSector);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067), not just the back-ref
         victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
+        // P653d: native SetBaseHullType restores m_fraction to 1 even when
+        // assigning the same pod hull (shipIGC.cpp:1352-1359,1435). ChangeHull
+        // is a hull-only primitive in this port, so restore the restart here,
+        // just as EjectSurvivor does. Otherwise lethal damage leaves a docked
+        // pod Dead and every subsequent purchase/boarding/teleport is refused.
+        victim.SetFraction(1.0f);
         victim.StationId = dest.StationId; // SetStation + ShipStatusDocked (FedSrv.CPP:12064-12065)
         victim.LastDockTime = _simNow;     // P381: dock clock (lifepod respawn is a dock latch)
 
@@ -1808,7 +1844,7 @@ public sealed partial class Server
         var sector = victim.Sector;
         var mission = victim.Mission;
         if (sector is null || mission is null) return;
-        uint time0 = (uint)TickIndex;
+        uint time0 = (uint)(now * 1000);
 
         // (1) PARTS — 1-in-5 per still-mounted part (FedSrv.CPP:11686-11696):
         //     `if (randomInt(0,4) == 0) CreateTreasure(..., p, p->GetPartType(), p1, 100.0f, 60.0f)`
@@ -1823,7 +1859,7 @@ public sealed partial class Server
             if (Random.Shared.Next(5) == 0)   // randomInt(0,4)==0 — uniform pick in [0,4], p=1/5
             {
                 var treasure = victim.CreateDropTreasure(part.Type, part.Amount, now, time0, dv: 100.0f, lifespan: 60.0f);
-                SendSectorWide(sector.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+                SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
                 Console.WriteLine($"[loot] ship {victim.Id}: part {part.Type.PartId} amount {part.Amount} -> part treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
             }
         }
@@ -1846,7 +1882,7 @@ public sealed partial class Server
             if (ammoPack is { } ap && Random.Shared.Next(5) == 0)
             {
                 var treasure = victim.CreateDropTreasure(ap, ammo, now, time0, dv: 100.0f, lifespan: 30.0f);
-                SendSectorWide(sector.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+                SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
                 Console.WriteLine($"[loot] ship {victim.Id}: ammo {ammo} -> ammo-pack treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
             }
             victim.Ammo = 0;   // pship->SetAmmo(0), FedSrv.CPP:11711
@@ -1872,7 +1908,7 @@ public sealed partial class Server
             if (fuelPack is { } fp && Random.Shared.Next(5) == 0)
             {
                 var treasure = victim.CreateDropTreasure(fp, (short)fuel, now, time0, dv: 100.0f, lifespan: 30.0f);
-                SendSectorWide(sector.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+                SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
                 Console.WriteLine($"[loot] ship {victim.Id}: fuel {fuel:F1} -> fuel-pack treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
             }
         }
@@ -1891,7 +1927,7 @@ public sealed partial class Server
             else
             {
                 var ft = victim.CreateFlagTreasure(sidFlag, now, time0);
-                SendSectorWide(sector.Id, new TreasureSpawn { Data = ft.Data }.Encode());
+                SendSectorWide(sector, new TreasureSpawn { Data = ft.Data }.Encode());
                 Console.WriteLine($"[loot] ship {victim.Id}: jettisoned flag of side {sidFlag} as treasure obj={ft.Data.ObjectId} sector {sector.Id}");
             }
 
@@ -1929,16 +1965,14 @@ public sealed partial class Server
     /// flag's own side (capability <c>c_sabmPedestal</c>, with no flag of that side
     /// already within native's 300-unit "spitting distance", FedSrv.CPP:13883-13905)
     /// and spawn a c_tcFlag treasure above it (FedSrv.CPP:13921-13941). The
-    /// SIDE_TEAMLOBBY artifact (-2) leg (FedSrv.CPP:13847-13869) delegates to
-    /// <c>GenerateTreasure</c> in a random neutral cluster — the DECLARED-OUT-OF-SCOPE
-    /// ambient treasure system (P397, per this task's brief) — so it is logged and
-    /// left unspawned here, not silently dropped.
+    /// SIDE_TEAMLOBBY artifact (-2) delegates to GenerateTreasure in a random
+    /// neutral cluster (FedSrv.CPP:13847-13868).
     /// </summary>
     private void RespawnCarriedFlag(Mission mission, short sidFlag)
     {
         if (sidFlag == Side.ArtifactSentinelFlag)   // SIDE_TEAMLOBBY = -2 (igc.h:514)
         {
-            Console.WriteLine("[loot] flag artifact (SIDE_TEAMLOBBY) respawn needs the deferred ambient treasure generator (P397 out of scope) — not spawned");
+            mission.RespawnArtifact(_simNow);
             return;
         }
 
@@ -1974,7 +2008,7 @@ public sealed partial class Server
             P0: [p0.X, p0.Y, p0.Z],
             V0: [0f, 0f, 0f],
             Lifespan: 10.0f * 24.0f * 3600.0f,           // 10 days (FedSrv.CPP:13927)
-            Time0: (uint)TickIndex,
+            Time0: (uint)(_simNow * 1000.0),
             ObjectId: mission.NextObjectId(),            // GenerateNewTreasureID() (FedSrv.CPP:13930)
             TreasureId: sidFlag,
             ClusterId: st.ClusterId,                     // pstation->GetCluster()->GetObjectID() (FedSrv.CPP:13926)
@@ -1983,7 +2017,7 @@ public sealed partial class Server
             CreateNow: false);                           // createNow = false (FedSrv.CPP:13928)
         var flag = new Treasure(data.ObjectId, sec, data, _simNow, mission);
         sec.Add(flag);
-        SendSectorWide(sec.Id, new TreasureSpawn { Data = flag.Data }.Encode());
+        SendSectorWide(sec, new TreasureSpawn { Data = flag.Data }.Encode());
         Console.WriteLine($"[loot] flag {sidFlag} respawned above pedestal station {st.StationId} in sector {sec.Id} obj={flag.Data.ObjectId}");
     }
 
@@ -2184,21 +2218,10 @@ public sealed partial class Server
 
         victim.ChangeHull(pht);                 // SetBaseHullType(pht), FedSrv.CPP:11942
 
-        // P308 — an ejected lifepod must be born ALIVE, not dead. Ship.ReceiveDamage
-        // zeroes _fraction BEFORE raising KillShipEvent (Ship.cs:3131-3132), and
-        // ChangeHull/SetBaseHullType is documented NOT to reset it ("a lifepod is
-        // still the dead ship", Ship.cs:194-196), so without this the pod is born
-        // with Dead == true and stays that way forever — silently disabling every
-        // downstream gate the eject mechanic exists for (Sector.ResolveRescueEvents
-        // requires !s.Dead, Sector.cs:772; GetShipUpdateCandidates skips dead ships,
-        // Sector.cs:410; the combat/mine/explosion passes all skip dead ships). The
-        // port's faithful stand-in for native's behaviour: native keeps an ejected
-        // pod operational (its rescue is collision-based with NO Dead gate,
-        // shipIGC.cpp:1033-1036, and GetShipUpdateCandidates/combat don't filter by
-        // fraction-death) without ever naming an eject fraction — so restoring the
-        // pod to FULL hull is the natural "fresh intact pod" value, and it is
-        // native's own canonical "make a ship whole" number (SetFraction(1.0f),
-        // FedSrv.CPP:12759/12950, 12954; shipIGC.h:311-318).
+        // P308/P653d: native SetBaseHullType restores hull fraction to 1
+        // (shipIGC.cpp:1435). This port's ChangeHull leaves fraction to its
+        // caller, so restore the operational pod explicitly on ejection as
+        // well as on the true-death restart above (FedSrv.CPP:11942,12052).
         victim.SetFraction(1.0f);
 
         // ── position / orientation / velocity math (FedSrv.CPP:11944-12006) ──
@@ -2408,6 +2431,7 @@ public sealed partial class Server
                 Cookie = NextCookie(EnsurePeerUpdate(kv.Key)),   // P507 — native's NewCookie() on warp SET_CLUSTER (fsship.cpp:767)
             };
             SendPeer(kv.Key, FedPacket.Pack(new[] { set.Encode() }));
+            SendTreasureSnapshot(kv.Key, newSector);
             Console.WriteLine($"[warp] peer {kv.Key} ship {ship.Id} -> SET_CLUSTER sector {newSector.Id} (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)");
             return;
         }
@@ -2558,6 +2582,8 @@ public sealed partial class Server
                         mission.Site.FlagsKillsComputed(mission, fChanged, fWinner);
                 }
             }
+            if (sidFlag == Side.ArtifactSentinelFlag)
+                RespawnCarriedFlag(mission, sidFlag); // FedSrv.CPP:13161
             ship.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:13149
 
             // Whole-mission announce with sideidFlag = NA (FedSrv.CPP:13150-13157).

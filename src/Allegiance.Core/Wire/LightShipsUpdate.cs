@@ -44,9 +44,27 @@ public readonly record struct LightShipUpdateEntry(
     /// <summary>Wire width of one record = native <c>sizeof(ServerLightShipUpdate)</c>
     /// under the pack(1) igc.h block = 8.</summary>
     public const int Size = 8;
+    private byte[]? _encoded { get; init; }
+
+    /// <summary>Prepare the common record once; viewer packets only copy it.</summary>
+    public LightShipUpdateEntry EncodeOnce()
+    {
+        var bytes = new byte[Size];
+        WireWriter writer = new(bytes);
+        Write(ref writer);
+        return this with { _encoded = bytes };
+    }
 
     public void Write(ref WireWriter w)
     {
+        // A record's public init properties support `with`. Only reuse bytes
+        // while they still describe those values; a changed copy writes afresh.
+        if (_encoded is { } bytes
+            && BinaryPrimitives.ReadInt16LittleEndian(bytes) == ShipId
+            && BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(2)) == StateM
+            && bytes[4] == CtrlYaw && bytes[5] == CtrlPitch
+            && bytes[6] == CtrlRoll && bytes[7] == CtrlThrottle)
+        { w.WriteBytes(bytes); return; }
         w.WriteI16(ShipId);      // offset 0
         w.WriteU16(StateM);      // offset 2
         w.WriteByte(CtrlYaw);    // offset 4
@@ -54,6 +72,12 @@ public readonly record struct LightShipUpdateEntry(
         w.WriteByte(CtrlRoll);   // offset 6
         w.WriteByte(CtrlThrottle);// offset 7
     }
+
+    // Cached storage is not part of the wire value's equality contract.
+    public bool Equals(LightShipUpdateEntry other) => ShipId == other.ShipId && StateM == other.StateM
+        && CtrlYaw == other.CtrlYaw && CtrlPitch == other.CtrlPitch
+        && CtrlRoll == other.CtrlRoll && CtrlThrottle == other.CtrlThrottle;
+    public override int GetHashCode() => HashCode.Combine(ShipId, StateM, CtrlYaw, CtrlPitch, CtrlRoll, CtrlThrottle);
 
     public static LightShipUpdateEntry Read(ReadOnlySpan<byte> b) => new(
         ShipId: BinaryPrimitives.ReadInt16LittleEndian(b),

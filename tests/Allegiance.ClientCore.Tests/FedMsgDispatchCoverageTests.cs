@@ -20,8 +20,8 @@ namespace Allegiance.ClientCore.Tests;
 /// and is not silently falling into an "unknown fmid" sink. This test does that:
 ///
 ///  1. It encodes every server-sent message the real client is supposed to
-///     consume (the <see cref="ExpectedConsumedServerSent"/> registry — all 59
-///     native S/CS messages the client dispatches, plus the 16 port-added
+///     consume (the <see cref="ExpectedConsumedServerSent"/> registry — all 84
+///     native S/CS messages the client dispatches, plus the 17 port-added
 ///     server-sent messages), feeds the real bytes through the real dispatch
 ///     (no sockets — <see cref="ITransportSite.OnReceive"/> is invoked
 ///     directly), and asserts the fmid was consumed, i.e. did NOT land in
@@ -54,10 +54,11 @@ public class FedMsgDispatchCoverageTests
     /// </summary>
     private static readonly (ushort Fmid, string Type)[] ExpectedConsumedServerSent =
     {
+        (6, "ObjectSpotted"), (93, "OrderChange"), (95, "JoinedMission"), (106, "SetWingId"),
         (2, "LogonAck"), (5, "BuyLoadoutAck"), (7, "SetCluster"), (8, "DevCompleted"),
         (9, "SetBriefingText"), (10, "PlayerInfo"), (12, "ProjectileInstance"), (13, "RankInfo"), (14, "SetStartTime"),
         (16, "PlayerRescued"), (17, "Ballot"), (20, "ShipDelete"), (23, "ChatMessage"),
-        (26, "ExportShip"), (28, "TreasureSpawn"), (30, "DestroyTreasure"), (35, "Ping"),
+        (26, "ExportShip"), (28, "TreasureSpawn"), (30, "DestroyTreasure"), (33, "DropPart"), (34, "SwapPart"), (35, "Ping"),
         (37, "MissionStageMessage"), (38, "MissionDef"), (45, "PlayerReady"), (46, "TeamReady"),
         (47, "ForceTeamReady"), (57, "StationsUpdate"), (58, "StationCapture"), (59, "StationDestroyed"),
         (60, "MoneyChange"), (61, "DockedNotify"), (62, "GameOver"), (63, "GameOverPlayers"),
@@ -69,12 +70,14 @@ public class FedMsgDispatchCoverageTests
         (114, "Payday"), (115, "SetMoney"),
         (116, "AutoDonateUpdate"), (121, "SetTeamLeader"), (123, "SetMissionOwner"), (125, "JoinSide"),
         (129, "Reload"), (166, "EnterLifepod"), (175, "LightShipsUpdate"), (176, "HeavyShipsUpdate"),
-        (178, "BoardNack"), (179, "AsteroidsUpdate"),
+        (177, "ViewClusterReply"), (178, "BoardNack"), (189, "Promote"), (199, "HighlightCluster"), (197, "ChangeAlliances"), (179, "AsteroidsUpdate"),
         (181, "BuildingEffectDestroyed"), (183, "ShipReset"), (185, "RipcordActivate"), (186, "RipcordDenied"),
         (187, "RipcordAborted"), (191, "CreateBuckets"), (198, "AsteroidMined"), (200, "ClusterInfo"),
+        (18, "CancelBallot"), (40, "PositionReqBroadcast"), (42, "DelPositionReq"),
+        (43, "LockLobby"), (44, "LockSides"), (52, "AutoAccept"),
         // port-added server-sent messages the real client also dispatches:
         (204, "MissileLockUpdate"), (205, "MissileUpdate"), (206, "OwnShipMiningUpdate"),
-        (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"), (209, "ScoreRosterUpdate"),
+        (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"), (209, "ScoreRosterUpdate"), (219, "ScoreRosterDelta"),
         (210, "LeadIndicatorUpdate"), (211, "SideRoster"), (212, "OwnShipKillBonusUpdate"),
         (213, "ProjectileHullHit"), (214, "ClusterWarningUpdate"), (215, "QueuedCommandUpdate"),
         (216, "CollisionEvent"), (217, "VictimDamaged"), (853, "MineStrength"), (991, "TimescaleUpdate"),
@@ -91,24 +94,12 @@ public class FedMsgDispatchCoverageTests
     private static readonly (ushort Fmid, string Name, string Why)[] KnownUnconsumedServerSent =
     {
         (3, "LOGOFF", "server echo of client LOGOFF; quit handled client-side, echo benign"),
-        (6, "OBJECT_SPOTTED", "native spy-cam spotting relay; no spotter mechanic in this port"),
-        (18, "CANCEL_BALLOT", "ballot withdrawn; VOTE/ballot state handled via BALLOT(17)+ActiveBallot"),
         (31, "NEW_SHIP_INSTANCE", "codec only; neither side wired (no sender, no handler)"),
-        (33, "DROP_PART", "broadcast echo; dropped-part visibility realized via TREASURE(28) P293"),
-        (34, "SWAP_PART", "client sends SWAP_PART; server echo not consumed by real client (Bot-only)"),
-        (40, "POSITIONREQ", "team-leader seat-request forward; leader acceptance path not surfaced"),
-        (42, "DELPOSITIONREQ", "cancel/reject seat request; same partial seat-request feature"),
-        (43, "LOCK_LOBBY", "lobby lock broadcast; pre-game lobby not surfaced in MonoGame client"),
-        (44, "LOCK_SIDES", "side-lock broadcast; side-select lock UI not surfaced"),
         (51, "CHANGE_TEAM_CIV", "team civ change broadcast; civ-swap feature not implemented"),
-        (52, "AUTO_ACCEPT", "auto-accept toggle broadcast; partial lobby feature"),
         (86, "ASTEROID_DESTROYED", "asteroid destroy broadcast; rocks rendered from EXPORT/ASTEROIDS_UPDATE"),
         (87, "FIRE_EXPENDABLE", "FE broadcast; expendable deploy effect via CREATE_CHAFF(109)+chaff entities"),
         (89, "TREASURE_SETS", "treasure-sets broadcast; DROP_TREASURE sets not modelled"),
         (92, "PROBES_UPDATE", "per-cluster probe list sync; probe sensor model partial (P98-P100)"),
-        (93, "ORDER_CHANGE", "relay echo; order state surfaced via QueuedCommandUpdate(215)"),
-        (95, "JOINED_MISSION", "joined-mission announce; side-select flow uses SIDE_ROSTER(211)"),
-        (106, "SET_WINGID", "wing-assignment broadcast; wing UI not surfaced"),
         (124, "QUIT_MISSION", "quit-mission broadcast; game-over/leave path local"),
         (126, "QUIT_SIDE", "side-quit broadcast; side-select roster via SIDE_ROSTER(211)"),
         (128, "ENTER_GAME", "enter-game announce; spawn handled via SET_CLUSTER(7)"),
@@ -116,14 +107,10 @@ public class FedMsgDispatchCoverageTests
         (156, "GAIN_FLAG", "flag gain broadcast; conquest flag mechanic not implemented"),
         (162, "ACQUIRE_TREASURE", "treasure acquired notice; treasure pickup via DESTROY_TREASURE(30)"),
         (164, "ADD_PART", "part-added broadcast; loadout state via BUY_LOADOUT_ACK(5)"),
-        (177, "VIEW_CLUSTER", "sector-view streaming reply; spectator cam uses VIEW_CLUSTER(104) request only"),
         (182, "REQUEST_MONEY", "request-money broadcast; donation feature partial (P197-P199)"),
         (188, "WARP_BOMB", "warp-bomb explosion; no warp-bomb mechanic"),
-        (189, "PROMOTE", "turret-seat promotion broadcast; send path (SendPromote) done, receive unconsumed"),
         (192, "RELAUNCH_SHIP", "server relaunch notice; launch handled via BUY_LOADOUT_ACK(5) fLaunch"),
         (194, "PINGDATA", "bandwidth ping stats; connectivity via PING(35) echoes P508"),
-        (197, "CHANGE_ALLIANCES", "alliance-set broadcast; alliances only via game-owner chat (P190)"),
-        (199, "HIGHLIGHT_CLUSTER", "sector-highlight broadcast; commander-map highlight partial"),
     };
 
     // ── helpers ────────────────────────────────────────────────────────────
@@ -204,6 +191,8 @@ public class FedMsgDispatchCoverageTests
                 Set(obj, "OidTarget", (short)5); Set(obj, "Ship", MakeShip(5)); break;
             case 183: // SHIP_RESET — carry a real ship
                 Set(obj, "Ship", MakeShip(5)); Set(obj, "Cookie", (byte)1); break;
+            case 197: // CHANGE_ALLIANCES — full signed six-side group vector
+                Set(obj, "Allies", Enumerable.Repeat((sbyte)-1, ChangeAlliances.SideAlliesMax).ToArray()); break;
             case 191: // CREATE_BUCKETS — both masks exactly MaskBytes
                 Set(obj, "TtbmDevelopments", new byte[CreateBuckets.MaskBytes]);
                 Set(obj, "TtbmInitial", new byte[CreateBuckets.MaskBytes]); break;
@@ -287,9 +276,15 @@ public class FedMsgDispatchCoverageTests
         Assert.True(unexpected.Count == 0,
             $"Consumed registry lists non-native-S/CS fmids that are not in the supported set: {string.Join(",", unexpected)}");
 
+        // Registry entries must be unique; otherwise a duplicate can mask stale counts.
+        Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
+        Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
+        Assert.Equal(84, consumed.Count(f => supportedNativeServerSent.Contains(f)));
+        Assert.Equal(17, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
+
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(84, ExpectedConsumedServerSent.Length);
-        Assert.Equal(34, KnownUnconsumedServerSent.Length);
+        Assert.Equal(101, ExpectedConsumedServerSent.Length);
+        Assert.Equal(18, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

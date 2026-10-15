@@ -246,7 +246,7 @@ public sealed class TurretServerClockLiveTests
                 {
                     case TurretSendAction.Active:
                     {
-                        uint t = (uint)Math.Floor(clock.ServerTimeMs(Environment.TickCount64) / 1000.0);
+                        uint t = clock.ServerTimeMs(Environment.TickCount64);
                         var atu = ClientActiveTurretUpdate.From(t, ControlData.Neutral, integrated);
                         boarderSess.SendActiveTurret(t, atu);
                         activeSent++;

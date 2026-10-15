@@ -148,7 +148,7 @@ public sealed class ShopLauncherBuyLiveTests
             foreach (var h in Catalog.Hulls)
             {
                 var part = lo.Part;
-                if (h.CanMountPart(part))
+                if (h.GroupId >= 0 && h.CanMountPart(part, 0))
                     return (lo, h);
             }
         throw new InvalidOperationException("PCore001 has no (terminal launcher, mounting-hull) pair");

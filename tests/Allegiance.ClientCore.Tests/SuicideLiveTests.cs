@@ -110,6 +110,9 @@ public class SuicideLiveTests
         Assert.False(session.World.Ships[myId].IsDead);
 
         // …then press it: one fire-and-forget SUICIDE(80) over the real transport.
+        // H-26 / FedSrv.CPP:6338: death-fixture connection explicitly has CanCheat.
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig
+            { Enabled = true, AllowNames = ["SUICIDER"] };
         session.SendSuicide();
 
         // HandleSuicide → KillShipEvent → the ship dies over the wire, observed by

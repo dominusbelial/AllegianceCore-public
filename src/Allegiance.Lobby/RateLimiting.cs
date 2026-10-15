@@ -31,18 +31,13 @@ public static class RateLimiting
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = RegisterWindow, QueueLimit = 0, AutoReplenishment = true }));
+
             options.AddPolicy(RegisterPolicy, context =>
                 RateLimitPartition.GetFixedWindowLimiter(
-                    // ⚠ REVERSE-PROXY NOTE (deployment-critical, do not ignore):
-                    // This partitions by the request's immediate source IP. Real public
-                    // infrastructure is very likely behind a reverse proxy (nginx/Caddy/
-                    // Cloudflare), in which case EVERY request arrives from the proxy's IP
-                    // and this partitioning collapses to a single shared bucket — making the
-                    // rate limit meaningless (and worse, letting one abusive self-hoster
-                    // throttle everyone, or vice versa). The deployment (Stage 3 /
-                    // LOBBY_APP.md) must configure `ForwardedHeaders` middleware trusting
-                    // ONLY the actual proxy so RemoteIpAddress carries the real client IP.
-                    // That config lives outside this class by design — we only flag it.
+                    // UseForwardedHeaders runs first and trusts configured IPs only.
                     partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {

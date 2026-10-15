@@ -335,7 +335,16 @@ public class DockDockingTests
             ? (PumpUntil(server, () => bot.ShipAssignment is not null, 4000), bot.ShipAssignment!.Ship.ShipId).Item2
             : bot.ShipAssignment.Ship.ShipId;
 
-        PumpUntil(server, () => bot.ShipStatuses.Count >= 3, 4000);
+        PumpUntil(server, () => server.Ships.Any(s => s.Ship.Id == shipId), 4000);
+        // P653 H-06: fresh default-spawn ships start DOCKED at the base hangar
+        // (native FedSrv/fsmission.cpp:791-796). Launch the probe so the "ordinary
+        // flight unaffected" check observes the FLYING state, not the docked spawn.
+        var probe = server.Ships.First(s => s.Ship.Id == shipId).Ship;
+        bot.ResetShipStatuses();
+        bot.SendBuyLoadout(probe.HullType.HullId, fLaunch: true);
+        PumpUntil(server,
+            () => bot.ShipStatuses.Count(s => s.ShipId == shipId
+                && s.StationId == -1 && s.State == ShipStatusMessage.StateFlying) >= 3, 4000);
         // P382: the port now spawns one docked initial miner per side at its home
         // station at boot, so a peer also hears those docked NPCs' SHIP_STATUSs —
         // scope the "ordinary flight unaffected" check to the player's own ship.

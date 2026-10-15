@@ -245,11 +245,9 @@ public sealed class Ship : Model, IShipIgc
     /// <c>CshipIGC::SetBaseHullType</c> (<c>shipIGC.cpp:1352</c>) used by the
     /// death-respawn slice (P105) to turn a dead player's ship into their
     /// side's Lifepod hull (<c>FedSrv.CPP:12052</c> <c>pship-&gt;SetBaseHullType(pht)</c>).
-    /// Matches the subset of the native function that matters here: it
-    /// <b>does not</b> reset the hull fraction (a lifepod is still the dead
-    /// ship; native <c>SetBaseHullType</c> never touches <c>m_fraction</c>),
-    /// and this port has no damage-track / turreted-child / garaged-parts
-    /// machinery to clear. Zeroes <c>StateM</c> like the native
+    /// This hull-only primitive preserves hull fraction; lifecycle and purchase
+    /// callers supply native's <c>m_fraction = 1.0f</c> reset
+    /// (<c>shipIGC.cpp:1435</c>). Zeroes <c>StateM</c> like native
     /// <c>SetStateM(0)</c> (<c>shipIGC.cpp:1356</c>). Writing
     /// <see cref="_hull"/> in place flows <see cref="HullType"/>, <see cref="Mass"/>
     /// and the downstream damage / status readers automatically.
@@ -257,6 +255,8 @@ public sealed class Ship : Model, IShipIgc
     public void ChangeHull(DataHullTypeIGC hull)
     {
         _hull = hull;
+        RefundableHullValue = 0;
+        PendingTreasureOffer = null;
         StateM = 0;   // SetStateM(0), shipIGC.cpp:1356
 
         // P279 — arm/clear the drifting Lifepod's oxygen countdown. Native sets
@@ -284,14 +284,104 @@ public sealed class Ship : Model, IShipIgc
         // P173: raise the host seam so the server can broadcast a real
         // FM_S_LOADOUT_CHANGE(96) — the whole current loadout (native raises
         // c_lcHullChange, shipIGC.cpp:1455; NULL part, matching native).
-        Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.HullChange);
+        RaiseLoadoutChange(null, LoadoutChange.HullChange);
     }
 
     /// <summary>The ship's energy pool. Seeded to <c>Hull.MaxEnergy</c> at construction.</summary>
     public float Energy { get; set; }
 
-    /// <summary>The ship's ammo count (magazine rounds for projectile weapons). Seeded to <c>Hull.MaxAmmo</c> at construction.</summary>
-    public short Ammo { get; set; }
+    private short _ammo;
+    /// <summary>The ship's projectile ammo, clamped to the hull's maximum
+    /// (native Igc/shipIGC.h:597-601).</summary>
+    public short Ammo
+    {
+        get => _ammo;
+        set => _ammo = (short)Math.Clamp((int)value, 0, Math.Max(0, (int)_hull.MaxAmmo));
+    }
+
+    /// <summary>Paid hull value eligible for trade-in. Free spawn/respawn hulls
+    /// start at zero; a server purchase records the paid hull price.</summary>
+    public int RefundableHullValue { get; set; }
+
+    /// <summary>Mark the initial, unpaid hardware before the peer is seated.</summary>
+    public void MarkSpawnLoadoutFree()
+    {
+        RefundableHullValue = 0;
+        static MountedPart Free(MountedPart part) => new()
+        {
+            PartId = part.PartId, Type = part.Type, Amount = part.Amount,
+            MountId = part.MountId, FractionMounted = part.FractionMounted,
+            MountedFraction = part.MountedFraction, TimeLoaded = part.TimeLoaded,
+            FunctionalWeapon = part.FunctionalWeapon, FreeSpawn = true,
+        };
+        for (int i = 0; i < _parts.Count; i++) _parts[i] = Free(_parts[i]);
+        for (int i = 0; i < _cargo.Length; i++)
+            if (_cargo[i] is { } part) _cargo[i] = Free(part);
+    }
+
+    private int _loadoutUpdateDepth;
+    private bool _loadoutUpdateDirty;
+
+    /// <summary>Native queues one final loadout per purchase/swap
+    /// (FedSrv/fsship.cpp:694-735). Nested batches publish only at the outer end.</summary>
+    public IDisposable BeginLoadoutUpdate()
+    {
+        _loadoutUpdateDepth++;
+        return new LoadoutUpdate(this);
+    }
+
+    private sealed class LoadoutUpdate(Ship ship) : IDisposable
+    {
+        private Ship? _ship = ship;
+        public void Dispose()
+        {
+            if (_ship is not { } owner) return;
+            _ship = null;
+            if (--owner._loadoutUpdateDepth == 0 && owner._loadoutUpdateDirty)
+            {
+                owner._loadoutUpdateDirty = false;
+                owner.Mission?.Site.LoadoutChangeEvent(owner, null!, LoadoutChange.Mounted);
+            }
+        }
+    }
+
+    private void RaiseLoadoutChange(IPartIgc? part, LoadoutChange change)
+    {
+        if (_loadoutUpdateDepth > 0) _loadoutUpdateDirty = true;
+        else Mission?.Site.LoadoutChangeEvent(this, part!, change);
+    }
+
+    /// <summary>Native quantity ceilings: packigc.h:102-123 and
+    /// launchertypeigc.h:130-145 (hull capacity / expendable size, minimum 1).</summary>
+    public static short ClampPartAmount(DataHullTypeIGC hull, StaticCore? core, DataPartTypeIGC type, int amount)
+    {
+        int max;
+        if (type.Type is DataPartTypeIGC.Pack pack)
+            max = pack.PackType == cPackAmmo ? hull.MaxAmmo : (int)Math.Min(short.MaxValue, hull.MaxFuel);
+        else if (IsLauncherType(type.Type))
+        {
+            int capacity = type.EquipmentType switch
+            {
+                EquipmentType.Magazine => hull.CapacityMagazine,
+                EquipmentType.Dispenser => hull.CapacityDispenser,
+                _ => hull.CapacityChaffLauncher,
+            };
+            int size = type.Type switch
+            {
+                DataPartTypeIGC.MissileLauncher m when core is not null && core.MissileTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.LauncherExpendableSize,
+                DataPartTypeIGC.MineLauncher m when core is not null && core.MineTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.LauncherExpendableSize,
+                DataPartTypeIGC.ProbeLauncher m when core is not null && core.ProbeTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.LauncherExpendableSize,
+                DataPartTypeIGC.ChaffLauncher m when core is not null && core.ChaffTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.LauncherExpendableSize,
+                _ => 1,
+            };
+            max = Math.Max(1, capacity / Math.Max(1, size));
+        }
+        else max = short.MaxValue;   // weapons & other single-item equipment: no per-unit
+                                     // capacity — native clamps only pack/launcher quantities
+                                     // (packigc.h:102-123, launchertypeigc.h:130-145); only the
+                                     // non-negative bound below applies.
+        return (short)Math.Clamp(amount, 0, Math.Clamp(max, 0, short.MaxValue));
+    }
 
     /// <summary>
     /// P412 — the ship's fuel pool (afterburner propellant), the live port of
@@ -406,12 +496,8 @@ public sealed class Ship : Model, IShipIgc
     /// <summary>
     /// P269 — the ship's effective detection signature, the port of
     /// <c>CshipIGC::GetSignature()</c> = <c>baseSignature · GetCloaking()</c>
-    /// (<c>shipIGC.h:268-270</c>). The base is the hull signature plus the cloak
-    /// part's own signature contribution while its emitter is on (the
-    /// <c>ChangeSignature(+typeData-&gt;signature)</c> of
-    /// <c>CcloakIGC::Activate</c>, <c>cloakigc.h:76</c> — the same
-    /// active-emitter signature every active part adds, cf. shield/afterburner/
-    /// weapon), all scaled by <see cref="Cloaking"/>. Fed to
+    /// (<c>shipIGC.h:268-270</c>). The base is the hull signature plus every
+    /// active part's contribution, all scaled by <see cref="Cloaking"/>. Fed to
     /// <see cref="Model.Sector.ResolveCrossSideVisibility"/> so the per-object
     /// detection sweep (<c>VisibilityMath.DetectionRadius = scannerRadius +
     /// targetRadius + scannerRange · targetSignature</c>) uses a reduced
@@ -419,9 +505,17 @@ public sealed class Ship : Model, IShipIgc
     /// target.GetSignature()</c> (shipIGC.h:353) that makes a fully-cloaked ship
     /// effectively undetectable within ordinary detection range.
     /// </summary>
+    // Native active-part additions: weaponIGC.h:109,122; afterburnerIGC.h:78,89;
+    // shieldIGC.h:72,76; magazineigc.h:74,78; dispenserigc.h:74,79.
     public float EffectiveSignature =>
-        (HullType.Signature + (_cloakEmitterActive && _mountedCloak is { } ck ? ck.Type.Signature : 0.0f))
-        * Cloaking;
+        (HullType.Signature
+         + _weapons.Where(w => w.Active).Sum(w => _parts.FirstOrDefault(p => p.FunctionalWeapon == w)?.Type.Signature
+             ?? Mission?.Core.PartTypes.Values.FirstOrDefault(p => p.Type == w.Type).Signature ?? 0f)
+         + _parts.Where(p => p.MountId == 0 && p.EquipmentType is
+             EquipmentType.Shield or EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher)
+             .Sum(p => p.Type.Signature)
+         + (_afterburnerActive && _mountedAfterburner is { } ab ? ab.Type.Signature : 0f)
+         + (_cloakEmitterActive && _mountedCloak is { } ck ? ck.Type.Signature : 0f)) * Cloaking;
 
     /// <summary>
     /// Fractional hull integrity (<c>m_fraction</c>): 1.0 = full hull, 0.0 =
@@ -431,6 +525,9 @@ public sealed class Ship : Model, IShipIgc
     /// real damage taken.
     /// </summary>
     public float Fraction => _fraction;
+
+    /// <summary>Native igc.h:635-637; the current environmental warnings.</summary>
+    public ShipWarningMask WarningMask { get; private set; }
 
     /// <summary>The mounted shield's charge fraction (0..1); 0 when no shield is
     /// mounted. Port of the C++ <c>CshieldIGC::GetFraction()</c>
@@ -462,6 +559,7 @@ public sealed class Ship : Model, IShipIgc
     public void SetFraction(float value)
     {
         _fraction = value;
+        if (Dead) PendingTreasureOffer = null; // H-30: clear the pending treasure offer on death
         if (value > _fractionLastOrder) _fractionLastOrder = value; // shipIGC.h:316-317
     }
 
@@ -733,7 +831,7 @@ public sealed class Ship : Model, IShipIgc
     /// side. This is the port of native <c>m_pship-&gt;GetSide()-&gt;GetGlobalAttributeSet()</c>
     /// (<c>shipIGC.cpp:4528-4546</c>); a native ship always has a side, but
     /// this port's sim permits sideless ships, so identity (all 1.0) is the
-    /// honest neutral. <b>Cheap:</b> a manual <c>foreach</c> over
+    /// honest neutral. <b>Cheap:</b> an indexed loop over
     /// <see cref="Mission.Sides"/> with no LINQ/delegate allocation, so it is
     /// safe to call from the per-tick flight path. The side id is looked up by
     /// identity against the mission's sides (side ids are not unique across
@@ -743,9 +841,9 @@ public sealed class Ship : Model, IShipIgc
     {
         if (SideId is not { } sideId || Mission is not { } mission)
             return GlobalAttributeSet.Identity;
-        foreach (var side in mission.Sides)
-            if (side.Id == sideId)
-                return side.GlobalAttributes;
+        for (int i = 0; i < mission.Sides.Count; i++)
+            if (mission.Sides[i].Id == sideId)
+                return mission.Sides[i].GlobalAttributes;
         return GlobalAttributeSet.Identity;
     }
 
@@ -1324,6 +1422,8 @@ public sealed class Ship : Model, IShipIgc
         return false;
     }
 
+    private Model? _commandTarget;
+
     /// <summary>
     /// The ship's current command target (<c>m_commandTargets[c_cmdCurrent]</c>,
     /// <c>shipIGC.h:2624</c>) exposed as a nullable model — the subset of the
@@ -1336,7 +1436,19 @@ public sealed class Ship : Model, IShipIgc
     /// <c>null</c> means "no current target" (native returns NULL for an
     /// unset slot) — the common case, under which the leading path is inert.
     /// </summary>
-    public Model? CommandTarget { get; set; }
+    public Model? CommandTarget
+    {
+        get => _commandTarget;
+        set
+        {
+            // Native shipIGC.h:743-746 clears magazine lock on target change.
+            if (!ReferenceEquals(_commandTarget, value)
+                && (_commandTarget is null || value is null || _commandTarget.Id != value.Id
+                    || EquipmentTarget.TypeOf(_commandTarget) != EquipmentTarget.TypeOf(value)))
+                MissileLock = 0f;
+            _commandTarget = value;
+        }
+    }
 
     /// <summary>
     /// P219 — the per-ship staleness counter that drives the heavy/light
@@ -1651,6 +1763,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (_attackTarget == value) return;
             _attackTarget = value;
+            if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
             DronePlanChanged();
         }
     }
@@ -1682,6 +1795,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (_defendTarget == value) return;
             _defendTarget = value;
+            if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
             DronePlanChanged();
         }
     }
@@ -1977,6 +2091,15 @@ public sealed class Ship : Model, IShipIgc
         foreach (var ast in sector.Mineable)
         {
             if (!ast.CanMineHe3) continue;                             // He3 gate (shipIGC.cpp:1955)
+            // common.cpp:608-613: autonomous selection rejects rocks with less
+            // than a quarter-load left after other miners' reservations.
+            if (IsNpc && PilotType == PilotTypeMiner)
+            {
+                int reserved = Mission?.Sectors.SelectMany(s => s.Models.OfType<Ship>()).Count(s =>
+                    s != this && s.IsNpc && s.SideId == SideId && s.MiningAsteroidTarget == ast) ?? 0;
+                if (ast.OreRemaining - reserved * EffectiveMineCapacity() <= EffectiveMineCapacity() * 0.25f)
+                    continue;
+            }
             if (ast.Data.Position is not { Length: 3 } p) continue;    // no position: can't measure (Sector.cs:2044)
             float dx = p[0] - Position.X;
             float dy = p[1] - Position.Y;
@@ -2146,15 +2269,10 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     /// <remarks>
     /// <list type="number">
-    /// <item><b>"Enemy" = a different <see cref="SideId"/>.</b> This port has no
-    /// alliance system (the established finding P159 states for its own
-    /// same-side filtering, and P149 documents for the friendly-station
-    /// search's <c>c_ttFriendly</c> gate), so the whole enemy test is
-    /// <c>ship.SideId != this.SideId</c> — the <c>pside != pHisSide</c> /
-    /// <c>!AlliedSides</c> story (<c>common.cpp:269-273</c>) with no alliance
-    /// tier to add. A ship with no <see cref="SideId"/> is skipped (native's
-    /// null-<c>pside</c> path never matches <c>c_ttEnemy</c> against a side
-    /// it can't identify).</item>
+    /// <item><b>Enemy excludes same-side and live allies.</b> Native
+    /// <c>common.cpp:269-273</c> uses <c>!AlliedSides</c>; the shared
+    /// <see cref="IsFriendlySide"/> reads the current alliance groups.
+    /// Side-less ships are neutral and never match an enemy search.</item>
     /// <item><b>Undocked, alive, not self.</b> Enumerates
     /// <see cref="Model.Sector.GetShipUpdateCandidates()"/> — the port's
     /// established per-sector ship-membership accessor (used by P138/P159/P161),
@@ -2172,13 +2290,13 @@ public sealed class Ship : Model, IShipIgc
     /// <c>c_cidAttack</c> either — not built, stated not assumed).</item>
     /// </list>
     /// </remarks>
-    /// <returns>The nearest undocked, alive ship with a different (non-null)
-    /// <see cref="SideId"/> in this ship's sector, excluding this ship itself,
+    /// <returns>The nearest undocked, alive enemy ship with a non-null
+    /// <see cref="SideId"/> in this sector, excluding self and live allies,
     /// or <c>null</c> if the ship has no sector/side or no such ship exists.</returns>
     private Ship? FindNearestEnemyShip()
     {
         if (Sector is not { } sector) return null;
-        if (SideId is not { } sideId) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
+        if (SideId is null) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
 
         Ship? best = null;
         float bestDistanceSquared = float.MaxValue;
@@ -2186,7 +2304,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (ReferenceEquals(ship, this)) continue;                 // a ship is never its own enemy
             if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
-            if (otherSide == sideId) continue;                         // c_ttEnemy: different side (no alliance system)
+            if (IsFriendlySide(otherSide)) continue;                  // common.cpp:269-273; igc.h:4297-4305
 
             float dx = ship.Position.X - Position.X;
             float dy = ship.Position.Y - Position.Y;
@@ -2234,7 +2352,7 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     private Ship? FindNearestEnemyNear(Vector3 center, ref float radius)
     {
-        if (SideId is not { } sideId) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
+        if (SideId is null) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
         if (Sector is not { } sector) return null;   // no sector → nothing to search (defend gate guarantees charge is same-sector)
 
         Ship? best = null;
@@ -2244,7 +2362,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (ReferenceEquals(ship, this)) continue;                 // a ship is never its own enemy
             if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
-            if (otherSide == sideId) continue;                         // c_ttEnemy: different side (no alliance system)
+            if (IsFriendlySide(otherSide)) continue;                  // common.cpp:269-273; igc.h:4297-4305
 
             float dx = ship.Position.X - center.X;
             float dy = ship.Position.Y - center.Y;
@@ -2371,7 +2489,7 @@ public sealed class Ship : Model, IShipIgc
             // P173: raise on the PARENT ship (this) whose passenger list grew,
             // matching native's LoadoutChangeEvent(pshipParent, NULL,
             // c_lcAddPassenger) at shipIGC.cpp:3668.
-            Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.AddPassenger);
+            RaiseLoadoutChange(null, LoadoutChange.AddPassenger);
         }
     }
 
@@ -2384,7 +2502,7 @@ public sealed class Ship : Model, IShipIgc
             // P173: raise on the parent (this) whose passenger list shrank
             // (native's LoadoutChangeEvent(pshipParent, NULL,
             // c_lcRemovePassenger), shipIGC.cpp:3670).
-            Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.RemovePassenger);
+            RaiseLoadoutChange(null, LoadoutChange.RemovePassenger);
     }
 
     /// <summary>
@@ -2471,10 +2589,23 @@ public sealed class Ship : Model, IShipIgc
 
         // 2. Take the parent's hull (SetBaseHullType, shipIGC.cpp:3515).
         ChangeHull(parent.HullType);
+        RefundableHullValue = parent.RefundableHullValue;
+        parent.RefundableHullValue = 0;
 
         // 3. Copy the parent's inventory (shipIGC.cpp:3519-3532); fuel is N/A (see doc).
         foreach (var p in parent.Parts.ToArray())
-            MountPart(p.Type, p.Amount, p.MountId, p.FractionMounted);
+            if (MountPart(p.Type, p.Amount, p.MountId, p.FractionMounted, p.FreeSpawn) is { } copy)
+            {
+                copy.MountedFraction = p.MountedFraction;
+                copy.TimeLoaded = p.TimeLoaded;
+            }
+        for (int slot = 0; slot < parent.CargoHold.Count; slot++)
+            if (parent.CargoHold[slot] is { } cargo
+                && MountPart(cargo.Type, cargo.Amount, unchecked((byte)(-slot - 1)), cargo.FractionMounted, cargo.FreeSpawn) is not null)
+            {
+                _cargo[slot]!.MountedFraction = cargo.MountedFraction;
+                _cargo[slot]!.TimeLoaded = cargo.TimeLoaded;
+            }
         Ammo = parent.Ammo;
         SetFuel(parent.Fuel);   // SetFuel(pshipParent->GetFuel()), shipIGC.cpp:3538 (P412 real)
         Energy = parent.Energy;
@@ -2661,10 +2792,12 @@ public sealed class Ship : Model, IShipIgc
     /// <returns>The mounted-part record, or <c>null</c> if the mount was refused
     /// because the ship is already at the wire's 255-part ceiling. Always recorded
     /// (even when a weapon couldn't be realized) unless refused.</returns>
-    public MountedPart? MountPart(DataPartTypeIGC type, short amount, byte mountId, byte fractionMounted)
+    public MountedPart? MountPart(DataPartTypeIGC type, short amount, byte mountId, byte fractionMounted, bool freeSpawn = false)
     {
-        if (_parts.Count >= byte.MaxValue)
-            return null;
+        if (amount < 0 || _parts.Count + _cargo.Count(p => p is not null) >= byte.MaxValue) return null;
+        amount = ClampPartAmount(_hull, Mission?.Core, type, amount);
+        int signedMount = unchecked((sbyte)mountId);
+        if (signedMount < 0 && (signedMount < -CargoCapacity || _cargo[CargoSlotForMount(signedMount)] is not null)) return null;
 
         var part = new MountedPart
         {
@@ -2673,7 +2806,16 @@ public sealed class Ship : Model, IShipIgc
             MountId = mountId,
             FractionMounted = fractionMounted,
             Type = type,
+            FreeSpawn = freeSpawn,
         };
+
+        if (signedMount < 0)
+        {
+            _cargo[CargoSlotForMount(signedMount)] = AsCargoPart(part);
+            BumpLoadout();
+            RaiseLoadoutChange(part, LoadoutChange.Mounted);
+            return part;
+        }
 
         // Realize a weapon subtype against the mission core (best-effort).
         if (type.Type is DataPartTypeIGC.Weapon w && Mission is { } mission)
@@ -2686,24 +2828,36 @@ public sealed class Ship : Model, IShipIgc
             }
         }
 
+        if (type.Type is DataPartTypeIGC.MissileLauncher ml && Mission is { } m
+            && m.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt))
+            part.TimeLoaded = part.MountedFraction >= 1f ? LastUpdate : LastUpdate + 1.0 / MountRate() + mt.LoadTime;
         _parts.Add(part);
         BumpLoadout();
 
-        // CshieldIGC::Arm (shieldIGC.h:99-103): mounting a Shield part charges
-        // it to fully up (m_fraction = 1.0f). The shield is now functional
-        // (Phase 2 of the roadmap) rather than inert bookkeeping, so the
-        // charge fraction reflects the just-mounted fresh shield.
+        // Ready spawn/dock parts are armed (shieldIGC.h:99-103); a flight
+        // mount starts discharged (shieldIGC.cpp:134) and later regenerates.
         if (type.Type is DataPartTypeIGC.Shield)
-            _shieldFraction = 1.0f;
+            _shieldFraction = part.MountedFraction >= 1f ? 1f : 0f;
 
         // P173: raise the host seam so the server can broadcast a real
         // FM_S_LOADOUT_CHANGE(96) carrying the current whole loadout (this
         // port collapses native's Added/Mounted distinction — both AddPart and
         // SetMountID boil down to a MountPart here — to one Mounted raise,
         // a stated simplification, not a silent gap).
-        Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Mounted);
+        RaiseLoadoutChange(part, LoadoutChange.Mounted);
 
         return part;
+    }
+
+    /// <summary>Install purchased cargo at a signed wire mount, without
+    /// realizing equipment. Native ProcessShipLoadout/CreateAndAddPart uses
+    /// the signed mount (shipIGC.h:901-921,1030-1039; shipIGC.cpp:1520-1548).</summary>
+    public bool TryMountCargoPart(DataPartTypeIGC type, short amount, int mount, byte fractionMounted)
+    {
+        if (mount >= 0 || mount < -CargoCapacity) return false;
+        // Share quantity/slot validation and the final purchase batch with
+        // equipped parts (native FedSrv/fsship.cpp:694-735).
+        return MountPart(type, amount, unchecked((byte)mount), fractionMounted) is not null;
     }
 
     /// <summary>
@@ -2809,12 +2963,21 @@ public sealed class Ship : Model, IShipIgc
         // always safe (a FirstOrDefault scan, no indexing).
         if (mountOld < -CargoCapacity || mountNew < -CargoCapacity) return false;
 
+        if ((short)etOld < -1 || (short)etOld > 7
+            || mountOld >= 8 || mountNew >= 8
+            || (mountOld > 0 || mountNew > 0) && etOld != EquipmentType.Weapon
+            || (mountOld >= 0 || mountNew >= 0) && (short)etOld < 0) return false;
         var src = ResolvePart(etOld, mountOld);
-        if (src is null) return false;                       // source empty → silent no-op
+        if (src is null || (short)etOld >= 0 && src.EquipmentType != etOld
+            || !_hull.CanMountPart(src.Type, mountNew)) return false;
 
         var dst = ResolvePart(etOld, mountNew);              // GetMountedPart(etOld, mountNew)
         MountedPart? dstSwap = dst is not null && !ReferenceEquals(dst, src) ? dst : null;
 
+        if (dstSwap is not null && ((short)etOld >= 0 && dstSwap.EquipmentType != etOld
+            || !_hull.CanMountPart(dstSwap.Type, mountOld))) return false;
+        if (mountOld == mountNew) return true;
+        using var update = BeginLoadoutUpdate();
         RemoveFromHome(src, mountOld);                       // ppart->SetMountID(c_mountNA) prep
         if (dstSwap is not null) RemoveFromHome(dstSwap, mountNew);
         PlaceIntoHome(src, mountNew);                        // ppart->SetMountID(mountNew)
@@ -2852,10 +3015,34 @@ public sealed class Ship : Model, IShipIgc
     {
         if (mount < 0)
         {
-            _cargo[CargoSlotForMount(mount)] = AsCargoPart(part);
+            _cargo[CargoSlotForMount(mount)] = AsCargoPart(WithFraction(part, 0));
+            BumpLoadout();
+            RaiseLoadoutChange(part, LoadoutChange.Mounted);
             return;
         }
-        MountPart(part.Type, part.Amount, (byte)mount, part.FractionMounted);
+        // Native shipIGC.cpp:1567 resets readiness on EVERY mount change.
+        MountPart(part.Type, part.Amount, (byte)mount, 0, part.FreeSpawn);
+        if (part.EquipmentType == EquipmentType.Shield) _shieldFraction = 0;
+        if (part.EquipmentType == EquipmentType.Afterburner) DeactivateAfterburner();
+    }
+
+    /// <summary>Native weaponIGC.h:33-48, magazineigc.cpp:85-100 and
+    /// shieldIGC.cpp:65-85 advance a float accumulator once per flight tick.
+    /// Docked/boarded parts and cargo never mount (shipIGC.cpp:266-271).</summary>
+    private void AdvanceFlightMounts(float dt)
+    {
+        if (StationId is not null || ParentShip is not null) return;
+        foreach (var part in _parts.ToArray())
+        {
+            if (part.EquipmentType == EquipmentType.Afterburner || part.MountedFraction >= 1f) continue;
+            part.MountedFraction = Math.Min(1f, part.MountedFraction + dt * MountRate());
+            if (part.MountedFraction >= 1f)
+            {
+                if (part.EquipmentType == EquipmentType.Weapon)
+                    Mission?.Site.WeaponReady(this, part.Type.Name); // weaponIGC.h:44-46
+                RaiseLoadoutChange(part, LoadoutChange.Mounted);
+            }
+        }
     }
 
     /// <summary>A <see cref="MountedPart"/> as a cargo-hold entry: same wire
@@ -2868,8 +3055,11 @@ public sealed class Ship : Model, IShipIgc
         Amount = p.Amount,
         MountId = 0,
         FractionMounted = p.FractionMounted,
+        MountedFraction = p.MountedFraction,
+        TimeLoaded = p.TimeLoaded,
         Type = p.Type,
         FunctionalWeapon = null,
+        FreeSpawn = p.FreeSpawn,
     };
 
     /// <summary>
@@ -2927,7 +3117,7 @@ public sealed class Ship : Model, IShipIgc
 
             if (packType == cPackAmmo)                   // c_packAmmo = 0 (Igc/igc.h:549)
             {
-                Ammo += amount;                          // SetAmmo(ammo + amount)
+                Ammo = (short)Math.Min(Math.Max(0, (int)_hull.MaxAmmo), (int)Ammo + amount);                          // SetAmmo(ammo + amount)
                 ResetAmmoWeaponFractions();              // FedSrv.CPP:6574-6581
             }
             else                                         // c_packFuel = 1 (Igc/igc.h:550)
@@ -2946,6 +3136,7 @@ public sealed class Ship : Model, IShipIgc
 
         if (amountTransfered == -1)                      // NA
         {
+            if (!_hull.CanMountPart(part.Type, 0)) return false;
             if (mounted is not null && mounted.Amount != 0) return false;   // boot (FedSrv.CPP:6607)
             if (mounted is not null)                     // terminate the equipped launcher
             {
@@ -2954,18 +3145,19 @@ public sealed class Ship : Model, IShipIgc
                 if (mounted.FunctionalWeapon is { } w) _weapons.Remove(w);
             }
             _cargo[slot] = null;                         // cargo launcher leaves cargo...
-            MountPart(part.Type, part.Amount, 0, part.FractionMounted);  // ...and mounts at 0 (SetMountID(0))
+            // SetMountID resets readiness (shipIGC.cpp:1567); preserve refund provenance.
+            MountPart(part.Type, part.Amount, 0, 0, part.FreeSpawn);
             return true;
         }
         else
         {
             short amount = part.Amount;
-            if (mounted is null || amountTransfered <= 0 || amountTransfered > amount) return false;  // boot
+            if (mounted is null || mounted.PartId != part.PartId || amountTransfered <= 0 || amountTransfered > amount) return false;  // boot
             if (amount == amountTransfered) _cargo[slot] = null;            // terminate cargo launcher
             else SetCargoPartAmount(slot, (short)(amount - amountTransfered));
-            SetPartAmount(mounted, (short)(mounted.Amount + amountTransfered));  // add to equipped
+            SetPartAmount(mounted, (int)mounted.Amount + amountTransfered);  // add to equipped
             ResetEquippedFraction(launcherType);         // mounted-fraction reset (FedSrv.CPP:6637)
-            // ResetTimeLoaded() N/A — no per-launcher reload-time tracker here.
+            // WithFraction resets the magazine load deadline too (magazineigc.h:146-149).
             return true;
         }
     }
@@ -3012,7 +3204,7 @@ public sealed class Ship : Model, IShipIgc
         if (Mission?.Core.Constants.FloatConstants is { } fc && fc.Length > MountRateConstantIndex)
         {
             float rate = fc[MountRateConstantIndex];
-            if (rate > 0.0001f) return halfSecond / rate;
+            return halfSecond / rate;
         }
         return halfSecond;
     }
@@ -3215,8 +3407,11 @@ public sealed class Ship : Model, IShipIgc
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.EquipmentType == et && p.MountId == 0 && p.FractionMounted != 0)
+            if (p.EquipmentType == et && p.MountId == 0)
+            {
                 _parts[i] = WithFraction(p, 0);
+                RaiseLoadoutChange(_parts[i], LoadoutChange.Mounted);
+            }
         }
     }
 
@@ -3229,21 +3424,28 @@ public sealed class Ship : Model, IShipIgc
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0 && p.FractionMounted != 0)
+            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0)
+            {
                 _parts[i] = WithFraction(p, 0);
+                RaiseLoadoutChange(_parts[i], LoadoutChange.Mounted);
+            }
         }
     }
 
     /// <summary>Rewrite a <see cref="MountedPart"/>'s <c>FractionMounted</c> wire
     /// byte via list-entry replacement (the properties are <c>init</c>-only).</summary>
-    private static MountedPart WithFraction(MountedPart p, byte fractionMounted) => new()
+    private MountedPart WithFraction(MountedPart p, byte fractionMounted) => new()
     {
         PartId = p.PartId,
         Amount = p.Amount,
         MountId = p.MountId,
         FractionMounted = fractionMounted,
+        TimeLoaded = fractionMounted == 0 && p.Type.Type is DataPartTypeIGC.MissileLauncher ml
+            && Mission is { } mission && mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var mt)
+            ? LastUpdate + 1.0 / MountRate() + mt.LoadTime : p.TimeLoaded,
         Type = p.Type,
         FunctionalWeapon = p.FunctionalWeapon,
+        FreeSpawn = p.FreeSpawn,
     };
 
     /// <summary>Rewrite a <see cref="MountedPart"/>'s <c>Amount</c> via
@@ -3257,23 +3459,29 @@ public sealed class Ship : Model, IShipIgc
         Amount = amount,
         MountId = p.MountId,
         FractionMounted = p.FractionMounted,
+        MountedFraction = p.MountedFraction,
+        TimeLoaded = p.TimeLoaded,
         Type = p.Type,
         FunctionalWeapon = p.FunctionalWeapon,
+        FreeSpawn = p.FreeSpawn,
     };
 
     /// <summary>Rewrite a cargo slot's part <c>Amount</c> via list-entry
     /// replacement (native <c>ppack-&gt;SetAmount</c> / <c>plauncher-&gt;SetAmount</c>).</summary>
-    public void SetCargoPartAmount(int slot, short amount)
+    public void SetCargoPartAmount(int slot, int amount)
     {
         if (slot < 0 || slot >= _cargo.Length || _cargo[slot] is not { } p) return;
         _cargo[slot] = new MountedPart
         {
             PartId = p.PartId,
-            Amount = amount,
+            Amount = ClampPartAmount(_hull, Mission?.Core, p.Type, amount),
             MountId = p.MountId,
             FractionMounted = p.FractionMounted,
+            MountedFraction = p.MountedFraction,
+            TimeLoaded = p.TimeLoaded,
             Type = p.Type,
             FunctionalWeapon = p.FunctionalWeapon,
+            FreeSpawn = p.FreeSpawn,
         };
     }
 
@@ -3295,18 +3503,24 @@ public sealed class Ship : Model, IShipIgc
     private void RepointMount(MountedPart part, byte mountId)
     {
         int idx = _parts.IndexOf(part);
-        if (idx < 0) return;   // defensive; every caller passes a live member
+        if (idx < 0 || part.MountId == mountId) return;
+        part.FunctionalWeapon?.Deactivate(); // weaponIGC.cpp:110
+        part = WithFraction(part, 0); // shipIGC.cpp:1567
         _parts[idx] = new MountedPart
         {
             PartId = part.PartId,
             Amount = part.Amount,
             MountId = mountId,
             FractionMounted = part.FractionMounted,
+            MountedFraction = part.MountedFraction,
+            TimeLoaded = part.TimeLoaded,
             Type = part.Type,
             FunctionalWeapon = part.FunctionalWeapon,
+            FreeSpawn = part.FreeSpawn,
         };
         BumpLoadout();
         part.FunctionalWeapon?.SetMountId(mountId);
+        RaiseLoadoutChange(_parts[idx], LoadoutChange.Mounted);
     }
 
     /// <summary>
@@ -3318,18 +3532,21 @@ public sealed class Ship : Model, IShipIgc
     /// <see cref="RepointMount"/> uses. The realized weapon (if any) is carried
     /// over untouched; only the wire <c>Amount</c> changes.
     /// </summary>
-    public void SetPartAmount(MountedPart part, short amount)
+    public void SetPartAmount(MountedPart part, int amount)
     {
         int idx = _parts.IndexOf(part);
-        if (idx < 0) return;   // defensive; every caller passes a live member
+        if (idx < 0) return;
         _parts[idx] = new MountedPart
         {
             PartId = part.PartId,
-            Amount = amount,
+            Amount = ClampPartAmount(_hull, Mission?.Core, part.Type, amount),
             MountId = part.MountId,
             FractionMounted = part.FractionMounted,
+            MountedFraction = part.MountedFraction,
+            TimeLoaded = part.TimeLoaded,
             Type = part.Type,
             FunctionalWeapon = part.FunctionalWeapon,
+            FreeSpawn = part.FreeSpawn,
         };
         BumpLoadout();
     }
@@ -3362,7 +3579,7 @@ public sealed class Ship : Model, IShipIgc
         var replacement = new MountedPart
         {
             PartId = newType.PartId,
-            Amount = amount,
+            Amount = ClampPartAmount(_hull, Mission?.Core, newType, amount),
             MountId = part.MountId,
             FractionMounted = part.FractionMounted,
             Type = newType,
@@ -3378,7 +3595,7 @@ public sealed class Ship : Model, IShipIgc
 
         _parts[idx] = replacement;
         BumpLoadout();
-        Mission?.Site.LoadoutChangeEvent(this, replacement, LoadoutChange.Mounted);
+        RaiseLoadoutChange(replacement, LoadoutChange.Mounted);
         return replacement;
     }
 
@@ -3431,7 +3648,7 @@ public sealed class Ship : Model, IShipIgc
         // P173: raise the host seam so the server can broadcast a real
         // FM_S_LOADOUT_CHANGE(96) reflecting the loadout without this part
         // (native raises c_lcRemoved, shipIGC.cpp:1510, passing the part).
-        Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Removed);
+        RaiseLoadoutChange(part, LoadoutChange.Removed);
         return true;
     }
 
@@ -3506,12 +3723,8 @@ public sealed class Ship : Model, IShipIgc
     /// P113's ripcord / P116's landing probes use (<c>Ship.cs:411-415</c>).</item>
     /// <item><b>Velocity:</b> <c>v0 = direction × 25.0f + ship velocity</c>
     /// (<c>dv = 25.0f</c> is the DROP_PART call's argument,
-    /// <c>FedSrv.CPP:6326</c>). A real value is computed and stored on the wire
-    /// for fidelity, but — per the task's explicit scope and <see cref="Treasure"/>
-    ///'s own remarks — <b>no velocity integration</b> is added to the sim: the
-    /// treasure rests statically at <c>P0</c> exactly as cash treasures do. The
-    /// deceleration-to-stop of <c>treasureIGC.cpp:95-116</c> is a known,
-    /// accepted gap.</item>
+    /// <c>FedSrv.CPP:6326</c>). Treasure integrates this initial velocity with
+    /// native deceleration (Igc/treasureIGC.cpp:18,221-259).</item>
     /// <item><b>Amount:</b> set to the dropped part's own <c>Amount</c> per this
     /// task's spec (the verification demands the treasure's
     /// <c>TreasureId</c>/<c>Amount</c> match the dropped part). This is a
@@ -3525,9 +3738,7 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="part">The just-removed mounted part (already out of the
     /// ship's <c>_parts</c>).</param>
     /// <param name="now">Current sim time (seeds the treasure's clock).</param>
-    /// <param name="time0">Wire <c>time0</c> — the server tick index, this
-    /// port's uint-Time convention (cf. <c>ProjectileInstance</c> stamps its
-    /// create-time as <c>(uint)TickIndex</c>, Server.cs:4676).</param>
+    /// <param name="time0">Wire creation epoch in server simulation milliseconds.</param>
     public Treasure CreateDropTreasure(MountedPart part, double now, uint time0, float dv = 25.0f, float lifespan = 120.0f) =>
         CreateDropTreasure(part.Type, part.Amount, now, time0, dv, lifespan);
 
@@ -3554,8 +3765,7 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="amount">The buffered offered quantity (the treasure's
     /// <c>Amount</c>).</param>
     /// <param name="now">Current sim time (seeds the treasure's clock).</param>
-    /// <param name="time0">Wire <c>time0</c> — the server tick index, this
-    /// port's uint-Time convention.</param>
+    /// <param name="time0">Wire creation epoch in server simulation milliseconds.</param>
     public Treasure CreateDropTreasure(DataPartTypeIGC type, short amount, double now, uint time0, float dv = 25.0f, float lifespan = 120.0f)
     {
         var sector = Sector
@@ -3609,7 +3819,7 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="sidFlag">The carried flag's original side id (becomes the
     /// treasure's <c>TreasureId</c>).</param>
     /// <param name="now">Current sim time (seeds the treasure's clock).</param>
-    /// <param name="time0">Wire <c>time0</c> — the server tick index.</param>
+    /// <param name="time0">Wire creation epoch in server simulation milliseconds.</param>
     public Treasure CreateFlagTreasure(short sidFlag, double now, uint time0)
     {
         var sector = Sector
@@ -3697,7 +3907,7 @@ public sealed class Ship : Model, IShipIgc
     /// solve — the <see cref="Ship.UpdateMissileLock"/>-produced lock quality
     /// a caller may supply once the buildup mechanic exists.</para>
     /// </remarks>
-    public Missile FireMissile(DataMissileTypeIGC missileType, double now, Model? target = null, float lockFraction = 1f)
+    public Missile FireMissile(DataMissileTypeIGC missileType, double now, Model? target = null, float lockFraction = 1f, bool dud = false)
     {
         var sector = Sector
             ?? throw new InvalidOperationException("a placed ship must be in a sector before it can fire a missile");
@@ -3708,7 +3918,7 @@ public sealed class Ship : Model, IShipIgc
         Vector3 velocity = missileType.InitialSpeed * forward + Velocity;   // inherit launcher velocity (Weapon.cs:213-215)
         Vector3 position = Position + Velocity * (float)(now - LastUpdate); // muzzle at origin (no hull mesh, Weapon.cs:217)
 
-        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this, target, lockFraction);
+        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this, target, lockFraction, dud);
         sector.Add(missile);
 
         // P90: raise the host seam so the server can broadcast the real
@@ -3719,79 +3929,29 @@ public sealed class Ship : Model, IShipIgc
         return missile;
     }
 
-    /// <summary>
-    /// P181 — the current lock quality (0..1) of this ship's missile lock
-    /// against <see cref="CommandTarget"/>, the port of the native magazine's
-    /// <c>m_lock</c> (<c>Igc/magazineigc.cpp:104-176</c>). <c>0</c> by default,
-    /// written only by <see cref="UpdateMissileLock"/> and consumed by the
-    /// caller as the <c>lockFraction</c> it supplies to
-    /// <see cref="FireMissile"/>. Every validity gate failure resets it to
-    /// <c>0</c> (matching native's "any gate failure resets to the
-    /// <c>m_lock=0.0f</c> already set before the gate",
-    /// <c>magazineigc.cpp:140-141</c>).
-    /// </summary>
+    /// <summary>Normalized magazine lock quality. Launches multiply by the missile
+    /// type's MaxLock (magazineigc.cpp:110-123).</summary>
     public float MissileLock { get; private set; }
 
-    /// <summary>
-    /// P181 — advance this ship's missile lock quality by one sim chunk
-    /// (<paramref name="dt"/> seconds) against the current
-    /// <see cref="CommandTarget"/>, porting native <c>CmagazineIGC::Update</c>'s
-    /// lock-build block (<c>Igc/magazineigc.cpp:104-176</c>) as a
-    /// directly-callable capability. <b>Not wired</b> into any control-input /
-    /// live-fire path (there is no <c>missileFireIGC</c>-equivalent bit in
-    /// <see cref="ShipControlState"/>, and the native state bit is documented as
-    /// not transmitted in the wire mask, <c>Igc/igc.h:829-834</c>) — exactly the
-    /// "caller supplies the type directly" precedent of
-    /// <see cref="FireMissile"/>.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Flow (in native order):</b> ripcord active ⇒ lock <c>0</c>; no
-    /// command target ⇒ lock <c>0</c>; the validity gate (same sector, hostile
-    /// side, damageable) ⇒ lock <c>0</c> on any failure; the range gate ⇒ lock
-    /// <c>0</c> on failure; a <see cref="DataMissileTypeIGC.MaxLock"/> of <c>0</c>
-    /// ⇒ instant full lock <c>1f</c> (some missile types need no lock at all,
-    /// <c>magazineigc.cpp:145-146</c>); otherwise the real angle-off-bow
-    /// buildup/decay (see the derivation in <c>docs/MISSILE_LOCK_P181.md</c>),
-    /// clamped to <c>[0,1]</c>.</para>
-    /// <para><b>Explicit, verified omissions</b> (each confirmed to have no
-    /// equivalent in this port, per the P181 task brief): the <c>CanSee</c> gate
-    /// (no visibility/sensor model — every valid target is treated as visible),
-    /// the <c>AlliedSides</c> half of the hostility test (no alliance system —
-    /// hostile is a bare <c>SideId</c> inequality, the P159/P162 idiom), and the
-    /// warp-bomb targeting branch (no warp-bomb capability flag is decoded on
-    /// <see cref="DataMissileTypeIGC"/> — only the "damageable, non-warp" target
-    /// case applies; the port's separate <c>WarpBomb</c> feature is unrelated).
-    /// The ECM multiplier, by contrast, IS applied: the brief asserted "no ECM
-    /// field anywhere in this port", but <see cref="DataHullTypeIGC.Ecm"/> is in
-    /// fact decoded (Data/DataHullTypeIGC.cs:33,220), so native's
-    /// <c>lockTime·ECM</c> denominator for a ship target is ported faithfully
-    /// (see <c>docs/MISSILE_LOCK_P181.md</c>). A lock target must be a living
-    /// <see cref="Ship"/> with a <see cref="SideId"/> differing from this ship's
-    /// — the only <see cref="Model"/> kind with both a side and a sector
-    /// membership in this port, and the natural missile-lock target (native's
-    /// primary case, and the ECM-bearing <c>OT_ship</c> branch of the buildup
-    /// formula).</para>
-    /// </remarks>
+    /// <summary>Native magazineigc.cpp:104-178 lock acquisition: same-cluster,
+    /// hostile visible damageable targets, or warps for warp bombs. Non-ship
+    /// targets use LockTime without the ship-only hull ECM multiplier.</summary>
     public void UpdateMissileLock(DataMissileTypeIGC missileType, double dt)
     {
         // 1. Mid-ripcord ⇒ lock resets to zero (magazineigc.cpp:104-105).
         if (IsRipcordActive) { MissileLock = 0f; return; }
 
-        // 2. Resolve the target = the command target; no target ⇒ no lock
-        //    (magazineigc.cpp:108, gate failure ⇒ m_lock=0).
-        if (CommandTarget is not Ship target) { MissileLock = 0f; return; }
-
-        // 3. Validity gate (magazineigc.cpp:127-132): target in the same
-        //    sector/cluster (this ship's own sector's model-list membership —
-        //    the same primitive Stage 1's Missile.cs homing code uses via
-        //    `_sector.Models.Contains(t)`, Missile.cs:191), on a hostile side
-        //    (bare SideId inequality; no alliance system), and damageable (a
-        //    living ship — the combat-pass "can take damage" notion, which a
-        //    dead ship has left). CanSee and AlliedSides omitted (no port
-        //    equivalents, above).
-        if (Sector is not { } sector || !sector.Models.Contains(target)) { MissileLock = 0f; return; }
-        if (SideId is not { } sideId) { MissileLock = 0f; return; }
-        if (target.SideId is not { } otherSide || otherSide == sideId || target.Dead) { MissileLock = 0f; return; }
+        // magazineigc.cpp:127-132: hostile, visible, same cluster, damageable
+        // (warp bombs require a warp instead). Static objects use model views.
+        if (CommandTarget is not { } target || Sector is not { } sector
+            || SideId is null || target is Ship { StationId: not null }
+            || !EquipmentTarget.IsPresent(target, sector)
+            || Mission?.AreSidesFriendly(SideId, EquipmentTarget.SideOf(target)) == true
+            || (missileType.HasWarpBombCapability ? target is not EquipmentTarget { ObjectType: IgcObjectType.Warp }
+                : !EquipmentTarget.IsDamageable(target)))
+        { MissileLock = 0f; return; }
+        if (SideId is { } sid && !EquipmentTarget.CanSee(target, sid, sector))
+        { MissileLock = 0f; return; }
 
         // 4. Range gate (magazineigc.cpp:134-143): 1.0 < |dP|² < maxRange² where
         //    maxRange = InitialSpeed·Lifespan + 0.5·Acceleration·Lifespan².
@@ -3821,15 +3981,9 @@ public sealed class Ship : Model, IShipIgc
         float lockAngle = missileType.LockAngle;
         float v = (lockAngle - angleOffBow) / lockAngle;
         if (v < 0.0f) v *= lockTime;
-        // Native scales the denominator by the TARGET SHIP's hull ECM
-        // (magazineigc.cpp:165-167, the OT_ship branch — the only target kind
-        // this port locks onto). DataHullTypeIGC.Ecm IS decoded in this port
-        // (Data/DataHullTypeIGC.cs:33,220) — contrary to the P181 brief's "no
-        // ECM field" claim — so the multiplier is applied faithfully. (This is
-        // the one verified divergence from the brief's omissions; see
-        // docs/MISSILE_LOCK_P181.md.) A non-positive ECM (degenerate data) is
-        // treated as 1 to avoid dividing by zero.
-        float ecm = target.HullType.Ecm > 0f ? target.HullType.Ecm : 1f;
+        // magazineigc.cpp:165-167: hull ECM applies only to a ship target.
+        // Degenerate non-positive ECM retains the port's defensive fallback.
+        float ecm = target is Ship ts && ts.HullType.Ecm > 0f ? ts.HullType.Ecm : 1f;
         MissileLock = Math.Clamp(MissileLock + v * (float)dt / (lockTime * ecm), 0f, 1f);
     }
 
@@ -3850,31 +4004,21 @@ public sealed class Ship : Model, IShipIgc
         if (Mission is not { } mission) return;
         var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
         if (launcher is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) return;
-        if (launcher.Amount <= 0) return;
+        if (launcher.Amount <= 0 || launcher.MountedFraction < 1f || launcher.TimeLoaded >= LastUpdate + dt)
+        { MissileLock = 0f; return; }
+        if ((StateM & ShipControlState.MissileFire) != 0) return; // native fires using the OLD lock
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return;
         UpdateMissileLock(missileType, dt);
     }
 
     /// <summary>
-    /// P226 — attempt to fire the mounted missile launcher (<c>ET_Magazine</c>@0).
-    /// Public so the server's inbound <c>FM_CS_FIRE_MISSILE(70)</c> handler can call
-    /// it directly (the same direct-callable precedent as <see cref="FireMissile"/> /
-    /// <see cref="UpdateMissileLock"/>). Shared by the two real launch triggers:
-    /// <see cref="OnUpdate"/>'s held-bit
-    /// leg (missileFireIGC, the magazineigc.cpp:111 NPC/local auto-fire) and the
-    /// server's inbound <c>FM_CS_FIRE_MISSILE(70)</c> handler
-    /// (FedSrv.CPP:5413-5507, the player path). Gates, in order: a mounted
-    /// <see cref="DataPartTypeIGC.MissileLauncher"/>, ammo remaining, and lock
-    /// sufficiency — a <c>MaxLock == 0</c> type needs none
-    /// (<see cref="UpdateMissileLock"/>'s own gate 5 already snaps it to
-    /// <c>1f</c>), otherwise the lock must have reached full (<c>&gt;= 1f</c>),
-    /// the same threshold that method enforces, not a new one. On a successful
-    /// launch the lock is consumed (reset to <c>0</c>, native's
-    /// <c>SetLock(0.0f)</c> after fire, FedSrv.CPP:5507) so it must rebuild
-    /// before the next shot — the natural fire-rate limiter — and the launcher's
-    /// <c>Amount</c> decrements. Returns whether a missile was actually created.
+    /// Fire the mounted magazine with any lock quality, including zero.
+    /// Native local/NPC fire is gated by mount/load readiness (magazineigc.cpp:85-120).
+    /// Player wire requests use the reported normalized lock and create a dud
+    /// when more than 0.5s early (FedSrv.CPP:5433-5434,5468); every shot consumes
+    /// ammunition, clears lock and starts LoadTime (FedSrv.CPP:5507-5510).
     /// </summary>
-    public bool TryFireMissile(double now)
+    public bool TryFireMissile(double now, bool clientRequest = false, float? requestedLock = null)
     {
         if (Mission is not { } mission) return false;
         var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
@@ -3882,12 +4026,33 @@ public sealed class Ship : Model, IShipIgc
         if (launcher.Amount <= 0) return false;
         if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return false;
 
-        bool lockReady = missileType.MaxLock == 0f || MissileLock >= 1f;
-        if (!lockReady) return false;
-
-        FireMissile(missileType, now, CommandTarget, MissileLock);
-        MissileLock = 0f;                                              // lock consumed (FedSrv.CPP:5507)
-        SetPartAmount(launcher, (short)(launcher.Amount - 1));         // ammo decrement (FedSrv.CPP:5744-5745)
+        // Native local/NPC update waits for strict load readiness; the server
+        // accepts an early player request as a disarmed dud with 0.5s tolerance
+        // (magazineigc.cpp:103,118; FedSrv.CPP:5433-5434,5468).
+        if (Sector is null || StationId is not null || ParentShip is not null || IsRipcordActive) return false;
+        if (!clientRequest && (launcher.MountedFraction < 1f || launcher.TimeLoaded >= now)) return false;
+        bool dud = clientRequest && now + 0.5 < launcher.TimeLoaded;
+        Model? target = CommandTarget;
+        // Recheck the selected target at fire time: selection may predate
+        // detection, or visibility may have disappeared after lock acquisition.
+        // Preserve native zero/partial-lock and untargeted dumbfire behavior.
+        if (target is not null && (!EquipmentTarget.IsPresent(target, Sector)
+            || SideId is not { } sid || !EquipmentTarget.CanSee(target, sid, Sector)
+            || mission.AreSidesFriendly(SideId, EquipmentTarget.SideOf(target))
+            || target is Ship { StationId: not null }
+            || (missileType.HasWarpBombCapability ? target is not EquipmentTarget { ObjectType: IgcObjectType.Warp }
+                : !EquipmentTarget.IsDamageable(target))))
+        {
+            MissileLock = 0f;
+            if (missileType.MaxLock != 0f) return false;
+            target = null;
+        }
+        launcher.TimeLoaded = now + missileType.LoadTime;
+        float launchLock = (requestedLock is { } l && float.IsFinite(l)
+            ? Math.Clamp(l, 0f, 1f) : MissileLock) * missileType.MaxLock;
+        MissileLock = 0f; // magazineigc.cpp:115-118: reset before the fire callback
+        FireMissile(missileType, now, target, launchLock, dud);
+        SetPartAmount(launcher, (short)(launcher.Amount - 1));         // ammo decrement (FedSrv.CPP:5509-5510)
         return true;
     }
 
@@ -4209,7 +4374,7 @@ public sealed class Ship : Model, IShipIgc
         // FM_S_LOADOUT_CHANGE(96). Exactly one Removed raise for the whole
         // clear (mirrors native ProcessShipLoadout triggering one
         // QueueLoadoutChange, not one event per part); NULL part.
-        Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.Removed);
+        RaiseLoadoutChange(null, LoadoutChange.Removed);
     }
 
 
@@ -4369,6 +4534,7 @@ public sealed class Ship : Model, IShipIgc
             else
             {
                 _fraction = 0.0f;
+                PendingTreasureOffer = null;
                 if (oldFraction > 0.0f)   // Only send the death message once (shipIGC.cpp:1317)
                 {
                     // P549 — native shipIGC.cpp:1319-1331: the kill is credited
@@ -4413,19 +4579,15 @@ public sealed class Ship : Model, IShipIgc
     /// the <c>c_sabmRepair</c> capability</b> (<see cref="DataStationTypeIGC.SabmRepair"/>).</item>
     /// <item><b>Shield → 1.0</b> — unconditional, if a shield is mounted
     /// (<c>stationIGC.cpp:461-465</c>).</item>
-    /// <item><b>Afterburner deactivated</b> (<c>stationIGC.cpp:466-469</c>) — a
-    /// no-op here: afterburners are inert bookkeeping in this port (see
-    /// <see cref="MountedPart"/>), with no activation state to clear.</item>
+    /// <item><b>Afterburner deactivated</b> (<c>stationIGC.cpp:474-478</c>) —
+    /// clears the runtime activation and power ramp.</item>
     /// <item><b>Ammo + fuel → max</b> (<c>stationIGC.cpp:470-485</c>), but only
     /// if the station type carries the <c>c_sabmReload</c> capability
     /// (<see cref="DataStationTypeIGC.SabmReload"/>). <see cref="Ammo"/> →
     /// <see cref="DataHullTypeIGC.MaxAmmo"/>; every mounted pack's
     /// <c>Amount</c> → maxAmmo (ammo pack) / maxFuel (fuel pack), per
-    /// <c>ppack-&gt;SetAmount(...)</c>. Fuel is a documented no-op in this port:
-    /// there is no runtime fuel pool (only <see cref="Ammo"/>/<see cref="Energy"/>;
-    /// <see cref="DataHullTypeIGC.MaxFuel"/> is static-core data, never tracked
-    /// at runtime — see the <see cref=\"MountPart\"/>/reload notes), so the fuel
-    /// half of the reload reduces to the pack-amount bookkeeping only.</item>
+    /// <c>ppack-&gt;SetAmount(...)</c>. The runtime <see cref="Fuel"/>
+    /// pool is refilled through <see cref="SetFuel"/>.</item>
     /// <item><b>Energy → max</b> — <c>SetEnergy(pht-&gt;GetMaxEnergy())</c>,
     /// unconditional (<c>stationIGC.cpp:487-488</c>).</item>
     /// </list>
@@ -4437,11 +4599,11 @@ public sealed class Ship : Model, IShipIgc
     public void RepairAndRefuel(DataStationTypeIGC stationType)
     {
         // 1. Fully mount every part (SetMountedFraction(1.0f), stationIGC.cpp:453-456).
-        const byte fullyMounted = byte.MaxValue;      // BytePercentage 1.0 → 255
+        const byte fullyMounted = ExpandedPartData.FullyMounted; // BytePercentage(1) == 240
         for (int i = 0; i < _parts.Count; i++)
         {
             var p = _parts[i];
-            if (p.FractionMounted != fullyMounted)
+            if (p.MountedFraction < 1f)
                 _parts[i] = WithFraction(p, fullyMounted);
         }
 
@@ -4453,7 +4615,8 @@ public sealed class Ship : Model, IShipIgc
         if (_parts.Any(p => p.EquipmentType == EquipmentType.Shield))
             _shieldFraction = 1.0f;
 
-        // 4. Afterburner deactivated — no-op (inert bookkeeping, see class doc).
+        // 4. stationIGC.cpp:474-478 — resupply clears the active power ramp.
+        DeactivateAfterburner();
 
         // 5. Ammo + fuel → max, gated on the station's c_sabmReload capability.
         if (stationType.HasCapability(DataStationTypeIGC.SabmReload))
@@ -4515,7 +4678,7 @@ public sealed class Ship : Model, IShipIgc
     private DataPartTypeIGC.Shield? MountedShieldType()
     {
         var shieldPart = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield);
-        return shieldPart?.Type.Type as DataPartTypeIGC.Shield;
+        return shieldPart is { MountedFraction: >= 1f } ? shieldPart.Type.Type as DataPartTypeIGC.Shield : null;
     }
 
     /// <summary>P389 — the mounted shield's per-tick regeneration, the port of
@@ -4539,6 +4702,8 @@ public sealed class Ship : Model, IShipIgc
     /// port's regen precedent (<c>Station.Regenerate</c>) is silent.</summary>
     private void UpdateShield(float dt)
     {
+        if (_parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield && p.MountId == 0)
+            is { MountedFraction: < 1f }) { _shieldFraction = 0f; return; }
         if (MountedShieldType() is not { } st) return;
         // shieldIGC.cpp:88: m_fraction += GetRegeneration()*dt/GetMaxStrength();
         // clamped to [0,1] (SetFraction, shieldIGC.h:126-147); the defensive clamp
@@ -4572,7 +4737,7 @@ public sealed class Ship : Model, IShipIgc
         if (amount > 0.0f)
         {
             float absorbed = amount / maxStrength;        // shieldIGC.cpp:155-156
-            const float down = 0.1f;                       // c_fcidDownedShield — mission-init override of the core's DataConstantsIGC slot (missionigc.cpp:2690,2745); hardcoded literal (see report, P87).
+            float down = Mission?.Core.Constants.FloatConstants[5] ?? 0.1f; // shieldIGC.cpp:158
 
             if (_shieldFraction <= down)                   // shieldIGC.cpp:160-164
             {
@@ -4639,6 +4804,7 @@ public sealed class Ship : Model, IShipIgc
         // (ramp + engine thrust) via the input flag, matching the two
         // `if (_ripcordModel is null)` guards in the native.
         float dT = (float)(timeStop - timeStart);
+        UpdateAfterburner(dT, useFuel: false); // shipIGC.cpp:2950: ramp before this step
         var kin = BuildKinematicsInputs();
 
         Vector3 velocity = Velocity;
@@ -4646,21 +4812,30 @@ public sealed class Ship : Model, IShipIgc
         Velocity = velocity;
     }
 
+    /// <summary>P655 movement envelope. Cruise drag/thrust and afterburner boost
+    /// use the same effective inputs as ExecuteMove (Igc/shipIGC.cpp:2922-2957).
+    /// The 10% margin covers discrete integration and wire quantisation. Server
+    /// collision/launch impulses are accounted for separately by the caller.</summary>
+    public float MovementSpeedLimit()
+    {
+        float thrust = EffectiveThrust();
+        float boost = _mountedAfterburner is { FractionMounted: >= ExpandedPartData.FullyMounted, Type.Type: DataPartTypeIGC.Afterburner ab }
+            && (((StateM & ShipControlState.AfterburnerButton) != 0 && Fuel > 0f)
+                || _afterburnerPower > 0f) ? ab.MaxThrust : 0f;
+        float ratio = thrust > 0 ? boost / thrust : 0;
+        return MathF.Max(0, EffectiveMaxSpeed()) * (1 + MathF.Max(0, ratio)) * 1.1f + 1f;
+    }
+
     /// <summary>
-    /// Build the <see cref="ShipKinematics.Inputs"/> this ship's flight step
-    /// consumes from its current controls/stateM, effective (GA-scaled) hull
-    /// stats, mounted afterburner and ripcord state — the shared input-holder
-    /// used by <see cref="ExecuteMove"/> (the server tick) and
-    /// <see cref="CalculateShipPose"/> (the P507 client-pose replay). Behaviour-
-    /// identical to the inline construction ExecuteMove previously performed
-    /// (same field-for-field source); the golden ShipKinematics equivalence
-    /// tests pin that identity.
+    /// Build the shared effective flight inputs used by ExecuteMove and
+    /// CalculateShipPose. The golden ShipKinematics equivalence tests pin
+    /// identity with the original inline construction.
     /// </summary>
     private ShipKinematics.Inputs BuildKinematicsInputs()
     {
         float abThrust = 0f;
         if (_mountedAfterburner is { Type.Type: DataPartTypeIGC.Afterburner ab })
-            abThrust = ab.MaxThrust;   // GetMaxThrustWithGA(); c_gaThrust = 1.0
+            abThrust = ab.MaxThrust * SideGlobalAttributes().Get(GlobalAttributeSet.Thrust); // afterburnerIGC.h:113-116
 
         return new ShipKinematics.Inputs(
             Controls: Controls,
@@ -4708,13 +4883,14 @@ public sealed class Ship : Model, IShipIgc
             return;
         }
 
-        var kin = BuildKinematicsInputs();
         int n = 1 + (int)(deltaT / Mission.TimeIncrement);
         float elapsed = 0f;
         for (int i = 1; i <= n; i++)
         {
             float next = deltaT * (i / (float)n);
             float dt = next - elapsed;
+            UpdateAfterburner(dt, useFuel: false); // shipIGC.cpp:3244-3297 calls ExecuteShipMove
+            var kin = BuildKinematicsInputs();
             ShipKinematics.Step(in kin, ref velocity, orientation, turnRates, dt);
             position += velocity * dt;
             elapsed = next;
@@ -4829,32 +5005,9 @@ public sealed class Ship : Model, IShipIgc
     /// <c>TurnTorques</c> (the manoeuvre ramp at <c>Ship.cs:1790-1804</c>).</summary>
     private const float AutopilotTurnGain = 2.0f;
 
-    // P162 — Wingman combat-approach constants. The combat leg of
-    // ApplyNpcAutopilot steers toward the enemy's LIVE position through the
-    // SAME face+thrust computation as every other goal, but with a different
-    // arrival condition: "close enough to fire" (a standoff inside weapon
-    // range) rather than "stopped on the point" (AutopilotArrivalRadius).
-    //
-    //   MaxEngagementStandoff caps how far the Wingman holds from its target
-    //     so a very-long-range weapon doesn't park it at extreme range where
-    //     a small aim error misses entirely; the effective standoff is
-    //     min(0.7 · weaponRange, this), floored at AutopilotArrivalRadius so a
-    //     weapon-less Wingman still behaves like a normal arrival.
-    //   FireFacingCosine is the CosForward-style dot-product bar (forward·dir
-    //     = −local Z, the same metric the P155 turn law already uses) for
-    //     "facing the target closely enough to fire".
+    // Existing engagement standoff; the native lead/turn/fire law lives below.
     private const float WingmanMaxEngagementStandoff = 350f;
-    private const float WingmanFireFacingCosine = 0.90f;
-
-    // P169 — native's plain-Wingman shoot skill (Igc/shipIGC.cpp:2359,
-    // fShootSkill = 0.75f; only overridden for c_ptCheatPlayer, shipIGC.cpp:
-    // 2366-2369, which this port has no analogue for and needs none). Inside
-    // the lead solve it SCALES THE TARGET'S VELOCITY DOWN (common.cpp:137:
-    // hisVelocity * skill), i.e. a lower skill leads less — a 0.75 Wingman
-    // accounts for only 75% of the target's motion, so its shots trail the
-    // ideal intercept slightly. Named+cited following the
-    // WingmanFireFacingCosine precedent (P162) for a tuned constant.
-    private const float WingmanShootSkill = 0.75f;   // shipIGC.cpp:2359
+    private const float WingmanShootSkill = 0.75f; // Igc/shipIGC.cpp:2359
 
     // P166 — the native c_cidDefend re-evaluation thresholds, ported with their
     // exact native values (Igc/shipIGC.cpp:2373-2407). Distance in world units,
@@ -5057,6 +5210,7 @@ public sealed class Ship : Model, IShipIgc
             BuilderAsteroidTarget = null;
             MiningAsteroidTarget = null; LayerAsteroidTarget = null;
             AttackTarget = null; DefendTarget = null; LayerBuildOrder = null;
+            RepairTarget = null; RepairStationTarget = null;
             // Re-arm cross-cluster nav + ripcord caches for the fresh target.
             _npcNavCached = false; _npcRipcordCached = false;
             _npcCrossClusterDepartureLogged = false; _npcCrossClusterNoPathLogged = false;
@@ -5092,6 +5246,7 @@ public sealed class Ship : Model, IShipIgc
             BuilderAsteroidTarget = null;
             MiningAsteroidTarget = null; LayerAsteroidTarget = null;
             AttackTarget = null; DefendTarget = null; PickupTarget = null;
+            RepairTarget = null; RepairStationTarget = null;
             LayerBuildOrder = g;
             _npcNavCached = false; _npcRipcordCached = false;
             ConsoleLog.Write($"[layer] ship {Id} (side {SideId}) — layer BUILD order to sector {g.ClusterId} position ({g.Position.X:0},{g.Position.Y:0},{g.Position.Z:0}) armed (native c_cmdPlan=c_cidBuild, shipIGC.cpp:2810-2828)");
@@ -5167,6 +5322,18 @@ public sealed class Ship : Model, IShipIgc
             else if (!TryRipcordOrDefer(repairSector.Id, now, $"repair carrier {repairShip.Id}"))
             {
                 goal = CrossClusterWarpGoal(repairSector.Id, $"repair carrier {repairShip.Id}");
+                goalIsWarp = goal is not null;
+            }
+        }
+        else if (HasRepairOrder)
+        {
+            short? targetSector = RepairTarget?.Sector?.Id ?? RepairStationTarget?.ClusterId;
+            if (targetSector == sector.Id)
+                goal = RepairTarget?.Position ?? RepairStationTarget?.Center;
+            else if (targetSector is { } destination &&
+                !TryRipcordOrDefer(destination, now, "repair"))
+            {
+                goal = CrossClusterWarpGoal(destination, "repair");
                 goalIsWarp = goal is not null;
             }
         }
@@ -5298,6 +5465,12 @@ public sealed class Ship : Model, IShipIgc
         else if (AttackTarget is { } enemy && enemy.Sector == sector)
         {
             goal = enemy.Position;
+            if (Weapons.FirstOrDefault(w => w.MountId == 0) is { } leadWeapon)
+            {
+                SolveForLead(enemy, leadWeapon, WingmanShootSkill, out var lead);
+                if (lead.LengthSquared() > 1e-6f)
+                    goal = Position + lead * (enemy.Position - Position).Length();
+            }
             float range = EstimateWeaponRange();
             float standoff = Math.Clamp(range * 0.7f, AutopilotArrivalRadius, WingmanMaxEngagementStandoff);
             arrivalRadius = standoff;
@@ -6375,7 +6548,7 @@ public sealed class Ship : Model, IShipIgc
     /// can switch to the sell leg (otherwise the ship would hover at the rock
     /// forever — <see cref="ResolveMining"/> stops accruing at capacity).</para>
     /// </remarks>
-    private void DecideMiningOrSelling()
+    private void DecideMiningOrSelling(bool tapped = false)
     {
         _runawayCheckInterval = 5f; // PickDefaultOrder, shipIGC.h:2216
         if (TryTakeCover())
@@ -6384,7 +6557,7 @@ public sealed class Ship : Model, IShipIgc
             return;
         }
 
-        if (Ore < EffectiveMineCapacity())
+        if (Ore < EffectiveMineCapacity() * (tapped ? 0.5f : 1f))
         {
             if (FindNearestMinableAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
             {
@@ -6612,6 +6785,10 @@ public sealed class Ship : Model, IShipIgc
 
         if (FindLeastTargetedAsteroidAnyCluster(stationType.AabmBuild) is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
+            // H-18: single-commitment — never send two constructors to the same
+            // asteroid. Another builder already owns this rock, so pick again
+            // next tick rather than duplicating the build (avoid occupied rocks).
+            if (sector.BuildingEffects.Any(effect => ReferenceEquals(effect.Target, rock))) return;
             BuilderAsteroidTarget = rock; // fly before drilling; shipIGC.cpp:2810-2827
             TryStartBuilderBuild(sector.LastUpdate);
             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
@@ -6626,107 +6803,171 @@ public sealed class Ship : Model, IShipIgc
         }
     }
 
-    /// <summary>
-    /// P162 — the Wingman's per-tick combat leg, the counterpart of the
-    /// decision in <see cref="DecideWingmanDefaultOrder"/>: (1) validate the
-    /// current <see cref="AttackTarget"/> and clear it when it is no longer a
-    /// valid same-sector enemy, and (2) decide whether to hold the trigger and
-    /// set/clear the <c>AllWeapons</c> <see cref="StateM"/> bit that the
-    /// already-built <see cref="Weapon.Update"/>/<see cref="Weapon.FireWeapon"/>
-    /// mechanic checks (<see cref="Weapon.IsWeaponSelected"/>,
-    /// Weapon.cs:363-375). Runs every tick <em>before</em> the weapon loop in
-    /// <see cref="OnUpdate"/> so the fire decision is in place for that tick's
-    /// fire. Called only for <see cref="IsNpc"/> <see cref="PilotTypeWingman"/>
-    /// ships.
-    /// </summary>
-    /// <remarks>
-    /// <list type="number">
-    /// <item><b>Target validity — cleared, never pursued across sectors.</b> The
-    /// target is dropped when it dies, docks (<see cref="StationId"/> non-null),
-    /// leaves this ship's sector, or is no longer a different-sided enemy — the
-    /// scope's same-sector-only contract (no cross-sector pursuit, matching
-    /// native's same-sector-only selection). When cleared, the trigger is
-    /// released and <see cref="DecideWingmanDefaultOrder"/> will re-pick on the
-    /// next idle tick.</item>
-    /// <item><b>The fire decision reuses the already-working mechanic.</b>
-    /// Nothing here modifies <c>Weapon.cs</c>: the weapon already fires whenever
-    /// the mounting ship's <see cref="StateM"/> carries the weapon-selection bit
-    /// (<c>AllWeapons</c>, Weapon.cs:372) — the exact input a real player's
-    /// client streams. This leg only sets that bit when the target is alive,
-    /// same-sector, within the mounted weapon's effective range
-    /// (<see cref="EstimateWeaponRange"/>), and the nose is within
-    /// <see cref="WingmanFireFacingCosine"/> of the target — the
-    /// CosForward-style <c>forward·dir</c> dot-product the P155 turn law already
-    /// uses (<c>−Orientation.TimesInverse(dir).Z</c>, Ship.cs:2545/2588) — and
-    /// clears it when any condition stops holding. No aim-leading: fire at the
-    /// target's current position, no velocity-lead calculation.</item>
-    /// </list>
-    /// </remarks>
-    private void UpdateWingmanCombat()
+    /// <summary>Native turnToFace (Igc/common.cpp:152-254), including
+    /// skill-scaled angular stopping drift and coupled yaw/pitch normalization.</summary>
+    private float TurnWingmanToFace(Vector3 direction, float dt, float skill)
     {
-        // (a) Release the trigger when there is no target or it is no longer a
-        //     valid same-sector enemy. Keep the release unconditional at the
-        //     top so a stale target can never leave the bit latched.
-        if (AttackTarget is not { } target
-            || target.Dead
-            || target.StationId is not null
-            || target.Sector != Sector
-            || SideId is null || target.SideId is null || target.SideId == SideId)
+        Vector3 local = Orientation.TimesInverse(direction);
+        float cosine = Math.Clamp(-local.Z, -1f, 1f);
+        if (cosine <= -0.999f)
         {
-            if (AttackTarget is not null)
-            {
-                ConsoleLog.Write($"[npc] ship {Id} — dropping attack target {AttackTarget.Id}: " +
-                                  $"{(AttackTarget.Dead ? "dead" : AttackTarget.StationId is not null ? "docked" : AttackTarget.Sector != Sector ? "left sector" : "no longer an enemy")}");
-                AttackTarget = null;
-            }
-            StateM &= ~ShipControlState.AllWeapons;
+            Controls = Controls with { Yaw = 1, Pitch = 0, Roll = 0 };
+            return MathF.PI;
+        }
+        float angle, yaw, pitch;
+        if (cosine < 0.98f)
+        {
+            angle = MathF.Acos(cosine);
+            var twist = Orientation.TimesInverse(Vector3.CrossProduct(Orientation.GetBackward(), direction).Normalize());
+            yaw = -twist.Y * angle;
+            pitch = twist.X * angle;
+        }
+        else
+        {
+            yaw = MathF.Acos(Math.Clamp(local.X, -1f, 1f)) - MathF.PI * 0.5f;
+            pitch = MathF.Acos(Math.Clamp(local.Y, -1f, 1f)) - MathF.PI * 0.5f;
+            angle = MathF.Sqrt(yaw * yaw + pitch * pitch);
+        }
+        float fraction = EffectiveMaxSpeed() > 0 ? Velocity.Length() / EffectiveMaxSpeed() : 0;
+        float tm = 0.5f + fraction / (fraction + 1f); // shipIGC.h:542-549
+        float Drift(int axis)
+        {
+            float torque = tm * EffectiveTurnTorque(axis);
+            float rate = TurnRates[axis];
+            return torque > 0 ? skill * MathF.Abs(rate) * (0.5f * rate * Mass / torque) : 0;
+        }
+        float Axis(float error, int axis)
+        {
+            float maximum = dt * EffectiveMaxTurnRate(axis);
+            return maximum > 0 ? error / maximum : 0;
+        }
+        yaw = Axis(yaw - Drift(ControlData.AxisYaw), ControlData.AxisYaw);
+        pitch = Axis(pitch - Drift(ControlData.AxisPitch), ControlData.AxisPitch);
+        float length = MathF.Sqrt(yaw * yaw + pitch * pitch);
+        if (length > 1) { yaw /= length; pitch /= length; }
+        Controls = Controls with { Yaw = yaw, Pitch = pitch, Roll = 0 };
+        return angle;
+    }
+
+    /// <summary>Native attack gate: angle to the lead <= 0.10 rad and
+    /// intercept time <= 95% of effective lifespan (shipIGC.cpp:2463-2477,2600).
+    /// Time, rather than centre distance, includes radius and relative velocity.</summary>
+    private void UpdateWingmanCombat(float dt)
+    {
+        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire | ShipControlState.MoveButtonsMask);
+        if (AttackTarget is not { } target) return;
+        if (target.Dead || target.StationId is not null || target.Sector != Sector ||
+            SideId is null || target.SideId is null || IsFriendlySide(target.SideId))
+        {
+            AttackTarget = null;
             return;
         }
-
-        // (b) Fire decision: within weapon range AND facing the AIM direction
-        // within tolerance → select all weapons; otherwise release.
-        float distance = (target.Position - Position).Length();
-
-        // Aim direction for the fire check. Native LEADS the shot:
-        // solveForLead() predicts where to point so the round intercepts the
-        // moving target (shipIGC.cpp:2463-2468), and the fire gate is the
-        // angle to that AIM POINT, not the target's raw current position
-        // (turnToFace(direction), shipIGC.cpp:2470-2476). Mirror that here:
-        // when a weapon is mounted, aim at the lead direction; only with NO
-        // mounted weapon does this fall back to P162's facing-the-raw-position
-        // check (no lead to solve for an unmounted ship — the same empty-
-        // weapons safety EstimateWeaponRange already exercises for range).
-        // Crucially this changes ONLY the fire gate's aim reference; the
-        // pursuit steering (SteerToward, ApplyNpcAutopilot) still flies at the
-        // target's LIVE position to close/keep range — the honest, stated
-        // decoupling (native turns the WHOLE ship to the lead vector via
-        // turnToFace; this port keeps approach steering as-is and only
-        // re-checks facing against the lead direction for the shoot decision).
-        Vector3 aim = target.Position - Position;             // raw-position fallback (P162, weapon-less)
-        if (Weapons.Count > 0)
-        {
-            // Native leads with the FIRST mounted weapon (m_mountedWeapons[0],
-            // shipIGC.cpp:2353,2466) — mirror that. A solved direction is a
-            // unit vector; the no-intercept branch leaves it Zero
-            // (SolveForImpact returns its mmf sentinel and direction = default,
-            // Ship.cs:2919), in which case we fall back to raw facing rather
-            // than aim at the zero vector (native's *direction is left UNSET in
-            // that branch, common.cpp:91 — undefined behaviour this port
-            // declines to reproduce; a target no longer reachable is no longer
-            // worth leading at anyway).
-            SolveForLead(target, Weapons[0], WingmanShootSkill, out Vector3 leadDir);
-            if (leadDir.LengthSquared() > 1e-6f)
-                aim = leadDir;
-        }
-
-        float toLen = aim.Length();
-        float facing = toLen > 1e-6f
-            ? -Orientation.TimesInverse(aim / toLen).Z      // forward·dir (P155 metric)
-            : 1f;                                                 // dead-centre: "facing"
-        if (distance <= EstimateWeaponRange() && facing >= WingmanFireFacingCosine)
+        var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+        if (weapon is null) return;
+        float t = SolveForLead(target, weapon, WingmanShootSkill, out var direction);
+        if (direction.LengthSquared() < 1e-6f) return;
+        float angle = TurnWingmanToFace(direction, dt, 0.75f);
+        float throttle = 0.5f + (MathF.PI - angle) / (2f * MathF.PI); // shipIGC.cpp:2474
+        if (angle < MathF.PI * 0.5f && t < weapon.GetLifespan() * 0.45f)
+            throttle = ComputeWingmanRangeThrottle(target); // closest band, :2493-2512
+        Controls = Controls with { Throttle = throttle };
+        if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f)
             StateM |= ShipControlState.AllWeapons;
-        else
-            StateM &= ~ShipControlState.AllWeapons;
+    }
+
+    /// <summary>Native c_cidRepair target (shipIGC.cpp:2608-2678). Stations
+    /// have a separate runtime representation in this port.</summary>
+    public Ship? RepairTarget { get; private set; }
+    public Station? RepairStationTarget { get; private set; }
+    public bool HasRepairOrder => RepairTarget is not null || RepairStationTarget is not null;
+
+    public void SetRepairOrder(Ship? target, Station? station = null)
+    {
+        AttackTarget = null;
+        DefendTarget = null;
+        GotoWaypoint = null;
+        PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+        AcceptedTarget = null; AcceptedCommandId = OrderChange.CidNone;
+        MiningAsteroidTarget = null; LayerAsteroidTarget = null; BuilderAsteroidTarget = null;
+        LayerBuildOrder = null; PickupTarget = null;
+        RepairTarget = target;
+        RepairStationTarget = station;
+        DronePlanChanged();
+    }
+
+    private void UpdateWingmanRepair(double now, float dt)
+    {
+        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire | ShipControlState.MoveButtonsMask);
+        if (Dead || StationId is not null || ParentShip is not null) return;
+        var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+        if (weapon is null || weapon.ProjectileType.Power >= 0 || Sector is null) return;
+        Vector3 position, velocity;
+        float radius;
+        bool needsRepair;
+        if (RepairTarget is { } ship)
+        {
+            if (ship.Dead || ship.StationId is not null || ship.Sector is null ||
+                !IsFriendlySide(ship.SideId))
+            { SetRepairOrder(null); return; }
+            if (ship.Sector != Sector) return;
+            position = ship.Position; velocity = ship.Velocity;
+            radius = ship.HullType.Length * 0.5f;
+            needsRepair = ship.Fraction != 1f; // shipIGC.cpp:2669-2671
+        }
+        else if (RepairStationTarget is { } station)
+        {
+            if (!IsFriendlySide(station.SideId) ||
+                Mission?.Sectors.FirstOrDefault(s => s.Id == station.ClusterId)?.StationRuntimes.Contains(station) != true)
+            { SetRepairOrder(null); return; }
+            if (!Sector.StationRuntimes.Contains(station)) return;
+            position = station.Center; velocity = Vector3.Zero;
+            radius = station.Radius;
+            needsRepair = true; // native tests full health only for OT_ship
+        }
+        else return;
+
+        float speed = weapon.ProjectileType.Speed;
+        if (weapon.Type.CAmmoPerShot != 0) speed *= GlobalAttributeFactor(GlobalAttributeSet.SpeedAmmo);
+        float t = SolveForImpact(position - Position,
+            weapon.ProjectileType.AbsoluteF ? velocity : velocity - Velocity,
+            speed, radius, out var direction); // common.cpp:121-149, skill=1
+        if (direction.LengthSquared() < 1e-6f) return;
+        float angle = TurnWingmanToFace(direction, dt, 1f); // shipIGC.cpp:2612-2627
+        Controls = Controls with { Throttle = 0.5f + (MathF.PI - angle) / (2f * MathF.PI) };
+        bool dodging = TryComputeDodgeGoal(out _);
+        int state = 0;
+        if (!dodging && t <= weapon.GetLifespan() * 0.25f)
+        {
+            if ((WingmanBehaviour & 1) != 0) state |= ShipControlState.LeftButton;
+            if (angle < MathF.PI * 0.5f)
+                state |= angle > 0.10f ? ShipControlState.BackwardButton : ShipControlState.ForwardButton;
+        }
+        // Native deliberately tests different sides here, including allies,
+        // and only wingmen / player pilots (shipIGC.cpp:2653-2665).
+        if ((WingmanBehaviour & 4) != 0 &&
+            _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0)
+                is { Type.Type: DataPartTypeIGC.MineLauncher } &&
+            Sector.Models.OfType<Ship>().Any(s => s.SideId != SideId &&
+                (s.PilotType == PilotTypeWingman || s.PilotType >= PilotTypePlayer) &&
+                (s.Position - Position).Length() < 2500f))
+            state |= ShipControlState.MineFire;
+        if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f && needsRepair)
+            state |= ShipControlState.AllWeapons;
+        StateM = (StateM & ~(ShipControlState.MoveButtonsMask | ShipControlState.WeaponsMask |
+            ShipControlState.MineFire)) | state;
+        if ((state & ShipControlState.MineFire) != 0) TryDeployRepairMine(now);
+    }
+
+    private void TryDeployRepairMine(double now)
+    {
+        // dispenserigc.cpp:103-119: amount, mount and load-time gates.
+        var part = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0);
+        if (IsRipcordActive || part is not { Amount: > 0, MountedFraction: >= 1f, Type.Type: DataPartTypeIGC.MineLauncher launcher } ||
+            now <= part.TimeLoaded || Mission is not { } mission ||
+            !mission.Core.MineTypes.TryGetValue(launcher.ExpendableTypeId, out var type)) return;
+        part.TimeLoaded = now + type.LoadTime;
+        DeployMine(type, now);
+        SetPartAmount(part, (short)(part.Amount - 1));
     }
 
     /// <summary>
@@ -6882,7 +7123,7 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>Native WingmanBehaviour bits (igc.h:789-790); default from
-    /// shipIGC.cpp:197. Only the retreat bits are consumed here.</summary>
+    /// shipIGC.cpp:197; repair consumes Strafe/UseMines as well as retreat policy.</summary>
     public int WingmanBehaviour { get; set; } = 0x22; // UseMissiles | RunAt60Hull
 
     private sealed record DroneOrder(DataStationIGC? Station, short Command,
@@ -6921,6 +7162,22 @@ public sealed class Ship : Model, IShipIgc
         float distanceSquared = (Position - new Vector3(p[0], p[1], p[2])).LengthSquared();
         return (IsNpc ? distanceSquared < radius * radius : distanceSquared <= radius * radius) &&
                Velocity.LengthSquared() < 1f; // shipIGC.cpp:1957-1964, strict bounds
+    }
+
+    internal void RedirectTappedMiner()
+    {
+        // shipIGC.cpp:2240-2244; shipIGC.h:2280-2339.
+        _departingMineAsteroid = MiningAsteroidTarget;
+        MiningAsteroidTarget = null;
+        MiningAsteroid = null;
+        IsMining = false;
+        DecideMiningOrSelling(tapped: true);
+        // shipIGC.h:2327-2339: no more eligible rocks -> unload a partial bag.
+        if (MiningAsteroidTarget is null && PlanTarget is null && Ore > 0f)
+        {
+            PlanTarget = FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload);
+            PlanCommandId = PlanTarget is null ? OrderChange.CidNone : OrderChange.CidGoto;
+        }
     }
 
     internal void RedirectDisplacedMiner()
@@ -7020,6 +7277,10 @@ public sealed class Ship : Model, IShipIgc
         float radius = rock.Radius + 0.5f * HullType.Length + 30f;
         if ((Position - new Vector3(p[0], p[1], p[2])).LengthSquared() >= radius * radius ||
             Velocity.LengthSquared() >= 1f) return;
+        // H-18: another builder claimed this rock while we travelled — back off
+        // and pick again next decision cycle rather than crashing on the
+        // occupied-rock guard inside StartBuildingEffect (Sector.cs).
+        if (sector.BuildingEffects.Any(effect => ReferenceEquals(effect.Target, rock))) return;
         BuilderAsteroidTarget = null;
         sector.StartBuildingEffect(this, rock, type, now);
     }
@@ -7056,7 +7317,9 @@ public sealed class Ship : Model, IShipIgc
         return (null, null);
     }
 
-    private bool IsFriendlySide(short? other)
+    /// <summary>Native IsideIGC::AlliedSides, Igc/igc.h:4297-4305:
+    /// same side or equal non-null alliance groups.</summary>
+    public bool IsFriendlySide(short? other)
     {
         if (SideId is not { } side || other is null) return false;
         if (other == side) return true;
@@ -7213,12 +7476,10 @@ public sealed class Ship : Model, IShipIgc
 
         // bActive = the cloak-active control bit AND fit-to-cloak (native
         // cloakigc.cpp:80-81: (stateM & cloakActiveIGC) && mountedFraction >= 1).
-        // The mountedFraction>=1 term collapses to "the part is present" (the
-        // loadout buys parts mounted-ready; the native mounting ramp is a
-        // separate notification-only concern not ported here). The docked/parent/
+        // The docked/parent/
         // ripcord gates mirror SetStateM (shipIGC.cpp:1595-1601) refusing the bit
         // while docked/boarded/ripped.
-        bool bActive = (StateM & ShipControlState.CloakActive) != 0
+        bool bActive = cloak.MountedFraction >= 1f && (StateM & ShipControlState.CloakActive) != 0
                        && StationId is null
                        && ParentShip is null
                        && !IsRipcordActive;
@@ -7300,8 +7561,7 @@ public sealed class Ship : Model, IShipIgc
     // CafterburnerIGC object (afterburnerIGC.h:172-181); this port realises at
     // most the singular ET_Afterburner@0 slot, so those members fold onto the
     // ship exactly like the cloak's do. The mounted fraction reuses the
-    // MountedPart.FractionMounted wire byte (255 = 1.0) so the mount-ramp is
-    // the ship's existing part-mount mechanism, not a new float.
+    // MountedPart.MountedFraction float; FractionMounted is its native div-240 wire view.
     /// <summary>P412 — the mounted ET_Afterburner@0 part, the only slot an
     /// afterburner engages from (native <c>CafterburnerIGC::fActive =
     /// (m_mountID == 0)</c>, afterburnerIGC.h:67-70). Null when none mounted,
@@ -7332,7 +7592,7 @@ public sealed class Ship : Model, IShipIgc
         if (Mission?.Core.Constants.FloatConstants is { } fc && fc.Length > AfterburnerMountRateConstantIndex)
         {
             float rate = fc[AfterburnerMountRateConstantIndex];
-            if (rate > 0.0001f) return rate;
+            return rate;
         }
         return defaultRate;
     }
@@ -7378,7 +7638,7 @@ public sealed class Ship : Model, IShipIgc
     /// <c>fuelUsed = power·fuelConsumption·maxThrust·dt</c> — draining the
     /// pool or, on an overdraw, zeroing it and deactivating ("out of gas").
     /// </summary>
-    private void UpdateAfterburner(float dt)
+    private void UpdateAfterburner(float dt, bool useFuel = true)
     {
         var ab = _mountedAfterburner;
         if (ab is null || ab.Type.Type is not DataPartTypeIGC.Afterburner type)
@@ -7393,29 +7653,15 @@ public sealed class Ship : Model, IShipIgc
             return;
         }
 
-        // Mount-ramp gate (afterburnerIGC.cpp:111-125): while the part is not
-        // fully mounted (wire FractionMounted < 255), ramp it toward 1.0 at
-        // mountRate and stay inert until fully mounted (the early return).
-        float frac = ab.FractionMounted / 255f;
-        if (frac < 1.0f)
+        // Native afterburnerIGC.cpp:111-125 advances only in the fuel pass.
+        // Use the part's float so quantity edits cannot discard sub-byte progress.
+        if (ab.MountedFraction < 1f)
         {
-            frac += dt * MountRate();
-            if (frac >= 1.0f)
-            {
-                frac = 1.0f;
-                // native posts "%s ready." + mountsound here (afterburnerIGC.cpp:119-121);
-                // this port has no PostNotificationText wiring (same stance as cloak).
-            }
-            else
-            {
-                byte advanced = (byte)(frac * 255f);
-                if (advanced != ab.FractionMounted)
-                {
-                    int i = _parts.FindIndex(p => ReferenceEquals(p, ab));
-                    if (i >= 0) _parts[i] = WithFraction(_parts[i], advanced);
-                }
-                return;
-            }
+            DeactivateAfterburner(); // afterburnerIGC.h:160-165
+            if (useFuel && StationId is null && ParentShip is null)
+                ab.MountedFraction = Math.Min(1f, ab.MountedFraction + dt * MountRate());
+            if (ab.MountedFraction < 1f) return;
+            RaiseLoadoutChange(ab, LoadoutChange.Mounted);
         }
 
         // Activation + power ramp + fuel burn (afterburnerIGC.cpp:127-161).
@@ -7438,7 +7684,7 @@ public sealed class Ship : Model, IShipIgc
                     DeactivateAfterburner();
             }
 
-            if (_afterburnerPower != 0.0f)   // bUseFuel=true here (the real burn)
+            if (_afterburnerPower != 0.0f && useFuel) // afterburnerIGC.cpp:148
             {
                 float fuelUsed = _afterburnerPower * type.FuelConsumption * type.MaxThrust * dt;
                 if (fuelUsed < fuel)
@@ -7452,8 +7698,44 @@ public sealed class Ship : Model, IShipIgc
         }
     }
 
+    /// <summary>Native shipIGC.cpp:368-408: lens-adjusted bounds damage
+    /// subtracts hull fraction directly; shields and armor do not absorb it.</summary>
+    private void ApplyOutOfBoundsDamage(double now, float dt)
+    {
+        if (Mission is not { } mission || StationId is not null || ParentShip is not null) return;
+        var fc = mission.Core.Constants.FloatConstants;
+        float lens = fc[0], radius = fc[1], bound = fc[2] * radius * radius;
+        // Synthetic cores with no spatial constants have no universe boundary.
+        if (lens <= 0f || bound <= 0f) return;
+        Vector3 p = Position;
+        float r2 = p.X * p.X + p.Y * p.Y + p.Z * p.Z / (lens * lens);
+        if (r2 <= bound) return;
+        WarningMask |= ShipWarningMask.OutOfBounds; // shipIGC.cpp:386
+        float damage = dt * (r2 - bound) / (50f * bound);
+        float old = _fraction;
+        _fraction = Math.Max(0f, _fraction - damage);
+        if (_fraction > 0f)
+            mission.Site.DamageShipEvent(now, this, null, 0, damage, damage, p, p * 2f);
+        else if (old > 0f)
+            mission.Site.KillShipEvent(now, this, null, damage, p, p * 2f);
+    }
+
     protected override void OnUpdate(double now, double dt)
     {
+        WarningMask = ShipWarningMask.None; // shipIGC.cpp:271-273
+        // P655 / H-12: native docked ships have no cluster and never run flight
+        // or weapons (FedSrv/FedSrv.CPP:4857,5428,5634). The port retains Sector
+        // for hangar/launch lookup, so enforce the equivalent invariant here.
+        // Keep docked NPC management: stay/launch orders run in server handlers;
+        // automatic drone launch remains in the host's docked-NPC pass.
+        if (StationId is not null || ParentShip?.StationId is not null)
+        {
+            Controls = ControlData.Neutral;
+            StateM = 0;
+            Velocity = Vector3.Zero;
+            return;
+        }
+
         // P279 — the drifting Lifepod's oxygen timer. Direct port of native
         // shipIGC.cpp:361-363: `if (lifepod hull && (now > m_timeToDie))
         // KillShipEvent(now, this, NULL, 1.0f, GetPosition(), Vector::GetZero())`.
@@ -7521,11 +7803,12 @@ public sealed class Ship : Model, IShipIgc
         // UpdateWingmanCombat reflects any just-made acquire/switch/return-to-
         // escort (a returned-to-escort Wingman releases the trigger; a switched
         // one aims at the new threat).
-        if (IsNpc && PilotType == PilotTypeWingman && !IsRunningAway)
+        if (IsNpc && (PilotType == PilotTypeWingman || PilotType == PilotTypeCheatPlayer) && !IsRunningAway)
         {
             if (DefendTarget is not null)
                 UpdateWingmanDefend();
-            UpdateWingmanCombat();
+            if (HasRepairOrder) UpdateWingmanRepair(now, (float)dt);
+            else UpdateWingmanCombat((float)dt);
         }
 
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
@@ -7566,22 +7849,8 @@ public sealed class Ship : Model, IShipIgc
         // settled. Derives activation from the CloakActive StateM bit, drains
         // energy, and ramps Cloaking (feeding EffectiveSignature → the sector's
         // cross-side detection sweep). No-op on a ship with no ET_Cloak@0 part.
+        AdvanceFlightMounts((float)dt);
         UpdateCloak((float)dt);
-
-        // P389 — the mounted shield's per-tick regeneration (CshieldIGC::Update,
-        // shieldIGC.cpp:88), run within the ship's Update exactly where native
-        // calls its mounted parts' Update, alongside the cloak sim. Unconditional:
-        // a shield regrows from ANY fraction (including 0) every tick — it is
-        // NOT gated on the c_fcidDownedShield absorption threshold. No-op on a
-        // ship with no ET_Shield part mounted (silent, matching Station.Regenerate).
-        UpdateShield((float)dt);
-
-        // P412 — the mounted afterburner's per-tick sim (CafterburnerIGC::Update,
-        // afterburnerIGC.cpp:60-63) — the real fuel-consuming tick (mount ramp,
-        // activation, power ramp, fuel burn), run where native calls its mounted
-        // parts' Update (shipIGC.cpp:358-359) alongside the cloak/shield sims.
-        // No-op on a ship with no ET_Afterburner@0 part (silent).
-        UpdateAfterburner((float)dt);
 
         // Drive mounted weapons (CshipIGC::Update calls its parts' Update,
         // which for a weapon is CweaponIGC::Update → FireWeapon). Runs after the
@@ -7601,7 +7870,15 @@ public sealed class Ship : Model, IShipIgc
         // ([MaxFixedWeapons, MaxWeapons)) can have a gunner; fixed weapons
         // never do (native asserts w->GetGunner() null on that range,
         // shipIGC.cpp:322), so the loop keys off the weapon's mount index.
-        foreach (var weapon in _weapons)
+        // shipIGC.cpp:312-349: selected fixed gun first, then descending
+        // cyclic mounts; turret mounts ascend. Preserve energy priority.
+        int selected = (int)(StateM & ShipControlState.SelectedWeaponMask);
+        for (int i = _hull.MaxFixedWeapons; i > 0; i--)
+        {
+            int mount = (i + selected) % _hull.MaxFixedWeapons;
+            _weapons.FirstOrDefault(w => w.MountId == mount)?.Update(now);
+        }
+        foreach (var weapon in _weapons.Where(w => w.MountId >= _hull.MaxFixedWeapons).OrderBy(w => w.MountId))
         {
             if (weapon.MountId >= _hull.MaxFixedWeapons && weapon.Gunner is { } gunner)
             {
@@ -7612,14 +7889,17 @@ public sealed class Ship : Model, IShipIgc
             weapon.Update(now);
         }
 
+        // shipIGC.cpp:347-349: weapons take energy before shield regeneration.
+        UpdateShield((float)dt);
+
         // P226 — the per-tick missile armament leg (the lock half of native
         // CmagazineIGC::Update, magazineigc.cpp:104-176): for a mounted missile
         // launcher (ET_Magazine@0) with ammo, build/decay MissileLock toward
-        // CommandTarget every tick. Then honour the held missile-fire bit
-        // (missileFireIGC) by attempting a launch when lock+ammo allow — the
+        // CommandTarget while loaded. Honour the held missile-fire bit
+        // (missileFireIGC) using the previous lock when mount/load readiness allow — the
         // NPC/local auto-fire lever of magazineigc.cpp:111. Real PLAYER ships
         // instead trigger through the inbound FM_CS_FIRE_MISSILE(70) handler
-        // (Server.HandleFireMissile), which runs the same fire gate; the 16-bit
+        // (Server.HandleFireMissile), which marks early shots as duds; the 16-bit
         // wire stateM cannot carry this high-word bit (igc.h:829,2457-2465), so
         // it is never set on a player ship's wire-owned StateM here. This leg
         // runs for every ship that carries the bit in its local StateM (an NPC
@@ -7628,6 +7908,27 @@ public sealed class Ship : Model, IShipIgc
         UpdateMountedMissileLock((float)dt);
         if ((StateM & ShipControlState.MissileFire) != 0)
             TryFireMissile(now);
+
+        // shipIGC.cpp:358-359 / afterburnerIGC.cpp:60-63: the second
+        // incremental update advances the mount and consumes fuel.
+        UpdateAfterburner((float)dt);
+
+        ApplyOutOfBoundsDamage(now, (float)dt);
+
+        // shipIGC.cpp:408-423. No extra dt: Sector.Cost already includes it.
+        // Boarded ships do not update natively; only their cost is counted.
+        if (ParentShip is null && StationId is null && !Dead &&
+            PilotType >= PilotTypePlayer && Sector is { Cost: > 0f } sector &&
+            Mission is { CrowdingPenaltyEnabled: true })
+        {
+            WarningMask |= ShipWarningMask.CrowdedSector;
+            float maximum = EffectiveMaxHitPoints();
+            // Native counts an installed shield even while it is mounting.
+            if (_parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield && p.MountId == 0)?.Type.Type
+                is DataPartTypeIGC.Shield shield)
+                maximum += EffectiveMaxShieldStrength(shield);
+            ReceiveDamage(0, sector.Cost * maximum, now, Position, Vector3.Zero, null);
+        }
 
         // P151 — NPC self-preservation (the per-tick trigger at
         // shipIGC.cpp:1934-1945): when the Plan slot holds no legal command,
@@ -7722,7 +8023,7 @@ public sealed class Ship : Model, IShipIgc
                     // would instantly re-engage the very foe UpdateWingmanDefend
                     // just broke off from to escort the charge.
                     // P403 — an active goto also counts as non-idle.
-                    if (DefendTarget is null && AttackTarget is null && StationId is null && GotoWaypoint is null)
+                    if (!HasRepairOrder && DefendTarget is null && AttackTarget is null && StationId is null && GotoWaypoint is null)
                         DecideWingmanDefaultOrder();
                 }
                 else if (PilotType == PilotTypeBuilder)

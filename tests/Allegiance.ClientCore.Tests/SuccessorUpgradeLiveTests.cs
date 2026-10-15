@@ -89,12 +89,13 @@ public class SuccessorUpgradeLiveTests
 
     private static (Ship Ship, Sector Sector) SpawnDocked(StaticCore core, Mission mission, short shipId)
     {
-        var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        // H-07: the fixture purchases a real gun at hardpoint zero.
+        var hull = EconomyLoadoutTestSetup.WeaponHull(core);
         var st = mission.Sectors.SelectMany(s => s.Stations).First(s => s.SideId >= 0);
         var sector = mission.Sectors.First(s => s.Stations.Contains(st));
         var ship = new Ship(shipId, hull, StationPos(st) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
         {
-            SideId = st.SideId,
+            SideId = st.SideId, StationId = st.StationId,
         };
         mission.PlaceShip(ship, sector);
         return (ship, sector);

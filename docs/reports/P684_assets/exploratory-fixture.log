@@ -1,0 +1,14 @@
+Test run for /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.63]     Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Pooled_data_frames_send_only_valid_bytes_and_own_their_copy [FAIL]
+  Failed Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Pooled_data_frames_send_only_valid_bytes_and_own_their_copy [26 ms]
+  Error Message:
+   System.ArgumentException : send diagnostic buffers must cover live peers and pool workers
+  Stack Trace:
+     at Allegiance.Core.Transport.TcpTransport.DrainSendWindow(Span`1 peers, Span`1 workers) in /home/domingo/.claude/jobs/82c1509b/tmp/integ7/src/Allegiance.Core/Transport/TcpTransport.cs:line 892
+   at Allegiance.Core.Tests.Transport.TcpTransportSendHardeningTestsBase.Pooled_data_frames_send_only_valid_bytes_and_own_their_copy() in /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/Transport/TcpTransportSendHardeningTests.cs:line 149
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /home/domingo/.claude/jobs/82c1509b/tmp/integ7/docs/reports/P684_assets/final/preserved-features.trx
+
+Failed!  - Failed:     1, Passed:    84, Skipped:     0, Total:    85, Duration: 1 m 1 s - Allegiance.Core.Tests.dll (net10.0)

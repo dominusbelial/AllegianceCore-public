@@ -31,8 +31,12 @@ public sealed partial class Server
     /// (no immediate broadcast; native's explicit side-group flush after a
     /// <c>bSend=false</c> batch is reproduced by the caller passing <c>bSend:true</c>
     /// for each member of that batch, giving the identical wire effect).</summary>
-    private void SetAutoDonate(LiveShip donor, Ship? target, int amount, bool bSend)
+    private bool SetAutoDonate(LiveShip donor, Ship? target, int amount, bool bSend)
     {
+        // Native's pointer check (FedSrv.CPP:5523) never checked the amount.
+        // Validate again here: leadership/internal callers share this primitive.
+        if (amount < 0 || amount > 0 && (donor.Wallet.Money < amount || donor.Wallet.Money < 0)) return false;
+        LiveShip? clearTarget = null;
         Ship? resolved = null;
         if (target is not null)
         {
@@ -52,7 +56,7 @@ public sealed partial class Server
                     // They're already donating to US — stop that first (silent,
                     // no messages), then donate to them anyway
                     // (fsship.cpp:1313-1321).
-                    if (targetLive is not null) targetLive.Wallet.AutoDonateTarget = null;
+                    clearTarget = targetLive;
                     resolved = target;
                 }
                 else
@@ -71,18 +75,22 @@ public sealed partial class Server
                 var receiver = LiveOf(resolved!);
                 if (receiver is not null)
                 {
-                    receiver.Wallet.Money += amount;
-                    donor.Wallet.Money -= amount;    // fsship.cpp:1336-1338
+                    if (ReferenceEquals(receiver.Ship, donor.Ship) || receiver.Wallet.Money < 0
+                        || (long)receiver.Wallet.Money + amount > int.MaxValue) return false;
+                    receiver.Wallet.Money = checked(receiver.Wallet.Money + amount);
+                    donor.Wallet.Money = checked(donor.Wallet.Money - amount);    // fsship.cpp:1336-1338
                 }
             }
         }
         // else: clearing the target entirely — no gift (native's if(amount!=0)
         // sits inside the if(pplayer) block, so a clear never transfers money).
 
+        if (clearTarget is not null) clearTarget.Wallet.AutoDonateTarget = null;
         donor.Wallet.AutoDonateTarget = resolved;
 
         if (bSend)
             BroadcastAutoDonate(donor.Ship, donor.Ship.Id, resolved?.Id ?? Na, amount);
+        return true;
     }
 
 /// <summary>Broadcast <c>AUTODONATE(116)</c> to the donor's <em>side</em>
@@ -136,10 +144,10 @@ public sealed partial class Server
         }
         if (ship.SideId is not { } sideId) return;
 
-        // Can't donate more than you have (only relevant to the gift path; the
-        // amount==-1 toggle sentinel is never below a non-negative Money).
-        if (live.Wallet.Money < req.Amount)
-            req.Amount = live.Wallet.Money;
+        if (req.Amount < -1 || req.Amount >= 0 && live.Wallet.Money < 0) return;
+        // Preserve native's upper clamp, without converting a gift to a negative
+        // amount or clamping away the leader-only sentinel (FedSrv.CPP:5525-5532).
+        if (req.Amount >= 0) req.Amount = Math.Min(req.Amount, live.Wallet.Money);
 
         // amount == -1 is the LEADER-ONLY "toggle someone else's donation" mode.
         if (req.Amount == -1 && !IsSideLeader(mission, ship))
@@ -169,7 +177,7 @@ public sealed partial class Server
         }
         else
         {
-            SetAutoDonate(live, pfsDonate, req.Amount, bSend: true);
+            if (!SetAutoDonate(live, pfsDonate, req.Amount, bSend: true)) return;
             changed = live;
         }
 
@@ -340,12 +348,15 @@ public sealed partial class Server
         // gate and this point (FedSrv.CPP:7234). Port both faithfully.
         if (pfssTo is not null && (sameSide || bAllied) && live.Wallet.Money >= req.MoneyGiven)
         {
+            // Validate both balances before any mutation, using a wider sum.
+            if (LiveOf(pfssTo) is { } recipient && !ReferenceEquals(recipient.Ship, live.Ship)
+                && (recipient.Wallet.Money < 0 || (long)recipient.Wallet.Money + req.MoneyGiven > int.MaxValue)) return;
             // Real transfer (FedSrv.CPP:7236-7240).
             mc.SidTo = req.ShipID;
             mc.SidFrom = ship.Id;
-            live.Wallet.Money -= req.MoneyGiven;
+            live.Wallet.Money = checked(live.Wallet.Money - req.MoneyGiven);
             if (LiveOf(pfssTo) is { } toLive)
-                toLive.Wallet.Money += req.MoneyGiven;
+                toLive.Wallet.Money = checked(toLive.Wallet.Money + req.MoneyGiven);
             // else: an NPC target has no per-player wallet to credit (the port's
             // LiveOf returns null for non-players); the sender is still debited and
             // the broadcasts still fire, matching native's "transfer happened"
@@ -475,10 +486,10 @@ public sealed partial class Server
     /// <c>FedSrv.CPP:2435-2441</c>, <c>7202-7206</c>). <c>sidFrom = NA</c>
     /// marks the server-initiated pooled-treasury credit, matching the native
     /// convention (<c>Messages.h:444</c>) for this port's refunds.</summary>
-    private void BroadcastMoneyChangeSideWide(short sideId, int dMoney, short sidTo)
+    private void BroadcastMoneyChangeSideWide(Mission mission, short sideId, int dMoney, short sidTo)
     {
         var targets = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
         if (targets.Length == 0) return;   // no peers on the side — nothing to tell
@@ -560,7 +571,7 @@ public sealed partial class Server
 
             // MONEY_CHANGE(60) to the whole side: negative delta, sidTo == sidFrom ==
             // the donating player's own ship (native FedSrv.CPP:7162-7168).
-            BroadcastBucketDonateSpendSideWide(sideId, -(int)spent, live.Ship.Id);
+            BroadcastBucketDonateSpendSideWide(mission, sideId, -(int)spent, live.Ship.Id);
 
             // BUCKET_STATUS(65) — to the whole mission when the bucket's buyable
             // is the c_didTeamMoney development ("Everyone knows about anyone's
@@ -570,9 +581,9 @@ public sealed partial class Server
                 && bucket.Development is { } dev
                 && dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
             if (teamMoney)
-                BroadcastBucketStatusMissionWide(sideId, bucket);
+                BroadcastBucketStatusMissionWide(mission, sideId, bucket);
             else
-                BroadcastBucketStatusSideWide(sideId, bucket);
+                BroadcastBucketStatusSideWide(mission, sideId, bucket);
         }
         else
         {
@@ -603,10 +614,10 @@ public sealed partial class Server
     /// donating player's own ship — matching native's
     /// <c>pfmMoneyChange-&gt;sidFrom = pfmMoneyChange-&gt;sidTo</c>.
     /// </summary>
-    private void BroadcastBucketDonateSpendSideWide(short sideId, int dMoney, short shipId)
+    private void BroadcastBucketDonateSpendSideWide(Mission mission, short sideId, int dMoney, short shipId)
     {
         var targets = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
         if (targets.Length == 0) return;   // no peers on the side — nothing to tell
@@ -624,10 +635,10 @@ public sealed partial class Server
     /// <c>FedSrv.CPP:7183-7196</c>). timeTotal = invested build ms,
     /// moneyTotal = invested money (bucketigc.h:264-272).
     /// </summary>
-    private void BroadcastBucketStatusSideWide(short sideId, Bucket bucket)
+    private void BroadcastBucketStatusSideWide(Mission mission, short sideId, Bucket bucket)
     {
         var targets = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
         if (targets.Length == 0) return;   // no peers on the side — nothing to tell
@@ -651,9 +662,9 @@ public sealed partial class Server
     /// <c>c_didTeamMoney</c> development, the send group is
     /// <c>pfsMission->GetGroupMission()</c> (everyone), not the side group,
     /// because it is the game-winning economic development.</summary>
-    private void BroadcastBucketStatusMissionWide(short sideId, Bucket bucket)
+    private void BroadcastBucketStatusMissionWide(Mission mission, short sideId, Bucket bucket)
     {
-        var targets = _peerShips.Select(kv => kv.Key).ToArray();   // whole mission, every side
+        var targets = _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)).Select(kv => kv.Key).ToArray();   // whole mission, every side
         if (targets.Length == 0) return;
         var msg = new BucketStatus
         {
@@ -1177,7 +1188,7 @@ public sealed partial class Server
             var donate = kv.Value.Wallet.AutoDonateTarget;
             var receiver = donate is null ? kv.Value : LiveOf(donate);
             if (receiver is not null)
-                receiver.Wallet.Money += delta;
+                receiver.Wallet.Money = (int)Math.Clamp((long)receiver.Wallet.Money + delta, 0, int.MaxValue);
         }
 
         var payNote = $"[payday] side {side.Id} '{side.Name}' -> PAYDAY(114) delta={delta} balance={side.Money}";

@@ -60,8 +60,18 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
+        ResolveBroadcastSnapshot();
+        // Reject invalid cadence before any other subsystem registers profiler
+        // callbacks: a failed boot must not leave a partially initialized host.
+        InitUpdateCadence();
+        bool crowdingEnabled = _config.Sim.CrowdingEnabled; // validate before binding/listening
+        Console.WriteLine($"[boot] sim.crowdingPenalty = {(crowdingEnabled ? "native" : "off")}");
         _period = _config.UpdatesPerSecond > 0 ? 1.0 / _config.UpdatesPerSecond : 0.05;
         _simNow = 0.0;
+        var next = _config.LiveSettings?.AutoNextMatch;
+        if (next is not null && (!double.IsFinite(next.IntermissionSeconds) || next.IntermissionSeconds < 0
+            || next.IntermissionSeconds > 3600))
+            throw new InvalidDataException("liveSettings.autoNextMatch.intermissionSeconds must be finite and in [0, 3600]");
         ConsoleLog.Verbose = _config.ConsoleVerbose;   // P318: gate the high-frequency per-tick lines
 
         // P594 — the P591b/P591c warp re-entry guard is a NON-NATIVE QoL safety
@@ -96,7 +106,7 @@ public sealed partial class Server
         if (live.TestHarness is { Enabled: true } th)
             Console.WriteLine("[boot] *** TEST-HARNESS ECONOMY GRANT ACTIVE (liveSettings.testHarness.enabled=true) *** "
                               + $"prefix '{th.CharacterNamePrefix}' money={th.Money} ignoreTechGate={th.IgnoreTechGate} "
-                              + "— applies ONLY to matching char names; real players NEVER affected ***");
+                              + "— requires matching prefix AND configured bearer (or verified loopback when unset) ***");
 
         // P509 — the test-unlock grant is a port extension (native has no
         // "unlock all", see TestUnlockConfig) that must never be silently on:
@@ -214,6 +224,7 @@ public sealed partial class Server
                 TryAutoStart(mission);
         }
         StartLobbyHeartbeat(core);                   // opt-in; no-op when config.Lobby is null
+        StartBroadcastPublisher();
         PrintReady();
     }
 
@@ -459,6 +470,7 @@ public sealed partial class Server
             Console.WriteLine($"[debugtopology] peer {n + 1} spawned: ship {shipId}, hull {hull.Name}, side {sideId}, sector {home.Id} '{home.Name}'");
             return (ship, home);
         };
+        _hangarShipSpawner = ShipSpawner;
 
         Console.WriteLine("[boot] DEBUG MODE ACTIVE — side 0 home Omega(1053)/side 1 home Plato(1060), single warp each to Alderan(1052), Alderan sealed to just those 2 warps, Scout+Fighter mix");
     }
@@ -507,6 +519,7 @@ public sealed partial class Server
             Console.WriteLine($"[debugtopology] peer {n + 1} spawned: ship {shipId}, hull {hull.Name}, side {sideId}, sector {home.Id} '{home.Name}'");
             return (ship, home);
         };
+        _hangarShipSpawner = ShipSpawner;
     }
 
     private static Sector RequireSector(Mission mission, short id, string name) =>
@@ -749,7 +762,16 @@ public sealed partial class Server
 
     private void BindHostAndTransport()
     {
-        _host = new ServerHost();
+        bool decouple = _config.Receive?.Decouple ?? false;
+        string? receiveEnv = Environment.GetEnvironmentVariable("ALLEGIANCE_RECEIVE_DECOUPLE");
+        if (!string.IsNullOrWhiteSpace(receiveEnv))
+            decouple = receiveEnv == "1" || receiveEnv.Equals("true", StringComparison.OrdinalIgnoreCase);
+        _host = new ServerHost
+        {
+            ReceiveDecouple = decouple,
+            InboundTrace = _config.Receive?.Measure == true ? new InboundTrace() : null,
+        };
+        Console.WriteLine($"[boot] receive.decouple = {decouple.ToString().ToLowerInvariant()} (receive-worker decode; tick-boundary apply)");
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
@@ -762,6 +784,7 @@ public sealed partial class Server
         _host.ProjectileHit = BroadcastProjectileHullHit;      // P364: wire the site's ProjectileHitEvent to the wire broadcast
         _host.VictimDamaged = BroadcastVictimDamaged;          // P623: wire the site's VictimDamagedEvent to the targeted unicast
         _host.Collision = BroadcastCollision;                  // P463c: wire the site's CollisionEvent to the wire broadcast
+        _host.WeaponReadyNotification = BroadcastWeaponReady;
         _host.LoadoutChange = BroadcastLoadoutChange;          // P173: wire the site's LoadoutChangeEvent to the wire broadcast
         _host.AutoReload = BroadcastAutoReload;                // P361: wire the site's AutoReloadTriggered to the wire broadcast
         _host.MineCreated = BroadcastExportMine;                // P94: wire the site's MineCreatedEvent to the wire broadcast
@@ -769,7 +792,14 @@ public sealed partial class Server
         _host.MineHit = BroadcastMineHit;                       // P574: wire the site's MineHitEvent (per-hit pop at P2) to the wire broadcast
         _host.ProbeCreated = BroadcastExportProbe;             // P99: wire the site's ProbeCreatedEvent to the wire broadcast
         _host.ProbeDestroyed = BroadcastProbeDestroyed;        // P99: wire the site's ProbeDestroyedEvent to the wire broadcast
-        _host.TreasureDestroyed = BroadcastTreasureDestroyed;  // P586: wire the site's TreasureDestroyedEvent (expiry) to the whole-mission DESTROY_TREASURE
+        _host.TreasureGenerated = BroadcastGeneratedTreasure;
+        _host.TreasureDestroyed = treasure =>
+        {
+            BroadcastTreasureDestroyed(treasure);
+            // Expiry, unlike pickup, retains the flag payload (FedSrv.CPP:12504-12506).
+            if (treasure.Code == TreasureCode.Flag && treasure.OwnerMission is { } owner)
+                RespawnCarriedFlag(owner, treasure.Data.TreasureId);
+        };  // P586: wire the site's TreasureDestroyedEvent (expiry) to the whole-mission DESTROY_TREASURE
         _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast
         _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
@@ -781,7 +811,12 @@ public sealed partial class Server
         _host.FlagsKillsComputedHook = OnFlagsKillsComputed;  // P303: wire the flags/kills recompute to GAME_STATE(155) + P178 GameOver
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
-        var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers); // site set; assign the back-ref next
+        var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers)
+        {
+            Egress = TickProfiler.Instance is not null ? new EgressAccounting() : null,
+        }; // site set; assign the back-ref next
+        LastEgressWindow = null;
+        TickProfiler.WindowReported += EmitEgressWindow;
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
@@ -803,16 +838,8 @@ public sealed partial class Server
     /// packet the server emits flows through here so capture sees all of TX.</summary>
     private void SendPeer(ConnectionId target, byte[] packet)
     {
-        lock (_captureLock)
-            _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
-        // P604 — egress accounting (sim-thread only; see the field doc).
-        _egressBytesSent += packet.Length;
-        // P603 — internal test seam (InternalsVisibleTo): observe every outbound
-        // packet per recipient, in order, so the byte-identity harness can collect
-        // the exact per-peer payload stream both broadcast modes produce. Null in
-        // production, so this is a no-op check on the default path.
-        _testSendCapture?.Invoke(target, packet);
-        _host.Send(target, packet);   // ServerHost.Send forwards as guaranteed: true
+        if (_broadcastPublisher is null) PublishBytes(target, packet, 0, true);
+        else QueueBroadcast(target, new BroadcastPacket(packet), 0, true);
     }
 
     /// <summary>
@@ -830,14 +857,8 @@ public sealed partial class Server
     /// </summary>
     private void SendPeerCoalescing(ConnectionId target, byte[] packet, int coalesceKey, bool guaranteed = false)
     {
-        lock (_captureLock)
-            _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
-        // P604 — egress accounting (sim-thread only; see the field doc).
-        _egressBytesSent += packet.Length;
-        _testSendCapture?.Invoke(target, packet);
-        _testSendCoalescingCapture?.Invoke(target, packet, coalesceKey, guaranteed);
-        if (guaranteed) _host.SendGuaranteedCoalescing(target, packet, coalesceKey);
-        else _host.SendCoalescing(target, packet, coalesceKey);
+        if (_broadcastPublisher is null) PublishBytes(target, packet, coalesceKey, guaranteed);
+        else QueueBroadcast(target, new BroadcastPacket(packet), coalesceKey, guaranteed);
     }
 
     /// <summary>Capture one received packet before it is processed. Called from
@@ -1000,7 +1021,7 @@ public sealed partial class Server
         if (fromMapGen)
         {
             var pmp = ToCoreParams(mg!, g.Teams, g.CivIds);
-            map = MissionMapGenerator.Generate(pmp, core, 0.0);
+            map = MissionMapGenerator.Generate(pmp, core, _simNow);
             Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg!.Type}, "
                 + $"{map.Clusters.Count} sectors / {map.Warps.Count} warps / "
                 + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids");
@@ -1026,7 +1047,17 @@ public sealed partial class Server
         for (int t = 0; t < g.Teams; t++)
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
-        var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
+        var mission = Mission.Assemble(core, map, sides, _host, _simNow);  // preserve next-match clock
+        mission.AllowDevelopments = g.AllowDevelopments;
+        mission.AllowAlliedRip = g.AllowAlliedRip;
+        mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
+        g.Treasure.Validate();
+        mission.TreasureParameters = g.Treasure;
+        if (mg is not null)
+        {
+            mission.PopulateTreasures(_simNow, mg.PlayerSectorTreasures ?? 0,
+                mg.NeutralSectorTreasures ?? 0, mg.ArtifactsGame ?? false);
+        }  // site bound; core resolved
         // P402 — remember whether this mission's map came from MapGen so the
         // debug-topology machinery below (and the join/death/respawn paths that
         // share its station helpers) can tell a generated arena from the real
@@ -1425,7 +1456,7 @@ public sealed partial class Server
         string trans = _transportMode == TransportMode.Pool
             ? $"transport=pool ({_transportPoolWorkers} workers)"
             : "transport=thread-per-peer";
-        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
+        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; broadcast.immutableSnapshot={_broadcastSnapshotEnabled}; broadcast.encodeOnce={_broadcastEncodeOnceEnabled}; broadcast.interestTiers={_broadcastInterestTiersEnabled}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
     }
 
     private static string ParseShipUpdateModel(string modelStr)
@@ -1543,7 +1574,7 @@ public sealed partial class Server
                 break;
             case ReceivedEvt r:
                 CaptureReceived(r.Data);
-                ProcessDatagram(r.From, r.Data);
+                ProcessInboundPacket(r.From, r.Prepared ?? InboundPacket.Prepare(r.Data, decode: false));
                 break;
         }
     }
@@ -1577,6 +1608,7 @@ public sealed partial class Server
         // P315 — drop this peer's unsupported-fmid log-gate state so the
         // rate-limit table stays bounded by the live peer set.
         _unsupportedLog.Remove(id.Value);
+        _turretLog.Remove(id.Value);
         _duplicateLogonLog.Remove(id.Value);   // P646 — trim with the peer (same rationale)
         // M1 — release every remaining connection-scoped cache keyed by this
         // peer. The original ReleasePeer only freed _pendingSideSelect /
@@ -1590,6 +1622,10 @@ public sealed partial class Server
         _lastClusterInfoTick.Remove(id);
         _lastPingQuery.Remove(id);
         _peerRequests.Remove(id);   // P480 — forget the retained LogonRequest with the peer
+        RetireViewerUpdateCadence(id);
+        _adminAuthenticated.Remove(id);
+        _harnessAuthenticated.Remove(id);
+        _spectateSector.Remove(id);
         _peerShipUpdate.Remove(id); // P507 — release the per-peer ship-update cookie/counters with the peer
         if (!_peerShips.Remove(id, out var live))
         {
@@ -1789,11 +1825,15 @@ public sealed partial class Server
     /// background threads), then drop the host. Idempotent.</summary>
     public void Shutdown()
     {
+        TickProfiler.WindowReported -= EmitEgressWindow;
         // Heartbeat constructed last in Boot → torn down first, so its best-effort
         // deregister DELETE fires before the process tears down. Independent of the
         // transport shutdown (either order is fine) — kept first for reverse-of-boot clarity.
         _heartbeat?.Dispose();
         _heartbeat = null;
+        CompleteBroadcastSnapshot();
+        _broadcastPublisher?.Dispose();
+        _broadcastPublisher = null;
         _host?.Transport?.Shutdown();
         lock (_captureLock)
         {
@@ -1803,6 +1843,7 @@ public sealed partial class Server
         }
         Console.WriteLine($"[shutdown] clean: {LoopIterations} ticks, {Overruns} overruns");
         // P600 — flush + release the profiler's CSV handle (best-effort).
+        ShutdownUpdateCadence();
         ShutdownProfiler();
     }
 

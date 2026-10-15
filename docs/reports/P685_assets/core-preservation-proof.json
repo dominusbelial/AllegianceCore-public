@@ -1,0 +1,478 @@
+[
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Native_turn_law_applies_skill_to_stopping_drift(skill: 1, expectedYaw: -0.100000001)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.LoadedCorePartTables_GenerateNativeLauncherPackAndHardwareQuantities",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Ripcord_aborts_when_flag_is_acquired_or_anchor_hull_loses_capability(flag: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.PaydayTests.Payday_message_round_trips",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Ripcord_revalidates_alliance_and_allow_allied_rip_each_tick(allow: True, allied: False, legal: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Generated_map_reads_loaded_universe_radius_and_asteroid_lens(radius: 16000, lens: 0.800000012)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.TrajectoryExport_PreservesOriginalMilliseconds_AndInitialCollisionVelocity",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Malformed_rows_fail_validation(row: \"area,item,native,done,reason,5,extra\", diagnostic: \"columns\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Payday_only_accrues_and_pays_in_started_with_developments(stage: Started, developments: True, pays: False, treasureDevelopments: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Combat_uses_native_point_one_radian_lead_gate(angle: 0.109999999, fire: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_specific_target_must_be_present_hostile_damageable_and_scanned(invalid: \"dead\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanLeadLiveTests.SolveForLead_intercepts_a_laterally_moving_target",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Allied_neighbor_does_not_starve_default_or_defend_enemy_acquisition",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Combat_range_gate_uses_intercept_time_and_relative_speed(speedAway: 40, fire: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Reduced_light_anchor_is_valid_only_for_a_light_capable_ripper(lightRipper: True, legal: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_specific_target_must_be_present_hostile_damageable_and_scanned(invalid: \"absent\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.IrregularPayday_UsesNativeOverdueElapsedAndRetainsRemainder",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Malformed_rows_fail_validation(row: \"area,item,native,complete,reason,5\", diagnostic: \"status\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.Generator_UsesWeightedCoreEntries_AndNativePlacementAndSuppression",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Combat_range_gate_uses_intercept_time_and_relative_speed(speedAway: 0, fire: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_AOE_prioritizes_missiles_otherwise_ships(blastRadius: 0, expectsMissile: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_AOE_prioritizes_missiles_otherwise_ships(blastRadius: 1, expectsMissile: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_mine_decision_checks_pilot_distance_amount_and_load_time(pilot: 2, distance: 2499, deploy: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.P685_Started_gate_preserves_treasure_elapsed_and_both_development_controls(developments: False, treasureDevelopments: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Closing_too_fast_backs_off",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_mine_decision_checks_pilot_distance_amount_and_load_time(pilot: 10, distance: 2499, deploy: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Payday_only_accrues_and_pays_in_started_with_developments(stage: Over, developments: True, pays: False, treasureDevelopments: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_requires_nan_damage_missing_health_and_native_angle(power: -10, health: 0.5, angle: 0.0900000036, fire: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_respects_live_alliance_groups_and_reacquires_when_alliance_ends",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_prioritizes_known_station_and_excludes_allied_station(specific: True, allied: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Ripcord_aborts_when_flag_is_acquired_or_anchor_hull_loses_capability(flag: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.P685_Started_gate_preserves_treasure_elapsed_and_both_development_controls(developments: True, treasureDevelopments: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Acceleration_intercept_satisfies_native_quartic(distance: 100, relativeSpeed: -10, acceleration: 10)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Weapon_ready_notification_occurs_once_on_float_completion_and_again_after_remount",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Falling_behind_presses_in",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Projectile_crossing_blast_is_at_expiry_then_terminates_next_update(crossing: 1.5)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Malformed_rows_fail_validation(row: \"area,item,native,done,reason,0\", diagnostic: \"weight\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Accepted_return_to_base_slot_cleared_on_dock",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Generated_map_reads_loaded_universe_radius_and_asteroid_lens(radius: 8000, lens: 0.0500000007)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Missile_burnout_waits_for_previous_clock_and_explodes_at_previous_position",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Payday_only_accrues_and_pays_in_started_with_developments(stage: Started, developments: False, pays: False, treasureDevelopments: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Ripcord_revalidates_alliance_and_allow_allied_rip_each_tick(allow: True, allied: True, legal: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.Drift_MatchesNativeTenUnitDeceleration(elapsed: 10, distance: 500, speed: 0)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Ripcord_follows_the_same_anchor_when_it_changes_sector",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Starting_does_not_arm_payday_and_disabled_developments_preserve_phase_without_backpay",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_requires_nan_damage_missing_health_and_native_angle(power: -10, health: 0.5, angle: 0.109999999, fire: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Match_speed_bounds_match_native",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_specific_target_must_be_present_hostile_damageable_and_scanned(invalid: \"lifepod\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Payday_only_accrues_and_pays_in_started_with_developments(stage: Started, developments: True, pays: True, treasureDevelopments: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_requires_line_of_sight_except_for_flag_carrier(flag: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_specific_target_must_be_present_hostile_damageable_and_scanned(invalid: \"no_target\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_requires_nan_damage_missing_health_and_native_angle(power: 10, health: 0.5, angle: 0, fire: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_prioritizes_known_station_and_excludes_allied_station(specific: False, allied: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Payday_only_accrues_and_pays_in_started_with_developments(stage: Started, developments: False, pays: False, treasureDevelopments: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Teleport_activation_is_once_and_expiry_takes_precedence(delay: 2, lifespan: 100, expected: 1)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Malformed_rows_fail_validation(row: \"area,item,native,done,reason, sort by score\", diagnostic: \"weight\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Quoted_commas_partial_zero_credit_and_both_na_spellings_score_correctly",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Malformed_rows_fail_validation(row: \"area,item,native,done,reason,NaN\", diagnostic: \"weight\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.PaydayTests.Payday_message_emits_exact_declared_bytes",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Projectile_crossing_blast_is_at_expiry_then_terminates_next_update(crossing: 1)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_transverse_muzzle_preserves_current_up_when_turning(roll: 90)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.Drift_MatchesNativeTenUnitDeceleration(elapsed: 13, distance: 500, speed: 0)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.PaydayWindow_AccruesFractionalHomeAndNeutralRates_FromMissionAndCore",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Missile_activation_inside_tick_uses_only_active_interval",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_AOE_prioritizes_missiles_otherwise_ships(blastRadius: 1.00999999, expectsMissile: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_idle_clock_clamps_next_burst_to_previous_update",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Acceleration_intercept_satisfies_native_quartic(distance: 100, relativeSpeed: 0, acceleration: 10)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_specific_target_must_be_present_hostile_damageable_and_scanned(invalid: \"out_of_scan\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_station_uses_station_geometry_and_keeps_firing_at_full_station_health",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Missile_leads_moving_target_and_drops_it_after_sector_departure(staleSnapshot: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_requires_nan_damage_missing_health_and_native_angle(power: -10, health: 1, angle: 0, fire: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Acceleration_intercept_satisfies_native_quartic(distance: 100, relativeSpeed: 60, acceleration: 10)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.LateExport_AndDifferentTickPartitionsReachSameRestingPose_ThenExpire",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Alternate_ripcord_site_can_defer_at_zero_retry_and_consume_or_abort",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_prioritizes_known_station_and_excludes_allied_station(specific: False, allied: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Native_turn_law_applies_skill_to_stopping_drift(skill: 0.75, expectedYaw: -0.075000003)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.ArtifactRespawn_SelectsNeutralSectors_AndInitialPopulationUsesStartSets",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_requires_line_of_sight_except_for_flag_carrier(flag: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.OrdinaryPlacement_GivesUpAfterThreeBlockedAttempts",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.LiveQuickChatToDroneCommandTests.P676_Individual_repair_orders_ship_or_station_and_affirms_over_tcp(stationTarget: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Combat_range_gate_uses_intercept_time_and_relative_speed(speedAway: -40, fire: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_specific_target_must_be_present_hostile_damageable_and_scanned(invalid: \"allied\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Combat_uses_native_point_one_radian_lead_gate(angle: 0.0900000036, fire: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Reduced_light_anchor_is_valid_only_for_a_light_capable_ripper(lightRipper: False, legal: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_transverse_muzzle_preserves_current_up_when_turning(roll: -90)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Teleport_activation_is_once_and_expiry_takes_precedence(delay: 0, lifespan: 100, expected: 1)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Teleport_activation_is_once_and_expiry_takes_precedence(delay: -1, lifespan: 100, expected: 0)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Payday_only_accrues_and_pays_in_started_with_developments(stage: Starting, developments: True, pays: False, treasureDevelopments: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Malformed_rows_fail_validation(row: \"area,item,native,done,\\\"unclosed,5\", diagnostic: \"unexpected end\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Acceleration_intercept_satisfies_native_quartic(distance: 100, relativeSpeed: -60, acceleration: 10)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Ripcord_revalidates_alliance_and_allow_allied_rip_each_tick(allow: False, allied: True, legal: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Teleport_activation_is_once_and_expiry_takes_precedence(delay: 2, lifespan: 2, expected: 0)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.Drift_MatchesNativeTenUnitDeceleration(elapsed: 7, distance: 455, speed: 30)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.Drift_MatchesNativeTenUnitDeceleration(elapsed: 0.25, distance: 24.6875, speed: 97.5)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_burst_uses_historical_clocks_rotated_muzzle_and_launcher_fallback",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_specific_target_must_be_present_hostile_damageable_and_scanned(invalid: \"friendly\")",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_mine_decision_checks_pilot_distance_amount_and_load_time(pilot: 0, distance: 1000, deploy: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Match_speed_uses_native_graduated_formula",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Probe_transverse_muzzle_preserves_current_up_when_turning(roll: 0)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.LiveQuickChatToDroneCommandTests.P676_Individual_repair_orders_ship_or_station_and_affirms_over_tcp(stationTarget: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.P685_Started_gate_preserves_treasure_elapsed_and_both_development_controls(developments: True, treasureDevelopments: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Combat_uses_native_point_one_radian_lead_gate(angle: 0.400000006, fire: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.MovingLoot_SweepsAcrossPicker_WhenBothEndpointsAreOutsidePickupRadius",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P663TreasureParityTests.Drift_MatchesNativeTenUnitDeceleration(elapsed: 2, distance: 180, speed: 80)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_mine_decision_checks_pilot_distance_amount_and_load_time(pilot: 2, distance: 2500, deploy: False)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P676SimRulesTests.Repair_order_fires_real_projectiles_that_restore_friendly_hull",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.P681OrdnanceRulesTests.Missile_leads_moving_target_and_drops_it_after_sector_departure(staleSnapshot: True)",
+    "outcome": "Passed"
+  },
+  {
+    "test": "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+    "outcome": "Passed"
+  }
+]

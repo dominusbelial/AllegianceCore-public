@@ -47,8 +47,8 @@ public class ExpiryTests
 
         // Get() filters expired entries immediately (the detail endpoint 404s once stale)…
         Assert.Null(registry.Get(created.Id));
-        // …but List() is not lazily pruned: the entry lingers until the sweep actually runs.
-        Assert.Contains(created.Id, registry.List().Select(s => s.Id));
+        // P655: expired listings are hidden immediately, before the sweep.
+        Assert.DoesNotContain(created.Id, registry.List().Select(s => s.Id));
 
         registry.PruneExpired(TimeSpan.FromSeconds(90));    // sweep runs
 
@@ -84,9 +84,8 @@ public class ExpiryTests
         Assert.Equal(HttpStatusCode.NotFound,
             (await client.GetAsync($"/api/servers/{reg.Id}")).StatusCode);
 
-        // The public LIST still shows it — only a sweep removes it. So run the sweep through
-        // the app's own registry instance (exactly what ExpirySweepService.PruneExpired does).
-        Assert.Contains(reg.Id, (await client.GetFromJsonAsync<List<ServerListingDto>>("/api/servers"))!
+        // The public list also hides it before the background sweep.
+        Assert.DoesNotContain(reg.Id, (await client.GetFromJsonAsync<List<ServerListingDto>>("/api/servers"))!
             .Select(s => s.Id));
         app.Services.GetRequiredService<ServerRegistry>().PruneExpired(TimeSpan.FromSeconds(0.3));
 

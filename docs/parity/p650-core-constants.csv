@@ -1,0 +1,41 @@
+slot,name,native_reader_under_src,port_reader,PCore001_before,PCore001_after
+0,LensMultiplier,Igc/shipIGC.cpp:372; FedSrv/FedSrv.CPP:11737,Sim/Ship.cs:ApplyOutOfBoundsDamage; Server.Combat.cs:IsOutsideUniverse,0.200000003 (bounds absent),0.200000003
+1,RadiusUniverse,Igc/shipIGC.cpp:376; FedSrv/FedSrv.CPP:11738,Sim/Ship.cs:ApplyOutOfBoundsDamage; Server.Combat.cs:IsOutsideUniverse,5000 (bounds absent),5000
+2,OutOfBounds,Igc/shipIGC.cpp:377,Sim/Ship.cs:ApplyOutOfBoundsDamage,not implemented,25
+3,ExitWarpSpeed,FedSrv/fsship.cpp:126,ServerHost.cs:HitWarpEvent,15,15
+4,ExitStationSpeed,Igc/stationIGC.cpp:307; FedSrv/FedSrv.CPP:12959/13476,Server.Docking.cs:PerformRelaunch/PlaceRipcordNearTarget/RepositionForLaunch,50,50
+5,DownedShield,Igc/shieldIGC.cpp:158; Igc/shipIGC.cpp:851,Sim/Ship.cs:ApplyShieldDamage; Model/Sector.cs:IsDockOrBoardCandidate/ResolveDockCollisions,0.100000001,0.100000001
+6,SecondsBetweenPaydays,"FedSrv/fsmission.cpp:2253,2516",Model/Mission.cs:SecondsBetweenPaydays,60,60
+7,CapacityHe3,Igc/shipIGC.cpp:2213,Sim/Ship.cs:LoadedHe3Capacity,90,90
+8,ValueHe3,Igc/shipIGC.h:448,Sim/Ship.cs:LoadedHe3Value,80,80
+9,AmountHe3,Igc/mapmakerigc.cpp:954,MapGen/MissionMapGenerator.cs:AmountHe3,1500,1500
+10,MountRate,"Igc/afterburnerIGC.cpp:114; Igc/shipIGC.h:608,638",Sim/Ship.cs:MountRate/ReloadDebounceInterval,0.200000003,0.200000003
+11,StartingMoney,FedSrv/fsmission.cpp:1992,Model/Mission.cs:StartingMoneyPerSide,16000,16000
+12,WinTheGameMoney,Igc/missionigc.h:790,Model/Bucket.cs:ForSide/EnumerateDefs,80000 (dev.Price),72000
+13,RipcordTime,FedSrv/FedSrv.CPP:1676 (custom hull generation); Igc/shipIGC.h:1536 (ordinary countdown uses hull speed),Sim/Ship.cs:RipcordSpeed (ordinary hull countdown); custom hull loader absent; SIM-0014 remains partial,unused (stored 10),unused (stored 10)
+14,He3Regeneration,Igc/asteroidigc.h:52,Model/Sector.cs:He3Regeneration/ResolveMining,0.025,0.000166667
+15,PointsWarp,Igc/common.cpp:2675,Server/PlayerScore.cs:CalculateScore,2,2
+16,PointsAsteroid,Igc/common.cpp:2676,Server/PlayerScore.cs:CalculateScore,1,1
+17,PointsTech,Igc/common.cpp:2677,Server/PlayerScore.cs:CalculateScore,5,5
+18,PointsMiner,Igc/common.cpp:2678,Server/PlayerScore.cs:CalculateScore,10,10
+19,PointsBuilder,Igc/common.cpp:2679,Server/PlayerScore.cs:CalculateScore,20,20
+20,PointsLayer,Igc/common.cpp:2680,Server/PlayerScore.cs:CalculateScore,10,10
+21,PointsCarrier,Igc/common.cpp:2681,Server/PlayerScore.cs:CalculateScore,10,10
+22,PointsPlayer,Igc/common.cpp:2682,Server/PlayerScore.cs:CalculateScore,10,10
+23,PointsBaseKill,Igc/common.cpp:2683,Server/PlayerScore.cs:CalculateScore,25,25
+24,PointsBaseCapture,Igc/common.cpp:2684,Server/PlayerScore.cs:CalculateScore,25,25
+25,PointsFlags,Igc/common.cpp:2687,Server/PlayerScore.cs:CalculateScore,10,10
+26,PointsArtifacts,Igc/common.cpp:2686,Server/PlayerScore.cs:CalculateScore,10,10
+27,PointsRescues,Igc/common.cpp:2685,Server/PlayerScore.cs:CalculateScore,5,5
+28,RatingAdd,Igc/common.cpp:2711,Server/PlayerScore.cs:AdjustCombatRating,1.25,1.25
+29,RatingDivide,Igc/common.cpp:2713,Server/PlayerScore.cs:AdjustCombatRating,100,100
+30,Income,FedSrv/fsmission.cpp:2523,Model/Mission.cs:IncomePerPayday,600,600
+31,LifepodEndurance,Igc/shipIGC.cpp:1408,Sim/Ship.cs:LifepodTimeToDie,300,300
+32,WarpBombDelay,FedSrv/FedSrv.CPP:12551,Model/Sector.cs:EffectiveWarpBombDelay,15,15
+33,LifepodCost,Igc/clusterIGC.cpp:165,Model/Sector.cs:Update (P629; sim-rules-matrix.csv SIM-0034),not implemented,0.5
+34,TurretCost,Igc/clusterIGC.cpp:166,Model/Sector.cs:Update (P629; sim-rules-matrix.csv SIM-0035),not implemented,0.5
+35,DroneCost,Igc/clusterIGC.cpp:168,Model/Sector.cs:Update (P629; sim-rules-matrix.csv SIM-0036),not implemented,0.5
+36,PlayerCost,Igc/clusterIGC.cpp:167,Model/Sector.cs:Update (P629; sim-rules-matrix.csv SIM-0037),not implemented,1
+37,BaseClusterCost,Igc/clusterIGC.cpp:163,Model/Sector.cs:Update (P629; sim-rules-matrix.csv SIM-0038),not implemented,-72
+38,ClusterDivisor,Igc/clusterIGC.cpp:197,Model/Sector.cs:Update (P629; sim-rules-matrix.csv SIM-0039),not implemented,400
+39,Unused,No native reader (reserved),No reader (reserved),unused (debug padding),unused (debug padding)

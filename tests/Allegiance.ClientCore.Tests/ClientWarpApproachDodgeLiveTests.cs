@@ -268,6 +268,9 @@ public sealed class ClientWarpApproachDodgeLiveTests
         bot.SendPlayerReady(fReady: true, shipId: bot.World.MyShipId!.Value);
         int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
         Assert.True(started < 2000, $"mission never reached Started (stage={server.Missions[0].Stage})");
+        bot.SendDocked();
+        Assert.True(PumpUntil(server, () => server.Ships.Single(l => l.Ship.Id == bot.World.MyShipId).Ship.StationId is null, 4000) < 4000,
+            "the flight fixture must launch from the debug hangar");
 
         // Sanity: Alderan genuinely has its mining-hub rock field present
         // (nothing stripped) — this is the very field P484 showed blocks a
