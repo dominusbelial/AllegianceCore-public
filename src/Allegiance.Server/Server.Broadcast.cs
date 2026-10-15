@@ -1741,6 +1741,7 @@ public sealed partial class Server
     /// </summary>
     private void SweepCrossSideExports()
     {
+        PruneEmissionPoses();
         // Build the per-side audience once per tick: the side's seated connections
         // AND the sectors that side has a seated peer in (a peer only receives
         // ship telemetry for ships in its own cluster — see BroadcastShipsUpdate).
@@ -1896,7 +1897,7 @@ public sealed partial class Server
                         if (sideId == ownerSide) continue;            // own side — the deploy-time BroadcastExportMine path
                         if (!mine.SeenBySide(sideId)) continue;       // not spotted by this side's scanner net yet
                         foreach (var conn in conns)
-                            if (_crossSideMineExportSent.Add((conn, mine.Id)))
+                            if (PeerInMission(conn, mine.OwnerSector) && _crossSideMineExportSent.Add((conn, mine.Id)))
                                 SendCrossSideMineExport(conn, mine, sideId);
                     }
                 }
@@ -1919,6 +1920,12 @@ public sealed partial class Server
             (uint)TickIndex,
             launcherId: launcherId,
             sideId: mine.SideId ?? seeingSide);
+        // Discovery belongs to the mine, independently of its historical
+        // launcher (FedSrv.CPP:10754-10784). If the live layer is in this view,
+        // order its pose before the newly discovered field as well.
+        if (mine.Launcher is Ship layer && EmissionVisible(conn, layer, mine.OwnerSector)
+            && layer.Fraction > 0 && layer.StationId is null && layer.ParentShip is null)
+            EnsureEmissionPose(conn, layer, mine.OwnerSector);
         SendPeer(conn, PackBroadcast(new[] { Message(exp) }));
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} mine {mine.Id} (type {mine.MineType.ExpendableTypeId}) @ {mine.Position}");   // P619c: gated
     }
@@ -2072,25 +2079,10 @@ public sealed partial class Server
         return null;
     }
 
-    /// <summary>
-    /// P375 — the set of CROSS-SIDE connections that can currently see a combat
-    /// effect produced by <paramref name="subject"/> in sector
-    /// <paramref name="subjectSector"/>, as (connection, seeing side) pairs. This
-    /// is the EXACT cross-side audience gate P369 built — <b>reused, not
-    /// re-derived</b> — the same two conditions <see cref=\"SweepCrossSideExports\"/>
-    /// applies when it decides whether to export a cross-side ship's identity
-    /// (Server.Broadcast.cs): a seeing side must have a seated peer in the
-    /// subject's sector (the condition under which that side's HEAVY_SHIPS_UPDATE
-    /// telemetry flows for the subject, <see cref=\"BroadcastShipsUpdate\"/>), and
-    /// the subject must not be a cloak-hidden enemy of that side
-    /// (<c>BroadcastShipsUpdate.peerSees</c>, P270 drops those from telemetry).
-    /// Grouped per side like the sweep: if ANY seated peer of a side sits in the
-    /// subject's sector, that whole side's connections qualify (the side's scanner
-    /// net is shared). The subject's OWN side is excluded — those peers are the
-    /// same-side audience the callers already assemble. Sharing this one helper
-    /// between the identity sweep and the ordnance broadcasts guarantees they can
-    /// never disagree about who sees whom.
-    /// </summary>
+    /// <summary>Legacy cross-side audience for collision/side notifications:
+    /// a side with a seated peer in this sector, excluding cloak-hidden enemies.
+    /// Fire and deployment use BroadcastShipEmission instead, which also checks
+    /// each recipient's sector and orders the source pose before its effect.</summary>
     private IEnumerable<(ConnectionId Conn, short SeeingSide)> CrossSideViewers(Ship subject, Sector subjectSector)
     {
         short? subjectSide = subject.SideId;
@@ -2607,7 +2599,7 @@ public sealed partial class Server
         // P612 — an admin spectator's broadcast serves the sector its free camera
         // is viewing (ANY sector, all ships, side visibility ignored); everyone
         // else keeps their own-sector view.
-        bool adminSpectator = IsSpectatorAdmin(kv.Key) && _spectateSector.ContainsKey(kv.Key);
+        bool adminSpectator = HasAdminView(kv.Key);
         var sector = BroadcastSectorFor(kv.Key, kv.Value.Sector);
 
             // P270 — data-level cloak invisibility: when a ship is actually
@@ -2627,7 +2619,7 @@ public sealed partial class Server
             // ships is a separate concern, out of P270's scope.
             // P612 — an ADMIN spectator sees EVERY ship in the viewed sector,
             // including cloaked/undetected enemies (side visibility ignored).
-            bool peerSees(Ship c) => adminSpectator || !c.IsCloaked || self.SideId is not { } sd || c.SeenBySide(sd);
+            bool peerSees(Ship c) => ShipPoseVisible(self, c, adminSpectator);
 
             // 1. Resolve the peer's command target within its own cluster
             //    (native pmodelTarget->GetCommandTarget(c_cmdCurrent) then the
@@ -3217,78 +3209,50 @@ public sealed partial class Server
         return false;
     }
 
-    /// <summary>
-    /// P234 — the periodic half of missile observation: broadcast every
-    /// in-flight missile's current position/heading to the peers that can see
-    /// it, once per sim tick (the same per-tick cadence as the STATIONS/
-    /// ASTEROIDS/PROBES syncs and <see cref="BroadcastMissileLock"/>). This is
-    /// the <em>ongoing position</em> stream a renderer-only client needs because
-    /// it cannot simulate the missile's homing/turning locally (see
-    /// <see cref="Wire.MissileUpdate"/> and docs/MISSILE_RENDERING_P234.md).
-    /// <para/>
-    /// Audience: <b>same-side only</b>, grouped per side like
-    /// <see cref="BroadcastProbesUpdate"/> — a peer sees the missiles launched
-    /// by ships on its own side (cross-side visibility is not attempted,
-    /// matching <see cref="BroadcastFireMissile"/>). This is deliberately a hair
-    /// <em>broader</em> than creation's export-sent micro-gate (which only
-    /// reaches teammates who already hold the launcher's ExportShip): a peer who
-    /// missed the one-shot FIRE_MISSILE(70) can hydrate the missile straight
-    /// from this per-tick update, because ClientWorld upserts a missile entity
-    /// from a MissileUpdate record for an id it has not seen before. Bandwidth is
-    /// negligible (few missiles in flight per side).
-    /// <para/>
-    /// Runs on the sim thread (after the mission tick), so no extra locking is
-    /// needed — mirroring <see cref="BroadcastMissileLock"/> and the per-side
-    /// object syncs. Each record carries the missile's current <c>Position</c> /
-    /// <c>Forward</c> plus its id, type and cluster so the client can both pick
-    /// the model and sector-filter it like asteroids/warps.
-    /// </summary>
+    /// <summary>Per-viewer missile tracking in the viewed sector. Tracking can
+    /// hydrate a late viewer, so it orders the source identity/pose first and
+    /// records the viewer for guaranteed destruction cleanup.</summary>
     private void BroadcastMissilesUpdate()
     {
-        // Side universe = the sides with seated peers (the only sides that have
-        // anyone to send to). Group the peer connections by their ship's side —
-        // and each side's seated sectors (needed below for the cross-side gate) —
-        // in one pass over a stable snapshot.
-        var connsBySide = GatherSideConnections();
-        if (connsBySide.Count == 0) return;
-
-        // All in-flight missiles across every mission, once — read off the live
-        // sector model lists (the Missile case), never re-derived.
-        var allMissiles = _missions
-            .SelectMany(m => m.Sectors)
-            .SelectMany(s => s.Models)
-            .OfType<Missile>()
-            .ToArray();
-
-        foreach (var (sideId, conns) in connsBySide)
+        // Gather once: do not rescan every ship/model for every viewer, or
+        // allocate per-viewer record lists in sectors with no missiles.
+        var bySector = new Dictionary<Sector, List<Missile>>();
+        foreach (var mission in _missions)
+            foreach (var sector in mission.Sectors)
+                foreach (var model in sector.Models)
+                    if (model is Missile missile)
+                    {
+                        if (!bySector.TryGetValue(sector, out var list)) bySector[sector] = list = new();
+                        list.Add(missile);
+                    }
+        // A late viewer can hydrate a missile from tracking alone. Give that
+        // path the same reliable source dependency as a launch, per recipient.
+        foreach (var peer in _peerShips)
         {
-            var visible = allMissiles
-                .Where(m =>
+            var sector = BroadcastSectorFor(peer.Key, peer.Value.Sector);
+            if (!bySector.TryGetValue(sector, out var missiles)) continue;
+            var records = new List<MissileStateRecord>(missiles.Count);
+            foreach (var missile in missiles)
+            {
+                if (missile.Launcher is not Ship source) continue;
+                bool known = _missileViewers.TryGetValue(missile, out var viewers) && viewers.Contains(peer.Key);
+                if (EmissionVisible(peer.Key, source, sector))
                 {
-                    if ((m.Launcher as Ship) is not { } launcher || launcher.SideId is not { } ls) return false;
-                    if (ls == sideId) return true;   // same-side — the existing P234 rule (broader than creation; client sector-filters)
-                    // P375 — CROSS-SIDE: a peer of this side sees an enemy missile
-                    // iff this side has a seated peer in the missile's sector AND
-                    // the launcher is not cloak-hidden from this side — the exact
-                    // P369 cross-side visibility gate (BroadcastShipsUpdate.peerSees
-                    // + "seated peer in the shooter's sector"), the same condition
-                    // SweepCrossSideExports uses for identity and CrossSideViewers
-                    // for the ordnance creation broadcasts. So a cross-side viewer
-                    // tracks the enemy missile in real time (not a frozen spawn).
-                    if (!_broadcastSideSectors.TryGetValue(sideId, out var ss) || !ss.Contains(m.OwnerSector)) return false;
-                    if (launcher.IsCloaked && !launcher.SeenBySide(sideId)) return false;
-                    return true;
-                })
-                .Select(m => new MissileStateRecord(m.Id, m.MissileType.ExpendableTypeId, m.OwnerSector.Id, m.Position, m.Forward))
-                .ToArray();
-            if (visible.Length == 0) continue;              // no missiles this side can see this tick
-
-            var msg = new MissileUpdate { Records = visible };
-            var packet = PackBroadcast(Message(msg));
-            foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceMissiles);
-
-            ConsoleLog.Write($"[missile-update] side {sideId} sees {visible.Length} missile(s) " +
-                              $"=> MISSILE_UPDATE(205) -> {conns.Count} peer(s) [PER SIDE, same-side + cross-side]");
+                    if (source.Fraction > 0 && source.StationId is null && source.ParentShip is null)
+                        EnsureEmissionPose(peer.Key, source, sector);
+                    else if (!known) continue;
+                }
+                else if (!known) continue;
+                // Once launched, an already-known missile remains an independent
+                // object if the launcher cloaks, dies or leaves this sector.
+                if (viewers is null) _missileViewers[missile] = viewers = new();
+                viewers.Add(peer.Key);
+                records.Add(new(missile.Id, missile.MissileType.ExpendableTypeId,
+                    sector.Id, missile.Position, missile.Forward));
+            }
+            if (records.Count == 0) continue;
+            var packet = PackBroadcast(Message(new MissileUpdate { Records = records.ToArray() }));
+            SendPeerCoalescing(peer.Key, packet, CoalesceMissiles);
         }
     }
 

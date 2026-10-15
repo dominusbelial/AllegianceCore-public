@@ -1,0 +1,4 @@
+[
+  "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return",
+  "Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.First_emission_from_unexported_npc_orders_identity_sector_and_pose"
+]

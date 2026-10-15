@@ -1,0 +1,13 @@
+[
+  "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+  "Allegiance.Core.Tests.ArmedProbeLiveTests.P641_quick_ready_and_shoot_only_target_live",
+  "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+  "Allegiance.Core.Tests.MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy",
+  "Allegiance.Core.Tests.ProbeBroadcastTests.Directly_deployed_probe_broadcasts_create_and_destroy_to_teammate_but_not_enemy",
+  "Allegiance.Core.Tests.ProbeCombatLiveTests.Cross_side_missile_hits_probe_with_exact_computed_damage_and_it_survives",
+  "Allegiance.Core.Tests.ProbeCombatLiveTests.Lethal_hit_kills_probe_removes_from_sector_and_broadcasts_destroy_to_same_side_peer",
+  "Allegiance.Core.Tests.ProbeCombatLiveTests.Same_side_friendly_missile_damages_the_probe_no_friendly_fire_gate",
+  "Allegiance.Core.Tests.ProbesUpdateLiveTests.Combat_damage_reflected_in_next_update",
+  "Allegiance.Core.Tests.ProbesUpdateLiveTests.ProbesUpdate_codec_round_trips_multiple_entries",
+  "Allegiance.Core.Tests.ProbesUpdateLiveTests.Visible_probe_received_correct_fields_absent_from_unseeing_side"
+]

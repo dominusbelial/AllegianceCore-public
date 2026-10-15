@@ -30,6 +30,10 @@ public sealed partial class Server
         _minUpdateHz = Math.Min(hz, Math.Max(1, _config.UpdatesPerSecond));
         InitInterestTiers();
         _viewerPoseCadence.Clear();
+        _emissionViewers.Clear();
+        _missileViewers.Clear();
+        _probeViewers.Clear();
+        _fireSent = _fireNeverPosed = _fireInitialPoses = _fireRefreshPoses = _fireHidden = 0;
         _retiredPoseAges.Clear();
         _updateAgeWindowStart = UpdateCadenceNow;
         TickProfiler.WindowReported -= RequestUpdateAgeWindow;
@@ -45,6 +49,9 @@ public sealed partial class Server
     {
         TickProfiler.WindowReported -= RequestUpdateAgeWindow;
         _viewerPoseCadence.Clear();
+        _emissionViewers.Clear();
+        _missileViewers.Clear();
+        _probeViewers.Clear();
         _retiredPoseAges.Clear();
         _retiredTierAges.Clear();
     }
@@ -52,6 +59,17 @@ public sealed partial class Server
     internal void RetireViewerUpdateCadence(ConnectionId id)
     {
         RetireBroadcastProjectionCaches();
+        _emissionViewers.Remove(id);
+        foreach (var pair in _missileViewers)
+        {
+            pair.Value.Remove(id);
+            if (pair.Value.Count == 0) _missileViewers.Remove(pair.Key);
+        }
+        foreach (var pair in _probeViewers)
+        {
+            pair.Value.Remove(id);
+            if (pair.Value.Count == 0) _probeViewers.Remove(pair.Key);
+        }
         if (!_viewerPoseCadence.Remove(id, out var state)) return;
         // Preserve this viewer's contribution to the current window while
         // releasing its identity/ship caches immediately on disconnect.
@@ -91,7 +109,11 @@ public sealed partial class Server
         return string.Create(CultureInfo.InvariantCulture, $"[update-age] window={seconds:0.###}s viewers={_viewerPoseCadence.Count} minHz={_minUpdateHz:0.###} {total.FormatBands()} visiblePairs={pairs} older1s={older1} older3s={older3} older1sSamples={total.Older1} older3sSamples={total.Older3} neverPose={total.NeverPose} shipsBytes={total.PacketBytes} shipsBps={total.PacketBytes / seconds:0.0} floorExtraBytes={total.ExtraBytes} floorExtraBps={total.ExtraBytes / seconds:0.0}{(_broadcastInterestTiersEnabled ? FormatTierAges(tiers) : "")}");
     }
 
-    private void EmitUpdateAgeWindow() => Console.WriteLine(TakeUpdateAgeReport(UpdateCadenceNow));
+    private void EmitUpdateAgeWindow()
+    {
+        Console.WriteLine(TakeUpdateAgeReport(UpdateCadenceNow));
+        Console.WriteLine(TakeFireAudienceReport());
+    }
 }
 
 /// <summary>One viewer's state; owned by its sector worker. Capacity grows only
@@ -122,7 +144,7 @@ internal sealed class ViewerPoseCadence
     internal int TrackedCount => _stamps.Count;
 
     internal void Begin(IReadOnlyList<Ship> candidates, Ship self, Sector sector,
-        bool adminSpectator, double now, bool sample, Func<Ship, Ship, int>? classify = null, bool cloakOnly = false, Server? tierServer = null)
+        bool adminSpectator, double now, bool sample, Func<Ship, Ship, int>? classify = null, Server? tierServer = null)
     {
         if (_sector != sector || _viewer != self || _side != self.SideId)
         {
@@ -140,8 +162,7 @@ internal sealed class ViewerPoseCadence
         for (int i = 0; i < candidates.Count; i++)
         {
             var ship = candidates[i];
-            if (ship == self || (!adminSpectator && self.SideId is { } side
-                && (cloakOnly ? ship.IsCloaked : ship.SideId != side) && !ship.SeenBySide(side))) continue;
+            if (ship == self || !Server.ShipPoseVisible(self, ship, adminSpectator)) continue;
             _visible.Add(ship);
             if (!_stamps.TryGetValue(ship.Id, out var stamp) || stamp.Ship != ship)
                 stamp = new Stamp { Ship = ship, LastPose = now };

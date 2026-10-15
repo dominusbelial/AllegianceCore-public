@@ -140,6 +140,13 @@ public class MineBroadcastTests
             PumpUntil(server, () => obsBot.Exports.Any(e => e.ShipId == subjectId), 8000);
             Assert.Contains(obsBot.Exports, e => e.ShipId == subjectId);
 
+            // Fresh default seats now start in the hangar. Exercise emissions
+            // from a genuinely flying source through the real undock wire path.
+            bots[subject].SendDocked();
+            PumpUntil(server, () => layer.StationId is null, 4000);
+            Assert.Null(layer.StationId);
+            Assert.True(layer.Fraction > 0);
+
             // Deploy TWO mines directly at the current sim time. Distinct ids
             // (NextObjectId increments per call) and, since both share `now`,
             // both expire together — yielding two distinct destroys, proving no

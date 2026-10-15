@@ -4,6 +4,40 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P697 observation (2026-10-15)
+
+The final unfiltered runs reported Core **4555 pass / 3 fail**, ClientCore
+**1031 pass / 0 fail / 0 skip**, MonoGame **2199 pass / 0 fail / 3 existing
+optional Meshy-pack skips**, and Lobby **19 pass / 0 fail**. P542's local live
+proof and P660's local 15v15 showcase were explicitly enabled. Each of the three
+Core failures then passed **3/3 exact-method isolated reruns**:
+
+- `AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide`: no same-side observer in `SeatThree` setup.
+- `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy`: owner receipt collection empty.
+- `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector`: bystander activation receipt collection empty.
+
+An earlier unfiltered ClientCore run had a match-2 credited-kill timeout in
+`P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches`
+(native model, pipeline disabled). After the final clean ClientCore suite,
+all four cases of that method passed **3/3 isolated runs**. Earlier focused
+single failures in these methods also had three subsequent isolated passes:
+
+- `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction`
+- `CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return`
+- `CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate`
+
+These satisfy P697's load-flake rule. No deadlines, receipt assertions or
+quarantine settings were relaxed. Repeated deterministic failures in old
+ordnance fixtures were corrected by exercising real undock/launch state,
+clearing the station on missile expiry, notifying creation for a manually
+placed warp missile, and choosing an actually armed hull in the opt-in P542
+proof. Those corrections and the intentional golden transcript changes are
+not classified as load flakes.
+
+See [P697 report](reports/P697_GHOST_BATTLES.md),
+[complete invocation ledger](reports/P697_assets/results.json), and
+[development iterations](reports/P697_assets/development_results.json).
+
 ## P695 observation (2026-10-15)
 
 The final unfiltered workspace-output suites reported Core **4557 pass / 1 fail**,

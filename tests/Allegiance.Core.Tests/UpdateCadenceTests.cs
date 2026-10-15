@@ -209,6 +209,15 @@ public sealed class UpdateCadenceTests
         for (int i = 0; i < 10000; i++) state.Begin(both, self, sector, false, 1.2, true);
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
         subject.SideId = 1;
+        state.Begin(both, self, sector, false, 9, false);
+        Assert.Equal(1, state.TrackedCount); // uncloaked: same audience as ranked telemetry/fire
+        subject.MountPart(server.TestMission!.Core.PartTypes.Values.First(p => p.Type is DataPartTypeIGC.Cloak),
+            1, mountId: 0, fractionMounted: 255);
+        subject.Energy = 1_000_000;
+        subject.StateM = ShipControlState.CloakActive;
+        subject.Update(subject.LastUpdate + 0.05);
+        Assert.True(subject.IsCloaked);
+        subject.SideVisibility.SetSideVisibility(0, false);
         state.Begin(both, self, sector, false, 10, false);
         Assert.Equal(0, state.TrackedCount);
         var entries = new List<HeavyShipUpdateEntry>();
