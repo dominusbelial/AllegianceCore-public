@@ -441,6 +441,38 @@ public sealed class ProfilerConfig
 }
 
 /// <summary>
+/// P667 — the intra-sector parallel simulation configuration (top-level
+/// <c>sim</c> section). OFF by default (an absent section, or
+/// <c>parallelSectorCells:false</c>, preserves today's serial, byte-for-byte
+/// behaviour). When on, <c>Sector.Update</c>'s collision <b>detection</b> phase
+/// (the broad/narrow pair testing in the four detector-based passes: combat,
+/// ship-asteroid, ship-ship, ship-station) runs on
+/// <see cref="ParallelSectorCellThreads"/> workers with a deterministic merge.
+/// The result is byte-identical to the serial path for any thread count — see
+/// docs/reports/P667_PARALLEL_SECTOR_SIM.md.
+/// </summary>
+public sealed class SimConfig
+{
+    /// <summary>
+    /// Master switch. <c>false</c> (the default, and the meaning of an absent
+    /// <c>sim</c> section) leaves the sector sim exactly as it ran before P667.
+    /// <c>true</c> enables the parallel detection path (gated per detect).
+    /// Overridable at boot by <c>ALLEGIANCE_SIM_PARALLEL_CELLS</c> (env wins).
+    /// </summary>
+    public bool ParallelSectorCells { get; set; }
+
+    /// <summary>
+    /// Cap on the parallel detection phase's degree of parallelism
+    /// (<see cref="System.Threading.Tasks.Parallel.For"/> <c>MaxDegreeOfParallelism</c>).
+    /// When set, it is clamped to <c>[1, ProcessorCount]</c>; when null, the
+    /// <see cref="Allegiance.Core.Sim.ParallelSectorSim.ThreadCount"/> default
+    /// (about half the logical processors) is used. Diagnostic only — it never
+    /// changes which bytes are produced, only how fast.
+    /// </summary>
+    public int? ParallelSectorCellThreads { get; set; }
+}
+
+/// <summary>
 /// P603 — the parallel per-peer broadcast-build configuration (top-level
 /// <c>broadcast</c> section). OFF by default (an absent section, or
 /// <c>parallelBuild:false</c>, preserves today's serial, byte-for-byte
@@ -680,6 +712,13 @@ public sealed class ServerConfig
     /// <see cref="TransportConfig"/>.
     /// </summary>
     public TransportConfig? Transport { get; init; }
+
+    /// <summary>
+    /// P667 — the intra-sector parallel simulation settings. Null/absent (the
+    /// default) = OFF: the sector sim keeps today's serial, byte-for-byte
+    /// behaviour. See <see cref="SimConfig"/>.
+    /// </summary>
+    public SimConfig? Sim { get; init; }
 }
 
 /// <summary>Static helpers for reading <see cref="ServerConfig"/> from JSON.</summary>

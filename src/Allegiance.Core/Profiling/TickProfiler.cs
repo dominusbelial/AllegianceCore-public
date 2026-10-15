@@ -152,6 +152,12 @@ public sealed class TickProfiler
         lock (StaticGate) _label = label;
     }
 
+    /// <summary>P667 — read the current report-header label so a later resolver
+    /// can APPEND to it instead of clobbering the earlier flags (broadcast mode,
+    /// transport mode, ship-update model, sim time-scale). Strings are immutable
+    /// so the unlocked read is safe.</summary>
+    public static string? Label => _label;
+
     /// <summary>
     /// P618 — fired once per report window roll-over, immediately after the
     /// <c>[tickprof]</c> header (and bucket lines) are written. The server
@@ -286,6 +292,30 @@ public sealed class TickProfiler
     {
         var p = Instance;
         if (p is not null) p.Report();
+    }
+
+    /// <summary>
+    /// P667 — snapshot the current window's per-bucket aggregates (count, mean,
+    /// p95, max, total ms) WITHOUT rolling the window or touching the CSV. Lets a
+    /// benchmark (or a test) read where a run's time went directly from the
+    /// in-memory histograms. Returns an empty map when the profiler is off.
+    /// </summary>
+    public static Dictionary<string, (int Count, double MeanMs, double P95Ms, double MaxMs, double TotalMs)> Snapshot()
+    {
+        var p = Instance;
+        if (p is null) return new Dictionary<string, (int, double, double, double, double)>();
+        lock (p._lock)
+        {
+            var d = new Dictionary<string, (int, double, double, double, double)>();
+            foreach (var kv in p._hist)
+            {
+                var l = kv.Value;
+                if (l.Count == 0) continue;
+                double mean = MeanOf(l);
+                d[kv.Key] = (l.Count, mean, P95Of(l), MaxOf(l), mean * l.Count);
+            }
+            return d;
+        }
     }
 
     /// <summary>Record a sector's object/ship population for the next report.
