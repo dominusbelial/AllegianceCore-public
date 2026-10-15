@@ -577,6 +577,12 @@ public sealed partial class Game1
                 }
                 _debrisRenderer.Draw(_drawDustViews, cameraEye, view, proj);
 
+                // P628 — per-frame LOD bookkeeping reset (counts + far sprite list).
+                _lodFullCount = 0;
+                _lodFarCount = 0;
+                _lodDrawCalls = 0;
+                _drawFarSprites.Clear();
+
                 foreach (var (id, pose) in _poses)
                 {
                     // In cockpit mode the local hull is not drawn — you are inside
@@ -585,6 +591,7 @@ public sealed partial class Game1
                         continue;
 
                     var xnaPos = PoseConverter.ToXna(pose.Position);
+                    var eyeRel = xnaPos - cameraEye;                     // P612b camera-relative
                     var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
                     // P270 — alpha-blend cloaked ships (subtle shimmer over
                     // elapsed wall-clock); fully solid otherwise. The server
@@ -593,45 +600,112 @@ public sealed partial class Game1
                     float shipOpacity = _cloakedShips.Contains(id)
                         ? Flight.CloakVisual.Opacity(gameTime.TotalGameTime.TotalSeconds)
                         : 1f;
-                    var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
-                    // P566 — NATIVE ship path (default): draw the original .mdl mesh +
-                    // native texture at native scale/orientation under pure native sector
-                    // lighting. When the hull's native art failed to decode (ref null /
-                    // geometry null) it falls through to the Meshy content path below.
-                    if (ShipsNativeFor(id)
-                        && _nativeShipRefById.TryGetValue(id, out var nref) && nref is not null
-                        && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo)
+
+                    // P628 — level-of-detail selection. The projected on-screen
+                    // pixel radius (native GetImageRadius, context.cpp:1858-1871)
+                    // drives both the far-tier crossfade and native LODGeo level.
+                    float viewH = GraphicsDevice.Viewport.Height;
+                    float worldRadius = _shipRadiusById.TryGetValue(id, out var wr) && wr > 0f ? wr : 1f;
+                    float px = Rendering.ShipLod.ProjectedPixelRadius(eyeRel, worldRadius, view, proj, viewH);
+                    float farAmt = Rendering.ShipLod.FarAmount(px, _shipLodProfile);
+                    bool wasFar = _shipLodFar.TryGetValue(id, out var wf) && wf;
+                    bool isFar = Rendering.ShipLod.NextFarState(px, wasFar, _shipLodProfile);
+                    _shipLodFar[id] = isFar;
+                    if (isFar) _lodFarCount++; else _lodFullCount++;
+
+                    // P628 — draw the FULL model component whenever the far tier
+                    // hasn't fully taken over (crossfade: model fades out as the
+                    // sprite fades in → no popping). Within the full tier the
+                    // native LODGeo level is chosen by projected pixel radius.
+                    if (farAmt < 1f)
                     {
-                        var ntex = nref.TextureStem is not null ? _nativeShipRenderer.TextureFor(nref.TextureStem) : null;
-                        _nativeShipRenderer.Draw(ngeo, ntex, worldMat, view, proj, shipOpacity, nref.NativeScale, _sectorLighting);
-                    }
-                    else
-                    {
-                        // P333 — PURE VISUAL scale: normalize this ship's model to
-                        // its real hull size (1.0 when unknown). Affects rendering
-                        // only; the server's collision radius is untouched.
-                        float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
-                        // P337 — the real texture bound to this ship's model (paired
-                        // by the same resolved asset); fallback texture when the ship
-                        // fell back to the fallback model (resolved asset null).
-                        var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
-                            ? t : _fallbackTexture;
-                        // P607 — never pass null to ShipRenderer.Draw: when a
-                        // ship has no native art (failed resolution) and no
-                        // Meshy pack fallback (both shipModel and _fallbackModel
-                        // null — the P607 live crash), draw the guaranteed
-                        // procedural stand-in so the ship stays visible and
-                        // targetable, and log it once by ship id.
-                        var drawModel = shipModel ?? _fallbackModel;
-                        if (drawModel is null)
+                        float modelOp = shipOpacity * Rendering.ShipLod.ModelAlpha(farAmt, _shipLodProfile);
+                        var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
+                        // P566 — NATIVE ship path (default): draw the original .mdl
+                        // mesh + native texture at native scale/orientation under
+                        // pure native sector lighting. When the hull's native art
+                        // failed to decode (ref null / geometry null) it falls
+                        // through to the Meshy content path below.
+                        if (ShipsNativeFor(id)
+                            && _nativeShipRefById.TryGetValue(id, out var nref) && nref is not null
+                            && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo0)
                         {
-                            drawModel = _shipStandInModel;
-                            if (_standInLoggedShips.Add(id))
-                                Console.WriteLine($"[client] P607 unresolvable ship #{id} (no native art, no Meshy pack) — rendering procedural stand-in");
+                            var ntex0 = nref.TextureStem is not null ? _nativeShipRenderer.TextureFor(nref.TextureStem) : null;
+                            // P628 native LOD: select the LODGeo level by projected
+                            // pixel radius (geometry.cpp LODGeoImpl::Render), only
+                            // when fully in the near tier (during the crossfade the
+                            // base mesh is kept so the fade-out is seamless).
+                            var drawGeo = ngeo0;
+                            if (farAmt <= 0f && _nativeShipRenderer.LodLevelCount(nref.ModelStem!) > 0)
+                            {
+                                int lev = Rendering.ShipLod.NativeLodLevelFor(px, _nativeShipRenderer.LodPixelRadii(nref.ModelStem!));
+                                if (lev > 0)
+                                    drawGeo = _nativeShipRenderer.LodLevel(nref.ModelStem!, lev - 1) ?? ngeo0;
+                            }
+                            _nativeShipRenderer.Draw(drawGeo, ntex0, worldMat, view, proj, modelOp, nref.NativeScale, _sectorLighting);
+                            _lodDrawCalls++;
                         }
-                        _shipRenderer.Draw(drawModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
+                        else
+                        {
+                            // P333 — PURE VISUAL scale: normalize this ship's model to
+                            // its real hull size (1.0 when unknown). Affects rendering
+                            // only; the server's collision radius is untouched.
+                            float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
+                            // P337 — the real texture bound to this ship's model (paired
+                            // by the same resolved asset); fallback texture when the ship
+                            // fell back to the fallback model (resolved asset null).
+                            var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
+                                ? t : _fallbackTexture;
+                            // P607 — never pass null to ShipRenderer.Draw: when a
+                            // ship has no native art (failed resolution) and no
+                            // Meshy pack fallback (both shipModel and _fallbackModel
+                            // null — the P607 live crash), draw the guaranteed
+                            // procedural stand-in so the ship stays visible and
+                            // targetable, and log it once by ship id.
+                            var drawModel = shipModel ?? _fallbackModel;
+                            if (drawModel is null)
+                            {
+                                drawModel = _shipStandInModel;
+                                if (_standInLoggedShips.Add(id))
+                                    Console.WriteLine($"[client] P607 unresolvable ship #{id} (no native art, no Meshy pack) — rendering procedural stand-in");
+                            }
+                            _shipRenderer.Draw(drawModel, worldMat, view, proj, modelOp, scale, shipTex, _sectorLighting);
+                            _lodDrawCalls++;
+                        }
+                    }
+
+                    // P628 — draw the FAR sprite component (lit, side-tinted point)
+                    // batched one call per hull type; no trails/ribbons at this tier.
+                    if (farAmt > 0f)
+                    {
+                        var (sr2, sg2, sb2) = _shipSideRgbById.TryGetValue(id, out var sc) ? sc : (1f, 1f, 1f);
+                        float alpha = Rendering.ShipLod.SpriteAlpha(farAmt, px, _shipLodProfile);
+                        // Size the billboard so it projects to a small readable point.
+                        float targetPx = 5f;
+                        float dist = eyeRel.Length();
+                        float scalePx = (0.5f * viewH) * proj.M22;
+                        float half = dist > 1e-4f && scalePx > 0f ? targetPx * dist / scalePx : worldRadius;
+                        half = MathF.Min(half, worldRadius * 3f);
+
+                        string lookKey = "";
+                        if (ShipsNativeFor(id)
+                            && _nativeShipRefById.TryGetValue(id, out var fnref) && fnref is not null
+                            && fnref.TextureStem is { } tstem
+                            && _nativeShipRenderer.TextureFor(tstem) is { } ftex)
+                        {
+                            lookKey = tstem;
+                            RegisterLodTexture(lookKey, ftex);   // one draw call per hull type
+                        }
+                        var col = new Color(sr2, sg2, sb2, alpha);
+                        _drawFarSprites.Add(new Rendering.FarSprite(lookKey, eyeRel, half, col, 0f));
                     }
                 }
+
+                // P628 — draw the batched far-tier sprites (one call per hull type)
+                // AFTER the opaque scene so nearer geometry still occludes them via
+                // the depth test.
+                if (_shipLodSpriteRenderer is { } spr)
+                    _lodDrawCalls += spr.Draw(_drawFarSprites, view, proj);
 
                 // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
                 // (fine for the targeting code, which frustum-projects every
@@ -1360,6 +1434,8 @@ public sealed partial class Game1
                 // gate), for the local hull AND every visible remote ship.
                 foreach (var kv in _engineTrailEmitters)
                 {
+                    // P628 — no engine trails at the far tier (distant sprite ships).
+                    if (IsFarLod(kv.Key)) continue;
                     var et = kv.Value;
                     _engineTrail.Emit(new Rendering.EngineTrailShip(
                         kv.Key, et.Position, et.Velocity, et.Orientation, et.Radius,
@@ -1431,7 +1507,10 @@ public sealed partial class Game1
                 // Gate above.
                 _motionTrail.Advance((float)dt);
                 _drawMotionTrailStrips.Clear();
-                _drawMotionTrailStrips.AddRange(_motionTrail.Enumerate());
+                // P628 — no motion ribbons at the far tier (distant sprite ships);
+                // filter the enumerated strips by ship id.
+                foreach (var strip in _motionTrail.Enumerate())
+                    if (!IsFarLod(strip.ShipId)) _drawMotionTrailStrips.Add(strip);
                 _motionTrailRenderer.Draw(_drawMotionTrailStrips, cameraEye, view, proj);
 
                 // P263 — explosions. Under the Gate, prune finished blasts and
@@ -1986,6 +2065,20 @@ public sealed partial class Game1
         }
     }
 
+    /// <summary>P628 — register a far-tier sprite livery texture once per hull
+    /// look key so identical hulls share one batched draw call per type.</summary>
+    private void RegisterLodTexture(string lookKey, Texture2D tex)
+    {
+        if (_lodRegisteredTextures.Add(lookKey))
+            _shipLodSpriteRenderer?.RegisterTexture(lookKey, tex);
+    }
+
+    /// <summary>P628 — is this ship currently in the FAR tier (hysteresis-gated)?
+    /// Used to suppress engine trails / motion ribbons and the model depth
+    /// silhouette for distant sprite ships.</summary>
+    private bool IsFarLod(short id)
+        => _shipLodFar.TryGetValue(id, out var f) && f;
+
     /// <summary>
     /// P559 — gather the opaque scene geometry (ships, asteroids, stations) into
     /// the draw lists ONCE per frame, before the linear-depth pass. Running this
@@ -2016,6 +2109,9 @@ public sealed partial class Game1
         foreach (var (id, pose) in _poses)
         {
             if (_cameraMode == CameraMode.Cockpit && id == me) continue;
+            // P628 — far-tier ships draw as sprites, not models: no depth
+            // silhouette (their tiny point must not occlude soft smoke oddly).
+            if (IsFarLod(id)) continue;
             var xnaPos = PoseConverter.ToXna(pose.Position);
             var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
             // P566 — native depth geometry (original .mdl at native scale); else the
@@ -2415,7 +2511,10 @@ public sealed partial class Game1
             _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
                 _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
                 leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
-                commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner());
+                commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner(),
+                lodOverlay: Environment.GetEnvironmentVariable("ALLEGIANCE_LOD_OVERLAY") == "1"
+                    ? $"LOD full:{_lodFullCount} far:{_lodFarCount}"
+                    : null);
 
         // P578 — the eject/death feedback overlays drawn straight onto the HUD:
         // the critical/tip lines (native SetCriticalTipText/SetTipText), the

@@ -93,7 +93,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null, string? commandeeLabel = null, bool turretView = false)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null, string? commandeeLabel = null, bool turretView = false, string? lodOverlay = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -101,6 +101,13 @@ public sealed class HudRenderer
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
+            // P628 — LOD debug overlay: per-tier ship counts, drawn top-right
+            // when the caller supplies the line (env ALLEGIANCE_LOD_OVERLAY=1).
+            if (lodOverlay is { Length: > 0 })
+            {
+                var sz = _small.MeasureString(lodOverlay);
+                _sb.DrawString(_small, lodOverlay, new Vector2(w - sz.X - 12f, 12f), Color.White);
+            }
             // P228 — damage flash: a full-viewport translucent-red wash while the
             // local player's ship is mid flash-window (hull took a hit). Drawn
             // FIRST, beneath the reticle/HUD widgets, so the scene visibly tints

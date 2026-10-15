@@ -170,6 +170,11 @@ public sealed partial class Game1
             // P566 — the native ship renderer (parses .mdl meshes + native textures
             // at runtime from the artwork source, like ProjectileModelRenderer).
             _nativeShipRenderer = new Rendering.NativeShipRenderer(GraphicsDevice, _assets);
+            // P628 — the far-tier sprite batcher (distant ships as lit, side-tinted
+            // sprites/points, batched per hull type) + the env-configurable LOD
+            // thresholds. Profile is parsed at construction (FromEnv) and kept.
+            _shipLodSpriteRenderer = new Rendering.ShipLodSpriteRenderer(GraphicsDevice);
+            _shipLodProfile = Rendering.ShipLodProfile.FromEnv();
 
             // P306 — headless capture: an offscreen target the WHOLE frame is
             // rendered into (the P207 offscreen-render recipe — never the

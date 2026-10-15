@@ -705,6 +705,31 @@ public sealed partial class Game1 : Game
     // size to the real hull size so ships read at proportional real-world scale.
     private readonly Dictionary<short, float> _shipScaleById = new();
 
+    // P628 — per-ship level-of-detail state. Collected under the Gate with the
+    // other per-ship render tables; the Draw loop reads them lock-free.
+    // _shipRadiusById: the ship's rendered bounding-sphere radius in world units
+    // (0.5 × HullType.Length), the metric input to ProjectedPixelRadius.
+    // _shipSideRgbById: the ship's real side colour (team colour), fetched from
+    // the side roster under the Gate; the far-tier sprite's tint.
+    private readonly Dictionary<short, float> _shipRadiusById = new();
+    private readonly Dictionary<short, (float R, float G, float B)> _shipSideRgbById = new();
+    // Discrete far-tier state with hysteresis (ShipLod.NextFarState); suppresses
+    // engine trails / motion ribbons for far ships and stabilises the toggle.
+    private readonly Dictionary<short, bool> _shipLodFar = new();
+    // Debug overlay counters (per-tier counts) for the LOD hud line.
+    private int _lodFullCount, _lodFarCount;
+    // P628 — ship-pass draw-call counter (full-model draws + far-sprite batches),
+    // reset each frame; reported by the ALLEGIANCE_VOL_PERF frame-stats line so
+    // the before/after draw-call benchmark is measurable on the real client.
+    private int _lodDrawCalls;
+    private readonly List<Rendering.FarSprite> _drawFarSprites = new();
+    private readonly HashSet<string> _lodRegisteredTextures = new(StringComparer.Ordinal);
+
+    // P628 — configurable LOD thresholds (env overridable) and the far-tier
+    // sprite batcher (constructed in LoadContent when a GraphicsDevice exists).
+    private Rendering.ShipLodProfile _shipLodProfile = Rendering.ShipLodProfile.FromEnv();
+    private Rendering.ShipLodSpriteRenderer? _shipLodSpriteRenderer;
+
     // P566 — the native-ship renderer switch (--ships native|meshy; default native).
     private readonly bool _shipsNative;
     // P565 — the committed per-hull art override (assets/ships/ship-art.json) consulted by
@@ -1689,6 +1714,7 @@ public sealed partial class Game1 : Game
         _nativeAsteroidRenderer?.Dispose();   // P567 — native per-rock .mdl meshes + textures
         _nativeStationRenderer?.Dispose();    // P564 — native per-station-type .mdl meshes + textures
         _nativeShipRenderer?.Dispose();       // P646 — was never disposed (own GPU buffers/textures/effects)
+        _shipLodSpriteRenderer?.Dispose();    // P628 — far-tier sprite batcher
         _nativeTreasureRenderer?.Dispose();   // P646 — was never disposed (own GPU buffers/textures/effects)
         if (_asteroidTextures != null)
             foreach (var t in _asteroidTextures.Values) t.Dispose();

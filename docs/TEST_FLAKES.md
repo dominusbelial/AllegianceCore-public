@@ -132,6 +132,22 @@ P647's 4 measurement runs and are not quarantined; if they reappear, the fix is 
 their exact-content assertions marker-filtered (count only the lines the test itself
 produces) rather than quarantining.
 
+## P628 run A/B load flakes (confirmed in isolation, not P628 code)
+
+`scripts/run-tests.sh` runs A and B on the P628 final tree (client render LOD). Every
+failure was a live-wire load flake in test code P628 did not touch; each was re-run 3×
+in isolation (specific method):
+
+| test (main-pass flake) | isolation | verdict |
+|---|---|---|
+| `LiveShipDeathFinalizeTests.Oxygen_dead_lifepod_with_no_friendly_station_is_finalized_server_side` | 3/3 pass | load flake (live-wire lifepod finalize receipt) |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | 3/3 pass | load flake (live-wire game-over surviving-peer receipt) |
+| `P590PodRescueTests.Pod_pickup_order_streams_queued_order_to_real_player_rescuer` | 2/3 (one intermittent) | load flake (live-wire pod-pickup queued-order receipt) — already listed below in history |
+| `RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads` | 3/3 pass | load flake (live-wire socket-cleanup count, expected 10/actual 9 race) |
+
+The MonoGame suite (which contains the P628 LOD tests) was **fully clean** in both runs
+(A: 1977 passed / 0 failed; B: no failures).
+
 ---
 
 ## History (preserved verbatim from before P647)
