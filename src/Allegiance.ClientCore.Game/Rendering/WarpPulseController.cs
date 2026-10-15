@@ -59,6 +59,13 @@ public sealed class WarpPulseController
     /// <see cref="MaxSimultaneous"/>).</summary>
     public int ActiveCount => _active.Count;
 
+    /// <summary>Discard transit pulses when the viewed cluster changes.</summary>
+    public void Reset()
+    {
+        _active.Clear();
+        _seqCounter = 0;
+    }
+
     /// <summary>
     /// Begin (or restart) a transit pulse for <paramref name="warpId"/>, using
     /// <paramref name="now"/> as the pulse clock (monotonic seconds). A

@@ -65,7 +65,10 @@ public sealed class CommandCamera
     public static ShipEntity? FollowSubject(ClientWorld world, short id, short sector, bool sameSideOnly = true)
     {
         if (!world.Ships.TryGetValue(id, out var ship) || (sameSideOnly && ship.SideId != world.MySideId)
-            || ship.Unknown || ship.IsNotVisible) return null;
+            || ship.Unknown || ship.IsDead) return null;
+        // A boarded player's own hull is retired from the scene. Native
+        // resolves GetSourceShip BEFORE testing cluster/visibility
+        // (WinTrek.cpp:7506-7510); test the carrier's presence below.
         if (ship.ParentId >= 0)
         {
             if (!world.Ships.TryGetValue(ship.ParentId, out var carrier)) return null;

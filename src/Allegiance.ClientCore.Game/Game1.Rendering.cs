@@ -350,7 +350,8 @@ public sealed partial class Game1
         else // Flying
         {
             var world = _session.World;
-            if (world.MyShipId is { } me && _poses.TryGetValue(me, out var myPose))
+            if (world.MyShipId is { } me && _poses.TryGetValue(me, out var myPose)
+                && _flightEffects.Generation == world.SectorGeneration)
             {
                 var myPos = PoseConverter.ToXna(myPose.Position);
                 var myRot = PoseConverter.ToXnaRotation(myPose.Orientation);
@@ -800,6 +801,7 @@ public sealed partial class Game1
                     }
                 }
                 double dt = gameTime.ElapsedGameTime.TotalSeconds;
+                _flightEffects.Advance((float)dt);
                 foreach (var (wId, wPos, wOri, wRadius, wTex) in _drawWarps)
                 {
                     var wXnaPos = PoseConverter.ToXna(wPos);
@@ -1403,7 +1405,6 @@ public sealed partial class Game1
                         transitRadius,
                         (float)dt, _trailRandom);
                 }
-                _warpParticles.Update((float)dt);
                 _drawSparkViews.Clear();
                 _drawSparkViews.AddRange(_warpParticles.Enumerate());
                 _warpParticleRenderer.Draw(_drawSparkViews, cameraEye, view, proj);
@@ -1427,7 +1428,6 @@ public sealed partial class Game1
                         emRadius,
                         kv.Key, em.VentCount, (float)dt, _trailRandom);
                 }
-                _damageDebris.Update((float)dt);
                 _drawDebrisViews.Clear();
                 _drawDebrisViews.AddRange(_damageDebris.Enumerate());
                 _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
@@ -1450,7 +1450,6 @@ public sealed partial class Game1
                         kv.Key, et.Position, et.Velocity, et.Orientation, et.Radius,
                         _shipThrustPower.GetValueOrDefault(kv.Key)), (float)dt, _trailRandom);
                 }
-                _engineTrail.Update((float)dt);
                 _drawEngineTrailViews.Clear();
                 _drawEngineTrailViews.AddRange(_engineTrail.Enumerate());
                 _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
@@ -1514,7 +1513,6 @@ public sealed partial class Game1
                 // stretches behind every moving visible ship and fades/retracts
                 // when it stops. The anchor/right/colour were gathered under the
                 // Gate above.
-                _motionTrail.Advance((float)dt);
                 _drawMotionTrailStrips.Clear();
                 // P628 — no motion ribbons at the far tier (distant sprite ships);
                 // filter the enumerated strips by ship id.
@@ -1596,7 +1594,6 @@ public sealed partial class Game1
                         : Rendering.HullHitSparkParticles.ShipRadiusDefault;
                     _hullHitParticles.Emit(hit.Position, hit.Normal, hitRadius, _trailRandom);
                 }
-                _hullHitParticles.Update((float)dt);
                 _drawHullHitViews.Clear();
                 _drawHullHitViews.AddRange(_hullHitParticles.Enumerate());
                 _drawHullHitFlashes.Clear();
@@ -1653,7 +1650,6 @@ public sealed partial class Game1
                         shipOrient ?? Orientation.Identity,
                         hit.Position, ellipse, shieldRadius, meshRadius);
                 }
-                _shieldFlareParticles.Update((float)dt);
                 _drawShieldFlares.Clear();
                 _drawShieldFlares.AddRange(_shieldFlareParticles.Enumerate());
                 _shieldFlareRenderer.Draw(_drawShieldFlares, cameraEye, view, proj);
