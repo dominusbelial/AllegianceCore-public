@@ -286,7 +286,7 @@ public sealed class NativeOwnShipDockLiveTests
         Console.WriteLine($"[P518-LIVE] clock calibrated (err {calibErr:+0.000;-0.000}s), initial cookie 0x{cookie:X2}");
 
         // ── Phase 1: fly to the garrison and DOCK (#1) ──────────────────────────
-        Vector3 gpos = StationPos(garrison);
+        Vector3 gpos = DockTestPlacement.Inside(mission, garrison, ship.HullType);
         int creep1 = CreepToward(server, session, sim, clock, ref localT, ref cookie, ref lastPing,
             gpos, () => ship.StationId is not null, 3000);
         Assert.True(ship.StationId is not null, $"ship never docked #1 (after {creep1} ticks) — server not accepting poses?");
@@ -312,6 +312,7 @@ public sealed class NativeOwnShipDockLiveTests
         // debounce elapses and the dock pass latches it again.
         Assert.True(Undock(server, session, ship, sim, ref cookie, 4000) < 4000, "undock #1 did not complete");
         Console.WriteLine($"[P518-LIVE] UNDOCK #1 complete; re-seeded; cookie now 0x{cookie:X2}");
+        gpos = DockTestPlacement.Inside(mission, garrison, ship.HullType);
         int creep2 = CreepToward(server, session, sim, clock, ref localT, ref cookie, ref lastPing,
             gpos, () => ship.StationId is not null, 3000);
         Assert.True(ship.StationId is not null, $"ship never docked #2 (after {creep2} ticks) — accepted froze / silent cookie drops?");

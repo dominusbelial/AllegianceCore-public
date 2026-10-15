@@ -26,6 +26,11 @@ public sealed class HullLandingBayGeometry
     public required float Scale { get; init; }
     public required IReadOnlyList<HullLaunchSlot> LaunchSlots { get; init; }
     public required IReadOnlyList<HullLandSlot> LandSlots { get; init; }
+
+    /// <summary>Station capital bays precede ordinary fighter bays. Carrier and
+    /// synthetic geometry without a separate count uses every slot.</summary>
+    public int? CapitalLandSlots { get; init; }
+    public int CapLandSlots => CapitalLandSlots ?? LandSlots.Count;
 }
 
 /// <summary>
@@ -76,28 +81,25 @@ public static class HullLandingBay
     }
 
     /// <summary>
-    /// Reconstruct a <b>station</b> type's landing-bay geometry — the same
-    /// <c>garageNA</c> slot/plane algorithm, but from the station's own
-    /// <c>capgarage{N}{A..}</c> frames and scaled by
-    /// <c>stationtypeigc.cpp:92</c>'s <c>scale = radius / originalRadius</c>
-    /// (the station type's collision <c>Radius</c> over the model's header
-    /// radius). Native loads these in <c>CstationTypeIGC::Initialize</c>
-    /// (<c>stationtypeigc.cpp:77-101</c>: frames <c>capgarageXA</c>,
-    /// <c>capgarageXB</c>, …), the data the station dock gate's
-    /// <c>CstationIGC::InGarage</c> (<c>stationIGC.cpp:385-436</c>) consumes —
-    /// the station twin of <see cref="Reconstruct(CvhFile, float)"/>'s carrier
-    /// geometry. Note native sets <c>m_nCapLandSlots = m_nLandSlots</c>
-    /// (<c>stationtypeigc.cpp:101</c>), so a station exposes a single land-slot
-    /// set used for both fighters and capitals. Launch slots are not consumed
-    /// by the dock predicate, so none are reconstructed here
-    /// (<c>maxLaunchSlots: 0</c>); the returned geometry is the shared
-    /// <see cref="HullLandingBayGeometry"/> shape so it feeds the SAME
-    /// geometric <c>InGarage</c> test the carrier bays feed.
+    /// Reconstruct station bays in native order: capgarage slots first, then
+    /// garage slots, using the combined slot index and radius/model-radius scale
+    /// (Igc/stationtypeigc.cpp:46,71-144). Fighters use every slot; other hulls
+    /// use only the capital prefix (Igc/stationIGC.cpp:389-391).
     /// </summary>
     public static HullLandingBayGeometry ReconstructStation(CvhFile model, float radius)
     {
-        var scale = radius / model.Radius;                 // stationtypeigc.cpp:92
-        return Reconstruct(model, scale, "capgarage", maxLaunchSlots: 0);
+        var scale = radius / model.Radius;                 // stationtypeigc.cpp:46
+        var capital = Reconstruct(model, scale, "capgarage", maxLaunchSlots: 0);
+        var lands = capital.LandSlots.ToList();
+        int capCount = lands.Count;
+        // Native appends garage slots using the TOTAL slot index, rather than
+        // restarting at garage1 (Igc/stationtypeigc.cpp:102-144).
+        AppendLandSlots(model, scale, "garage", lands);
+        return new HullLandingBayGeometry
+        {
+            Scale = scale, LaunchSlots = capital.LaunchSlots,
+            LandSlots = lands, CapitalLandSlots = capCount,
+        };
     }
 
     /// <summary>The shared slot/plane reconstruction: scan <c>launchN</c> and
@@ -121,7 +123,19 @@ public static class HullLandingBay
         }
 
         var lands = new List<HullLandSlot>();
-        for (var slot = 0; ; slot++)                       // hullTypeIGC.cpp:180-212
+        AppendLandSlots(model, scale, landPrefix, lands);
+
+        return new HullLandingBayGeometry
+        {
+            Scale = scale,
+            LaunchSlots = launches,
+            LandSlots = lands,
+        };
+    }
+
+    private static void AppendLandSlots(CvhFile model, float scale, string landPrefix, List<HullLandSlot> lands)
+    {
+        for (var slot = lands.Count; ; slot++)                       // hullTypeIGC.cpp:180-212
         {
             if (slot >= MaxLandSlots) break;
             var planes = new List<HullLandPlane>();
@@ -136,13 +150,6 @@ public static class HullLandingBay
             if (planes.Count == 0) break;
             lands.Add(new HullLandSlot(planes));
         }
-
-        return new HullLandingBayGeometry
-        {
-            Scale = scale,
-            LaunchSlots = launches,
-            LandSlots = lands,
-        };
     }
 
     /// <summary>The load-time frame transform native <c>HitTest::Load</c> applies to

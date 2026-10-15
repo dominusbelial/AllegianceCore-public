@@ -2477,7 +2477,7 @@ public sealed partial class Game1
                 so.Set(Vec(f), Vec(u));
             SimVec center = Vec(station.Position);
 
-            // World-rotated bays from the capgarage plane-0 slots
+            // World-rotated bays from the landing slots (capital prefix, then fighters)
             // (native centers[i] = GetLandPosition(i,0)*itsOrientation).
             var bays = new List<DockApproach.DockBay>(geom.LandSlots.Count);
             foreach (var slot in geom.LandSlots)
@@ -2488,7 +2488,7 @@ public sealed partial class Game1
                     p0.Direction.Normalize() * so));
             }
             int nLand = DockApproach.StationBaysForClass(
-                hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.LandSlots.Count);
+                hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.CapLandSlots);
 
             float speed = vel.Length();
             float decel = hull.Mass > 0f ? hull.Thrust / hull.Mass : DockApproachFallbackDecel;

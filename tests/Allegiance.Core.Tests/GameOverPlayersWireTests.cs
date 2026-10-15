@@ -427,6 +427,8 @@ public sealed class GameOverPlayersWireTests
         var baseType = core.StationTypes.Values.First();
         var type = baseType with
         {
+            ModelName = "P699_SYNTHETIC_CONQUEST", // synthetic 40-unit base, no artwork bay
+
             // P550 — counts for victory + landable/capturable (native dock gate
             // shipIGC.cpp:725-727 needs a land bit for any capture/dock).
             SabmCapabilities = DataStationTypeIGC.SabmFlag | DataStationTypeIGC.SabmLand | DataStationTypeIGC.SabmCapLand,

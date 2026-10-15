@@ -261,7 +261,7 @@ public class RepairAndRefuelTests
     {
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var sector = mission.Sectors.First(s => s.Stations.Contains(station));
-        var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+        var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
         {
             SideId = station.SideId,
         };

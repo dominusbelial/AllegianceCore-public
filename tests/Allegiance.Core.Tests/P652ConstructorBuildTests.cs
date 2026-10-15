@@ -156,7 +156,9 @@ public sealed class P652ConstructorBuildTests
         Assert.Empty(sector.BuildingEffects);
         // H-18: launch the waiting constructor before issuing BUILD; native
         // drone orders distinguish LAUNCH from construction (FedSrv.CPP:7281-7322).
-        Invoke(server, "UndockShipState", ship, sector);
+        // Native constructors leave the station immediately (FedSrv.CPP:11355-11356).
+        // A center spawn is no longer implicitly docked by a 200-unit sphere.
+        if (ship.StationId is not null) Invoke(server, "UndockShipState", ship, sector);
         Assert.Null(ship.StationId);
         var rock = Rock(mission, sector, type, ship.Position + new Vector3(400, 0, 0));
         Order(server, ship, rock);

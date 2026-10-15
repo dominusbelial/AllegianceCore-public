@@ -146,7 +146,7 @@ public class LiveViewClusterTests
             // Controlled positions per role.
             if (idx == 0)       // requester: docked
             {
-                var ship = new Ship(id, hull, StationPos(dockStation) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+                var ship = new Ship(id, hull, DockTestPlacement.Inside(mission, dockStation, hull), Vector3.Zero, Orientation.Identity);
                 ship.SideId = sideA;
                 mission.PlaceShip(ship, dockSector);
                 layout.DockId = dockSector.Id;

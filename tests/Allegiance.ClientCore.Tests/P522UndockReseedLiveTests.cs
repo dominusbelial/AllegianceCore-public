@@ -255,7 +255,7 @@ public sealed class P522UndockReseedLiveTests
                 if (session.World.MyShipId is { } me && session.World.Ships.TryGetValue(me, out var mine))
                     frozenAtTick = mine.LastUpdateTick;
             }
-            serverShip.Position = stationCenter;
+            serverShip.Position = DockTestPlacement.Inside(serverShip.Mission!, st, serverShip.HullType);
             int docked = PumpUntil(server, () => serverShip.StationId is not null, 3000);
             if (docked >= 3000) throw new InvalidOperationException($"cycle {cycle}: ship never docked");
             long rejAfterDock = Pu(server, "Rejected");

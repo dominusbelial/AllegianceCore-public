@@ -1,0 +1,35 @@
+[
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exit": 0,
+    "seconds": 1.64,
+    "log": "/tmp/p699-validation/post-suite-000-isolation-1.log",
+    "trx": "/tmp/p699-validation/post-suite-000-isolation-1.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exit": 0,
+    "seconds": 1.64,
+    "log": "/tmp/p699-validation/post-suite-001-isolation-2.log",
+    "trx": "/tmp/p699-validation/post-suite-001-isolation-2.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exit": 0,
+    "seconds": 1.67,
+    "log": "/tmp/p699-validation/post-suite-002-isolation-3.log",
+    "trx": "/tmp/p699-validation/post-suite-002-isolation-3.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  }
+]
