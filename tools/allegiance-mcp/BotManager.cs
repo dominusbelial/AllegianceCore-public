@@ -3377,9 +3377,13 @@ bool isThreat =
 
         if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return false;
         Vector3 vel = Vector3.Zero;
+        GlobalAttributeSet attributes;
         lock (cs.Gate)
+        {
             if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.Latest is { } mu)
                 vel = mu.Velocity;
+            attributes = cs.World.GlobalAttributesFor(bot.Side);
+        }
 
         var so = new Orientation();
         if (st.Forward is { Length: 3 } f && st.Up is { Length: 3 } u) so.Set(Vec3(f), Vec3(u));
@@ -3397,20 +3401,15 @@ bool isThreat =
             hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.CapLandSlots);
 
         float speed = vel.Length();
-        float decel = hull.Mass > 0f ? hull.Thrust / hull.Mass : 55f;
-        float distanceRest;
-        Vector3 positionRest;
-        if (speed > 0.1f && decel > 0f)
-        {
-            distanceRest = (speed * speed) / (2f * decel);
-            positionRest = pos + vel * (distanceRest / speed);
-        }
-        else { distanceRest = 0f; positionRest = pos; }
+        float distanceRest = DockApproach.StoppingDistance(speed, hull.Thrust * attributes.Get(GlobalAttributeSet.Thrust),
+            hull.Mass, hull.Speed * attributes.Get(GlobalAttributeSet.MaxSpeed), hull.BackMultiplier);
+        Vector3 positionRest = speed > .1f ? pos + vel * (distanceRest / speed) : pos;
 
         float totalRadius = HullRadius(ActualHullId(bot)) + stype.Radius + 10f;
         var step = DockApproach.DockStation(
             pos, vel, orient, center, bays, nLand, distanceRest, positionRest,
-            totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false);
+            totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false,
+            bayPreference: hull.HasCapability(DataHullTypeIGC.HabmLifepod) ? bot.ShipId : 0);
 
         ctrl = DockApproach.Steer(step, pos, orient, vel, distanceRest);
         return true;
@@ -3663,12 +3662,28 @@ bool isThreat =
                     podPos, podOrient, bot.PodStationCenter), 0);
             return;
         }
-        EnsureCombatPath(bot, cur, bot.PodStationSector, now);
-        if (bot.Path.Count == 0) { LoiterCombat(bot, now); return; }
-        short next = CombatNextHop(bot, cur);
-        if (next == cur) return;
-        if (!TransitWarp(cs, bot, cur, next))
-            LoiterCombat(bot, now);
+        // Native FindPath seeds by mouth distance (Igc/common.cpp:917-958).
+        // Pods have no wing/staging objective: don't reuse the combat route or
+        // choose equal-hop alephs by sector id while their oxygen burns.
+        DataWarpIGC? warp = null;
+        lock (cs.Gate)
+            if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.Latest is { } pose)
+            {
+                // Plan once per sector/export topology, not at the 20Hz control
+                // cadence for every pod. Refresh when a partial export fills in.
+                if (bot.PodRouteSector != cur || bot.PodRouteWarpCount != cs.World.Warps.Count
+                    || !cs.World.Warps.ContainsKey(bot.PodRouteWarpId))
+                {
+                    var pick = PodReturnNavigation.NextWarp(cs.World.Warps, cur, bot.PodStationSector,
+                        pose.Position, bot.PodStationCenter);
+                    bot.PodRouteWarpId = pick?.WarpId ?? (short)-1;
+                    bot.PodRouteSector = cur;
+                    bot.PodRouteWarpCount = cs.World.Warps.Count;
+                }
+                if (cs.World.Warps.TryGetValue(bot.PodRouteWarpId, out var chosen)) warp = chosen;
+            }
+        if (warp is { } mouth) FlyWarpLeg(bot, Vec3(mouth.Position));
+        else LoiterCombat(bot, now);
     }
 
     /// <summary>P557 — the first real MINE DISPENSER part id in a loadout (a
@@ -5621,6 +5636,8 @@ bool isThreat =
         public DecisionSnapshot? DecisionFrame;
         public bool IsPod;
         public bool EverPod;                         // has this bot ever become a pod
+        public short PodRouteSector = -1, PodRouteWarpId = -1;
+        public int PodRouteWarpCount;
         public short PodStationId = -1;
         public short PodStationSector = -1;
         public Vector3 PodStationCenter;

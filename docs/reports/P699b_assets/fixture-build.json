@@ -1,0 +1,7 @@
+{
+  "finished": 1792107399.3627384,
+  "command": "NUGET_HTTP_CACHE_PATH=/tmp/p699b-nuget dotnet build tests/Allegiance.ClientCore.MonoGame.Tests --nologo",
+  "warnings": 0,
+  "errors": 0,
+  "unchanged_binary_count": 22
+}

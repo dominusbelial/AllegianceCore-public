@@ -744,6 +744,8 @@ public sealed partial class Server
             return;
         }
 
+        _podTrips.End(rescuee, _simNow, "rescued");
+
         // 3) Place the rescuee at the station — PerformTeleport's relocation
         // core (Server.cs:3284-3299): move to the station's cluster and latch
         // docked. FindFriendlyStation already guarantees same-side, so the
@@ -810,6 +812,8 @@ public sealed partial class Server
             Console.WriteLine($"[rescue] lifepod ship {rescuee.Id} reached station {station.StationId} but has no mission — station rescue dropped");
             return;
         }
+
+        _podTrips.End(rescuee, _simNow, "station-rescued");
 
         // Dock the pod at the rescue station — the same direct-dock relocation
         // core PerformRescue/PerformTeleport use (move to the station's sector,

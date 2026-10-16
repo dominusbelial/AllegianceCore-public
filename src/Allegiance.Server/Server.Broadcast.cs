@@ -21,6 +21,9 @@ namespace Allegiance.Server;
 /// </summary>
 public sealed partial class Server
 {
+    private readonly PodTripTelemetry _podTrips = new(Console.WriteLine);
+    internal PodTripTelemetry PodTrips => _podTrips;
+
     // P606 — per-peer coalesce keys for the latest-wins streaming broadcasts.
     // Each key is a distinct "message kind": within one peer's send queue only
     // the NEWEST pending frame per key is retained (older tick's snapshot is
@@ -218,6 +221,7 @@ public sealed partial class Server
                     foreach (var (rescuee, station) in sector.DrainStationRescues())
                         PerformStationRescue(rescuee, station);
         });
+        Step("podTrips", () => _podTrips.Sample(now, _missions));
         // P117 — perform the real relaunch this tick's carrier-landing pass
         // found (Sector.ResolveCarrierLandings). Server.PerformRelaunch is the
         // port of LandOnCarrierEvent (FedSrv.CPP:12808-13031): restore the

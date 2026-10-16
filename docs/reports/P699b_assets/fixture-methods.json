@@ -1,0 +1,10 @@
+[
+  [
+    "ClientCore.MonoGame",
+    "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks"
+  ],
+  [
+    "ClientCore.MonoGame",
+    "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback"
+  ]
+]

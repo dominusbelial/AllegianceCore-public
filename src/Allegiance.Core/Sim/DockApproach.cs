@@ -76,6 +76,16 @@ public static class DockApproach
     public static bool IsFast(this in Step s) => (s.Mask & Mask.Fast) != 0;
     public static bool WantsRoll(this in Step s) => (s.Mask & Mask.Roll) != 0;
 
+    /// <summary>Native kill-throttle drag solve (Igc/common.cpp:1936-1983).
+    /// Arguments are effective hull/side values, including actual ship mass.</summary>
+    public static float StoppingDistance(float speed, float thrust, float mass, float maxSpeed, float backMultiplier)
+    {
+        if (speed <= .1f || thrust <= 0 || mass <= 0 || maxSpeed <= 0 || backMultiplier <= 0) return 0;
+        double vMax = maxSpeed * (double)backMultiplier;
+        double k = thrust / (mass * (double)maxSpeed);
+        return (float)((speed - vMax * Math.Log(1 + speed / vMax)) / k);
+    }
+
     /// <summary>Fallback state when the hull has no bay of its class — native
     /// "power glide in" (<c>c_gpmFast</c> at the centre, <c>common.cpp:1517-1524</c>).</summary>
     public static Step PowerGlide(in Vector3 itsPosition) =>
@@ -105,7 +115,8 @@ public static class DockApproach
         float totalRadius,
         float rateYaw,
         float ratePitch,
-        bool experimental)
+        bool experimental,
+        int bayPreference = 0)
     {
         if (nLand <= 0)
             return PowerGlide(stationCenter);   // no bays for this hull class — native power glide (common.cpp:1517-1524)
@@ -113,7 +124,7 @@ public static class DockApproach
         Step step = DoApproach(
             myPosition, myVelocity, stationCenter, bays, nLand,
             distanceRest, positionRest, totalRadius, myOrientation,
-            rateYaw, ratePitch, experimental);
+            rateYaw, ratePitch, experimental, bayPreference);
 
         // c_gpmEnter → add c_gpmRoll (station: roll to fit the bay's orientation,
         // common.cpp:1540-1542 — the same line the carrier case adds at :1494).
@@ -150,7 +161,8 @@ public static class DockApproach
         in Orientation myOrientation,
         float rateYaw,
         float ratePitch,
-        bool experimental)
+        bool experimental,
+        int bayPreference = 0)
     {
         Vector3 dpNow = myPosition - itsPosition;
         Vector3 dpRest = positionRest - itsPosition;
@@ -162,8 +174,13 @@ public static class DockApproach
         float error2Best = float.MaxValue;
         float offset2Best = float.MaxValue;
 
-        for (int i = 0; i < nLand; i++)
+        // Native selects the least approach error (common.cpp:1239). Equal
+        // errors are interchangeable; rotate the stable tie order per pod so
+        // symmetric arrivals can use every bay without reservations/occupancy.
+        int first = nLand > 0 ? (bayPreference % nLand + nLand) % nLand : 0;
+        for (int offset = 0; offset < nLand; offset++)
         {
+            int i = (first + offset) % nLand;
             Vector3 pcenter = bays[i].Center;
             Vector3 pdirection = bays[i].Direction;
 

@@ -52,6 +52,8 @@ internal sealed partial class BotManager
         }
         bot.IsPod = bot.PodDocked = bot.PodRestarted = false;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
+        bot.PodRouteSector = bot.PodRouteWarpId = -1;
+        bot.PodRouteWarpCount = 0;
         bot.PodStationCenter = Vector3.Zero;
         bot.RelaunchAttempts = 0;
         bot.RelaunchAt = double.NegativeInfinity;

@@ -1,0 +1,89 @@
+[
+  {
+    "file": "src/Allegiance.ClientCore.Game/Game1.FlightInput.cs",
+    "sha256": "c3c679b6b81ee27442226fcd31ca727c3414961255d8545b3e29c5f430fdd8e2",
+    "modified": 1792102691.3255072
+  },
+  {
+    "file": "src/Allegiance.Core/Model/Sector.cs",
+    "sha256": "85b6ae068bfc91bd29de295a43db72a0ab06d7574fb8b49e147a0eb8af16f2f1",
+    "modified": 1792103001.7081149
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/DockApproach.cs",
+    "sha256": "a976bcb908db4f29c37036621d65ffbd36e6cd98fe033ce79a0d4299f44f55d0",
+    "modified": 1792102332.1844776
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/PodReturnNavigation.cs",
+    "sha256": "30cb0e19f467b4634631bbbb83aee6d20381aa419988d70c64920c48d603b014",
+    "modified": 1792102939.3464391
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/Ship.cs",
+    "sha256": "7ea895c56c81864b8b3c731ec59633aff0471b4fbd61eb2cb6c11ad343a40ddc",
+    "modified": 1792102332.1996698
+  },
+  {
+    "file": "src/Allegiance.Server/PodTripTelemetry.cs",
+    "sha256": "75e1d66b56d4c1ddd5329f837e83e22140d5bab564221890bb74c326c4291d31",
+    "modified": 1792103507.5885065
+  },
+  {
+    "file": "src/Allegiance.Server/Server.Broadcast.cs",
+    "sha256": "57dba8e1af13e0d5cfe818decd16ba3deaf76417e2cad48f357be8d98b516a91",
+    "modified": 1792103001.7073767
+  },
+  {
+    "file": "src/Allegiance.Server/Server.Combat.cs",
+    "sha256": "1bd213b245d90c17fbc369edd88eccfcf2fa8858e061e18c0a543da4fb879c2e",
+    "modified": 1792102256.6263947
+  },
+  {
+    "file": "src/Allegiance.Server/Server.Docking.cs",
+    "sha256": "0c7c71ee508ffdb82ec73734d1b3c16756e6a8f9db9b05c432b7493201a34fcb",
+    "modified": 1792103507.5878572
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P699bPodLoadTests.cs",
+    "sha256": "595113ef6fbe83a9a8b3b08ecfc141a2ae35abe114862662d777af6d00adaf78",
+    "modified": 1792103507.5886178
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P699bPodNavigationTests.cs",
+    "sha256": "600258a6eca4a39aad0bbef5e333b377df5cb765de6c29ef4637f3676b1e13ad",
+    "modified": 1792103001.7065732
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P699bPodTelemetryTests.cs",
+    "sha256": "cd91d6b3910931f7742db16e19a3c59dec35c186d943a6863c7595f8a0650bc6",
+    "modified": 1792103507.588672
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/StationRescueModelTests.cs",
+    "sha256": "52110b5ff3265cf7d0540a779760aa650a1961facd9c75aac67e8fb6bd39ece1",
+    "modified": 1792102610.5869274
+  },
+  {
+    "file": "tools/allegiance-mcp/BotManager.Lifecycle.cs",
+    "sha256": "4c8ea1a296e50bb42b1e7943d1f0c5639f16e15d26205272aa6fb9b549a0010d",
+    "modified": 1792103111.7102742
+  },
+  {
+    "file": "tools/allegiance-mcp/BotManager.cs",
+    "sha256": "1300ae627075f1d5664fa47c644e277a17eb29147b85d51cf889591fe413139d",
+    "modified": 1792103111.710082
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.MonoGame.Tests/P540EjectLiveProofTests.cs",
+    "sha256": "fd0814fae8c513b40df99ec14b703c8c0e6bf09b79d1ab78f668fb3bc45792f6",
+    "modified": 1792107298.4444306,
+    "build": "fixture"
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.MonoGame.Tests/P698StaleShipsLoopbackTests.cs",
+    "sha256": "5dd7fc989691060509edff8ff48a729042b86531f323b424eae8b3f6b765f15b",
+    "modified": 1792107298.4442704,
+    "build": "fixture"
+  }
+]

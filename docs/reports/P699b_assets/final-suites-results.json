@@ -1,0 +1,75 @@
+[
+  {
+    "project": "Core",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792105063.825063,
+    "finished": 1792105632.8048172,
+    "seconds": 568.98,
+    "log": "/tmp/p699b-validation/final-suites-000-Core.log",
+    "trx": "final-suites-000-Core.trx.gz",
+    "passed": 4583,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792105632.8104384,
+    "finished": 1792106273.415404,
+    "seconds": 640.6,
+    "log": "/tmp/p699b-validation/final-suites-001-ClientCore.log",
+    "trx": "final-suites-001-ClientCore.trx.gz",
+    "passed": 1060,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "(unfiltered)",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792106273.4175432,
+    "finished": 1792107210.1544845,
+    "seconds": 936.74,
+    "log": "/tmp/p699b-validation/final-suites-002-ClientCore.MonoGame.log",
+    "trx": "final-suites-002-ClientCore.MonoGame.trx.gz",
+    "passed": 2206,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback(scenario: \"teammate-pod-dock\")",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P698StaleShipsLoopbackTests.Departed_ship_leaves_hull_strobe_and_effect_gather_on_real_loopback",
+        "error": "departed ship excluded from actual gather gate"
+      },
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks",
+        "error": "ejected pod never docked at the rescue station (pumped 2000 ticks)"
+      }
+    ],
+    "skipped": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+    ]
+  },
+  {
+    "project": "Lobby",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792107210.1567636,
+    "finished": 1792107211.1168902,
+    "seconds": 0.96,
+    "log": "/tmp/p699b-validation/final-suites-003-Lobby.log",
+    "trx": "final-suites-003-Lobby.trx.gz",
+    "passed": 19,
+    "failed": [],
+    "skipped": []
+  }
+]
