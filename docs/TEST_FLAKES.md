@@ -811,6 +811,8 @@ Defending_side…`, `P590PodRescueTests.Pod_pickup_order_streams…`,
 `ClientCore…ShipDeleteGoneLiveTests.DockOut_WatcherLatchesGone_UndockReturnsAndClears` (P687 run 2; 3/3 in isolation — the fixed-P482 dock latch, live-wire),
 `Core…LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector` (P687 run 2; 3/3 in isolation — live-wire ripcord receipt).
 
+Added during P706: `ClientCore…P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds` — a live 15v15 showcase bot test that asserts no bot stays below idle speed with a target for >5 s (line `Assert.True(now - since <= 5, "Parked >5s")`). It is a bot-speed-under-machine-load timing flake, not the fixed-sleep wire-receipt class: under concurrent full-suite load (load avg 3+, other worktrees running suites) bots tick slowly enough to appear "parked". Confirmed pre-existing by running it on the pre-change commit `060fc834` under the same load: it failed there too (P706 post-change 1/3 pass, pre-change 2/3 pass — both intermittent). Independent of the P706 collision change (the change is proven byte-identical by P706SeparateCacheIdentityTests and the collision gameplay suite stays green).
+
 **Regression caught by the suite (P646, FIXED):** `TcpTransportGreetTimeoutPoolTests.
 Silent_connection_is_eventually_dropped` / `…ThreadPerPeer…` failed because the first P646
 `ReadExactly` applied `Socket.Poll` to blocking sockets, bypassing `ReceiveTimeout`; fixed

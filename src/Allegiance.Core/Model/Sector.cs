@@ -125,6 +125,16 @@ public sealed class Sector : IClusterIgc
     // asteroids, treasures etc. join later. Mirrors CclusterIGC::m_models.
     private readonly List<Model> _models = [];
 
+    // P706 — diagnostics: the number of ship↔ship collision events this sector's
+    // most recent ResolveShipShipCollisions pass dispatched (retained — i.e. that
+    // reached ResolveShipShipCollision). Measurement/testing seam only; not part
+    // of gameplay state.
+    internal int LastShipShipEvents { get; private set; }
+    // ...and how many of those ran the full Separate+resolution versus were
+    // rejected by the post-Separate approach debounce (which wastes the Separate).
+    internal int LastShipShipResolved { get; private set; }
+    internal int LastShipShipDebounced { get; private set; }
+
     // P324 (M3) — ship-update-candidate cache bookkeeping. GetShipUpdateCandidates
     // is called from many hot sites (BroadcastShipsUpdate per seated peer, plus the
     // NPC arbitration searches), each of which used to allocate a fresh list and
@@ -2613,6 +2623,9 @@ public sealed class Sector : IClusterIgc
         using (TickProfiler.Enter("collision.ship.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
         using var dispatchScope = TickProfiler.Enter("collision.ship.dispatch");
         var probeCache = new Separate.ProbeCache();
+        LastShipShipResolved = 0;
+        LastShipShipDebounced = 0;
+        int dispatched = 0;
         foreach (var ev in events)
         {
             var ship1 = ev.A.Data as Ship;
@@ -2620,8 +2633,10 @@ public sealed class Sector : IClusterIgc
             if (ship1 is null || ship2 is null) continue;   // only ship↔ship pairs interest this pass
             if (ReferenceEquals(ship1, ship2)) continue;
             if (ship1.Dead || ship2.Dead) continue;
+            dispatched++;
             ResolveShipShipCollision(now, ev, ship1, ship2, probeCache);
         }
+        LastShipShipEvents = dispatched;
     }
 
     private void ResolveShipShipCollision(double now, CollisionEvent ev, Ship ship1, Ship ship2, Separate.ProbeCache probeCache)
@@ -2644,7 +2659,9 @@ public sealed class Sector : IClusterIgc
         // sign convention is unchanged: from ship2 toward ship1, so a rear ship
         // bumping the one ahead has v1 − v2 along +normal and the normal-speed
         // formulas below accelerate the forward ship.
-        var sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB, probeCache);
+        Separate.Result sep;
+        using (TickProfiler.Enter("collision.ship.separate"))
+            sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB, probeCache);
         var normal = sep.Normal;
 
         // Mutual exclusivity with the rescue pass: a rescue-eligible pair is
@@ -2660,7 +2677,12 @@ public sealed class Sector : IClusterIgc
         // debounce (Sector.cs:1985-1987) adapted to the two-body relative
         // velocity. After the bounce the relative normal velocity is positive,
         // so no re-slam this tick.
-        if ((velocity1 - velocity2) * normal >= 0f) return;
+        if ((velocity1 - velocity2) * normal >= 0f)
+        {
+            LastShipShipDebounced++;
+            return;
+        }
+        LastShipShipResolved++;
 
         float mass1 = ship1.Mass;                 // shipIGC.cpp:1095
         float mass2 = ship2.Mass;                 // shipIGC.cpp:1098
@@ -2698,9 +2720,10 @@ public sealed class Sector : IClusterIgc
         // shipIGC.cpp:1189-1195) — the intensities are functions of the velocity
         // change, already known before the exemption. Routed through whichever
         // party has a mission site. See IIgcSite.CollisionEvent.
-        (ship1.Mission ?? ship2.Mission)?.Site.CollisionEvent(ship1, ship2, Id, sep.Position1,
-            (2.0f * damage1 + damage2) * ImpactJiggleCoefficient,
-            (damage1 + 2.0f * damage2) * ImpactJiggleCoefficient);
+        using (TickProfiler.Enter("collision.ship.event"))
+            (ship1.Mission ?? ship2.Mission)?.Site.CollisionEvent(ship1, ship2, Id, sep.Position1,
+                (2.0f * damage1 + damage2) * ImpactJiggleCoefficient,
+                (damage1 + 2.0f * damage2) * ImpactJiggleCoefficient);
 
         // HP pools for the damage split (shipIGC.cpp:1147-1158): each is the hull
         // hit-points plus ShieldFraction × MaxStrength when a Shield is mounted —

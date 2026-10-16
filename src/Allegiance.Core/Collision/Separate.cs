@@ -66,6 +66,37 @@ public static class Separate
     public sealed class ProbeCache
     {
         private readonly Dictionary<Key, (Vector3[] A, Vector3[] B)> _offsets = [];
+
+        // P706 — per-body cache of the 27 body-2 (GetMaxExtreme) support
+        // vertices. GetMaxExtreme(hts, d) is a pure function of the collider's
+        // hull/shape/scale/radius and the FIXED probe direction d — it never
+        // involves the body's orientation (Collider.GetMaxExtreme →
+        // GetHullExtreme is hull-local × scale). The pair-keyed _offsets cache
+        // recomputes these 27 supports for every DISTINCT pair, but in a dense
+        // fleet of few hull types (e.g. one fighter class relaunching in a
+        // mass) the same body's 27 supports repeat across thousands of pairs.
+        // Keying them by the body alone computes them once per unique body and
+        // is byte-for-byte the same support values — a pure memoisation, no
+        // gameplay change. (The body-1 `aa` terms depend on the relative
+        // orientation o, so they stay pair-keyed.)
+        private readonly Dictionary<BKey, Vector3[]> _bb = [];
+        private readonly record struct BKey(CvhFile? Hull, int Hts, int Scale, int Radius);
+
+        internal Vector3[] GetB(Collider b, int htsB)
+        {
+            var key = new BKey(b.Hull, htsB,
+                BitConverter.SingleToInt32Bits(b.Scale),
+                BitConverter.SingleToInt32Bits(b.EffectiveRadius));
+            if (!_bb.TryGetValue(key, out var arr))
+            {
+                arr = new Vector3[Directions.Length];
+                for (int i = 0; i < Directions.Length; i++)
+                    arr[i] = b.GetMaxExtreme(htsB, Directions[i]);
+                _bb.Add(key, arr);
+            }
+            return arr;
+        }
+
         private readonly record struct Bits(int X, int Y, int Z)
         {
             public static Bits Of(Vector3 v) => new(BitConverter.SingleToInt32Bits(v.X),
@@ -160,7 +191,9 @@ public static class Separate
                 HitShape.Sphere => dpLocal - cached.A[attempt],
                 _ => dpLocal + cached.A[attempt]
             } : a.GetMinExtreme(htsA, dpLocal, o, direction);
-            Vector3 eBb = offsets is { } cachedB ? cachedB.B[attempt] : b.GetMaxExtreme(htsB, direction);
+            Vector3 eBb = offsets is { } cachedB
+                ? cachedB.B[attempt]
+                : probeCache is { } pcB ? pcB.GetB(b, htsB)[attempt] : b.GetMaxExtreme(htsB, direction);
             Vector3 deltaA = eAa - eBb;
             double distance = deltaA * direction;
 
