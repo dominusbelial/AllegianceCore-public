@@ -1,0 +1,107 @@
+[
+  {
+    "revision": "5556eb0f",
+    "repetition": 1,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "--logger",
+      "trx;LogFileName=baseline-gate-1.trx",
+      "--results-directory",
+      "/tmp/p709/baseline-certified"
+    ],
+    "cwd": "/tmp/p709/base",
+    "exit_code": 0,
+    "seconds": 97.808,
+    "log": "/tmp/p709/baseline-certified/baseline-gate-1.log",
+    "trx": "/tmp/p709/baseline-certified/baseline-gate-1.trx",
+    "started_utc": "2026-10-16T13:44:13Z",
+    "counts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "failures": [],
+    "stdout": [
+      "P700 local 15v15: 94.2s, samples=941, reached=24/30, longest speed<1 with target=3.807s, shots=3736, hits=1949, kills=10\n{\"Cadence\":{\"BotCount\":30,\"Interval\":{\"Mean\":0.04999888031666638,\"P95\":0.05062450000001206,\"WorstBot\":\"mcp-b013-7985\",\"WorstValue\":0.05193349999999697},\"Jump\":{\"Mean\":11.666273372840136,\"P95\":21.248334884643555,\"WorstBot\":\"mcp-b013-7985\",\"WorstValue\":8379.7685546875}},\"DecisionPass\":{\"MeanMs\":1.421279492187502,\"P50Ms\":1.3929,\"P95Ms\":1.748,\"MaxMs\":4.3885},\"DecisionRateHz\":20.14739836644877,\"FleetDecisionRateHz\":604.4219509934632,\"Resources\":{\"CpuFraction\":0.5700753098188752,\"RssMb\":187.53125,\"Gen0\":209,\"Gen1\":142,\"Gen2\":2},\"MaxGateHoldMs\":0.1916,\"DecodeMbPerSec\":1.9609307651865244,\"SnapAgeMs\":{},\"SnapshotStats\":{},\"Stall\":{\"CurrentMinute\":{\"StartMonotonicMs\":1079017270,\"DurationMs\":36518,\"DecisionPassMaxMs\":4.3903,\"GcPauseMaxMs\":3.022,\"GcPauseTotalMs\":222.40000000000003,\"GcGen0\":98,\"GcGen1\":70,\"GcGen2\":0,\"ThreadPoolThreadsMax\":11,\"ThreadPoolPendingMax\":1,\"ThreadPoolNoProgressMaxMs\":0,\"WatchdogLateMaxMs\":1,\"SessionsReadOver2sMax\":0,\"SessionsReadOver5sMax\":0},\"LastCompletedMinute\":{\"StartMonotonicMs\":1078957203,\"DurationMs\":60067,\"DecisionPassMaxMs\":26.6181,\"GcPauseMaxMs\":13.155,\"GcPauseTotalMs\":271.262,\"GcGen0\":108,\"GcGen1\":72,\"GcGen2\":2,\"ThreadPoolThreadsMax\":9,\"ThreadPoolPendingMax\":1,\"ThreadPoolNoProgressMaxMs\":0,\"WatchdogLateMaxMs\":2,\"SessionsReadOver2sMax\":0,\"SessionsReadOver5sMax\":0},\"ThreadPoolThreads\":11,\"ThreadPoolPending\":0,\"ThreadPoolNoProgressMs\":0,\"ThreadPoolStarvationSuspected\":false,\"WatchdogLateMs\":0,\"WatchdogSampleAgeMs\":88,\"Sessions\":31,\"SessionsReadOver2s\":0,\"SessionsReadOver5s\":0,\"ReceiveAgeMaxMs\":8,\"DecisionPassInProgressMs\":0,\"IncidentCount\":0,\"LogDroppedLines\":0},\"IdleWithTarget\":{\"CurrentCount\":0,\"BotsLastMinute\":0,\"SampleAgeSeconds\":0.8969091999999961}}"
+    ]
+  },
+  {
+    "revision": "5556eb0f",
+    "repetition": 2,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "--logger",
+      "trx;LogFileName=baseline-gate-2.trx",
+      "--results-directory",
+      "/tmp/p709/baseline-certified"
+    ],
+    "cwd": "/tmp/p709/base",
+    "exit_code": 0,
+    "seconds": 101.559,
+    "log": "/tmp/p709/baseline-certified/baseline-gate-2.log",
+    "trx": "/tmp/p709/baseline-certified/baseline-gate-2.trx",
+    "started_utc": "2026-10-16T13:45:50Z",
+    "counts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "failures": [],
+    "stdout": [
+      "P700 local 15v15: 98.0s, samples=979, reached=25/30, longest speed<1 with target=4.007s, shots=4650, hits=2876, kills=16\n{\"Cadence\":{\"BotCount\":30,\"Interval\":{\"Mean\":0.04999993483333448,\"P95\":0.050592699999995716,\"WorstBot\":\"mcp-b002-5362\",\"WorstValue\":0.051084800000012365},\"Jump\":{\"Mean\":9.079230872795126,\"P95\":18.000045776367188,\"WorstBot\":\"mcp-b029-7750\",\"WorstValue\":3201.553955078125}},\"DecisionPass\":{\"MeanMs\":1.3925664062499987,\"P50Ms\":1.3666,\"P95Ms\":1.7542,\"MaxMs\":4.2085},\"DecisionRateHz\":20.230997529791733,\"FleetDecisionRateHz\":606.9299258937519,\"Resources\":{\"CpuFraction\":0.623961,\"RssMb\":187.65625,\"Gen0\":221,\"Gen1\":16,\"Gen2\":2},\"MaxGateHoldMs\":0.2009,\"DecodeMbPerSec\":2.002124786376953,\"SnapAgeMs\":{},\"SnapshotStats\":{},\"Stall\":{\"CurrentMinute\":{\"StartMonotonicMs\":1079115105,\"DurationMs\":40287,\"DecisionPassMaxMs\":7.3321,\"GcPauseMaxMs\":3.007,\"GcPauseTotalMs\":230.88400000000001,\"GcGen0\":111,\"GcGen1\":6,\"GcGen2\":0,\"ThreadPoolThreadsMax\":11,\"ThreadPoolPendingMax\":0,\"ThreadPoolNoProgressMaxMs\":0,\"WatchdogLateMaxMs\":3,\"SessionsReadOver2sMax\":0,\"SessionsReadOver5sMax\":0},\"LastCompletedMinute\":{\"StartMonotonicMs\":1079055042,\"DurationMs\":60063,\"DecisionPassMaxMs\":26.9291,\"GcPauseMaxMs\":12.846,\"GcPauseTotalMs\":250.459,\"GcGen0\":108,\"GcGen1\":9,\"GcGen2\":2,\"ThreadPoolThreadsMax\":9,\"ThreadPoolPendingMax\":1,\"ThreadPoolNoProgressMaxMs\":0,\"WatchdogLateMaxMs\":5,\"SessionsReadOver2sMax\":0,\"SessionsReadOver5sMax\":0},\"ThreadPoolThreads\":11,\"ThreadPoolPending\":0,\"ThreadPoolNoProgressMs\":0,\"ThreadPoolStarvationSuspected\":false,\"WatchdogLateMs\":0,\"WatchdogSampleAgeMs\":53,\"Sessions\":31,\"SessionsReadOver2s\":0,\"SessionsReadOver5s\":0,\"ReceiveAgeMaxMs\":17,\"DecisionPassInProgressMs\":0,\"IncidentCount\":0,\"LogDroppedLines\":0},\"IdleWithTarget\":{\"CurrentCount\":0,\"BotsLastMinute\":0,\"SampleAgeSeconds\":0.039742099999998004}}"
+    ]
+  },
+  {
+    "revision": "5556eb0f",
+    "repetition": 3,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "--logger",
+      "trx;LogFileName=baseline-gate-3.trx",
+      "--results-directory",
+      "/tmp/p709/baseline-certified"
+    ],
+    "cwd": "/tmp/p709/base",
+    "exit_code": 1,
+    "seconds": 95.556,
+    "log": "/tmp/p709/baseline-certified/baseline-gate-3.log",
+    "trx": "/tmp/p709/baseline-certified/baseline-gate-3.trx",
+    "started_utc": "2026-10-16T13:47:32Z",
+    "counts": {
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    "failures": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "message": "Parked >5s: {\"Name\":\"mcp-b025-2412\",\"ShipId\":8121,\"Side\":1,\"Hull\":\"Hvy Interceptor\",\"Sector\":1052,\"Behavior\":\"combat\",\"Position\":[-2482.2041015625,1181.655029296875,-12.095510482788086],\"Target\":8102,\"OrderedTarget\":null,\"Engagers\":3,\"WorldReady\":true,\"WorldReadyDelaySec\":0.04454029999999998,\"WorldNotReadyAttempts\":0,\"RouteIndex\":0,\"RouteName\":\"R0:1051\\u21921061\\u21921052\",\"Role\":\"Interceptor\",\"State\":\"active\",\"DefenseSector\":null,\"TargetSector\":1052,\"StagingSector\":1061,\"StagePhase\":2,\"Velocity\":[0,0,0],\"Speed\":0,\"Idle\":false}",
+        "stack": "   at Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds() in /tmp/p709/base/tests/Allegiance.ClientCore.Tests/P700ShowcaseLiveTests.cs:line 51\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+      }
+    ],
+    "stdout": [
+      ""
+    ]
+  }
+]

@@ -4,6 +4,31 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P709 observation (2026-10-16)
+
+The unfiltered sequential suites reported Core **4,691 pass / 2 fail / 0 skip**,
+ClientCore **1,087 pass / 0 fail / 0 skip** (local P660 showcase enabled), and
+MonoGame **2,237 pass / 0 fail / 3 existing optional private Meshy-pack skips**.
+After all three suites finished, both failed Core methods passed **3/3
+exact-method isolated invocations**:
+
+| Full-suite method | Symptom | Isolated result |
+| --- | --- | --- |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Owner/teammate loadout-change receipt collection empty at `Assert.Contains`. | 3/3 pass |
+| `LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission` | Countdown receipt collection empty at `Assert.Single`. | 3/3 pass |
+
+These satisfy P709's explicit load-flake rule. No assertions, timeouts,
+quarantine settings, or transport/receipt behavior were changed. Isolated
+passes do not establish an underlying fix. See the [P709 report](reports/P709_PARITY_WAVE12.md)
+and [invocation ledger](reports/P709_assets/verification.json) for commands,
+raw counters, messages/stacks, and individual TRX/log locations.
+
+The separate mandatory P700 parking gate was **8 pass / 2 fail** across ten
+isolated runs. That zero-failure gate remains **failed**; it is not waived by
+this receipt-flake classification. Parking/dispenser/readiness fixes are
+explicitly assigned to P707 by the brief. The report separately records the
+untouched-base comparison.
+
 ## P702 observation (2026-10-15)
 
 The first unfiltered Core run reported **4,570 pass / 5 fail / 0 skip**.

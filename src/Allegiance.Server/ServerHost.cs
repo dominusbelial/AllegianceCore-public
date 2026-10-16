@@ -4,6 +4,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
+using ChatMessage = Allegiance.Core.Wire.ChatMessage;
 
 namespace Allegiance.Server;
 
@@ -500,6 +501,19 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public bool QueueRipcordUse => true;
     public Action<Ship, string>? WeaponReadyNotification;
     public void WeaponReady(Ship ship, string partName) => WeaponReadyNotification?.Invoke(ship, partName);
+
+    public Action<Ship?, ChatMessage>? ChatRequested;
+    // Igc/igc.h:4801-4825; FedSrv/FedSrv.CPP:13652-13693.
+    public void SendChat(IShipIgc pshipSender, ChatTarget chatTarget, short oidRecipient,
+        short soVoiceOver, string szText, short cid = -1,
+        IgcObjectType otTarget = (IgcObjectType)(-1), short oidTarget = -1,
+        IModelIgc? pmodelTarget = null, bool bObjectModel = false) =>
+        ChatRequested?.Invoke(pshipSender as Ship, new ChatMessage
+        {
+            Message = szText, SidSender = pshipSender is Ship sender ? sender.Id : (short)-1,
+            ChatTarget = (int)chatTarget, OidRecipient = oidRecipient, VoiceOver = soVoiceOver,
+            CommandID = cid, OtTarget = (short)otTarget, OidTarget = oidTarget, BObjectModel = bObjectModel,
+        });
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.LoadoutChangeEvent"/>: raise the
     /// <see cref="LoadoutChange"/> hook so the owning <see cref="Server"/> can

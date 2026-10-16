@@ -800,6 +800,7 @@ public sealed partial class Server
         _host.SideLostRestartStationHook = OnSideLostRestartStation;   // P455: wire the site's restart-station-loss seam to the station-elimination win (DeactivateSide)
         _host.ProsperityArtifactComputedHook = OnProsperityArtifactComputed;  // P302: wire the prosperity/artifact recompute to GAME_STATE(155) + P178 GameOver
         _host.FlagsKillsComputedHook = OnFlagsKillsComputed;  // P303: wire the flags/kills recompute to GAME_STATE(155) + P178 GameOver
+        _host.ChatRequested = SendSiteChat;
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
         var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers)

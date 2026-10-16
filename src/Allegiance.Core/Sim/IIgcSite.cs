@@ -18,8 +18,8 @@ namespace Allegiance.Core.Sim;
 /// global clock source here.</item>
 /// <item>IGC object pointers → the empty marker interfaces in
 /// <c>Sim/IgcMarkers.cs</c>.</item>
-/// <item>Client/UI-only methods and variadic printf-style text helpers are
-/// omitted; see README for the full skip list and rationale.</item>
+/// <item>Formatting helpers use invariant .NET composite formats in place of
+/// C varargs. Client-only text consumers live in ClientWorld.</item>
 /// </list>
 /// Where a C++ default body needs a member the empty markers cannot provide
 /// (<c>KillTreasureEvent</c>, <c>GetCluster</c>, <c>GetRipcordCluster</c>), the
@@ -87,8 +87,7 @@ public interface IIgcSite
 
     // ── chat ───────────────────────────────────────────────────────────────
     // igc.h:4792-4800. ReceiveChat is server-side host handling of incoming
-    // chat; no-op default. (SendChatf, the variadic printf helper, is skipped —
-    // see README.)
+    // chat; no-op default.
     void ReceiveChat(
         IShipIgc pshipSender,
         ChatTarget ctRecipient,
@@ -108,10 +107,16 @@ public interface IIgcSite
         short soVoiceOver,
         string szText,
         short cid = -1,            // c_cidNone
-        IgcObjectType otTarget = IgcObjectType.Ship,  // NA maps to Ship (0) — see README
+        IgcObjectType otTarget = (IgcObjectType)(-1), // native NA
         short oidTarget = -1,      // NA
         IModelIgc? pmodelTarget = null,
         bool bObjectModel = false) { }
+
+    /// <summary>igc.h:4812-4825: format once, then dispatch the virtual SendChat.
+    /// Managed call sites use invariant .NET composite formatting.</summary>
+    void SendChatf(IShipIgc pshipSender, ChatTarget ctRecipient, short oidRecipient,
+        short soVoiceOver, string format, params object?[] args) =>
+        SendChat(pshipSender, ctRecipient, oidRecipient, soVoiceOver, CallbackText.Format(format, args));
 
     // ── economy ───────────────────────────────────────────────────────────
     // igc.h:4828. Money is int, HullID is short (both igc.h:477,483,840).
@@ -158,8 +163,15 @@ public interface IIgcSite
     void TreasureGeneratedEvent(Treasure t) { }
 
     // ── text (console messages to clients) ────────────────────────────────
-    // igc.h:4847. (PostText / PostNotificationText variadic wrappers skipped.)
+    // igc.h:4847-4849.
     void PostPlainText(bool bCritical, string pszText) { }
+
+    /// <summary>WinTrek/trekigc.cpp:3086-3102: format then call PostPlainText.</summary>
+    void PostText(bool bCritical, string format, params object?[] args) =>
+        PostPlainText(bCritical, CallbackText.Format(format, args));
+
+    // The base site has no local player/console (igc.h:4849).
+    void PostNotificationText(IModelIgc pmodel, bool bCritical, string format, params object?[] args) { }
 
     /// <summary>Mounted sound and owner ready text: weaponIGC.h:44-46,
     /// cloakigc.cpp:75-76, shieldIGC.cpp:82-83, afterburnerIGC.cpp:119-120.
