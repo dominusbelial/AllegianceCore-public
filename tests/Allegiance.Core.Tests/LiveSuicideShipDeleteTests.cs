@@ -25,8 +25,8 @@ namespace Allegiance.Core.Tests;
 ///      scenarios: a flying suicide kills (real <c>KILL_SHIP(105)</c> +
 ///      <c>SHIP_DELETE(20)</c> naming the suiciding ship), a docked suicide is
 ///      a no-op (nothing dies, nothing broadcasts), and a combat death also
-///      emits the <c>SHIP_DELETE</c> alongside its <c>KILL_SHIP</c>, both to
-///      the same peers.
+///      emits KILL_SHIP to sector peers and SHIP_DELETE to mission peers
+///      (native fsship.cpp:196-223).
 /// Like the other live suites this drives a real in-process <see cref="Srv"/>
 /// over loopback TCP; the [Collection("LiveNetwork")] tag keeps it sequential
 /// against the other live suites.
@@ -396,8 +396,8 @@ public class LiveSuicideShipDeleteTests
 
     /// <summary>⭐ A combat death (the pre-existing path, unchanged) now also
     /// produces a real <c>SHIP_DELETE(20)</c> with <c>sdr = SDR_KILLED</c>
-    /// naming the victim — to the same peers <c>KILL_SHIP(105)</c> reaches.
-    /// Two armed bots fight; the death is witnessed on <b>both</b> clients.</summary>
+    /// naming the victim. Both armed clients share the sector and receive both;
+    /// off-sector mission peers receive deletion only (fsship.cpp:196-223).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Combat_death_produces_ship_delete_to_same_audience()
@@ -445,8 +445,8 @@ public class LiveSuicideShipDeleteTests
         }
 
         // The death is witnessed on BOTH clients as KILL_SHIP + SHIP_DELETE
-        // naming the same victim id — the SHIP_DELETE audience matches the
-        // KILL_SHIP audience (peers in the victim's sector).
+        // naming the same victim id. They share the sector; deletion also reaches
+        // off-sector mission peers (native AnnounceExit, fsship.cpp:196-223).
         Assert.True(ticks < MaxTicks, $"no SHIP_DELETE within {MaxTicks} ticks");
         Assert.Contains(targetClient.Kills, k => k.ShipId == targetId && k.BDeathCredit);
         Assert.Contains(shooterClient.Kills, k => k.ShipId == targetId && k.IdCredit == shooterId);

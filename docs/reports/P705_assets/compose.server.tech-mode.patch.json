@@ -1,0 +1,128 @@
+[
+  {
+    "op": "add",
+    "path": "/showcase",
+    "value": {
+      "techMode": "research",
+      "incomeMultiplier": 500,
+      "loopResearchPlans": false
+    }
+  },
+  {
+    "op": "add",
+    "path": "/liveSettings/debugMode",
+    "value": false
+  },
+  {
+    "op": "add",
+    "path": "/liveSettings/timeDilation",
+    "value": "auto"
+  },
+  {
+    "op": "add",
+    "path": "/liveSettings/autoNextMatch",
+    "value": {
+      "enabled": true,
+      "intermissionSeconds": 30
+    }
+  },
+  {
+    "op": "add",
+    "path": "/liveSettings/testUnlock",
+    "value": {
+      "enabled": false,
+      "allTech": false,
+      "money": 0
+    }
+  },
+  {
+    "op": "add",
+    "path": "/liveSettings/testHarness",
+    "value": {
+      "enabled": false,
+      "ignoreTechGate": false,
+      "money": 0
+    }
+  },
+  {
+    "op": "add",
+    "path": "/games/0/map",
+    "value": "m2xspiderw.igc"
+  },
+  {
+    "op": "add",
+    "path": "/games/0/mapGen",
+    "value": null
+  },
+  {
+    "op": "add",
+    "path": "/games/0/teams",
+    "value": 2
+  },
+  {
+    "op": "add",
+    "path": "/games/0/civIds",
+    "value": [
+      25,
+      3
+    ]
+  },
+  {
+    "op": "add",
+    "path": "/games/0/sideNames",
+    "value": [
+      "Alpha",
+      "Bravo"
+    ]
+  },
+  {
+    "op": "add",
+    "path": "/games/0/maxPlayersPerTeam",
+    "value": 128
+  },
+  {
+    "op": "add",
+    "path": "/games/0/maxTeamImbalance",
+    "value": 32767
+  },
+  {
+    "op": "add",
+    "path": "/games/0/allowDevelopments",
+    "value": true
+  },
+  {
+    "op": "add",
+    "path": "/games/0/allowShipyardPath",
+    "value": true
+  },
+  {
+    "op": "add",
+    "path": "/games/0/allowExpansionPath",
+    "value": true
+  },
+  {
+    "op": "add",
+    "path": "/games/0/allowTacticalPath",
+    "value": true
+  },
+  {
+    "op": "add",
+    "path": "/games/0/allowSupremacyPath",
+    "value": true
+  },
+  {
+    "op": "add",
+    "path": "/games/0/initialMinersPerTeam",
+    "value": 1
+  },
+  {
+    "op": "add",
+    "path": "/games/0/researchPlanDirectory",
+    "value": null
+  },
+  {
+    "op": "add",
+    "path": "/games/0/researchPlans",
+    "value": {}
+  }
+]

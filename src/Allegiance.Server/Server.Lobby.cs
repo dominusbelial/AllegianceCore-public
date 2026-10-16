@@ -2938,6 +2938,20 @@ private void CompleteStartCountdown(Mission mission, double now)
                 }.Encode(),
             }));
         }
+        // P703 read-only extension: clients execute the server's actual selected plan.
+        if (_missions.FirstOrDefault(m => m.Sides.Contains(side)) is { } researchMission && researchMission.ResearchPlans.TryGetValue(side.Id, out var plan))
+        {
+            foreach (var ship in researchMission.Sectors.SelectMany(s => s.Models).OfType<Ship>().Where(s => s.IsNpc && s.SideId == side.Id))
+                SendPeer(to, FedPacket.Pack(ProductionIdentity(ship).Encode()));
+            SendPeer(to, FedPacket.Pack(new ResearchBriefing
+            {
+                Epoch = researchMission.ResearchEpoch, SideId = side.Id, Plan = plan,
+                Settings = researchMission.Research, IncomeMultiplier = _config.Showcase.IncomeMultiplier,
+                Loop = _config.Showcase.LoopResearchPlans,
+                CompletedDevelopments = side.Buckets.Where(b => b.Completed && b.Development.HasValue)
+                    .Select(b => b.Development!.Value.DevelopmentId).ToList(),
+            }.Encode()));
+        }
         if (side.Buckets.Count > 0)
             Console.WriteLine($"[bucketstatus] peer {to} -> BUCKET_STATUS(65) x{side.Buckets.Count} for side {side.Id}");
     }

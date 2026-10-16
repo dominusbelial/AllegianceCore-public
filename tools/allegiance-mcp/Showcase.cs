@@ -66,50 +66,11 @@ internal static class Showcase
 
     // ── Hull role classification ──────────────────────────────────────────
 
-    /// <summary>The showcase role buckets a hull is sorted into. Roles are a
-    /// presentation concern for building a READABLE mixed fleet — native has no
-    /// single "hull class" field, so the classifier combines the real
-    /// capability bits (<see cref="DataHullTypeIGC.HasCapability"/>) with the
-    /// hull's own name, exactly the cues the game's own targeting/alert systems
-    /// use (e.g. c_amEnemyBomber keys on c_habmThreatToStation, igc.h:5390).
-    /// The role rule (P557, with P656b capital exclusion):
-    ///   Heavy    — name contains heavy/gunship/capital/destroyer/flagship/
-    ///              carrier/cruiser/frigate/corvette, or carries c_habmCarrier.
-    ///              Takes precedence over station threat: capitals threaten bases too.
-    ///   Bomber   — remaining hulls named "bomber", OR carrying c_habmThreatToStation
-    ///              (native's own bomber-threat classifier, igc.h:5390-5394);
-    ///   Scout    — name contains "scout";
-    ///   Interceptor — name contains "interceptor";
-    ///   Fighter  — everything else that is a c_habmFighter hull (igc.h:733)
-    ///              or any remaining eligible fighter-sized hull.
-    /// </summary>
+    /// <summary>Fleet policy roles derived from native capabilities, mounts and sensor reach.
+    /// The exact policy lives with the shared purchase selector.</summary>
     public enum HullRole { Fighter, Interceptor, Scout, Bomber, Heavy }
 
-    /// <summary>Classify a hull into a showcase role (see the enum doc for the
-    /// documented rule). Pure over the real hull record.</summary>
-    public static HullRole ClassifyHull(DataHullTypeIGC h)
-    {
-        string n = h.Name;
-        if (n.Contains("heavy", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("gunship", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("capital", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("destroyer", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("flagship", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("carrier", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("cruiser", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("frigate", StringComparison.OrdinalIgnoreCase)
-            || n.Contains("corvette", StringComparison.OrdinalIgnoreCase)
-            || h.HasCapability(DataHullTypeIGC.HabmCarrier))
-            return HullRole.Heavy;
-        if (n.Contains("bomber", StringComparison.OrdinalIgnoreCase)
-            || h.HasCapability(DataHullTypeIGC.HabmThreatToStation))
-            return HullRole.Bomber;
-        if (n.Contains("scout", StringComparison.OrdinalIgnoreCase))
-            return HullRole.Scout;
-        if (n.Contains("interceptor", StringComparison.OrdinalIgnoreCase))
-            return HullRole.Interceptor;
-        return HullRole.Fighter;
-    }
+    public static HullRole ClassifyHull(DataHullTypeIGC h) => TechLoadoutSelector.Classify(h);
 
     /// <summary>
     /// Whether a hull is a PLAYER-BUYABLE fleet ship for a showcase side.
@@ -262,10 +223,8 @@ internal static class Showcase
     /// Each spec is a (hull name/substring, count, tech) triple; the hull is
     /// resolved through the real core (exact-over-substring, throws on unknown
     /// or ambiguous — <see cref="Catalog.ResolveHull"/>), then validated as a
-    /// player-buyable combat hull with a real mountable native-preferred
-    /// loadout at the requested tech (P555/P556). A spec that names a
-    /// drone-only / lifepod / miner / builder hull, or one with no mountable
-    /// preferred loadout, is a real, specific error — never silently skipped.
+    /// player-buyable combat hull used as a role seed. A spec that names a
+    /// drone-only / lifepod / miner / builder hull, is a real, specific error — never silently skipped.
     /// `count` must be ≥ 1 and `tech` ≥ 0. Pure over the real core, so the
     /// parse + validation rules are unit-provable.
     /// </summary>
@@ -288,11 +247,7 @@ internal static class Showcase
                 throw new ArgumentException(
                     $"spawn_scenario: side '{sideLabel}' hull '{hull.Name}' is not a player-buyable combat ship "
                     + "(drone-only/lifepod/miner/builder or no mountable gun — P470 drone hulls carry group −1); wire bots can't fly it");
-            // Resolve the native-preferred loadout at the requested tech; a
-            // hull with no mountable loadout is a validation failure.
-            var tl = Catalog.NativePreferredLoadout(hull.Id, hull.Name, tech);
-            if (tl.Parts.Count == 0)
-                throw new ArgumentException($"spawn_scenario: side '{sideLabel}' hull '{hull.Name}' has no mountable native-preferred loadout at tech {tech}");
+            // Hardware is selected only after seating, from the live shop.
             result.Add(new FleetEntry(hull.Id, hull.Name, count, tech));
         }
         return result;

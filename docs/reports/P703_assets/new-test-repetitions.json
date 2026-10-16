@@ -1,0 +1,271 @@
+{
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Every_step_spends_real_wallet_and_waits_for_observed_completion": {
+    "isolated_passes": 6,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "001-focused-1.trx",
+      "002-focused-2.trx",
+      "003-focused-3.trx",
+      "205-recheck-1.trx",
+      "206-recheck-2.trx",
+      "207-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_death_rock_loss_and_lost_prerequisites_recover_without_tech_grants": {
+    "isolated_passes": 6,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "004-focused-1.trx",
+      "005-focused-2.trx",
+      "006-focused-3.trx",
+      "208-recheck-1.trx",
+      "209-recheck-2.trx",
+      "210-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_uses_native_goto_before_building_in_another_sector": {
+    "isolated_passes": 6,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "007-focused-1.trx",
+      "008-focused-2.trx",
+      "009-focused-3.trx",
+      "214-recheck-1.trx",
+      "215-recheck-2.trx",
+      "216-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Reservations_are_shared_across_three_sides_and_released_when_no_rock_survives": {
+    "isolated_passes": 6,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "010-focused-1.trx",
+      "011-focused-2.trx",
+      "012-focused-3.trx",
+      "217-recheck-1.trx",
+      "218-recheck-2.trx",
+      "219-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Donations_wait_for_ack_and_completion_is_not_inferred_from_elapsed_time": {
+    "isolated_passes": 6,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "013-focused-1.trx",
+      "014-focused-2.trx",
+      "015-focused-3.trx",
+      "220-recheck-1.trx",
+      "221-recheck-2.trx",
+      "222-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Waits_require_both_duration_and_live_tech_mask_and_loop_is_opt_in": {
+    "isolated_passes": 6,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "016-focused-1.trx",
+      "017-focused-2.trx",
+      "018-focused-3.trx",
+      "223-recheck-1.trx",
+      "224-recheck-2.trx",
+      "225-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Briefing_production_dev_history_and_asteroid_destruction_use_real_receive_dispatch": {
+    "isolated_passes": 6,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "019-focused-1.trx",
+      "020-focused-2.trx",
+      "021-focused-3.trx",
+      "226-recheck-1.trx",
+      "227-recheck-2.trx",
+      "228-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)": {
+    "isolated_passes": 7,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "022-focused-1.trx",
+      "023-focused-2.trx",
+      "024-focused-3.trx",
+      "232-recheck-1.trx",
+      "233-recheck-2.trx",
+      "234-recheck-3.trx",
+      "292-recheck-failure-isolated-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)": {
+    "isolated_passes": 6,
+    "isolated_failures": 1,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "022-focused-1.trx",
+      "023-focused-2.trx",
+      "024-focused-3.trx",
+      "232-recheck-1.trx",
+      "233-recheck-2.trx",
+      "234-recheck-3.trx",
+      "292-recheck-failure-isolated-3.trx"
+    ]
+  },
+  "Allegiance.Core.Tests.P703EconomyTests.Production_buckets_reset_and_can_be_purchased_again(kind: BitDroneType)": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "052-focused-1.trx",
+      "053-focused-2.trx",
+      "054-focused-3.trx"
+    ]
+  },
+  "Allegiance.Core.Tests.P703EconomyTests.Production_buckets_reset_and_can_be_purchased_again(kind: BitStationType)": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "052-focused-1.trx",
+      "053-focused-2.trx",
+      "054-focused-3.trx"
+    ]
+  },
+  "Allegiance.Core.Tests.P703EconomyTests.Join_catalog_tracks_runtime_asteroid_creation_and_removal": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "055-focused-1.trx",
+      "056-focused-2.trx",
+      "057-focused-3.trx"
+    ]
+  },
+  "Allegiance.Core.Tests.P703EconomyTests.Lost_base_empties_funded_research_before_it_can_finish_and_rebuild_requires_new_money": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "058-focused-1.trx",
+      "059-focused-2.trx",
+      "060-focused-3.trx"
+    ]
+  },
+  "Allegiance.Core.Tests.P703EconomyTests.Obsolete_station_bucket_transfers_paid_money_and_time_to_its_successor": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "061-focused-1.trx",
+      "062-focused-2.trx",
+      "063-focused-3.trx"
+    ]
+  },
+  "Allegiance.Core.Tests.P703EconomyTests.Obsolete_development_is_marked_complete_without_reapplying_completion_effects": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "064-focused-1.trx",
+      "065-focused-2.trx",
+      "066-focused-3.trx"
+    ]
+  },
+  "Allegiance.Core.Tests.P703EconomyTests.Multiplier_scales_only_periodic_accrual_and_one_is_native(multiplier: 1)": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "067-focused-1.trx",
+      "068-focused-2.trx",
+      "069-focused-3.trx"
+    ]
+  },
+  "Allegiance.Core.Tests.P703EconomyTests.Multiplier_scales_only_periodic_accrual_and_one_is_native(multiplier: 50)": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "067-focused-1.trx",
+      "068-focused-2.trx",
+      "069-focused-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.A_dead_paused_constructor_cannot_reserve_the_only_rock_needed_for_another_repair": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "211-recheck-1.trx",
+      "212-recheck-2.trx",
+      "213-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects(quiet: False)": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "229-recheck-1.trx",
+      "230-recheck-2.trx",
+      "231-recheck-3.trx"
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects(quiet: True)": {
+    "isolated_passes": 3,
+    "isolated_failures": 0,
+    "full_outcomes": [
+      "Passed"
+    ],
+    "isolated_invocations": [
+      "229-recheck-1.trx",
+      "230-recheck-2.trx",
+      "231-recheck-3.trx"
+    ]
+  }
+}

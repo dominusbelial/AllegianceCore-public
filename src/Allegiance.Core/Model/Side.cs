@@ -549,6 +549,42 @@ public sealed class Side : ISideIgc
         GlobalAttributes = GlobalAttributeSet.FromArray(civilization.GasBaseAttributes);
     }
 
+    private TechTreeBitMask? _bucketTechs, _bucketDevelopments;
+
+    /// <summary>Native AdjustBuckets (sideigc.h:611-675): losing a prerequisite empties
+    /// invested buckets, station obsolescence migrates funding to its successor, and
+    /// already-known tech-only research is completed without applying effects twice.
+    /// Reconcile before advancing time so a destroyed base cannot finish now-illegal research.</summary>
+    private void AdjustBucketsIfTechsChanged()
+    {
+        if (Mission is not { } mission) return;
+        var techs = Techs;
+        if (_bucketTechs == techs && _bucketDevelopments == DevelopmentTechs) return;
+        _bucketTechs = techs; _bucketDevelopments = DevelopmentTechs;
+        // BucketChangeEvent may terminate this bucket or another one. Work from
+        // stable identities, and never reconcile a bucket removed by a callback.
+        foreach (var bucket in _buckets.ToArray())
+        {
+            if (!ReferenceEquals(bucket.Side, this)) continue;
+            if (bucket.Completed || bucket.ItemType == BucketItemType.BitShipType) continue;
+            if (bucket.Development is { } dev && dev.DevelopmentId != Mission.TeamMoneyDevelopmentId
+                && DevelopmentLogic.IsObsolete(dev, DevelopmentTechs))
+            {
+                bucket.SetTimeAndMoney((long)bucket.TimeToBuild * 1000, bucket.Price);
+                continue;
+            }
+            if (bucket.InvestedMoney == 0 || CanBuy(bucket)) continue;
+            if (bucket.StationType is { } station)
+            {
+                var successor = SuccessorUpgrade.StationSuccessor(mission.Core, station, DevelopmentTechs);
+                if (successor.StationTypeId != station.StationTypeId)
+                    Buckets.FirstOrDefault(b => b.StationType?.StationTypeId == successor.StationTypeId)
+                        ?.SetTimeAndMoney(bucket.InvestedMilliseconds, bucket.InvestedMoney);
+            }
+            bucket.SetEmpty();
+        }
+    }
+
     /// <summary>
     /// Once-per-<see cref="Mission.Update"/> side pass (<c>CsideIGC::Update</c>,
     /// <c>sideigc.h:41</c>): records the time and advances every construction
@@ -561,11 +597,21 @@ public sealed class Side : ISideIgc
     {
         UpdateCount++;
         LastUpdate = now;
-        for (int i = 0; i < _buckets.Count;)
+        AdjustBucketsIfTechsChanged();
+        // Native sideigc.h:43-49 updates each attached bucket once. A callback
+        // can remove any bucket, including one before the current list index;
+        // a snapshot prevents shifts from skipping or revisiting a survivor.
+        foreach (var bucket in _buckets.ToArray())
         {
-            var bucket = _buckets[i];
+            if (!ReferenceEquals(bucket.Side, this)) continue;
+            // Only funded, unfinished work can notify or complete during Update
+            // (bucketigc.h:44-71). Avoid rebuilding station masks for every idle
+            // or completed catalog entry, while still checking both tech sources
+            // after any update that can invoke a callback (sideigc.h:160-204).
+            bool canNotify = bucket.InvestedMoney > 0
+                && bucket.InvestedMilliseconds < (long)bucket.TimeToBuild * 1000;
             bucket.Update(now);
-            if (i < _buckets.Count && ReferenceEquals(bucket, _buckets[i])) i++;
+            if (canNotify) AdjustBucketsIfTechsChanged();
         }
     }
 }

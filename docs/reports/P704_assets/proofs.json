@@ -1,0 +1,383 @@
+[
+  {
+    "file": "focused-final-Local_showcase_never_parks_with_target_for_five_seconds-3.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "output": "P700 local 15v15: 93.0s, samples=930, reached=24/30, longest speed<1 with target=3.007s, shots=2973, hits=1198, kills=10"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Local_showcase_never_parks_with_target_for_five_seconds-2.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "output": "P700 local 15v15: 94.9s, samples=949, reached=26/30, longest speed<1 with target=2.203s, shots=4081, hits=1911, kills=14"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Local_showcase_never_parks_with_target_for_five_seconds-1.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "output": "P700 local 15v15: 92.9s, samples=929, reached=24/30, longest speed<1 with target=1.903s, shots=2920, hits=1541, kills=15"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Rig_allTech_finale_buy_loadout_is_fully_accepted-3.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 0)",
+        "outcome": "Passed",
+        "output": "side 0, civ 25: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber\nBUY_LOADOUT accepted: hull 23, full grant, parts 52@0 x1, 52@1 x1, 601@0 x2, 42@0 x1, 86@0 x8, 35@0 x1"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 1)",
+        "outcome": "Passed",
+        "output": "side 1, civ 3: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber\nBUY_LOADOUT accepted: hull 23, full grant, parts 52@0 x1, 52@1 x1, 601@0 x2, 42@0 x1, 86@0 x8, 35@0 x1"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Rig_allTech_finale_buy_loadout_is_fully_accepted-2.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 1)",
+        "outcome": "Passed",
+        "output": "side 1, civ 3: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber\nBUY_LOADOUT accepted: hull 23, full grant, parts 52@0 x1, 52@1 x1, 601@0 x2, 42@0 x1, 86@0 x8, 35@0 x1"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 0)",
+        "outcome": "Passed",
+        "output": "side 0, civ 25: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber\nBUY_LOADOUT accepted: hull 23, full grant, parts 52@0 x1, 52@1 x1, 601@0 x2, 42@0 x1, 86@0 x8, 35@0 x1"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Rig_allTech_finale_buy_loadout_is_fully_accepted-1.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 1)",
+        "outcome": "Passed",
+        "output": "side 1, civ 3: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber\nBUY_LOADOUT accepted: hull 23, full grant, parts 52@0 x1, 52@1 x1, 601@0 x2, 42@0 x1, 86@0 x8, 35@0 x1"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 0)",
+        "outcome": "Passed",
+        "output": "side 0, civ 25: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber\nBUY_LOADOUT accepted: hull 23, full grant, parts 52@0 x1, 52@1 x1, 601@0 x2, 42@0 x1, 86@0 x8, 35@0 x1"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Rig_allTech_client_selects_the_best_legal_bomber-3.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 1)",
+        "outcome": "Passed",
+        "output": "side 1, civ 3: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 0)",
+        "outcome": "Passed",
+        "output": "side 0, civ 25: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Rig_allTech_client_selects_the_best_legal_bomber-2.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 0)",
+        "outcome": "Passed",
+        "output": "side 0, civ 25: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 1)",
+        "outcome": "Passed",
+        "output": "side 1, civ 3: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Rig_allTech_client_selects_the_best_legal_bomber-1.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 0)",
+        "outcome": "Passed",
+        "output": "side 0, civ 25: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 1)",
+        "outcome": "Passed",
+        "output": "side 1, civ 3: server techs 281, client techs 281, target 15; selected 23 Stealth Bomber"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted-3.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted(flyingHull: 23, attacksStation: True)",
+        "outcome": "Passed",
+        "output": ""
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted(flyingHull: 14, attacksStation: False)",
+        "outcome": "Passed",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "file": "focused-final-P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted-2.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted(flyingHull: 23, attacksStation: True)",
+        "outcome": "Passed",
+        "output": ""
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted(flyingHull: 14, attacksStation: False)",
+        "outcome": "Passed",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "file": "focused-final-P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted-1.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted(flyingHull: 23, attacksStation: True)",
+        "outcome": "Passed",
+        "output": ""
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted(flyingHull: 14, attacksStation: False)",
+        "outcome": "Passed",
+        "output": ""
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research-3.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+        "outcome": "Passed",
+        "output": "civ=35 step=0 dock=210: role=Fighter; techBits=36; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 315 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, Dispenser@0=59 'Prox Mine 1' x1, ChaffLauncher@0=80 'Counter 1' x4, Cloak@0=41 'Hvy Cloak 1' x1\nciv=35 step=76 dock=202: role=Fighter; techBits=110; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 388 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x4, Cloak@0=35 'Hvy Cloak 2' x1\nciv=35 step=152 dock=201: role=Fighter; techBits=178; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 388 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x4, Cloak@0=35 'Hvy Cloak 2' x1",
+        "traceLineCount": 72
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+        "outcome": "Passed",
+        "output": "civ=25 step=0 dock=115: role=Interceptor; techBits=38; hull role score=45000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 415 'Lt Interceptor'; cost=0; Weapon@0=120 'PW Mini-Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=125 'Afterburner 1' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=25 step=78 dock=102: role=Fighter; techBits=118; hull role score=1050.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 414 'Enh Fighter'; cost=0; Weapon@0=71 'PW Gat Gun 2' x1, Weapon@1=71 'PW Gat Gun 2' x1, Weapon@2=71 'PW Gat Gun 2' x1, Shield@0=40 'Sm Shield 2' x1, Afterburner@0=27 'Booster 2' x1, Magazine@0=151 'SRM Dumbfire 2' x4, Dispenser@0=13 'Mine Pack 1' x1, ChaffLauncher@0=85 'Counter 2' x4\nciv=25 step=157 dock=101: role=Fighter; techBits=186; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 488 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 95
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+        "outcome": "Passed",
+        "output": "civ=101 step=0 dock=315: role=Fighter; techBits=37; hull role score=1200.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 515 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, ChaffLauncher@0=80 'Counter 1' x4\nciv=101 step=81 dock=302: role=Fighter; techBits=114; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 511 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Afterburner@0=27 'Booster 2' x1, Magazine@0=20 'LRM Killer 1' x2, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=101 step=163 dock=301: role=Fighter; techBits=185; hull role score=2250.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 67 'Omni Fighter'; cost=500; Weapon@0=122 'PW Mini-Gun 3' x1, Weapon@1=122 'PW Mini-Gun 3' x1, Weapon@2=122 'PW Mini-Gun 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=30 'LRM Killer 2' x3, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x5, Cloak@0=34 'Sig Cloak 3' x1",
+        "traceLineCount": 100
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+        "outcome": "Passed",
+        "output": "civ=3 step=0 dock=44: role=Fighter; techBits=33; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 121 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, ChaffLauncher@0=80 'Counter 1' x4\nciv=3 step=90 dock=42: role=Fighter; techBits=123; hull role score=1600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 126 'Guardian'; cost=2000; Weapon@0=131 'PW AutoCan 2' x1, Afterburner@0=27 'Booster 2' x1, ChaffLauncher@0=85 'Counter 2' x4\nciv=3 step=181 dock=42: role=Fighter; techBits=203; hull role score=1600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 126 'Guardian'; cost=2000; Weapon@0=132 'PW AutoCan 3' x1, Afterburner@0=29 'Booster 3' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 108
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+        "outcome": "Passed",
+        "output": "civ=4 step=0 dock=60: role=Fighter; techBits=32; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 190 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x5, ChaffLauncher@0=80 'Counter 1' x4\nciv=4 step=93 dock=60: role=Fighter; techBits=124; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 200 'Stealth Fighter'; cost=0; Weapon@0=196 'PE Vul Can 1' x1, Weapon@1=196 'PE Vul Can 1' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=20 'LRM Killer 1' x3, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=4 step=186 dock=60: role=Fighter; techBits=202; hull role score=1800.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 246 'Vanguard'; cost=0; Weapon@0=89 'PW Mini-AC 3' x1, Weapon@1=89 'PW Mini-AC 3' x1, Afterburner@0=189 'Hyper-Jump' x1, Dispenser@0=114 'EMP Mine 2' x1, ChaffLauncher@0=86 'Counter 3' x6",
+        "traceLineCount": 114
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+        "outcome": "Passed",
+        "output": "civ=2 step=0 dock=40: role=Scout; techBits=46; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 51 'Scout'; cost=100; Weapon@0=3 'PE Gat Gun 1' x1, Weapon@1=3 'PE Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Dispenser@0=73 'Beacon' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=2 step=71 dock=29: role=Fighter; techBits=118; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 58 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=116 'SRP Killer 1' x4, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=2 step=143 dock=29: role=Interceptor; techBits=181; hull role score=67500.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 60 'Hvy Interceptor'; cost=0; Weapon@0=9 'PE Mini-Gun 3' x1, Weapon@1=9 'PE Mini-Gun 3' x1, Weapon@2=9 'PE Mini-Gun 3' x1, Afterburner@0=224 'Afterburner 3' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 91
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+        "outcome": "Passed",
+        "output": "civ=1 step=0 dock=26: role=Interceptor; techBits=33; hull role score=45000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 21 'Lt Interceptor'; cost=0; Weapon@0=120 'PW Mini-Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=125 'Afterburner 1' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=1 step=83 dock=4: role=Fighter; techBits=114; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 18 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=20 'LRM Killer 1' x2, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=1 step=167 dock=1: role=Fighter; techBits=188; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 15 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 109
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research-2.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+        "outcome": "Passed",
+        "output": "civ=25 step=0 dock=115: role=Interceptor; techBits=38; hull role score=45000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 415 'Lt Interceptor'; cost=0; Weapon@0=120 'PW Mini-Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=125 'Afterburner 1' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=25 step=78 dock=102: role=Fighter; techBits=118; hull role score=1050.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 414 'Enh Fighter'; cost=0; Weapon@0=71 'PW Gat Gun 2' x1, Weapon@1=71 'PW Gat Gun 2' x1, Weapon@2=71 'PW Gat Gun 2' x1, Shield@0=40 'Sm Shield 2' x1, Afterburner@0=27 'Booster 2' x1, Magazine@0=151 'SRM Dumbfire 2' x4, Dispenser@0=13 'Mine Pack 1' x1, ChaffLauncher@0=85 'Counter 2' x4\nciv=25 step=157 dock=101: role=Fighter; techBits=186; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 488 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 95
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+        "outcome": "Passed",
+        "output": "civ=101 step=0 dock=315: role=Fighter; techBits=37; hull role score=1200.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 515 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, ChaffLauncher@0=80 'Counter 1' x4\nciv=101 step=81 dock=302: role=Fighter; techBits=114; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 511 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Afterburner@0=27 'Booster 2' x1, Magazine@0=20 'LRM Killer 1' x2, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=101 step=163 dock=301: role=Fighter; techBits=185; hull role score=2250.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 67 'Omni Fighter'; cost=500; Weapon@0=122 'PW Mini-Gun 3' x1, Weapon@1=122 'PW Mini-Gun 3' x1, Weapon@2=122 'PW Mini-Gun 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=30 'LRM Killer 2' x3, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x5, Cloak@0=34 'Sig Cloak 3' x1",
+        "traceLineCount": 100
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+        "outcome": "Passed",
+        "output": "civ=35 step=0 dock=210: role=Fighter; techBits=36; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 315 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, Dispenser@0=59 'Prox Mine 1' x1, ChaffLauncher@0=80 'Counter 1' x4, Cloak@0=41 'Hvy Cloak 1' x1\nciv=35 step=76 dock=202: role=Fighter; techBits=110; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 388 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x4, Cloak@0=35 'Hvy Cloak 2' x1\nciv=35 step=152 dock=201: role=Fighter; techBits=178; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 388 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x4, Cloak@0=35 'Hvy Cloak 2' x1",
+        "traceLineCount": 72
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+        "outcome": "Passed",
+        "output": "civ=2 step=0 dock=40: role=Scout; techBits=46; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 51 'Scout'; cost=100; Weapon@0=3 'PE Gat Gun 1' x1, Weapon@1=3 'PE Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Dispenser@0=73 'Beacon' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=2 step=71 dock=29: role=Fighter; techBits=118; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 58 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=116 'SRP Killer 1' x4, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=2 step=143 dock=29: role=Interceptor; techBits=181; hull role score=67500.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 60 'Hvy Interceptor'; cost=0; Weapon@0=9 'PE Mini-Gun 3' x1, Weapon@1=9 'PE Mini-Gun 3' x1, Weapon@2=9 'PE Mini-Gun 3' x1, Afterburner@0=224 'Afterburner 3' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 91
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+        "outcome": "Passed",
+        "output": "civ=4 step=0 dock=60: role=Fighter; techBits=32; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 190 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x5, ChaffLauncher@0=80 'Counter 1' x4\nciv=4 step=93 dock=60: role=Fighter; techBits=124; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 200 'Stealth Fighter'; cost=0; Weapon@0=196 'PE Vul Can 1' x1, Weapon@1=196 'PE Vul Can 1' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=20 'LRM Killer 1' x3, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=4 step=186 dock=60: role=Fighter; techBits=202; hull role score=1800.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 246 'Vanguard'; cost=0; Weapon@0=89 'PW Mini-AC 3' x1, Weapon@1=89 'PW Mini-AC 3' x1, Afterburner@0=189 'Hyper-Jump' x1, Dispenser@0=114 'EMP Mine 2' x1, ChaffLauncher@0=86 'Counter 3' x6",
+        "traceLineCount": 114
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+        "outcome": "Passed",
+        "output": "civ=1 step=0 dock=26: role=Interceptor; techBits=33; hull role score=45000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 21 'Lt Interceptor'; cost=0; Weapon@0=120 'PW Mini-Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=125 'Afterburner 1' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=1 step=83 dock=4: role=Fighter; techBits=114; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 18 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=20 'LRM Killer 1' x2, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=1 step=167 dock=1: role=Fighter; techBits=188; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 15 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 109
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+        "outcome": "Passed",
+        "output": "civ=3 step=0 dock=44: role=Fighter; techBits=33; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 121 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, ChaffLauncher@0=80 'Counter 1' x4\nciv=3 step=90 dock=42: role=Fighter; techBits=123; hull role score=1600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 126 'Guardian'; cost=2000; Weapon@0=131 'PW AutoCan 2' x1, Afterburner@0=27 'Booster 2' x1, ChaffLauncher@0=85 'Counter 2' x4\nciv=3 step=181 dock=42: role=Fighter; techBits=203; hull role score=1600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 126 'Guardian'; cost=2000; Weapon@0=132 'PW AutoCan 3' x1, Afterburner@0=29 'Booster 3' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 108
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research-1.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+        "outcome": "Passed",
+        "output": "civ=25 step=0 dock=115: role=Interceptor; techBits=38; hull role score=45000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 415 'Lt Interceptor'; cost=0; Weapon@0=120 'PW Mini-Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=125 'Afterburner 1' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=25 step=78 dock=102: role=Fighter; techBits=118; hull role score=1050.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 414 'Enh Fighter'; cost=0; Weapon@0=71 'PW Gat Gun 2' x1, Weapon@1=71 'PW Gat Gun 2' x1, Weapon@2=71 'PW Gat Gun 2' x1, Shield@0=40 'Sm Shield 2' x1, Afterburner@0=27 'Booster 2' x1, Magazine@0=151 'SRM Dumbfire 2' x4, Dispenser@0=13 'Mine Pack 1' x1, ChaffLauncher@0=85 'Counter 2' x4\nciv=25 step=157 dock=101: role=Fighter; techBits=186; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 488 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 95
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+        "outcome": "Passed",
+        "output": "civ=3 step=0 dock=44: role=Fighter; techBits=33; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 121 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, ChaffLauncher@0=80 'Counter 1' x4\nciv=3 step=90 dock=42: role=Fighter; techBits=123; hull role score=1600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 126 'Guardian'; cost=2000; Weapon@0=131 'PW AutoCan 2' x1, Afterburner@0=27 'Booster 2' x1, ChaffLauncher@0=85 'Counter 2' x4\nciv=3 step=181 dock=42: role=Fighter; techBits=203; hull role score=1600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 126 'Guardian'; cost=2000; Weapon@0=132 'PW AutoCan 3' x1, Afterburner@0=29 'Booster 3' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 108
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+        "outcome": "Passed",
+        "output": "civ=2 step=0 dock=40: role=Scout; techBits=46; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 51 'Scout'; cost=100; Weapon@0=3 'PE Gat Gun 1' x1, Weapon@1=3 'PE Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Dispenser@0=73 'Beacon' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=2 step=71 dock=29: role=Fighter; techBits=118; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 58 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=116 'SRP Killer 1' x4, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=2 step=143 dock=29: role=Interceptor; techBits=181; hull role score=67500.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 60 'Hvy Interceptor'; cost=0; Weapon@0=9 'PE Mini-Gun 3' x1, Weapon@1=9 'PE Mini-Gun 3' x1, Weapon@2=9 'PE Mini-Gun 3' x1, Afterburner@0=224 'Afterburner 3' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 91
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+        "outcome": "Passed",
+        "output": "civ=35 step=0 dock=210: role=Fighter; techBits=36; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 315 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, Dispenser@0=59 'Prox Mine 1' x1, ChaffLauncher@0=80 'Counter 1' x4, Cloak@0=41 'Hvy Cloak 1' x1\nciv=35 step=76 dock=202: role=Fighter; techBits=110; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 388 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x4, Cloak@0=35 'Hvy Cloak 2' x1\nciv=35 step=152 dock=201: role=Fighter; techBits=178; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 388 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x4, Cloak@0=35 'Hvy Cloak 2' x1",
+        "traceLineCount": 72
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+        "outcome": "Passed",
+        "output": "civ=1 step=0 dock=26: role=Interceptor; techBits=33; hull role score=45000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 21 'Lt Interceptor'; cost=0; Weapon@0=120 'PW Mini-Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=125 'Afterburner 1' x1, ChaffLauncher@0=80 'Counter 1' x4\nciv=1 step=83 dock=4: role=Fighter; techBits=114; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 18 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=20 'LRM Killer 1' x2, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=1 step=167 dock=1: role=Fighter; techBits=188; hull role score=1350.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 15 'Adv Fighter'; cost=0; Weapon@0=72 'PW Gat Gun 3' x1, Weapon@1=72 'PW Gat Gun 3' x1, Weapon@2=72 'PW Gat Gun 3' x1, Shield@0=42 'Sm Shield 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=152 'SRM Dumbfire 3' x5, Dispenser@0=14 'Mine Pack 2' x1, ChaffLauncher@0=86 'Counter 3' x4",
+        "traceLineCount": 109
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+        "outcome": "Passed",
+        "output": "civ=4 step=0 dock=60: role=Fighter; techBits=32; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 190 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x5, ChaffLauncher@0=80 'Counter 1' x4\nciv=4 step=93 dock=60: role=Fighter; techBits=124; hull role score=300.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 200 'Stealth Fighter'; cost=0; Weapon@0=196 'PE Vul Can 1' x1, Weapon@1=196 'PE Vul Can 1' x1, Shield@0=40 'Sm Shield 2' x1, Magazine@0=20 'LRM Killer 1' x3, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=4 step=186 dock=60: role=Fighter; techBits=202; hull role score=1800.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 246 'Vanguard'; cost=0; Weapon@0=89 'PW Mini-AC 3' x1, Weapon@1=89 'PW Mini-AC 3' x1, Afterburner@0=189 'Hyper-Jump' x1, Dispenser@0=114 'EMP Mine 2' x1, ChaffLauncher@0=86 'Counter 3' x6",
+        "traceLineCount": 114
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+        "outcome": "Passed",
+        "output": "civ=101 step=0 dock=315: role=Fighter; techBits=37; hull role score=1200.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 515 'Fighter'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Weapon@1=120 'PW Mini-Gun 1' x1, Afterburner@0=23 'Booster 1' x1, Magazine@0=150 'SRM Dumbfire 1' x4, ChaffLauncher@0=80 'Counter 1' x4\nciv=101 step=81 dock=302: role=Fighter; techBits=114; hull role score=600.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 511 'Stealth Fighter'; cost=0; Weapon@0=51 'EW Utl Can 2' x1, Weapon@1=51 'EW Utl Can 2' x1, Afterburner@0=27 'Booster 2' x1, Magazine@0=20 'LRM Killer 1' x2, Dispenser@0=113 'EMP Mine 1' x2, ChaffLauncher@0=85 'Counter 2' x5, Cloak@0=41 'Hvy Cloak 1' x1\nciv=101 step=163 dock=301: role=Fighter; techBits=185; hull role score=2250.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 67 'Omni Fighter'; cost=500; Weapon@0=122 'PW Mini-Gun 3' x1, Weapon@1=122 'PW Mini-Gun 3' x1, Weapon@2=122 'PW Mini-Gun 3' x1, Afterburner@0=174 'Hvy Booster' x1, Magazine@0=30 'LRM Killer 2' x3, Dispenser@0=14 'Mine Pack 2' x2, ChaffLauncher@0=86 'Counter 3' x5, Cloak@0=34 'Sig Cloak 3' x1",
+        "traceLineCount": 100
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout-3.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+        "outcome": "Passed",
+        "output": "One intentionally stale-wallet refusal; previous loadout revalidated and fully granted on the next paced retry."
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout-2.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+        "outcome": "Passed",
+        "output": "One intentionally stale-wallet refusal; previous loadout revalidated and fully granted on the next paced retry."
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout-1.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+        "outcome": "Passed",
+        "output": "One intentionally stale-wallet refusal; previous loadout revalidated and fully granted on the next paced retry."
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals-3.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+        "outcome": "Passed",
+        "output": "1 peers: 2 purchases, 2 full launch grants, 0 refusals; research through real BUCKET_DONATE + completion + SIDE_TECH_CHANGE; wall=2.20s"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+        "outcome": "Passed",
+        "output": "60 peers: 120 purchases, 120 full launch grants, 0 refusals; research through real BUCKET_DONATE + completion + SIDE_TECH_CHANGE; wall=77.57s"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals-2.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+        "outcome": "Passed",
+        "output": "60 peers: 120 purchases, 120 full launch grants, 0 refusals; research through real BUCKET_DONATE + completion + SIDE_TECH_CHANGE; wall=79.57s"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+        "outcome": "Passed",
+        "output": "1 peers: 2 purchases, 2 full launch grants, 0 refusals; research through real BUCKET_DONATE + completion + SIDE_TECH_CHANGE; wall=2.12s"
+      }
+    ]
+  },
+  {
+    "file": "focused-final-Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals-1.trx",
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+        "outcome": "Passed",
+        "output": "60 peers: 120 purchases, 120 full launch grants, 0 refusals; research through real BUCKET_DONATE + completion + SIDE_TECH_CHANGE; wall=77.82s"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+        "outcome": "Passed",
+        "output": "1 peers: 2 purchases, 2 full launch grants, 0 refusals; research through real BUCKET_DONATE + completion + SIDE_TECH_CHANGE; wall=2.21s"
+      }
+    ]
+  }
+]

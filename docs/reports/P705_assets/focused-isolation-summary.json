@@ -1,0 +1,20 @@
+[
+  {
+    "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches&DisplayName~civA: 101,",
+    "reruns": [
+      {
+        "label": "isolation-focused-1-1",
+        "clean": true
+      },
+      {
+        "label": "isolation-focused-1-2",
+        "clean": true
+      },
+      {
+        "label": "isolation-focused-1-3",
+        "clean": true
+      }
+    ],
+    "threeClean": true
+  }
+]

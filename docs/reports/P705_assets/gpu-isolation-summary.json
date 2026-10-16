@@ -1,0 +1,9 @@
+{
+  "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Both_shaders_load_and_render_through_real_gl_to_native_backbuffer",
+  "threeClean": true,
+  "labels": [
+    "isolation-gpu-1",
+    "isolation-gpu-2",
+    "isolation-gpu-3"
+  ]
+}

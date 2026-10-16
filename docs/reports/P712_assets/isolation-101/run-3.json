@@ -1,0 +1,991 @@
+[
+  {
+    "kind": "tech-reset",
+    "match": 1,
+    "wall": 0.0032709,
+    "sim": 0,
+    "detail": {
+      "epoch": "b5322911e00b45e5a1279adf23cf4634"
+    }
+  },
+  {
+    "kind": "started",
+    "match": 1,
+    "wall": 0.3843856,
+    "sim": 24.750000000000217,
+    "detail": null
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 1.1045184,
+    "sim": 66.99999999999834,
+    "detail": {
+      "side": 0,
+      "development": 222,
+      "Name": "Weedcore 03"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 1.1069789,
+    "sim": 66.99999999999834,
+    "detail": {
+      "side": 1,
+      "development": 222,
+      "Name": "Weedcore 03"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 6.5466166,
+    "sim": 346.0000000000444,
+    "detail": {
+      "side": 1,
+      "development": 54,
+      "Name": "Retro Booster"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 8.0352978,
+    "sim": 422.5000000000618,
+    "detail": {
+      "side": 1,
+      "development": 90,
+      "Name": "MRM Seeker 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 9.5516328,
+    "sim": 502.2500000000799,
+    "detail": {
+      "side": 1,
+      "development": 109,
+      "Name": "Med Shield 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 11.0832799,
+    "sim": 582.500000000018,
+    "detail": {
+      "side": 1,
+      "development": 116,
+      "Name": "Lt Booster 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 12.5371542,
+    "sim": 660.499999999947,
+    "detail": {
+      "side": 1,
+      "development": 131,
+      "Name": "Counter 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 14.0146154,
+    "sim": 740.9999999998738,
+    "detail": {
+      "side": 1,
+      "development": 236,
+      "Name": "MRM Quickfire 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 20.2198629,
+    "sim": 1059.2499999995844,
+    "detail": {
+      "side": 0,
+      "development": 54,
+      "Name": "Retro Booster"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 25.4712456,
+    "sim": 1327.4999999993404,
+    "detail": {
+      "side": 0,
+      "development": 61,
+      "Name": "Enh Constructor"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 28.4129852,
+    "sim": 1476.4999999992049,
+    "detail": {
+      "side": 1,
+      "development": 58,
+      "Name": "Enh Constructor"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 29.9135342,
+    "sim": 1550.7499999991373,
+    "detail": {
+      "side": 1,
+      "development": 64,
+      "Name": "Enh Miner"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 30.8221758,
+    "sim": 1595.9999999990962,
+    "detail": {
+      "side": 0,
+      "development": 65,
+      "Name": "Enh Miner"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 31.4040648,
+    "sim": 1625.2499999990696,
+    "detail": {
+      "side": 1,
+      "development": 87,
+      "Name": "ER Nanite 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 32.882927,
+    "sim": 1701.4999999990002,
+    "detail": {
+      "side": 1,
+      "development": 97,
+      "Name": "SRM Seismic"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 34.3696742,
+    "sim": 1777.9999999989307,
+    "detail": {
+      "side": 1,
+      "development": 121,
+      "Name": "Hvy Sig Cloak 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 35.9590491,
+    "sim": 1859.4999999988565,
+    "detail": {
+      "side": 0,
+      "development": 90,
+      "Name": "MRM Seeker 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 39.8867636,
+    "sim": 2060.4999999987303,
+    "detail": {
+      "side": 1,
+      "development": 223,
+      "Name": "Enh Carrier Drone"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 41.1448267,
+    "sim": 2126.4999999989705,
+    "detail": {
+      "side": 0,
+      "development": 109,
+      "Name": "Med Shield 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 41.357604,
+    "sim": 2137.4999999990105,
+    "detail": {
+      "side": 1,
+      "development": 17,
+      "Name": "SpecMine (He)"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 45.9052615,
+    "sim": 2380.4999999998945,
+    "detail": {
+      "side": 0,
+      "development": 116,
+      "Name": "Lt Booster 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 46.8448562,
+    "sim": 2430.0000000000746,
+    "detail": {
+      "side": 1,
+      "development": 37,
+      "Name": "Bomber"
+    }
+  },
+  {
+    "kind": "first-upgraded-launch",
+    "match": 1,
+    "wall": 46.9844892,
+    "sim": 2435.7500000000955,
+    "detail": {
+      "side": 1,
+      "ship": 8102,
+      "hull": 25,
+      "parts": [
+        33,
+        33,
+        157,
+        43,
+        85
+      ],
+      "legalAtStart": false
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 48.3505111,
+    "sim": 2506.250000000352,
+    "detail": {
+      "side": 1,
+      "development": 171,
+      "Name": "Upgrade Garrison"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 50.8404935,
+    "sim": 2636.7500000008267,
+    "detail": {
+      "side": 0,
+      "development": 131,
+      "Name": "Counter 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 54.7794513,
+    "sim": 2851.750000001609,
+    "detail": {
+      "side": 1,
+      "development": 151,
+      "Name": "GA: Missile Track 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 55.6032569,
+    "sim": 2897.0000000017735,
+    "detail": {
+      "side": 0,
+      "development": 236,
+      "Name": "MRM Quickfire 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 56.2811214,
+    "sim": 2934.50000000191,
+    "detail": {
+      "side": 1,
+      "development": 155,
+      "Name": "GA: Ripcord 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 57.8167163,
+    "sim": 3019.0000000022173,
+    "detail": {
+      "side": 1,
+      "development": 157,
+      "Name": "GA: Ship Sensors 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 59.4300385,
+    "sim": 3100.250000002513,
+    "detail": {
+      "side": 1,
+      "development": 159,
+      "Name": "GA: Ship Hull 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 60.9458571,
+    "sim": 3174.250000002782,
+    "detail": {
+      "side": 1,
+      "development": 161,
+      "Name": "GA: Ship Shield 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 62.351645,
+    "sim": 3248.5000000030523,
+    "detail": {
+      "side": 1,
+      "development": 53,
+      "Name": "Cruise Booster"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 63.8371581,
+    "sim": 3328.2500000033424,
+    "detail": {
+      "side": 1,
+      "development": 71,
+      "Name": "PW Gattling Gun 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 65.3310952,
+    "sim": 3408.2500000036334,
+    "detail": {
+      "side": 1,
+      "development": 74,
+      "Name": "EW Disruptor 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 66.8189448,
+    "sim": 3488.5000000039254,
+    "detail": {
+      "side": 1,
+      "development": 81,
+      "Name": "PW Auto-Cannon 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 67.4378045,
+    "sim": 3522.0000000040473,
+    "detail": {
+      "side": 0,
+      "development": 226,
+      "Name": "Enh Carrier Drone"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 68.316069,
+    "sim": 3569.250000004219,
+    "detail": {
+      "side": 1,
+      "development": 88,
+      "Name": "SRM Dumbfire 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 69.8613619,
+    "sim": 3652.250000004521,
+    "detail": {
+      "side": 1,
+      "development": 96,
+      "Name": "SRM Anti-Base 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 71.3612007,
+    "sim": 3732.500000004813,
+    "detail": {
+      "side": 1,
+      "development": 107,
+      "Name": "Sm Shield 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 1,
+    "wall": 72.1794664,
+    "sim": 3776.750000004974,
+    "detail": {
+      "side": 0,
+      "development": 38,
+      "Name": "Bomber"
+    }
+  },
+  {
+    "kind": "first-upgraded-launch",
+    "match": 1,
+    "wall": 72.2861493,
+    "sim": 3782.500000004995,
+    "detail": {
+      "side": 0,
+      "ship": 8105,
+      "hull": 504,
+      "parts": [
+        33,
+        33,
+        157,
+        43,
+        85
+      ],
+      "legalAtStart": false
+    }
+  },
+  {
+    "kind": "game-over",
+    "match": 1,
+    "wall": 74.14799,
+    "sim": 3782.500000004995,
+    "detail": null
+  },
+  {
+    "kind": "tech-reset",
+    "match": 2,
+    "wall": 74.1492634,
+    "sim": 3782.500000004995,
+    "detail": {
+      "epoch": "11c80ce2fc4c4906a02625eb2132786c"
+    }
+  },
+  {
+    "kind": "started",
+    "match": 2,
+    "wall": 74.405679,
+    "sim": 3801.500000005064,
+    "detail": null
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 75.1272247,
+    "sim": 3846.250000005227,
+    "detail": {
+      "side": 0,
+      "development": 222,
+      "Name": "Weedcore 03"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 75.1286566,
+    "sim": 3846.250000005227,
+    "detail": {
+      "side": 1,
+      "development": 222,
+      "Name": "Weedcore 03"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 80.2457475,
+    "sim": 4124.250000006238,
+    "detail": {
+      "side": 1,
+      "development": 54,
+      "Name": "Retro Booster"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 81.7655283,
+    "sim": 4203.5000000065265,
+    "detail": {
+      "side": 1,
+      "development": 90,
+      "Name": "MRM Seeker 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 83.1842256,
+    "sim": 4280.250000006806,
+    "detail": {
+      "side": 1,
+      "development": 109,
+      "Name": "Med Shield 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 84.6988384,
+    "sim": 4362.000000007103,
+    "detail": {
+      "side": 1,
+      "development": 116,
+      "Name": "Lt Booster 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 86.2612764,
+    "sim": 4444.500000007403,
+    "detail": {
+      "side": 1,
+      "development": 131,
+      "Name": "Counter 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 87.689403,
+    "sim": 4521.750000007684,
+    "detail": {
+      "side": 1,
+      "development": 236,
+      "Name": "MRM Quickfire 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 93.2822856,
+    "sim": 4811.750000008739,
+    "detail": {
+      "side": 0,
+      "development": 54,
+      "Name": "Retro Booster"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 98.3116535,
+    "sim": 5069.250000009676,
+    "detail": {
+      "side": 0,
+      "development": 61,
+      "Name": "Enh Constructor"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 102.0764891,
+    "sim": 5258.000000010363,
+    "detail": {
+      "side": 1,
+      "development": 58,
+      "Name": "Enh Constructor"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 103.4253606,
+    "sim": 5323.500000010601,
+    "detail": {
+      "side": 0,
+      "development": 65,
+      "Name": "Enh Miner"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 103.6368951,
+    "sim": 5333.750000010638,
+    "detail": {
+      "side": 1,
+      "development": 64,
+      "Name": "Enh Miner"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 105.1214365,
+    "sim": 5405.2500000108985,
+    "detail": {
+      "side": 1,
+      "development": 87,
+      "Name": "ER Nanite 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 106.8619588,
+    "sim": 5490.250000011208,
+    "detail": {
+      "side": 1,
+      "development": 97,
+      "Name": "SRM Seismic"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 108.3625354,
+    "sim": 5563.500000011474,
+    "detail": {
+      "side": 1,
+      "development": 121,
+      "Name": "Hvy Sig Cloak 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 108.8318778,
+    "sim": 5586.250000011557,
+    "detail": {
+      "side": 0,
+      "development": 90,
+      "Name": "MRM Seeker 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 113.8190531,
+    "sim": 5832.500000012453,
+    "detail": {
+      "side": 1,
+      "development": 223,
+      "Name": "Enh Carrier Drone"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 113.9794478,
+    "sim": 5840.500000012482,
+    "detail": {
+      "side": 0,
+      "development": 109,
+      "Name": "Med Shield 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 115.3039281,
+    "sim": 5908.0000000127275,
+    "detail": {
+      "side": 1,
+      "development": 17,
+      "Name": "SpecMine (He)"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 119.2056716,
+    "sim": 6102.000000013433,
+    "detail": {
+      "side": 0,
+      "development": 116,
+      "Name": "Lt Booster 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 120.8063717,
+    "sim": 6183.50000001373,
+    "detail": {
+      "side": 1,
+      "development": 37,
+      "Name": "Bomber"
+    }
+  },
+  {
+    "kind": "first-upgraded-launch",
+    "match": 2,
+    "wall": 120.9190734,
+    "sim": 6189.500000013752,
+    "detail": {
+      "side": 1,
+      "ship": 8133,
+      "hull": 25,
+      "parts": [
+        33,
+        33,
+        157,
+        43,
+        85
+      ],
+      "legalAtStart": false
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 122.2848811,
+    "sim": 6260.50000001401,
+    "detail": {
+      "side": 1,
+      "development": 171,
+      "Name": "Upgrade Garrison"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 124.2739185,
+    "sim": 6364.500000014388,
+    "detail": {
+      "side": 0,
+      "development": 131,
+      "Name": "Counter 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 128.8047795,
+    "sim": 6598.75000001524,
+    "detail": {
+      "side": 1,
+      "development": 151,
+      "Name": "GA: Missile Track 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 129.27824,
+    "sim": 6623.50000001533,
+    "detail": {
+      "side": 0,
+      "development": 236,
+      "Name": "MRM Quickfire 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 130.3383967,
+    "sim": 6678.25000001553,
+    "detail": {
+      "side": 1,
+      "development": 155,
+      "Name": "GA: Ripcord 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 131.8233395,
+    "sim": 6754.750000015808,
+    "detail": {
+      "side": 1,
+      "development": 157,
+      "Name": "GA: Ship Sensors 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 133.4198243,
+    "sim": 6830.250000016083,
+    "detail": {
+      "side": 1,
+      "development": 159,
+      "Name": "GA: Ship Hull 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 135.1565454,
+    "sim": 6912.500000016382,
+    "detail": {
+      "side": 1,
+      "development": 161,
+      "Name": "GA: Ship Shield 1"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 136.8720665,
+    "sim": 6998.000000016693,
+    "detail": {
+      "side": 1,
+      "development": 53,
+      "Name": "Cruise Booster"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 138.3415846,
+    "sim": 7072.500000016964,
+    "detail": {
+      "side": 1,
+      "development": 71,
+      "Name": "PW Gattling Gun 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 139.8247072,
+    "sim": 7148.750000017241,
+    "detail": {
+      "side": 1,
+      "development": 74,
+      "Name": "EW Disruptor 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 141.3076285,
+    "sim": 7225.25000001752,
+    "detail": {
+      "side": 1,
+      "development": 81,
+      "Name": "PW Auto-Cannon 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 141.5737059,
+    "sim": 7239.00000001757,
+    "detail": {
+      "side": 0,
+      "development": 226,
+      "Name": "Enh Carrier Drone"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 142.8442621,
+    "sim": 7305.00000001781,
+    "detail": {
+      "side": 1,
+      "development": 88,
+      "Name": "SRM Dumbfire 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 144.3218128,
+    "sim": 7382.500000018092,
+    "detail": {
+      "side": 1,
+      "development": 96,
+      "Name": "SRM Anti-Base 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 145.7750864,
+    "sim": 7459.500000018372,
+    "detail": {
+      "side": 1,
+      "development": 107,
+      "Name": "Sm Shield 2"
+    }
+  },
+  {
+    "kind": "research-completed",
+    "match": 2,
+    "wall": 146.498112,
+    "sim": 7498.000000018512,
+    "detail": {
+      "side": 0,
+      "development": 38,
+      "Name": "Bomber"
+    }
+  },
+  {
+    "kind": "first-upgraded-launch",
+    "match": 2,
+    "wall": 146.6075628,
+    "sim": 7504.000000018534,
+    "detail": {
+      "side": 0,
+      "ship": 8134,
+      "hull": 504,
+      "parts": [
+        33,
+        33,
+        157,
+        43,
+        85
+      ],
+      "legalAtStart": false
+    }
+  },
+  {
+    "kind": "game-over",
+    "match": 2,
+    "wall": 148.4537832,
+    "sim": 7504.000000018534,
+    "detail": null
+  },
+  {
+    "kind": "tech-reset",
+    "match": 3,
+    "wall": 148.4552527,
+    "sim": 7504.000000018534,
+    "detail": {
+      "epoch": "86324132369246769f0e70e399faedaf"
+    }
+  }
+]

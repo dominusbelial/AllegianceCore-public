@@ -186,6 +186,7 @@ public class ShipDeleteGoneTests
     [InlineData(ShipDelete.SdrLeftSector)]
     [InlineData(ShipDelete.SdrKilled)]
     [InlineData(ShipDelete.SdrLoggedOff)]
+    [InlineData(ShipDelete.SdrTerminate)]
     public void ShipDelete_encodes_decodes_roundtrip(int sdr)
     {
         var m = new ShipDelete { ShipId = 1234, Sdr = sdr };

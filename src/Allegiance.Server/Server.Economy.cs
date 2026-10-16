@@ -17,6 +17,10 @@ namespace Allegiance.Server;
 /// </summary>
 public sealed partial class Server
 {
+    // The donation transaction sends status after the wallet debit, matching
+    // FedSrv/FedSrv.CPP:7154-7196. Other authoritative money snapshots have
+    // no such transaction and must still be sent by OnBucketChanged.
+    private Bucket? _donatingBucket;
 
 /// <summary>Port of <c>CFSPlayer::SetAutoDonate</c>
     /// (<c>FedSrv/fsship.cpp:1293-1352</c>) — the real cycle-resolution
@@ -564,7 +568,11 @@ public sealed partial class Server
             // an unbuyable bucket accepts nothing. The bucket caps at what it
             // still needs (bucketigc.h:281-293) and only the actually-spent
             // figure leaves the player's wallet (FedSrv.CPP:7154-7160).
-            long spent = bucket.AddMoney(donate.MoneyGiven);
+            var previousDonation = _donatingBucket;
+            _donatingBucket = bucket;
+            long spent;
+            try { spent = bucket.AddMoney(donate.MoneyGiven); }
+            finally { _donatingBucket = previousDonation; }
             refund -= spent;
             live.Wallet.Money -= (int)spent;   // spend from the PLAYER's wallet, not the side (FedSrv.CPP:7160)
             Console.WriteLine($"[bucketdonate] {from}: player {live.Ship.Id} donated {donate.MoneyGiven} into bucket {bucket.Id} -> spent {spent}, invested {bucket.InvestedMoney}/{bucket.Price}, wallet now {live.Wallet.Money}");
@@ -680,11 +688,13 @@ public sealed partial class Server
 
     private void OnBucketChanged(BucketChange change, Bucket bucket)
     {
+        if (change == BucketChange.MoneyChange && ReferenceEquals(bucket, _donatingBucket)) return;
         // Native client simulates bucket time locally. This port's investment
         // pane consumes authoritative snapshots instead: carry the same integer
         // percentage transition over the existing BUCKET_STATUS message.
-        // Donation already sends MoneyChange in its wallet/status transaction.
-        if (change is not (BucketChange.PercentCompleteChange or BucketChange.Emptied)
+        // Money snapshots also carry obsolete research and station-successor
+        // transfers (Igc/sideigc.h:629-656), which have no donation transaction.
+        if (change is not (BucketChange.PercentCompleteChange or BucketChange.Emptied or BucketChange.MoneyChange)
             || bucket.Side is not { Mission: { } mission } side) return;
         if (bucket.Development is { DevelopmentId: Mission.TeamMoneyDevelopmentId })
             BroadcastBucketStatusMissionWide(mission, side.Id, bucket);
@@ -829,6 +839,7 @@ public sealed partial class Server
 
         Console.WriteLine($"[constr] station-type bucket '{stationType.Name}' complete on side {side.Id} → spawned constructor ship {ship.Id} (drone type {constructionDroneId}, hull '{ship.HullType.Name}', BuilderStationType '{stationType.Name}', waits-for-build) at home '{hs.Name}'");
 
+        BroadcastResearchProduction(mission, ship);
         BroadcastConstructorNeedRock(mission, side.Id, stationType.ConstructorNeedRockSound, ship.Id);
     }
 
@@ -978,6 +989,7 @@ public sealed partial class Server
 
         var pos = new Vector3(hs.Position[0], hs.Position[1], hs.Position[2]);
         var ship = SpawnNpcShip(mission, sector, side.Id, pos, droneType.DroneTypeId);
+        BroadcastResearchProduction(mission, ship);
 
         // Layer base data = the laid expendable (native CreateStockDrone's
         // GetLaidExpendable(), FedSrv.CPP:11523-11525), recorded on the ship;

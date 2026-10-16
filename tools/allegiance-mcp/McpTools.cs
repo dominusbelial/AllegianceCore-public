@@ -65,7 +65,7 @@ internal static class McpTools
             new Tool
             {
                 Name = "spawn_scenario",
-                Description = "Spawn a whole fight in one call. Three compositions: (1) homogeneous — `size` real 'combat' bots PER SIDE of one `hull` (2×size total, the P430 path, optional per-side `tech_a`/`tech_b`); (2) MIXED-FLEET (P557) — `fleet_a`/`fleet_b` (or one `fleet` for both sides) as arrays of {hull, count, tech?}, each entry spawning `count` bots of that hull with its native preferred loadout advanced by `tech` (P555/P556), staging/arena working over the whole mixed fleet; (3) SHOWCASE PRESET (P557) — `preset:\"showcase\"` composes a readable per-side mix (fighters main line + interceptors + scouts + bombers/heavies where available, ~15 per side × `size_scale`) from the real core's player-buyable hulls, gives mine dispensers to a slice of the fleet and enables the native wingman UseMines/UseMissiles/Strafe behaviour. Optional `minefields:{side,count,at}` invests the side's native LAYER-drone bucket and orders the drone to build a minefield (default: in front of the enemy's arrival aleph in the rendezvous sector). Optional `wingman:{strafe,use_missiles,use_mines}` sets the scenario default behaviour mask. Returns a per-side summary with the resolved per-hull loadouts, who carries mines/missiles, and minefield placements; any real per-bot failure is named individually. Showcase defaults to a mature-battle bomber finale after at least 30 minutes; finale_after_minutes:0 disables it. Read the live finale section in get_perf_stats.",
+                Description = "Spawn a fight with size bots per side, explicit fleet arrays, or preset:\"showcase\" (15 per side times size_scale). Hull names seed capability-based roles. Each bot buys the best legal affordable loadout from its own side techs and dock station, then re-picks on death or the next match. Locked roles temporarily fly a legal fighter/scout. Legacy tech_a, tech_b and fleet tech fields are accepted but ignored. Grants report actual purchases. Supports staging/arena, routes, wingman settings, native layer-drone minefields, and a mature-battle bomber finale (showcase default 30 minutes; finale_after_minutes:0 disables it).",
                 InputSchema = Schema(new
                 {
                     type = "object",
@@ -74,14 +74,14 @@ internal static class McpTools
                         refill = new { type = "boolean", @default = true, description = "Retry each failed or disconnected slot once at the end of spawning. Summary counts only bots still connected at completion; failures lists every failed attempt." },
                         size = new { type = "integer", description = "Homogeneous mode: bots PER SIDE to spawn (total = 2×size). Used when no `fleet`/`fleet_a`/`fleet_b`/`preset` is given. 5 / 10 / 15 are the intended presets." },
                         hull = new { type = "string", description = "Homogeneous mode: hull name/substring used for every bot. Defaults to the same real fighter spawn_bot / vizfight use." },
-                        fleet = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet used for BOTH sides: array of { hull (name/substring), count (int ≥1), tech (optional int ≥0) }. Each entry spawns `count` bots of that hull with its native preferred loadout advanced by `tech`." },
+                        fleet = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet used for BOTH sides: array of { hull (name/substring), count (int ≥1), tech (optional int ≥0) }. Each entry requests `count` bots of the hull's capability-based role; actual purchases use side techs and the dock. Legacy tech is ignored." },
                         fleet_a = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet for SIDE A specifically: array of { hull, count, tech? }. Overrides `fleet` for side A." },
                         fleet_b = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet for SIDE B specifically: array of { hull, count, tech? }. Overrides `fleet` for side B." },
-                        preset = new { type = "string", @enum = new[] { "showcase" }, description = "P557: 'showcase' composes a readable per-side mixed fleet from the real core's player-buyable hulls (~15 per side × size_scale), gives mine dispensers to a slice of the fleet and enables native wingman UseMines/UseMissiles/Strafe." },
+                        preset = new { type = "string", @enum = new[] { "showcase" }, description = "P557: 'showcase' composes a readable per-side mixed fleet from the real core's player-buyable hulls (~15 per side × size_scale), selects legal equipment per role and enables native wingman UseMines/UseMissiles/Strafe." },
                         size_scale = new { type = "integer", @default = 1, minimum = 1, description = "P557: scales the showcase fleet size (15 × size_scale ships per side)." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
-                        tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Homogeneous mode: per-side tech level for side A (P539b/P556). Ignored when a mixed fleet is given (each entry carries its own `tech`)." },
-                        tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Homogeneous mode: per-side tech level for side B. Ignored when a mixed fleet is given." },
+                        tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Legacy compatibility field; ignored. Purchases use the real side techs at the dock." },
+                        tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Legacy compatibility field; ignored. Purchases use the real side techs at the dock." },
                         mode = new { type = "string", @enum = new[] { "march", "arena" }, @default = "march", description = "Battle start mode (Domingo, 2026-10-13). `march` (DEFAULT, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. `arena`: both fleets spawn directly in `target_sector` facing each other for an instant clash (server stress test). The legacy `arena: true` flag is an alias for `mode: \"arena\"`." },
                         arena = new { type = "boolean", @default = false, description = "P539d — arena mode: launch both sides DIRECTLY into `target_sector` at mirrored spots so travel can't decide the outcome. Requires `target_sector`." },
                         staging = new { type = "boolean", @default = true, description = "P539d — travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers until its whole living complement is assembled before advancing." },
@@ -153,14 +153,14 @@ internal static class McpTools
             new Tool
             {
                 Name = "invest",
-                Description = "P486 — fund a REAL investment on the chosen side through the harness commander's P473-granted wallet, then report the observed BUCKET_STATUS progress (or completion + the drone that appeared on the wire). `bucket` is a drone-type or station-type bucket name or id (resolved with the same ids the server bakes into its list — see list_drones context); a development bucket is refused. Donates `amount` (default: the remaining price), so completing a bucket also requires the build time (TimeToBuild seconds) to elapse, which the tool waits out up to `observe_seconds`. Works entirely as an ordinary same-side player — the native drone AI then flies the spawned drone.",
+                Description = "P486 — fund a REAL investment on the chosen side through the commander's real player wallet, then report the observed BUCKET_STATUS progress (or completion + the drone that appeared on the wire). `bucket` is a development, drone-type or station-type bucket name or id (resolved with the same ids the server bakes into its list — see list_drones context); developments complete through normal research. Donates `amount` (default: the remaining price), so completing a bucket also requires the build time (TimeToBuild seconds) to elapse, which the tool waits out up to `observe_seconds`. Works entirely as an ordinary same-side player — the native drone AI then flies the spawned drone.",
                 InputSchema = Schema(new
                 {
                     type = "object",
                     properties = new
                     {
                         side = new { type = "integer", description = "REQUIRED: side id to invest on (the commander seats on it)." },
-                        bucket = new { type = "string", description = "REQUIRED: drone-type / station-type bucket NAME or id to invest in (e.g. '.Miner', 'Wingman', or a numeric id). Resolved exact-over-unique-substring." },
+                        bucket = new { type = "string", description = "REQUIRED: development / drone-type / station-type bucket NAME or id to invest in (e.g. '.Miner', 'Wingman', or a numeric id). Resolved exact-over-unique-substring." },
                         amount = new { type = "integer", description = "Optional money to donate. Default = the remaining price (to completion). Capped at the outstanding balance and the commander wallet." },
                         observe_seconds = new { type = "number", description = "Optional observation window in real seconds (default 20). The tool waits up to this for the bucket to complete (money full AND build time elapsed) and for the spawned drone to appear on the wire; otherwise returns current progress." },
                     },
@@ -435,11 +435,7 @@ internal static class McpTools
         // (same resolution semantics as the spawn_bot `launcher` argument).
         var (launcherId, launcherRequest) = ResolveLauncherArg(args);
 
-        // P539b — per-side tech LEVEL: 0 = the hull's native preferred loadout;
-        // N = each preferred part advanced N steps along its native successor
-        // chain (stopping at the last successor that still mounts). Higher tech
-        // flies stronger parts, so a showcase operator can make one side
-        // predictably dominate.
+        // Accepted for old callers; scenarios now select against live techs.
         int techA = OptInt(args, "tech_a") ?? 0;
         int techB = OptInt(args, "tech_b") ?? 0;
 
@@ -451,27 +447,9 @@ internal static class McpTools
 
         var spawnSlots = new List<SpawnBatch.Slot>();
         bool refill = OptBool(args, "refill", def: true);
-        // P556 — each side's resolved tech loadout (effective hull + parts). The
-        // effective hull id is what each side's spawn REQUESTS so the server
-        // mounts the successor hull, not the base.
-        var tlA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA);
-        var tlB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB);
-        var partsA = tlA.Parts;
-        var partsB = tlB.Parts;
-        var flyHullIdA = tlA.HullId;   var flyHullNameA = tlA.HullName;
-        var flyHullIdB = tlB.HullId;   var flyHullNameB = tlB.HullName;
-
-        // P556 — the per-side report fragment: hull id/name/HP, mounted shield
-        // (name + strength/regen), lead gun, and the full resolved loadout.
-        object SideReport(Catalog.TechLoadout tl, int level) => new
-        {
-            level,
-            hull = new { id = tl.HullId, name = tl.HullName, hitPoints = tl.HitPoints },
-            shield = Catalog.ShieldStats(tl.Parts) is { } sh ? new { partId = sh.PartId, name = sh.Name, strength = sh.Strength, regen = sh.Regen } : null,
-            gun = Catalog.FirstWeaponPartId(tl.Parts) is { } gw ? Catalog.PartName(gw) : null,
-            loadout = tl.Parts.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray(),
-        };
-
+        var flyHullIdA = hull.Id; var flyHullNameA = hull.Name;
+        var flyHullIdB = hull.Id; var flyHullNameB = hull.Name;
+        IReadOnlyList<ExpandedPartData> partsA = [], partsB = [];
         // P539d — fair contact: `arena` launches both sides DIRECTLY into the
         // target sector at mirrored spots (equal distance from the centre, facing
         // each other) so travel can't decide the outcome. `staging` (default for a
@@ -535,11 +513,11 @@ internal static class McpTools
             spawnSlots.Add(new(i, sideA, flyHullNameA, () => mgr.SpawnBot(
                 flyHullIdA, flyHullNameA, sideA, partsA, "combat", targetSector, launcherId, launcherRequest,
                 useStaging: staging, arena: arena, arenaPosition: arena ? spotA.Pos : null, arenaFacing: arena ? spotA.Fwd : null,
-                routePath: raPath, routeIndex: raIdx, reportFailure: false)));
+                routePath: raPath, routeIndex: raIdx, role: Showcase.ClassifyHull(Catalog.RepresentativeCore().HullTypes[flyHullIdA]).ToString(), reportFailure: false)));
             spawnSlots.Add(new(i, sideB, flyHullNameB, () => mgr.SpawnBot(
                 flyHullIdB, flyHullNameB, sideB, partsB, "combat", targetSector, launcherId, launcherRequest,
                 useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null,
-                routePath: rbPath, routeIndex: rbIdx, reportFailure: false)));
+                routePath: rbPath, routeIndex: rbIdx, role: Showcase.ClassifyHull(Catalog.RepresentativeCore().HullTypes[flyHullIdB]).ToString(), reportFailure: false)));
         }
         var batch = new SpawnBatch(mgr.Partition?.Select(spawnSlots) ?? spawnSlots);
         if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = size }, new { side = sideB, requested = size } } }));
@@ -563,14 +541,8 @@ internal static class McpTools
             arenaNote,
             routes = routesNote,
             maxPerRoute,
-            // P539b/P556 — the resolved per-side tech loadout by PART NAME plus
-            // the effective hull/HP/shield/gun each side actually flies, so a
-            // showcase operator knows exactly who should win before the fight.
-            tech = new
-            {
-                sideA = SideReport(tlA, techA),
-                sideB = SideReport(tlB, techB),
-            },
+            loadoutPolicy = "current side techs and dock station; legacy synthetic levels ignored",
+            ignoredLegacyTech = new { sideA = techA, sideB = techB },
             refill,
             sideA = batch.Counts(sideA),
             sideB = batch.Counts(sideB),
@@ -667,8 +639,8 @@ internal static class McpTools
 
         // Per-bot spawn slots (mixed-fleet loadout resolution + mine/missile slicing).
         var slots = new List<ShowcaseSpawnSlot>();
-        AddSideFleet(slots, fleetA, sideA, showcase, wingman, core, launcherId);
-        AddSideFleet(slots, fleetB, sideB, showcase, wingman, core, launcherId);
+        AddSideFleet(slots, fleetA, sideA, wingman, core);
+        AddSideFleet(slots, fleetB, sideB, wingman, core);
 
         // Lay minefields (native layer drones) BEFORE the fleets meet.
         var minefieldReports = new List<object>();
@@ -772,7 +744,7 @@ internal static class McpTools
 
         finaleNames.AddRange(batch.Results.Select(r => r.Name));   // P656 finale roster from the P657 spawn batch
         var finale = mgr.ConfigureFinale(finaleSettings, finaleNames);
-        var (faRep, fbRep) = BuildFleetReport(core, slots);
+        var (faRep, fbRep) = BuildFleetReport(core, slots, batch);
         var summary = new
         {
             finale,
@@ -794,7 +766,7 @@ internal static class McpTools
             grants,
             warnings,
             failures = batch.Failures,
-            note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence. fleet lists the resolved per-hull loadout and whether the slice carries mines (mounted mine dispenser) / missiles; each bot's wingman flags are in `wingman`.",
+            note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence. fleet and grants list actual accepted purchases selected from side techs and dock stations. Requested roles persist through later upgrades; legacy synthetic tech fields are ignored. Wingman flags are in `wingman`.",
         };
         if (batch.Results.Count == 0 && (batch.Counts(sideA).requested + batch.Counts(sideB).requested > 0 || mgr.Partition is null))
             return Err(JsonSerializer.Serialize(summary));
@@ -817,70 +789,35 @@ internal static class McpTools
         short? LauncherId, string? LauncherName, short Wingman,
         string SourceHull, int Tech, bool CarriesMines, Showcase.HullRole Role);
 
-    /// <summary>Expand one side's fleet into per-bot spawn slots: per entry,
-    /// resolve the native-preferred loadout at its `tech` (P555/P556); when
-    /// <paramref name="giveMines"/> (showcase), give a real mountable mine
-    /// dispenser to ~⅓ of each entry (botIndex % 3 == 0) and enable UseMines
-    /// (already in the default mask).</summary>
+    /// <summary>Fleet entries seed roles; the seated client's real shop selects hardware.</summary>
     private static void AddSideFleet(List<ShowcaseSpawnSlot> slots, IReadOnlyList<Showcase.FleetEntry> fleet,
-        short side, bool giveMines, short wingman, StaticCore core, short? homoL)
+        short side, short wingman, StaticCore core)
     {
         foreach (var e in fleet)
-        {
-            var tl = Catalog.NativePreferredLoadout(e.HullId, e.HullName, e.Tech);
-            var eff = core.HullTypes[tl.HullId];
-            for (int b = 0; b < e.Count; b++)
-            {
-                var parts = tl.Parts.ToList();
-                short? launcherId = homoL;
-                string? launcherName = launcherId is { } hl ? Catalog.ResolveLauncherName(hl) : null;
-                bool carriesMines = false;
-                if (giveMines && b % 3 == 0)
-                {
-                    var (pid, note) = Showcase.PickMineDispenser(core, eff);
-                    if (pid is { } pp)
-                    {
-                        string? mn = Catalog.AppendLauncher(parts, pp, tl.HullId, tl.HullName, note);
-                        if (mn is not null && mn.StartsWith("mounted real mine", StringComparison.Ordinal))
-                        {
-                            carriesMines = true;
-                            launcherId = pp;
-                            launcherName = Catalog.ResolveLauncherName(pp);
-                        }
-                    }
-                }
-                slots.Add(new ShowcaseSpawnSlot(tl.HullId, tl.HullName, side, parts, launcherId, launcherName,
-                    wingman, e.HullName, e.Tech, carriesMines, Showcase.ClassifyHull(eff)));
-            }
-        }
+            for (int i = 0; i < e.Count; i++)
+                slots.Add(new(e.HullId, e.HullName, side, [], null, null, wingman,
+                    e.HullName, e.Tech, false, Showcase.ClassifyHull(core.HullTypes[e.HullId])));
     }
 
-    /// <summary>P557 — the per-side fleet report fragment: per distinct source
-    /// hull, its count, resolved loadout by name, and whether the slice carries
-    /// mines / missiles. Returns (sideA, sideB).</summary>
-    private static (List<object> A, List<object> B) BuildFleetReport(StaticCore core, List<ShowcaseSpawnSlot> slots)
+    private static (List<object> A, List<object> B) BuildFleetReport(StaticCore core,
+        List<ShowcaseSpawnSlot> slots, SpawnBatch batch)
     {
-        if (slots.Count == 0) return (new List<object>(), new List<object>());
+        if (slots.Count == 0) return ([], []);
         short first = slots[0].Side;
-        var aList = slots.Where(s => s.Side == first).ToList();
-        var bList = slots.Where(s => s.Side != first).ToList();
-        List<object> ReportFor(List<ShowcaseSpawnSlot> list) =>
-            list.GroupBy(s => s.SourceHull).Select(g =>
+        List<object> ReportFor(short side) => batch.Results.Where(r => r.Side == side)
+            .GroupBy(r => r.Granted.HullId).Select(g =>
             {
-                var first0 = g.First();
-                bool anyMissiles = g.Any(s => s.Parts.Any(p =>
-                    core.Launchers.ContainsKey(p.PartId) && core.MissileTypes.ContainsKey(core.Launchers[p.PartId].ExpendabletypeId)));
-                return new
+                var parts = g.First().Granted.Parts;
+                return (object)new
                 {
-                    hull = first0.SourceHull,
-                    count = g.Count(),
-                    tech = first0.Tech,
-                    loadout = first0.Parts.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray(),
-                    carriesMines = g.Any(s => s.CarriesMines),
-                    carriesMissiles = anyMissiles,
+                    hull = core.HullTypes[g.Key].Name, hullId = g.Key, count = g.Count(),
+                    loadoutSource = "current side techs at dock",
+                    loadout = parts.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray(),
+                    carriesMines = parts.Any(p => TechLoadoutSelector.Part(core, p.PartId).Type is DataPartTypeIGC.MineLauncher),
+                    carriesMissiles = parts.Any(p => TechLoadoutSelector.Part(core, p.PartId).Type is DataPartTypeIGC.MissileLauncher),
                 };
-            }).Cast<object>().ToList();
-        return (ReportFor(aList), ReportFor(bList));
+            }).ToList();
+        return (ReportFor(first), ReportFor(slots.Select(s => s.Side).FirstOrDefault(s => s != first, first)));
     }
 
     /// <summary>P557 — lay minefields with native LAYER drones. For each side,
@@ -1104,6 +1041,7 @@ internal static class McpTools
                 units = "Distinct active undocked bots idle with a target, sampled each second; botsLastMinute counts each bot once over 60 seconds. Idle means speed < 1 m/s and no movement for > 5 seconds.",
             },
             finale = mgr.FinaleStatus(),
+            research = mgr.ResearchStatus(),
             decisionOverruns = mgr.DecisionOverruns,
             stall = StallWatchdog.JsonSnapshot(ps.Stall),
             removedBots = mgr.RemovedBots(),

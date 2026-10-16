@@ -1,0 +1,9 @@
+{
+  "method": "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+  "threeClean": true,
+  "labels": [
+    "fixed-isolation-mine-1",
+    "fixed-isolation-mine-2",
+    "fixed-isolation-mine-3"
+  ]
+}

@@ -184,8 +184,9 @@ public sealed class Bucket : IBucketIgc
     /// <c>m_investedMilliseconds</c>, <c>GetTime()</c> bucketigc.h:264-267).</summary>
     public long InvestedMilliseconds { get; private set; }
 
-    /// <summary>True once the bucket has become fully funded and fully
-    /// time-invested (the detection boundary; nothing is built on it yet).</summary>
+    /// <summary>True after money/time completion. Developments retain completion;
+    /// native repeatable drone/station buckets reset after their completion callback
+    /// (bucketigc.h:180-239).</summary>
     public bool Completed { get; private set; }
 
     /// <summary>The native percent-bought figure <c>100 * invested / price</c>
@@ -249,6 +250,10 @@ public sealed class Bucket : IBucketIgc
     {
         InvestedMilliseconds = milliseconds;
         InvestedMoney = money;
+        // Native GetCompleteF is derived from invested time (bucketigc.h:175-178).
+        // In particular AdjustBuckets marks obsolete research complete without
+        // firing its completion effects (sideigc.h:629-633).
+        Completed = _completionRaised = milliseconds >= (long)TimeToBuild * 1000;
         _site.BucketChangeEvent(BucketChange.MoneyChange, this);
     }
 
@@ -276,7 +281,7 @@ public sealed class Bucket : IBucketIgc
     /// only accrues while there is invested money, is clamped to the
     /// money-proportional share (<c>mim</c>, bucketigc.h:58-61), and completion
     /// is detected when money-full <em>and</em> time-full coincide
-    /// (bucketigc.h:51), raising <see cref="IIgcSite.BucketCompleted"/> once.
+    /// (bucketigc.h:51), raising <see cref="IIgcSite.BucketCompleted"/> once per purchase.
     /// Called every tick (even when unfunded) so <c>_lastUpdate</c> stays
     /// current, matching the native's unconditional <c>m_lastUpdate = now</c>
     /// (bucketigc.h:73).
@@ -324,6 +329,12 @@ public sealed class Bucket : IBucketIgc
         Completed = true;
         // Detection only — the no-op host seam (nothing is built yet).
         _site.BucketCompleted(this, now);
+        // Native ForceComplete resets repeatable production, bucketigc.h:214-215,238-239.
+        // Development and the legacy synthetic ship bucket retain their one-shot contract.
+        if (ItemType is BucketItemType.BitDroneType or BucketItemType.BitStationType)
+        {
+            SetEmpty();
+        }
     }
 }
 

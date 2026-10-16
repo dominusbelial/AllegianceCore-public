@@ -1,0 +1,220 @@
+{
+  "focused": {
+    "invocations": 159,
+    "seconds": 7098.559801101685,
+    "passed": 311,
+    "failed": 1,
+    "skipped": 0,
+    "failedInvocations": [
+      "focused-P705-101-1-1"
+    ]
+  },
+  "suites": {
+    "invocations": 6,
+    "seconds": 9577.028938293457,
+    "passed": 15800,
+    "failed": 8,
+    "skipped": 6,
+    "failedInvocations": [
+      "full-Core",
+      "full-ClientCore.MonoGame",
+      "fixed-full-Core"
+    ]
+  },
+  "suiteResults": [
+    {
+      "label": "full-Core",
+      "exit": 1,
+      "seconds": 619.6437332630157,
+      "counters": {
+        "total": "4606",
+        "executed": "4606",
+        "passed": "4600",
+        "failed": "6",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+          "message": "System.NullReferenceException : Object reference not set to an instance of an object."
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+          "message": "System.Threading.ThreadStateException : Thread has not been started."
+        },
+        {
+          "name": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_TCP_pipeline_cost_three_configurations",
+          "message": "System.NullReferenceException : Object reference not set to an instance of an object."
+        },
+        {
+          "name": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_TCP_interest_tiers_reduce_bytes_and_report_ages",
+          "message": "System.NullReferenceException : Object reference not set to an instance of an object."
+        },
+        {
+          "name": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+          "message": "git ls-files returned no files \u2014 is this a git checkout?"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P672ScoreRosterTrafficTests.Sixty_four_loopback_peers_measure_steady_refresh_and_heavy_kill_traffic",
+          "message": "System.NullReferenceException : Object reference not set to an instance of an object."
+        }
+      ]
+    },
+    {
+      "label": "full-ClientCore",
+      "exit": 0,
+      "seconds": 3199.2785065174103,
+      "counters": {
+        "total": "1090",
+        "executed": "1090",
+        "passed": "1090",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "label": "full-ClientCore.MonoGame",
+      "exit": 1,
+      "seconds": 932.6906640529633,
+      "counters": {
+        "total": "2211",
+        "executed": "2208",
+        "passed": "2207",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Both_shaders_load_and_render_through_real_gl_to_native_backbuffer",
+          "message": "Possible reasons for this include:\n  * You misspelled a built-in dotnet command.\n  * You intended to execute a .NET program, but dotnet-/tmp/p705-artifacts/tools/fsr-proof/bin/Debug/net10.0/fsr-proof.dll does not exist.\n  * You intended to run a global tool, but a dotnet-prefixed executable with this name could not be found on the PATH.\nCould not execute because the specified command or file was not found.\n"
+        }
+      ]
+    },
+    {
+      "label": "fixed-full-Core",
+      "exit": 1,
+      "seconds": 722.7754628658295,
+      "counters": {
+        "total": "4606",
+        "executed": "4606",
+        "passed": "4605",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+          "message": "B must receive the mine's EXPORT once its scanner net spots it"
+        }
+      ]
+    },
+    {
+      "label": "fixed-full-ClientCore",
+      "exit": 0,
+      "seconds": 3169.1232492923737,
+      "counters": {
+        "total": "1090",
+        "executed": "1090",
+        "passed": "1090",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "label": "fixed-full-ClientCore.MonoGame",
+      "exit": 0,
+      "seconds": 933.5173223018646,
+      "counters": {
+        "total": "2211",
+        "executed": "2208",
+        "passed": "2208",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    }
+  ],
+  "newCases": {
+    "count": 27,
+    "minimumPassingIsolatedExecutions": 3
+  },
+  "matchupMatrix": {
+    "civilizations": 10,
+    "unorderedPairs": 45,
+    "valid": 45
+  },
+  "localTimelines": {
+    "pairs": 4,
+    "completedMatchesPerPair": 2,
+    "sidesResearchAndUpgradeInEachMatch": true,
+    "resetEpochsPerPair": 3
+  }
+}

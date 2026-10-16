@@ -1,0 +1,8 @@
+{
+  "src/Allegiance.Core/Model/Bucket.cs": "bc3685b7952a36b254a86621157e988129f51eec7eab9738eade7e32a8554be4",
+  "src/Allegiance.Core/Model/Side.cs": "d9b853fecce36f895b128ac034ba6f1b42515db7a5ba18958e82aa2dd9dd0f2a",
+  "src/Allegiance.Server/ServerHost.cs": "62e3fc90552d4a3fbbc6ffabce398be883879686f68eaf845eff4a63beb40199",
+  "src/Allegiance.Server/Server.Lifecycle.cs": "94d0c9348e3b9dae10a60d960169ae70a148a9608905c7bb24c2f360dbbcb542",
+  "src/Allegiance.Server/Server.Economy.cs": "cb0027fbbb56a4ed51d368ffc7aeaeba51663c0133cfb9fe6512f5f671af918c",
+  "tests/Allegiance.Core.Tests/P712BucketMergeTests.cs": "9c4c5803a34fb43f7680c140f4bd0cb411ceed849561b80f49021e98259151a2"
+}
