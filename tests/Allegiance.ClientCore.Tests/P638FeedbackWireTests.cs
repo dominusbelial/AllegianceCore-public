@@ -96,12 +96,15 @@ public class P638FeedbackWireTests
         var s = new ConnectionSession();
         var w = s.World;
 
+        // Enter the sector before deploying its chaff. SET_CLUSTER resets
+        // sector effects (P698); a previous sector's decoy cannot spoof here.
+        w.Apply(new SetCluster { SectorId = 1, Cookie = 1, Ship = MakeShip(5) });
+
         // Deploy a chaff decoy (CREATE_CHAFF,109) — this becomes the spoof target.
         var chaffPos = new Vector3(50f, 0f, -60f);
         w.Apply(new CreateChaff { Etid = 801, P0 = chaffPos, V0 = Vector3.Zero });
 
         // Launch a missile (FIRE_MISSILE,70) into the same sector as our own ship.
-        w.Apply(new SetCluster { SectorId = 1, Cookie = 1, Ship = MakeShip(5) });
         w.Apply(new FireMissile
         {
             MissileTypeId = 802,

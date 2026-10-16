@@ -1,0 +1,119 @@
+{
+  "method": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+  "initialExitCodes": [
+    1,
+    0,
+    0
+  ],
+  "freshIsolatedAudits": [
+    {
+      "repeat": 1,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "ac6619bd-53ee-4e3b-859b-5aebb5b6de34",
+          "testId": "64d4e222-3c00-ff19-3955-7e47346844e5",
+          "testName": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:00.1085537",
+          "startTime": "2026-10-15T02:25:22.2357347-05:00",
+          "endTime": "2026-10-15T02:25:22.3471594-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "ac6619bd-53ee-4e3b-859b-5aebb5b6de34"
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "f941432e-4c00-4bdb-941b-e41c9e069b6f",
+          "testId": "64d4e222-3c00-ff19-3955-7e47346844e5",
+          "testName": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:00.1016896",
+          "startTime": "2026-10-15T02:25:23.8008906-05:00",
+          "endTime": "2026-10-15T02:25:23.9066209-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "f941432e-4c00-4bdb-941b-e41c9e069b6f"
+        }
+      ]
+    },
+    {
+      "repeat": 3,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "bf0f5f8b-80bb-4e84-a718-e8c4a9cb0649",
+          "testId": "64d4e222-3c00-ff19-3955-7e47346844e5",
+          "testName": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:00.1017195",
+          "startTime": "2026-10-15T02:25:25.2238935-05:00",
+          "endTime": "2026-10-15T02:25:25.3299107-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "bf0f5f8b-80bb-4e84-a718-e8c4a9cb0649"
+        }
+      ]
+    }
+  ],
+  "finalDisposition": "The final three method-filtered invocations also passed; no assertion, timeout, skip, or quarantine changed."
+}

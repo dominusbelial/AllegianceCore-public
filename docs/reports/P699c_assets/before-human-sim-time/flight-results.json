@@ -1,0 +1,98 @@
+{
+  "loads": [
+    {
+      "trace": "accepted-focused-048-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-1.trx.gz",
+      "case": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+      "summary": "baseline=False rescueTraffic=False docked=200 rescued=0 total=200/200 oxygen=0 other=0 homeReached=200 launchTraffic=136 median=216.60 p95=282.80 bays=1:5587,0:1523"
+    },
+    {
+      "trace": "accepted-focused-049-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-2.trx.gz",
+      "case": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+      "summary": "baseline=False rescueTraffic=False docked=200 rescued=0 total=200/200 oxygen=0 other=0 homeReached=200 launchTraffic=136 median=216.55 p95=283.90 bays=1:5327,0:1512"
+    },
+    {
+      "trace": "accepted-focused-050-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-3.trx.gz",
+      "case": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+      "summary": "baseline=False rescueTraffic=False docked=200 rescued=0 total=200/200 oxygen=0 other=0 homeReached=200 launchTraffic=136 median=216.85 p95=284.00 bays=1:5455,0:1579"
+    },
+    {
+      "trace": "accepted-focused-051-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-1.trx.gz",
+      "case": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+      "summary": "baseline=False rescueTraffic=True docked=167 rescued=33 total=200/200 oxygen=0 other=0 homeReached=171 launchTraffic=116 median=215.10 p95=276.90 bays=1:4069,0:1508"
+    },
+    {
+      "trace": "accepted-focused-052-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-2.trx.gz",
+      "case": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+      "summary": "baseline=False rescueTraffic=True docked=169 rescued=31 total=200/200 oxygen=0 other=0 homeReached=171 launchTraffic=112 median=214.80 p95=276.30 bays=1:3972,0:1618"
+    },
+    {
+      "trace": "accepted-focused-053-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-3.trx.gz",
+      "case": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+      "summary": "baseline=False rescueTraffic=True docked=167 rescued=33 total=200/200 oxygen=0 other=0 homeReached=170 launchTraffic=114 median=215.15 p95=276.85 bays=1:4045,0:1627"
+    }
+  ],
+  "network": [
+    {
+      "trace": "accepted-focused-159-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-1.trx.gz",
+      "case": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+      "summary": "MCP route=1056 -> 1057 -> 1050 elapsed=230.75 endurance=300.00 landed=True relaunchTraffic=12"
+    },
+    {
+      "trace": "accepted-focused-159-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-1.trx.gz",
+      "case": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+      "summary": "MCP route=1053 -> 1055 -> 1051 elapsed=219.05 endurance=300.00 landed=True relaunchTraffic=12"
+    },
+    {
+      "trace": "accepted-focused-160-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-2.trx.gz",
+      "case": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+      "summary": "MCP route=1056 -> 1057 -> 1050 elapsed=230.30 endurance=300.00 landed=True relaunchTraffic=12"
+    },
+    {
+      "trace": "accepted-focused-160-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-2.trx.gz",
+      "case": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+      "summary": "MCP route=1053 -> 1055 -> 1051 elapsed=219.55 endurance=300.00 landed=True relaunchTraffic=12"
+    },
+    {
+      "trace": "accepted-focused-161-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-3.trx.gz",
+      "case": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+      "summary": "MCP route=1053 -> 1055 -> 1051 elapsed=219.00 endurance=300.00 landed=True relaunchTraffic=12"
+    },
+    {
+      "trace": "accepted-focused-161-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-3.trx.gz",
+      "case": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+      "summary": "MCP route=1056 -> 1057 -> 1050 elapsed=231.00 endurance=300.00 landed=True relaunchTraffic=12"
+    },
+    {
+      "trace": "accepted-focused-186-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-1.trx.gz",
+      "case": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+      "summary": "HUMAN route=1051 -> 1052 -> 1053 elapsed=240.85 oxygen=300.00 station=1051"
+    },
+    {
+      "trace": "accepted-focused-187-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-2.trx.gz",
+      "case": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+      "summary": "HUMAN route=1051 -> 1052 -> 1053 elapsed=241.60 oxygen=300.00 station=1051"
+    },
+    {
+      "trace": "accepted-focused-188-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-3.trx.gz",
+      "case": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+      "summary": "HUMAN route=1051 -> 1052 -> 1053 elapsed=241.20 oxygen=300.00 station=1051"
+    }
+  ],
+  "real_time": [
+    {
+      "trace": "accepted-focused-189-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-1.trx.gz",
+      "case": "Allegiance.ClientCore.MonoGame.Tests.P540bPodAutopilotCrossSectorLiveTests.EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets",
+      "summary": "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4906/11000"
+    },
+    {
+      "trace": "accepted-focused-190-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-2.trx.gz",
+      "case": "Allegiance.ClientCore.MonoGame.Tests.P540bPodAutopilotCrossSectorLiveTests.EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets",
+      "summary": "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4911/11000"
+    },
+    {
+      "trace": "accepted-focused-191-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-3.trx.gz",
+      "case": "Allegiance.ClientCore.MonoGame.Tests.P540bPodAutopilotCrossSectorLiveTests.EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets",
+      "summary": "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4909/11000"
+    }
+  ]
+}

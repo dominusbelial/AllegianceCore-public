@@ -32,8 +32,7 @@ namespace Allegiance.Core.Tests;
 ///   (3b) a player whose personal wallet is too thin is refused even when the
 ///       side treasury is large (the P198 gate's discriminating proof);
 ///   (4) fully funding a bucket AND letting enough build-time pass fires the
-///       completion seam — and nothing else happens (no spawned object, no
-///       further broadcast).
+///       completion seam without spawning an object; P691 progress reaches the investment pane.
 /// The codecs round-trip byte-exact in Wire.BucketWireTests.
 /// </summary>
 [Collection("LiveNetwork")]
@@ -253,8 +252,8 @@ public class LiveBucketTests
                 && funderBot.MoneyChanges.Any(mc => mc.DMoney == -donate && mc.SidFrom == sp.Funder.Id), 3000);
         Assert.True(seen < 3000, "BUCKET_STATUS(65) did not reach both same-side peers");
 
-        var fbs = Assert.Single(funderBot.BucketStatuses);
-        var mbs = Assert.Single(mateBot.BucketStatuses);
+        var fbs = Assert.Single(funderBot.BucketStatuses, s => s.TimeTotal == 0);
+        var mbs = Assert.Single(mateBot.BucketStatuses, s => s.TimeTotal == 0);
         Assert.Equal(donate, fbs.MoneyTotal);
         Assert.Equal(bucket.Id, fbs.IBucket);
         Assert.Equal(funderSide, fbs.SideId);
@@ -341,7 +340,7 @@ public class LiveBucketTests
                 && funderBot.MoneyChanges.Any(mc => mc.DMoney == excess && mc.SidFrom == -1), 3000);
         Assert.True(seen < 3000, "BUCKET_STATUS(65) / MONEY_CHANGE never reached the funder");
 
-        var bs = Assert.Single(funderBot.BucketStatuses);
+        var bs = Assert.Single(funderBot.BucketStatuses, s => s.TimeTotal == 0);
         // Bucket reached EXACTLY its price — never over-funded.
         Assert.Equal(bucket.Price, bucket.InvestedMoney);
         Assert.Equal(bucket.Price, bs.MoneyTotal);
@@ -497,13 +496,12 @@ public class LiveBucketTests
         Console.WriteLine($"BUCKETCANBUY-LIVE: donor {donorId} donated {donate} into unbuyable bucket {bucket.Id} (CanBuy=false) -> nothing invested, no spend/no BUCKET_STATUS, full refund MONEY_CHANGE(+{donate}) sidFrom=NA; wallet >= {walletBefore}, side treasury {side.Money} untouched");
     }
 
-    // ── (4) full funding + build time → completion seam, nothing else ────
+    // ── (4) full funding + build time → completion seam and progress ────
 
     /// <summary>⭐ Scenario 4 — fully funding a bucket AND letting enough build
     /// time pass fires the completion-<em>detection</em> seam exactly once, with
-    /// nothing else happening: no spawned object (ship count unchanged), no
-    /// further broadcast (the bucket emits no second BUCKET_STATUS). This is the
-    /// task's explicit "detect but don't act yet" boundary.
+    /// no spawned object (ship count unchanged). P691 also delivers integer
+    /// progress changes through BUCKET_STATUS to the side's investment pane.
     /// Uses UpdatesPerSecond=2 so each TickSim advances 0.5s of sim time,
     /// making the time-to-build traverse quick and deterministic.</summary>
     [Trait("Requires", "Artwork")]
@@ -538,11 +536,11 @@ public class LiveBucketTests
         int funded = PumpUntil(server, () => bot.BucketStatuses.Count >= 1 && bucket.InvestedMoney >= bucket.Price, 3000);
         Assert.True(funded < 3000, "bucket did not reach full funding");
         Assert.Equal(bucket.Price, bucket.InvestedMoney);
-        Assert.Equal(bucket.Price, Assert.Single(bot.BucketStatuses).MoneyTotal);   // the funding broadcast
+        Assert.Equal(bucket.Price, Assert.Single(bot.BucketStatuses, s => s.TimeTotal == 0).MoneyTotal);   // the funding broadcast
         // P198: the player's wallet paid the full price; the side treasury is untouched.
         Assert.Equal(10_000_000 - (int)bucket.Price, server.Ships.First(s => s.Ship.Id == builderId).Wallet.Money);
         Assert.Equal(555555L, side.Money);
-        bot.ResetBucketStatuses();          // forget the funding broadcast — completion must add NONE
+        bot.ResetBucketStatuses();          // observe the subsequent progress snapshots
 
         // Enough build time to complete: at 2 upd/s each tick = 0.5s, so need
         // TimeToBuild seconds -> 2*TimeToBuild ticks; add a generous margin.
@@ -555,11 +553,18 @@ public class LiveBucketTests
         Assert.Contains(bucket.Id, server.BucketCompletions);
         Assert.True(bucket.Completed);
 
-        // …and NOTHING else happened: no object spawned, no further broadcast
-        // (the completion emitted no BUCKET_STATUS — the list is still empty).
+        // The synthetic bucket still spawns no object. The last progress
+        // snapshot must carry the exact completed build time and funding.
         Assert.Equal(shipsBefore, server.Ships.Count);
-        Assert.Empty(bot.BucketStatuses);
+        int delivered = PumpUntil(server, () => bot.BucketStatuses.Any(s => s.IBucket == bucket.Id
+            && s.TimeTotal == bucket.TimeToBuild * 1000), 3000);
+        Assert.True(delivered < 3000, "completed progress snapshot did not arrive");
+        Assert.All(bot.BucketStatuses, s =>
+        {
+            Assert.Equal(bucket.Id, s.IBucket); Assert.Equal(bucket.Price, s.MoneyTotal);
+            Assert.InRange(s.TimeTotal, 0u, bucket.TimeToBuild * 1000);
+        });
 
-        Console.WriteLine($"BUCKETCOMPLETE-LIVE: bucket {bucket.Id} fully funded ({bucket.InvestedMoney}/{bucket.Price}) + {bucket.TimeToBuild}s build -> completion seam fired once; no object spawned, no further broadcast");
+        Console.WriteLine($"BUCKETCOMPLETE-LIVE: bucket {bucket.Id} fully funded ({bucket.InvestedMoney}/{bucket.Price}) + {bucket.TimeToBuild}s build -> completion seam fired once; no object spawned, progress delivered");
     }
 }

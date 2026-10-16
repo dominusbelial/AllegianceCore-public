@@ -1,0 +1,55 @@
+{
+  "Core": {
+    "total": 4566,
+    "passed": 4566,
+    "failed": 0,
+    "skipped": 0,
+    "times": {
+      "creation": "2026-10-15T16:34:41.8658994-05:00",
+      "queuing": "2026-10-15T16:34:41.8658994-05:00",
+      "start": "2026-10-15T16:34:40.2207738-05:00",
+      "finish": "2026-10-15T16:44:02.7601394-05:00"
+    },
+    "failures": [],
+    "skipped_tests": []
+  },
+  "ClientCore": {
+    "total": 1019,
+    "passed": 1017,
+    "failed": 1,
+    "skipped": 1,
+    "times": {
+      "creation": "2026-10-15T16:44:04.2722406-05:00",
+      "queuing": "2026-10-15T16:44:04.2722407-05:00",
+      "start": "2026-10-15T16:44:03.6516945-05:00",
+      "finish": "2026-10-15T16:52:25.3929490-05:00"
+    },
+    "failures": [
+      {
+        "test": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+        "message": "System.InvalidOperationException : logon drain order diverged from connection order \u2014 peer2 side 0 not cross-side (0, 1, 0); determinism broken"
+      }
+    ],
+    "skipped_tests": [
+      "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+    ]
+  },
+  "MonoGame": {
+    "total": 2228,
+    "passed": 2225,
+    "failed": 0,
+    "skipped": 3,
+    "times": {
+      "creation": "2026-10-15T16:52:26.7812929-05:00",
+      "queuing": "2026-10-15T16:52:26.7812929-05:00",
+      "start": "2026-10-15T16:52:25.9637004-05:00",
+      "finish": "2026-10-15T16:57:54.9138788-05:00"
+    },
+    "failures": [],
+    "skipped_tests": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+    ]
+  }
+}

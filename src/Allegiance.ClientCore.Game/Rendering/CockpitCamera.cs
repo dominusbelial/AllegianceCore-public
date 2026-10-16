@@ -26,7 +26,7 @@ public sealed class CockpitCamera
 {
     private readonly float _nearPlane;
     private readonly float _farPlane;
-    private readonly float _fieldOfView;
+    public float FieldOfViewRadians { get; set; }
     private readonly float _forwardOffset;
 
     /// <param name="nearPlane">Near clip. A small value keeps distant ships
@@ -45,7 +45,7 @@ public sealed class CockpitCamera
     {
         _nearPlane = nearPlane;
         _farPlane = farPlane;
-        _fieldOfView = MathHelper.ToRadians(fieldOfViewDegrees);
+        FieldOfViewRadians = MathHelper.ToRadians(fieldOfViewDegrees);
         _forwardOffset = forwardOffset;
     }
 
@@ -80,7 +80,7 @@ public sealed class CockpitCamera
         Vector3 lookTarget = shipPosition + forward * 256f;
         var view = Matrix.CreateLookAt(Vector3.Zero, lookTarget - cameraEye, up);
         var projection = Matrix.CreatePerspectiveFieldOfView(
-            _fieldOfView, aspectRatio, _nearPlane, _farPlane);
+            FieldOfViewRadians, aspectRatio, _nearPlane, _farPlane);
         return (view, projection);
     }
 }

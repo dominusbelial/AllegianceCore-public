@@ -139,6 +139,18 @@ public class MissileBroadcastTests
             PumpUntil(server, () => obsBot.Exports.Any(e => e.ShipId == subjectId), 8000);
             Assert.Contains(obsBot.Exports, e => e.ShipId == subjectId);
 
+            // Fresh default seats now start in the hangar. Exercise emissions
+            // from a genuinely flying source through the real undock wire path.
+            bots[subject].SendDocked();
+            PumpUntil(server, () => shooter.StationId is null, 4000);
+            Assert.Null(shooter.StationId);
+            Assert.True(shooter.Fraction > 0);
+            // The launch kick points out of the station. The default identity
+            // nose points back into its hull; aim along that real outward kick
+            // so this expiry test measures a flight, rather than an immediate hit.
+            Assert.True(shooter.Velocity.LengthSquared() > 0);
+            shooter.Orientation.Set(shooter.Velocity);
+
             // Fire TWO missiles directly at the current sim time. Distinct ids
             // (NextObjectId increments per call) and, since both share `now`, both
             // expire together — yielding two distinct destroys, proving no cache.

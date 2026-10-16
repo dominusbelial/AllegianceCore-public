@@ -1,0 +1,147 @@
+{
+  "affected_methods": 80,
+  "final_isolated_invocations": 240,
+  "final_isolated_cases_passed": 264,
+  "suites": [
+    {
+      "project": "Core",
+      "counters": {
+        "total": "4564",
+        "executed": "4564",
+        "passed": "4562",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped_cases": [],
+      "times": {
+        "creation": "2026-10-15T15:05:26.1685011-05:00",
+        "queuing": "2026-10-15T15:05:26.1685012-05:00",
+        "start": "2026-10-15T15:05:24.5788119-05:00",
+        "finish": "2026-10-15T15:14:36.3278314-05:00"
+      },
+      "archive": "Core-final.trx.gz",
+      "trx_sha256": "31877bea463099a310893a7f3fe530f7d6f536129338e122680c2404de8b2034"
+    },
+    {
+      "project": "ClientCore",
+      "counters": {
+        "total": "1019",
+        "executed": "1019",
+        "passed": "1019",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped_cases": [],
+      "times": {
+        "creation": "2026-10-15T15:14:37.8892727-05:00",
+        "queuing": "2026-10-15T15:14:37.8892728-05:00",
+        "start": "2026-10-15T15:14:37.3211734-05:00",
+        "finish": "2026-10-15T15:23:19.6141298-05:00"
+      },
+      "archive": "ClientCore-final.trx.gz",
+      "trx_sha256": "6fd9bd2378f746c72f0e96c8560338ddef2efae491d1e279462f597b0048759a"
+    },
+    {
+      "project": "ClientCore.MonoGame",
+      "counters": {
+        "total": "2203",
+        "executed": "2200",
+        "passed": "2200",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped_cases": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+      ],
+      "times": {
+        "creation": "2026-10-15T15:23:21.1978919-05:00",
+        "queuing": "2026-10-15T15:23:21.1978923-05:00",
+        "start": "2026-10-15T15:23:20.3089859-05:00",
+        "finish": "2026-10-15T15:28:46.5916572-05:00"
+      },
+      "archive": "ClientCore.MonoGame-final.trx.gz",
+      "trx_sha256": "df7474dc68deade504e568df5fc517746a3ea5b63a4a0f8e3bfe9da3151f9d1f"
+    },
+    {
+      "project": "Lobby",
+      "counters": {
+        "total": "19",
+        "executed": "19",
+        "passed": "19",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped_cases": [],
+      "times": {
+        "creation": "2026-10-15T15:28:47.8471773-05:00",
+        "queuing": "2026-10-15T15:28:47.8471773-05:00",
+        "start": "2026-10-15T15:28:47.2954571-05:00",
+        "finish": "2026-10-15T15:28:47.8909874-05:00"
+      },
+      "archive": "Lobby-final.trx.gz",
+      "trx_sha256": "0a2e3a3011aa634297475d07e40e501f4205261064beb2387990ba377e919b69"
+    }
+  ],
+  "post_suite_methods": [
+    [
+      "Core",
+      "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide"
+    ],
+    [
+      "Core",
+      "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy"
+    ],
+    [
+      "Core",
+      "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+    ]
+  ],
+  "post_suite_isolated_invocations": 9,
+  "post_suite_cases_passed": 9
+}

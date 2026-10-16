@@ -38,13 +38,13 @@ public class ClientWorldBallotTests
     }
 
     [Fact]
-    public void New_ballot_replaces_the_previous_active_ballot()
+    public void New_ballot_queues_behind_the_previous_active_ballot()
     {
         var world = new ClientWorld();
         world.Apply(Ballot.Decode(new Ballot { BallotId = 1, BallotText = "one" }.Encode()));
         world.Apply(Ballot.Decode(new Ballot { BallotId = 2, BallotText = "two" }.Encode()));
 
-        Assert.Equal((short)2, world.ActiveBallot!.BallotId);
-        Assert.Equal("two", world.ActiveBallot.BallotText);
+        Assert.Equal((short)1, world.ActiveBallot!.BallotId);
+        Assert.Equal("one", world.ActiveBallot.BallotText);
     }
 }

@@ -1,0 +1,673 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="522eebb1-bea7-416b-bdbf-91c4a63adf9c" name="@domingo-MS-02-Ultra 2026-10-15 15:00:22" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-15T15:00:22.0060033-05:00" queuing="2026-10-15T15:00:22.0060033-05:00" start="2026-10-15T15:00:09.5526365-05:00" finish="2026-10-15T15:00:22.0090596-05:00" />
+  <TestSettings name="default" id="9c5205d8-4511-4c98-b1a7-bb10cef89642">
+    <Deployment runDeploymentRoot="_domingo-MS-02-Ultra_2026-10-15_15_00_22" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="cc4364a4-86ae-468e-83fe-6de59487058e" testId="fe1b4478-4d77-066a-f41a-05d91ff45898" testName="Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn" computerName="domingo-MS-02-Ultra" duration="00:00:11.8635898" startTime="2026-10-15T15:00:10.0765211-05:00" endTime="2026-10-15T15:00:21.9427414-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cc4364a4-86ae-468e-83fe-6de59487058e">
+      <Output>
+        <StdOut>POSE accepted=1442 rejected=1
+HUMAN route=1051 -&gt; 1052 -&gt; 1053 elapsed=240.30 oxygen=300.00 station=1051</StdOut>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn" storage="/home/domingo/allegiance-codex-p699/tests/allegiance.clientcore.monogame.tests/bin/debug/net10.0/allegiance.clientcore.monogame.tests.dll" id="fe1b4478-4d77-066a-f41a-05d91ff45898">
+      <Execution id="cc4364a4-86ae-468e-83fe-6de59487058e" />
+      <TestMethod codeBase="/home/domingo/allegiance-codex-p699/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests" name="Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="fe1b4478-4d77-066a-f41a-05d91ff45898" executionId="cc4364a4-86ae-468e-83fe-6de59487058e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="1" executed="1" passed="1" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.11)
+[xUnit.net 00:00:00.05]   Discovering: Allegiance.ClientCore.MonoGame.Tests
+[xUnit.net 00:00:00.25]   Discovered:  Allegiance.ClientCore.MonoGame.Tests
+[xUnit.net 00:00:00.26]   Starting:    Allegiance.ClientCore.MonoGame.Tests
+[boot] broadcast.interestTiers = False
+[boot] broadcast.immutableSnapshot = False
+[boot] broadcast.encodeOnce = False
+[boot] broadcast.minUpdateHz = 2 (requested 2); 0 = ranked budget only
+[boot] sim.crowdingPenalty = native
+[boot] sim.timeDilation = auto — load-driven EVE-style time dilation active (engages when smoothed tick cost &gt; 1.005× period, releases &lt; 0.965×; scale slews toward nominal/cost in [0.1,1] rate-limited to 0.04/s every 0.5s); admin `timescale` cheat overrides auto
+[boot] broadcast.parallelBuild = false — serial broadcast building (today's byte-for-byte behaviour)
+[boot] transport mode = thread-per-peer
+[boot] broadcast.shipUpdateModel = port — port per-tick teammate SingleShipUpdate posBatch stream (today's byte-for-byte behaviour)
+[boot] sim.parallelSectorCells = false — serial sector simulation (today's byte-for-byte behaviour)
+[boot] gc = workstation/concurrent
+[boot] static core 'PCore001.igc' loaded: version=990051329, 10 civilizations, 447 hulls, 143 station types
+[boot]   civ    1  'Dreghklar'
+[boot]   civ    2  'Technoflux'
+[boot]   civ    3  'Ga'Taraan'
+[boot]   civ    4  'Phoenix'
+[boot]   civ    5  'Omicron'
+[boot]   civ   18  'Gigacorp'
+[boot]   civ   25  'Iron Coalition'
+[boot]   civ   35  'Bios'
+[boot]   civ  101  'Belters'
+[boot]   civ  201  'Rixian'
+[boot] (stub) cores.txt / maps.txt NOT loaded — download list out of scope (rank list IS loaded from ranks.txt, see above)
+[boot] rank list loaded: 40 ranks from '/home/domingo/Development/Artwork/ranks.txt' (standalone: civ=-1, requiredRanking=0)
+[boot] receive.decouple = false (receive-worker decode; tick-boundary apply)
+[boot] transport listening on 0.0.0.0:35171 (all interfaces)
+[boot] game 'P699 human' ready: map=XXV_simple.igc, 13 sectors, 2 sides [Alpha, Bravo], 38 warps, 2 stations, 0 asteroids
+[boot] server ready: 1 mission(s), 20 upd/s (period 50 ms). Ctrl-C to stop.
+[conn] peer 1 'P699-human' joined
+[launch] peer 1 'P699-human' pending side-select (ship id 8096 reserved; launch deferred to side choice)
+[logon] 1 'P699-human' validated=True -&gt; 'Welcome P699-human' (server time 2, ship 8096)
+[sideselect] -&gt; peer 1 SIDE_ROSTER(211): 2 side(s) [Alpha(0)=0, Bravo(1)=0]
+[egress] window: payloadOfferedBytes=145 enqueuedBytes=155 writtenBytes=155 peers=0 windowSecs=0.218 enqueued-per-peer-bps=0.0 written-per-peer-bps=0.0 gc={gen0=8,gen1=2,gen2=1} allocMB=154.45 logDrops=0
+[egress] window: payloadOfferedBytes=0 enqueuedBytes=0 writtenBytes=0 peers=0 windowSecs=0.117 enqueued-per-peer-bps=0.0 written-per-peer-bps=0.0 gc={gen0=0,gen1=0,gen2=0} allocMB=0.63 logDrops=0
+[egress] window: payloadOfferedBytes=0 enqueuedBytes=0 writtenBytes=0 peers=0 windowSecs=0.116 enqueued-per-peer-bps=0.0 written-per-peer-bps=0.0 gc={gen0=0,gen1=0,gen2=0} allocMB=0.63 logDrops=0
+[egress] window: payloadOfferedBytes=0 enqueuedBytes=0 writtenBytes=0 peers=0 windowSecs=0.114 enqueued-per-peer-bps=0.0 written-per-peer-bps=0.0 gc={gen0=0,gen1=0,gen2=0} allocMB=0.63 logDrops=0
+[egress] window: payloadOfferedBytes=0 enqueuedBytes=0 writtenBytes=0 peers=0 windowSecs=0.11 enqueued-per-peer-bps=0.0 written-per-peer-bps=0.0 gc={gen0=0,gen1=0,gen2=0} allocMB=0.62 logDrops=0
+[egress] window: payloadOfferedBytes=0 enqueuedBytes=0 writtenBytes=0 peers=0 windowSecs=0.11 enqueued-per-peer-bps=0.0 written-per-peer-bps=0.0 gc={gen0=0,gen1=0,gen2=0} allocMB=0.63 logDrops=0
+[sideselect] peer 1 'P699-human' never chose a side within 30s — auto-assigning
+[join] ship 8096 -&gt; side 0: JOIN_SIDE(125) whole-mission to 0 peer(s)
+[lead] side 0 new team leader ship 8096: SET_TEAM_LEADER(121) whole-mission to 0 peer(s)
+[own] side 0 new mission owner ship 8096: SET_MISSION_OWNER(123) whole-mission to 0 peer(s)
+[sideselect] 1 'P699-human' AUTO-assigned to side 0 (ship 8096); leader election via TryJoinSide
+[join] peer 1 'P699-human' -&gt; MISSIONDEF core 'PCore001' v990051329 + JOINED_MISSION ship 8096 (static core load + hull-table hydration)
+[sides] peer 1 'P699-human' -&gt; MISSIONDEF(38) nTeams 2 civIds [25, 3] (create SIDE_TEAMLOBBY + real sides via UpdateSides)
+[create] peer 1 'P699-human' -&gt; EXPORT hull 504 ship NA(real=8096) side 0
+[playerinfo] peer 1 'P699-human' -&gt; PLAYERINFO(10) ship 8096 iSide 0 (side assignment for the direct-connect ship)
+[setmoney] peer 1 'P699-human' -&gt; SET_MONEY(115) money=0 shipID=8096
+[createbuckets] peer 1 -&gt; CREATE_BUCKETS(191) ttbmDevelopments=33 bits ttbmInitial=33 bits (side 0)
+[bucketstatus] peer 1 -&gt; BUCKET_STATUS(65) x300 for side 0
+[briefing] peer 1 'P699-human' -&gt; SET_BRIEFING_TEXT(9) generateCivBriefing=true text='Ceto' (friendly station 1051 side 0)
+[rankinfo] peer 1 'P699-human' -&gt; RANK_INFO(13) 40 rank(s) (civ=-1, requiredRanking=0, standalone)
+[treasuresets] peer 1 'P699-human' -&gt; TREASURE_SETS(89) 1 set(s)
+[clusterinfo] peer 1 'P699-human' -&gt; CLUSTERINFO(200) 13 cluster(s), 38 warp(s)
+[export] peer 1 'P699-human' -&gt; 13 cluster(s): 1051:'Arrokoth', 1052:'Borasisi', 1053:'Ceto'*, 1054:'Deucalion', 1055:'Eris', 1056:'Farout', 1057:'Haumea', 1058:'Ixion', 1059:'Makemake', 1060:'Orcus', 1061:'Quaoar'*, 1062:'Varda', 1063:'Sedna'
+[export] peer 1 'P699-human' -&gt; 38 warp(s), 2 station(s), 0 asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)
+[stage] peer 1 'P699-human' -&gt; MISSION_STAGE(37) Started
+[entergame] peer 1 'P699-human' -&gt; ENTER_GAME(128) (join-sync complete — player ready)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[autoreload] ship 8096: ammo hit zero, no cargo spare — Ammo depleted (no RELOAD relay)
+[scoring] ship 8096 ejection +1 (player peer)
+[loadout] ship 8096 HullChange -&gt; LOADOUT_CHANGE(96) hull 444 0 part(s) 0 passenger(s) -&gt; 1 same-side peer(s)
+[eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8096, killer ship -1 -&gt; 1 peer(s)
+[eject] player ship 8096 ejected -&gt; Lifepod hull 444 at Vector3 { X = 3733.3333, Y = 3911.111, Z = 1056.727 }, vel (74.9,63.9,17.5), fwd (-0.75,-0.64,-0.18); EJECT(77) -&gt; 1 peer(s) in sector 1051; hull stays in sector (not removed), no SHIP_DELETE
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=40483 enqueuedBytes=45883 writtenBytes=45641 peers=1 windowSecs=0.343 enqueued-per-peer-bps=133581.3 written-per-peer-bps=132876.8 gc={gen0=2,gen1=2,gen2=1} allocMB=17.33 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26821 peers=1 windowSecs=0.225 enqueued-per-peer-bps=118553.1 written-per-peer-bps=119439.3 gc={gen0=0,gen1=0,gen2=0} allocMB=2.78 logDrops=0
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=54 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x02)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[warp] ship 8096 crossed from 'Arrokoth' (1051) to 'Borasisi' (1052) via warp 1053
+[warp] peer 1 ship 8096 -&gt; SET_CLUSTER sector 1052 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18874 enqueuedBytes=22439 writtenBytes=22240 peers=1 windowSecs=0.338 enqueued-per-peer-bps=66345.7 written-per-peer-bps=65757.3 gc={gen0=0,gen1=0,gen2=0} allocMB=1.92 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=22409 peers=1 windowSecs=0.228 enqueued-per-peer-bps=116969.6 written-per-peer-bps=98458.9 gc={gen0=0,gen1=0,gen2=0} allocMB=1.9 logDrops=0
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=104 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18816 enqueuedBytes=22376 writtenBytes=26788 peers=1 windowSecs=0.226 enqueued-per-peer-bps=98927.0 written-per-peer-bps=118433.0 gc={gen0=0,gen1=0,gen2=0} allocMB=1.91 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26588 peers=1 windowSecs=0.225 enqueued-per-peer-bps=118508.0 written-per-peer-bps=118356.6 gc={gen0=0,gen1=0,gen2=0} allocMB=1.91 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=525 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 600)
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=154 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18896 enqueuedBytes=22466 writtenBytes=22543 peers=1 windowSecs=0.227 enqueued-per-peer-bps=98795.1 written-per-peer-bps=99133.7 gc={gen0=0,gen1=0,gen2=0} allocMB=1.91 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=22167 peers=1 windowSecs=0.23 enqueued-per-peer-bps=115812.3 written-per-peer-bps=96431.9 gc={gen0=0,gen1=0,gen2=0} allocMB=1.9 logDrops=0
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=205 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18816 enqueuedBytes=22376 writtenBytes=26589 peers=1 windowSecs=0.248 enqueued-per-peer-bps=90285.2 written-per-peer-bps=107284.3 gc={gen0=2,gen1=2,gen2=1} allocMB=1.91 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=22409 peers=1 windowSecs=0.223 enqueued-per-peer-bps=119605.3 written-per-peer-bps=100677.5 gc={gen0=0,gen1=0,gen2=0} allocMB=1.9 logDrops=0
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=255 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18816 enqueuedBytes=22376 writtenBytes=26589 peers=1 windowSecs=0.227 enqueued-per-peer-bps=98614.4 written-per-peer-bps=117181.7 gc={gen0=0,gen1=0,gen2=0} allocMB=1.9 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26708 peers=1 windowSecs=0.221 enqueued-per-peer-bps=120504.3 written-per-peer-bps=120893.5 gc={gen0=0,gen1=0,gen2=0} allocMB=1.91 logDrops=0
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=305 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18884 enqueuedBytes=22449 writtenBytes=22528 peers=1 windowSecs=0.222 enqueued-per-peer-bps=101110.6 written-per-peer-bps=101466.4 gc={gen0=0,gen1=0,gen2=0} allocMB=1.88 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26656 peers=1 windowSecs=0.224 enqueued-per-peer-bps=118892.4 written-per-peer-bps=119044.2 gc={gen0=0,gen1=0,gen2=0} allocMB=1.91 logDrops=0
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=356 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18816 enqueuedBytes=22376 writtenBytes=22177 peers=1 windowSecs=0.223 enqueued-per-peer-bps=100422.7 written-per-peer-bps=99529.6 gc={gen0=0,gen1=0,gen2=0} allocMB=1.89 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=22409 peers=1 windowSecs=0.22 enqueued-per-peer-bps=120770.3 written-per-peer-bps=101658.1 gc={gen0=0,gen1=0,gen2=0} allocMB=1.89 logDrops=0
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=406 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18816 enqueuedBytes=22376 writtenBytes=26654 peers=1 windowSecs=0.232 enqueued-per-peer-bps=96641.9 written-per-peer-bps=115118.5 gc={gen0=0,gen1=0,gen2=0} allocMB=1.9 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26756 peers=1 windowSecs=0.224 enqueued-per-peer-bps=118588.2 written-per-peer-bps=119185.1 gc={gen0=1,gen1=0,gen2=0} allocMB=1.9 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=525 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 1200)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=456 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18948 enqueuedBytes=22523 writtenBytes=22508 peers=1 windowSecs=0.233 enqueued-per-peer-bps=96523.1 written-per-peer-bps=96458.8 gc={gen0=0,gen1=0,gen2=0} allocMB=2.54 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26586 peers=1 windowSecs=0.225 enqueued-per-peer-bps=118423.7 written-per-peer-bps=118263.5 gc={gen0=0,gen1=0,gen2=0} allocMB=2.48 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=510 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18816 enqueuedBytes=22376 writtenBytes=22412 peers=1 windowSecs=0.224 enqueued-per-peer-bps=99737.6 written-per-peer-bps=99898.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.46 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26680 peers=1 windowSecs=0.227 enqueued-per-peer-bps=117234.4 written-per-peer-bps=117489.8 gc={gen0=0,gen1=0,gen2=0} allocMB=2.48 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=577 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 141199)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18836 enqueuedBytes=22401 writtenBytes=22358 peers=1 windowSecs=0.225 enqueued-per-peer-bps=99514.0 written-per-peer-bps=99323.0 gc={gen0=0,gen1=0,gen2=0} allocMB=2.49 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=22210 peers=1 windowSecs=0.219 enqueued-per-peer-bps=121720.8 written-per-peer-bps=101548.3 gc={gen0=0,gen1=0,gen2=0} allocMB=2.48 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=644 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18884 enqueuedBytes=22449 writtenBytes=26662 peers=1 windowSecs=0.227 enqueued-per-peer-bps=98936.5 written-per-peer-bps=117503.9 gc={gen0=0,gen1=0,gen2=0} allocMB=2.48 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26864 peers=1 windowSecs=0.232 enqueued-per-peer-bps=114759.2 written-per-peer-bps=115802.4 gc={gen0=1,gen1=1,gen2=0} allocMB=2.47 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=710 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18816 enqueuedBytes=22376 writtenBytes=22134 peers=1 windowSecs=0.224 enqueued-per-peer-bps=99980.3 written-per-peer-bps=98899.0 gc={gen0=0,gen1=0,gen2=0} allocMB=2.49 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=22409 peers=1 windowSecs=0.225 enqueued-per-peer-bps=118565.7 written-per-peer-bps=99802.4 gc={gen0=0,gen1=0,gen2=0} allocMB=2.47 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=777 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18816 enqueuedBytes=22376 writtenBytes=26589 peers=1 windowSecs=0.227 enqueued-per-peer-bps=98504.2 written-per-peer-bps=117050.7 gc={gen0=0,gen1=0,gen2=0} allocMB=2.48 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23052 enqueuedBytes=26622 writtenBytes=26821 peers=1 windowSecs=0.227 enqueued-per-peer-bps=117069.5 written-per-peer-bps=117944.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.49 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=525 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 1800)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=844 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x03)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[warp] ship 8096 crossed from 'Borasisi' (1052) to 'Ceto' (1053) via warp 1063
+[warp] peer 1 ship 8096 -&gt; SET_CLUSTER sector 1053 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=19038 enqueuedBytes=22623 writtenBytes=22489 peers=1 windowSecs=0.238 enqueued-per-peer-bps=94995.4 written-per-peer-bps=94432.7 gc={gen0=0,gen1=0,gen2=0} allocMB=2.92 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=26766 peers=1 windowSecs=0.222 enqueued-per-peer-bps=119863.2 written-per-peer-bps=120661.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.17 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=909 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=0.04m (cookie 0x05)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18844 enqueuedBytes=22409 writtenBytes=22167 peers=1 windowSecs=0.225 enqueued-per-peer-bps=99587.4 written-per-peer-bps=98511.9 gc={gen0=1,gen1=1,gen2=0} allocMB=2.14 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=22376 peers=1 windowSecs=0.223 enqueued-per-peer-bps=119137.3 written-per-peer-bps=100260.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.16 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=976 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=0.04m (cookie 0x05)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18844 enqueuedBytes=22409 writtenBytes=26821 peers=1 windowSecs=0.218 enqueued-per-peer-bps=102558.6 written-per-peer-bps=122750.9 gc={gen0=0,gen1=0,gen2=0} allocMB=2.15 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=22177 peers=1 windowSecs=0.223 enqueued-per-peer-bps=119337.5 written-per-peer-bps=99535.4 gc={gen0=0,gen1=0,gen2=0} allocMB=2.16 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1043 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=0.04m (cookie 0x05)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18912 enqueuedBytes=22482 writtenBytes=26695 peers=1 windowSecs=0.226 enqueued-per-peer-bps=99419.4 written-per-peer-bps=118050.0 gc={gen0=0,gen1=0,gen2=0} allocMB=2.15 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=26754 peers=1 windowSecs=0.224 enqueued-per-peer-bps=118594.2 written-per-peer-bps=119330.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.17 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1109 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=0.04m (cookie 0x05)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18844 enqueuedBytes=22409 writtenBytes=22443 peers=1 windowSecs=0.225 enqueued-per-peer-bps=99675.7 written-per-peer-bps=99827.0 gc={gen0=0,gen1=0,gen2=0} allocMB=2.15 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=22177 peers=1 windowSecs=0.222 enqueued-per-peer-bps=119894.3 written-per-peer-bps=99999.8 gc={gen0=0,gen1=0,gen2=0} allocMB=2.15 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1176 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=0.04m (cookie 0x05)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18844 enqueuedBytes=22409 writtenBytes=26622 peers=1 windowSecs=0.223 enqueued-per-peer-bps=100336.6 written-per-peer-bps=119200.4 gc={gen0=1,gen1=1,gen2=0} allocMB=2.16 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=26675 peers=1 windowSecs=0.222 enqueued-per-peer-bps=119740.9 written-per-peer-bps=120128.2 gc={gen0=0,gen1=0,gen2=0} allocMB=2.15 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=525 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 2400)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1243 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=0.04m (cookie 0x05)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18924 enqueuedBytes=22499 writtenBytes=22578 peers=1 windowSecs=0.221 enqueued-per-peer-bps=101696.2 written-per-peer-bps=102053.3 gc={gen0=0,gen1=0,gen2=0} allocMB=2.64 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=22211 peers=1 windowSecs=0.222 enqueued-per-peer-bps=119886.5 written-per-peer-bps=100146.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.63 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1309 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=0.04m (cookie 0x05)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18844 enqueuedBytes=22409 writtenBytes=26687 peers=1 windowSecs=0.221 enqueued-per-peer-bps=101458.5 written-per-peer-bps=120827.5 gc={gen0=0,gen1=0,gen2=0} allocMB=2.61 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=22311 peers=1 windowSecs=0.219 enqueued-per-peer-bps=121491.6 written-per-peer-bps=101944.4 gc={gen0=0,gen1=0,gen2=0} allocMB=2.62 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: corrections-total=1 replay=0 same-tick=0 accepted=1376 rejected=1 out-of-date=0 invalid=0 mean-reject-dist=0.04m (cookie 0x05)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=18844 enqueuedBytes=22409 writtenBytes=26806 peers=1 windowSecs=0.221 enqueued-per-peer-bps=101332.9 written-per-peer-bps=121216.0 gc={gen0=0,gen1=0,gen2=0} allocMB=2.62 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=23024 enqueuedBytes=26589 writtenBytes=22192 peers=1 windowSecs=0.223 enqueued-per-peer-bps=119324.6 written-per-peer-bps=99592.0 gc={gen0=1,gen1=1,gen2=0} allocMB=2.62 logDrops=0
+[dock] ship 8096 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' — next SHIP_STATUS(90) carries StationID + State=c_ssDocked
+[dock-restock] ship 8096: dock restock done — 0 successor upgrade(s), pools refilled, net cost 0
+[docked] peer 1 ship 8096 &lt;- FM_S_DOCKED(61) station 1051 (native ship.GetStation() resolve trigger)
+[docked] peer 1 ship 8096 &lt;- BUY_LOADOUT_ACK dock-sync hull 444 + 0 part(s) (real mounted loadout)
+[conn-drop] peer 1 left reason=ReadErrorOrEof
+[shutdown] clean: 5407 ticks, 0 overruns
+[xUnit.net 00:00:12.15]   Finished:    Allegiance.ClientCore.MonoGame.Tests
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

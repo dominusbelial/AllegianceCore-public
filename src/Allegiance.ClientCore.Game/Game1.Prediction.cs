@@ -2,6 +2,7 @@ using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.State;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.MonoGame;
@@ -32,6 +33,24 @@ namespace Allegiance.ClientCore.MonoGame;
 //      pose + _ownShipCookie + _ownServerClock time.
 public sealed partial class Game1
 {
+    private Allegiance.Core.Wire.ExpandedPartData? _ownBoostPart;
+    private short _ownBoostHull = -1;
+
+    private void ConfigureOwnBooster(ShipEntity mine, ServerShipUpdate update)
+    {
+        Allegiance.Core.Wire.ExpandedPartData? mounted = null;
+        foreach (var part in mine.Loadout ?? [])
+            if (ResolveFlightPart(part.PartId)?.EquipmentType == EquipmentType.Afterburner) { mounted = part; break; }
+        if (_ownBoostHull == mine.HullId && mounted == _ownBoostPart && !mine.HasPendingReset) return;
+        _ownBoostPart = mounted;
+        _ownBoostHull = mine.HullId;
+        var hull = _shopCatalog?.Hulls.FirstOrDefault(h => h.HullId == mine.HullId);
+        var constants = _shopCatalog?.Core?.Constants.FloatConstants;
+        float rate = constants is { Length: > 10 } ? constants[10] : 1;
+        var type = mounted is { } p ? ResolveFlightPart(p.PartId)?.Type as DataPartTypeIGC.Afterburner : null;
+        _ownSim.SetAfterburner(type, mounted?.FractionMounted ?? 255, update.FuelFraction * (hull?.MaxFuel ?? 0), rate, mine.HasPendingReset ? update.Power : 0,
+            thrustFactor: _session.World.GlobalAttributesFor(_session.World.MySideId ?? -1).Get(GlobalAttributeSet.Thrust));
+    }
     /// <summary>
     /// P508 — drive the own-ship local simulation from the real client world for
     /// this frame. MUST be called under <c>_session.Gate</c> (with the own ship's
@@ -75,6 +94,8 @@ public sealed partial class Game1
             // the change never false-arms the red damage flash.
             _flashTracker.ResetBaseline();
         }
+
+        ConfigureOwnBooster(mine, up);
 
         // Adopt the current ship cookie every frame (pick up SET_CLUSTER at join and
         // warp, and SHIP_RESET renewals) — the send path echoes this.
@@ -183,21 +204,35 @@ public sealed partial class Game1
     private void SeedSimFrom(ServerShipUpdate up)
         => _ownSim.Seed(up.Position, up.Velocity, up.Orientation, up.TurnRates);
 
-    /// <summary>
-    /// P508 — feed the own-ship server clock from received FM_CS_PING echoes and send
-    /// a ~1 Hz ping while connected. Called every frame from <c>Game1.Update</c> (any
-    /// state) so a server-converted SHIP_UPDATE time is ready by undock. The server
-    /// stamps <c>timeServer = SimNow·1000</c> on each echo, so the clock needs no
-    /// tick-rate assumption (see <see cref="Flight.OwnShipServerClock"/>).
-    /// </summary>
+    // Own and remote ships must advance on the same simulation clock under TiDi.
+    private void StepOwnShipSimulation(double wallSeconds, ControlData controls, int stateM)
+        => _ownSim.Step((float)(wallSeconds * _session.World.TimeScale), controls, stateM);
+
+    private long _ownClockConnectionGeneration = -1;
+    private bool _ownClockInitialPingSent;
+
+    /// <summary>Consume session PING echoes and follow the live simulation rate.
+    /// A new connection requires a new clock epoch; a rotated mission does not.</summary>
     private void PumpServerClock()
     {
-        foreach (var (serverMs, localMs) in _session.TakePingEchoes())
-            _ownServerClock.AddSample(serverMs, localMs);
-        if (_session.Connected && _nowSeconds - _lastPingSentAt >= 1.0)
+        lock (_session.Gate)
         {
-            _session.SendPing();
-            _lastPingSentAt = _nowSeconds;
+            if (_ownClockConnectionGeneration != _session.ConnectionGeneration)
+            {
+                _ownClockConnectionGeneration = _session.ConnectionGeneration;
+                _ownServerClock.Reset();
+                _ownClockInitialPingSent = false;
+            }
+            // Bootstrap immediately instead of waiting up to six seconds for the
+            // native keep-alive. All subsequent pings remain session-owned.
+            if (!_ownClockInitialPingSent && _session.Connected)
+            {
+                _session.SendPing();
+                _ownClockInitialPingSent = true;
+            }
+            foreach (var (serverMs, localMs) in _session.TakePingEchoes())
+                _ownServerClock.AddSample(serverMs, localMs);
+            _ownServerClock.SetTimeScale(_session.World.TimeScale, Environment.TickCount64);
         }
     }
 
@@ -282,7 +317,7 @@ public sealed partial class Game1
                 foreach (var pt in cat.Parts)
                 {
                     if (pt.PartId != p.PartId) continue;
-                    if (pt.Type is DataPartTypeIGC.Afterburner ab) { abMax = ab.MaxThrust; }
+                    if (pt.Type is DataPartTypeIGC.Afterburner ab) { abMax = ab.MaxThrust * gas.Get(GlobalAttributeSet.Thrust); }
                     break;
                 }
             }

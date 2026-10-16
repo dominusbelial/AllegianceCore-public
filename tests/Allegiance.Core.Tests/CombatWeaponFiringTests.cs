@@ -251,9 +251,12 @@ public class CombatWeaponFiringTests
         int modelCountAlive = sector.Models.Count;
         Assert.Equal(preFire + 1, modelCountAlive);           // exactly one more model while alive
 
-        // Advance until the projectile's own expiry time is passed.
-        Assert.True(TickUntil(mission, 400, () => mission.LastUpdate > proj.TimeExpire),
+        // Igc/projectileIGC.cpp:120-143: the crossing tick keeps the round;
+        // termination checks the previous update clock on the following tick.
+        Assert.True(TickUntil(mission, 400, () => proj.LastUpdate >= proj.TimeExpire),
                     "must be able to tick past the projectile's lifespan");
+        Assert.Contains(proj, sector.Models);
+        mission.Update(mission.LastUpdate + .021);
 
         // The sector has no projectiles left and its count is back to pre-fire.
         Assert.Empty(sector.Models.OfType<Projectile>());

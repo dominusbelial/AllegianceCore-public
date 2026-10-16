@@ -84,6 +84,14 @@ public class ClusterWarningLiveTests
             PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(bots.All(b => b.ShipAssignment is not null), "both bots must be assigned a ship");
 
+            // H-06: an enemy entering a sector is flying, after a docked launch.
+            foreach (var bot in bots)
+            {
+                var ship = server.Ships.Single(l => l.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Ship;
+                bot.SendBuyLoadout(ship.HullType.HullId, fLaunch: true);
+            }
+            Assert.True(PumpUntil(server, () => server.Ships.All(l => l.Ship.StationId is null), 4000) < 4000);
+
             var ships = server.Ships.ToDictionary(s => s.Ship.Id, s => s.Ship);
             short friendlyId = bots[0].ShipAssignment!.Ship.ShipId;
             short enemyId = bots[1].ShipAssignment!.Ship.ShipId;

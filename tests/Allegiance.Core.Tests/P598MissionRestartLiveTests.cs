@@ -54,6 +54,7 @@ public class P598MissionRestartLiveTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        LiveSettings = new Ls { AutoNextMatch = new() { Enabled = false } },
         Games =
         [
             new Gm { Name = "P598 AutoRestart", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"],

@@ -147,8 +147,8 @@ public class PaydayTests
 
         var side0 = mission.Sides[0];
         var side1 = mission.Sides[1];
-        long expected0 = (long)(Mission.IncomePerPayday * (1.0f + side0.Civilization.IncomeMoney));
-        long expected1 = (long)(Mission.IncomePerPayday * (1.0f + side1.Civilization.IncomeMoney));
+        long expected0 = (long)(mission.IncomePerPayday * (1.0f + side0.Civilization.IncomeMoney));
+        long expected1 = (long)(mission.IncomePerPayday * (1.0f + side1.Civilization.IncomeMoney));
         Assert.Equal(expected0, side0.Money);
         Assert.Equal(expected1, side1.Money);
 
@@ -216,7 +216,7 @@ public class PaydayTests
     private static long ExpectedDelta(Mission m, short sideId)
     {
         var side = m.Sides.Single(s => s.Id == sideId);
-        return (long)(Mission.IncomePerPayday * (1.0f + side.Civilization.IncomeMoney));
+        return (long)(m.IncomePerPayday * (1.0f + side.Civilization.IncomeMoney));
     }
 
     /// <summary>⭐ Two bots on two sides. Across two payday boundaries the wire

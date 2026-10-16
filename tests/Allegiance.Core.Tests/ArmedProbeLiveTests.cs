@@ -205,4 +205,30 @@ public sealed class ArmedProbeLiveTests
         Console.WriteLine($"P491-LIVE: armed probe '{probeType.LauncherName}' ammo 5→{probe.Ammo}; enemy {1f}→{enemy.Fraction:F4}; " +
                           $"PROJ_INST(12) type {pTypeId} vel {round.Velocity} on deployer peer after {pumps} pumps");
     }
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
+    [InlineData(true, 5)] [InlineData(false, 30)]
+    public void P641_quick_ready_and_shoot_only_target_live(bool quick, int delay)
+    {
+        Require.Artwork();
+        using var seat = SeatTwo();
+        var mission = seat.Deployer.Mission!;
+        var type = PlasGen() with { EabmCapabilities = (short)(0x1040 | (quick ? 8 : 0)), Lifespan = 100 };
+        var probe = seat.Deployer.DeployProbe(type, mission.LastUpdate);
+        seat.Enemy.Position = probe.Position + new Vector3(0, 0, 100);
+        seat.Enemy.Velocity = Vector3.Zero;
+        double deployed = mission.LastUpdate;
+        probe.Target = seat.Enemy;
+        PumpUntil(seat.Server, () => mission.LastUpdate >= deployed + delay - .1, 45000);
+        Assert.Equal(type.Ammo, probe.Ammo);
+        probe.Target = null;
+        PumpUntil(seat.Server, () => mission.LastUpdate >= deployed + delay + .2, 5000);
+        Assert.Equal(type.Ammo, probe.Ammo); // eligible hostile is present, but no fallback allowed
+        seat.DeployerBot.ResetProjectileInstances();
+        probe.Target = seat.Enemy;
+        PumpUntil(seat.Server, () => probe.Ammo < type.Ammo && seat.DeployerBot.ProjectileInstances.Any(), 5000);
+        Assert.True(probe.Ammo < type.Ammo);
+        Assert.Contains(seat.DeployerBot.ProjectileInstances, p => p.ProjectileTypeId == type.ProjectileTypeId);
+    }
+
 }

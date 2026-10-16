@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Offscreen HUD-gauge layout proof harness (P395).
+       Builds the REAL HudRenderer + REAL GaugeTextures and renders the REAL
+       production Draw path to an offscreen RenderTarget2D, saving PNGs for a
+       before/after gauge-layout comparison against the native reference. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>hud-gauge-proof</AssemblyName>
+    <RootNamespace>HudGaugeProof</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Content/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

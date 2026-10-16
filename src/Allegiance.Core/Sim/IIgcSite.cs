@@ -154,9 +154,22 @@ public interface IIgcSite
     /// </summary>
     void TreasureDestroyedEvent(Treasure t) { }
 
+    /// <summary>New ambient treasure / artifact (Igc/missionigc.cpp:4207-4213).</summary>
+    void TreasureGeneratedEvent(Treasure t) { }
+
     // ── text (console messages to clients) ────────────────────────────────
     // igc.h:4847. (PostText / PostNotificationText variadic wrappers skipped.)
     void PostPlainText(bool bCritical, string pszText) { }
+
+    /// <summary>Mounted sound and owner ready text: weaponIGC.h:44-46,
+    /// cloakigc.cpp:75-76, shieldIGC.cpp:82-83, afterburnerIGC.cpp:119-120.
+    /// The historical method name also serves these utility parts.</summary>
+    void WeaponReady(Ship ship, string partName) { }
+
+    /// <summary>Port host adapter: queued hosts drain completed teleports after
+    /// Mission.Update. Other sites use the native ContinueRipcord/UseRipcord
+    /// callbacks directly, including false-at-zero retries (shipIGC.cpp:278-292).</summary>
+    bool QueueRipcordUse => false;
 
     // ── player / ship events ──────────────────────────────────────────────
     // igc.h:4850-4854.

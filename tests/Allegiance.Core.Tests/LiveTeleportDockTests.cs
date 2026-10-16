@@ -114,7 +114,7 @@ public class LiveTeleportDockTests
             var hull = friendlyHullId is { } fid && core.HullTypes.TryGetValue(fid, out var h)
                 ? h
                 : core.HullTypes.Values.OrderBy(x => x.HullId).First();
-            var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
             {
                 SideId = station.SideId,
             };
@@ -200,7 +200,7 @@ public class LiveTeleportDockTests
             // buyable one so bNewHull is provably false on real data.
             var hull = core.HullTypes.Values.Where(h => SellsHull(core, station.StationTypeId, side.Civilization.CivilizationId, h))
                                             .OrderBy(h => h.Price).First();
-            var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
             { SideId = station.SideId };
             mission.PlaceShip(ship, sector);
             r = new SpawnResult { Station = station, Sector = sector, Ship = ship, Hull = hull };
@@ -238,7 +238,7 @@ public class LiveTeleportDockTests
     /// <summary>⭐ A docked ship teleports to its garrison with a hull the
     /// garrison does NOT sell → <c>bNewHull = true</c> in the ACK, and the
     /// server applies the native's three operations (<c>FedSrv.CPP:7079-7120</c>):
-    /// refund the hull+part value to the side treasury, strip all parts, and
+    /// refund the paid hardware value to the personal wallet, strip all parts, and
     /// swap to the side's Lifepod hull — the ship redocked at the target.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
@@ -254,9 +254,9 @@ public class LiveTeleportDockTests
             var side = mission.Sides.First(s => s.Id == station.SideId);
             // The cheapest hull the garrison does NOT sell, with a positive price
             // so the refund is real money (not a 0-credit no-op).
-            var hull = core.HullTypes.Values.Where(h => !SellsHull(core, station.StationTypeId, side.Civilization.CivilizationId, h) && h.Price > 0)
+            var hull = core.HullTypes.Values.Where(h => !SellsHull(core, station.StationTypeId, side.Civilization.CivilizationId, h) && h.Price > 0 && h.Hardpoints.Length > 0)
                                             .OrderBy(h => h.Price).First();
-            var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
             { SideId = station.SideId };
             mission.PlaceShip(ship, sector);
             // Equip a real part so the strip has something to clear and the
@@ -281,8 +281,22 @@ public class LiveTeleportDockTests
 
         var side = server.Missions.Single().Sides.First(s => s.Id == live.SideId);
         long moneyBefore = side.Money;
-        int partPrice = live.Parts.Sum(p => p.Type.Price);
-        int expectRefund = live.HullType.Price + partPrice;
+        var owner = server.Ships.Single(l => l.Ship == live);
+        // H-03: the spawn hull/weapon are unpaid. Buy a controlled paid gun
+        // through the real docked wire path, then refund only that paid hardware.
+        var acquired = live.Mission!.Core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon) with { Price = 25, PartMask = 0 };
+        acquired = EconomyLoadoutTestSetup.Sell(live.Mission, acquired);
+        owner.Wallet.Money = 1000;
+        bot.ResetBuyLoadoutAcks();
+        bot.SendBuyLoadout(live.HullType.HullId, false, [new ExpandedPartData(acquired.PartId, 1, 0, 255)]);
+        // A late join-burst ACK can already name the free spawn gun. Wait
+        // for the actual paid purchase, including its authoritative debit.
+        Assert.True(PumpUntil(server, () => owner.Wallet.Money == 975 &&
+            bot.BuyLoadoutAcks.Any(a => a.FBoughtEverything && a.Parts.Any(p => p.PartId == acquired.PartId)), 4000) < 4000);
+        Assert.Equal(975, owner.Wallet.Money);
+        int walletBefore = owner.Wallet.Money;
+        int partPrice = acquired.Price;
+        int expectRefund = partPrice;
         short lifepodId = side.Civilization.Lifepod;
 
         bot.ResetTeleportAcks();
@@ -300,10 +314,11 @@ public class LiveTeleportDockTests
         Assert.Equal(r.Station.StationId, after.StationId);
         // Parts stripped (FedSrv.CPP:7107-7113).
         Assert.Empty(after.Parts);
-        // Refund deposited into the side treasury (this port's money primitive,
-        // same as P108's board refund).
+        // H-03: only the acquired gun refunds, into the personal wallet.
+        // The unpaid hull and side treasury never become spendable credit.
         long moneyAfter = side.Money;
-        Assert.Equal(expectRefund, (int)(moneyAfter - moneyBefore));
+        Assert.Equal(moneyBefore, moneyAfter);
+        Assert.Equal(walletBefore + expectRefund, owner.Wallet.Money);
 
         Console.WriteLine($"TELEPORT-LIVE: ship {shipId} tp to {r.Station.StationId} bNewHull=true refund {expectRefund} (hull {r.Hull.HullId} + part {partPrice}) -> Lifepod {lifepodId}");
     }
@@ -406,7 +421,7 @@ public class LiveTeleportDockTests
             AddStationToSector(sector, fake);
 
             var hull = core.HullTypes.Values.OrderBy(x => x.HullId).First();
-            var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+            var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
             { SideId = station.SideId };
             mission.PlaceShip(ship, sector);
             r = new SpawnResult { Station = station, Sector = sector, Ship = ship, Hull = hull };
@@ -474,15 +489,11 @@ public class LiveTeleportDockTests
             s => s.ShipId == shipId && s.State == ShipStatusMessage.StateFlying && s.StationId == -1);
     }
 
-    /// <summary>Reflection-free helper note: the Core assembly does not expose
-    /// <c>AttachStations</c> to tests, so the synthetic-station injection walks
-    /// the private <c>_stations</c> list directly. Test-only, on the sim thread
-    /// (ShipSpawner runs during the join), safe because the server disposes
-    /// afterward.</summary>
+    /// <summary>Register both the station record and its runtime, as a normal
+    /// mission does, so ripcord/undock can exercise the native launch routine.</summary>
     private static void AddStationToSector(Sector sector, DataStationIGC station)
     {
-        var field = typeof(Sector).GetField("_stations", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var list = (List<DataStationIGC>)field.GetValue(sector)!;
-        list.Add(station);
+        var mission = sector.Mission!;
+        mission.PlaceStation(new Station(station, mission.Core.StationTypes[station.StationTypeId]), sector);
     }
 }

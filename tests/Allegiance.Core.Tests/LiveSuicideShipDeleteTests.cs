@@ -125,7 +125,7 @@ public class LiveSuicideShipDeleteTests
             var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
             var sector = mission.Sectors.First(s => s.Stations.Contains(station));
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var ship = new Ship(id, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            var ship = new Ship(id, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity);
             ship.SideId = station.SideId;
             mission.PlaceShip(ship, sector);
             return (ship, sector);
@@ -338,6 +338,11 @@ public class LiveSuicideShipDeleteTests
         PumpUntil(server, () => client.ShipAssignment is not null, 4000);
         var set = client.ShipAssignment ?? throw new InvalidOperationException("no ship assignment");
         short myId = set.Ship.ShipId;
+
+        // P653 H-26 restores native's child-or-CAN_CHEAT suicide gate (FedSrv.CPP:6338):
+        // a lone pod may no longer suicide. Enable the configured admin predicate for the
+        // test connection (native's CanCheat escape hatch).
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig { Enabled = true, AllowNames = ["SUICIDER"] };
 
         client.SendSuicide();
         int ticks = PumpUntil(server,

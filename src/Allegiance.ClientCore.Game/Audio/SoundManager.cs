@@ -62,10 +62,17 @@ public sealed class SoundManager : IDisposable
     // while an enemy missile's target is the local ship, pitched 0.75..1.25 by
     // the best lock (trekigc.cpp:5065).
     private SoundEffectInstance? _missileWarning;
+    private SoundEffectInstance? _boundsWarning;
+    private SoundEffect? _boundsVoice;
+    private SoundEffect? _crowdingVoice;
     private SoundEffect _apEngage = null!;    // vo_sal_autopilotengage
     private SoundEffect _apDisengage = null!; // vo_sal_autopilotdisengage
     private SoundEffect _countdownStart = null!;   // countdownstart
     private readonly Dictionary<int, SoundEffect> _countdownTicks = new(); // 10..1
+    // P711 — coarse mission-clock milestone VO (SIM-0300..0303, WinTrek.cpp:
+    // 11157-11169): vo_time_10min/5min/1min/30sec, keyed by the native
+    // "seconds remaining" value (600/300/60/30).
+    private readonly Dictionary<int, SoundEffect> _countdownMilestones = new();
     private SoundEffect _gameOver = null!;    // vo_ma_gameover
     // P578 — the eject/death/rescue one-shot feedback cues (sounddef.mdl:
     // newCriticalMsgSound=ImportWave("criticalmessage"),
@@ -104,6 +111,7 @@ public sealed class SoundManager : IDisposable
     // the ambient is the scanning-loop default (per-type ambientSound unreachable
     // client-side). See ProbeAmbientSoundCurve remarks.
     private SoundEffect _probeDeploy = null!;     // lrgslideout — generic expendable deploy (deployProbeSound=dropobject stand-in)
+    private SoundEffect _mineDeploy = null!;      // P717 — dropmine (deployMineSound, sounddef.mdl:368)
     private SoundEffect _probeAmbient = null!;    // erbeam — scanning-loop default
     private readonly Dictionary<short, SoundEffectInstance> _probeAmbients = new(); // keyed by ProbeId
     // P267 — hull maneuvering-thruster loop (adjust), the local ship's turn
@@ -117,14 +125,6 @@ public sealed class SoundManager : IDisposable
     // ILStationExternalSound (sounddef id 380), see StationAmbientSoundCurve.
     private SoundEffect _stationAmbient = null!;      // shipout
     private readonly Dictionary<short, SoundEffectInstance> _stationAmbients = new();
-    // P267 — station event one-shots. Real per-station-class VO defaults from
-    // the demo core's garrison family (sounddef ids 860-927):
-    // vo_destroy_garrison / vo_capture_garrison / vo_destroy_enemygarrison /
-    // vo_capture_enemygarrison. Single-real-defaults (no core client-side).
-    private SoundEffect _stationDestroyed = null!;        // vo_destroy_garrison (garrisonDestroyedSound, id 860)
-    private SoundEffect _stationEnemyDestroyed = null!;   // vo_destroy_enemygarrison (garrisonEnemyDestroyedSound, id 900)
-    private SoundEffect _stationCaptured = null!;         // vo_capture_garrison (garrisonCapturedSound, id 880)
-    private SoundEffect _stationEnemyCaptured = null!;    // vo_capture_enemygarrison (garrisonEnemyCapturedSound, id 920)
     // P451 — id → asset-stem table for the base UNDER-ATTACK / CRITICAL voice
     // cues, covering EXACTLY the SoundIDs the real PCore001 station types decode
     // for UnderAttackSound / CriticalSound (dump: garrison=820, outpost=821,
@@ -202,6 +202,44 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _otherHullHit = null!;                      // ef120 (reused)
     private SoundEffect _collision = null!;                         // P463c — colisionlarge (collisionSound, sounddef.mdl:308)
     private SoundEffect _rockHit = null!;                           // P463c — hitrock (rockHitSound, sounddef.mdl:266)
+    // P710 — wealth / treasure announcement one-shots (clintlib/appmsg.cpp).
+    // Native plays pickUpPowerupSound/pickUpDevelopmentSound/pickUpCashSound on
+    // a treasure pickup (appmsg.cpp:282-303) and paydaySound on each payday
+    // (appmsg.cpp:1313). Real single-default assets from sounddef.mdl:279-281,294.
+    private SoundEffect _payday = null!;              // payday — paydaySound
+    private SoundEffect _pickupPowerup = null!;       // PowerupShield — pickUpPowerupSound
+    private SoundEffect _pickupDevelopment = null!;   // PowerupDevelopment — pickUpDevelopmentSound (+ flag reuses it, NYI flag cue)
+    private SoundEffect _pickupCash = null!;          // hoover — pickUpCashSound
+    // P710 — incoming-message notification cues (trekigc.cpp:4536-4560). Real
+    // waves from sounddef.mdl:297-301; newOfflineChatMsgSound reuses receivechat
+    // at reduced gain (sounddef.mdl:299), so it shares _chatRegular's asset.
+    private SoundEffect _chatCommand = null!;     // receivedobjective — newCommandMsgSound
+    private SoundEffect _chatCommander = null!;   // receivedcomchat — newChatMsgFromCommanderSound
+    private SoundEffect _chatPersonal = null!;    // receivepersonalchat — newPersonalMsgSound
+    private SoundEffect _chatRegular = null!;     // receivechat — newChatMsgSound (+ offline at lower gain)
+    // P711 — ship low-status / combat feedback one-shots (trekigc.cpp:1264-1275,
+    // appmsg.cpp:970). Waves resolved from sounddef.mdl:371-374, 811-812, 348.
+    private SoundEffect _hullLow = null!;         // vo_sal_hullcritical — hullLowSound (:374)
+    private SoundEffect _ammoLow = null!;         // outofammo — ammoLowSound (:371)
+    private SoundEffect _fuelLow = null!;         // fuellow — fuelLowSound (:372)
+    private SoundEffect _energyLow = null!;       // vo_sal_lowenergy — energyLowSound (:373)
+    private SoundEffect _noAmmo = null!;          // vo_sal_noammo — salNoAmmoSound (:812)
+    private SoundEffect _noFuel = null!;          // vo_sal_nofuel — salNoFuelSound (:811)
+    private SoundEffect _noRipcord = null!;       // vo_sal_noripcord — salNoRipcordSound (:348)
+    private SoundEffect _shieldsOffline = null!;  // P717 — vo_sal_shieldsoffline — salShieldsOfflineSound (:791)
+    // P714 — objective & status announce one-shots (appmsg.cpp:1238,2965,3149,3156,3169).
+    // Waves from sounddef.mdl:771,773,776,779,780.
+    private SoundEffect _madeCommander = null!;   // vo_sal_madecommander — commanderSound (:779)
+    private SoundEffect _madeInvestor = null!;    // vo_sal_madeinvestor — investorSound (:780)
+    private SoundEffect _stolenEnemyFlag = null!; // vo_stolen_enemyflag — enemyFlagLostSound (:773)
+    private SoundEffect _artifact = null!;        // vo_sal_artifact — artifactFoundSound (:776)
+    private SoundEffect _stolenFlag = null!;      // vo_stolen_flag — flagLostSound (:771)
+    // P711 — the ripcord-active loop (SIM-0368) and the mining loop (SIM-0370).
+    // ripcordOnLoopSound = ImportWave("countdownStart") (sounddef.mdl:347), the
+    // same countdown-tick wave native loops while a ripcord countdown runs;
+    // miningSound = ThreeDSound(200, LoopingSound(miningsound)) (sounddef.mdl:379).
+    private SoundEffectInstance? _ripcordLoop;    // countdownstart — ripcordOnLoopSound
+    private SoundEffectInstance? _miningLoop;     // miningsound — miningSound
     // P373 — the one-shot "new contact" (first-sighting) cues, one per
     // enemy/friendly split. Real native mapping confirmed from sounddef.mdl:247-248
     // — note the native VARIABLE names are swapped vs their meaning: the sound
@@ -539,12 +577,20 @@ public sealed class SoundManager : IDisposable
             _afterburner = Loop("Sounds/iafter");
             _missileTone = Loop("Sounds/missilelock");   // P230 — lock-acquired beep (missileToneSound = ImportWave("missilelock"), sounddef.mdl:365; sound id missileTone, sounds.h:135)
             _missileWarning = Loop("Sounds/missilelockonme"); // P264 — incoming-missile warning loop (missileLockSound = LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364)
+            _boundsWarning = Loop($"Sounds/{ShipWarningState.LoopSound}");
+            _boundsVoice = _content.Load<SoundEffect>($"Sounds/{ShipWarningState.BoundsVoice}");
+            _crowdingVoice = _content.Load<SoundEffect>($"Sounds/{ShipWarningState.CrowdingVoice}");
             _ambienceVariants = AmbienceStems.Select(s => _content.Load<SoundEffect>($"Sounds/{s}")).ToArray();
             _apEngage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotengage");
             _apDisengage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotdisengage");
             _countdownStart = _content.Load<SoundEffect>("Sounds/countdownstart");
             for (int n = 1; n <= CountdownSound.MaxTickSecond; n++)
                 _countdownTicks[n] = _content.Load<SoundEffect>($"Sounds/countdown{n}");
+            // P711 — coarse mission-clock milestone VO (SIM-0300..0303).
+            _countdownMilestones[600] = _content.Load<SoundEffect>("Sounds/vo_time_10min");
+            _countdownMilestones[300] = _content.Load<SoundEffect>("Sounds/vo_time_5min");
+            _countdownMilestones[60] = _content.Load<SoundEffect>("Sounds/vo_time_1min");
+            _countdownMilestones[30] = _content.Load<SoundEffect>("Sounds/vo_time_30sec");
             _gameOver = _content.Load<SoundEffect>("Sounds/vo_ma_gameover");
             _fireSound = _content.Load<SoundEffect>("Sounds/pulselaser");   // P232 — weapon single-shot (pulselaserShotSound, sounddef.mdl)
             _projectileAmbient = _content.Load<SoundEffect>("Sounds/erbeam");// P232 — projectile in-flight loop (er_beam, sounddef.mdl)
@@ -578,18 +624,14 @@ public sealed class SoundManager : IDisposable
             _rockHit = _content.Load<SoundEffect>("Sounds/hitrock");
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
             _probeDeploy = _content.Load<SoundEffect>("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
+            _mineDeploy = _content.Load<SoundEffect>("Sounds/dropmine");     // P717 — deployMineSound (sounddef.mdl:368)
             _probeAmbient = _content.Load<SoundEffect>("Sounds/erbeam");      // scanning-loop default
             // P267 — hull maneuvering-thruster turn loop (adjust), hull exterior
-            // loop (shipout), station exterior ambient loop (shipout), the four
-            // station event one-shots (garrison VO defaults), and the tech
+            // loop (shipout), station exterior ambient loop (shipout), and the tech
             // completion chime (vo_sal_researchcomplete). See the field docs.
             _turnThruster = Loop("Sounds/adjust");
             _shipExterior = Loop("Sounds/shipout");
             _stationAmbient = _content.Load<SoundEffect>("Sounds/shipout");
-            _stationDestroyed = _content.Load<SoundEffect>("Sounds/vo_destroy_garrison");
-            _stationEnemyDestroyed = _content.Load<SoundEffect>("Sounds/vo_destroy_enemygarrison");
-            _stationCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_garrison");
-            _stationEnemyCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_enemygarrison");
             _devComplete = _content.Load<SoundEffect>("Sounds/vo_sal_researchcomplete");
             _ripcordAborted = _content.Load<SoundEffect>("Sounds/vo_sal_ripcordaborted"); // P414
             // P578 — eject/death/rescue feedback cues (sounddef.mdl).
@@ -597,6 +639,42 @@ public sealed class SoundManager : IDisposable
             _nonCriticalMsg = _content.Load<SoundEffect>("Sounds/noncriticalmessage");
             _rescuePlayer = _content.Load<SoundEffect>("Sounds/hoover");
             _jump = _content.Load<SoundEffect>("Sounds/jumpin");
+            // P710 — wealth announcements (payday + treasure pickups). Waves
+            // resolved from sounddef.mdl:279-281,294 (payday, PowerupShield,
+            // PowerupDevelopment, hoover).
+            _payday = _content.Load<SoundEffect>("Sounds/payday");
+            _pickupPowerup = _content.Load<SoundEffect>("Sounds/powerupshield");
+            _pickupDevelopment = _content.Load<SoundEffect>("Sounds/powerupdevelopment");
+            _pickupCash = _content.Load<SoundEffect>("Sounds/hoover");
+            // P710 — incoming-message notification cues. Waves from
+            // sounddef.mdl:297-301 (receivedobjective, receivedcomchat,
+            // receivepersonalchat, receivechat).
+            _chatCommand = _content.Load<SoundEffect>("Sounds/receivedobjective");
+            _chatCommander = _content.Load<SoundEffect>("Sounds/receivedcomchat");
+            _chatPersonal = _content.Load<SoundEffect>("Sounds/receivepersonalchat");
+            _chatRegular = _content.Load<SoundEffect>("Sounds/receivechat");
+            // P711 — ship low-status / combat feedback one-shots. Waves from
+            // sounddef.mdl:371-374, 811-812, 348.
+            _hullLow = _content.Load<SoundEffect>("Sounds/vo_sal_hullcritical");
+            _ammoLow = _content.Load<SoundEffect>("Sounds/outofammo");
+            _fuelLow = _content.Load<SoundEffect>("Sounds/fuellow");
+            _energyLow = _content.Load<SoundEffect>("Sounds/vo_sal_lowenergy");
+            _noAmmo = _content.Load<SoundEffect>("Sounds/vo_sal_noammo");
+            _noFuel = _content.Load<SoundEffect>("Sounds/vo_sal_nofuel");
+            _noRipcord = _content.Load<SoundEffect>("Sounds/vo_sal_noripcord");
+            _shieldsOffline = _content.Load<SoundEffect>("Sounds/vo_sal_shieldsoffline"); // P717 — salShieldsOfflineSound (:791)
+            // P714 — objective & status announce one-shots. Waves from
+            // sounddef.mdl:771,773,776,779,780.
+            _madeCommander = _content.Load<SoundEffect>("Sounds/vo_sal_madecommander");
+            _madeInvestor = _content.Load<SoundEffect>("Sounds/vo_sal_madeinvestor");
+            _stolenEnemyFlag = _content.Load<SoundEffect>("Sounds/vo_stolen_enemyflag");
+            _artifact = _content.Load<SoundEffect>("Sounds/vo_sal_artifact");
+            _stolenFlag = _content.Load<SoundEffect>("Sounds/vo_stolen_flag");
+            // P711 — ripcord-active + mining loops (two looped instances created
+            // here, gated on/off by Game1's per-frame drivers; see
+            // UpdateRipcordLoop / UpdateMiningLoop).
+            _ripcordLoop = Loop("Sounds/countdownstart");
+            _miningLoop = Loop("Sounds/miningsound");
             // P373 — first-sighting cues (see field docs for the confirmed
             // native enemy/friendly mapping).
             _newContactEnemy = _content.Load<SoundEffect>("Sounds/newtarget");
@@ -693,6 +771,26 @@ public sealed class SoundManager : IDisposable
 
     /// <summary>Play the autopilot-engage voice chime (one-shot). No-op when
     /// audio is not loaded.</summary>
+    private SoundEffect? _commandMessage;
+    private bool _commandMessageAttempted;
+    public void PlayCommandMessage()
+    {
+        if (!IsLoaded) return;
+        if (!_commandMessageAttempted)
+        {
+            _commandMessageAttempted = true;
+            try { _commandMessage = _content.Load<SoundEffect>("Sounds/receivedobjective"); }
+            catch (ContentLoadException) { }
+        }
+        if (_commandMessage is { } sound) PlayWarnOneShot(sound);
+    }
+
+    /// <summary>WinTrek.cpp:10658; sounddef.mdl:304 (acceptCommandSound).</summary>
+    public void PlayCommandAccepted()
+    {
+        if (IsLoaded && WeaponWaveByStem("accept") is { } sound) PlayWarnOneShot(sound);
+    }
+
     public void PlayAutopilotEngage()
     {
         PlayWarnOneShot(_apEngage);
@@ -720,9 +818,30 @@ public sealed class SoundManager : IDisposable
     /// no-op (the caller decides eligibility via
     /// <see cref="CountdownSound.TickAssetFor"/>); this method only speaks the
     /// matching asset it already holds. No-op when audio is not loaded.</summary>
-    public void PlayCountdownSecond(int second)
+    public void PlayCountdownSecond(int second, float gain = 1f)
     {
         if (IsLoaded && _countdownTicks.TryGetValue(second, out var sfx))
+            PlayOneShot(sfx, SoundCategory.Warning, gain);
+    }
+
+    /// <summary>P711 — play the coarse mission-clock milestone VO
+    /// (<c>vo_time_10min</c>/<c>5min</c>/<c>1min</c>/<c>30sec</c>), native
+    /// <c>countdown10min/5min/1min/30Sound</c> (WinTrek.cpp:11157-11169;
+    /// SIM-0300..0303). <paramref name="assetStem"/> is a
+    /// <c>vo_time_*</c> stem from <see cref="CountdownSound.MilestoneAssetFor"/>.
+    /// No-op when not loaded or the stem is unrecognised.</summary>
+    public void PlayCountdownMilestone(string assetStem)
+    {
+        if (!IsLoaded) return;
+        int sec = assetStem switch
+        {
+            "vo_time_10min" => 600,
+            "vo_time_5min" => 300,
+            "vo_time_1min" => 60,
+            "vo_time_30sec" => 30,
+            _ => -1,
+        };
+        if (sec > 0 && _countdownMilestones.TryGetValue(sec, out var sfx))
             PlayWarnOneShot(sfx);
     }
 
@@ -765,6 +884,135 @@ public sealed class SoundManager : IDisposable
     {
         PlayWarnOneShot(_jump);
     }
+
+    // ── P710 — wealth announcements (clintlib/appmsg.cpp) ────────────────────
+    /// <summary>Play the payday cue (<c>payday</c>, native <c>paydaySound</c>,
+    /// appmsg.cpp:1313) on each PAYDAY broadcast. No-op when audio is not
+    /// loaded.</summary>
+    public void PlayPayday() => PlayWarnOneShot(_payday);
+
+    /// <summary>Play the powerup-pickup cue (<c>PowerupShield</c>, native
+    /// <c>pickUpPowerupSound</c>, appmsg.cpp:282). No-op when not loaded.</summary>
+    public void PlayPickupPowerup() => PlayWarnOneShot(_pickupPowerup);
+
+    /// <summary>Play the development-pickup cue (<c>PowerupDevelopment</c>,
+    /// native <c>pickUpDevelopmentSound</c>, appmsg.cpp:286 — also reused for a
+    /// flag pickup, :303, whose dedicated flag cue is NYI in native). No-op
+    /// when not loaded.</summary>
+    public void PlayPickupDevelopment() => PlayWarnOneShot(_pickupDevelopment);
+
+    /// <summary>Play the cash-pickup cue (<c>hoover</c>, native
+    /// <c>pickUpCashSound</c>, appmsg.cpp:291). No-op when not loaded.</summary>
+    public void PlayPickupCash() => PlayWarnOneShot(_pickupCash);
+
+    // ── P710 — incoming-message notification cues (trekigc.cpp:4536-4560) ────
+    /// <summary>Play the objective/command cue (<c>receivedobjective</c>, native
+    /// <c>newCommandMsgSound</c>, trekigc.cpp:4540). No-op when not loaded.</summary>
+    public void PlayChatCommand() => PlayWarnOneShot(_chatCommand);
+
+    /// <summary>Play the commander cue (<c>receivedcomchat</c>, native
+    /// <c>newChatMsgFromCommanderSound</c>, trekigc.cpp:4546/4555). No-op when
+    /// not loaded.</summary>
+    public void PlayChatCommander() => PlayWarnOneShot(_chatCommander);
+
+    /// <summary>Play the personal cue (<c>receivepersonalchat</c>, native
+    /// <c>newPersonalMsgSound</c>, trekigc.cpp:4548). No-op when not loaded.</summary>
+    public void PlayChatPersonal() => PlayWarnOneShot(_chatPersonal);
+
+    /// <summary>Play the regular-chat cue (<c>receivechat</c>, native
+    /// <c>newChatMsgSound</c>, trekigc.cpp:4557; the offline variant at :4560
+    /// reuses the same wave at reduced gain, so <paramref name="offline"/>
+    /// drops the gain by 10 dB to match <c>GainSound(-10, …)</c>,
+    /// sounddef.mdl:299). No-op when not loaded.</summary>
+    public void PlayChatRegular(bool offline = false)
+    {
+        if (!IsLoaded) return;
+        PlayOneShot(_chatRegular, SoundCategory.Warning, offline ? 0.318f : 1f); // -10 dB ≈ 0.316 gain
+    }
+
+    // ── P711 — ship low-status / combat feedback one-shots ─────────────────
+    // (trekigc.cpp:1264-1275 one-shots; appmsg.cpp:970 ripcord-deny). All are
+    // own-ship announce VO, so they ride the Warning-priority voice path like
+    // the other cockpit one-shots (MutexSal, sounddef.mdl:71-79).
+
+    /// <summary>Play the hull-critical cue (<c>vo_sal_hullcritical</c>, native
+    /// <c>hullLowSound</c>, trekigc.cpp:1264). No-op when not loaded.</summary>
+    public void PlayHullLow() => PlayWarnOneShot(_hullLow);
+
+    /// <summary>Play the ammo-low cue (<c>outofammo</c>, native
+    /// <c>ammoLowSound</c>, trekigc.cpp:1266). No-op when not loaded.</summary>
+    public void PlayAmmoLow() => PlayWarnOneShot(_ammoLow);
+
+    /// <summary>Play the fuel-low cue (<c>fuellow</c>, native
+    /// <c>fuelLowSound</c>, trekigc.cpp:1268). No-op when not loaded.</summary>
+    public void PlayFuelLow() => PlayWarnOneShot(_fuelLow);
+
+    /// <summary>Play the energy-low cue (<c>vo_sal_lowenergy</c>, native
+    /// <c>energyLowSound</c>, trekigc.cpp:1270). No-op when not loaded.</summary>
+    public void PlayEnergyLow() => PlayWarnOneShot(_energyLow);
+
+    /// <summary>Play the no-ammo attempt cue (<c>vo_sal_noammo</c>, native
+    /// <c>salNoAmmoSound</c>, trekigc.cpp:1273). No-op when not loaded.</summary>
+    public void PlayNoAmmo() => PlayWarnOneShot(_noAmmo);
+
+    /// <summary>Play the no-fuel attempt cue (<c>vo_sal_nofuel</c>, native
+    /// <c>salNoFuelSound</c>, trekigc.cpp:1275). No-op when not loaded.</summary>
+    public void PlayNoFuel() => PlayWarnOneShot(_noFuel);
+
+    /// <summary>Play the ripcord-denied cue (<c>vo_sal_noripcord</c>, native
+    /// <c>salNoRipcordSound</c>, appmsg.cpp:970 / clintlib.h:1175). No-op when
+    /// not loaded.</summary>
+    public void PlayNoRipcord() => PlayWarnOneShot(_noRipcord);
+
+    /// <summary>P717 — play the shields-offline cue (<c>vo_sal_shieldsoffline</c>,
+    /// native <c>salShieldsOfflineSound</c>, shieldIGC.cpp:186). No-op when not
+    /// loaded.</summary>
+    public void PlayShieldsOffline() => PlayWarnOneShot(_shieldsOffline);
+
+    /// <summary>P714 — play the "you became team leader" cue (<c>vo_sal_madecommander</c>,
+    /// native <c>commanderSound</c>, appmsg.cpp:2965). No-op when not loaded.</summary>
+    public void PlayMadeCommander() => PlayWarnOneShot(_madeCommander);
+
+    /// <summary>P714 — play the "you gained your first investor" cue
+    /// (<c>vo_sal_madeinvestor</c>, native <c>investorSound</c>, appmsg.cpp:1238).
+    /// No-op when not loaded.</summary>
+    public void PlayMadeInvestor() => PlayWarnOneShot(_madeInvestor);
+
+    /// <summary>P714 — play the enemy-flag-stolen cue (<c>vo_stolen_enemyflag</c>,
+    /// native <c>enemyFlagLostSound</c>, appmsg.cpp:3149). No-op when not loaded.</summary>
+    public void PlayStolenEnemyFlag() => PlayWarnOneShot(_stolenEnemyFlag);
+
+    /// <summary>P714 — play the artifact-found cue (<c>vo_sal_artifact</c>, native
+    /// <c>artifactFoundSound</c>, appmsg.cpp:3156). No-op when not loaded.</summary>
+    public void PlayArtifactFound() => PlayWarnOneShot(_artifact);
+
+    /// <summary>P714 — play the own-flag-stolen cue (<c>vo_stolen_flag</c>, native
+    /// <c>flagLostSound</c>, appmsg.cpp:3169). No-op when not loaded.</summary>
+    public void PlayStolenFlag() => PlayWarnOneShot(_stolenFlag);
+
+    /// <summary>P711 — gate the ripcord-active loop (<c>countdownstart</c>,
+    /// native <c>ripcordOnLoopSound</c>, trekigc.cpp:1287): a looping one-shot
+    /// instance plays while <paramref name="active"/> is true and stops
+    /// otherwise — native's <c>PlaySoundIf(m_pRipcordingSound, ...)</c> keeps
+    /// the sound started for as long as the local ship's ripcord countdown
+    /// runs. No-op when not loaded.</summary>
+    public void UpdateRipcordLoop(bool active)
+    {
+        if (!IsLoaded || _ripcordLoop is not { } loop) return;
+        if (active) { SetLoopVolume(loop, 0.8f * _masterVolume); EnsurePlaying(loop); }
+        else if (loop.State == SoundState.Playing) Safe(loop.Stop);
+    }
+
+    /// <summary>P711 — gate the mining loop (<c>miningsound</c>, native
+    /// <c>miningSound</c>, trekigc.cpp:1293): plays while the local ship is
+    /// actively mining a rock and stops otherwise. No-op when not loaded.</summary>
+    public void UpdateMiningLoop(bool mining)
+    {
+        if (!IsLoaded || _miningLoop is not { } loop) return;
+        if (mining) { SetLoopVolume(loop, 0.7f * _masterVolume); EnsurePlaying(loop); }
+        else if (loop.State == SoundState.Playing) Safe(loop.Stop);
+    }
+
 
     /// <summary>P232/P465 — play the per-weapon single-shot cue (one-shot) for the
     /// given weapon's <c>singleShotSound</c> id, resolved to its wave via
@@ -1124,6 +1372,16 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) PlayOneShot(_probeDeploy, SoundCategory.WeaponFire, 1f);
     }
 
+    /// <summary>P717 — play the mine-deploy one-shot (<c>dropmine.ogg</c>;
+    /// native <c>deployMineSound</c>, sounddef.mdl:368, played for the local
+    /// ship's own drop at <c>clintlib.cpp:3253</c>). Non-positional cockpit-range
+    /// one-shot (no 3D emitter yet), mirroring <see cref="PlayProbeDeploy"/>.
+    /// No-op when audio is not loaded.</summary>
+    public void PlayMineDeploy()
+    {
+        if (IsLoaded) PlayOneShot(_mineDeploy, SoundCategory.WeaponFire, 1f);
+    }
+
     /// <summary>P260 — begin a probe's continuous scanning ambient loop (a looped
     /// instance keyed by the probe's real <c>ProbeId</c>), seeded at the given
     /// volume. Starts it only if one is not already playing for that probe.
@@ -1247,24 +1505,14 @@ public sealed class SoundManager : IDisposable
         }
     }
 
-    /// <summary>P267 — play a station event one-shot (destroyed / captured, with
-    /// the own vs enemy variant) at non-positional volume. Driven by the real
-    /// <c>STATION_DESTROYED</c>/<c>STATION_CAPTURE</c> wire events (see
-    /// <see cref="StationEventSoundKind"/>); mirrors native
-    /// <c>appmsg.cpp:548-551</c> (destroyed) and <c>:674-677</c> (captured).
-    /// No-op when audio is not loaded.</summary>
-    public void PlayStationEvent(StationEventSoundKind kind)
+    /// <summary>Play the core-selected station cue, even after the station has
+    /// been removed. Native clintlib/appmsg.cpp:548-551,674-677. Uses the same
+    /// cached, budgeted warning voice path as other station announcements.</summary>
+    public void PlayStationEvent(Allegiance.ClientCore.State.ClientSoundEvent ev,
+        IReadOnlyDictionary<short, Allegiance.Core.DataStationTypeIGC>? stationTypes)
     {
-        if (!IsLoaded) return;
-        var sfx = kind switch
-        {
-            StationEventSoundKind.Destroyed => _stationDestroyed,
-            StationEventSoundKind.EnemyDestroyed => _stationEnemyDestroyed,
-            StationEventSoundKind.Captured => _stationCaptured,
-            StationEventSoundKind.EnemyCaptured => _stationEnemyCaptured,
-            _ => null,
-        };
-        if (sfx is not null) PlayWarnOneShot(sfx);
+        if (StationEventSoundMap.TryResolve(ev, stationTypes, out var stem))
+            PlayVoice(stem);
     }
 
     /// <summary>P267 — play the development/tech-completion chime (one-shot)
@@ -1315,6 +1563,23 @@ public sealed class SoundManager : IDisposable
         if (stem.Length == 0) return;
         if (_clusterAlertSounds.TryGetValue(stem, out var sfx))
             PlayWarnOneShot(sfx);
+    }
+
+    /// <summary>WinTrek.cpp:8659-8666 voices on each rising bit;
+    /// trekigc.cpp:1285-1286 loops while either warning remains active.</summary>
+    public void UpdateShipWarnings(Allegiance.Core.Sim.ShipWarningMask mask, Allegiance.Core.Sim.ShipWarningMask rising)
+    {
+        if (!IsLoaded || _boundsWarning is not { } loop) return;
+        if ((rising & Allegiance.Core.Sim.ShipWarningMask.OutOfBounds) != 0 && _boundsVoice is { } bounds)
+            PlayWarnOneShot(bounds);
+        if ((rising & Allegiance.Core.Sim.ShipWarningMask.CrowdedSector) != 0 && _crowdingVoice is { } crowd)
+            PlayWarnOneShot(crowd);
+        if (mask != Allegiance.Core.Sim.ShipWarningMask.None)
+        {
+            SetLoopVolume(loop, 0.8f * _masterVolume);
+            EnsurePlaying(loop);
+        }
+        else if (loop.State == SoundState.Playing) Safe(loop.Stop);
     }
 
     /// <summary>
@@ -1430,11 +1695,16 @@ public sealed class SoundManager : IDisposable
             _afterburner?.Dispose();
             _missileTone?.Dispose();
             _missileWarning?.Dispose();
+            _boundsWarning?.Dispose();
+            _boundsVoice?.Dispose();
+            _crowdingVoice?.Dispose();
             foreach (var sfx in _ambienceVariants) sfx.Dispose();
+            _commandMessage?.Dispose();
             _apEngage?.Dispose();
             _apDisengage?.Dispose();
             _countdownStart?.Dispose();
             foreach (var sfx in _countdownTicks.Values) sfx.Dispose();
+            foreach (var sfx in _countdownMilestones.Values) sfx.Dispose();   // P711
             _gameOver?.Dispose();
             _criticalMsg?.Dispose();        // P578
             _nonCriticalMsg?.Dispose();     // P578
@@ -1456,18 +1726,25 @@ public sealed class SoundManager : IDisposable
             _rockHit?.Dispose();     // P463c
             foreach (var inst in _missileAmbients.Values) inst.Dispose();
             _probeDeploy?.Dispose();
+            _mineDeploy?.Dispose();  // P717
             _probeAmbient?.Dispose();
             foreach (var inst in _probeAmbients.Values) inst.Dispose();
             _turnThruster?.Dispose();
             _shipExterior?.Dispose();
             _stationAmbient?.Dispose();
             foreach (var inst in _stationAmbients.Values) inst.Dispose();
-            _stationDestroyed?.Dispose();
-            _stationEnemyDestroyed?.Dispose();
-            _stationCaptured?.Dispose();
-            _stationEnemyCaptured?.Dispose();
             _devComplete?.Dispose();
             _ripcordAborted?.Dispose();   // P414
+            _hullLow?.Dispose();          // P711
+            _ammoLow?.Dispose();          // P711
+            _fuelLow?.Dispose();          // P711
+            _energyLow?.Dispose();        // P711
+            _noAmmo?.Dispose();           // P711
+            _noFuel?.Dispose();           // P711
+            _noRipcord?.Dispose();        // P711
+            _shieldsOffline?.Dispose();   // P717
+            _ripcordLoop?.Dispose();      // P711
+            _miningLoop?.Dispose();       // P711
             _newContactEnemy?.Dispose();       // P373
             _newContactFriendly?.Dispose();    // P373
             foreach (var sfx in _voices.Values) sfx.Dispose();

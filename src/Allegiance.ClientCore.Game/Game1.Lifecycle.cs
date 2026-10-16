@@ -170,6 +170,11 @@ public sealed partial class Game1
             // P566 — the native ship renderer (parses .mdl meshes + native textures
             // at runtime from the artwork source, like ProjectileModelRenderer).
             _nativeShipRenderer = new Rendering.NativeShipRenderer(GraphicsDevice, _assets);
+            // P628 — the far-tier sprite batcher (distant ships as lit, side-tinted
+            // sprites/points, batched per hull type) + the env-configurable LOD
+            // thresholds. Profile is parsed at construction (FromEnv) and kept.
+            _shipLodSpriteRenderer = new Rendering.ShipLodSpriteRenderer(GraphicsDevice);
+            _shipLodProfile = Rendering.ShipLodProfile.FromEnv();
 
             // P306 — headless capture: an offscreen target the WHOLE frame is
             // rendered into (the P207 offscreen-render recipe — never the
@@ -315,10 +320,13 @@ public sealed partial class Game1
         // core yields an empty catalogue, so the docked screen still renders the
         // current ship and launch/undock stay usable.
         _shopCatalog = Rendering.ShopCatalog.TryLoad(_assets);
+        if (_shopCatalog?.Core is { } startupCore) _assetMissionCores["PCore001"] = startupCore;
+        _session.World.MissionCoreResolver = ResolveAssetMissionCore;
         // P540 — give the ClientWorld a way to resolve an ejected ship's lifepod
         // hull id (it has no core of its own). Wired once the catalogue loads,
         // before the wire receive path starts.
         _session.World.LifepodHullResolver = ResolveLifepodHull;
+        _session.World.PartTypeResolver = ResolveFlightPart;
         // P465b — cache the core's projectile-type table once (from the same
         // loaded core the shop catalogue reads) so the per-frame bolt gather can
         // style each bolt by its real type. Null when the core is missing →
@@ -729,12 +737,13 @@ public sealed partial class Game1
         // constructed in Enhanced mode; the native-art trail renderers below
         // get it as their optional smoke source and the enhanced explosion
         // renderer reuses it so the on-screen budget spans all smoke sources.
+        _shaders = Rendering.ShaderAssetCache.ForDevice(GraphicsDevice);
+        InitializeGpuBudget();
         if (_enhancedVfx)
         {
             // P547 — the shader cache + post-processor (linear-depth target,
             // scene target, soft-particle + bloom effects). Constructed before
             // the smoke field so its soft-particle renderer can be handed in.
-            _shaders = Rendering.ShaderAssetCache.ForDevice(GraphicsDevice);
             _post = new Rendering.VfxPostProcessor(GraphicsDevice, _shaders);
             if (_softEnabled && _post.SoftReady)
                 Console.WriteLine("[monogame] P547: soft particles ACTIVE (linear-depth shader + target ready)");

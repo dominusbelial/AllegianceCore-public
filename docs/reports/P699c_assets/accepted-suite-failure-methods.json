@@ -1,0 +1,6 @@
+[
+  [
+    "ClientCore",
+    "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors"
+  ]
+]

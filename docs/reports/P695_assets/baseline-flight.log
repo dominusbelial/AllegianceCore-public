@@ -1,0 +1,13 @@
+Test run for /tmp/p695/before-artifacts/bin/Allegiance.ClientCore.MonoGame.Tests/debug/Allegiance.ClientCore.MonoGame.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:44.24]     Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations(rotations: 2, scale: 0.5) [FAIL]
+  Failed Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations(rotations: 2, scale: 0.5) [12 s]
+  Error Message:
+   normal human flight must not need correction
+  Stack Trace:
+     at Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations(Int32 rotations, Double scale) in /home/domingo/allegiance-codex-p695/tests/Allegiance.ClientCore.MonoGame.Tests/P695HumanShipUpdatesLiveTests.cs:line 143
+   at InvokeStub_P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+Results File: /tmp/p695/before-live-2.trx
+
+Failed!  - Failed:     1, Passed:     2, Skipped:     0, Total:     3, Duration: 43 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)

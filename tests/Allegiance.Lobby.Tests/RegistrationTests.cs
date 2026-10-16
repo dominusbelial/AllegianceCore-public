@@ -39,7 +39,7 @@ public class RegistrationTests
         var servers = await ListServers(client);
         var mine = Assert.Single(servers, s => s.Id == resp.Id);
         Assert.Equal("Test Server", mine.Name);
-        Assert.Equal("1.2.3.4", mine.Address);
+        Assert.Equal("127.0.0.1", mine.Address);
         Assert.Equal(6073, mine.Port);
         Assert.Equal(5, mine.PlayerCount);
         Assert.Equal(64, mine.MaxPlayers);

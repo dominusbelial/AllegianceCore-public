@@ -110,7 +110,7 @@ public class LiveLogoffTests
             var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
             var sector = mission.Sectors.First(s => s.Stations.Contains(station));
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var ship = new Ship(id, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            var ship = new Ship(id, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity);
             ship.SideId = station.SideId;
             mission.PlaceShip(ship, sector);
             return (ship, sector);

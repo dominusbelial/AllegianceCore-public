@@ -75,9 +75,8 @@ public class LiveTeleportProbeRipcordTests
 
     private static void AddStationToSector(Sector sector, DataStationIGC station)
     {
-        var field = typeof(Sector).GetField("_stations", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var list = (List<DataStationIGC>)field.GetValue(sector)!;
-        list.Add(station);
+        var mission = sector.Mission!;
+        mission.PlaceStation(new Station(station, mission.Core.StationTypes[station.StationTypeId]), sector);
     }
 
     /// <summary>The REAL PCore001 teleport probe with the SMALLEST activation
@@ -110,6 +109,9 @@ public class LiveTeleportProbeRipcordTests
             GroupId: 0, TtbmRequired: [], TtbmEffects: [], Mass: 0f, Signature: 0f,
             PartId: 777, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
             Type: new DataPartTypeIGC.ProbeLauncher(probeType.ExpendableTypeId));
+        // H-07/H-08: remount replaces the depleted launcher; do not leave
+        // duplicate dispensers at slot zero and rely on excess old rounds.
+        ship.TryRemovePart(EquipmentType.Dispenser, 0, out _);
         ship.MountPart(part, amount, mountId: 0, fractionMounted: 255);
     }
 

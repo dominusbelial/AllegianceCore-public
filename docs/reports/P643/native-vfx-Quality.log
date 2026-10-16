@@ -1,0 +1,49 @@
+[monogame] lobby mode: browsing http://127.0.0.1:5000/api/servers (pass [host] [port] [name] to skip the lobby)
+[client] aleph glimpse/transit-flare: ON (--aleph-glimpse off to disable the glimpse + flare; the native arrival swell stays on either way)
+[client] VFX: NATIVE (P263/P545 native-art path)
+[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models) (NO Meshy pack — native only; see ALLEGIANCE_MESHY_PACK_PATH)
+[client] asteroids: NATIVE per-rock .mdl meshes + native textures (--asteroids imported to use the shared imported variants)
+[client] ambient space dust: density=1 (native Debris pref)
+[inspect] --inspect: offline hull inspector (no server connect)
+MESA: error: Failed to query drm device.
+glx: failed to create dri3 screen
+failed to load driver: iris
+[client] ship-art override: 0 entries from <repo>/assets/ships/ship-art.json
+[client] ship catalogue: 0 public entries (no Meshy pack)
+[monogame] lock sprite 'Partial': 64x64 'plockbmp.mdl'
+[monogame] lock sprite 'Full': 64x64 'lockedbmp.mdl'
+[monogame] feedback art 'conejectpoddisplaybmp': 172x44 'conejectpoddisplaybmp.mdl'
+[monogame] feedback art 'deathbannerbmp': 136x25 'deathbannerbmp.mdl'
+[monogame] feedback art 'ejectpodbmp': 16x16 'ejectpodbmp.mdl'
+[monogame] quick-chat: 310 voices, 13 menus, mainMenu ok
+[keymap] Controls popup ready (open: F6)
+[monogame] shop catalogue: 447 hulls, 117 parts, 123 launchers (56 missile, 8 mine, 6 chaff, 53 probe)
+[monogame] P607 ship-model audit: 447 hull(s), 0 unresolved native
+[monogame] rock surface 'Plain': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] rock surface 'Helium': 2048x2048 'bgrnd55bmp.mdl'
+[monogame] rock surface 'Uranium': 2048x2048 'bgrnd51bmp.mdl'
+[monogame] rock surface 'Silicon': 2048x2048 'bgrnd52bmp.mdl'
+[monogame] rock surface 'Carbon': 2048x2048 'bgrnd53bmp.mdl'
+[monogame] rock surface 'Buildable': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] P593 projectile-model audit: 4 model(s), 0 lit-solid fallback(s)
+[monogame] P593b missile-model audit: 20 model(s), 0 lit-solid fallback(s)
+[monogame] P593b render-model audit: 0-lit-solid guarantee -> 0 model fallback(s), 0 treasure fallback(s)
+[p643] telemetry enabled; serverGC=False; latency=Interactive
+[p643] GPU timer: GL_TIME_ELAPSED scene/post, asynchronous
+[monogame] explosion film 'exp20' = 20 frames 1280x64
+[monogame] explosion film 'exp22' = 30 frames 15360x512
+[monogame] explosion film 'exp23' = 38 frames 2432x64
+[monogame] explosion film 'exp24' = 16 frames 1024x64
+[monogame] explosion film 'exp25' = 32 frames 2048x64
+[monogame] explosion shockwave fx18 = 2048x2048
+[monogame] ambient dust decal: 32x32 'debris1bmp.mdl'
+[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact/sector-threat cues
+[monogame] music: loaded flight + station beds (placeholder-generated tones — drop real .ogg at 'Sounds/flightmusic'/'Sounds/stationmusic' to replace)
+[inspect] ship-art override: 0 entries from <repo>/assets/ships/ship-art.json
+[inspect] catalogue: 0 replacement models from <repo>/assets/ships/catalogue.json
+[inspect] hull 1/295: id=13 name="Adv Scout" civ=dreg model=quizscoutv2 length=17 native=True meshy=dreg-scout2 fallback=False
+[inspect] READY: 295 hulls; F11 screenshot, Enter=mark bad, ?=help
+[client] The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable — or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root — to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.
+[p643] p50 10.08 p99 258.78 max 258.78 ms | CPU u/d/p 3.15/178.73/74.20 GPU 7.01 ms (async scene+post) | present 5.62 ms | draws 9 1280x720->1920x1080 GC gen0/1/2 1/1/1 pause 1.41 ms | 348041 B/frame | heap 30.8 MiB p99 #1: GC 1.41 GPU 239.77 | max #1: GC 1.41 GPU 239.77 ms
+[p643] p50 9.67 p99 11.89 max 13.09 ms | CPU u/d/p 0.02/0.69/7.71 GPU 7.56 ms (async scene+post) | present 4.63 ms | draws 9 1280x720->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 15660 B/frame | heap 32.4 MiB p99 #121: GC 0.00 GPU 8.67 | max #142: GC 0.00 GPU 9.18 ms
+[p643] p50 9.92 p99 13.72 max 14.08 ms | CPU u/d/p 0.02/0.78/7.19 GPU 6.16 ms (async scene+post) | present 6.04 ms | draws 9 1280x720->1920x1080 GC gen0/1/2 0/0/0 pause 0.00 ms | 15508 B/frame | heap 33.9 MiB p99 #172: GC 0.00 GPU 9.77 | max #170: GC 0.00 GPU 10.46 ms

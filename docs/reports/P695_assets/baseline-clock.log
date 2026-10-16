@@ -1,0 +1,15 @@
+Test run for /tmp/p695/before-artifacts/bin/Allegiance.ClientCore.Tests/debug/Allegiance.ClientCore.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.19]     Allegiance.ClientCore.Tests.P695ServerClockTests.Latest_ping_reanchors_after_a_dilation_rate_change [FAIL]
+  Failed Allegiance.ClientCore.Tests.P695ServerClockTests.Latest_ping_reanchors_after_a_dilation_rate_change [3 ms]
+  Error Message:
+   Assert.InRange() Failure: Value not in range
+Range:  (0 - 1499)
+Actual: 1977
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P695ServerClockTests.Latest_ping_reanchors_after_a_dilation_rate_change() in /home/domingo/allegiance-codex-p695/tests/Allegiance.ClientCore.Tests/P695ServerClockTests.cs:line 23
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /tmp/p695/before-clock-gate.trx
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 10 ms - Allegiance.ClientCore.Tests.dll (net10.0)

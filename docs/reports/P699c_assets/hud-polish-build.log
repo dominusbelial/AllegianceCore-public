@@ -1,0 +1,14 @@
+  Determining projects to restore...
+  Restored /home/domingo/allegiance-codex-p699c/tools/hud-polish-proof/hud-polish-proof.csproj (in 155 ms).
+  4 of 5 projects are up-to-date for restore.
+  Allegiance.Core -> /home/domingo/allegiance-codex-p699c/src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll
+  Allegiance.ClientCore -> /home/domingo/allegiance-codex-p699c/src/Allegiance.ClientCore/bin/Debug/net10.0/Allegiance.ClientCore.dll
+  Allegiance.ClientCore.Game -> /home/domingo/allegiance-codex-p699c/src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.ClientCore.Game.dll
+  Allegiance.ClientCore.MonoGame -> /home/domingo/allegiance-codex-p699c/src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.dll
+  hud-polish-proof -> /home/domingo/allegiance-codex-p699c/tools/hud-polish-proof/bin/Debug/net10.0/hud-polish-proof.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.95

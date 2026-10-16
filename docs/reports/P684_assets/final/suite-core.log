@@ -1,0 +1,15 @@
+Test run for /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.33]     Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events [FAIL]
+  Failed Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events [135 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   6672
+  Stack Trace:
+     at Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events() in /home/domingo/.claude/jobs/82c1509b/tmp/integ7/tests/Allegiance.Core.Tests/Transport/P661EgressAccountingTests.cs:line 139
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /home/domingo/.claude/jobs/82c1509b/tmp/integ7/docs/reports/P684_assets/final/suite-core.trx
+
+Failed!  - Failed:     1, Passed:  4445, Skipped:     0, Total:  4446, Duration: 8 m 46 s - Allegiance.Core.Tests.dll (net10.0)

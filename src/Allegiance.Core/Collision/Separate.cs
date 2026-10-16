@@ -58,6 +58,82 @@ public static class Separate
     ];
 
     /// <summary>
+    /// Per-pass immutable support offsets for the 27 fixed separation probes.
+    /// Identical hull/scale/relative-orientation pairs share offsets, but every
+    /// pair still evaluates its own positions and the native probe order. Seed
+    /// normals and coincident-centre random perturbations are never cached.
+    /// </summary>
+    public sealed class ProbeCache
+    {
+        private readonly Dictionary<Key, (Vector3[] A, Vector3[] B)> _offsets = [];
+
+        // P706 — per-body cache of the 27 body-2 (GetMaxExtreme) support
+        // vertices. GetMaxExtreme(hts, d) is a pure function of the collider's
+        // hull/shape/scale/radius and the FIXED probe direction d — it never
+        // involves the body's orientation (Collider.GetMaxExtreme →
+        // GetHullExtreme is hull-local × scale). The pair-keyed _offsets cache
+        // recomputes these 27 supports for every DISTINCT pair, but in a dense
+        // fleet of few hull types (e.g. one fighter class relaunching in a
+        // mass) the same body's 27 supports repeat across thousands of pairs.
+        // Keying them by the body alone computes them once per unique body and
+        // is byte-for-byte the same support values — a pure memoisation, no
+        // gameplay change. (The body-1 `aa` terms depend on the relative
+        // orientation o, so they stay pair-keyed.)
+        private readonly Dictionary<BKey, Vector3[]> _bb = [];
+        private readonly record struct BKey(CvhFile? Hull, int Hts, int Scale, int Radius);
+
+        internal Vector3[] GetB(Collider b, int htsB)
+        {
+            var key = new BKey(b.Hull, htsB,
+                BitConverter.SingleToInt32Bits(b.Scale),
+                BitConverter.SingleToInt32Bits(b.EffectiveRadius));
+            if (!_bb.TryGetValue(key, out var arr))
+            {
+                arr = new Vector3[Directions.Length];
+                for (int i = 0; i < Directions.Length; i++)
+                    arr[i] = b.GetMaxExtreme(htsB, Directions[i]);
+                _bb.Add(key, arr);
+            }
+            return arr;
+        }
+
+        private readonly record struct Bits(int X, int Y, int Z)
+        {
+            public static Bits Of(Vector3 v) => new(BitConverter.SingleToInt32Bits(v.X),
+                BitConverter.SingleToInt32Bits(v.Y), BitConverter.SingleToInt32Bits(v.Z));
+        }
+        private readonly record struct Key(CvhFile? HullA, CvhFile? HullB, int ShapeA, int ShapeB,
+            int ScaleA, int ScaleB, int RadiusA, int RadiusB, Bits Right, Bits Up, Bits Backward);
+
+        internal (Vector3[] A, Vector3[] B)? Get(Collider a, int htsA, Collider b, int htsB, Orientation o)
+        {
+            var key = new Key(a.Hull, b.Hull, htsA, htsB,
+                BitConverter.SingleToInt32Bits(a.Scale), BitConverter.SingleToInt32Bits(b.Scale),
+                BitConverter.SingleToInt32Bits(a.EffectiveRadius), BitConverter.SingleToInt32Bits(b.EffectiveRadius),
+                Bits.Of(o.GetRight()), Bits.Of(o.GetUp()), Bits.Of(o.GetBackward()));
+            if (_offsets.TryGetValue(key, out var offsets)) return offsets;
+            // A fleet with many distinct attitudes must not create an unbounded
+            // per-pair support cache. Fall back to the original solver once full.
+            if (_offsets.Count >= 256) return null;
+            var aa = new Vector3[Directions.Length]; var bb = new Vector3[Directions.Length];
+            for (int i = 0; i < Directions.Length; i++)
+            {
+                var d = Directions[i];
+                aa[i] = htsA switch
+                {
+                    HitShape.Point => Vector3.Zero,
+                    HitShape.Sphere => d * a.EffectiveRadius,
+                    HitShape.Ellipse => a.GetEllipseExtreme(o.TimesInverse(-d)) * o,
+                    _ => a.GetHullExtreme(htsA, o.TimesInverse(-d)) * o
+                };
+                bb[i] = b.GetMaxExtreme(htsB, d);
+            }
+            _offsets.Add(key, offsets = (aa, bb));
+            return offsets;
+        }
+    }
+
+    /// <summary>
     /// The separated collision-time positions of the two bodies and the world-space
     /// separating normal, computed from their convex hulls. Body-1 moves (or is
     /// pushed full-distance when <c>fEqualBounce</c> is false); body-2 is static
@@ -72,7 +148,7 @@ public static class Separate
     /// <param name="fEqualBounce">Both bodies bounce (ship↔ship); else only body-1 moves.</param>
     /// <param name="htsA"><paramref name="a"/>'s concrete sub-shape from detection (<c>entry.m_hts1</c>).</param>
     /// <param name="htsB"><paramref name="b"/>'s concrete sub-shape (<c>entry.m_hts2</c>).</param>
-    public static Result SeparateColliders(Collider a, Collider b, float tCollision, bool fEqualBounce, int htsA, int htsB)
+    public static Result SeparateColliders(Collider a, Collider b, float tCollision, bool fEqualBounce, int htsA, int htsB, ProbeCache? probeCache = null)
     {
         // Collision-time positions (shipIGC.cpp:523-526): body-2 only moves when
         // equal-bounce; a static body stays at its position.
@@ -103,13 +179,21 @@ public static class Separate
         Vector3 delta = eA - eB;
         double distanceBest = delta * directionBest;
 
+        var offsets = probeCache?.Get(a, htsA, b, htsB, o);
         int attempt = 0;
         do
         {
             var direction = Directions[attempt];
 
-            Vector3 eAa = a.GetMinExtreme(htsA, dpLocal, o, direction);
-            Vector3 eBb = b.GetMaxExtreme(htsB, direction);
+            Vector3 eAa = offsets is { } cached ? htsA switch
+            {
+                HitShape.Point => dpLocal,
+                HitShape.Sphere => dpLocal - cached.A[attempt],
+                _ => dpLocal + cached.A[attempt]
+            } : a.GetMinExtreme(htsA, dpLocal, o, direction);
+            Vector3 eBb = offsets is { } cachedB
+                ? cachedB.B[attempt]
+                : probeCache is { } pcB ? pcB.GetB(b, htsB)[attempt] : b.GetMaxExtreme(htsB, direction);
             Vector3 deltaA = eAa - eBb;
             double distance = deltaA * direction;
 

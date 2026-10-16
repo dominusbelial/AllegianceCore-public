@@ -236,8 +236,121 @@ public sealed partial class Game1
 
     /// <summary>--auto-goto / --auto-target / --auto-dock-after, applied in
     /// UpdateFlying (only meaningful airborne, after the hangar branch).</summary>
+    private int _autoFlightPartsStage;
+    private void ApplyAutoFlightParts()
+    {
+        double time = _auto?.SecondsSinceLaunch ?? 0;
+        var inventory = OwnInventory();
+        if (_autoFlightPartsStage == 0 && time >= 1 && inventory.Any(p => p.MountId == 0))
+        {
+            ToggleFixedWeapon(0);
+            _autoFlightPartsStage = 1;
+        }
+        if (_autoFlightPartsStage == 1 && time >= 3)
+        {
+            var weapon = inventory.FirstOrDefault(p => p.MountId == 0 && ResolveFlightPart(p.PartId)?.EquipmentType == Allegiance.Core.EquipmentType.Weapon);
+            if (weapon.PartId == 0) return;
+            _inventorySelection = weapon;
+            ChangeFlightPart(Allegiance.Core.FlightPartAction.Unmount);
+            _autoFlightPartsStage = 2;
+        }
+        if (_autoFlightPartsStage == 2 && time >= 5)
+        {
+            var spare = inventory.FirstOrDefault(p => p.MountId >= 128 && ResolveFlightPart(p.PartId)?.EquipmentType == Allegiance.Core.EquipmentType.Weapon);
+            if (spare.PartId == 0) return; // wait for real guaranteed echo
+            _inventorySelection = spare;
+            ChangeFlightPart(Allegiance.Core.FlightPartAction.Mount);
+            _autoFlightPartsStage = 3;
+        }
+        if (_autoFlightPartsStage == 3 && time >= 7 && inventory.Any(p => p.MountId == 0 && ResolveFlightPart(p.PartId)?.EquipmentType == Allegiance.Core.EquipmentType.Weapon))
+        {
+            Console.WriteLine("[p641] in-flight mount CONFIRMED by server echo");
+            _autoFlightPartsStage = 4;
+        }
+        if (_autoFlightPartsStage == 4 && time >= 10) { _boosterToggled = true; _autoFlightPartsStage = 5; }
+        if (_autoFlightPartsStage == 5 && time >= 13) { _boosterToggled = false; _autoFlightPartsStage = 6; }
+    }
+
+    private bool _autoCommandOrientationReady;
+    private bool _autoCommandSubjectReady;
+    private int _autoParityStage;
+    private void ApplyAutoParityCommands()
+    {
+        double seconds = _auto?.SecondsSinceLaunch ?? 0;
+        if (_autoParityStage == 0 && seconds >= 1)
+        {
+            SelectRemainderTarget("TargetWarp", StepDirection.Nearest);
+            if (_autoTarget is not { Kind: TargetKind.Warp } warp) return;
+            EngageAutopilotToward(warp, "p642 warp frame:");
+            _autoParityStage = 1;
+        }
+        if (_autoParityStage == 1 && seconds >= 6) { ApplyConsoleMode("ConModeInventory"); _autoParityStage = 2; }
+        if (_autoParityStage == 2 && seconds >= 10) { ApplyConsoleMode("ConModeInventory"); ApplyConsoleMode("ConModeGameState"); _autoParityStage = 3; }
+        if (_autoParityStage == 3 && seconds >= 14) { ApplyConsoleMode("ConModeMiniTeam"); _autoParityStage = 4; }
+        if (_autoParityStage == 4 && seconds >= 18) { ApplyConsoleMode("TeamPane"); _autoParityStage = 5; }
+        if (_autoParityStage == 5 && seconds >= 22) { ApplyConsoleMode("ConModeCombat"); _autoParityStage = 6; }
+        if (_autoParityStage == 6 && seconds >= 26) { ApplyConsoleMode("ViewExternal"); _autoParityStage = 7; }
+        if (_autoParityStage == 7 && seconds >= 30)
+        {
+            _flightZoom.Step(.5f, true, false, false);
+            Console.WriteLine($"[p642] external zoom={_flightZoom.ExternalDistance}");
+            _autoParityStage = 8;
+        }
+        if (_autoParityStage == 8 && seconds >= 34)
+        {
+            ApplyConsoleMode("ViewCommand");
+            _cameraMode = CameraMode.Command;
+            _commandCentered = false;
+            _commandGridVisible = true;
+            _autoParityStage = 9;
+        }
+        if (_autoParityStage == 9 && seconds >= 38) { ToggleCommandGrid(); _autoParityStage = 10; }
+        if (_autoParityStage == 10 && seconds >= 42) { ToggleMainMenu(); _autoParityStage = 11; }
+    }
+    private bool _autoHighlightSent;
+    private bool _autoHighlightConfirmed;
+    private short _autoHighlightId;
     private void ApplyAutoProofFlying()
     {
+        if (_autoPlan.AutoFlightParts) ApplyAutoFlightParts();
+        if (_autoPlan.AutoParityCommands) ApplyAutoParityCommands();
+        if (!_autoCommandOrientationReady && _autoPlan.Camera is "command" or "commandtd")
+        {
+            _commandCamera.TopDown = _autoPlan.Camera == "commandtd";
+            _autoCommandOrientationReady = true;
+            Microsoft.Xna.Framework.Input.Mouse.SetPosition(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
+        }
+        if (!_autoCommandSubjectReady && _autoPlan.Camera is "dronefollow" or "dronecockpit")
+        {
+            if (_commandee is null) SelectCommandee(false);
+            if (TryCommandedPose(out _, out _, out _))
+            {
+                _cameraMode = _autoPlan.Camera == "dronefollow" ? CameraMode.DroneFollow : CameraMode.DroneCockpit;
+                _autoCommandSubjectReady = true;
+                Console.WriteLine($"[autoproof] commanded follow subject={_commandee?.Id} camera={_cameraMode}");
+            }
+        }
+        if (!_autoHighlightSent && _autoPlan.AutoHighlightSector.Length > 0)
+        {
+            short? id = _autoPlan.AutoHighlightSector == "current" ? CurrentOwnSector() : ResolveSectorId(_autoPlan.AutoHighlightSector);
+            if (id is { } sector)
+            {
+                _session.SendHighlightCluster(sector, true);
+                _autoHighlightSent = true;
+                _autoHighlightId = sector;
+                _minimapExpanded = true;
+                Console.WriteLine($"[autoproof] sent HIGHLIGHT_CLUSTER sector={sector}; awaiting real server echo");
+            }
+        }
+        if (_autoHighlightSent && !_autoHighlightConfirmed)
+        {
+            lock (_session.Gate)
+                if (_session.World.HighlightedClusters.Contains(_autoHighlightId))
+                {
+                    _autoHighlightConfirmed = true;
+                    Console.WriteLine($"[autoproof] received HIGHLIGHT_CLUSTER sector={_autoHighlightId}; map/HUD mark active");
+                }
+        }
         if (_pendingGotoSector is { Length: > 0 } gotoName)
         {
             _pendingGotoSector = null;
@@ -267,6 +380,12 @@ public sealed partial class Game1
                 HeadToHomeStation();
             }
         }
+    }
+
+    private short? CurrentOwnSector()
+    {
+        lock (_session.Gate)
+            return _session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var ship) ? ship.SectorId : null;
     }
 
     private short? ResolveSectorId(string token)
@@ -475,7 +594,11 @@ public sealed partial class Game1
         double t = _auto?.SecondsSinceLaunch ?? 0.0;
         string camera = _cameraMode switch
         {
+            CameraMode.Command => _commandCamera.TopDown ? "commandtd" : "command",
+            CameraMode.DroneFollow => "dronefollow",
+            CameraMode.DroneCockpit => "dronecockpit",
             CameraMode.Cockpit => "cockpit",
+            CameraMode.External => "external",
             CameraMode.FreeCam => "freecam",
             CameraMode.OrbitCam => "orbitcam",
             _ => "chase",

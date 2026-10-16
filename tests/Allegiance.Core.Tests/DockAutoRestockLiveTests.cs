@@ -204,7 +204,7 @@ public sealed class DockAutoRestockLiveTests
 
         // Cross the dock radius → the next tick's dock pass raises the dock
         // event → RestockOnDock refills the pools.
-        ship.Position = StationPos(garrison) + new Vector3(15f, 0f, 0f);
+        ship.Position = DockTestPlacement.Inside(ship.Mission!, garrison, ship.HullType);
         PumpUntil(server, () => LiveShip(server, shipId).StationId is not null, 200);
 
         var after = LiveShip(server, shipId);
@@ -244,6 +244,8 @@ public sealed class DockAutoRestockLiveTests
         var mission = ship.Mission!;
         var side = mission.Sides.First(s => s.Id == ship.SideId);
         var (basePt, leaf) = FindUpgradeChain(mission, side);
+        // H-07: a Miner cannot accept this weapon upgrade; use real compatible hardpoints.
+        ship.ChangeHull(mission.Core.HullTypes.Values.First(h => h.CanMountPart(basePt, 0) && h.CanMountPart(leaf, 0)));
 
         // Mount ONLY the base part (clear any spawner default) and seed the
         // side's tech to exactly the base's requirement. Wallet funded well above
@@ -258,7 +260,7 @@ public sealed class DockAutoRestockLiveTests
         // Dock #1 — the side has NOT researched the successor: the mounted part
         // must stay the base and the wallet must be untouched (P441 differential
         // 0). This is the fail-first "before the research" baseline.
-        ship.Position = StationPos(garrison) + new Vector3(15f, 0f, 0f);
+        ship.Position = DockTestPlacement.Inside(ship.Mission!, garrison, ship.HullType);
         PumpUntil(server, () => LiveShip(server, shipId).StationId is not null, 200);
         Assert.Equal(basePt.PartId, LiveShip(server, shipId).Parts.Single().Type.PartId);
         Assert.Equal(wallet0, WalletOf(server, shipId));
@@ -312,7 +314,19 @@ public sealed class DockAutoRestockLiveTests
         Require.Artwork();
         using var server = new Srv();
         DataStationIGC garrison = default;
-        server.ShipSpawner = (core, mission, shipId) => OutsideGarrison(mission, shipId);
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            // H-07 needs a real torpedo-compatible capital hull. P550's
+            // CapLand home supplies a legal, deterministic capital dock.
+            var home = P550TestDockHome.CapLandHome(mission, mission.Sides[0].Id);
+            var sector = mission.Sectors.First(s => s.Stations.Contains(home));
+            var launcher = PaidLauncher(core);
+            var hull = core.HullTypes.Values.First(h => h.CanMountPart(launcher, 0));
+            var ship = new Ship(shipId, hull, StationPos(home) + new Vector3(Sector.DockRadius + 50f, 0, 0),
+                Vector3.Zero, Orientation.Identity) { SideId = home.SideId };
+            mission.PlaceShip(ship, sector);
+            return (ship, sector);
+        };
         server.Boot(Config());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
 
@@ -324,31 +338,34 @@ public sealed class DockAutoRestockLiveTests
             : bot.ShipAssignment.Ship.ShipId;
 
         var ship = LiveShip(server, shipId);
-        garrison = GarrisonOf(ship.Mission!).Station;
+        garrison = ship.Sector!.Stations.Single(st => st.Name.StartsWith("CAPHOME", StringComparison.Ordinal));
         var mission = ship.Mission!;
 
         // The player's DESIRED loadout is a real paid launcher they bought; the
         // ship currently carries NO parts (the launcher is missing). Funding the
         // wallet comfortably above the launcher's price.
         var paid = PaidLauncher(mission.Core);
+        ship.ChangeHull(mission.Core.HullTypes.Values.First(h => h.CanMountPart(paid, 0)));
         ship.ClearLoadout();
         server.Ships.First(s => s.Ship.Id == shipId).Wallet.DesiredLoadout = new List<DataPartTypeIGC> { paid };
-        int wallet0 = paid.Price + 10_000;
+        int wallet0 = paid.Price * Ship.ClampPartAmount(ship.HullType, mission.Core, paid, short.MaxValue) + 10_000;
         Fund(server, shipId, wallet0);
 
         // Dock → the restock re-buys the missing paid launcher (upgraded to its
         // same-priced successor) as a mounted part → ShipValue rises by its price
         // → the player is debited that exact P441 differential.
-        ship.Position = StationPos(garrison) + new Vector3(15f, 0f, 0f);
+        ship.Position = DockTestPlacement.Inside(ship.Mission!, garrison, ship.HullType);
         PumpUntil(server, () => LiveShip(server, shipId).StationId is not null, 200);
 
         var after = LiveShip(server, shipId);
+        Assert.NotNull(after.StationId);
         Assert.Equal(paid.PartId, after.Parts.Single().Type.PartId);        // re-bought the desired launcher
-        Assert.Equal(wallet0 - paid.Price, WalletOf(server, shipId));        // charged the native amount
+        int cost = paid.Price * after.Parts.Single().Amount; // H-08: native launcher price is per round.
+        Assert.Equal(wallet0 - cost, WalletOf(server, shipId));        // charged the native amount
 
         // The side-wide MONEY_CHANGE(60) reached the peer (BroadcastMoneyChangeSideWide).
         PumpUntil(server,
-            () => bot.MoneyChanges.Any(mc => mc.SidTo == shipId && mc.DMoney == -paid.Price), 4000);
-        Assert.Contains(bot.MoneyChanges, mc => mc.SidTo == shipId && mc.DMoney == -paid.Price);
+            () => bot.MoneyChanges.Any(mc => mc.SidTo == shipId && mc.DMoney == -cost), 4000);
+        Assert.Contains(bot.MoneyChanges, mc => mc.SidTo == shipId && mc.DMoney == -cost);
     }
 }

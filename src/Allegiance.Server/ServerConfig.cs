@@ -14,21 +14,44 @@ namespace Allegiance.Server;
 /// </summary>
 public sealed class GameConfig
 {
+    /// <summary>Native bAllowDevelopments, FedSrv/fsmission.cpp:2520.</summary>
+    public bool AllowDevelopments { get; set; } = true;
+    public bool AllowShipyardPath { get; set; } = true;
+    public bool AllowExpansionPath { get; set; } = true;
+    public bool AllowTacticalPath { get; set; } = true;
+    public bool AllowSupremacyPath { get; set; } = true;
+    public int InitialMinersPerTeam { get; set; } = 1;
+    /// <summary>Optional runtime plan validation/selection. Directory contains core/civ*-*.json.</summary>
+    public string? ResearchPlanDirectory { get; set; }
+    /// <summary>Selections by side id: auto, generated, or a plan name.</summary>
+    public Dictionary<short, string> ResearchPlans { get; set; } = new();
+    /// <summary>Native bAllowAlliedRip, FedSrv/FedSrv.CPP:13387.</summary>
+    public bool AllowAlliedRip { get; set; }
+
     /// <summary>Human name, used in logs only.</summary>
-    public string Name { get; init; } = "";
+    public string Name { get; set; } = "";
 
     /// <summary>File name of the map, relative to <see cref="ServerConfig.ArtPath"/>.</summary>
-    public string Map { get; init; } = "";
+    public string Map { get; set; } = "";
 
     /// <summary>Number of sides. Sides are built for ids 0..Teams-1.</summary>
-    public int Teams { get; init; }
+    public int Teams { get; set; }
+
+    /// <summary>P655: native nMaxPlayersPerTeam; supports the 200v200 lane.
+    /// Use a setter so source-generated JSON retains the initializer when omitted;
+    /// init-only members are assigned zero by its generated constructor.</summary>
+    public int MaxPlayersPerTeam { get; set; } = 256;
+
+    /// <summary>Native iMaxImbalance; 32767 disables balance; default 1 matches native.
+    /// Applied after NotStarted (FedSrv/fsmission.cpp:4614-4626).</summary>
+    public int MaxTeamImbalance { get; set; } = 1;
 
     /// <summary>Per-team <c>rgCivID[]</c> — indexes <see cref="ServerConfig.StaticCore"/>
     /// civilizations. Length must be &gt;= Teams.</summary>
-    public int[] CivIds { get; init; } = [];
+    public int[] CivIds { get; set; } = [];
 
     /// <summary>Per-team display names; length must be &gt;= Teams.</summary>
-    public string[] SideNames { get; init; } = [];
+    public string[] SideNames { get; set; } = [];
 
     /// <summary>
     /// P397 — when set, this game's mission map is <b>generated procedurally</b>
@@ -38,7 +61,10 @@ public sealed class GameConfig
     /// generator is a pure addition, mirroring the opt-in <c>liveSettings</c>
     /// convention. See <see cref="MapGenConfig"/> for the tunables.
     /// </summary>
-    public MapGenConfig? MapGen { get; init; }
+    public MapGenConfig? MapGen { get; set; }
+
+    /// <summary>Mission treasure rates and loaded-core set IDs, with native defaults.</summary>
+    public Allegiance.Core.Model.TreasureParameters Treasure { get; set; } = new();
 
     /// <summary>
     /// P598 — the port of native's <c>bAutoRestart</c> (igc.h:1154, default
@@ -51,7 +77,7 @@ public sealed class GameConfig
     /// default) the restart relies on the ready-up auto-start, exactly as
     /// before P598.
     /// </summary>
-    public bool AutoRestart { get; init; }
+    public bool AutoRestart { get; set; }
 
     /// <summary>
     /// P598 — the port of native's <c>fRestartCountdown</c> (igc.h:1171,
@@ -59,7 +85,7 @@ public sealed class GameConfig
     /// <see cref="AutoRestart"/> is on, between a game-over rotation and the
     /// rebuilt mission's auto-restart start countdown. Absent → 60.0.
     /// </summary>
-    public double? RestartCountdownSeconds { get; init; }
+    public double? RestartCountdownSeconds { get; set; }
 }
 
 /// <summary>
@@ -76,23 +102,23 @@ public sealed class MapGenConfig
 {
     /// <summary>The topology name, e.g. <c>"HiHigher"</c>. Matched
     /// case-insensitively against <see cref="Allegiance.Core.MapGen.MapGenType"/>.</summary>
-    public string Type { get; init; } = "";
+    public string Type { get; set; } = "";
 
     /// <summary>0 ⇒ one team cluster per team; non-zero ⇒ two (<c>iMapSize</c>).</summary>
-    public int? MapSize { get; init; }
+    public int? MapSize { get; set; }
 
-    public int? PlayerSectorMineableAsteroids { get; init; }
-    public int? PlayerSectorSpecialAsteroids { get; init; }
-    public int? PlayerSectorAsteroids { get; init; }
-    public int? PlayerSectorTreasures { get; init; }
-    public int? NeutralSectorMineableAsteroids { get; init; }
-    public int? NeutralSectorSpecialAsteroids { get; init; }
-    public int? NeutralSectorAsteroids { get; init; }
-    public int? NeutralSectorTreasures { get; init; }
+    public int? PlayerSectorMineableAsteroids { get; set; }
+    public int? PlayerSectorSpecialAsteroids { get; set; }
+    public int? PlayerSectorAsteroids { get; set; }
+    public int? PlayerSectorTreasures { get; set; }
+    public int? NeutralSectorMineableAsteroids { get; set; }
+    public int? NeutralSectorSpecialAsteroids { get; set; }
+    public int? NeutralSectorAsteroids { get; set; }
+    public int? NeutralSectorTreasures { get; set; }
 
-    public double? He3Density { get; init; }
-    public bool? FlagsGame { get; init; }
-    public bool? ArtifactsGame { get; init; }
+    public double? He3Density { get; set; }
+    public bool? FlagsGame { get; set; }
+    public bool? ArtifactsGame { get; set; }
 }
 
 /// <summary>
@@ -105,34 +131,36 @@ public sealed class MapGenConfig
 public sealed class LobbyConfig
 {
     /// <summary>Base URL of the lobby directory (e.g. <c>http://localhost:5000</c>).</summary>
-    public string Url { get; init; } = "";
+    public string Url { get; set; } = "";
 
     /// <summary>Human-readable name shown in the directory listing.</summary>
-    public string DisplayName { get; init; } = "";
+    public string DisplayName { get; set; } = "";
 
     /// <summary>Publicly reachable address advertised to players (hostname/IP, no scheme).</summary>
-    public string PublicAddress { get; init; } = "";
+    public string PublicAddress { get; set; } = "";
 
     /// <summary>Seconds between heartbeats. Registry default expiry is 90s, so the
     /// default 25s tolerates ~3 missed beats before a live server flaps off the list.</summary>
-    public int HeartbeatIntervalSeconds { get; init; } = 25;
+    public int HeartbeatIntervalSeconds { get; set; } = 25;
 }
 
-/// <summary>
-/// P378 — the server's dedicated live/testing ("debug") settings section. A
-/// clearly separated object in the config file (<c>server.json</c> /
-/// <c>docker/compose.server.json</c>: <c>"liveSettings": { ... }</c>) that is
-/// the single, obvious, growable home for runtime/testing-tunable knobs as
-/// more are added later — distinct from the mission / network / artwork-path
-/// config. The first real field is <see cref="DebugMode"/>. Crucially, the
-/// mechanism is a simple reusable boolean named <c>DebugMode</c> (NOT a
-/// single-purpose <c>LifepodDebugMode</c>), so a future debug convenience can
-/// gate on the same flag without a second knob. An absent section equals all
-/// defaults (debug off, no override) — byte-for-byte identical to pre-P378
-/// behaviour.
-/// </summary>
+/// <summary>P660 dedicated-server rotation policy. Uses native bAutoRestart's
+/// SET_START_TIME while NotStarted (fsmission.cpp:3539-3546), then StartCountdown.</summary>
+public sealed class AutoNextMatchConfig
+{
+    public bool Enabled { get; set; } = true;
+    /// <summary>Simulation seconds, like the native restart and briefing timers.</summary>
+    public double IntermissionSeconds { get; set; } = 30;
+}
+
+/// <summary>The dedicated live/testing settings section. An absent section
+/// uses defaults: debug off, automatic next match on, automatic dilation on.</summary>
 public sealed class LiveSettingsConfig
 {
+    /// <summary>P660: keep connected players seated and start the next match after
+    /// an intermission. Enabled by default for this dedicated server. Disable to
+    /// retain the ready-up flow. Legacy GameConfig.AutoRestart remains independent.</summary>
+    public AutoNextMatchConfig AutoNextMatch { get; set; } = new();
     /// <summary>
     /// P378 — the server-wide debug-mode flag (default <c>false</c>). When
     /// <c>true</c>, useful live-testing conveniences become available; the
@@ -168,7 +196,7 @@ public sealed class LiveSettingsConfig
 
     /// <summary>Clamp a proposed scale into [<see cref="MinTimeScale"/>, <see cref="MaxTimeScale"/>].</summary>
     public static double ClampTimeScale(double v) =>
-        Math.Clamp(v, MinTimeScale, MaxTimeScale);
+        double.IsFinite(v) ? Math.Clamp(v, MinTimeScale, MaxTimeScale) : MaxTimeScale;
 
     /// <summary>
     /// P618 — the load-driven time-dilation mode (<c>sim.timeDilation</c>):
@@ -178,10 +206,12 @@ public sealed class LiveSettingsConfig
     /// measures the smoothed tick cost and lowers the sim time scale toward
     /// <c>nominal/cost</c> (clamped to [0.1, 1.0]) when the server can't hold real
     /// time, easing back to full speed when load drops. An admin <c>timescale</c>
-    /// cheat always overrides auto (manual wins). Default <c>"off"</c> until a 221
-    /// run confirms the tuning (Domingo decides the default after that).
+    /// cheat always overrides auto (manual wins). Default <c>"auto"</c> since
+    /// 2026-10-14 (Domingo, after the 221 200v200 A/B: clash39 with auto had no tick
+    /// over 143 ms and no bot drops, vs 253 ms / 141 drops with off and 201 ms / 28 drops
+    /// at 15 Hz; game speed averaged 0.92, minimum 0.73). Set <c>"off"</c> to disable.
     /// </summary>
-    public string TimeDilation { get; set; } = "off";
+    public string TimeDilation { get; set; } = "auto";
 
     /// <summary>P618 — EMA smoothing of the measured tick cost
     /// (<c>sim.timeDilation.alpha</c>). Lower = smoother, slower to react.</summary>
@@ -235,7 +265,7 @@ public sealed class LiveSettingsConfig
     /// enabled it is a PORT EXTENSION (native has no money/tech cheat —
     /// <c>fCanCheat</c> only relaxes rank limits and win checks,
     /// FedSrv/fsship.h:337-339, fsmission.cpp:1877,3810): it applies ONLY to a
-    /// connection whose character name starts with <see cref="TestHarnessConfig.CharacterNamePrefix"/>
+    /// authenticated connection whose name starts with <see cref="TestHarnessConfig.CharacterNamePrefix"/>
     /// (so a real player can never receive it), grants that wallet at seat, and
     /// can skip the BUY_LOADOUT tech gate while still charging real prices
     /// through the real debit path. Loudly logged at boot and once per granted
@@ -280,17 +310,18 @@ public sealed class LiveSettingsConfig
 /// </summary>
 public sealed class TestHarnessConfig
 {
+    /// <summary>P655: bearer presented in LOGONREQ.CDKey. Without a configured
+    /// secret, grants require an actual loopback socket. Never trust names alone.</summary>
+    public string? Secret { get; set; }
+
     /// <summary>Master switch. <c>false</c> (the default, and the meaning of an
     /// absent <c>testHarness</c> section) leaves behaviour byte-identical to
     /// P441 — no money grant, no tech-gate bypass, for anyone.</summary>
     public bool Enabled { get; set; }
 
     /// <summary>The character-name prefix that marks a connection as a test
-    /// harness. Only a connection whose <c>LogonRequest.CharacterName</c>
-    /// starts with this (ordinal, case-sensitive) is eligible for the grant —
-    /// the guarantees that a human's random character name never matches and
-    /// the grant never touches real players. Defaults to <c>"mcp-"</c>, the
-    /// prefix the MCP and vizfight bot character names now use.</summary>
+    /// harness. A matching prefix is an eligibility filter; the configured
+    /// secret or a verified loopback socket is also required. Defaults to mcp-.</summary>
     public string CharacterNamePrefix { get; set; } = "mcp-";
 
     /// <summary>The wallet granted to a harness connection on seat, in credits.
@@ -384,15 +415,9 @@ public sealed class AdminCheatsConfig
     /// ship only (see the token docs) — never on an arbitrary ship.</summary>
     public List<string> AllowNames { get; set; } = [];
 
-    /// <summary>P602 — optional shared secret. When set (non-empty), an
-    /// allow-listed connection is trusted ONLY if its cheat line presents this
-    /// secret as the leading whitespace-delimited token
-    /// (<c>"&lt;secret&gt; relocate …"</c>); a line without it is treated as
-    /// ordinary chat and never as a cheat. When unset (the default), the
-    /// LAN/demo behaviour is unchanged: name-only matching. The 221 test server
-    /// and allegiance-mcp rely on the unset (name-only) default; leave it unset
-    /// unless you need defence-in-depth against a spoofed name on a shared
-    /// network.</summary>
+    /// <summary>P655: bearer sent in LOGONREQ.CDKey, or as the first token of
+    /// an admin command. Required for remote cheats and spectator access. With
+    /// no secret, only server-verified loopback sockets are eligible.</summary>
     public string? Secret { get; set; }
 }
 
@@ -438,11 +463,12 @@ public sealed class ProfilerConfig
     public double SlowTickMs { get; set; } = 250;
 }
 
+
 /// <summary>
 /// P603 — the parallel per-peer broadcast-build configuration (top-level
-/// <c>broadcast</c> section). OFF by default (an absent section, or
-/// <c>parallelBuild:false</c>, preserves today's serial, byte-for-byte
-/// behaviour). When on, <c>BroadcastShipStates</c> splits into a serial
+/// <c>broadcast</c> section). Parallel building is OFF by default. P659's
+/// independent <c>minUpdateHz</c> pose floor defaults to 2 Hz (0 restores the
+/// pre-floor ranked budget). When parallel building is on, <c>BroadcastShipStates</c> splits into a serial
 /// snapshot phase + a parallel per-peer build phase + a serial enqueue phase,
 /// and <c>BroadcastShipsUpdate</c> parallelises across sectors (within-sector
 /// peer order — and the per-ship Deviation staleness accumulator — stay
@@ -450,10 +476,33 @@ public sealed class ProfilerConfig
 /// </summary>
 public sealed class BroadcastConfig
 {
+    /// <summary>Capture owned wire data on the sim thread and encode/publish it
+    /// off-thread. Default off. ALLEGIANCE_BROADCAST_SNAPSHOT overrides this.</summary>
+    public bool ImmutableSnapshot { get; set; }
+
+    /// <summary>Share ship record encodings within a snapshot. Default off;
+    /// requires ImmutableSnapshot. ALLEGIANCE_BROADCAST_ENCODE_ONCE overrides.</summary>
+    public bool EncodeOnce { get; set; }
+
+    /// <summary>P677 — per-viewer interest rates. Opt-in; also enables the
+    /// immutable snapshot and encode-once pipeline. ALLEGIANCE_BROADCAST_TIERS overrides.</summary>
+    public bool InterestTiers { get; set; }
+    public double Tier1Hz { get; set; } = 5;
+    public double Tier2Hz { get; set; } = 2;
+    /// <summary>World units. Minimum engagement radius; mounted gun reach can extend it.</summary>
+    public float EngagementRange { get; set; } = 1500;
+    /// <summary>Enemies outside this radius are T2; allies remain T1.</summary>
+    public float MidDistanceRange { get; set; } = 6000;
+
+    /// <summary>P659 — minimum remote visible-ship pose frequency per viewer.
+    /// Default 2 Hz; 0 preserves the existing ranked budget. Rounded up to a
+    /// whole broadcast tick, capped by UpdatesPerSecond. LIGHT records carry
+    /// no pose and do not satisfy this floor. Measured in wall time, not sim time.</summary>
+    public double MinUpdateHz { get; set; } = 2;
+
     /// <summary>
-    /// Master switch. <c>false</c> (the default, and the meaning of an absent
-    /// <c>broadcast</c> section) leaves both broadcast builders running exactly
-    /// as they did before P603 — the same serial code path, byte-for-byte.
+    /// Parallel-build switch. <c>false</c> (the default) uses the serial builders.
+    /// Serial and parallel modes apply the same independent pose floor.
     /// <c>true</c> enables the parallel per-peer build path (gated per build).
     /// </summary>
     public bool ParallelBuild { get; set; }
@@ -519,6 +568,80 @@ public sealed class TransportConfig
     /// <c>ALLEGIANCE_TRANSPORT_HUMAN_GRACE_SECONDS</c>.
     /// </summary>
     public int? HumanGraceSeconds { get; set; }
+
+    /// <summary>P654 (H-15) — hard ceiling on live client connections
+    /// (greetings + established). Absent → 1024. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_MAX_CONNECTIONS</c>.</summary>
+    public int? MaxConnections { get; set; }
+
+    /// <summary>P654 (H-15) — ceiling on client connections from ONE source IP
+    /// address. Absent → 64 (a sane public-server default). The 200v200 rig's
+    /// ~390 bots all originate from one Mac bot host, so the README's
+    /// recommended settings raise this (see README "Recommended settings").
+    /// Overridable by <c>ALLEGIANCE_TRANSPORT_MAX_PER_IP</c>.</summary>
+    public int? MaxConnectionsPerIp { get; set; }
+
+    /// <summary>P654 (H-02/H-15) — ceiling on connections still in the greeting
+    /// (pending-handshake) phase. Absent → 256. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_MAX_PENDING_HANDSHAKE</c>.</summary>
+    public int? MaxPendingHandshake { get; set; }
+
+    /// <summary>P654 (H-02/H-21) — the server's inbound DATA-phase frame cap in
+    /// bytes (largest legitimate client message is ~1.1 KB, so 64 KiB is
+    /// generous). A pre-auth peer can no longer claim a huge body up front.
+    /// Absent → 65536. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_MAX_FRAME_BYTES</c>.</summary>
+    public int? MaxFrameBytes { get; set; }
+
+    /// <summary>P654 (H-02) — read deadline (seconds) for a server-inbound frame
+    /// once it has STARTED (first header byte seen): a header-then-stall or
+    /// dribbling-body peer is dropped rather than parking a buffer + thread
+    /// (slowloris protection). Absent → 30. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_DATA_FRAME_TIMEOUT_SECONDS</c>. Distinct from
+    /// <see cref="DataLinkIdleTimeoutSeconds"/>, which bounds the silence
+    /// BETWEEN frames (P671).</summary>
+    public int? DataFrameReadTimeoutSeconds { get; set; }
+
+    /// <summary>P671 — the IDLE timeout (seconds) for a server-inbound data
+    /// session: a connected peer that sends NO bytes for this long is dropped
+    /// as link-dead (native's 30 s g_sDeadTime, clintlib.cpp:2047). A healthy
+    /// client never hits it because the shared client session keep-alive sends
+    /// a CS_PING every 6 s (clintlib.cpp:2050-2087). Absent → 30. Overridable
+    /// by <c>ALLEGIANCE_TRANSPORT_IDLE_TIMEOUT_SECONDS</c>. Before P671 the
+    /// frame deadline doubled as this idle grace; the two are now separate.</summary>
+    public int? DataLinkIdleTimeoutSeconds { get; set; }
+
+    // ---- P654 (H-24) per-peer message/chat budget (native's chat budget) ----
+
+    /// <summary>P654 (H-24) — the per-peer chat/message token-bucket MAXIMUM.
+    /// Port of native <c>c_chatBudgetMax = 100</c> (fsship.h:24), sized up from
+    /// the modem era so today's busy commanders are not starved (era-constraint
+    /// sizing per the project rule — native's constants are cited in the code).
+    /// Absent → 1000. Overridable by <c>ALLEGIANCE_TRANSPORT_CHAT_BUDGET_MAX</c>.</summary>
+    public int? ChatBudgetMax { get; set; }
+
+    /// <summary>P654 (H-24) — the per-peer token cost of one chat / state-
+    /// changing message. Port of native <c>c_chatBudgetCost = 20</c>
+    /// (fsship.h:25), cited in code. Absent → 20. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_CHAT_BUDGET_COST</c>.</summary>
+    public int? ChatBudgetCost { get; set; }
+
+    /// <summary>P654 (H-24) — token refill per simulation tick. Native refills
+    /// +1 per tick (FedSrv.CPP:8287, IncrementChatBudget), capped at the max;
+    /// sized to +5 so today's sustained traffic (~100 msg/s) flows while a
+    /// flood is still sharply bounded. Absent → 5. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_CHAT_BUDGET_REFILL</c>.</summary>
+    public int? ChatBudgetRefillPerTick { get; set; }
+}
+
+/// <summary>Opt-in receive pipeline and attribution settings.</summary>
+public sealed class ReceiveConfig
+{
+    /// <summary>Decode and validate wire data on transport receive workers. Default off.
+    /// ALLEGIANCE_RECEIVE_DECOUPLE overrides this value at boot.</summary>
+    public bool Decouple { get; set; }
+    /// <summary>Emit per-tick fmid/peer counts, bytes and a 100-tick drain histogram.</summary>
+    public bool Measure { get; set; }
 }
 
 /// <summary>
@@ -530,6 +653,9 @@ public sealed class TransportConfig
 /// </summary>
 public sealed class ServerConfig
 {
+    /// <summary>P629 simulation rules, including the stress-test crowding override.</summary>
+    public SimConfig Sim { get; set; } = new();
+    public ReceiveConfig? Receive { get; set; }
     /// <summary>Root of the artwork tree (contains the core and map files).
     /// Resolved by <see cref="ExternalPaths"/>: <c>$ALLEGIANCE_ARTWORK_PATH</c>,
     /// else the gitignored <c>local.env</c>, else empty (validation in
@@ -569,7 +695,7 @@ public sealed class ServerConfig
     /// <summary>When set, enable the lobby heartbeat (announce to an
     /// <c>Allegiance.Lobby</c> directory on a fixed cadence). Null (the default) =
     /// fully opt-out: no heartbeat client is constructed and no HTTP call is ever made.</summary>
-    public LobbyConfig? Lobby { get; init; }
+    public LobbyConfig? Lobby { get; set; }
 
     /// <summary>
     /// P594 — the P591b/P591c warp re-entry guard (<c>Sector.WarpReEntryGuardEnabled</c>)
@@ -586,34 +712,32 @@ public sealed class ServerConfig
 
     /// <summary>
     /// P378 — the dedicated live/testing settings section (see
-    /// <see cref="LiveSettingsConfig"/>). Absent section = defaults (debug off,
-    /// no lifepod override), so a normal server run with no config change is
-    /// byte-for-byte identical to pre-P378 behaviour.
+    /// <see cref="LiveSettingsConfig"/>). Absent section uses defaults:
+    /// debug off, no lifepod override, automatic next match and dilation on.
     /// </summary>
-    public LiveSettingsConfig LiveSettings { get; init; } = new();
+    public LiveSettingsConfig LiveSettings { get; set; } = new();
 
     /// <summary>The game worlds to instantiate at boot.</summary>
-    public List<GameConfig> Games { get; init; } = [];
+    public List<GameConfig> Games { get; set; } = [];
 
     /// <summary>
     /// P600 — the per-tick profiler settings. Null/absent (the default) = the
     /// profiler is OFF, with no hot-path overhead. See <see cref="ProfilerConfig"/>.
     /// </summary>
-    public ProfilerConfig? Profiler { get; init; }
+    public ProfilerConfig? Profiler { get; set; }
 
     /// <summary>
-    /// P603 — the parallel per-peer broadcast-build settings. Null/absent (the
-    /// default) = OFF: both broadcast builders keep today's serial, byte-for-byte
-    /// behaviour. See <see cref="BroadcastConfig"/>.
+    /// Per-peer broadcast settings. Null/absent uses serial building, the port
+    /// ship-update model and P659's 2 Hz pose floor. See <see cref="BroadcastConfig"/>.
     /// </summary>
-    public BroadcastConfig? Broadcast { get; init; }
+    public BroadcastConfig? Broadcast { get; set; }
 
     /// <summary>
     /// P605 — the server transport's send-draining mode. Null/absent (the
     /// default) = thread-per-peer, today's behaviour (unchanged). See
     /// <see cref="TransportConfig"/>.
     /// </summary>
-    public TransportConfig? Transport { get; init; }
+    public TransportConfig? Transport { get; set; }
 }
 
 /// <summary>Static helpers for reading <see cref="ServerConfig"/> from JSON.</summary>

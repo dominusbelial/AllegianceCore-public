@@ -1,0 +1,22 @@
+[
+  {
+    "test": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+    "run": 1,
+    "exit_code": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+    "run": 2,
+    "exit_code": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+    "run": 3,
+    "exit_code": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+    "run": "explicit-opt-in",
+    "exit_code": 0
+  }
+]

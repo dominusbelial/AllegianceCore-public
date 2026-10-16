@@ -73,7 +73,8 @@ public class CombatLogVolumeTests
         spawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {
             var sector = mission.Sectors[0];
-            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // H-08 / shipIGC.h:597-601: sustained fire needs an ammo-capable hull.
+            var hull = core.HullTypes.Values.Where(h => h.MaxAmmo >= 600 && h.MaxEnergy >= 1200).OrderBy(h => h.HullId).First();
             var side = mission.Sides[placed % mission.Sides.Count].Id;   // round-robin
             var ship = new Ship(id, hull, new Vector3(placed * 250f, 0f, 0f), Vector3.Zero, Orientation.Identity) { SideId = side };
             mission.PlaceShip(ship, sector);

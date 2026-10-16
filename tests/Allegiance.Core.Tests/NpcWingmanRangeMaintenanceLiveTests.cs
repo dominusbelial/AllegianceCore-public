@@ -292,7 +292,8 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
             {
                 wingman.Position = wp;
                 wingman.Velocity = Vector3.Zero;
-                wingman.Orientation.SetForward(new Vector3(1f, 0f, 0f));   // nose on +X (enemy is +X)
+                wingman.Orientation.Set(new Vector3(1f, 0f, 0f), new Vector3(0f, 1f, 0f)); // complete orthonormal +X frame
+                for (int axis = 0; axis < 3; axis++) wingman.SetTurnRate(axis, 0);
                 enemy.Position = wp + new Vector3(sep, 0f, 0f);
                 enemy.Velocity = targetVel;
                 srv.TickSim();

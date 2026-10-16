@@ -1,0 +1,164 @@
+{
+  "base": "8ab819837fbb92613613571b175e9185e19195ab",
+  "no_commits_or_pushes": true,
+  "build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tree_civs": 10,
+  "authored_plans": 4,
+  "generated_plans_validated": 10,
+  "matchup_tuples": 45,
+  "sweep_sides": 90,
+  "final_suites": {
+    "Core": {
+      "suite": "Core-final",
+      "exit": 1,
+      "seconds": 607.73,
+      "counters": {
+        "total": "4575",
+        "executed": "4575",
+        "passed": "4574",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts",
+          "error": "\n      \n        \n          Assert.Contains() Failure: Filter not matched in collection\nCollection: []\n             at Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts() in /home/domingo/allegiance-codex-p702/tests/Allegiance.Core.Tests/MissionRotationLiveTests.cs:line 181\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+        }
+      ]
+    },
+    "ClientCore": {
+      "suite": "ClientCore",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests",
+        "--no-build",
+        "--logger",
+        "trx;LogFileName=suite-ClientCore.trx",
+        "--results-directory",
+        "/tmp/p702-results"
+      ],
+      "exit": 1,
+      "seconds": 661.43,
+      "counters": {
+        "total": "1060",
+        "executed": "1060",
+        "passed": "1059",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+          "error": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: 1053\nActual:   1060\n             at Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume() in /home/domingo/allegiance-codex-p702/tests/Allegiance.ClientCore.Tests/ClientWarpApproachSlowHullLiveTests.cs:line 314\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        \n      \n    "
+        }
+      ],
+      "skips": []
+    },
+    "MonoGame": {
+      "suite": "MonoGame-final",
+      "exit": 0,
+      "seconds": 933.89,
+      "counters": {
+        "total": "2211",
+        "executed": "2208",
+        "passed": "2208",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    }
+  },
+  "extra_local_proofs": {
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--filter",
+      "FullyQualifiedName~P496CaptureProofLiveTests|FullyQualifiedName~P539LogBaselineLiveTests|FullyQualifiedName~P539cReproLiveTests",
+      "--logger",
+      "trx;LogFileName=local-proofs.trx",
+      "--results-directory",
+      "/tmp/p702-results"
+    ],
+    "environment": {
+      "ALLEGIANCE_LIVE_CAPTURE_PROOF": "1",
+      "ALLEGIANCE_LIVE_P539_BASELINE": "1",
+      "ALLEGIANCE_LIVE_P539C_REPRO": "1"
+    },
+    "exit": 0,
+    "seconds": 1203.31,
+    "counters": {
+      "total": "5",
+      "executed": "5",
+      "passed": "5",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": []
+  },
+  "load_flake_evidence": [
+    "retries.json",
+    "rotation-retries.json",
+    "client-retries.json"
+  ],
+  "deterministic_correction_evidence": [
+    "guards-final.json",
+    "station-final.json",
+    "wire-final.json",
+    "mono-final-focused.json"
+  ],
+  "focused_evidence": [
+    "focused.json",
+    "focused-final.json",
+    "extensibility-final.json"
+  ]
+}

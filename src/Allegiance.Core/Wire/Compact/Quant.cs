@@ -238,7 +238,7 @@ public static class CompactOrientationCodec
                 ? MathF.Sqrt(1.0f + C(i, i) - C(j, j) - C(k, k))
                 : -MathF.Sqrt(1.0f + C(i, i) - C(j, j) - C(k, k));
 
-            var vec = new float[3];
+            Span<float> vec = stackalloc float[3];
             vec[i] = scale * 0.5f;
             scale = 0.5f / scale;
             float a = scale * dojk;

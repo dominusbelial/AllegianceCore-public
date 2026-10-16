@@ -416,6 +416,15 @@ public sealed class ChaffTests
         seat.Server = new Srv();
 
         var hull = core.HullTypes.Values.First();
+        // P653 H-08 clamps launcher rounds to hull launcher capacity / expendable
+        // size, min 1 (launchertypeigc.h:130-145). Values.First() is hull 3
+        // 'Miner' (capChaff=Dispenser=0), which would clamp every mount to 1.
+        // These live tests verify the FIRING flow (decrement + broadcast), so arm
+        // the test hull with a generous launcher capacity — 3 rounds fits any
+        // real chaff/mine/probe expendable size. (The audit's clamp is preserved;
+        // this merely gives the fixture a hull that can hold its test rounds.)
+        hull = hull with { CapacityChaffLauncher = 100, CapacityDispenser = 100, CapacityMagazine = 100 };
+        ((Dictionary<short, DataHullTypeIGC>)core.HullTypes)[hull.HullId] = hull;
         int placed = 0;
         seat.Server.ShipSpawner = (_, mission, id) =>
         {

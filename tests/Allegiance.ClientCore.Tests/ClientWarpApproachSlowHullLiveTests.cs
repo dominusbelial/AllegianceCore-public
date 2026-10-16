@@ -175,7 +175,7 @@ public sealed class ClientWarpApproachSlowHullLiveTests
     /// the P496 mechanism evidence: min distance to each hop-warp, and (at the
     /// point of minimum distance) the commanded throttle, the ship's speed and
     /// the transit threshold <c>warp.Radius + ship.Radius</c>.</summary>
-    private static (short finalSector, float minWarpDist, string parkEvidence, List<string> log) FlyToward(
+    private static (short finalSector, float minWarpDist, float minTransitClearance, string parkEvidence, List<string> log) FlyToward(
         Srv server, ConnectionSession cs, StaticCore core, short goal,
         Func<float, float, (float arrival, float brake)> approach, int maxTicks)
     {
@@ -190,6 +190,7 @@ public sealed class ClientWarpApproachSlowHullLiveTests
         var log = new List<string>();
         short lastSector = -1;
         float minWarpDist = float.MaxValue;
+        float minTransitClearance = float.MaxValue;
         string parkEvidence = "";
         var serverShip = server.Missions.SelectMany(m => m.Sectors).SelectMany(s => s.Models).OfType<Ship>()
             .FirstOrDefault(s => s.Id == shipId);
@@ -217,6 +218,7 @@ public sealed class ClientWarpApproachSlowHullLiveTests
                         if (serverShip is not null)
                         {
                             float d = (serverShip.Position - warpPos).Length();
+                            minTransitClearance = MathF.Min(minTransitClearance, d - threshold);
                             if (d < minWarpDist)
                             {
                                 minWarpDist = d;
@@ -237,7 +239,7 @@ public sealed class ClientWarpApproachSlowHullLiveTests
             }
             if (cur == goal) { log.Add($"ARRIVED goal sector {cur} at tick {i}"); break; }
         }
-        return (CsSector(cs), minWarpDist, parkEvidence, log);
+        return (CsSector(cs), minWarpDist, minTransitClearance, parkEvidence, log);
     }
 
     private static (Srv server, ConnectionSession bot, StaticCore core, short hullId) BootSeat()
@@ -302,16 +304,19 @@ public sealed class ClientWarpApproachSlowHullLiveTests
 
         // P484 setup: 2-hop target Plato(1060); the legacy 200/450 constants.
         short goal = 1060;
-        var (finalSector, minWarpDist, parkEvidence, log) =
+        var (finalSector, minWarpDist, minTransitClearance, parkEvidence, log) =
             FlyToward(srv, b, core, goal, (_, _) => (arrival: 200f, brake: 450f), maxTicks: 35000);
 
         Console.WriteLine("P496-LEGACY:\n  " + string.Join("\n  ", log));
         Console.WriteLine($"P496-LEGACY: final sector {finalSector} (start 1053, goal 1060); {parkEvidence}");
 
         // The board hull must NOT have crossed: it parks above the transit threshold.
-        Assert.NotEqual(goal, finalSector);
-        Assert.True(minWarpDist > 150f,
-            $"legacy 200/450 should park hull 26 OUTSIDE the ~115 u transit volume, but minWarpDist={minWarpDist:F1}");
+        Assert.Equal((short)1053, finalSector); // no transit, including the first hop
+        // Compare every approach sample to the decoded warp + hull radius.
+        // A 128-unit stop is safely outside a 115-unit transit sphere; the
+        // former arbitrary 150-unit margin falsely rejected that valid stop.
+        Assert.True(minTransitClearance > 0f,
+            $"legacy 200/450 must stay OUTSIDE the actual transit volume: clearance={minTransitClearance:F1}, minWarpDist={minWarpDist:F1}");
     }
 
     /// <summary>⭐ GREEN: with the P496 warp-approach law
@@ -329,7 +334,7 @@ public sealed class ClientWarpApproachSlowHullLiveTests
         using var b = bot;
 
         short goal = 1060;
-        var (finalSector, minWarpDist, parkEvidence, log) =
+        var (finalSector, minWarpDist, _, parkEvidence, log) =
             FlyToward(srv, b, core, goal,
                 (warpR, shpR) => BotManager.WarpApproachParams(warpR, shpR),
                 maxTicks: 60000);

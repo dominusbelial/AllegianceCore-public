@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Offscreen HUD polish-batch proof harness (P409).
+       Builds the REAL HudRenderer + REAL GaugeTextures and renders the REAL
+       production Draw path to an offscreen RenderTarget2D, sampling pixels to
+       prove: (Q1) the Thrust gauge's % stays the accent colour at idle (not
+       warning red), and (Q2) the leader-command line clears the speed numeral.
+       Also exercises (Q3) the P333 ship-scaling-disabled log gate against the
+       REAL ShopCatalog loader (once when the hull catalog is unavailable, zero
+       when it loads). -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>hud-polish-proof</AssemblyName>
+    <RootNamespace>HudPolishProof</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Content/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,871 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="d08ae83f-963b-4bcd-9d68-fc179f841732" name="@domingo-MS-02-Ultra 2026-10-15 13:39:19" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-15T13:39:19.0451237-05:00" queuing="2026-10-15T13:39:19.0451237-05:00" start="2026-10-15T13:38:16.0314819-05:00" finish="2026-10-15T13:39:19.0479333-05:00" />
+  <TestSettings name="default" id="02ac386d-9cc1-4cfe-8e61-e0d818a34f92">
+    <Deployment runDeploymentRoot="_domingo-MS-02-Ultra_2026-10-15_13_39_19" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="1e204e81-e550-4b05-a896-0197c37017e0" testId="3f4149d0-ca37-68cf-ad4d-b357fdd731c5" testName="Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death" computerName="domingo-MS-02-Ultra" duration="00:01:02.4920877" startTime="2026-10-15T13:38:16.4754140-05:00" endTime="2026-10-15T13:39:18.9737465-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1e204e81-e550-4b05-a896-0197c37017e0">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.DoesNotContain() Failure: Filter matched in collection
+                                                                                                                           ↓ (pos 1)
+Collection: [KillShip { BDeathCredit = False, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, ··· }, KillShip { BDeathCredit = True, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, ··· }]</Message>
+          <StackTrace>   at Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death() in /home/domingo/allegiance-codex-p699/tests/Allegiance.ClientCore.Tests/P699PodHomeLiveTests.cs:line 86
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death" storage="/home/domingo/allegiance-codex-p699/tests/allegiance.clientcore.tests/bin/debug/net10.0/allegiance.clientcore.tests.dll" id="3f4149d0-ca37-68cf-ad4d-b357fdd731c5">
+      <Execution id="1e204e81-e550-4b05-a896-0197c37017e0" />
+      <TestMethod codeBase="/home/domingo/allegiance-codex-p699/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Allegiance.ClientCore.Tests.P699PodHomeLiveTests" name="Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="3f4149d0-ca37-68cf-ad4d-b357fdd731c5" executionId="1e204e81-e550-4b05-a896-0197c37017e0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="1" executed="1" passed="0" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.11)
+[xUnit.net 00:00:00.05]   Discovering: Allegiance.ClientCore.Tests
+[xUnit.net 00:00:00.16]   Discovered:  Allegiance.ClientCore.Tests
+[xUnit.net 00:00:00.17]   Starting:    Allegiance.ClientCore.Tests
+[boot] broadcast.interestTiers = False
+[boot] broadcast.immutableSnapshot = False
+[boot] broadcast.encodeOnce = False
+[boot] broadcast.minUpdateHz = 2 (requested 2); 0 = ranked budget only
+[boot] sim.crowdingPenalty = native
+[boot] sim.timeDilation = auto — load-driven EVE-style time dilation active (engages when smoothed tick cost &gt; 1.005× period, releases &lt; 0.965×; scale slews toward nominal/cost in [0.1,1] rate-limited to 0.04/s every 0.5s); admin `timescale` cheat overrides auto
+[boot] *** TEST-HARNESS ECONOMY GRANT ACTIVE (liveSettings.testHarness.enabled=true) *** prefix 'mcp-' money=1000000 ignoreTechGate=True — requires matching prefix AND configured bearer (or verified loopback when unset) ***
+[boot] broadcast.parallelBuild = false — serial broadcast building (today's byte-for-byte behaviour)
+[boot] transport mode = thread-per-peer
+[boot] broadcast.shipUpdateModel = port — port per-tick teammate SingleShipUpdate posBatch stream (today's byte-for-byte behaviour)
+[boot] sim.parallelSectorCells = false — serial sector simulation (today's byte-for-byte behaviour)
+[boot] gc = workstation/concurrent
+[boot] static core 'PCore001.igc' loaded: version=990051329, 10 civilizations, 447 hulls, 143 station types
+[boot]   civ    1  'Dreghklar'
+[boot]   civ    2  'Technoflux'
+[boot]   civ    3  'Ga'Taraan'
+[boot]   civ    4  'Phoenix'
+[boot]   civ    5  'Omicron'
+[boot]   civ   18  'Gigacorp'
+[boot]   civ   25  'Iron Coalition'
+[boot]   civ   35  'Bios'
+[boot]   civ  101  'Belters'
+[boot]   civ  201  'Rixian'
+[boot] (stub) cores.txt / maps.txt NOT loaded — download list out of scope (rank list IS loaded from ranks.txt, see above)
+[boot] rank list loaded: 40 ranks from '/home/domingo/Development/Artwork/ranks.txt' (standalone: civ=-1, requiredRanking=0)
+[boot] receive.decouple = false (receive-worker decode; tick-boundary apply)
+[boot] transport listening on 0.0.0.0:42367 (all interfaces)
+[boot] game 'P699' ready: map=XXV_simple.igc, 13 sectors, 2 sides [Alpha, Bravo], 38 warps, 2 stations, 0 asteroids
+[boot] server ready: 1 mission(s), 20 upd/s (period 50 ms). Ctrl-C to stop.
+[conn] peer 1 'mcp-probe-w1-92e7fe' joined
+[launch] peer 1 'mcp-probe-w1-92e7fe' pending side-select (ship id 8096 reserved; launch deferred to side choice)
+[logon] 1 'mcp-probe-w1-92e7fe' validated=True -&gt; 'Welcome mcp-probe-w1-92e7fe' (server time 912, ship 8096)
+[sideselect] -&gt; peer 1 SIDE_ROSTER(211): 2 side(s) [Alpha(0)=0, Bravo(1)=0]
+[posreq] 1: POSITIONREQ side -1 recorded for pending side-select peer
+[sideselect] draining peer 1 'mcp-probe-w1-92e7fe' -&gt; auto-pick (NA)
+[spawn] ship 8096 seated on side 0 (Alpha) in its home sector 'Ceto' (id 1053)
+[combat]   mount 0: 'PE Gat Gun 3' (PartMask 1, 3.672/shot)
+[combat] ship 8096 armed 1 of 1 fixed hardpoints (per-hardpoint PartMask-compatible cheapest; 0 fixed slot(s) with no compatible weapon left unmounted; hull 1 fixed/1 total, 0 non-fixed skipped)
+[join] ship 8096 -&gt; side 0: JOIN_SIDE(125) whole-mission to 0 peer(s)
+[lead] side 0 new team leader ship 8096: SET_TEAM_LEADER(121) whole-mission to 0 peer(s)
+[own] side 0 new mission owner ship 8096: SET_MISSION_OWNER(123) whole-mission to 0 peer(s)
+[sideselect] 1 'mcp-probe-w1-92e7fe' AUTO-assigned to side 0 (ship 8096); leader election via TryJoinSide
+[testharness] 1 'mcp-probe-w1-92e7fe' GRANTED wallet $1000000 at seat (prefix 'mcp-' matches)
+[join] peer 1 'mcp-probe-w1-92e7fe' -&gt; MISSIONDEF core 'PCore001' v990051329 + JOINED_MISSION ship 8096 (static core load + hull-table hydration)
+[sides] peer 1 'mcp-probe-w1-92e7fe' -&gt; MISSIONDEF(38) nTeams 2 civIds [25, 3] (create SIDE_TEAMLOBBY + real sides via UpdateSides)
+[create] peer 1 'mcp-probe-w1-92e7fe' -&gt; EXPORT hull 13 ship NA(real=8096) side 0
+[playerinfo] peer 1 'mcp-probe-w1-92e7fe' -&gt; PLAYERINFO(10) ship 8096 iSide 0 (side assignment for the direct-connect ship)
+[setmoney] peer 1 'mcp-probe-w1-92e7fe' -&gt; SET_MONEY(115) money=1000000 shipID=8096
+[createbuckets] peer 1 -&gt; CREATE_BUCKETS(191) ttbmDevelopments=33 bits ttbmInitial=33 bits (side 0)
+[bucketstatus] peer 1 -&gt; BUCKET_STATUS(65) x300 for side 0
+[briefing] peer 1 'mcp-probe-w1-92e7fe' -&gt; SET_BRIEFING_TEXT(9) generateCivBriefing=true text='Ceto' (friendly station 1051 side 0)
+[rankinfo] peer 1 'mcp-probe-w1-92e7fe' -&gt; RANK_INFO(13) 40 rank(s) (civ=-1, requiredRanking=0, standalone)
+[treasuresets] peer 1 'mcp-probe-w1-92e7fe' -&gt; TREASURE_SETS(89) 1 set(s)
+[clusterinfo] peer 1 'mcp-probe-w1-92e7fe' -&gt; CLUSTERINFO(200) 13 cluster(s), 38 warp(s)
+[export] peer 1 'mcp-probe-w1-92e7fe' -&gt; 13 cluster(s): 1051:'Arrokoth', 1052:'Borasisi', 1053:'Ceto'*, 1054:'Deucalion', 1055:'Eris', 1056:'Farout', 1057:'Haumea', 1058:'Ixion', 1059:'Makemake', 1060:'Orcus', 1061:'Quaoar'*, 1062:'Varda', 1063:'Sedna'
+[export] peer 1 'mcp-probe-w1-92e7fe' -&gt; 38 warp(s), 2 station(s), 0 asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)
+[stage] peer 1 'mcp-probe-w1-92e7fe' -&gt; MISSION_STAGE(37) Started
+[entergame] peer 1 'mcp-probe-w1-92e7fe' -&gt; ENTER_GAME(128) (join-sync complete — player ready)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 1 peer(s) [PER SIDE]
+[p485] probe ready-up for ship 8096 on side 0 — enables the normal-map lobby auto-start (PLAYER_READY)
+[ready] 1 ship 8096 side 0 fReady=True -&gt; 1 peer(s)
+[ready] side 0 aggregate readiness True -&gt; TEAM_READY(46) whole-mission to 1 peer(s)
+[conn] peer 2 'mcp-b001-2961' joined
+[launch] peer 2 'mcp-b001-2961' pending side-select (ship id 8097 reserved; launch deferred to side choice)
+[logon] 2 'mcp-b001-2961' validated=True -&gt; 'Welcome mcp-b001-2961' (server time 912, ship 8097)
+[sideselect] -&gt; peer 2 SIDE_ROSTER(211): 2 side(s) [Alpha(0)=1, Bravo(1)=0]
+[posreq] 2: POSITIONREQ side 0 recorded for pending side-select peer
+[sideselect] draining peer 2 'mcp-b001-2961' -&gt; chosen side 0
+[spawn] ship 8097 seated on side 0 (Alpha) in its home sector 'Ceto' (id 1053)
+[combat]   mount 0: 'PE Gat Gun 3' (PartMask 1, 3.672/shot)
+[combat] ship 8097 armed 1 of 1 fixed hardpoints (per-hardpoint PartMask-compatible cheapest; 0 fixed slot(s) with no compatible weapon left unmounted; hull 1 fixed/1 total, 0 non-fixed skipped)
+[join] ship 8097 -&gt; side 0: JOIN_SIDE(125) whole-mission to 1 peer(s)
+[sideselect] 2 'mcp-b001-2961' chose side 0 (ship 8097)
+[testharness] 2 'mcp-b001-2961' GRANTED wallet $1000000 at seat (prefix 'mcp-' matches)
+[join] peer 2 'mcp-b001-2961' -&gt; MISSIONDEF core 'PCore001' v990051329 + JOINED_MISSION ship 8097 (static core load + hull-table hydration)
+[sides] peer 2 'mcp-b001-2961' -&gt; MISSIONDEF(38) nTeams 2 civIds [25, 3] (create SIDE_TEAMLOBBY + real sides via UpdateSides)
+[create] peer 2 'mcp-b001-2961' -&gt; EXPORT hull 13 ship NA(real=8097) side 0
+[playerinfo] peer 2 'mcp-b001-2961' -&gt; PLAYERINFO(10) ship 8097 iSide 0 (side assignment for the direct-connect ship)
+[setmoney] peer 2 'mcp-b001-2961' -&gt; SET_MONEY(115) money=1000000 shipID=8097
+[createbuckets] peer 2 -&gt; CREATE_BUCKETS(191) ttbmDevelopments=33 bits ttbmInitial=33 bits (side 0)
+[bucketstatus] peer 2 -&gt; BUCKET_STATUS(65) x300 for side 0
+[briefing] peer 2 'mcp-b001-2961' -&gt; SET_BRIEFING_TEXT(9) generateCivBriefing=true text='Ceto' (friendly station 1051 side 0)
+[rankinfo] peer 2 'mcp-b001-2961' -&gt; RANK_INFO(13) 40 rank(s) (civ=-1, requiredRanking=0, standalone)
+[treasuresets] peer 2 'mcp-b001-2961' -&gt; TREASURE_SETS(89) 1 set(s)
+[clusterinfo] peer 2 'mcp-b001-2961' -&gt; CLUSTERINFO(200) 13 cluster(s), 38 warp(s)
+[export] peer 2 'mcp-b001-2961' -&gt; 13 cluster(s): 1051:'Arrokoth', 1052:'Borasisi', 1053:'Ceto'*, 1054:'Deucalion', 1055:'Eris', 1056:'Farout', 1057:'Haumea', 1058:'Ixion', 1059:'Makemake', 1060:'Orcus', 1061:'Quaoar'*, 1062:'Varda', 1063:'Sedna'
+[export] peer 2 'mcp-b001-2961' -&gt; 38 warp(s), 2 station(s), 0 asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)
+[stage] peer 2 'mcp-b001-2961' -&gt; MISSION_STAGE(37) Started
+[entergame] peer 2 'mcp-b001-2961' -&gt; ENTER_GAME(128) (join-sync complete — player ready)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ready] 2 ship 8097 side 0 fReady=True -&gt; 2 peer(s)
+[loadout] 2 ship 8097: cost 0 — no money movement
+[loadout] 2 ship 8097 &lt;- BUY_LOADOUT_ACK hull 13 nParts 0 fbought False fLaunch True
+[loadout] ship 8097: saved desired loadout = []
+[undock] ship 8097 undocked from station 1051 — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying
+[loadout] ship 8097 Mounted -&gt; LOADOUT_CHANGE(96) hull 13 0 part(s) 0 passenger(s) -&gt; 2 same-side peer(s)
+[warp] peer 2 ship 8097 -&gt; SET_CLUSTER sector 1051 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+[autoreload] ship 8097: ammo hit zero, no cargo spare — Ammo depleted (no RELOAD relay)
+[scoring] ship 8097 ejection +1 (player peer)
+[loadout] ship 8097 HullChange -&gt; LOADOUT_CHANGE(96) hull 444 0 part(s) 0 passenger(s) -&gt; 2 same-side peer(s)
+[eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8097, killer ship -1 -&gt; 1 peer(s)
+[eject] player ship 8097 ejected -&gt; Lifepod hull 444 at Vector3 { X = 3733.3333, Y = 3911.111, Z = 1056.727 }, vel (66,74.7,8), fwd (-0.66,-0.75,-0.08); EJECT(77) -&gt; 1 peer(s) in sector 1051; hull stays in sector (not removed), no SHIP_DELETE
+[p598] re-readied bot 'mcp-b001-2961' ship 8097 after rotation (PLAYER_READY true)
+[ready] 2 ship 8097 side 0 fReady=True -&gt; 2 peer(s)
+[p539d] DEATH bot mcp-b001-2961 ship 8097 side 0 cause=collision deaths=1 gunfire=0 collision=1
+[p539] bot mcp-b001-2961 (ship 8097) is now a LIFEPOD (hull 444) — stopping combat, flying home to dock
+[p539] pod bot mcp-b001-2961 (ship 8097) flying home to friendly restart-capable station 1051 in sector 1053
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=80572 enqueuedBytes=91262 writtenBytes=91262 peers=2 windowSecs=1.276 enqueued-per-peer-bps=35756.9 written-per-peer-bps=35756.9 gc={gen0=5,gen1=2,gen2=1} allocMB=85.91 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37688 enqueuedBytes=44818 writtenBytes=44818 peers=2 windowSecs=1.037 enqueued-per-peer-bps=21616.1 written-per-peer-bps=21616.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.95 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[warp] ship 8097 crossed from 'Arrokoth' (1051) to 'Borasisi' (1052) via warp 1053
+[warp] peer 2 ship 8097 -&gt; SET_CLUSTER sector 1052 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46218 enqueuedBytes=53373 writtenBytes=53131 peers=2 windowSecs=1.038 enqueued-per-peer-bps=25720.4 written-per-peer-bps=25603.8 gc={gen0=0,gen1=0,gen2=0} allocMB=2.26 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=45093 peers=2 windowSecs=1.033 enqueued-per-peer-bps=21699.1 written-per-peer-bps=21816.2 gc={gen0=0,gen1=0,gen2=0} allocMB=2.17 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53277 peers=2 windowSecs=1.036 enqueued-per-peer-bps=25700.6 written-per-peer-bps=25700.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.19 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 28100)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 2 &lt;- echo (client 0, server 28700)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37756 enqueuedBytes=44901 writtenBytes=44815 peers=2 windowSecs=1.047 enqueued-per-peer-bps=21452.9 written-per-peer-bps=21411.8 gc={gen0=1,gen1=0,gen2=0} allocMB=2.14 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53121 peers=2 windowSecs=1.032 enqueued-per-peer-bps=25819.1 written-per-peer-bps=25743.5 gc={gen0=0,gen1=0,gen2=0} allocMB=2.21 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=44851 peers=2 windowSecs=1.032 enqueued-per-peer-bps=21721.1 written-per-peer-bps=21721.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.17 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53035 peers=2 windowSecs=1.032 enqueued-per-peer-bps=25818.5 written-per-peer-bps=25701.2 gc={gen0=0,gen1=0,gen2=0} allocMB=2.19 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=45292 peers=2 windowSecs=1.03 enqueued-per-peer-bps=21767.5 written-per-peer-bps=21981.5 gc={gen0=0,gen1=0,gen2=0} allocMB=2.17 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53078 peers=2 windowSecs=1.03 enqueued-per-peer-bps=25868.8 written-per-peer-bps=25772.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.19 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 57149)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 2 &lt;- echo (client 0, server 57799)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37756 enqueuedBytes=44901 writtenBytes=44901 peers=2 windowSecs=1.031 enqueued-per-peer-bps=21772.2 written-per-peer-bps=21772.2 gc={gen0=0,gen1=0,gen2=0} allocMB=2.19 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=262 balance=1
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 600)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46156 enqueuedBytes=53311 writtenBytes=53268 peers=2 windowSecs=1.037 enqueued-per-peer-bps=25699.4 written-per-peer-bps=25678.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.23 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=44652 peers=2 windowSecs=1.034 enqueued-per-peer-bps=21689.9 written-per-peer-bps=21593.7 gc={gen0=1,gen1=0,gen2=0} allocMB=2.14 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53363 peers=2 windowSecs=1.036 enqueued-per-peer-bps=25724.1 written-per-peer-bps=25765.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.19 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=44765 peers=2 windowSecs=1.032 enqueued-per-peer-bps=21725.4 written-per-peer-bps=21683.7 gc={gen0=0,gen1=0,gen2=0} allocMB=2.18 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53519 peers=2 windowSecs=1.031 enqueued-per-peer-bps=25833.2 written-per-peer-bps=25950.5 gc={gen0=0,gen1=0,gen2=0} allocMB=2.22 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 86149)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 2 &lt;- echo (client 0, server 86799)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37756 enqueuedBytes=44901 writtenBytes=45008 peers=2 windowSecs=1.031 enqueued-per-peer-bps=21765.3 written-per-peer-bps=21817.2 gc={gen0=0,gen1=0,gen2=0} allocMB=2.18 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53170 peers=2 windowSecs=1.03 enqueued-per-peer-bps=25856.3 written-per-peer-bps=25804.4 gc={gen0=0,gen1=0,gen2=0} allocMB=2.2 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=44808 peers=2 windowSecs=1.037 enqueued-per-peer-bps=21625.4 written-per-peer-bps=21604.7 gc={gen0=0,gen1=0,gen2=0} allocMB=2.15 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53078 peers=2 windowSecs=1.029 enqueued-per-peer-bps=25883.1 written-per-peer-bps=25786.4 gc={gen0=0,gen1=0,gen2=0} allocMB=2.21 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=45198 peers=2 windowSecs=1.033 enqueued-per-peer-bps=21713.4 written-per-peer-bps=21881.4 gc={gen0=0,gen1=0,gen2=0} allocMB=2.19 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=53172 peers=2 windowSecs=1.047 enqueued-per-peer-bps=25446.6 written-per-peer-bps=25396.4 gc={gen0=1,gen1=1,gen2=0} allocMB=2.18 logDrops=0
+[ping] 1 &lt;- echo (client 0, server 115149)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 2 &lt;- echo (client 0, server 115799)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37756 enqueuedBytes=44901 writtenBytes=44901 peers=2 windowSecs=1.035 enqueued-per-peer-bps=21688.6 written-per-peer-bps=21688.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.19 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=263 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 1200)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46208 enqueuedBytes=53368 writtenBytes=53368 peers=2 windowSecs=1.041 enqueued-per-peer-bps=25624.8 written-per-peer-bps=25624.8 gc={gen0=0,gen1=0,gen2=0} allocMB=2.85 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=44939 peers=2 windowSecs=1.033 enqueued-per-peer-bps=21715.3 written-per-peer-bps=21757.9 gc={gen0=0,gen1=0,gen2=0} allocMB=2.75 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46132 enqueuedBytes=53277 writtenBytes=52947 peers=2 windowSecs=1.034 enqueued-per-peer-bps=25755.1 written-per-peer-bps=25595.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.76 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=45093 peers=2 windowSecs=1.035 enqueued-per-peer-bps=21665.3 written-per-peer-bps=21782.2 gc={gen0=0,gen1=0,gen2=0} allocMB=2.73 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 144149)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 2 &lt;- echo (client 0, server 144799)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=46172 enqueuedBytes=53327 writtenBytes=53150 peers=2 windowSecs=1.034 enqueued-per-peer-bps=25794.5 written-per-peer-bps=25708.9 gc={gen0=2,gen1=1,gen2=1} allocMB=2.78 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=37716 enqueuedBytes=44851 writtenBytes=45270 peers=2 windowSecs=1.036 enqueued-per-peer-bps=21656.6 written-per-peer-bps=21858.9 gc={gen0=0,gen1=0,gen2=0} allocMB=2.74 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[warp] ship 8097 crossed from 'Borasisi' (1052) to 'Ceto' (1053) via warp 1063
+[warp] peer 2 ship 8097 -&gt; SET_CLUSTER sector 1053 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=47817 enqueuedBytes=54972 writtenBytes=54972 peers=2 windowSecs=1.035 enqueued-per-peer-bps=26546.5 written-per-peer-bps=26546.5 gc={gen0=0,gen1=0,gen2=0} allocMB=3.22 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48437 peers=2 windowSecs=1.039 enqueued-per-peer-bps=23449.3 written-per-peer-bps=23314.0 gc={gen0=0,gen1=0,gen2=0} allocMB=2.89 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50060 enqueuedBytes=57210 writtenBytes=57210 peers=2 windowSecs=1.034 enqueued-per-peer-bps=27663.0 written-per-peer-bps=27663.0 gc={gen0=0,gen1=0,gen2=0} allocMB=2.92 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48843 peers=2 windowSecs=1.031 enqueued-per-peer-bps=23615.4 written-per-peer-bps=23676.0 gc={gen0=0,gen1=0,gen2=0} allocMB=2.88 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 173100)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 2 &lt;- echo (client 0, server 173750)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50100 enqueuedBytes=57260 writtenBytes=57135 peers=2 windowSecs=1.036 enqueued-per-peer-bps=27631.5 written-per-peer-bps=27571.2 gc={gen0=1,gen1=1,gen2=0} allocMB=2.91 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48675 peers=2 windowSecs=1.034 enqueued-per-peer-bps=23566.3 written-per-peer-bps=23545.5 gc={gen0=0,gen1=0,gen2=0} allocMB=2.91 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=262 balance=1
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 1800)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50084 enqueuedBytes=57244 writtenBytes=57525 peers=2 windowSecs=1.03 enqueued-per-peer-bps=27779.3 written-per-peer-bps=27915.7 gc={gen0=0,gen1=0,gen2=0} allocMB=2.91 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48437 peers=2 windowSecs=1.034 enqueued-per-peer-bps=23561.3 written-per-peer-bps=23425.4 gc={gen0=0,gen1=0,gen2=0} allocMB=2.88 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50060 enqueuedBytes=57210 writtenBytes=57253 peers=2 windowSecs=1.04 enqueued-per-peer-bps=27507.0 written-per-peer-bps=27527.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.92 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48999 peers=2 windowSecs=1.042 enqueued-per-peer-bps=23382.2 written-per-peer-bps=23517.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.88 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 202050)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 2 &lt;- echo (client 0, server 202700)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50100 enqueuedBytes=57260 writtenBytes=56985 peers=2 windowSecs=1.041 enqueued-per-peer-bps=27508.9 written-per-peer-bps=27376.8 gc={gen0=0,gen1=0,gen2=0} allocMB=2.95 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48712 peers=2 windowSecs=1.042 enqueued-per-peer-bps=23366.9 written-per-peer-bps=23364.0 gc={gen0=1,gen1=1,gen2=0} allocMB=2.86 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50060 enqueuedBytes=57210 writtenBytes=56935 peers=2 windowSecs=1.036 enqueued-per-peer-bps=27598.4 written-per-peer-bps=27465.8 gc={gen0=0,gen1=0,gen2=0} allocMB=2.92 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48751 peers=2 windowSecs=1.036 enqueued-per-peer-bps=23522.7 written-per-peer-bps=23538.6 gc={gen0=0,gen1=0,gen2=0} allocMB=2.94 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50060 enqueuedBytes=57210 writtenBytes=57177 peers=2 windowSecs=1.041 enqueued-per-peer-bps=27484.1 written-per-peer-bps=27468.2 gc={gen0=0,gen1=0,gen2=0} allocMB=2.92 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=49274 peers=2 windowSecs=1.038 enqueued-per-peer-bps=23475.3 written-per-peer-bps=23743.2 gc={gen0=0,gen1=0,gen2=0} allocMB=2.87 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 230950)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 2 &lt;- echo (client 0, server 231600)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50100 enqueuedBytes=57260 writtenBytes=56979 peers=2 windowSecs=1.04 enqueued-per-peer-bps=27539.2 written-per-peer-bps=27404.1 gc={gen0=0,gen1=0,gen2=0} allocMB=2.94 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48682 peers=2 windowSecs=1.039 enqueued-per-peer-bps=23443.7 written-per-peer-bps=23426.4 gc={gen0=1,gen1=1,gen2=0} allocMB=2.88 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=263 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 2400)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50084 enqueuedBytes=57244 writtenBytes=57280 peers=2 windowSecs=1.039 enqueued-per-peer-bps=27547.6 written-per-peer-bps=27565.0 gc={gen0=0,gen1=0,gen2=0} allocMB=3.4 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48956 peers=2 windowSecs=1.036 enqueued-per-peer-bps=23514.5 written-per-peer-bps=23629.4 gc={gen0=0,gen1=0,gen2=0} allocMB=3.36 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50060 enqueuedBytes=57210 writtenBytes=57253 peers=2 windowSecs=1.041 enqueued-per-peer-bps=27470.8 written-per-peer-bps=27491.4 gc={gen0=0,gen1=0,gen2=0} allocMB=3.38 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 259800)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41608 enqueuedBytes=48743 writtenBytes=48743 peers=2 windowSecs=1.04 enqueued-per-peer-bps=23427.8 written-per-peer-bps=23427.8 gc={gen0=0,gen1=0,gen2=0} allocMB=3.37 logDrops=0
+[ping] 2 &lt;- echo (client 0, server 260450)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=49840 enqueuedBytes=56975 writtenBytes=56874 peers=2 windowSecs=1.04 enqueued-per-peer-bps=27401.9 written-per-peer-bps=27353.3 gc={gen0=1,gen1=1,gen2=0} allocMB=3.38 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41468 enqueuedBytes=48588 writtenBytes=48554 peers=2 windowSecs=1.036 enqueued-per-peer-bps=23458.1 written-per-peer-bps=23441.7 gc={gen0=0,gen1=0,gen2=0} allocMB=3.36 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=49940 enqueuedBytes=57080 writtenBytes=56934 peers=2 windowSecs=1.037 enqueued-per-peer-bps=27525.1 written-per-peer-bps=27454.7 gc={gen0=0,gen1=0,gen2=0} allocMB=3.37 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41468 enqueuedBytes=48588 writtenBytes=48588 peers=2 windowSecs=1.037 enqueued-per-peer-bps=23435.2 written-per-peer-bps=23435.2 gc={gen0=0,gen1=0,gen2=0} allocMB=3.36 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=49940 enqueuedBytes=57080 writtenBytes=57318 peers=2 windowSecs=1.033 enqueued-per-peer-bps=27626.5 written-per-peer-bps=27741.7 gc={gen0=0,gen1=0,gen2=0} allocMB=3.37 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[ping] 1 &lt;- echo (client 0, server 288750)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stall-minute] utc=2026-10-15T18:39:16.6132461Z window={"startMonotonicMs":1010199863,"durationMs":60068,"decisionPassMaxMs":29.3561,"gcPauseMaxMs":11.914,"gcPauseTotalMs":28.517999999999997,"gcGen0":10,"gcGen1":7,"gcGen2":2,"threadPoolThreadsMax":8,"threadPoolPendingMax":1,"threadPoolNoProgressMaxMs":0,"watchdogLateMaxMs":1,"sessionsReadOver2sMax":0,"sessionsReadOver5sMax":0} snapshot={"currentMinute":{"startMonotonicMs":1010199863,"durationMs":60068,"decisionPassMaxMs":29.3561,"gcPauseMaxMs":11.914,"gcPauseTotalMs":28.517999999999997,"gcGen0":10,"gcGen1":7,"gcGen2":2,"threadPoolThreadsMax":8,"threadPoolPendingMax":1,"threadPoolNoProgressMaxMs":0,"watchdogLateMaxMs":1,"sessionsReadOver2sMax":0,"sessionsReadOver5sMax":0},"lastCompletedMinute":null,"threadPoolThreads":6,"threadPoolPending":0,"threadPoolNoProgressMs":0,"threadPoolStarvationSuspected":false,"watchdogLateMs":0,"watchdogSampleAgeMs":0,"sessions":2,"sessionsReadOver2s":0,"sessionsReadOver5s":0,"receiveAgeMaxMs":6,"decisionPassInProgressMs":0,"incidentCount":0,"logDroppedLines":0}
+[ping] 2 &lt;- echo (client 0, server 289400)
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41628 enqueuedBytes=48768 writtenBytes=48569 peers=2 windowSecs=1.035 enqueued-per-peer-bps=23566.8 written-per-peer-bps=23470.7 gc={gen0=1,gen1=1,gen2=0} allocMB=3.67 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=50060 enqueuedBytes=57210 writtenBytes=57210 peers=2 windowSecs=1.034 enqueued-per-peer-bps=27651.6 written-per-peer-bps=27651.6 gc={gen0=0,gen1=0,gen2=0} allocMB=3.38 logDrops=0
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) =&gt; STATIONS_UPDATE(57) -&gt; 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=41588 enqueuedBytes=48718 writtenBytes=48437 peers=2 windowSecs=1.034 enqueued-per-peer-bps=23564.9 written-per-peer-bps=23429.0 gc={gen0=0,gen1=0,gen2=0} allocMB=3.36 logDrops=0
+[payday] side 0 'Alpha' -&gt; PAYDAY(114) delta=262 balance=1
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 3000)
+[oxygen] lifepod ship 8097 oxygen exhausted at sim-t 300.300000000034 (deadline 300.3) — KillShipEvent(launcher NULL, amount 1.0) -&gt; destroy + respawn
+[scoring] victim ship 8097 death +1 (player peer)
+[combat] ship 8097 killed by (none) at sim-t 300.300000000034 — KILL_SHIP(105) -&gt; 2 peer(s)
+[explosion] type 3 cluster 1053 scale 4 at Vector3 { X = -354.7728, Y = 236.57005, Z = 73.277 } -&gt; EXPLOSION_EVENT(207) -&gt; 2 peer(s)
+[combat] ship 8097 — SHIP_DELETE(20) SDR_KILLED -&gt; 2 peer(s)
+[loadout] ship 8097 HullChange -&gt; LOADOUT_CHANGE(96) hull 444 0 part(s) 0 passenger(s) -&gt; 2 same-side peer(s)
+[lifepod] player ship 8097 -&gt; docked Lifepod (hull 444) at station 1051 'Garrison' in sector 'Ceto' ; ENTER_LIFEPOD(166) -&gt; own peer only
+[session-loss] utc=2026-10-15T18:39:18.9571916Z name="mcp-b001-2961" reason=our-disposal detail="bot manager disposed this session" readAgeMs=1.0 snapshot={"currentMinute":{"startMonotonicMs":1010259931,"durationMs":2344,"decisionPassMaxMs":0.7553,"gcPauseMaxMs":0.963,"gcPauseTotalMs":0.963000000000001,"gcGen0":1,"gcGen1":1,"gcGen2":0,"threadPoolThreadsMax":6,"threadPoolPendingMax":0,"threadPoolNoProgressMaxMs":0,"watchdogLateMaxMs":1,"sessionsReadOver2sMax":0,"sessionsReadOver5sMax":0},"lastCompletedMinute":{"startMonotonicMs":1010199863,"durationMs":60068,"decisionPassMaxMs":29.3561,"gcPauseMaxMs":11.914,"gcPauseTotalMs":28.517999999999997,"gcGen0":10,"gcGen1":7,"gcGen2":2,"threadPoolThreadsMax":8,"threadPoolPendingMax":1,"threadPoolNoProgressMaxMs":0,"watchdogLateMaxMs":1,"sessionsReadOver2sMax":0,"sessionsReadOver5sMax":0},"threadPoolThreads":6,"threadPoolPending":0,"threadPoolNoProgressMs":0,"threadPoolStarvationSuspected":false,"watchdogLateMs":0,"watchdogSampleAgeMs":42,"sessions":2,"sessionsReadOver2s":0,"sessionsReadOver5s":0,"receiveAgeMaxMs":6,"decisionPassInProgressMs":0,"incidentCount":0,"logDroppedLines":0}
+[session-loss] utc=2026-10-15T18:39:18.9610499Z name="mcp-probe-w1-92e7fe" reason=our-disposal detail="bot manager disposed this session" readAgeMs=4.0 snapshot={"currentMinute":{"startMonotonicMs":1010259931,"durationMs":2348,"decisionPassMaxMs":0.7553,"gcPauseMaxMs":0.963,"gcPauseTotalMs":0.963000000000001,"gcGen0":1,"gcGen1":1,"gcGen2":0,"threadPoolThreadsMax":6,"threadPoolPendingMax":0,"threadPoolNoProgressMaxMs":0,"watchdogLateMaxMs":1,"sessionsReadOver2sMax":0,"sessionsReadOver5sMax":0},"lastCompletedMinute":{"startMonotonicMs":1010199863,"durationMs":60068,"decisionPassMaxMs":29.3561,"gcPauseMaxMs":11.914,"gcPauseTotalMs":28.517999999999997,"gcGen0":10,"gcGen1":7,"gcGen2":2,"threadPoolThreadsMax":8,"threadPoolPendingMax":1,"threadPoolNoProgressMaxMs":0,"watchdogLateMaxMs":1,"sessionsReadOver2sMax":0,"sessionsReadOver5sMax":0},"threadPoolThreads":6,"threadPoolPending":0,"threadPoolNoProgressMs":0,"threadPoolStarvationSuspected":false,"watchdogLateMs":0,"watchdogSampleAgeMs":46,"sessions":1,"sessionsReadOver2s":0,"sessionsReadOver5s":0,"receiveAgeMaxMs":4,"decisionPassInProgressMs":0,"incidentCount":0,"logDroppedLines":0}
+[conn-drop] peer 2 left reason=ReadErrorOrEof
+[conn-drop] peer 1 left reason=ReadErrorOrEof
+[shutdown] clean: 6008 ticks, 0 overruns
+[xUnit.net 00:01:02.68]       Assert.DoesNotContain() Failure: Filter matched in collection
+[xUnit.net 00:01:02.68]                                                                                                                                  ↓ (pos 1)
+[xUnit.net 00:01:02.68]       Collection: [KillShip { BDeathCredit = False, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, ··· }, KillShip { BDeathCredit = True, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, ··· }]
+[xUnit.net 00:01:02.68]       Stack Trace:
+[xUnit.net 00:01:02.69]         /home/domingo/allegiance-codex-p699/tests/Allegiance.ClientCore.Tests/P699PodHomeLiveTests.cs(86,0): at Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death()
+[xUnit.net 00:01:02.69]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:01:02.69]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:01:02.69]   Finished:    Allegiance.ClientCore.Tests
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="domingo-MS-02-Ultra" outcome="Error" timestamp="2026-10-15T13:39:18.9768999-05:00">
+        <Text>[xUnit.net 00:01:02.68]     Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

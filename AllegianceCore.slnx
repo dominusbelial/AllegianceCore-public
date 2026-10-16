@@ -17,6 +17,7 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/igcdump/igcdump.csproj" />
+    <Project Path="tools/tech-tree/tech-tree.csproj" />
     <Project Path="tools/missiondump/missiondump.csproj" />
     <Project Path="tools/fedmsgdump/fedmsgdump.csproj" />
     <Project Path="tools/corpusvalidate/corpusvalidate.csproj" />
@@ -31,5 +32,7 @@
     <Project Path="tools/shieldflare-proof/shieldflare-proof.csproj" />
     <Project Path="tools/allegiance-mcp/allegiance-mcp.csproj" />
     <Project Path="tools/p605synth/p605synth.csproj" />
+    <Project Path="tools/p629-proof/p629-proof.csproj" />
+    <Project Path="tools/receive-proof/receive-proof.csproj" />
   </Folder>
 </Solution>

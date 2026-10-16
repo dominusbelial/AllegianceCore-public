@@ -116,7 +116,7 @@ public sealed class ShopLauncherBuyLiveTests
         var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var st = mission.Sectors.SelectMany(s => s.Stations).First(s => s.SideId >= 0);
         var sector = mission.Sectors.First(s => s.Stations.Contains(st));
-        var ship = new Ship(shipId, hull, StationPos(st) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+        var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, st, hull), Vector3.Zero, Orientation.Identity)
         {
             SideId = st.SideId,
         };
@@ -148,7 +148,7 @@ public sealed class ShopLauncherBuyLiveTests
             foreach (var h in Catalog.Hulls)
             {
                 var part = lo.Part;
-                if (h.CanMountPart(part))
+                if (h.GroupId >= 0 && h.CanMountPart(part, 0))
                     return (lo, h);
             }
         throw new InvalidOperationException("PCore001 has no (terminal launcher, mounting-hull) pair");

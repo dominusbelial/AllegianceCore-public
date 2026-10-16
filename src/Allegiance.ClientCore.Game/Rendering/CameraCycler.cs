@@ -3,13 +3,10 @@ using System.Collections.Generic;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// P295 — the <c>V</c>-key camera-mode cycle. Native exposes a separate view key
-/// per mode (<c>TK_ViewChase</c>, <c>TK_ViewMissile</c>, <c>TK_ViewTurret</c>,
-/// … igc.h:252-260), but this port has always used a single <c>V</c> key to flip
-/// the view, and the brief explicitly blesses "a cycle through available modes"
-/// over one dedicated key per mode. This helper is the pure, unit-testable heart
-/// of that cycle: it walks a fixed mode order and offers only the modes that make
-/// sense for the pilot's current state, so <see cref="Game1"/> stays thin.
+/// P295 — the V-key camera-mode cycle, retained as a convenience alongside
+/// P675's discrete native ViewMissile/ViewChase actions and the port ViewTurret
+/// extension. This helper walks the modes available in the pilot's current
+/// state; native's discrete toggles are handled separately (WinTrek.cpp:9820-9864).
 /// </summary>
 /// <remarks>
 /// Mode order is <c>Cockpit → Chase → ExternalTurret → ExternalMissile →

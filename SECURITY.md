@@ -27,22 +27,13 @@ These are intentional trade-offs for a demo/experimental server. They are
 documented here and in [`docs/GUIDE.md`](docs/GUIDE.md) so operators can make
 an informed call — not silently "fixed" by pretending the server is hardened.
 
-- **Admin cheats are name-based.** `liveSettings.adminCheats` (off by
-  default) trusts self-declared character names (including prefix wildcards
-  such as `mcp-*`). A name is client-supplied and spoofable. Mitigations:
-  never enable admin cheats on a public/shared server (the server prints a
-  loud boot warning when it is enabled on all interfaces), and optionally set
-  `adminCheats.secret`, in which case an allow-listed connection is trusted
-  only when its cheat line presents the secret as its first token.
-- **Admin spectator cameras can reveal anything (P612).** When
-  `adminCheats` is enabled, an allow-listed player's free-flight spectator
-  camera is admin-unrestricted: the server streams **all ships in whatever
-  sector the camera is viewing** (ignoring side visibility and cloak) and the
-  free camera may view **any** sector. This rides the same name-based
-  privilege as the admin cheats and is equally spoofable — it is LAN / demo
-  only. Non-admins never get it (their `FM_C_VIEW_CLUSTER` request is a
-  no-op), so there is no information leak to ordinary players. A public
-  server must keep `adminCheats` disabled.
+- **Admin and harness privileges require provenance (P655).** Name allow-lists
+  and harness prefixes filter eligibility. A configured secret must be presented
+  in `LOGONREQ.CDKey` (MCP: `ALLEGIANCE_PRIVILEGE_SECRET`), or an admin can
+  authenticate with a secret-prefixed command. Without a configured secret,
+  only actual loopback sockets qualify. This also gates unrestricted spectator
+  visibility and cross-peer harness relocation. See the setup in
+  [`docs/GUIDE.md`](docs/GUIDE.md#admin-cheats--lan-only-documented-safety).
 - **The sim time scale is admin-only (P612).** `liveSettings.timeScale`
   (0.1–1.0) and the `timescale` cheat slow the whole world; only an
   allow-listed admin can change it at runtime, and the range is clamped. It

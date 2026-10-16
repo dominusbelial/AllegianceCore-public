@@ -1,0 +1,11 @@
+wall=60.0s sim=60.2s scale=1 accepted=342 rejected=1 resets=1
+wall=120.0s sim=120.2s scale=1 accepted=642 rejected=1 resets=1
+wall=180.0s sim=180.2s scale=1 accepted=1029 rejected=1 resets=1
+wall=240.0s sim=234.2s scale=0.85 accepted=1429 rejected=1 resets=1
+wall=300.0s sim=285.2s scale=0.85 accepted=1829 rejected=1 resets=1
+wall=360.0s sim=336.2s scale=0.85 accepted=2229 rejected=1 resets=1
+wall=420.0s sim=380.2s scale=0.5 accepted=2629 rejected=1 resets=1
+wall=480.0s sim=410.2s scale=0.5 accepted=3029 rejected=1 resets=1
+wall=540.0s sim=440.2s scale=0.5 accepted=3382 rejected=1 resets=1
+wall=600.0s sim=470.2s scale=0.5 accepted=3682 rejected=1 resets=1
+P695b soak: real-wall=605.0s flight-wall=611.5s accepted=3740 rejected=1 resets=1 boost-frames=406

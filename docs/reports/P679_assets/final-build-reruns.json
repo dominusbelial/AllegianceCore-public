@@ -1,0 +1,19 @@
+[
+  "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_TCP_interest_tiers_reduce_bytes_and_report_ages",
+  "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_TCP_pipeline_cost_three_configurations",
+  "Allegiance.Core.Tests.InterestTierCombatTests.Six_bot_firing_lanes_keep_kills_and_target_freshness_with_tiers",
+  "Allegiance.Core.Tests.InterestTierTests.Classification_boundaries_allies_and_command_target_promotion",
+  "Allegiance.Core.Tests.InterestTierTests.Classification_snapshot_is_detached_from_later_sim_changes",
+  "Allegiance.Core.Tests.InterestTierTests.Deviation_is_descending_within_tiers_target_first_and_hidden_ships_stay_hidden",
+  "Allegiance.Core.Tests.InterestTierTests.Flag_defaults_off_and_environment_wins",
+  "Allegiance.Core.Tests.InterestTierTests.Invalid_rates_and_ranges_fail_boot_and_floor_raises_both_tiers",
+  "Allegiance.Core.Tests.InterestTierTests.Json_binds_defaults_and_bad_environment_is_rejected",
+  "Allegiance.Core.Tests.InterestTierTests.Mounted_weapon_reach_extends_the_engagement_radius",
+  "Allegiance.Core.Tests.InterestTierTests.Target_and_near_enemies_are_full_rate_and_T2_meets_floor",
+  "Allegiance.Core.Tests.InterestTierTests.Tier_projection_is_identical_serial_or_parallel_and_shares_records",
+  "Allegiance.Core.Tests.PipelineCostTests.Identity_packet_cache_invalidates_loadout_side_name_and_reused_id",
+  "Allegiance.Core.Tests.PipelineCostTests.Span_pose_writers_match_canonical_codecs_for_rotations_and_endurance",
+  "Allegiance.Core.Tests.PipelineCostTests.Spatial_membership_certificates_match_exact_classification_through_changes",
+  "Allegiance.Core.Tests.PipelineCostTests.Stalled_publication_preserves_pooled_ordered_leases_and_latest_stream",
+  "Allegiance.Core.Tests.PipelineCostTests.Steady_512_peer_pipeline_allocation_budget"
+]

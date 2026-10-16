@@ -11,28 +11,29 @@ namespace Allegiance.Core.Collision;
 /// <see cref="Sim.Station.InGarage"/> dock test for that type. Frames are never
 /// reparsed or re-scanned per tick, mirroring the native engine where the bay
 /// planes are loaded exactly once in <c>CstationTypeIGC::Initialize</c>
-/// (<c>stationtypeigc.cpp:77-101</c> via <c>HitTest::Load(modelName)</c>) and
+/// (<c>stationtypeigc.cpp:71-144</c> via <c>HitTest::Load(modelName)</c>) and
 /// reused for the lifetime of the station type.
 /// </summary>
 /// <remarks>
 /// <b>Model vs type keying.</b> Native loads the bay per <em>station type</em>
 /// from that type's own model <b>and</b> its own radius
-/// (<c>scale = radius / originalRadius</c>, <c>stationtypeigc.cpp:92</c>), so
+/// (<c>scale = radius / originalRadius</c>, <c>stationtypeigc.cpp:46</c>), so
 /// two types sharing a model but differing in radius must not share a cached
 /// reconstruction. The reconstructed geometry therefore caches per
-/// <c>StationTypeId</c> (the model parse caches per <c>ModelName</c>).
+/// type id, model and radius (the model parse caches per <c>ModelName</c>).
 /// <b>Absent-model contract.</b> When the corpus provides no <c>.cvh</c> for
-/// the model or it has no <c>capgarageN…</c> frames, the bay is <c>null</c> —
+/// the model or it has no <c>capgarageN…</c> or <c>garageN…</c> frames, the bay is <c>null</c> —
 /// the native <c>HitTest::Load</c>-failed / no-land-slots case under which
 /// <c>InGarage</c> is necessarily <c>false</c> (native <c>landSlots-1 &lt; 0</c>,
-/// <c>stationIGC.cpp:388-390</c>), so such a station can never be docked at.
+/// <c>stationIGC.cpp:388-390</c>). The port's caller retains its documented
+/// absent-art proximity fallback.
 /// No lock: the per-tick pass runs on the sim thread only.
 /// </remarks>
 public sealed class StationLandingBayCache
 {
     private readonly Func<string, CvhFile?> _loader;   // modelName -> parsed .cvh (or null when corpus lacks it)
     private readonly Dictionary<string, CvhFile?> _model = new(StringComparer.Ordinal);
-    private readonly Dictionary<short, HullLandingBayGeometry?> _bay = [];
+    private readonly Dictionary<(short Id, string Model, float Radius), HullLandingBayGeometry?> _bay = [];
 
     /// <param name="loader">Resolve a model name to its parsed <c>.cvh</c>
     /// collision model, or <c>null</c> when the corpus has no such file.
@@ -44,12 +45,22 @@ public sealed class StationLandingBayCache
     /// <summary>
     /// The landing-bay geometry for a station type, or <c>null</c> when the
     /// corpus provides no <c>.cvh</c> for its model or that model has no
-    /// <c>capgarageN…</c> frames (under which <see cref="Sim.Station.InGarage"/>
+    /// <c>capgarageN…</c> or <c>garageN…</c> frames (under which <see cref="Sim.Station.InGarage"/>
     /// is necessarily <c>false</c> — the native no-land-slots case).
     /// </summary>
     public HullLandingBayGeometry? Bay(DataStationTypeIGC type)
     {
-        if (_bay.TryGetValue(type.StationTypeId, out var cached)) return cached;
+        var geometry = LaunchGeometry(type);
+        return geometry?.LandSlots.Count > 0 ? geometry : null;
+    }
+
+    /// <summary>Station launch frames, including models with no landing bay (P694).
+    /// Runtime type overrides (and synthetic stations) can retain an id while
+    /// replacing the model or scale, so the cache keys the actual geometry inputs (P699).</summary>
+    public HullLandingBayGeometry? LaunchGeometry(DataStationTypeIGC type)
+    {
+        var key = (type.StationTypeId, type.ModelName, type.Radius);
+        if (_bay.TryGetValue(key, out var cached)) return cached;
 
         HullLandingBayGeometry? g = null;
         if (!_model.TryGetValue(type.ModelName, out var model))
@@ -60,9 +71,9 @@ public sealed class StationLandingBayCache
         if (model is not null)
         {
             var reconstructed = HullLandingBay.ReconstructStation(model, type.Radius);
-            g = reconstructed.LandSlots.Count == 0 ? null : reconstructed;
+            g = reconstructed;
         }
-        _bay[type.StationTypeId] = g;
+        _bay[key] = g;
         return g;
     }
 }

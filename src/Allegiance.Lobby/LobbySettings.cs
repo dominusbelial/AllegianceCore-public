@@ -9,6 +9,9 @@ public sealed class LobbySettings
 {
     /// <summary>Hard cap on distinct listings ("a few hundred"). Heartbeats to existing ids are never evicted by it.</summary>
     public int MaxEntries { get; set; } = 384;
+    public int MaxEntriesPerAddress { get; set; } = 4;
+    /// <summary>Only these immediate proxy IPs may supply X-Forwarded-For.</summary>
+    public List<string> KnownProxies { get; set; } = [];
 
     /// <summary>How often the background sweep prunes stale listings.</summary>
     public double SweepIntervalSeconds { get; set; } = 30;

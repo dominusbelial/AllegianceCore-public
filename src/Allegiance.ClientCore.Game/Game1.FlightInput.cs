@@ -165,17 +165,7 @@ public sealed partial class Game1
     /// the next in-view candidate, nearest-to-crosshair first (ships except
     /// self/dead take priority; stations/asteroids only when no ship is in view).
     /// </summary>
-    private void HandleTargetCycleKey()
-    {
-        if (TryOwnPose(out var oPos, out var oOrient, out _))
-        {
-            var picked = CycleTarget(oPos, oOrient);
-            _autoTarget = picked;
-            Console.WriteLine(picked is { } pt
-                ? $"[monogame] target: {pt.Name} ({pt.Kind}#{pt.Id})"
-                : "[monogame] no target in view");
-        }
-    }
+    private void HandleTargetCycleKey() => SelectRemainderTarget("Target", StepDirection.Next);
 
     /// <summary>
     /// P501 — the G autopilot toggle action, extracted from the key handler so
@@ -259,6 +249,12 @@ public sealed partial class Game1
 
     protected override void Update(GameTime gameTime)
     {
+        using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
+        _flightGc.SetFlying(_state == ClientState.Flying && !_dockedActive
+            && !_graphicsSettingsVisible && !_keyBindVisible);
+        // Also runs in dock/lobby/disconnect states, so the loop cannot linger.
+        lock (_session.Gate)
+            _sound?.UpdateShipWarnings(_session.World.ShipWarnings.Mask, _session.World.ShipWarnings.TakeRisingEdges());
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
         // P618 — advance the sim-scaled game clock (wall × live server time
         // scale), clamped to [0,∞) so a scale=0 edge (never produced server-side;
@@ -272,11 +268,39 @@ public sealed partial class Game1
         // renders the requested tier consistently end to end.
         if (_autoPlan is null)
             EnsureVolumetricBudget(gameTime.ElapsedGameTime.TotalSeconds);
-        // P508 — keep the own-ship server clock fed and pinging every frame (regardless
-        // of lobby/flying state), so a server-converted SHIP_UPDATE time is ready by
-        // undock. Cheap: only drains received echoes + sends a ~1 Hz ping.
+        // P508 — keep the own-ship server clock fed in every state so a
+        // server-converted SHIP_UPDATE time is ready by undock. Bootstrap once
+        // per connection; subsequent echoes come from the session keep-alive.
         PumpServerClock();
+        var world = _session.World;
+        UpdateMissionCatalog();
+        if (_nextMatchGeneration != world.MissionGeneration)
+        {
+            _nextMatchGeneration = world.MissionGeneration;
+            _briefingDismissed = false;
+            _missionCountdownSound.Reset();
+            _gameOverCuePlayed = false;
+            _ownReady = false;
+        }
+        // P660: the server holds flight through intermission and briefing.
+        // Stay on the scoreboard during intermission, then show ReadyCheck's
+        // normal briefing until the authoritative Started transition releases it.
+        if (_state == ClientState.Flying && world.MissionGeneration > 0
+            && world.Mission?.Stage is (int)MissionStage.NotStarted or (int)MissionStage.Starting)
+            _state = ClientState.ReadyCheck;
         var ks = Keyboard.GetState();
+        if (UpdateGraphicsSettings(ks))
+        {
+            // A modal settings panel must release the last movement/fire command.
+            if (_state == ClientState.Flying && !_dockedActive)
+            {
+                var neutral = new ControlData(0f, 0f, 0f, -1f);
+                if (IsTurretGunner()) UpdateTurretGunner(neutral, 0, (float)gameTime.ElapsedGameTime.TotalSeconds);
+                else _session.CommandControls(neutral);
+            }
+            base.Update(gameTime);
+            return;
+        }
 
         // P320 — session-loss detection (see ConnectionSession.SessionLost). The
         // transport reports the established connection to the server dropped
@@ -310,10 +334,11 @@ public sealed partial class Game1
         // it leaves the mission (LOG OFF → server browser); otherwise it clears
         // the panel and enters the team lobby (ready-check for a rotated next
         // game, side-select for an eliminated side).
+        _menuConsumedFrame = _mainMenuVisible;
         bool back = ActionDown(ks, "GameOverBack");
         bool goBackEdge = back && !_gameOverBackWasDown;
         if (goBackEdge
-            && _state == ClientState.Flying
+            && _state is ClientState.Flying or ClientState.ReadyCheck
             && _session.World.GameOverResult is { }
             && !_chatActive && !_qcMenuOpen)
         {
@@ -328,28 +353,27 @@ public sealed partial class Game1
         // Alt+F4 combo below, matching the standard OS convention, so a
         // single stray Escape can no longer end the session. Edge-detected
         // so a single held Escape can never re-trigger across frames.
-        bool esc = ActionDown(ks, "CancelChat");
+        bool esc = ActionDown(ks, "CancelChat") || ActionDown(ks, "MainMenu");
         bool backBtn = GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed;
         if ((esc && !_escWasDown) || backBtn)
         {
-            if (IsBriefingVisible(out _))
+            var cancel = MainMenuRules.Escape(IsBriefingVisible(out _), _chatActive, _qcMenuOpen,
+                _keyBindVisible, _helpVisible, _creditsVisible, ActionDown(ks, "MainMenu") || backBtn,
+                _cameraMode == CameraMode.ExternalOverride || _state == ClientState.Connecting || _session.World.GameOverResult is not null);
+            if (cancel == EscapeUiAction.None && _state == ClientState.Lobby && _filterActive) ClearFilter();
+            switch (cancel)
             {
-                DismissBriefing();   // P271 — Esc closes the briefing popup, not the game
+                case EscapeUiAction.Briefing: DismissBriefing(); break;
+                case EscapeUiAction.Chat: _chatActive = false; _chatBuffer.Clear(); break;
+                case EscapeUiAction.QuickChat: BackQuickChat(); break;
+                case EscapeUiAction.Controls: _keyBindVisible = false; break;
+                case EscapeUiAction.Help: _helpVisible = false; break;
+                case EscapeUiAction.Credits: _creditsVisible = false; break;
+                case EscapeUiAction.ToggleMainMenu:
+                    if (_state == ClientState.Lobby && _filterActive) { ClearFilter(); break; }
+                    ToggleMainMenu();
+                    break;
             }
-            else if (_chatActive)
-            {
-                _chatActive = false;
-                _chatBuffer.Clear();
-            }
-            else if (_qcMenuOpen)
-            {
-                BackQuickChat();   // back one level, or close if at the top
-            }
-            else if (_state == ClientState.Lobby && _filterActive)
-            {
-                ClearFilter();     // P274 — Esc clears the filter, never quits while filtering
-            }
-            // else: bare Escape with nothing to cancel now does nothing.
         }
         _escWasDown = esc;
 
@@ -404,12 +428,19 @@ public sealed partial class Game1
         // OpenKeyBindings, resolved from the live map so a rebind of it works).
         // It is independent of the help overlay and gated behind composition so
         // typing can't flip it.
-        bool openKeys = KeyOf("OpenKeyBindings").Matches(ks);
+        bool openKeys = ActionDown(ks, "OpenKeyBindings");
         if (openKeys && !_keyBindOpenKeyWasDown && !_chatActive && !_qcMenuOpen)
             ToggleKeyBindings();
         _keyBindOpenKeyWasDown = openKeys;
         if (_keyBindVisible)
             UpdateKeyBindingPopup(ks);
+
+        UpdateMainMenu(ks);
+        HandleConsoleKeys(ks, _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible,
+            (float)gameTime.ElapsedGameTime.TotalSeconds);
+
+        HandleCommandKeys(ks, _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible,
+            (float)gameTime.ElapsedGameTime.TotalSeconds);
 
         // P265 — B scoreboard toggle (mnemonic: BoaRd / scoreBoaRd). B is an
         // unclaimed single letter (grep-verified, P257 KeyBindingTable: the only
@@ -440,21 +471,12 @@ public sealed partial class Game1
         }
         _pilotInfoKeyWasDown = pilotKey;
 
-        // P639 — Ctrl+T Team Pane toggle (rebindable via F6; native TK_ConModeTeam
-        // default F6 conflicts with the P625 Controls screen). Edge-triggered and
-        // composing-gated like the B/P toggles, independent of them.
-        bool teamKey = ActionDown(ks, "TeamPane");
-        if (teamKey && !_teamPaneKeyWasDown && !_chatActive && !_qcMenuOpen)
-        {
-            _teamPaneVisible = !_teamPaneVisible;
-            Console.WriteLine($"[monogame] teampane {( _teamPaneVisible ? "ON" : "OFF" )}");
-        }
-        _teamPaneKeyWasDown = teamKey;
-
         // P572 — live-proof automation: feed world observations + drain the
         // machine's due actions into the pending slots the handlers below
         // consume, BEFORE any state logic runs this frame.
         FeedAutoProofObservations();
+
+        UpdateMissionCountdownSound(world);
 
         // Top-level state dispatch: the server browser (default entry) and the
         // transient connecting state don't run any flight logic; only Flying does.
@@ -531,6 +553,7 @@ public sealed partial class Game1
     /// </summary>
     private void PrimeInFlightKeyLatches(KeyboardState ks)
     {
+        PrimeFlightParts(ks);
         (_enterWasDown, _qcRWasDown) = ComputeSharedEdgePrimes(ks);
         // The chat-delete Backspace is TEXT ENTRY (allow-listed raw key);
         // every other latch below tracks the ACTION (resolved binding).
@@ -547,6 +570,9 @@ public sealed partial class Game1
         _selPrevKeyWasDown             = ActionDown(ks, "SelectSectorPrev");
         _selNextKeyWasDown             = ActionDown(ks, "SelectSectorNext");
         _vKeyWasDown                   = ActionDown(ks, "CycleView");
+        _viewMissileWasDown = ActionDown(ks, "ViewMissile");
+        _viewChaseWasDown = ActionDown(ks, "ViewChase");
+        _viewTurretWasDown = ActionDown(ks, "ViewTurret");
         _kKeyWasDown                = ActionDown(ks, "Suicide");
         _cKeyWasDown                = ActionDown(ks, "DropChaff");
         _fCloakWasDown              = ActionDown(ks, "ToggleCloak");
@@ -559,10 +585,9 @@ public sealed partial class Game1
         _thDownWasDown              = ActionDown(ks, "ThrottleDown");
         _thZeroWasDown              = ActionDown(ks, "ThrottleZero");
         _thFullWasDown              = ThrottleFullDown(ks);
-        _tKeyWasDown                = ActionDown(ks, "Target");
-        _gKeyWasDown                = ActionDown(ks, "ToggleAutopilot");
-        _uTargetKeyWasDown          = ActionDown(ks, "TargetEnemyNearest");
-        _zTargetKeyWasDown          = ActionDown(ks, "TargetEnemyBaseNearest");
+        _targetPressEdges.Prime(InputActionCatalog.Definitions
+            .Where(a => a.Name.StartsWith("Target", StringComparison.Ordinal) || a.Name == "OccupyNextTurret")
+            .Select(a => (a.Name, ActionDown(ks, a.Name))));
         _semicolonNothingKeyWasDown = ActionDown(ks, "TargetNothing");
         _apostropheCenterKeyWasDown = ActionDown(ks, "TargetCenter");
         _shotKeyWasDown             = ActionDown(ks, "ScreenShot");
@@ -573,9 +598,7 @@ public sealed partial class Game1
         _p3TurretKeyWasDown         = ActionDown(ks, "PromoteTurret3");
         _p4TurretKeyWasDown         = ActionDown(ks, "PromoteTurret4");
         _xKeyWasDown                = ActionDown(ks, "LeaderCommand");
-        _acceptKeyWasDown           = ActionDown(ks, "AcceptCommand");
-        _rejectKeyWasDown           = ActionDown(ks, "RejectCommand");
-        _clearKeyWasDown            = ActionDown(ks, "ClearCommand");
+        _commandActionInput.Prime(ks, KeyBindingStore.Instance.Map);
         // P624 — prime the new flight-pack edge latches (vector lock, radar cycle)
         // so a key held across the pre-flight→flight transition can't fire once.
         _lockVectorKeyWasDown       = ActionDown(ks, "LockVector");
@@ -722,7 +745,7 @@ public sealed partial class Game1
         // itself arrives through Window.TextInput (OnTextInput). Enter is
         // ignored while the quick-chat menu is open (its keys are navigation).
         bool enter = ActionDown(ks, "StartChat");
-        if (!_qcMenuOpen && enter && !_enterWasDown)
+        if (!_mainMenuVisible && !_menuConsumedFrame && !_keyBindVisible && !_qcMenuOpen && enter && !_enterWasDown)
         {
             if (IsBriefingVisible(out _))
                 DismissBriefing();   // P271 — Enter closes the briefing popup, doesn't open chat
@@ -797,7 +820,16 @@ public sealed partial class Game1
         // A modal UI consumes the keyboard: chat composition OR the quick-chat
         // menu both neutralise flight input / toggles / autopilot-steering, so
         // navigating or typing never also thrusts/turns the ship.
-        bool composing = _chatActive || _qcMenuOpen;
+        bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame;
+        HandleRemainderTargetKeys(ks, composing);
+        HandleCommandActionKeys(ks, composing);
+        HandleP623TargetingKeys(ks, composing);
+        // Native SetViewToCombatMode also works while docked: close the panes
+        // and return to the hangar (WinTrek.cpp:9357-9385).
+        ToggleCameraKey(ks, composing, "ViewMissile", CameraMode.ExternalMissile, ref _viewMissileWasDown);
+        ToggleCameraKey(ks, composing, "ViewChase", CameraMode.Chase, ref _viewChaseWasDown);
+        ToggleCameraKey(ks, composing || !IsTurretGunner(), "ViewTurret", CameraMode.ExternalTurret, ref _viewTurretWasDown);
+
 
         // P626 — vote YES/NO (TK_VoteYes/TK_VoteNo, native WinTrek.cpp:10377-10387
         // trekClient.Vote(bAgree)). Edge-triggered + composing-gated like every
@@ -824,10 +856,10 @@ public sealed partial class Game1
         if (!composing && nc && !_nextCargoWasDown) CycleSelectedCargo(next: true);
         _nextCargoWasDown = nc;
         bool np = ActionDown(ks, "NextPart");
-        if (!composing && np && !_nextPartWasDown) CycleSelectedCargo(next: true);
+        if (!composing && np && !_nextPartWasDown) CycleInventory(next: true);
         _nextPartWasDown = np;
         bool pp = ActionDown(ks, "PrevPart");
-        if (!composing && pp && !_prevPartWasDown) CycleSelectedCargo(next: false);
+        if (!composing && pp && !_prevPartWasDown) CycleInventory(next: false);
         _prevPartWasDown = pp;
         bool dc = ActionDown(ks, "DropCargo");
         if (!composing && dc && !_dropCargoWasDown) TryDropCargo();
@@ -854,7 +886,7 @@ public sealed partial class Game1
         if (!composing && mMouse && !_mKeyWasDown)
         {
             _mouseFlightEnabled = !_mouseFlightEnabled;
-            IsMouseVisible = !_mouseFlightEnabled;
+            IsMouseVisible = CommandCameraActive || _minimapExpanded || !_mouseFlightEnabled;
             if (_mouseFlightEnabled)
                 _mouseFlight.Enable();      // arm the just-enabled skip
             else
@@ -984,11 +1016,11 @@ public sealed partial class Game1
         // SetViewToCombatMode((GetCameraMode()!=X)?X:Cockpit)
         // (WinTrek.cpp:9802-9812, 9816-9820, 9827-9835, 9867-9868). Choosing a
         // manual camera also cancels the director.
-        ToggleCameraKey(ks, composing, KeyOf("ViewExternalOrbit"), CameraMode.ExternalOrbit, ref _f4KeyWasDown);
-        ToggleCameraKey(ks, composing, KeyOf("ViewFlyby"), CameraMode.ExternalFlyBy, ref _f5KeyWasDown);
-        ToggleCameraKey(ks, composing, KeyOf("ViewTarget"), CameraMode.ExternalTarget, ref _f7KeyWasDown);
-        ToggleCameraKey(ks, composing, KeyOf("ViewBase"), CameraMode.ExternalBase, ref _f10KeyWasDown);
-        ToggleCameraKey(ks, composing, KeyOf("ViewExternalStation"), CameraMode.ExternalStation, ref _f11KeyWasDown);
+        ToggleCameraKey(ks, composing, "ViewExternalOrbit", CameraMode.ExternalOrbit, ref _f4KeyWasDown);
+        ToggleCameraKey(ks, composing, "ViewFlyby", CameraMode.ExternalFlyBy, ref _f5KeyWasDown);
+        ToggleCameraKey(ks, composing, "ViewTarget", CameraMode.ExternalTarget, ref _f7KeyWasDown);
+        ToggleCameraKey(ks, composing, "ViewBase", CameraMode.ExternalBase, ref _f10KeyWasDown);
+        ToggleCameraKey(ks, composing, "ViewExternalStation", CameraMode.ExternalStation, ref _f11KeyWasDown);
 
         // P580 — the director (F2) and spectator-follow (F3) toggles, plus the
         // rule that ANY flight input cancels the director immediately.
@@ -1000,6 +1032,9 @@ public sealed partial class Game1
         // (neutral controls, see the control-send block below) and no stray
         // flight input leaks through.
         HandleSpectatorKeys(ks, composing, gameTime.ElapsedGameTime.TotalSeconds);
+
+        if (_cameraMode == CameraMode.Command && !composing)
+            HandleFlightMouseButtons(Mouse.GetState());
 
         // P222 — suicide (TK_Suicide): edge-triggered like the M/V toggles above
         // (press once per key-down, never per-frame while held). Gated behind the
@@ -1122,7 +1157,7 @@ public sealed partial class Game1
         // cross the 16-bit wire stateM (igc.h:829,2457-2465), so the wire request is
         // the player-launch path and the server fires authoritatively against its own
         // CommandTarget lock. A ~250 ms throttle bounds chatter while held; the
-        // server's lock-rebuild is the real fire-rate limiter. Bound to Left Ctrl —
+        // magazine's load deadline is the fire-rate limiter. Bound to Left Ctrl —
         // unclaimed by every other binding (W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/
         // Enter/Back/Escape/Space/K/C/N/OemTilde/[ /] all taken) and the common
         // flight-sim missile-fire convention (the brief's own suggestion).
@@ -1130,7 +1165,7 @@ public sealed partial class Game1
         if (!composing && missileCtrl)
         {
             long nowMs = Environment.TickCount64;
-            if (nowMs - _lastMissileSendMs >= 250)
+            if (nowMs - _lastMissileSendMs >= 250 && _session.World.MissileLock.IsReady)
             {
                 _lastMissileSendMs = nowMs;
                 _session.SendFireMissile();
@@ -1161,6 +1196,7 @@ public sealed partial class Game1
         //     for "cycle the selection". The selection is advanced even while
         //     group-fire is ON so it is already in place the moment group-fire
         //     is toggled off (it simply has no effect until then).
+        UpdateFlightParts(ks, composing);
         bool gFire = ActionDown(ks, "ToggleGroupFire");
         if (!composing && gFire && !_gfireKeyWasDown)
         {
@@ -1268,7 +1304,12 @@ public sealed partial class Game1
         }
         _lastWheelValue = wheelValue;
 
-        if (!composing)
+        if (_cameraMode == CameraMode.Command)
+        {
+            if (!composing && !_ptrLeftDown && !ActionDown(ks, "ZoomIn") && !ActionDown(ks, "ZoomOut") && _wheelQueue != 0) _commandCamera.ZoomWheel((float)_wheelQueue / FlightInput.WheelNotch);
+            _wheelQueue = 0;
+        }
+        else if (!composing)
         {
             long nowMs = Environment.TickCount64;
             while (_wheelQueue >= FlightInput.WheelNotch && nowMs - _lastWheelStepMs >= WheelStepIntervalMs)
@@ -1361,18 +1402,18 @@ public sealed partial class Game1
             // that drives strafe-up through the real send path without a physical key.
             StrafeUp:        _fkExerciseStrafe || ActionDown(ks, "ThrustUp"),
             StrafeDown:      ActionDown(ks, "ThrustDown"),
-            PitchUp:         ActionDown(ks, "PitchUp"),
-            PitchDown:       ActionDown(ks, "PitchDown"),
-            YawLeft:         ActionDown(ks, "YawLeft"),
-            YawRight:        ActionDown(ks, "YawRight"),
-            RollLeft:        ActionDown(ks, "RollLeft"),
-            RollRight:       ActionDown(ks, "RollRight"),
+            PitchUp:         _cameraMode != CameraMode.External && ActionDown(ks, "PitchUp"),
+            PitchDown:       _cameraMode != CameraMode.External && ActionDown(ks, "PitchDown"),
+            YawLeft:         _cameraMode != CameraMode.External && ActionDown(ks, "YawLeft"),
+            YawRight:        _cameraMode != CameraMode.External && ActionDown(ks, "YawRight"),
+            RollLeft:        _cameraMode != CameraMode.External && ActionDown(ks, "RollLeft"),
+            RollRight:       _cameraMode != CameraMode.External && ActionDown(ks, "RollRight"),
             // P220 — afterburner (TK_FireBooster): held, continuous (not
             // edge-triggered), reading either Shift key. Mirrors native's
             // IsTrekKeyDown(TK_FireBooster) sense (WinTrek.cpp:8270-8271);
             // Shift is the recollection default since the native binding
             // table isn't in this checkout (see KEYBINDING_AUDIT_P220.md).
-            Afterburner:     ActionDown(ks, "FireBooster"),
+            Afterburner:     ActionDown(ks, "FireBooster") || _boosterToggled,
             // P221 — fire (TK_FireWeapon): held, continuous (not edge-triggered)
             // like afterburner, so a held Space keeps firing (native
             // IsTrekKeyDown sense). Bound to Space — unclaimed by every other
@@ -1413,7 +1454,7 @@ public sealed partial class Game1
         // for hit-testing, so a left-click can pick a sector. The collapsed mini-map
         // keeps mouse-flight steering (the default M-off free cursor also lets the
         // mini-map be clicked when the steering axis is not enabled).
-        if (_mouseFlightEnabled && !composing && !_minimapExpanded && !SpectatorCameraActive)
+        if (_mouseFlightEnabled && !composing && !_minimapExpanded && !SpectatorCameraActive && !CommandCameraActive)
         {
             var ms = Mouse.GetState();
             int centerX = GraphicsDevice.Viewport.Width / 2;
@@ -1509,7 +1550,7 @@ public sealed partial class Game1
         // commandee, right = command targets incl. stations → target+autopilot).
         // The returned fire bits OR into the command exactly like the joystick
         // buttons above. Disabled while composing so typing never trips a click.
-        if (!composing && !SpectatorCameraActive)
+        if (!composing && !SpectatorCameraActive && !CommandCameraActive)
         {
             int mouseFire = HandleFlightMouseButtons(Mouse.GetState());
             if (mouseFire != 0)
@@ -1528,11 +1569,6 @@ public sealed partial class Game1
         //   G  → toggle autopilot on/off toward the selected target.
         if (!composing)
         {
-            bool tPress = ActionDown(ks, "Target");
-            if (tPress && !_tKeyWasDown)
-                HandleTargetCycleKey();
-            _tKeyWasDown = tPress;
-
             bool gPress = ActionDown(ks, "ToggleAutopilot");
             if (gPress && !_gKeyWasDown)
             {
@@ -1552,52 +1588,12 @@ public sealed partial class Game1
             }
             _gKeyWasDown = gPress;
 
-            // P415 — friend/foe filtered nearest targeting (the port of native's
-            // Targeting family — TK_TargetEnemy/Friendly[Nearest/Prev],
-            // trekinput.cpp:1531-1600 → FindTarget common.cpp:470). The pair
-            // collapses to ONE cycling key each (first press = nearest, repeats
-            // step through MATCHING candidates and wrap), gated behind the same
-            // composing check as T. Plain key = ENEMY family, Shift+key =
-            // FRIENDLY family (the brief's suggested layering).
-            //   U        → nearest enemy ship (repeat = next enemy)
-            //   Shift+U  → nearest friendly ship (repeat = next friendly)
-            //   Z        → nearest enemy base (station) (repeat = next enemy base)
-            //   Shift+Z  → nearest friendly / allied base (repeat = next)
-            // Friend/foe are SEPARATE actions (TargetEnemyNearest vs
-            // TargetFriendlyNearest, etc.); the friend action wins when its
-            // Shift chord is held (the plain action tolerates extra modifiers,
-            // so both match on Shift+key). Reading both actions (never a raw
-            // Shift literal) means rebinding either key just works.
-            bool uFriend = ActionDown(ks, "TargetFriendlyNearest");
-            bool uTarget = ActionDown(ks, "TargetEnemyNearest");
-            if ((uFriend || uTarget) && !_uTargetKeyWasDown)
-            {
-                SelectFilteredTargetForKey(
-                    uFriend ? new TargetFilterSpec(TargetRelation.Friendly)
-                            : new TargetFilterSpec(TargetRelation.Enemy),
-                    uFriend ? "friendly ship" : "enemy ship");
-            }
-            _uTargetKeyWasDown = uFriend || uTarget;
-
-            bool zFriend = ActionDown(ks, "TargetFriendlyBaseNearest");
-            bool zTarget = ActionDown(ks, "TargetEnemyBaseNearest");
-            if ((zFriend || zTarget) && !_zTargetKeyWasDown)
-            {
-                // P587 — base targeting is now ANY-sector (native c_ttAnyCluster)
-                // with the local hull's dockability filter; the friendly base
-                // action adds the lifepod rescue-probe search. No "in sector"
-                // limitation.
-                if (zFriend) SelectFriendlyBaseForKey();
-                else SelectEnemyBaseForKey();
-            }
-            _zTargetKeyWasDown = zFriend || zTarget;
-
             // P623 — class-filtered targeting family (TK_Target{Enemy|Friendly}
             // {Bomber|Fighter|Miner|Constructor|Lifepod|MajorBase}[Nearest|Prev]
             // + TK_TargetHostile). Native defaults: O/I/K/H/J × plain/Shift/Ctrl =
             // next/nearest/prev (defaultinputmap.mdl); unbound commands are wired
             // here too so a F6 rebind works. See HandleP623TargetingKeys.
-            HandleP623TargetingKeys(ks);
+            // Dispatched above even while composing, to consume held press edges.
 
             // P417 — Target Nothing / Center, the small leftover targeting keys
             // (native TK_TargetNothing/Center). Edge-triggered and composing-
@@ -1755,79 +1751,6 @@ public sealed partial class Game1
             _xKeyWasDown = xPress;
 
             // P424 — accept / reject / clear a received queued order (native
-            // TK_AcceptCommand / TK_RejectCommand / TK_ClearCommand,
-            // WinTrek.cpp:10389-10406). The local player's OWN pending queued
-            // order arrives via the owner-only QUEUED_COMMAND_UPDATE(215) message
-            // (world.MyQueuedCommand); this client has no sim to derive it from,
-            // so the server streams it. All three edge-triggered + composing-gated
-            // like every key above.
-            //   Home    → ACCEPT: promote the pending queued order to the
-            //             accepted slot (echoes the pending command id; the
-            //             server promotes authoritatively, native
-            //             AcceptQueuedCommand, WinTrek.cpp:10626-10712).
-            //   End     → REJECT: clear the pending queued order (decline it,
-            //             native RejectQueuedCommand, WinTrek.cpp:10583-10623).
-            //   Delete  → CLEAR: cancel whatever is already ACCEPTED — distinct
-            //             from rejecting a still-queued order (native
-            //             TK_ClearCommand → SetAccepted(NULL, c_cidNone)).
-            // Keys: Home/End/Delete are unclaimed (grep-verified — no other
-            // binding uses any of them), chosen over ,/./ which the starmap nav
-            // already claims.
-            if (world.MyShipId is { } me)
-            {
-                bool acc = ActionDown(ks, "AcceptCommand");
-                if (acc && !_acceptKeyWasDown)
-                {
-                    var pend = world.MyQueuedCommand;
-                    if (pend is { } p && p.CommandId != Allegiance.Core.Wire.OrderChange.CidNone)
-                    {
-                        _session.SendOrderChange(me, p.CommandId, Allegiance.Core.Wire.OrderChange.CmdQueued, (IgcObjectType)(-1), -1);
-                        Console.WriteLine($"[monogame] ACCEPT queued order commandID={p.CommandId} (ORDER_CHANGE c_cmdQueued promote)");
-
-                        // P594 — accepting a POD-PICKUP offer (CidPickup → a Ship
-                        // target = the pod) engages the autopilot to go get them.
-                        // Native's TK_ExecuteCommand / AcceptQueuedCommand bExecute
-                        // branch (WinTrek.cpp:10626-10712) promotes the order AND
-                        // sets the autopilot toward the target; that is exactly the
-                        // rescue the player wants from "prepare for recovery" — and
-                        // the P594 intercept autopilot now flies the player INTO the
-                        // pod at full speed. Home therefore selects the pod and
-                        // engages, so the offer and the rescue are one keypress.
-                        if (PickupPodIdForQueued(pend) is { } podId)
-                        {
-                            string podName = "pod";
-                            lock (_session.Gate)
-                                if (world.Ships.TryGetValue(podId, out var pe)
-                                    && !string.IsNullOrEmpty(pe.CharacterName))
-                                    podName = pe.CharacterName;
-                            EngageAutopilotToward(
-                                new AutopilotTarget(TargetKind.Ship, podId, $"{podName} #{podId}"),
-                                "pickup accept:");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("[monogame] ACCEPT with no pending queued order — nothing sent");
-                    }
-                }
-                _acceptKeyWasDown = acc;
-
-                bool rej = ActionDown(ks, "RejectCommand");
-                if (rej && !_rejectKeyWasDown)
-                {
-                    _session.SendOrderChange(me, Allegiance.Core.Wire.OrderChange.CidNone, Allegiance.Core.Wire.OrderChange.CmdQueued, (IgcObjectType)(-1), -1);
-                    Console.WriteLine("[monogame] REJECT queued order (ORDER_CHANGE c_cmdQueued clear)");
-                }
-                _rejectKeyWasDown = rej;
-
-                bool cls = ActionDown(ks, "ClearCommand");
-                if (cls && !_clearKeyWasDown)
-                {
-                    _session.SendOrderChange(me, Allegiance.Core.Wire.OrderChange.CidNone, Allegiance.Core.Wire.OrderChange.CmdAccepted, (IgcObjectType)(-1), -1);
-                    Console.WriteLine("[monogame] CLEAR accepted order (ORDER_CHANGE c_cmdAccepted clear)");
-                }
-                _clearKeyWasDown = cls;
-            }
         }
 
         // Native behaviour (WinTrek.cpp's SenseJoystick): a real manual
@@ -1843,7 +1766,7 @@ public sealed partial class Game1
         bool mouseManualInput = _mouseFlightEnabled
             && _mouseFlight.DeflectionMovedPast(_autoPilotMouseBaseline, MouseFlightController.AutopilotDisengageThreshold);
         bool manualFlightInput =
-            !composing && !SpectatorCameraActive && (
+            !composing && !SpectatorCameraActive && !CommandCameraActive && (
             input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight ||
             input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight ||
             input.RollLeft || input.RollRight ||
@@ -1853,10 +1776,9 @@ public sealed partial class Game1
             DisengageAutopilot("manual input");
 
         // Send controls: while autopilot drives, its steering REPLACES the
-        // manual command and the movement buttons stay neutral (stateM=0) — it
-        // only uses the analog throttle axis (AutopilotSteering.Throttle), so
-        // it does NOT go through FlightInput's keyboard idle-throttle (-1)
-        // convention. If the target can no longer be resolved (died/vanished)
+        // manual command; station docking also supplies native directional
+        // thrusters while turning. These controls bypass FlightInput's
+        // keyboard idle-throttle convention. If the target can no longer be resolved (died/vanished)
         // disengage and fall back to the manual command.
         //
         // P464 — while seated as a turret gunner, NO flight SHIP_UPDATE is
@@ -1874,7 +1796,7 @@ public sealed partial class Game1
         bool turretGunner = IsTurretGunner();
         if (turretGunner)
         {
-            sentFireM = UpdateTurretGunner(cmd.Controls, cmd.StateM, (float)gameTime.ElapsedGameTime.TotalSeconds);
+            sentFireM = UpdateTurretGunner(CommandCameraActive ? new ControlData(0, 0, 0, -1) : cmd.Controls, CommandCameraActive ? 0 : cmd.StateM, (float)gameTime.ElapsedGameTime.TotalSeconds);
             sentControls = cmd.Controls;
             sentStateM = cmd.StateM;
         }
@@ -1884,10 +1806,11 @@ public sealed partial class Game1
             // re-seed the aim orientation and re-arm the turret send cadence.
             _turretSeeded = false;
             _turretCadence.Reset();
+            _autopilotDeltaSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
             {
                 sentControls = apControls;
-                sentStateM = 0;
+                sentStateM = _autopilotMovementButtons;
                 sentFireM = 0;   // autopilot drives with neutral fire
             }
             else
@@ -1905,7 +1828,7 @@ public sealed partial class Game1
         // inputs"). The local sim steps with these same neutral controls, so
         // the ship coasts to a stop / stays where it is, exactly native's
         // released-stick behaviour.
-        if (SpectatorCameraActive)
+        if (SpectatorCameraActive || (CommandCameraActive && !_autoPilotEngaged))
         {
             sentControls = new ControlData(0f, 0f, 0f, -1f);
             sentStateM = 0;
@@ -1921,7 +1844,7 @@ public sealed partial class Game1
         bool sendArm = !turretGunner;
         _ownShipSendArmed = sendArm;
         if (sendArm)
-            _ownSim.Step((float)gameTime.ElapsedGameTime.TotalSeconds, sentControls, sentStateM);
+            StepOwnShipSimulation(gameTime.ElapsedGameTime.TotalSeconds, sentControls, sentStateM);
 
         // Recompute every ship's render pose from its raw last-known
         // ServerShipUpdate — no smoothing/prediction (see PredictedPose's
@@ -1931,6 +1854,11 @@ public sealed partial class Game1
         _damageEmitters.Clear();
         _engineTrailEmitters.Clear();
         _nozzleGlowEmitters.Clear();
+        // Nav strobes are re-gathered per visible ship below like every other
+        // hull effect. Without this clear, a ship that died, docked, warped out or
+        // left view kept its last strobes forever — frozen lights piling up at
+        // battle spots and alephs (2026-10-15, Domingo in clash48/49).
+        _navStrobeEmitters.Clear();
         _cloakedShips.Clear();
         _shipModelById.Clear();
         _shipTextureById.Clear();   // P337 — parallel per-ship texture cache
@@ -1939,6 +1867,18 @@ public sealed partial class Game1
         float updateDt = (float)gameTime.ElapsedGameTime.TotalSeconds;   // P358 — powers the afterburner ramp
         lock (_session.Gate)
         {
+            short? viewSector = world.MyShipId is { } viewId && world.Ships.TryGetValue(viewId, out var viewShip)
+                ? RenderSector(viewShip.SectorId) : null;
+            if (_flightEffects.BeginView(world.SectorGeneration, viewSector))
+            {
+                _debrisGeo.Clear();
+                _shipThrustPower.Clear();
+                _lastShipSector.Clear();
+                _warpRenderer?.ResetTransits();
+                _pendingTeleportBurst = null;
+                _pendingHullHits.Clear();
+            }
+
             // P373 — drain the one-shot "new contact" (first-sighting) cues
             // into the audio manager. They were recorded on the wire-presence
             // edge under this same gate, so each genuine new contact plays
@@ -2066,7 +2006,8 @@ public sealed partial class Game1
                 // top-level guard also covers the damage-emitter gather,
                 // cloak-visual tracking and model/texture/scale resolution that
                 // share this loop body.
-                if (id == world.MyShipId || ship.IsNotVisible || ship.Latest is not { } up) continue;
+                if (id == world.MyShipId || viewSector is not { } sector
+                    || !ship.CanDrawInSector(sector) || ship.Latest is not { } up) continue;
                 // P448b — resolve this ship's RENDER pose: dead-reckon it to "now"
                 // (P448a ShipDeadReckoner, native CalculateShip replay) unless the
                 // kill switch is off or the reckoner isn't seeded (falls back to the
@@ -2081,6 +2022,14 @@ public sealed partial class Game1
                 // fixed 50-unit stand-in.
                 float tl = HullLength(ship.HullId);
                 float radius = tl > 0f ? 0.5f * tl : 0f;
+                // P628 — capture the per-ship LOD inputs under the Gate so the
+                // Draw loop reads them lock-free: the rendered radius (the
+                // ProjectedPixelRadius metric) and the real side colour (the
+                // far-tier sprite tint; native pside->GetColor(),
+                // radarimage.cpp:682-685).
+                _shipRadiusById[id] = radius;
+                if (world.TryGetSideColor(ship.SideId, out float sr, out float sg, out float sb))
+                    _shipSideRgbById[id] = (sr, sg, sb);
                 // P448b — every effect attached to the hull (damage debris, engine
                 // trail, nozzle glow, nav strobes, motion trail) is fed the SAME
                 // RENDER pose so nothing detaches from the drawn hull. Wire-driven
@@ -2165,6 +2114,12 @@ public sealed partial class Game1
         // live in-sector stations within audible range this frame (see the method).
         UpdateStationSounds();
 
+        // P711 — the ship low-status alarm edge detection (SIM-0361..0366,
+        // trekigc.cpp:1264-1275) and the ripcord-active + mining loop gates
+        // (SIM-0368/0370, :1287/:1293). Records the one-shot events drained
+        // below and replays the two loop gates against the audio manager.
+        UpdateShipStatusAlarms();
+
         // P267 — the station destroyed/captured one-shots and the tech-completion
         // chime, drained from the wire events the world observed this frame.
         UpdateSoundEvents();
@@ -2203,39 +2158,14 @@ public sealed partial class Game1
         // screen (P268) takes over and the player launches via BUY_LOADOUT
         // (fLaunch=true) or the fallback timer.
 
-        // P216 — mission announcer cues, from the same real per-frame mission
-        // read. Countdown: the server's SET_START_TIME(14) broadcast is what
-        // announces the countdown — the client's Mission.Stage is pinned to
-        // StageStarted by the join burst (Server.cs:2138), so it cannot
-        // distinguish the brief STAGE_STARTING window; the real "countdown
-        // began" signal is that SET_START_TIME receipt, anchored on the world as
-        // CountdownStartLocalMs (the same timeStart field native's
-        // CheckCountdownSound anchors on, WinTrek.cpp:11144). Fire the
-        // countdownstart callout once at the opening, then each per-second tick
-        // (countdown10..countdown1) exactly once per distinct seconds-remaining,
-        // mirroring native's m_nLastCountdown change-detection (WinTrek.cpp:11150).
-        if (world.CountdownStartLocalMs is { } cdStart)
-        {
-            if (!_countdownStartCuePlayed)
-            {
-                _sound?.PlayCountdownStart();
-                _countdownStartCuePlayed = true;
-                _countdownLastSecond = 0;
-                Console.WriteLine("[monogame] audio: countdown-start");
-            }
-
-            double elapsed = (Environment.TickCount64 - cdStart) / 1000.0;
-            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
-            if (remaining != _countdownLastSecond)
-            {
-                _countdownLastSecond = remaining;
-                if (Audio.CountdownSound.TickAssetFor(remaining) is { })
-                {
-                    _sound?.PlayCountdownSecond(remaining);
-                    Console.WriteLine($"[monogame] audio: countdown tick {remaining}");
-                }
-            }
-        }
+        // trekigc.cpp:1016-1075: own-ship ripcord voice uses the same
+        // countdown waves, with the native -7 dB gain (sounddef.mdl:353-362).
+        // Mission countdown audio is handled once by UpdateMissionCountdownSound.
+        float ripcordLeft = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
+            world.RipcordActiveSinceLocalMs, Environment.TickCount64,
+            RipcordDurationSeconds(world), world.TimeScale);
+        if (_ripcordCountdownSound.Update(world.RipcordActive, ripcordLeft) is { } ripcordSecond)
+            _sound?.PlayCountdownSecond(ripcordSecond, Audio.RipcordCountdownSound.Gain);
 
         // Game-over: fire once on the real transition of world.Mission.Stage
         // into Over — driven by the server's GAME_OVER(62) broadcast →
@@ -2290,6 +2220,9 @@ public sealed partial class Game1
         return LeaderBotCommandResolver.Resolve(world, selId);
     }
 
+    private int _autopilotMovementButtons;
+    private float _autopilotDeltaSeconds = .033f;
+
     /// <summary>Compute the autopilot's per-frame steering toward the selected
     /// target (re-read every frame, so a moving target is followed), or return
     /// false if there is no resolvable target / own pose. Also disengages once
@@ -2305,6 +2238,7 @@ public sealed partial class Game1
     /// engaged.</summary>
     private bool TryGetAutopilotControls(out ControlData controls)
     {
+        _autopilotMovementButtons = 0;
         controls = ControlData.Neutral;
         if (_autoTarget is not { } tgt) return false;
 
@@ -2476,10 +2410,6 @@ public sealed partial class Game1
     /// <c>StationTypeId</c>; null = no bays.</summary>
     private readonly Dictionary<short, Allegiance.Core.Collision.HullLandingBayGeometry?> _dockBaysByStationType = new();
 
-    /// <summary>P575 — fallback braking deceleration when the own hull's
-    /// Thrust/Mass is unavailable (matches AutopilotBrakeDeceleration).</summary>
-    private const float DockApproachFallbackDecel = 55f;
-
     /// <summary>P575 — cached station landing-bay geometry from the type's real
     /// <c>.cvh</c> under the artwork root via the SHARED reconstructor (the same
     /// source the server's dock gate consumes), keyed by <c>StationTypeId</c>.
@@ -2566,7 +2496,7 @@ public sealed partial class Game1
                 so.Set(Vec(f), Vec(u));
             SimVec center = Vec(station.Position);
 
-            // World-rotated bays from the capgarage plane-0 slots
+            // World-rotated bays from the landing slots (capital prefix, then fighters)
             // (native centers[i] = GetLandPosition(i,0)*itsOrientation).
             var bays = new List<DockApproach.DockBay>(geom.LandSlots.Count);
             foreach (var slot in geom.LandSlots)
@@ -2577,31 +2507,37 @@ public sealed partial class Game1
                     p0.Direction.Normalize() * so));
             }
             int nLand = DockApproach.StationBaysForClass(
-                hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.LandSlots.Count);
+                hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.CapLandSlots);
 
             float speed = vel.Length();
-            float decel = hull.Mass > 0f ? hull.Thrust / hull.Mass : DockApproachFallbackDecel;
-            float distanceRest;
-            SimVec positionRest;
-            if (speed > 0.1f && decel > 0f)
-            {
-                distanceRest = (speed * speed) / (2f * decel);
-                positionRest = pos + vel * (distanceRest / speed);
-            }
-            else { distanceRest = 0f; positionRest = pos; }
+            var attributes = _session.World.GlobalAttributesFor(_session.World.MySideId ?? -1);
+            float distanceRest = DockApproach.StoppingDistance(speed, hull.Thrust * attributes.Get(GlobalAttributeSet.Thrust),
+                hull.Mass, hull.Speed * attributes.Get(GlobalAttributeSet.MaxSpeed), hull.BackMultiplier);
+            SimVec positionRest = speed > .1f ? pos + vel * (distanceRest / speed) : pos;
 
             float shipRadius = 0.5f * hull.Length;
             float totalRadius = shipRadius + stype.Radius + 10f;
 
-            // Client has no per-axis turn-rate telemetry here → pass 0; the
-            // enter gate then reduces to the alignment check (safe: once the nose
-            // lines up with the bay entry it accelerates in), a documented
-            // client-side simplification of native's rate gate (common.cpp:1301).
+            // Native waits for angular motion to settle before entering
+            // (Igc/common.cpp:1301). Prediction supplies the current local rates;
+            // otherwise use the same rates carried by the latest server update.
+            var rates = _ownShipPrediction && _ownSim.HaveHull
+                ? _ownSim.TurnRates : mine.Latest?.TurnRates;
             var step = DockApproach.DockStation(
                 pos, vel, orient, center, bays, nLand, distanceRest, positionRest,
-                totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false);
+                totalRadius, rates?[ControlData.AxisYaw] ?? 0f, rates?[ControlData.AxisPitch] ?? 0f, experimental: false,
+                bayPreference: hull.HasCapability(DataHullTypeIGC.HabmLifepod) ? mine.ShipId : 0);
 
-            controls = DockApproach.Steer(step, pos, orient, vel, distanceRest);
+            // Match StepOwnShipSimulation: native angular control uses sim
+            // seconds, including the server's time-dilation factor.
+            float simDt = (_autopilotDeltaSeconds > 0 ? _autopilotDeltaSeconds : .033f)
+                * (float)_session.World.TimeScale;
+            controls = DockApproach.Steer(step, pos, orient, vel, distanceRest,
+                dt: simDt, turnState: DockApproach.TurnState.FromHull(hull, attributes,
+                    rates?[ControlData.AxisYaw] ?? 0f, rates?[ControlData.AxisPitch] ?? 0f));
+            _autopilotMovementButtons = DockApproach.MovementButtons(step, pos, orient, vel,
+                DockApproach.TurnState.FromHull(hull, attributes,
+                    rates?[ControlData.AxisYaw] ?? 0f, rates?[ControlData.AxisPitch] ?? 0f));
             return true;
         }
     }
@@ -2648,14 +2584,10 @@ public sealed partial class Game1
         };
 
     /// <summary>
-    /// P594 — the pod <b>ship id</b> a pending queued order asks the local
-    /// player to pick up, or null when it is not a lifepod pickup offer. Native
-    /// <c>AcceptQueuedCommand</c>'s <c>bExecute</c> branch (WinTrek.cpp:10626-
-    /// 10712) accepts the queued order AND sets the autopilot toward its target;
-    /// this is the pure decision for that target: only a <c>CidPickup</c> whose
-    /// target is a <c>Ship</c> (the pod) should engage the intercept autopilot.
-    /// Pure + static so the accept→engage wiring is unit-testable without a
-    /// live world.
+    /// P594 — read the ship id of a queued pickup target. This only identifies
+    /// the requested model. P675 validates legality in ClientWorld.Orders and
+    /// handles Accept versus Execute independently in CommandActionInput.
+    /// Native pickup branch: WinTrek.cpp:10666-10679.
     /// </summary>
     internal static short? PickupPodIdForQueued(QueuedCommandState? qc)
     {
@@ -2756,6 +2688,13 @@ public sealed partial class Game1
                         return true;
                     }
                     break;
+                case TargetKind.Treasure:
+                    if (world.Treasures.TryGetValue(tgt.Id, out var treasure))
+                    {
+                        pos = treasure.Position;
+                        return true;
+                    }
+                    break;
                 case TargetKind.Warp:
                     if (world.Warps.TryGetValue(tgt.Id, out var wp))
                     {
@@ -2803,6 +2742,17 @@ public sealed partial class Game1
         if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return false;
         short cur = own.SectorId;
         if (cur == targetCluster) return false;              // arrived
+
+        if (_shopCatalog?.Hulls.FirstOrDefault(h => h.HullId == own.HullId)
+            is { } podHull && podHull.HasCapability(DataHullTypeIGC.HabmLifepod) && own.Latest is { } pose)
+        {
+            SimVec? destination = _autoTarget is { Kind: TargetKind.Station } target
+                && world.Stations.TryGetValue(target.Id, out var station) ? Vec(station.Position) : null;
+            if (PodReturnNavigation.NextWarp(world.Warps, cur, targetCluster, pose.Position, destination) is not { } mouth)
+                return false;
+            pos = Vec(mouth.Position);
+            return true;
+        }
 
         var warps = AllWarps(world);
 
@@ -2884,6 +2834,7 @@ public sealed partial class Game1
                 TargetKind.Warp => world.Warps.TryGetValue(tgt.Id, out var wp) ? wp.ClusterId : null,
                 TargetKind.Probe => world.Probes.TryGetValue(tgt.Id, out var pb) ? pb.ClusterId : null,
                 TargetKind.Cluster => tgt.Id,
+                TargetKind.Treasure => world.Treasures.TryGetValue(tgt.Id, out var treasure) ? treasure.ClusterId : null,
                 _ => null,
             };
         }
@@ -3100,4 +3051,30 @@ public sealed partial class Game1
         if (wasEngaged) _sound?.PlayAutopilotDisengage();
         RefreshWindowTitle();
     }
+
+    // Native CheckCountdownSound (WinTrek.cpp:11137-11159) runs while the
+    // briefing holds the player on the team screen, as well as in flight.
+    private void UpdateMissionCountdownSound(Allegiance.ClientCore.State.ClientWorld world)
+    {
+        Audio.MissionCountdownCue cue;
+        lock (_session.Gate) cue = _missionCountdownSound.Update(world);
+        if (cue.Start)
+        {
+            _sound?.PlayCountdownStart();
+            Console.WriteLine("[monogame] audio: countdown-start");
+        }
+        // P711 — coarse mission-clock milestone VO (SIM-0300..0303, vo_time_*),
+        // announced at 10/5/1 min and 30 s before the per-second tail.
+        if (cue.Milestone is { } milestone)
+        {
+            _sound?.PlayCountdownMilestone(milestone);
+            Console.WriteLine($"[monogame] audio: countdown milestone {milestone}");
+        }
+        if (cue.Second is { } second)
+        {
+            _sound?.PlayCountdownSecond(second);
+            Console.WriteLine($"[monogame] audio: countdown tick {second}");
+        }
+    }
+
 }

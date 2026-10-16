@@ -123,7 +123,8 @@ public sealed partial class Game1 : Game
     // surface) plus the camera-facing billboard renderer. _trailNowSec is the
     // pool's monotonic clock, advanced by real elapsed time each frame in Draw
     // (feeds both the per-missile velocity estimate and particle aging).
-    private readonly MissileTrailParticles _trailParticles = new();
+    private readonly Rendering.FlightEffectPools _flightEffects = new();
+    private MissileTrailParticles _trailParticles => _flightEffects.Missiles;
     private readonly ITrailRandom _trailRandom = new RandomTrailSource();
     private MissileTrailRenderer _trailRenderer = null!;
     private double _trailNowSec;
@@ -131,7 +132,7 @@ public sealed partial class Game1 : Game
     // P296 — warp-transit teleport spark spray (native AddTeleportParticles).
     // The pure particle pool + camera-facing billboard renderer; the burst fires
     // once per transit reusing WarpTransitFlash's one-shot edge (see DrawHud).
-    private readonly Rendering.WarpTransitParticles _warpParticles = new();
+    private Rendering.WarpTransitParticles _warpParticles => _flightEffects.Warp;
     private Rendering.WarpTransitParticleRenderer _warpParticleRenderer = null!;
     // Transit-instant ship state (position/velocity/axes) buffered in DrawHud
     // when WarpTransitFlash.JustTransited arms, consumed on the next frame's 3D
@@ -146,7 +147,7 @@ public sealed partial class Game1 : Game
     // visible ship (driven by each ship's real hull fraction via
     // Flight.DamageDebrisTracker), then ages + draws them. See the emit block
     // in Draw for how the per-ship emission inputs are gathered under the Gate.
-    private readonly Rendering.DamageDebrisParticles _damageDebris = new();
+    private Rendering.DamageDebrisParticles _damageDebris => _flightEffects.Damage;
     private Rendering.DamageDebrisRenderer _damageDebrisRenderer = null!;
     // Per-frame emission inputs for every currently-damaged visible ship,
     // rebuilt under the Gate lock in the same pass that gathers _poses.
@@ -173,7 +174,7 @@ public sealed partial class Game1 : Game
     // 133-146) tracked here from the real StateM.AfterburnerButton bit already
     // on the wire — so the trail appears when a ship boosts and thins/stops as
     // the power decays once it stops (matching native's m_fThrustPower > 0 gate).
-    private readonly Rendering.ShipEngineTrailParticles _engineTrail = new();
+    private Rendering.ShipEngineTrailParticles _engineTrail => _flightEffects.Engines;
     private Rendering.ShipEngineTrailRenderer _engineTrailRenderer = null!;
     // Per-frame emission inputs for every currently-thrusting visible ship +
     // the native-style afterburner power ramp, both rebuilt under the Gate lock
@@ -212,7 +213,7 @@ public sealed partial class Game1 : Game
     // and is tinted by the ship's real side colour at half intensity. Fed
     // every visible ship's anchor/right/colour in the pose-gather (Update)
     // and advanced+drawn additively in Draw.
-    private readonly Rendering.ShipMotionTrailRibbons _motionTrail = new();
+    private Rendering.ShipMotionTrailRibbons _motionTrail => _flightEffects.Motion;
     private Rendering.ShipMotionTrailRenderer _motionTrailRenderer = null!;
 
     // P364 — the projectile-impact spark (native AddHullHit debris bits,
@@ -220,7 +221,7 @@ public sealed partial class Game1 : Game
     // renderer; each frame's 3D pass drains the buffered PROJECTILE_HULL_HIT(213)
     // hits (gathered under the Gate), emits the two bits per own-sector hit at
     // the real impact point/normal, then ages + draws them.
-    private readonly Rendering.HullHitSparkParticles _hullHitParticles = new();
+    private Rendering.HullHitSparkParticles _hullHitParticles => _flightEffects.HullHits;
     private Rendering.HullHitSparkRenderer _hullHitSparkRenderer = null!;
     // Hits drained this frame (world.TakeNewHullHits), filtered to the local
     // ship's own sector, emitted into the pool exactly once.
@@ -236,7 +237,7 @@ public sealed partial class Game1 : Game
     // spark, but only the AbsorbedByShield=true case (a shield-absorbed strike
     // spawns no hull spark — Game1.Rendering.cs); a flare is emitted on the
     // struck ship's shield toward the hit, aged, and drawn additively.
-    private readonly Rendering.ShieldFlareParticles _shieldFlareParticles = new();
+    private Rendering.ShieldFlareParticles _shieldFlareParticles => _flightEffects.Shields;
     private Rendering.ShieldFlareRenderer _shieldFlareRenderer = null!;
     private readonly List<ShieldFlareView> _drawShieldFlares = new();
 
@@ -469,7 +470,7 @@ public sealed partial class Game1 : Game
     // the viewer's sector (ClientWorld's AlephTransitSignals) the affected warp
     // briefly brightens, its glimpse opens wide and a lens-flare bursts. Drives
     // both the warp funnel boost and the glimpse/flare draw; idle = no cost.
-    private readonly Rendering.WarpPulseController _warpPulses = new();
+    private Rendering.WarpPulseController _warpPulses => _flightEffects.WarpPulses;
     // P588 — the black sky tier renderer (point stars + native planet, no
     // dome), the new DEFAULT. Constructed alongside the other tiers; the
     // active tier is dispatched in DrawSkyP576.
@@ -599,10 +600,6 @@ public sealed partial class Game1 : Game
     // bug that hid P518 — is never invisible again.
     private bool _ownShipEligible;
 
-    // P508 — wall-clock seconds of the last FM_CS_PING send (a ~1 Hz keepalive that
-    // feeds the own-ship server clock).
-    private double _lastPingSentAt = double.MinValue;
-
     // P508 — cumulative count of received SHIP_RESETs (live diagnostics + reset count).
     private long _shipResetCount;
 
@@ -675,7 +672,7 @@ public sealed partial class Game1 : Game
     // P462 — the local own-shot echo: emits a visual tracer (and fire one-shot)
     // at the trigger frame and de-dupes the server's PROJECTILE_INSTANCE echo so
     // each shot renders/sounds exactly once. See Flight.OwnShotEcho.
-    private readonly Flight.OwnShotEcho _ownShotEcho = new();
+    private Flight.OwnShotEcho _ownShotEcho => _flightEffects.OwnShots;
     // P465 — own-shot burst-loop lifecycle: which mounts are in sustained fire
     // (a looping burst wave is playing) and which mounts fired last frame (the
     // rising-edge discriminator that keeps a tap a single-shot, not a burst).
@@ -704,6 +701,31 @@ public sealed partial class Game1 : Game
     // 1.0 = no scaling (unknown hull/model); it normalizes each ship's raw model
     // size to the real hull size so ships read at proportional real-world scale.
     private readonly Dictionary<short, float> _shipScaleById = new();
+
+    // P628 — per-ship level-of-detail state. Collected under the Gate with the
+    // other per-ship render tables; the Draw loop reads them lock-free.
+    // _shipRadiusById: the ship's rendered bounding-sphere radius in world units
+    // (0.5 × HullType.Length), the metric input to ProjectedPixelRadius.
+    // _shipSideRgbById: the ship's real side colour (team colour), fetched from
+    // the side roster under the Gate; the far-tier sprite's tint.
+    private readonly Dictionary<short, float> _shipRadiusById = new();
+    private readonly Dictionary<short, (float R, float G, float B)> _shipSideRgbById = new();
+    // Discrete far-tier state with hysteresis (ShipLod.NextFarState); suppresses
+    // engine trails / motion ribbons for far ships and stabilises the toggle.
+    private readonly Dictionary<short, bool> _shipLodFar = new();
+    // Debug overlay counters (per-tier counts) for the LOD hud line.
+    private int _lodFullCount, _lodFarCount;
+    // P628 — ship-pass draw-call counter (full-model draws + far-sprite batches),
+    // reset each frame; reported by the ALLEGIANCE_VOL_PERF frame-stats line so
+    // the before/after draw-call benchmark is measurable on the real client.
+    private int _lodDrawCalls;
+    private readonly List<Rendering.FarSprite> _drawFarSprites = new();
+    private readonly HashSet<string> _lodRegisteredTextures = new(StringComparer.Ordinal);
+
+    // P628 — configurable LOD thresholds (env overridable) and the far-tier
+    // sprite batcher (constructed in LoadContent when a GraphicsDevice exists).
+    private Rendering.ShipLodProfile _shipLodProfile = Rendering.ShipLodProfile.FromEnv();
+    private Rendering.ShipLodSpriteRenderer? _shipLodSpriteRenderer;
 
     // P566 — the native-ship renderer switch (--ships native|meshy; default native).
     private readonly bool _shipsNative;
@@ -851,14 +873,9 @@ public sealed partial class Game1 : Game
     private Rendering.InvestmentPaneModel? _investModel;
     private short? _investAsteroidAabm;
 
-    // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
-    // the single countdown-start callout; _countdownLastSecond mirrors native's
-    // m_nLastCountdown change-detection (WinTrek.cpp:11150) so each second's
-    // per-second tick plays exactly once, not every frame it happens to still be
-    // true; _gameOverCuePlayed fires the game-over callout exactly once on the
-    // real Stage → Over transition.
-    private bool _countdownStartCuePlayed;
-    private int _countdownLastSecond;
+    private long _nextMatchGeneration;
+    private readonly Audio.MissionCountdownSound _missionCountdownSound = new();
+    private readonly Audio.RipcordCountdownSound _ripcordCountdownSound = new();
     private bool _gameOverCuePlayed;
 
     // P271 — mission-briefing popup. _briefingRenderer draws the dismissible
@@ -998,14 +1015,13 @@ public sealed partial class Game1 : Game
     private LeaderBotCommand? _leaderBotCommand;
     private bool _xKeyWasDown; // edge-detect X (leader bot dock/launch) so holding it doesn't re-fire
     // P424 — edge-detect the accept/reject/clear queued-order keys (Home/End/Delete).
-    private bool _acceptKeyWasDown;
-    private bool _rejectKeyWasDown;
-    private bool _clearKeyWasDown;
+    private bool _viewMissileWasDown;
+    private bool _viewChaseWasDown;
+    private bool _viewTurretWasDown;
     // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.
     private LeadIndicatorView? _leadIndicator;
-    private bool _tKeyWasDown; // edge-detect T so holding it doesn't re-fire
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
@@ -1013,8 +1029,6 @@ public sealed partial class Game1 : Game
     private bool _fCloakWasDown; // edge-detect F (cloak toggle) so holding it doesn't re-fire
     private bool _cloakToggled;  // P413 — latched cloak-engagement state folded into outgoing stateM
     private bool _lKeyWasDown;   // P414 — edge-detect L (ripcord) so holding it doesn't re-fire
-    private bool _uTargetKeyWasDown; // P415 — edge-detect U (nearest enemy/friendly ship) so holding it doesn't re-fire
-    private bool _zTargetKeyWasDown; // P415 — edge-detect Z (nearest enemy/friendly base) so holding it doesn't re-fire
     private bool _semicolonNothingKeyWasDown; // P417 — edge-detect ';' (target nothing) so holding it doesn't re-fire
     private bool _apostropheCenterKeyWasDown; // P417 — edge-detect '\'' (target center) so holding it doesn't re-fire
     private bool _shotKeyWasDown;              // P417 — edge-detect screenshot (PrintScreen, action ScreenShot) so holding it doesn't re-fire
@@ -1083,7 +1097,6 @@ public sealed partial class Game1 : Game
     // independent-flag / edge-detect discipline as the scoreboard/pilot toggles.
     private Rendering.TeamPaneRenderer _teamPaneRenderer = null!;
     private bool _teamPaneVisible;
-    private bool _teamPaneKeyWasDown;
     private long _lastMissileSendMs = 0; // P226 throttle: re-arm so the first hold fires immediately.
     // Was long.MinValue, but Environment.TickCount64 - long.MinValue overflows a
     // long (unchecked arithmetic wraps to an unpredictable/negative value), so the
@@ -1186,7 +1199,7 @@ public sealed partial class Game1 : Game
     private bool _voteYesWasDown, _voteNoWasDown;
     // P626 — in-flight cargo keys (NextCargo/NextPart/PrevPart/DropCargo/Reload).
     // The selected cargo mount is a negative native mount (-1..-5), -1 = none.
-    private int _selectedCargoMount = -1;
+    private int _selectedCargoMount;
     private bool _nextCargoWasDown, _nextPartWasDown, _prevPartWasDown, _dropCargoWasDown, _reloadWasDown;
 
     // P217 — real quick-chat (SonicChat) voice-macro system. The menu tree +
@@ -1288,7 +1301,10 @@ public sealed partial class Game1 : Game
         // lock so real GPU frame time (not the 60 Hz presentation period) is
         // observable via ALLEGIANCE_VOL_PERF. Inert for normal play.
         if (System.Environment.GetEnvironmentVariable("ALLEGIANCE_NOVSYNC") == "1")
+        {
             _graphics.SynchronizeWithVerticalRetrace = false;
+            IsFixedTimeStep = false;
+        }
         _session = new ConnectionSession();
         // P448b — register the remote-ship hull-stats resolver so the ClientWorld
         // dead-reckoner can (re-)seed each remote ship's ShipDeadReckoner from real
@@ -1378,9 +1394,7 @@ public sealed partial class Game1 : Game
         // drift from the viewport the smoke/HUD draw into.
         Window.ClientSizeChanged += (_, _) =>
         {
-            var w = GraphicsDevice.PresentationParameters.BackBufferWidth;
-            var h = GraphicsDevice.PresentationParameters.BackBufferHeight;
-            if (w > 0 && h > 0) _post?.SetSize(w, h);
+            _postWidth = _postHeight = 0; // recreated at next scene boundary, including dynamic scale
         };
         if (_debugMode)
         {
@@ -1491,6 +1505,10 @@ public sealed partial class Game1 : Game
             _inspectCivArg = opts.InspectCiv;
             _inspectHullArg = opts.InspectHull;
             _inspectStationsArg = opts.InspectStations;
+            _inspectStationArg = opts.InspectStation;
+            _inspectLightTime = opts.InspectLightTime;
+            _inspectPitch = opts.InspectPitch;
+            _inspectNativeOnly = opts.InspectNativeOnly;
             _inspectAutoShotsRemaining = opts.InspectShots;
             _inspectAutoShotsRequested = opts.InspectShots;
             _inspectDemo = opts.InspectDemo;
@@ -1689,6 +1707,7 @@ public sealed partial class Game1 : Game
         _nativeAsteroidRenderer?.Dispose();   // P567 — native per-rock .mdl meshes + textures
         _nativeStationRenderer?.Dispose();    // P564 — native per-station-type .mdl meshes + textures
         _nativeShipRenderer?.Dispose();       // P646 — was never disposed (own GPU buffers/textures/effects)
+        _shipLodSpriteRenderer?.Dispose();    // P628 — far-tier sprite batcher
         _nativeTreasureRenderer?.Dispose();   // P646 — was never disposed (own GPU buffers/textures/effects)
         if (_asteroidTextures != null)
             foreach (var t in _asteroidTextures.Values) t.Dispose();
@@ -1717,6 +1736,7 @@ public sealed partial class Game1 : Game
         _treasureRenderer?.Dispose();
         _chaffRenderer?.Dispose();
         _damageDebrisRenderer?.Dispose();
+        _commandGridRenderer?.Dispose();
         _debrisRenderer?.Dispose();
         _engineTrailRenderer?.Dispose();
         _nozzleGlowRenderer?.Dispose();
@@ -1733,6 +1753,10 @@ public sealed partial class Game1 : Game
         // P547 — the post-processor owns the shader effects + depth/scene/bloom
         // targets (and the SoftParticleRenderer/Bloom effect); the cache owns
         // the shared Effect objects. Dispose both after the renderers.
+        _gpuTimer?.Dispose();
+        _frameTelemetry?.Dispose();
+        _flightGc.Dispose();
+        _fsr?.Dispose();
         _post?.Dispose();
         _shaders?.Dispose();
         _nativeEffects?.Dispose();   // P545 — after the renderers that borrow it

@@ -130,6 +130,9 @@ public class LiveTurretGunnerBindingTests
         public void SendActiveTurret(uint outerTime, ClientActiveTurretUpdate atu) =>
             _t.Send(ConnectionId.Server, FedPacket.Pack(new[] { new ActiveTurretUpdate { TimeUpdate = outerTime, Atu = atu }.Encode() }), guaranteed: true);
 
+        public void SendUndock() => _t.Send(ConnectionId.Server,
+            FedPacket.Pack([new Docked { StationId = -1 }.Encode()]), guaranteed: true);
+
         public void SendInactiveTurret() =>
             _t.Send(ConnectionId.Server, FedPacket.Pack(new[] { new InactiveTurretUpdate().Encode() }), guaranteed: true);
 
@@ -197,7 +200,7 @@ public class LiveTurretGunnerBindingTests
         o.Yaw(0.5f);
         o.Pitch(-0.2f);
         return ClientActiveTurretUpdate.From(
-            (uint)Math.Floor(atuTime),
+            (uint)Math.Floor(atuTime * 1000),
             new ControlData(0.9f, 0.0f, 0.0f, 1.0f),   // yaw hard over, full throttle → rapid slew
             o);
     }
@@ -220,6 +223,11 @@ public class LiveTurretGunnerBindingTests
         var turretWeapon = sp.Carrier.Weapons.First(w => w.MountId == sp.Boarder.TurretId!.Value);
         Assert.Same(sp.Boarder, turretWeapon.Gunner);
 
+        // Native permits active turret input only in flight. Launch the parent
+        // after boarding rather than firing while invulnerable in the hangar.
+        carrier.SendUndock();
+        Assert.True(PumpUntil(server, () => sp.Carrier.StationId is null, PumpMax) < PumpMax);
+
         // ── scenario 2: gunner sends a real ACTIVE_TURRET_UPDATE(99) ──
         // Two ATUs, to keep each assertion deterministic under the async
         // delivery (deltaT at processing is unknown but bounded by ±1.5 s):
@@ -237,13 +245,13 @@ public class LiveTurretGunnerBindingTests
             if ((sp.Boarder.StateM & ShipControlState.WeaponsMask) != 0) { applied = attempt; break; }
             var o = new Orientation(); o.Yaw(0.5f); o.Pitch(-0.2f);
             atuA = ClientActiveTurretUpdate.From(
-                (uint)Math.Floor(sp.Boarder.LastUpdate),
+                (uint)Math.Floor(sp.Boarder.LastUpdate * 1000),
                 ControlData.Neutral,                    // zero slew → catch-up no-op
                 o);
             boarder.SendActiveTurret(atuA.Time, atuA);
             PumpUntil(server, () => (sp.Boarder.StateM & ShipControlState.WeaponsMask) != 0, 25);
         }
-        Assert.True(applied >= 0, "ACTIVE_TURRET_UPDATE did not set the shooting state / install an orientation");
+        Assert.True(applied >= 0, $"ACTIVE_TURRET_UPDATE did not set shooting: gunner dock={sp.Boarder.StationId}, parent dock={sp.Carrier.StationId}, clock={sp.Boarder.LastUpdate}, stage={sp.Boarder.Mission?.Stage}, turret={sp.Boarder.TurretId}");
         Assert.Equal(ShipControlState.WeaponsMask, sp.Boarder.StateM);   // full assignment, shipIGC.cpp:3359
 
         // Snapshot installed the reported facing server-side (SetOrientation,
@@ -261,7 +269,7 @@ public class LiveTurretGunnerBindingTests
         {
             var o2 = new Orientation(); o2.SetForward(sp.Boarder.Orientation.GetForward());
             atuB = ClientActiveTurretUpdate.From(
-                (uint)Math.Floor(sp.Boarder.LastUpdate),
+                (uint)Math.Floor(sp.Boarder.LastUpdate * 1000),
                 new ControlData(0.9f, 0f, 0f, 1f),      // yaw hard over, full throttle
                 o2);
             boarder.SendActiveTurret(atuB.Time, atuB);
@@ -311,6 +319,9 @@ public class LiveTurretGunnerBindingTests
         Console.WriteLine($"[turret] observer-reach CONFIRMED (P209): parked gunner {bId} re-aimed -> SINGLE_SHIP_UPDATE at carrier peer carries the rotated facing");
 
         // ── scenario 1b: leaving clears the binding ──
+        var dock = sp.Carrier.Sector!.Stations.First(st => st.SideId == sp.Carrier.SideId);
+        sp.Carrier.StationId = dock.StationId;
+        sp.Boarder.StationId = dock.StationId;
         boarder.SendBoard(-1);   // leave
         int left = PumpUntil(server, () => sp.Boarder.ParentShip is null, PumpMax);
         Assert.True(left < PumpMax, "leave did not clear ParentShip");

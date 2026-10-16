@@ -1,0 +1,35 @@
+[
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "exit": 0,
+    "seconds": 12.66,
+    "log": "/tmp/p699-validation/human-latency-000-isolation-1.log",
+    "trx": "/tmp/p699-validation/human-latency-000-isolation-1.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "exit": 0,
+    "seconds": 12.74,
+    "log": "/tmp/p699-validation/human-latency-001-isolation-2.log",
+    "trx": "/tmp/p699-validation/human-latency-001-isolation-2.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "Allegiance.ClientCore.MonoGame.Tests.P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn",
+    "exit": 0,
+    "seconds": 12.66,
+    "log": "/tmp/p699-validation/human-latency-002-isolation-3.log",
+    "trx": "/tmp/p699-validation/human-latency-002-isolation-3.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  }
+]

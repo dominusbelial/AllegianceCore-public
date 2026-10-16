@@ -1,0 +1,41 @@
+[
+  {
+    "name": "matched-before-prepared-build",
+    "exit": 0,
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Allegiance.Core.Tests",
+      "-c",
+      "Release",
+      "-m:8"
+    ]
+  },
+  {
+    "name": "matched-before-prepared",
+    "exit": 0,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "-c",
+      "Release",
+      "--no-build",
+      "--filter",
+      "FullyQualifiedName~P694Mass",
+      "--logger",
+      "console;verbosity=detailed"
+    ]
+  },
+  {
+    "name": "prepared-build",
+    "exit": 0,
+    "command": [
+      "dotnet",
+      "build",
+      "-c",
+      "Release",
+      "-m:8"
+    ]
+  }
+]

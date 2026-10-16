@@ -1,0 +1,7 @@
+[
+  "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection",
+  "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+  "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+  "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches",
+  "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts"
+]

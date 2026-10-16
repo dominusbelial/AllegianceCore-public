@@ -180,6 +180,24 @@ public sealed class ActionMap
         return false;
     }
 
+    /// <summary>Game command dispatch: a registered modified chord takes
+    /// precedence over a less specific chord on the same key. Plain keys still
+    /// tolerate extra modifiers when no more specific action owns them.
+    /// Native trekinput.cpp:543-577 checks the modifier family before Any.</summary>
+    public bool IsDownMostSpecific(KeyboardState ks, string action)
+    {
+        if (!IsDown(ks, action)) return false;
+        var binding = BindingOf(action);
+        foreach (var other in _current)
+        {
+            if (other.Key == action) continue;
+            var chord = other.Value;
+            if (chord.Key == binding.Key && chord.Modifiers != binding.Modifiers
+                && (chord.Modifiers & binding.Modifiers) == binding.Modifiers && chord.Matches(ks)) return false;
+        }
+        return true;
+    }
+
     /// <summary>Raw predicate for callers that need the chord itself.</summary>
     public bool ChordDown(KeyboardState ks, KeyBinding chord) => chord.Matches(ks);
 

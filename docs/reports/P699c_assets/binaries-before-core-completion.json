@@ -1,0 +1,14 @@
+{
+  "src/Allegiance.ClientCore.Explorer/bin/Debug/net10.0/Allegiance.ClientCore.Explorer.dll": "05ae3554b7baa21e3207a08a0cb3be0b039bfa5aa4cd7bdf88ba748ab9730a74",
+  "src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.ClientCore.Game.dll": "a061b8aa10da83860687a0feda137d6d12f3f2c1c80da9d98c981c87c131ba30",
+  "src/Allegiance.ClientCore/bin/Debug/net10.0/Allegiance.ClientCore.dll": "fb46b38248e2b7f1f7d3b7c4087a255f7027dca486d95a5644f38a45f44778c0",
+  "src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Server.dll": "fb275b79f048e79aaa6524512aa2ca10009a5a8c6beee1ae2dc9f250330627b9",
+  "src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll": "83dce86c88ed1cbfd8a1d1de71d4626c3e13002c7a307e72f4be94a96bf0733e",
+  "src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.dll": "347fbd006dd6b63c5a2e404d7fcde43cdc9f3294cf5ac2ce0a888bb5bcf77ecd",
+  "src/Allegiance.Bot/bin/Debug/net10.0/Allegiance.Bot.dll": "ff10f5d83a7cd1f48aaf4798f21dbbdaff0c0397b9953ccb2581075d03f4eecc",
+  "src/Allegiance.Lobby/bin/Debug/net10.0/Allegiance.Lobby.dll": "cf944f9bfdf99ba63442293aeb876d250d35f8074d4babf67ba1be2d30886676",
+  "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll": "4e0ad584d3291bd2cc15887d4e09f78df647d29112e2cbf5c7f26bd2df3ee88d",
+  "tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll": "1d3b56dba1ef44866cc65fd53f80e212478abe11783e5e15e1762927d18feb86",
+  "tests/Allegiance.Lobby.Tests/bin/Debug/net10.0/Allegiance.Lobby.Tests.dll": "bb9a7e47863c11794bf400daab34f53a15d803047da618d72221d8bec5058b7d",
+  "tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll": "2341b57cd590e98737bc534e4f698069b301770105161d2042bfe8619d3bb5b8"
+}

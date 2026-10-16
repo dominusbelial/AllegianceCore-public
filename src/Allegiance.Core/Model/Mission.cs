@@ -23,8 +23,11 @@ using Allegiance.Core.Sim;
 /// destination is the sector containing its partner warp (or the sector named
 /// directly), matching <c>warpIGC.h:129-141</c> and the corpus validator.
 /// </remarks>
-public sealed class Mission
+public sealed partial class Mission
 {
+    /// <summary>P629 stress-test override. Native sector crowding is enabled by default.</summary>
+    public bool CrowdingPenaltyEnabled { get; set; } = true;
+
     /// <summary>The type universe the mission draws on.</summary>
     public StaticCore Core { get; }
 
@@ -63,12 +66,10 @@ public sealed class Mission
     public WeaponMuzzleCache? WeaponMuzzles { get; set; }
 
     /// <summary>
-    /// The mission's last-updated time. Starts at 0 and is advanced by
-    /// <see cref="Update"/>; the C++ field is <c>m_lastUpdate</c>
-    /// (<c>missionigc.cpp:3127</c>). Before any tick it is 0, matching the
-    /// C++ constructor (<c>missionigc.h:397</c> keeps the mission
-    /// <c>STAGE_NOTSTARTED</c>). Read-only to callers; written only by
-    /// <see cref="Update"/>.
+    /// The mission's last-updated time. Seeded by Assemble to initialTime,
+    /// matching CmissionIGC::Initialize(now) (missionigc.cpp:3055-3059), then
+    /// advanced by Update even while NotStarted (missionigc.cpp:3180-3181).
+    /// Read-only to callers.
     /// </summary>
     public double LastUpdate { get; private set; }
 
@@ -84,6 +85,15 @@ public sealed class Mission
 
     /// <summary>Native bAllowFriendlyFire (shipIGC.cpp:1222-1228). Defaults off.</summary>
     public bool AllowFriendlyFire { get; set; }
+
+    /// <summary>FedSrv/fsmission.cpp:2520: periodic income requires developments.</summary>
+    public bool AllowDevelopments { get; set; } = true;
+
+    /// <summary>FedSrv/FedSrv.CPP:13387-13417: permit allied ripcord anchors.</summary>
+    public bool AllowAlliedRip { get; set; }
+
+    /// <summary>Native bAllowAlliedViz (probeigc.cpp:459), firing reveal only.</summary>
+    public bool AllowAlliedViz { get; set; }
 
     /// <summary>Allied side pairs for native AlliedSides damage immunity
     /// (shipIGC.cpp:1224). Either ordering represents the same alliance.</summary>
@@ -297,36 +307,16 @@ public sealed class Mission
     /// </summary>
     public const double TimeIncrement = 0.25;
 
-    /// <summary>The flat seconds between paydays, ported from
-    /// <c>c_dtBetweenPaydays = 60.0f</c> (<c>missionigc.cpp:2691</c>) and the
-    /// mission constant <c>c_fcidSecondsBetweenPaydays</c> it is stored under
-    /// (<c>missionigc.cpp:2746</c>). The reference mission <em>overrides</em>
-    /// whatever the core's <c>DataConstantsIGC.FloatConstants[6]</c> holds with
-    /// this fixed value at init (<c>missionigc.cpp:2773-2774</c>), so — like
-    /// <see cref="ServerHost.ExitWarpSpeedBonus"/> and per this repo's
-    /// honesty-about-simplifications convention — we use the fixed value and
-    /// say so, rather than reading the (overridden) core slot.</summary>
-    public const double SecondsBetweenPaydays = 60.0;
+    /// <summary>Loaded c_fcidSecondsBetweenPaydays (slot 6), read by
+    /// fsmission.cpp:2253,2516. Core import overrides constructor defaults
+    /// (missionigc.cpp:3283; missionigc.h:171-173).</summary>
+    public double SecondsBetweenPaydays => Core.Constants.FloatConstants[6];
 
-    /// <summary>The per-payday income before civilization adjustment, ported
-    /// from <c>c_fIncome = 600.0f</c> (<c>missionigc.cpp:2722</c>), also a
-    /// mission-set override of the core constant <c>c_fcidIncome=30</c>
-    /// (<c>missionigc.cpp:2773</c>; <c>igc.h:95</c>). This is the value
-    /// <c>DoTick</c> multiplies by <c>1.0 + IncomeMoney</c>
-    /// (<c>fsmission.cpp:2536</c>). Hardcoded for the same reason as
-    /// <see cref="SecondsBetweenPaydays"/>.</summary>
-    public const float IncomePerPayday = 600.0f;
+    /// <summary>Loaded c_fcidIncome (slot 30), fsmission.cpp:2523.</summary>
+    public float IncomePerPayday => Core.Constants.FloatConstants[30];
 
-    /// <summary>P443 — the per-side starting-treasury base, ported from the
-    /// reference mission's hardcoded <c>c_fStartingMoney = 16000.0f</c>
-    /// (<c>missionigc.cpp:2752</c>), the mission-set override of the core
-    /// constant <c>c_fcidStartingMoney</c> (<c>missionigc.cpp:2697</c>). Each
-    /// side's seed is this × <c>(fStartingMoney + civ.BonusMoney)</c> at game
-    /// start (<c>fsmission.cpp:1992-2001</c>); see
-    /// <see cref="ApplyStartingMoneyAndInitialPayday"/>. Hardcoded for the same
-    /// reason as <see cref="IncomePerPayday"/> / <see cref="SecondsBetweenPaydays"/>
-    /// — the reference mission overrides the core slot with this fixed value.</summary>
-    public const float StartingMoneyPerSide = 16000.0f;
+    /// <summary>Loaded c_fcidStartingMoney (slot 11), fsmission.cpp:1992.</summary>
+    public float StartingMoneyPerSide => Core.Constants.FloatConstants[11];
 
     /// <summary>P443 — the <c>MissionParams.fStartingMoney</c> multiplier in the
     /// seed formula <c>StartingMoneyPerSide × (fStartingMoney + civ.BonusMoney)</c>
@@ -462,6 +452,11 @@ public sealed class Mission
         Site = site;
     }
 
+    /// <summary>Selected plans keyed by side id; consumed by the P703 commander.</summary>
+    public Dictionary<short, ResearchPlan> ResearchPlans { get; } = new();
+
+    public ResearchSettings Research { get; private set; } = new();
+
     /// <summary>
     /// Assemble the mission object graph from a core, a map and the side
     /// specifications. Throws on a side naming a civilization absent from the
@@ -474,13 +469,19 @@ public sealed class Mission
         StaticCore core,
         MissionMap map,
         IReadOnlyList<SideSpec> sides,
-        IIgcSite site)
+        IIgcSite site,
+        double initialTime = 0,
+        ResearchSettings? research = null)
     {
+        if (!double.IsFinite(initialTime) || initialTime < 0)
+            throw new ArgumentOutOfRangeException(nameof(initialTime));
         ArgumentNullException.ThrowIfNull(core);
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(sides);
         ArgumentNullException.ThrowIfNull(site);
 
+        research ??= new ResearchSettings();
+        research.Validate();
         // 1. Resolve the sides' civilizations from the core.
         var sideList = new List<Side>(sides.Count);
         foreach (var spec in sides)
@@ -490,11 +491,13 @@ public sealed class Mission
                     $"side {spec.Id} ('{spec.Name}') names civilization {spec.CivilizationId} " +
                     $"absent from core {core.Version}; a side's civilization must exist in the core");
             sideList.Add(new Side(spec.Id, spec.Name, civ,
-                BucketCatalog.ForSide(core, site, TechTreeBitMask.FromBytes(civ.TtbmBaseTechs),
+                research.AllowDevelopments ? BucketCatalog.ForSide(core, site, research.StartingTechs(civ),
                     // P478 — the side's GA at bucket creation is the civ's base
                     // attribute set (no development has completed yet), exactly
                     // what native reads while CreateBuckets runs.
-                    GlobalAttributeSet.FromArray(civ.GasBaseAttributes))));
+                    GlobalAttributeSet.FromArray(civ.GasBaseAttributes)) : Array.Empty<Bucket>()));
+            sideList[^1].DevelopmentTechs = research.StartingTechs(civ);
+            sideList[^1].InitialTechs = sideList[^1].DevelopmentTechs;
             // P363 — seed each side's colour from the native per-side-id palette
             // (missionigc.cpp:3734-3746), the port of `ds.color.SetRGBA(...)`.
             var (cr, cg, cb) = SidePalette.ColorFor(spec.Id);
@@ -518,11 +521,11 @@ public sealed class Mission
 
         var sectorsById = new Dictionary<short, Sector>(map.Clusters.Count);
         foreach (var cluster in map.Clusters)
-            sectorsById.Add(cluster.ClusterId, new Sector(cluster));
+            sectorsById.Add(cluster.ClusterId, new Sector(cluster, initialTime));
 
         // 3. Attribute stations and asteroids by ClusterId.
-        foreach (var g in map.Stations.GroupBy(s => RequireSector(s.ClusterId, "station", s.Name)))
-            sectorsById[g.Key].AttachStations(g, core);
+        foreach (var station in map.Stations)
+            RequireSector(station.ClusterId, "station", station.Name);
         foreach (var g in map.Asteroids.GroupBy(a => RequireSector(a.ClusterId, "asteroid", a.Name)))
             sectorsById[g.Key].AttachAsteroids(g);
 
@@ -558,7 +561,10 @@ public sealed class Mission
         // the P132 cross-side visibility sweep can reconcile every side — even
         // one with no presence in the sector — to its correct SeenBySide value.
         foreach (var s in sectors) s.MissionSides = sideList;
-        var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site);
+        // Native CmissionIGC::Initialize(now) seeds m_lastUpdate (missionigc.cpp:3055-3059).
+        // Seed BEFORE any ship placement or countdown can observe this world.
+        var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site)
+        { LastUpdate = initialTime, Research = research, AllowDevelopments = research.AllowDevelopments };
         foreach (var sector in sectors)
         {
             sector.Mission = mission;
@@ -572,13 +578,17 @@ public sealed class Mission
             side.Mission = mission;
             side.VisibilityRange = VisibilityRangeDefault;
         }
-        // P475 — wire every production runtime station back to its mission so
-        // Station.SideGlobalAttributes can resolve the owning side's GA set (the
-        // station parallel of the side/ship back-refs just above). Stations
-        // placed via PlaceStation (the synthetic/test seam) get theirs there.
-        foreach (var s in sectors)
-            foreach (var st in s.StationRuntimes)
-                st.Mission = mission;
+        // Register runtime stations after their mission/side links exist. Native
+        // stationIGC.cpp:65-75 notifies after each addition, so distinct tech
+        // gains during initial construction must not collapse into one event.
+        foreach (var station in map.Stations)
+        {
+            var sector = sectorsById[station.ClusterId];
+            if (core.StationTypes.TryGetValue(station.StationTypeId, out var type))
+                mission.PlaceStation(new Station(station, type), sector);
+            else
+                sector.AttachStations([station], core); // retain the static-only fallback
+        }
         return mission;
     }
 
@@ -658,18 +668,23 @@ public sealed class Mission
         // Distribution to players (delta split + FM_S_PAYDAY send + deduction)
         // lives in the host's PaydayEvent handler, mirroring the split between
         // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
-        if (NextPaydayTime == 0)
-            NextPaydayTime = now + SecondsBetweenPaydays;     // fsmission.cpp:2253 (seeded at start + 60)
-        if (now >= NextPaydayTime)
+        if (Stage == MissionStage.Started && NextPaydayTime == 0)
+            NextPaydayTime = now + PaydayInterval;     // fsmission.cpp:2253 (seeded at start + 60)
+        if (Stage == MissionStage.Started && now >= NextPaydayTime)
         {
-            foreach (var side in Sides)
+            double treasureElapsed = PaydayInterval + now - NextPaydayTime;
+            if (AllowDevelopments && TreasureParameters.AllowDevelopments) // fsmission.cpp:2520
             {
-                long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
-                            + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
-                side.Money += income;                          // fsmission.cpp:2536
-                Site.PaydayEvent(side, income);                // site seam → host payout
+                foreach (var side in Sides)
+                {
+                    long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
+                                + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
+                    side.Money += income;                          // fsmission.cpp:2536
+                    Site.PaydayEvent(side, income);                // site seam → host payout
+                }
             }
-            NextPaydayTime += SecondsBetweenPaydays;           // keep phase (fsmission.cpp:2519)
+            RegenerateTreasures(now, treasureElapsed);
+            NextPaydayTime += PaydayInterval;           // keep phase (fsmission.cpp:2519)
         }
 
         double deltaT = now - LastUpdate;
@@ -740,13 +755,13 @@ public sealed class Mission
             side.Money = seed;                 // assignment, fsmission.cpp:2004 (fresh side starts at 0)
             Site.PaydayEvent(side, seed);      // fsmission.cpp:2278 — immediate payout via the existing seam
         }
-        NextPaydayTime = now + SecondsBetweenPaydays;   // fsmission.cpp:2253 — cadence anchored at the real start
+        NextPaydayTime = now + PaydayInterval;   // fsmission.cpp:2253 — cadence anchored at the real start
     }
 
     /// <summary>P443 — the starting-treasury seed for one side:
     /// <c>StartingMoneyPerSide × (fStartingMoney + civ.BonusMoney)</c>, or 0 when
     /// the multiplier is ≤ 0 (<c>fsmission.cpp:1992-2002</c>).</summary>
-    private static long StartingMoneyFor(Side side)
+    private long StartingMoneyFor(Side side)
     {
         // The fStartingMoney ≤ 0 guard (fsmission.cpp:2001-2002), where a
         // non-positive multiplier yields 0. Taken through a local so the named
@@ -879,6 +894,8 @@ public sealed class Mission
                 $"sector '{sector.Name}' is not part of this mission; a station can only be placed in a sector the mission owns");
         station.Mission = this;   // P475 — the synthetic/test station's back-ref (mirrors PlaceShip)
         sector.AttachStation(station);
+        Sides.FirstOrDefault(s => s.Id == station.SideId)?.NotifyBuildingTechsChanged();
+        Site.StationTypeChange(station); // Igc/stationIGC.cpp:72-75, after registration
     }
 
     /// <summary>

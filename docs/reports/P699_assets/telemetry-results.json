@@ -1,0 +1,68 @@
+[
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.BotFixRegressionTests.Pod_outcome_counts_a_true_death_restart_separately_from_flying_home",
+    "exit": 0,
+    "seconds": 1.02,
+    "log": "/tmp/p699-validation/telemetry-000-isolation-1.log",
+    "trx": "/tmp/p699-validation/telemetry-000-isolation-1.trx",
+    "passed": 2,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.BotFixRegressionTests.Pod_outcome_counts_a_true_death_restart_separately_from_flying_home",
+    "exit": 0,
+    "seconds": 1.02,
+    "log": "/tmp/p699-validation/telemetry-001-isolation-2.log",
+    "trx": "/tmp/p699-validation/telemetry-001-isolation-2.trx",
+    "passed": 2,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.BotFixRegressionTests.Pod_outcome_counts_a_true_death_restart_separately_from_flying_home",
+    "exit": 0,
+    "seconds": 1.0,
+    "log": "/tmp/p699-validation/telemetry-002-isolation-3.log",
+    "trx": "/tmp/p699-validation/telemetry-002-isolation-3.trx",
+    "passed": 2,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.GetPerfStatsExposesMinuteAndLiveStallFields_AndReadsDoNotResetThem",
+    "exit": 0,
+    "seconds": 0.95,
+    "log": "/tmp/p699-validation/telemetry-003-isolation-1.log",
+    "trx": "/tmp/p699-validation/telemetry-003-isolation-1.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.GetPerfStatsExposesMinuteAndLiveStallFields_AndReadsDoNotResetThem",
+    "exit": 0,
+    "seconds": 0.97,
+    "log": "/tmp/p699-validation/telemetry-004-isolation-2.log",
+    "trx": "/tmp/p699-validation/telemetry-004-isolation-2.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.GetPerfStatsExposesMinuteAndLiveStallFields_AndReadsDoNotResetThem",
+    "exit": 0,
+    "seconds": 1.0,
+    "log": "/tmp/p699-validation/telemetry-005-isolation-3.log",
+    "trx": "/tmp/p699-validation/telemetry-005-isolation-3.trx",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  }
+]

@@ -1,0 +1,934 @@
+{
+  "Core": {
+    "Allegiance.Core.Tests.BlastOnImpactTests.Impact_round_deals_direct_plus_own_blast_damage_two_additive_components": [
+      "isolated-core-012-1",
+      "isolated-core-012-2",
+      "isolated-core-012-3"
+    ],
+    "Allegiance.Core.Tests.BlastOnImpactTests.Nearby_second_ship_takes_only_the_blast_splash_no_direct_component": [
+      "isolated-core-013-1",
+      "isolated-core-013-2",
+      "isolated-core-013-3"
+    ],
+    "Allegiance.Core.Tests.BlastOnImpactTests.Round_that_times_out_still_detonates_at_its_expiry_position": [
+      "isolated-core-014-1",
+      "isolated-core-014-2",
+      "isolated-core-014-3"
+    ],
+    "Allegiance.Core.Tests.BotFlightTests.Abrupt_disconnect_during_broadcast_leaves_server_alive_and_others_served": [
+      "isolated-core-015-1",
+      "isolated-core-015-2",
+      "isolated-core-015-3"
+    ],
+    "Allegiance.Core.Tests.BotFlightTests.Bot_disconnect_leaves_the_server_ticking": [
+      "isolated-core-016-1",
+      "isolated-core-016-2",
+      "isolated-core-016-3"
+    ],
+    "Allegiance.Core.Tests.BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout": [
+      "isolated-core-017-1",
+      "isolated-core-017-2",
+      "isolated-core-017-3"
+    ],
+    "Allegiance.Core.Tests.BotFlightTests.Two_bots_get_distinct_ships_and_fly_independently": [
+      "isolated-core-018-1",
+      "isolated-core-018-2",
+      "isolated-core-018-3"
+    ],
+    "Allegiance.Core.Tests.BotFlightTests.Zero_thrust_leaves_the_ship_at_rest_and_quiet": [
+      "isolated-core-019-1",
+      "isolated-core-019-2",
+      "isolated-core-019-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide": [
+      "isolated-core-020-1",
+      "isolated-core-020-2",
+      "isolated-core-020-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice": [
+      "isolated-core-021-1",
+      "isolated-core-021-2",
+      "isolated-core-021-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime": [
+      "isolated-core-022-1",
+      "isolated-core-022-2",
+      "isolated-core-022-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime": [
+      "isolated-core-023-1",
+      "isolated-core-023-2",
+      "isolated-core-023-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider": [
+      "isolated-core-024-1",
+      "isolated-core-024-2",
+      "isolated-core-024-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls": [
+      "isolated-core-025-1",
+      "isolated-core-025-2",
+      "isolated-core-025-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide": [
+      "isolated-core-026-1",
+      "isolated-core-026-2",
+      "isolated-core-026-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime": [
+      "isolated-core-027-1",
+      "isolated-core-027-2",
+      "isolated-core-027-3"
+    ],
+    "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides": [
+      "isolated-core-028-1",
+      "isolated-core-028-2",
+      "isolated-core-028-3"
+    ],
+    "Allegiance.Core.Tests.CollisionEventWireTests.CollisionEvent_encodes_and_decodes_the_full_layout": [
+      "isolated-core-029-1",
+      "isolated-core-029-2",
+      "isolated-core-029-3"
+    ],
+    "Allegiance.Core.Tests.CollisionEventWireTests.CollisionEvent_round_trips_a_ship_ship_pair": [
+      "isolated-core-030-1",
+      "isolated-core-030-2",
+      "isolated-core-030-3"
+    ],
+    "Allegiance.Core.Tests.DockAutoRestockLiveTests.Docked_ship_get_its_expendables_refilled": [
+      "isolated-core-031-1",
+      "isolated-core-031-2",
+      "isolated-core-031-3"
+    ],
+    "Allegiance.Core.Tests.DockAutoRestockLiveTests.Docking_rebuys_paid_desired_launcher_and_charges_the_native_amount": [
+      "isolated-core-032-1",
+      "isolated-core-032-2",
+      "isolated-core-032-3"
+    ],
+    "Allegiance.Core.Tests.DockAutoRestockLiveTests.Docking_upgrades_mounted_part_to_successor_and_charges_after_research": [
+      "isolated-core-033-1",
+      "isolated-core-033-2",
+      "isolated-core-033-3"
+    ],
+    "Allegiance.Core.Tests.DockDockingTests.DockedNotify_message_emits_exact_declared_bytes": [
+      "isolated-core-034-1",
+      "isolated-core-034-2",
+      "isolated-core-034-3"
+    ],
+    "Allegiance.Core.Tests.DockDockingTests.DockedNotify_message_round_trips": [
+      "isolated-core-035-1",
+      "isolated-core-035-2",
+      "isolated-core-035-3"
+    ],
+    "Allegiance.Core.Tests.DockDockingTests.Docked_message_emits_exact_declared_bytes": [
+      "isolated-core-036-1",
+      "isolated-core-036-2",
+      "isolated-core-036-3"
+    ],
+    "Allegiance.Core.Tests.DockDockingTests.Docked_message_round_trips": [
+      "isolated-core-037-1",
+      "isolated-core-037-2",
+      "isolated-core-037-3"
+    ],
+    "Allegiance.Core.Tests.DockDockingTests.FriendlyDock_sends_exactly_one_DockedNotify_per_event_with_correct_station": [
+      "isolated-core-038-1",
+      "isolated-core-038-2",
+      "isolated-core-038-3"
+    ],
+    "Allegiance.Core.Tests.DockDockingTests.FriendlyDock_sets_StationId_and_StateDocked_then_Undock_clears": [
+      "isolated-core-039-1",
+      "isolated-core-039-2",
+      "isolated-core-039-3"
+    ],
+    "Allegiance.Core.Tests.DockDockingTests.HostileStation_in_radius_does_not_trigger_dock": [
+      "isolated-core-040-1",
+      "isolated-core-040-2",
+      "isolated-core-040-3"
+    ],
+    "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected": [
+      "isolated-core-041-1",
+      "isolated-core-041-2",
+      "isolated-core-041-3"
+    ],
+    "Allegiance.Core.Tests.ExplosionPropagationTests.Accumulated_blasts_push_a_mine_below_threshold_and_it_is_destroyed_once": [
+      "isolated-core-042-1",
+      "isolated-core-042-2",
+      "isolated-core-042-3"
+    ],
+    "Allegiance.Core.Tests.ExplosionPropagationTests.Explosion_respects_the_existing_friendly_fire_gate": [
+      "isolated-core-043-1",
+      "isolated-core-043-2",
+      "isolated-core-043-3"
+    ],
+    "Allegiance.Core.Tests.ExplosionPropagationTests.Falloff_is_real_a_ship_at_the_blast_edge_takes_less_than_one_at_the_centre": [
+      "isolated-core-044-1",
+      "isolated-core-044-2",
+      "isolated-core-044-3"
+    ],
+    "Allegiance.Core.Tests.ExplosionPropagationTests.Shielded_ship_in_blast_absorbs_like_a_weapon_hit": [
+      "isolated-core-045-1",
+      "isolated-core-045-2",
+      "isolated-core-045-3"
+    ],
+    "Allegiance.Core.Tests.ExplosionPropagationTests.Two_armed_mines_do_not_blast_cascade_a_moving_cross_side_ship_wears_only_the_field_it_crosses": [
+      "isolated-core-046-1",
+      "isolated-core-046-2",
+      "isolated-core-046-3"
+    ],
+    "Allegiance.Core.Tests.GhostShipSectorMembershipTests.Rescued_lifepod_lands_in_destination_sectors_model_list": [
+      "isolated-core-047-1",
+      "isolated-core-047-2",
+      "isolated-core-047-3"
+    ],
+    "Allegiance.Core.Tests.GhostShipSectorMembershipTests.Respawned_player_lands_in_destination_sectors_model_list": [
+      "isolated-core-048-1",
+      "isolated-core-048-2",
+      "isolated-core-048-3"
+    ],
+    "Allegiance.Core.Tests.GhostShipSectorMembershipTests.Teleported_ship_lands_in_destination_sectors_model_list": [
+      "isolated-core-049-1",
+      "isolated-core-049-2",
+      "isolated-core-049-3"
+    ],
+    "Allegiance.Core.Tests.LandingBayTests.Faohshcar_bay_reconstructs_from_real_cvh_frames": [
+      "isolated-core-050-1",
+      "isolated-core-050-2",
+      "isolated-core-050-3"
+    ],
+    "Allegiance.Core.Tests.LandingBayTests.Faohshcar_carrier_hull_carries_the_carrier_bit": [
+      "isolated-core-051-1",
+      "isolated-core-051-2",
+      "isolated-core-051-3"
+    ],
+    "Allegiance.Core.Tests.LandingBayTests.InGarage_is_true_inside_the_bay_and_false_outside": [
+      "isolated-core-052-1",
+      "isolated-core-052-2",
+      "isolated-core-052-3"
+    ],
+    "Allegiance.Core.Tests.LandingBayTests.New_capability_bits_match_igc_h": [
+      "isolated-core-053-1",
+      "isolated-core-053-2",
+      "isolated-core-053-3"
+    ],
+    "Allegiance.Core.Tests.LaunchUndockTests.BuyLoadout_with_fLaunch_on_an_undocked_ship_sends_no_extra_SetCluster": [
+      "isolated-core-054-1",
+      "isolated-core-054-2",
+      "isolated-core-054-3"
+    ],
+    "Allegiance.Core.Tests.LaunchUndockTests.BuyLoadout_with_fLaunch_undocks_a_docked_ship": [
+      "isolated-core-055-1",
+      "isolated-core-055-2",
+      "isolated-core-055-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Boarded_ship_ripcord_does_not_continue_ticking": [
+      "isolated-core-056-1",
+      "isolated-core-056-2",
+      "isolated-core-056-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide": [
+      "isolated-core-057-1",
+      "isolated-core-057-2",
+      "isolated-core-057-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Countdown_ticks_down_over_real_ticks": [
+      "isolated-core-058-1",
+      "isolated-core-058-2",
+      "isolated-core-058-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector": [
+      "isolated-core-059-1",
+      "isolated-core-059-2",
+      "isolated-core-059-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Gate_violations_are_silently_ignored": [
+      "isolated-core-060-1",
+      "isolated-core-060-2",
+      "isolated-core-060-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Inactive_ship_unaffected_by_ripcord_pass": [
+      "isolated-core-061-1",
+      "isolated-core-061-2",
+      "isolated-core-061-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Mid_countdown_anchor_side_change_aborts_sector_wide": [
+      "isolated-core-062-1",
+      "isolated-core-062-2",
+      "isolated-core-062-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only": [
+      "isolated-core-063-1",
+      "isolated-core-063-2",
+      "isolated-core-063-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Request_with_no_anchor_denies_requester_only": [
+      "isolated-core-064-1",
+      "isolated-core-064-2",
+      "isolated-core-064-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Ripcord_countdown_freezes_maneuver_and_thrust_until_teleport": [
+      "isolated-core-065-1",
+      "isolated-core-065-2",
+      "isolated-core-065-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried": [
+      "isolated-core-066-1",
+      "isolated-core-066-2",
+      "isolated-core-066-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_reaching_zero_relocates_near_target_and_pays_energy": [
+      "isolated-core-067-1",
+      "isolated-core-067-2",
+      "isolated-core-067-3"
+    ],
+    "Allegiance.Core.Tests.LiveRipcordTests.Station_anchor_reaching_zero_relocates_to_launch_shape_and_clears": [
+      "isolated-core-068-1",
+      "isolated-core-068-2",
+      "isolated-core-068-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportDockTests.TeleportAck_message_emits_exact_declared_bytes": [
+      "isolated-core-069-1",
+      "isolated-core-069-2",
+      "isolated-core-069-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportDockTests.TeleportAck_message_round_trips": [
+      "isolated-core-070-1",
+      "isolated-core-070-2",
+      "isolated-core-070-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportDockTests.Teleport_to_enemy_station_rejects_with_NA": [
+      "isolated-core-071-1",
+      "isolated-core-071-2",
+      "isolated-core-071-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportDockTests.Teleport_to_friendly_non_restart_capable_station_rejects_with_NA": [
+      "isolated-core-072-1",
+      "isolated-core-072-2",
+      "isolated-core-072-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportDockTests.Teleport_to_friendly_station_with_buyable_hull_acks_bNewHull_false": [
+      "isolated-core-073-1",
+      "isolated-core-073-2",
+      "isolated-core-073-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportDockTests.Teleport_to_nonexistent_station_rejects_with_NA": [
+      "isolated-core-074-1",
+      "isolated-core-074-2",
+      "isolated-core-074-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportDockTests.Teleport_with_non_buyable_hull_refunds_strips_and_swaps_to_lifepod": [
+      "isolated-core-075-1",
+      "isolated-core-075-2",
+      "isolated-core-075-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportDockTests.Undock_stationID_NA_still_undocks_with_no_teleport_ack": [
+      "isolated-core-076-1",
+      "isolated-core-076-2",
+      "isolated-core-076-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportProbeRipcordTests.Command_target_teleport_probe_beats_friendly_station": [
+      "isolated-core-077-1",
+      "isolated-core-077-2",
+      "isolated-core-077-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportProbeRipcordTests.Friendly_ripcord_station_wins_over_probe": [
+      "isolated-core-078-1",
+      "isolated-core-078-2",
+      "isolated-core-078-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportProbeRipcordTests.Most_recently_deployed_teleport_probe_wins_without_goal": [
+      "isolated-core-079-1",
+      "isolated-core-079-2",
+      "isolated-core-079-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportProbeRipcordTests.Non_teleport_probe_is_denied_even_after_long_delay": [
+      "isolated-core-080-1",
+      "isolated-core-080-2",
+      "isolated-core-080-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportProbeRipcordTests.Probe_destroyed_mid_countdown_aborts_ripcord": [
+      "isolated-core-081-1",
+      "isolated-core-081-2",
+      "isolated-core-081-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportProbeRipcordTests.Probe_not_yet_active_is_denied_before_activation_delay": [
+      "isolated-core-082-1",
+      "isolated-core-082-2",
+      "isolated-core-082-3"
+    ],
+    "Allegiance.Core.Tests.LiveTeleportProbeRipcordTests.Wire_deployed_teleport_probe_is_the_anchor_and_ripcord_lands_near_it": [
+      "isolated-core-083-1",
+      "isolated-core-083-2",
+      "isolated-core-083-3"
+    ],
+    "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines": [
+      "isolated-core-084-1",
+      "isolated-core-084-2",
+      "isolated-core-084-3"
+    ],
+    "Allegiance.Core.Tests.NpcRipcordTravelLiveTests.Cross_cluster_npc_rips_to_friendly_station_instead_of_warp_pathing": [
+      "isolated-core-085-1",
+      "isolated-core-085-2",
+      "isolated-core-085-3"
+    ],
+    "Allegiance.Core.Tests.NpcRipcordTravelLiveTests.Unsafe_npc_defers_ripcord_and_retries_after_hazard_clears": [
+      "isolated-core-086-1",
+      "isolated-core-086-2",
+      "isolated-core-086-3"
+    ],
+    "Allegiance.Core.Tests.OrderChangeLaunchLiveTests.Commanding_a_docked_npc_to_launch_undocks_and_repositions_it": [
+      "isolated-core-087-1",
+      "isolated-core-087-2",
+      "isolated-core-087-3"
+    ],
+    "Allegiance.Core.Tests.OrderChangeLaunchLiveTests.Docked_npc_command_do_nothing_still_stays_docked_after_launch_arm_added": [
+      "isolated-core-088-1",
+      "isolated-core-088-2",
+      "isolated-core-088-3"
+    ],
+    "Allegiance.Core.Tests.P550DockAndRespawnTests.Capital_needs_sabmc_apland": [
+      "isolated-core-089-1",
+      "isolated-core-089-2",
+      "isolated-core-089-3"
+    ],
+    "Allegiance.Core.Tests.P550DockAndRespawnTests.Docking_requires_native_landing_geometry_not_just_a_200u_sphere": [
+      "isolated-core-090-1",
+      "isolated-core-090-2",
+      "isolated-core-090-3"
+    ],
+    "Allegiance.Core.Tests.P550DockAndRespawnTests.Fighter_docks_at_sabml_and_capable_station": [
+      "isolated-core-091-1",
+      "isolated-core-091-2",
+      "isolated-core-091-3"
+    ],
+    "Allegiance.Core.Tests.P550DockAndRespawnTests.Fighter_is_refused_at_station_without_sabml_and": [
+      "isolated-core-092-1",
+      "isolated-core-092-2",
+      "isolated-core-092-3"
+    ],
+    "Allegiance.Core.Tests.P550DockAndRespawnTests.Respawn_picks_nearest_restart_capable_station_skipping_one_without_restart": [
+      "isolated-core-093-1",
+      "isolated-core-093-2",
+      "isolated-core-093-3"
+    ],
+    "Allegiance.Core.Tests.P550DockAndRespawnTests.Respawn_picks_the_nearer_of_two_restart_stations": [
+      "isolated-core-094-1",
+      "isolated-core-094-2",
+      "isolated-core-094-3"
+    ],
+    "Allegiance.Core.Tests.P550DockAndRespawnTests.Respawn_returns_null_when_no_restart_capable_friendly_station_exists": [
+      "isolated-core-095-1",
+      "isolated-core-095-2",
+      "isolated-core-095-3"
+    ],
+    "Allegiance.Core.Tests.P550LiveDockGateTests.Real_client_docks_at_geometry_bearing_valid_station": [
+      "isolated-core-096-1",
+      "isolated-core-096-2",
+      "isolated-core-096-3"
+    ],
+    "Allegiance.Core.Tests.P550LiveDockGateTests.Real_client_is_refused_at_station_without_sabml_and": [
+      "isolated-core-097-1",
+      "isolated-core-097-2",
+      "isolated-core-097-3"
+    ],
+    "Allegiance.Core.Tests.P551DockOreSaleTests.Dock_ore_sale_honours_sabmunload_and_own_side_gate": [
+      "isolated-core-098-1",
+      "isolated-core-098-2",
+      "isolated-core-098-3"
+    ],
+    "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Cache_resolves_once_and_falls_back_null": [
+      "isolated-core-099-1",
+      "isolated-core-099-2",
+      "isolated-core-099-3"
+    ],
+    "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Elongated_asteroid_hulls_let_a_ship_pass_through_empty_sphere_corners": [
+      "isolated-core-100-1",
+      "isolated-core-100-2",
+      "isolated-core-100-3"
+    ],
+    "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Resolver_bounces_off_asteroid_hull_but_not_through_empty_sphere_corner": [
+      "isolated-core-101-1",
+      "isolated-core-101-2",
+      "isolated-core-101-3"
+    ],
+    "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Station_hull_lets_a_ship_pass_through_empty_sphere_corner": [
+      "isolated-core-102-1",
+      "isolated-core-102-2",
+      "isolated-core-102-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair": [
+      "isolated-core-103-1",
+      "isolated-core-103-2",
+      "isolated-core-103-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source": [
+      "isolated-core-104-1",
+      "isolated-core-104-2",
+      "isolated-core-104-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Due_bombs_detonate_in_deadline_order_with_each_delay_captured_at_trigger": [
+      "isolated-core-105-1",
+      "isolated-core-105-2",
+      "isolated-core-105-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage": [
+      "isolated-core-106-1",
+      "isolated-core-106-2",
+      "isolated-core-106-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience": [
+      "isolated-core-107-1",
+      "isolated-core-107-2",
+      "isolated-core-107-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Expiring_missile_blast_does_not_destroy_or_notify_its_source_twice": [
+      "isolated-core-108-1",
+      "isolated-core-108-2",
+      "isolated-core-108-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one": [
+      "isolated-core-109-1",
+      "isolated-core-109-2",
+      "isolated-core-109-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order": [
+      "isolated-core-110-1",
+      "isolated-core-110-2",
+      "isolated-core-110-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Launcherless_station_damage_uses_matrix_before_hostile_capture": [
+      "isolated-core-111-1",
+      "isolated-core-111-2",
+      "isolated-core-111-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Lethal_splash_removes_targets_and_notifies_each_death_once_even_without_a_launcher": [
+      "isolated-core-112-1",
+      "isolated-core-112-2",
+      "isolated-core-112-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_destroyed_by_splash_creates_its_secondary_blast_once": [
+      "isolated-core-113-1",
+      "isolated-core-113-2",
+      "isolated-core-113-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_killed_at_the_zero_position_sentinel_does_not_create_a_secondary_blast": [
+      "isolated-core-114-1",
+      "isolated-core-114-2",
+      "isolated-core-114-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_missile_is_sampled_at_blast_time": [
+      "isolated-core-115-1",
+      "isolated-core-115-2",
+      "isolated-core-115-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp": [
+      "isolated-core-116-1",
+      "isolated-core-116-2",
+      "isolated-core-116-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity": [
+      "isolated-core-117-1",
+      "isolated-core-117-2",
+      "isolated-core-117-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_damages_probe_with_friendly_fire_off": [
+      "isolated-core-118-1",
+      "isolated-core-118-2",
+      "isolated-core-118-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle": [
+      "isolated-core-119-1",
+      "isolated-core-119-2",
+      "isolated-core-119-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Splash_passes_NoWarn_and_NoDebris_without_losing_the_damage_row": [
+      "isolated-core-120-1",
+      "isolated-core-120-2",
+      "isolated-core-120-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage": [
+      "isolated-core-121-1",
+      "isolated-core-121-2",
+      "isolated-core-121-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract": [
+      "isolated-core-122-1",
+      "isolated-core-122-2",
+      "isolated-core-122-3"
+    ],
+    "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source": [
+      "isolated-core-123-1",
+      "isolated-core-123-2",
+      "isolated-core-123-3"
+    ],
+    "Allegiance.Core.Tests.P667ParallelSectorSimDeterminismTests.Combat_with_flag_on_produces_kills_and_runs_clean": [
+      "isolated-core-000-1",
+      "isolated-core-000-2",
+      "isolated-core-000-3"
+    ],
+    "Allegiance.Core.Tests.P667ParallelSectorSimDeterminismTests.Crowded_sector_tick_output_is_byte_identical_flag_off_vs_on_all_thread_counts": [
+      "isolated-core-001-1",
+      "isolated-core-001-2",
+      "isolated-core-001-3"
+    ],
+    "Allegiance.Core.Tests.P667ParallelSectorSimDeterminismTests.Default_flag_is_off": [
+      "isolated-core-002-1",
+      "isolated-core-002-2",
+      "isolated-core-002-3"
+    ],
+    "Allegiance.Core.Tests.P689CollisionPairTests.Broad_phase_filter_uses_registration_order_and_preserves_original_pair_order": [
+      "isolated-core-003-1",
+      "isolated-core-003-2",
+      "isolated-core-003-3"
+    ],
+    "Allegiance.Core.Tests.P689CollisionPairTests.Filtered_combat_events_equal_original_dispatch_including_times_shapes_and_ties": [
+      "isolated-core-004-1",
+      "isolated-core-004-2",
+      "isolated-core-004-3"
+    ],
+    "Allegiance.Core.Tests.P689StationDeathTickTests.Crowded_station_death_keeps_expected_kill_order_and_stays_within_tick_budget": [
+      "isolated-core-124-1",
+      "isolated-core-124-2",
+      "isolated-core-124-3"
+    ],
+    "Allegiance.Core.Tests.P694CollisionGeometryTests.Cached_separation_probes_are_bit_identical_to_original_solver_including_cache_saturation": [
+      "isolated-core-005-1",
+      "isolated-core-005-2",
+      "isolated-core-005-3"
+    ],
+    "Allegiance.Core.Tests.P694CollisionGeometryTests.Shared_geometry_matches_uncached_narrow_phase_in_both_paths_and_after_mutation": [
+      "isolated-core-006-1",
+      "isolated-core-006-2",
+      "isolated-core-006-3"
+    ],
+    "Allegiance.Core.Tests.P694CollisionGeometryTests.Signed_zero_is_not_merged_and_default_detection_keeps_every_original_pair": [
+      "isolated-core-007-1",
+      "isolated-core-007-2",
+      "isolated-core-007-3"
+    ],
+    "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events": [
+      "warm5-matrix-Release-1",
+      "warm5-matrix-Release-2",
+      "warm5-matrix-Release-3"
+    ],
+    "Allegiance.Core.Tests.P694StationLaunchTests.Native_slots_rotate_all_six_with_rapid_launch_offset_jitter_and_reset_turn_rates": [
+      "isolated-core-125-1",
+      "isolated-core-125-2",
+      "isolated-core-125-3"
+    ],
+    "Allegiance.Core.Tests.P694StationLaunchTests.Real_station_launch_frames_scale_by_radius": [
+      "isolated-core-126-1",
+      "isolated-core-126-2",
+      "isolated-core-126-3"
+    ],
+    "Allegiance.Core.Tests.P694bCollisionWorkTests.Dense_and_sparse_candidates_keep_filtered_brute_force_order": [
+      "isolated-core-009-1",
+      "isolated-core-009-2",
+      "isolated-core-009-3"
+    ],
+    "Allegiance.Core.Tests.P694bCollisionWorkTests.Ordinal_event_sort_matches_general_comparator_for_common_and_mixed_times": [
+      "isolated-core-010-1",
+      "isolated-core-010-2",
+      "isolated-core-010-3"
+    ],
+    "Allegiance.Core.Tests.P694bCollisionWorkTests.Repeated_geometry_keeps_all_identities_with_direct_and_sparse_result_caches": [
+      "isolated-core-011-1",
+      "isolated-core-011-2",
+      "isolated-core-011-3"
+    ],
+    "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted": [
+      "isolated-core-127-1",
+      "isolated-core-127-2",
+      "isolated-core-127-3"
+    ],
+    "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle": [
+      "isolated-core-128-1",
+      "isolated-core-128-2",
+      "isolated-core-128-3"
+    ],
+    "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire": [
+      "isolated-core-129-1",
+      "isolated-core-129-2",
+      "isolated-core-129-3"
+    ],
+    "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216": [
+      "isolated-core-130-1",
+      "isolated-core-130-2",
+      "isolated-core-130-3"
+    ],
+    "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage": [
+      "isolated-core-131-1",
+      "isolated-core-131-2",
+      "isolated-core-131-3"
+    ],
+    "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram": [
+      "isolated-core-132-1",
+      "isolated-core-132-2",
+      "isolated-core-132-3"
+    ],
+    "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage": [
+      "isolated-core-133-1",
+      "isolated-core-133-2",
+      "isolated-core-133-3"
+    ],
+    "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward": [
+      "isolated-core-134-1",
+      "isolated-core-134-2",
+      "isolated-core-134-3"
+    ],
+    "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry": [
+      "isolated-core-135-1",
+      "isolated-core-135-2",
+      "isolated-core-135-3"
+    ],
+    "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships": [
+      "isolated-core-136-1",
+      "isolated-core-136-2",
+      "isolated-core-136-3"
+    ],
+    "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more": [
+      "isolated-core-137-1",
+      "isolated-core-137-2",
+      "isolated-core-137-3"
+    ],
+    "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump": [
+      "isolated-core-138-1",
+      "isolated-core-138-2",
+      "isolated-core-138-3"
+    ],
+    "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded": [
+      "isolated-core-139-1",
+      "isolated-core-139-2",
+      "isolated-core-139-3"
+    ],
+    "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles": [
+      "isolated-core-140-1",
+      "isolated-core-140-2",
+      "isolated-core-140-3"
+    ],
+    "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage": [
+      "isolated-core-141-1",
+      "isolated-core-141-2",
+      "isolated-core-141-3"
+    ],
+    "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures": [
+      "isolated-core-142-1",
+      "isolated-core-142-2",
+      "isolated-core-142-3"
+    ],
+    "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage": [
+      "isolated-core-143-1",
+      "isolated-core-143-2",
+      "isolated-core-143-3"
+    ],
+    "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station": [
+      "isolated-core-144-1",
+      "isolated-core-144-2",
+      "isolated-core-144-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatLiveTests.Cross_side_missile_hits_station_shield_exact_fraction_armor_untouched": [
+      "isolated-core-145-1",
+      "isolated-core-145-2",
+      "isolated-core-145-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatLiveTests.Lethal_hit_destroys_station_ejects_docked_ship_and_broadcasts_destroy_to_whole_mission": [
+      "isolated-core-146-1",
+      "isolated-core-146-2",
+      "isolated-core-146-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatLiveTests.Same_side_friendly_missile_deals_no_damage": [
+      "isolated-core-147-1",
+      "isolated-core-147-2",
+      "isolated-core-147-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatLiveTests.Shield_regenerates_over_real_ticks": [
+      "isolated-core-148-1",
+      "isolated-core-148-2",
+      "isolated-core-148-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Armor_regenerates_first_and_shield_waits_until_armor_full": [
+      "isolated-core-149-1",
+      "isolated-core-149-2",
+      "isolated-core-149-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Flag_pedestal_station_is_indestructible": [
+      "isolated-core-150-1",
+      "isolated-core-150-2",
+      "isolated-core-150-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Lethal_hit_marks_dead_returns_killed_and_leaves_removal_to_caller": [
+      "isolated-core-151-1",
+      "isolated-core-151-2",
+      "isolated-core-151-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Negative_amount_repairs_hull_fraction": [
+      "isolated-core-152-1",
+      "isolated-core-152-2",
+      "isolated-core-152-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Overflowing_hit_depletes_shield_and_converts_surplus_to_hull_by_exact_native_ratio": [
+      "isolated-core-153-1",
+      "isolated-core-153-2",
+      "isolated-core-153-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Same_side_friendly_fire_deals_no_damage": [
+      "isolated-core-154-1",
+      "isolated-core-154-2",
+      "isolated-core-154-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Shield_less_station_takes_no_damage_not_a_hull_fallback": [
+      "isolated-core-155-1",
+      "isolated-core-155-2",
+      "isolated-core-155-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Shield_regenerates_toward_max_at_documented_rate": [
+      "isolated-core-156-1",
+      "isolated-core-156-2",
+      "isolated-core-156-3"
+    ],
+    "Allegiance.Core.Tests.StationCombatTests.Shield_up_hit_reduces_shield_fraction_and_leaves_armor_untouched": [
+      "isolated-core-157-1",
+      "isolated-core-157-2",
+      "isolated-core-157-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Bucket_samples_sum_within_the_measured_tick_wall": [
+      "isolated-core-158-1",
+      "isolated-core-158-2",
+      "isolated-core-158-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Disabled_profiler_has_negligible_overhead": [
+      "isolated-core-159-1",
+      "isolated-core-159-2",
+      "isolated-core-159-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Enable_then_disable_roundtrips_the_singleton": [
+      "isolated-core-160-1",
+      "isolated-core-160-2",
+      "isolated-core-160-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Enabled_profiler_records_bucket_and_reports_to_csv": [
+      "isolated-core-161-1",
+      "isolated-core-161-2",
+      "isolated-core-161-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Profiler_is_off_by_default_when_not_configured": [
+      "isolated-core-162-1",
+      "isolated-core-162-2",
+      "isolated-core-162-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Slow_tick_capture_arms_via_configure_params": [
+      "isolated-core-163-1",
+      "isolated-core-163-2",
+      "isolated-core-163-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Slow_tick_capture_is_off_when_not_armed": [
+      "isolated-core-164-1",
+      "isolated-core-164-2",
+      "isolated-core-164-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Slow_tick_line_emits_top_buckets_gc_delta_and_worker_max_when_over_threshold": [
+      "isolated-core-165-1",
+      "isolated-core-165-2",
+      "isolated-core-165-3"
+    ],
+    "Allegiance.Core.Tests.TickProfilerTests.Slow_tick_line_is_NOT_emitted_below_the_threshold": [
+      "isolated-core-166-1",
+      "isolated-core-166-2",
+      "isolated-core-166-3"
+    ],
+    "Allegiance.Core.Tests.TimeDilationTimerAuditTests.AtFullSpeed_CooldownMatchesSimTimeExactly": [
+      "isolated-core-167-1",
+      "isolated-core-167-2",
+      "isolated-core-167-3"
+    ],
+    "Allegiance.Core.Tests.TimeDilationTimerAuditTests.Cooldown_TakesTwiceAsLongInWallTime_AtScaleHalf_ButSameSimTime": [
+      "isolated-core-168-1",
+      "isolated-core-168-2",
+      "isolated-core-168-3"
+    ]
+  },
+  "ClientCore": {
+    "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection": [
+      "isolated-client-000-1",
+      "isolated-client-000-2",
+      "isolated-client-000-3"
+    ],
+    "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing": [
+      "isolated-client-001-1",
+      "isolated-client-001-2",
+      "isolated-client-001-3"
+    ],
+    "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms": [
+      "isolated-client-002-1",
+      "isolated-client-002-2",
+      "isolated-client-002-3"
+    ],
+    "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches": [
+      "isolated-client-003-1",
+      "isolated-client-003-2",
+      "isolated-client-003-3"
+    ],
+    "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts": [
+      "isolated-client-004-1",
+      "isolated-client-004-2",
+      "isolated-client-004-3"
+    ]
+  },
+  "singleRows": {
+    "Release-150": [
+      "warm5-case-Release-150-1",
+      "warm5-case-Release-150-2",
+      "warm5-case-Release-150-3"
+    ],
+    "Release-195": [
+      "warm5-case-Release-195-1",
+      "warm5-case-Release-195-2",
+      "warm5-case-Release-195-3"
+    ],
+    "Debug-150": [
+      "warm5-case-Debug-150-1",
+      "warm5-case-Debug-150-2",
+      "warm5-case-Debug-150-3"
+    ],
+    "Debug-195": [
+      "warm5-case-Debug-195-1",
+      "warm5-case-Debug-195-2",
+      "warm5-case-Debug-195-3"
+    ]
+  },
+  "failureAudits": [
+    {
+      "method": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "message": "Assert.Equal() Failure: Values differ\nExpected: 11\nActual:   26",
+      "isolatedRuns": [
+        "failure-audit-postwarm-000-1",
+        "failure-audit-postwarm-000-2",
+        "failure-audit-postwarm-000-3"
+      ],
+      "classification": "load/receipt flake under the P694b brief"
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "message": "System.TimeoutException : no OnPeerJoined for raw peer",
+      "isolatedRuns": [
+        "failure-audit-postwarm-001-1",
+        "failure-audit-postwarm-001-2",
+        "failure-audit-postwarm-001-3"
+      ],
+      "classification": "load/receipt flake under the P694b brief"
+    }
+  ],
+  "completedSuites": [
+    "suite-Allegiance.Core.Tests-final",
+    "suite-Allegiance.ClientCore.Tests",
+    "suite-Allegiance.ClientCore.MonoGame.Tests-retry"
+  ],
+  "interruptedSuiteAttempts": [
+    {
+      "label": "suite-Allegiance.ClientCore.MonoGame.Tests",
+      "exit": 1,
+      "log": "/tmp/p694b/verification/suite-Allegiance.ClientCore.MonoGame.Tests.log",
+      "completion": "Incomplete: exited 1 without TRX or terminal summary; no failed assertion reported. Cause undetermined. Complete diagnostic rerun retained separately."
+    }
+  ],
+  "retainedSuitesNote": "Only the Core mass-event test preparation changed after ClientCore and MonoGame completed. Shared Core DLL and those test assemblies remain byte-identical; see unchanged-product-binaries.json. The changed Core test assembly was rebuilt and its full suite rerun."
+}

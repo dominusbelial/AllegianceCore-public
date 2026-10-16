@@ -15,10 +15,10 @@ namespace Allegiance.Core.Sim;
 /// <c>MaxShieldHitPoints</c>, <c>ShieldRegeneration</c>,
 /// <c>ArmorRegeneration</c> and the two defense-type indices are all already
 /// decoded — <c>DataStationTypeIGC.cs:32-35,42-43</c>) carries the capacity
-/// data, and this object carries exactly the <b>two</b> live per-instance
-/// pieces of combat state the task scopes: <see cref="ArmorFraction"/> and
-/// <see cref="ShieldFraction"/>, plus their damage intake
-/// (<see cref="ReceiveDamage"/>) and regen (<see cref="Regenerate"/>).
+/// data, and this object carries the live combat fractions
+/// (<see cref="ArmorFraction"/> and <see cref="ShieldFraction"/>), damage intake
+/// (<see cref="ReceiveDamage"/>), regen (<see cref="Regenerate"/>), and the
+/// station's rotating launch slot / last-launch time (<see cref="Launch"/>).
 /// </summary>
 /// <remarks>
 /// <para>Mirrors the <see cref="Asteroid"/> half of the split — and
@@ -79,6 +79,66 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Station : IStationIgc, ISideVisible
 {
+    private int _undockPosition;
+    private double _lastLaunch = double.NegativeInfinity;
+
+    /// <summary>
+    /// Native stationIGC.cpp:299-382: launch immediately from the next slot,
+    /// with +/-5 jitter and a larger outward offset for rapid successive
+    /// launches. There is no launch queue or temporary ship collision immunity.
+    /// The caller moves sector membership and sends the launch state.
+    /// </summary>
+    public void Launch(Ship ship, HullLandingBayGeometry? geometry, double now, Random? random = null)
+    {
+        random ??= Random.Shared;
+        const float maxOffset = 5;
+        float Jitter() => (float)(random.NextDouble() * (2 * maxOffset) - maxOffset);
+        var position = new Vector3(Jitter(), Jitter(), Jitter());
+        var orientation = Orientation;
+        float speed = ship.Mission!.Core.Constants.FloatConstants[4];
+        float radius = ship.HullType.Length * .5f;
+        var slots = geometry?.LaunchSlots;
+        Vector3 forward;
+        if (slots is not { Count: > 0 })
+        {
+            if (ship.PilotType < Ship.PilotTypePlayer && Type.HasCapability(DataStationTypeIGC.SabmRipcord))
+            {
+                // Vector::RandomDirection (zlib/vector.cpp:37-46).
+                double z = random.NextDouble() * 2 - 1;
+                double angle = random.NextDouble() * 2 * Math.PI;
+                double r = Math.Sqrt(1 - z * z);
+                forward = new Vector3((float)(r * Math.Cos(angle)), (float)(r * Math.Sin(angle)), (float)z);
+            }
+            else
+            {
+                // Preserve native's case 4 reset/fallthrough (including the
+                // repeated right launch at the five-launch wrap).
+                int direction = _undockPosition++;
+                if (direction == 4) { _undockPosition = 0; direction = 0; }
+                forward = direction switch
+                {
+                    1 => orientation.GetUp(), 2 => -orientation.GetRight(),
+                    3 => -orientation.GetUp(), _ => orientation.GetRight()
+                };
+            }
+            position += forward * (Radius + radius + speed * .5f + maxOffset);
+        }
+        else
+        {
+            var slot = slots[_undockPosition % slots.Count];
+            position += slot.Position * orientation;
+            forward = slot.Direction * orientation;
+            position += forward * (radius + speed * (now - _lastLaunch <= .1 ? .85f : .5f) + maxOffset);
+            _undockPosition = (_undockPosition + 1) % slots.Count;
+        }
+        ship.Orientation.Set(forward, orientation.GetForward());
+        ship.Position = position + Center;
+        ship.Velocity = forward * speed;
+        for (int axis = 0; axis < 3; axis++) ship.SetTurnRate(axis, 0);
+        ship.LastLaunchTime = now;
+        _lastLaunch = now;
+    }
+
     /// <summary>
     /// <c>c_sabmPedestal = 0x400</c> (<c>src/Igc/igc.h:758</c>) — the
     /// station-ability bit saying a station is a flag pedestal and therefore
@@ -90,11 +150,25 @@ public sealed class Station : IStationIgc, ISideVisible
     public const short SabmPedestal = 0x400;
 
     /// <summary>The underlying static wire record (identity, geometry, side).</summary>
-    public DataStationIGC Data { get; }
+    public DataStationIGC Data { get; private set; }
 
     /// <summary>The resolved static station <b>type</b> — the capacity data
     /// (max armor/shield, regen rates, defense types) the damage formula reads.</summary>
-    public DataStationTypeIGC Type { get; }
+    public DataStationTypeIGC Type { get; private set; }
+
+    /// <summary>
+    /// Igc/stationIGC.cpp:210-276: replace capacity/geometry, retaining pose and
+    /// damage fractions; recompute building techs before the type notification.
+    /// </summary>
+    public void SetBaseStationType(DataStationTypeIGC type)
+    {
+        Type = type;
+        Data = Data with { StationTypeId = type.StationTypeId };
+        if (Mission is not { } mission) return;
+        mission.Sectors.FirstOrDefault(s => s.Id == ClusterId)?.SyncStationData(this);
+        mission.Sides.FirstOrDefault(s => s.Id == SideId)?.NotifyBuildingTechsChanged();
+        mission.Site.StationTypeChange(this);
+    }
 
     /// <summary>Wrap a static record and its resolved type as the runtime model.</summary>
     public Station(DataStationIGC data, DataStationTypeIGC type)
@@ -263,48 +337,65 @@ public sealed class Station : IStationIgc, ISideVisible
 
     /// <summary>
     /// Port of <c>CstationIGC::InGarage(IshipIGC* pship, const Vector&amp; position)</c>
-    /// (<c>src/Igc/stationIGC.cpp:385-436</c>) — the geometric "is this ship in
+    /// (<c>src/Igc/stationIGC.cpp:385-448</c>) — the geometric "is this ship in
     /// my landing bay" test the native dock dispatch runs on a station
-    /// (<c>shipIGC.cpp:843,853</c>). Structurally identical to the carrier's
-    /// <see cref="Ship.InGarage(Ship, float, HullLandingBayGeometry)"/> — this
-    /// port deliberately REUSES that geometric predicate (the same
-    /// slot-plane/GetMinExtreme half-space test) rather than the station's
-    /// crude 200-unit dock-sphere; the only differences from the carrier form
-    /// are native-faithful: the test takes a <em>fixed</em> world
+    /// (<c>shipIGC.cpp:843,853</c>). Tests each bay's half-spaces against every
+    /// oriented convex sub-hull via <see cref="Collision.Collider.GetMinExtreme"/>.
+    /// The test takes a <em>fixed</em> world
     /// <paramref name="position"/> (the station is static, so there is no
-    /// carrier velocity term, <c>stationIGC.cpp:404</c>), the bay geometry
+    /// carrier velocity term, <c>stationIGC.cpp:412</c>), the bay geometry
     /// comes from the station <em>type's</em> own model
     /// (<see cref="Collision.StationLandingBayCache"/> /
     /// <see cref="Collision.HullLandingBay.ReconstructStation"/>,
     /// <c>stationtypeigc.cpp:77-101</c>), and <see cref="Orientation"/> is the
     /// station's. A bay with no land slots is <c>false</c> — the native
-    /// <c>landSlots-1 &lt; 0</c> no-bay case (<c>stationIGC.cpp:388-390</c>).
-    /// The lander's extreme point is the <c>0.5 × HullType.Length</c> sphere,
-    /// the same documented simplification <see cref="Ship.InGarage"/> makes.
+    /// <c>landSlots-1 &lt; 0</c> no-bay case (<c>stationIGC.cpp:389-391</c>).
+    /// The lander's extreme point uses the <c>0.5 × HullType.Length</c> sphere as
+    /// fallback for a missing model; resolved models use native oriented hull extremes.
     /// </summary>
     public bool InGarage(Ship lander, Vector3 position, HullLandingBayGeometry bay)
     {
         if (bay.LandSlots.Count == 0) return false;         // native: landSlots-1 < 0 → bInside stays false
 
-        var dp = position - Center;                          // stationIGC.cpp:404 (station static → no velocity term)
-        var landerRadius = 0.5f * lander.HullType.Length;    // documented sphere simplification
-        var orientationStation = Orientation;                // stationIGC.cpp:410
+        var dp = position - Center;                          // stationIGC.cpp:412 (station static → no velocity term)
+        // Resolve the CURRENT hull: a cached Model.Hull may predate an ejection
+        // or purchase. Native replaces the hit test in SetBaseHullType
+        // (Igc/shipIGC.cpp:1410-1419).
+        var hull = lander.Sector?.CollisionHulls is { } cache
+            ? cache.Resolve(lander.HullType.ModelName) : lander.Hull;
+        var body = new Collider(lander, Vector3.Zero, Vector3.Zero, lander.Orientation,
+            hull, 0.5f * lander.HullType.Length, isStatic: false);
+        // CvhReader retains file coordinates. Native flips vertex X at load
+        // (_Utility/HitTest.cpp:735-737); reflect that local axis before rotating
+        // into ship space. Copy so the ship's actual attitude is untouched.
+        var hitOrientation = lander.Orientation.Copy();
+        if (hull is not null) hitOrientation.SetRight(-hitOrientation.GetRight());
+        // stationIGC.cpp:397-407: all convex sub-hulls, or one primitive.
+        int kMin = body.TrueShape > 0 ? 0 : body.TrueShape;
+        int kMax = body.TrueShape > 0 ? body.TrueShape : body.TrueShape + 1;
+        var orientationStation = Orientation;                // stationIGC.cpp:409
 
-        for (var i = bay.LandSlots.Count - 1; i >= 0; i--)   // stationIGC.cpp:390,413 (slot loop, descending)
+        int slots = lander.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+            ? bay.LandSlots.Count : bay.CapLandSlots;
+        for (var i = slots - 1; i >= 0; i--)   // stationIGC.cpp:389-391,413 (slot loop, descending)
         {
             var slot = bay.LandSlots[i];
             var j = slot.Planes.Count - 1;
             do                                               // stationIGC.cpp:415 (plane loop, descending)
             {
                 var plane = slot.Planes[j];
-                var direction = plane.Direction * orientationStation;   // stationIGC.cpp:417
-                var point = plane.Position * orientationStation;        // stationIGC.cpp:418
-                var pMin = dp - direction * landerRadius;               // sphere GetMinExtreme, stationIGC.cpp:423
-                if ((pMin - point) * direction < 0.0f)                  // stationIGC.cpp:424
-                    break;
+                var direction = plane.Direction * orientationStation;   // stationIGC.cpp:419
+                var point = plane.Position * orientationStation;        // stationIGC.cpp:420
+                int k = kMin;
+                for (; k < kMax; k++)
+                {
+                    var pMin = body.GetMinExtreme(k, dp, hitOrientation, direction);
+                    if ((pMin - point) * direction < 0.0f) break;   // stationIGC.cpp:425-430
+                }
+                if (k < kMax) break;
             } while (j-- > 0);
 
-            if (j == -1)                                     // all planes passed → bInside=true (stationIGC.cpp:434-438)
+            if (j == -1)                                     // all planes passed → bInside=true (stationIGC.cpp:436-439)
                 return true;
         }
 
@@ -516,6 +607,7 @@ public sealed class Station : IStationIgc, ISideVisible
     /// <param name="newSideId">The capturing ship's side id — the station's new owner.</param>
     public void Capture(short newSideId)
     {
+        short oldSideId = SideId;
         // Post-capture damage fudge (fsship.cpp:582): halve the current hull fraction.
         ArmorFraction *= 0.5f;
 
@@ -535,6 +627,13 @@ public sealed class Station : IStationIgc, ISideVisible
 
         // Re-side the station to the capturing side (fsship.cpp:631: SetSide(pside)).
         SideId = newSideId;
+        Data = Data with { SideId = newSideId };
+        if (Mission is { } mission)
+        {
+            mission.Sectors.FirstOrDefault(s => s.Id == ClusterId)?.SyncStationData(this);
+            mission.Sides.FirstOrDefault(s => s.Id == oldSideId)?.NotifyBuildingTechsChanged();
+            mission.Sides.FirstOrDefault(s => s.Id == newSideId)?.NotifyBuildingTechsChanged();
+        }
     }
 
     /// <summary>

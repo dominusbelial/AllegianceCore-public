@@ -17,6 +17,29 @@ namespace Allegiance.Server;
 public sealed partial class Server
 {
 
+    // Seat a new player in the friendly hangar before their first purchase,
+    // matching native SetStation on side entry (FedSrv/fsmission.cpp:791-796).
+    // MCP initial buys and pod relaunches then use the same docked fLaunch path.
+    private void DockInitialLoadout(Ship ship, Sector sector)
+    {
+        ship.MarkSpawnLoadoutFree();
+        if (ship.StationId is not null || ship.Mission is not { } mission) return;
+        var station = sector.Stations.FirstOrDefault(st => st.SideId == ship.SideId
+            && mission.Core.StationTypes.TryGetValue(st.StationTypeId, out var type)
+            && type.HasCapability(DataStationTypeIGC.SabmRestart));
+        if (station == default) return;
+        ship.StationId = station.StationId;
+        ship.LastDockTime = _simNow;
+        ship.Velocity = Vector3.Zero;
+        ship.StateM = 0;
+    }
+
+    private void SendInitialDockState(ConnectionId from, Ship ship)
+    {
+        if (ship.StationId is { } station)
+            SendPeer(from, FedPacket.Pack([new DockedNotify { StationId = station }.Encode()]));
+    }
+
     /// <summary>
     /// P108+P109 — the server-side board action, the port of
     /// <c>FedSrv.CPP:2322-2475</c> <c>BoardShip()</c>. Establishes turret/
@@ -39,7 +62,8 @@ public sealed partial class Server
     /// a cluster</c> and <c>at a station</c> (boarding a docked ship from a
     /// docked ship). In this port a docked ship is <c>StationId != null</c>
     /// (docked ships retain their <see cref=\"Ship.Sector\"/>), so the gate
-    /// translates to both <c>StationId</c>s being set.</item>
+    /// translates to both <c>StationId</c>s being set. Existing children may
+    /// switch turrets on their own carrier in flight (FedSrv.CPP:2341).</item>
     /// <item><b>Turret-slot search</b> — <see cref=\"ChooseTurretSlot\"/>,
     /// faithful to the native walk (<c>FedSrv.CPP:2347-2402</c>): no turret
     /// slots ⇒ observer; else pick the first unoccupied, equipped
@@ -53,13 +77,9 @@ public sealed partial class Server
     /// (<c>FedSrv.CPP:2415-2420</c>). No nested boarding exists in this port, so
     /// the list is always empty; kept defensively per the task.</item>
     /// <item><b>Money refund</b> — <c>refund = pship-&gt;GetValue()</c>
-    /// (<c>FedSrv.CPP:2428</c>, hull price + Σ part prices,
-    /// <c>shipIGC.h:396-406</c>). <b>Simplification:</b> the native credits the
-    /// player's individual money and broadcasts <c>MONEY_CHANGE</c>
-    /// (<c>FedSrv.CPP:2433-2442</c>); this port has no per-player wallet and no
-    /// <c>MONEY_CHANGE</c> codec, so the refund is deposited into the boarder's
-    /// side treasury (<see cref=\"Side.Money\"/>) — the P51-59 money primitive —
-    /// where payday distributes it. Stated plainly, not a silent drop.</item>
+    /// (<c>FedSrv.CPP:2428</c>, native GetValue, shipIGC.h:396-406).
+    /// Credits the player wallet and sends a side-wide MONEY_CHANGE
+    /// (FedSrv.CPP:2433-2442). Free spawn hardware has zero refund credit.</item>
     /// <item><b>State transition</b> — <c>SetParentShip / SetTurretID</c>
     /// (<c>FedSrv.CPP:2445-2446</c>); the boarder's parts are cleared (the
     /// native <c>SetParentShip</c> with no old parent terminates them,
@@ -79,6 +99,12 @@ public sealed partial class Server
             return false;
         }
 
+        // Native SetParentShip clears the hull on the first board
+        // (Igc/shipIGC.cpp:3619-3633). A boarded ship has no hardware to sell.
+        if (boarder.Dead || carrier.Dead
+            || carrier.ParentShip is not null || boarder.Mission != carrier.Mission
+            || boarder.SideId != carrier.SideId) return false;
+
         // pfsShipBoard->IsPlayer() (FedSrv.CPP:2340) — the carrier must be a
         // peer-owned (player) ship in this port.
         if (!_peerShips.Any(kv => ReferenceEquals(kv.Value.Ship, carrier)))
@@ -88,7 +114,8 @@ public sealed partial class Server
         }
 
         // Both docked: the native precondition (FedSrv.CPP:2342-2345).
-        if (boarder.StationId is null || carrier.StationId is null)
+        if (!ReferenceEquals(boarder.ParentShip, carrier)
+            && (boarder.StationId is null || carrier.StationId is null))
         {
             ConsoleLog.Write($"[boardship] ship {boarder.Id} -> {carrier.Id}: boarder and carrier must both be docked (FedSrv.CPP:2342-2345) — refused");
             return false;
@@ -106,26 +133,11 @@ public sealed partial class Server
         foreach (var kid in kids)
             PerformLeave(kid, boarder);
 
-        // Money refund (FedSrv.CPP:2426-2443) — computed before the parts are
-        // cleared, matching native order (GetValue runs before SetParentShip
-        // clears parts). Simplified to credit the side treasury (see doc).
-        int refund = ShipValue(boarder);
-        if (refund > 0 && boarder.SideId is { } bs && boarder.Mission is { } bm)
-        {
-            var side = bm.Sides.FirstOrDefault(s => s.Id == bs);
-            if (side is not null)
-            {
-                side.Money += refund;
-                // P118: now that the MONEY_CHANGE(60) codec exists, tell the
-                // whole side its treasury moved — the faithful port of the
-                // native board-refund broadcast (FedSrv.CPP:2435-2441, which
-                // sends to CFSSide::FromIGC(pside)->GetGroup(), not just the
-                // boarded player). sidFrom = NA marks the server-initiated
-                // pooled-treasury credit (Messages.h:444 convention).
-                BroadcastMoneyChangeSideWide(side.Id, refund, boarder.Id);
-                Console.WriteLine($"[boardship] ship {boarder.Id} -> {carrier.Id}: refunded hardware value {refund} to side {side.Id} treasury + MONEY_CHANGE(60) to side");
-            }
-        }
+        // FedSrv.CPP:2426-2443: refund once to the player's wallet, side-wide notice.
+        if (boarder.ParentShip is null) RefundHardware(boarder);
+
+        if (boarder.ParentShip is { } previous && boarder.TurretId is { } previousSlot)
+            previous.Weapons.FirstOrDefault(w => w.MountId == previousSlot)?.SetGunner(null);
 
         // SetParentShip + SetTurretID (FedSrv.CPP:2445-2446). Reparent cleanly
         // if the boarder was somehow already on another carrier, then register
@@ -163,7 +175,8 @@ public sealed partial class Server
 
         // "No parts allowed on an observer or turret" (native SetParentShip with
         // no old parent terminates them, shipIGC.cpp:3619-3633).
-        boarder.ClearLoadout();
+        // RefundHardware consumed an unboarded ship's loadout; an existing
+        // child already has no parts, as native SetParentShip requires.
 
         // If the carrier is docked, the boarder inherits its dock state
         // (FedSrv.CPP:2456-2457 SetStation(pstationBoard)).
@@ -394,9 +407,9 @@ public sealed partial class Server
             if (current is not null)
             {
                 ship.SetRipcordModel(null);
-                SendRipcordSectorWide(ship.Sector!.Id,
+                SendRipcordSectorWide(ship.Sector!,
                     new RipcordAborted { ShipidRipcord = ship.Id }.Encode());
-                Console.WriteLine($"[ripcord] ship {ship.Id} cancels -> RIPCORD_ABORTED(187) sector {ship.Sector.Id} wide");
+                Console.WriteLine($"[ripcord] ship {ship.Id} cancels -> RIPCORD_ABORTED(187) sector {ship.Sector!.Id} wide");
             }
             return;
         }
@@ -420,8 +433,8 @@ public sealed partial class Server
             };
             if (firstActivation)
             {
-                SendRipcordSectorWide(ship.Sector!.Id, msg.Encode());
-                Console.WriteLine($"[ripcord] ship {ship.Id} FIRST activation anchor (ot={anchor.Ot} oid={anchor.Oid}) -> sector {target.Id} RIPCORD_ACTIVATE(185) sector {ship.Sector.Id} wide");
+                SendRipcordSectorWide(ship.Sector!, msg.Encode());
+                Console.WriteLine($"[ripcord] ship {ship.Id} FIRST activation anchor (ot={anchor.Ot} oid={anchor.Oid}) -> sector {target.Id} RIPCORD_ACTIVATE(185) sector {ship.Sector!.Id} wide");
             }
             else
             {
@@ -452,15 +465,15 @@ public sealed partial class Server
         => RequestRipcordCore(ship, target, null);
 
     /// <summary>Send a pre-encoded server message to every peer currently
-    /// flying in <paramref name="sectorId"/> — the port's
+    /// flying in <paramref name="sector"/> — the port's
     /// <c>GetGroupSectorFlying(pclusterShip)</c> (<c>FedSrv.CPP:13338</c>), the
     /// sector-wide broadcast both the ripcord slices and the P117 relaunch
     /// (<c>FedSrv.CPP:13019</c>) use.</summary>
-    private void SendSectorWide(short sectorId, byte[] encoded)
+    private void SendSectorWide(Sector sector, byte[] encoded)
     {
         var packet = FedPacket.Pack(new[] { encoded });
         foreach (var kv in _peerShips)
-            if (kv.Value.Sector.Id == sectorId)
+            if (ReferenceEquals(kv.Value.Ship.Sector, sector))
                 SendPeer(kv.Key, packet);
     }
 
@@ -486,9 +499,9 @@ public sealed partial class Server
     /// <item><b>Ship anchor with enough energy</b> (<c>FedSrv.CPP:13446-13474</c>):
     /// pay <c>RipcordCost</c> (the ripper's hull cost) from the target's energy,
     /// then the genuinely new ship-relative repositioning: <c>r = target.Radius +
-    /// ripper.Radius + 25.0f</c> (<b>25, not the 50-margin station launch</b>),
+    /// ripper.Radius + 25.0f</c> (the native ship-anchor margin),
     /// a <b>random</b> direction (<c>Vector::RandomDirection()</c>), the same
-    /// <see cref="ExitStationSpeed"/> velocity (<c>c_fcidExitStationSpeed</c>),
+    /// <c>c_fcidExitStationSpeed</c> (slot 4, stationIGC.cpp:307) velocity (<c>c_fcidExitStationSpeed</c>),
     /// zeroed turn rates, and relocation to the target ship's cluster.</item>
     /// <item><b>Ship anchor without enough energy</b> (<c>FedSrv.CPP:13451-13461</c>):
     /// broadcast <c>RIPCORD_ABORTED(187)</c> to everyone flying in the ripper's
@@ -575,7 +588,7 @@ public sealed partial class Server
                 // retried when the target later regains energy.
                 var ripSec = rip.Sector;
                 if (ripSec is not null)
-                    SendRipcordSectorWide(ripSec.Id,
+                    SendRipcordSectorWide(ripSec,
                         new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
                 rip.SetRipcordModel(null);
                 Console.WriteLine($"[ripcord] ship {rip.Id} ripcord to ship-anchor {target.Id} ABORTED — target energy {target.Energy} < RipcordCost {ripcordCost}; attempt consumed (RIPCORD_ABORTED(187) -> ripper sector {ripSec?.Id.ToString() ?? "?"} wide)");
@@ -585,7 +598,7 @@ public sealed partial class Server
 
             // Ship-relative reposition (FedSrv.CPP:13461-13474): NOT station-
             // relative — r = target.Radius + ripper.Radius + 25.0f (literal 25,
-            // distinct from the station launch's 50 margin), a random direction,
+            // distinct from the station launch-slot offsets), a random direction,
             // ExitStationSpeed velocity, zeroed turn rates, and move to the
             // target's cluster. Shared with the probe branch via
             // <see cref="PlaceRipcordNearTarget"/>.
@@ -731,6 +744,8 @@ public sealed partial class Server
             return;
         }
 
+        _podTrips.End(rescuee, _simNow, "rescued");
+
         // 3) Place the rescuee at the station — PerformTeleport's relocation
         // core (Server.cs:3284-3299): move to the station's cluster and latch
         // docked. FindFriendlyStation already guarantees same-side, so the
@@ -797,6 +812,8 @@ public sealed partial class Server
             Console.WriteLine($"[rescue] lifepod ship {rescuee.Id} reached station {station.StationId} but has no mission — station rescue dropped");
             return;
         }
+
+        _podTrips.End(rescuee, _simNow, "station-rescued");
 
         // Dock the pod at the rescue station — the same direct-dock relocation
         // core PerformRescue/PerformTeleport use (move to the station's sector,
@@ -982,9 +999,9 @@ public sealed partial class Server
         {
             Ship target = pickerLive.Wallet.AutoDonateTarget ?? ship;   // FedSrv.CPP:13594-13596
             var targetLive = LiveOf(target) ?? pickerLive;
-            targetLive.Wallet.Money += amount;                          // pfsDonate->SetMoney(+amount), FedSrv.CPP:13609
+            targetLive.Wallet.Money = (int)Math.Clamp((long)targetLive.Wallet.Money + amount, 0, int.MaxValue);                          // pfsDonate->SetMoney(+amount), FedSrv.CPP:13609
             Console.WriteLine($"[treasure] ship {ship.Id} (player) picked cash treasure {treasure.Id} amount={amount} -> wallet of ship {target.Id} now {targetLive.Wallet.Money}");
-            BroadcastMoneyChangeSideWide(sideId, amount, target.Id);    // sidTo = target, sidFrom = NA (FedSrv.CPP:13605-13606, side group)
+            BroadcastMoneyChangeSideWide(ship.Mission!, sideId, amount, target.Id);    // sidTo = target, sidFrom = NA (FedSrv.CPP:13605-13606, side group)
         }
         else
         {
@@ -999,9 +1016,8 @@ public sealed partial class Server
     /// <c>DESTROY_TREASURE(30)</c> whole-mission (every peer, every side) — the
     /// port of <c>KillTreasureEvent</c>'s wire half (<c>FedSrv.CPP:12498-12503</c>,
     /// <c>GetGroupRealSides()</c>). The treasure's <c>objectID</c> and its
-    /// sector id go on the wire; the (out-of-scope) flag respawn is omitted.
-    /// Called from the cash-pickup drain; would equally serve an expiry path
-    /// once the spawn/lifecycle system exists.</summary>
+    /// sector id go on the wire. Expiry's site handler separately respawns flags;
+    /// pickup consumes the payload without respawning (FedSrv.CPP:13576).</summary>
     private void BroadcastTreasureDestroyed(Treasure treasure)
     {
         var sector = treasure.OwnerSector;
@@ -1011,6 +1027,7 @@ public sealed partial class Server
         int n = 0;
         foreach (var kv in _peerShips)   // whole-mission: every peer, regardless of side
         {
+            if (treasure.OwnerMission is { } owner && !ReferenceEquals(kv.Value.Ship.Mission, owner)) continue;
             SendPeer(kv.Key, packet);
             n++;
         }
@@ -1207,7 +1224,7 @@ public sealed partial class Server
         int launchSlots = bay?.LaunchSlots.Count ?? 0;
 
         var orientation = carrier.Orientation;                  // FedSrv.CPP:12963
-        float vLaunch = ExitStationSpeed;                       // c_fcidExitStationSpeed = 50, FedSrv.CPP:12959, missionigc.cpp:2689,2744
+        float vLaunch = lander.Mission!.Core.Constants.FloatConstants[4];                       // c_fcidExitStationSpeed = 50, FedSrv.CPP:12959, missionigc.cpp:2689,2744
 
         var position = carrier.Position + Jitter(0.5f);         // FedSrv.CPP:12964-12968 (small ±0.5 jitter)
         var velocity = carrier.Velocity;                        // FedSrv.CPP:12969
@@ -1258,7 +1275,7 @@ public sealed partial class Server
             Parts = lander.Parts.Select(p => p.ToExpandedPartData()).ToList(),
         };
         byte[] encoded = relaunch.Encode();
-        SendSectorWide(lander.Sector!.Id, encoded);
+        SendSectorWide(lander.Sector!, encoded);
 
         var note = $"[relaunch] ship {lander.Id} relaunched off carrier {carrier.Id} (bay '{carrier.HullType.ModelName}', {launchSlots} launch slots{(selectedSlot >= 0 ? $", slot {selectedSlot}" : "")}) -> RELAUNCH_SHIP(192) sector-wide; energy={lander.Energy:F0}/{lander.HullType.MaxEnergy:F0} ammo={lander.Ammo}/{lander.HullType.MaxAmmo}; pos=({position.X:F1},{position.Y:F1},{position.Z:F1}) vel=({velocity.X:F1},{velocity.Y:F1},{velocity.Z:F1})";
         Console.WriteLine(note);
@@ -1279,7 +1296,7 @@ public sealed partial class Server
     /// <c>FedSrv.CPP:13461-13476</c>): place <paramref name="rip"/> at
     /// <c>targetPos + dir · (targetRadius + ripper.Radius + 25)</c> in a
     /// <b>random</b> unit direction, kick it outward at
-    /// <see cref="ExitStationSpeed"/>, zero its turn rates, orient it along
+    /// <c>c_fcidExitStationSpeed</c> (slot 4, stationIGC.cpp:307), zero its turn rates, orient it along
     /// the direction, and move it into <paramref name="targetSector"/>'s
     /// cluster. The energy cost is <b>not</b> applied here — it is the
     /// ship-branch's responsibility (<c>FedSrv.CPP:13452-13460</c>), so a probe
@@ -1289,7 +1306,7 @@ public sealed partial class Server
         float r = targetRadius + ShipRadius(rip) + 25.0f;
         Vector3 v = RandomDirection();
         rip.Position = targetPos + v * r;
-        rip.Velocity = v * ExitStationSpeed;
+        rip.Velocity = v * rip.Mission!.Core.Constants.FloatConstants[4];
         var o = new Orientation();
         o.Set(v);                       // Orientation o(v), FedSrv.CPP:13465
         rip.SetOrientation(o);
@@ -1398,8 +1415,31 @@ public sealed partial class Server
 
     /// <summary>The boarder's surrendered hardware value = hull price + Σ
     /// mounted part prices (<c>CshipIGC::GetValue</c>, <c>shipIGC.h:396-406</c>).</summary>
-    private static int ShipValue(Ship ship) =>
-        ship.HullType.Price + ship.Parts.Sum(p => p.Type.Price);
+    // Native GetPrice: launcher quantity * unit price; packs are free
+    // (Igc/magazineigc.h:85-88, dispenserigc.h:86-89, packigc.h:80-83).
+    private static long PartValue(DataPartTypeIGC type, int amount) =>
+        type.Type is DataPartTypeIGC.Pack ? 0
+        : IsExpendableLauncher(type.EquipmentType) ? (long)type.Price * amount : type.Price;
+
+    private static long RefundablePartValue(MountedPart part) =>
+        part.FreeSpawn ? 0 : PartValue(part.Type, part.Amount);
+
+    private static long RefundableShipValue(Ship ship) =>
+        (long)ship.RefundableHullValue + ship.Parts.Sum(RefundablePartValue)
+        + ship.CargoHold.Sum(p => p is null ? 0L : RefundablePartValue(p));
+
+    private void RefundHardware(Ship ship)
+    {
+        if (LiveOf(ship) is not { } live) return;
+        long value = RefundableShipValue(ship);
+        // The wire wallet is int32: discard only the unrepresentable excess.
+        int refund = (int)Math.Min(Math.Max(0, value), Math.Min(int.MaxValue, Math.Max(0L, (long)int.MaxValue - live.Wallet.Money)));
+        ship.RefundableHullValue = 0;
+        ship.ClearLoadout(); // consume all hardware before any outward send can throw
+        if (refund == 0) return;
+        live.Wallet.Money = checked(live.Wallet.Money + refund);
+        if (ship.SideId is { } side) BroadcastMoneyChangeSideWide(ship.Mission!, side, refund, ship.Id);
+    }
 
     /// <summary>P494 — an expendable launcher part (native <c>ET_Magazine /
     /// ET_Dispenser / ET_ChaffLauncher</c>, the only equipment kinds
@@ -1407,14 +1447,13 @@ public sealed partial class Server
     private static bool IsExpendableLauncher(EquipmentType et) =>
         et is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher;
 
-    /// <summary>P494 — the first mount slot (0..254) not occupied by a mounted
-    /// part, or <see cref="byte.MaxValue"/> (255) when every slot is taken — the
-    /// target for a desired-loadout re-buy's fresh mount.</summary>
-    private static byte FirstFreeMountSlot(Ship ship)
+    /// <summary>Native destination slot for a desired launcher re-buy.</summary>
+    private static byte FirstFreeMountSlot(Ship ship, DataPartTypeIGC part)
     {
-        for (byte m = 0; m < byte.MaxValue; m++)
-            if (!ship.Parts.Any(p => p.MountId == m))
-                return m;
+        int count = part.EquipmentType == EquipmentType.Weapon ? Math.Min(8, ship.HullType.Hardpoints.Length) : 1;
+        for (byte mount = 0; mount < count; mount++)
+            if (ship.HullType.CanMountPart(part, mount)
+                && !ship.Parts.Any(p => p.EquipmentType == part.EquipmentType && p.MountId == mount)) return mount;
         return byte.MaxValue;
     }
 
@@ -1465,7 +1504,7 @@ public sealed partial class Server
         if (side is null || ship.StationId is null) return;
 
         var ttbm = side.Techs;                 // dev | building (native RefillPart ttbm, FedSrv.CPP:12819)
-        int oldValue = ShipValue(ship);
+        long oldValue = RefundableShipValue(ship);
 
         // ---- projection: the target part for each mounted part + the desired-
         // loadout re-buys + the total cost (P441 ship-value differential).
@@ -1490,9 +1529,14 @@ public sealed partial class Server
                 reBuys.Add(SuccessorUpgrade.PartSuccessor(mission.Core, dpt, null, ttbm));
             }
         }
-        int projectedValue = ship.HullType.Price + targets.Sum(t => t.Price) + reBuys.Sum(r => r.Price);
-        int projectedCost = projectedValue - oldValue;
-        bool afford = projectedCost <= live.Wallet.Money;   // P441-style funds gate (soft-fail)
+        long projectedValue = ship.RefundableHullValue
+            + targets.Select((t, i) => ship.Parts[i].FreeSpawn && t.PartId == ship.Parts[i].PartId ? 0L
+                : PartValue(t, Ship.ClampPartAmount(ship.HullType, mission.Core, t,
+                    ship.Parts[i].Type.Price == 0 ? short.MaxValue : ship.Parts[i].Amount))).Sum()
+            + reBuys.Sum(r => PartValue(r, Ship.ClampPartAmount(ship.HullType, mission.Core, r, short.MaxValue)))
+            + ship.CargoHold.Sum(p => p is null ? 0L : RefundablePartValue(p));
+        long projectedCost = projectedValue - oldValue;
+        bool afford = projectedCost <= live.Wallet.Money && live.Wallet.Money >= 0;   // P441-style funds gate (soft-fail)
 
         // ---- apply the successor upgrades + free-amount resets (backwards so
         // newly-replaced parts are not revisited, RefillPart FedSrv.CPP:12665).
@@ -1507,7 +1551,8 @@ public sealed partial class Server
                 ship.SetPartAmount(p, newAmount);
                 continue;
             }
-            if (!afford && target.Price > p.Type.Price)
+            if (!ship.HullType.CanMountPart(target, p.MountId)
+                || !afford && PartValue(target, Ship.ClampPartAmount(ship.HullType, mission.Core, target, newAmount)) > RefundablePartValue(p))
             {
                 // Paid upgrade unaffordable → keep the base part, still reset the amount.
                 ship.SetPartAmount(p, newAmount);
@@ -1529,8 +1574,8 @@ public sealed partial class Server
                 Console.WriteLine($"[dock-restock] ship {ship.Id}: desired re-buy {succ.PartId} ('{succ.Name}', {succ.Price}) unaffordable — skipped");
                 continue;
             }
-            byte slot = FirstFreeMountSlot(ship);
-            if (slot == byte.MaxValue) break;   // no free mount slot
+            byte slot = FirstFreeMountSlot(ship, succ);
+            if (slot == byte.MaxValue) continue;   // no free mount slot
             ship.MountPart(succ, short.MaxValue, slot, byte.MaxValue);
         }
 
@@ -1544,11 +1589,11 @@ public sealed partial class Server
 
         // ---- charge P441-style: the ship-value differential, side-wide
         // MONEY_CHANGE to the owner's side (FedSrv.CPP:6195-6209).
-        int cost = ShipValue(ship) - oldValue;
+        long cost = RefundableShipValue(ship) - oldValue;
         if (cost > 0)
         {
-            live.Wallet.Money -= cost;
-            if (sd is { } bs) BroadcastMoneyChangeSideWide(bs, -cost, ship.Id);
+            live.Wallet.Money = checked((int)(live.Wallet.Money - cost));
+            if (sd is { } bs) BroadcastMoneyChangeSideWide(ship.Mission!, bs, checked((int)-cost), ship.Id);
             Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock charged {cost} (wallet now {live.Wallet.Money}) + MONEY_CHANGE(60) dMoney={-cost} side-wide");
         }
         Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock done — {upgraded} successor upgrade(s), pools refilled, net cost {cost}");
@@ -1623,7 +1668,7 @@ public sealed partial class Server
     private Ship? FindSameSideShip(short id, short? sideId, Mission? mission)
     {
         foreach (var kv in _peerShips)
-            if (kv.Value.Ship.Id == id && kv.Value.Ship.SideId == sideId)
+            if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.Id == id && kv.Value.Ship.SideId == sideId)
                 return kv.Value.Ship;
 
         // P148: also search the mission's full ship set (catches NPC/drones
@@ -1659,7 +1704,7 @@ public sealed partial class Server
     private Ship? FindShipAnySide(short id, Mission? mission)
     {
         foreach (var kv in _peerShips)
-            if (kv.Value.Ship.Id == id)
+            if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.Id == id)
                 return kv.Value.Ship;
 
         // NPC/drone ships placed via Mission.PlaceShip live in a sector's
@@ -1756,14 +1801,14 @@ public sealed partial class Server
     /// then emits a bare-cluster reply. This matches the practical reality of a
     /// spectator target (another player's ship, or a station).
     /// </summary>
-    private bool TryResolveViewTarget(IgcObjectType ot, short oid, out Vector3 position, out Sector? sector, out short? side)
+    private bool TryResolveViewTarget(Mission mission, IgcObjectType ot, short oid, out Vector3 position, out Sector? sector, out short? side)
     {
         switch (ot)
         {
             case IgcObjectType.Ship:
                 foreach (var kv in _peerShips)
                 {
-                    if (kv.Value.Ship.Id == oid)
+                    if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.Id == oid)
                     {
                         position = kv.Value.Ship.Position;
                         sector = kv.Value.Ship.Sector;
@@ -1774,7 +1819,7 @@ public sealed partial class Server
                 break;
 
             case IgcObjectType.Station:
-                foreach (var s in _missions[0].Sectors)
+                foreach (var s in mission.Sectors)
                 {
                     foreach (var st in s.Stations)
                     {
@@ -1814,29 +1859,13 @@ public sealed partial class Server
     /// core, replace the ship's loadout with the requested parts, and echo the
     /// mounted parts back byte-for-byte.
     /// </summary>
-    /// <summary>
-    /// P69/P113 — the shared station-launch reposition: push a ship radially
-    /// outward from a station to just clear <see cref="Sector.DockRadius"/> by
-    /// <see cref="LaunchClearMargin"/> and kick it outward at
-    /// <see cref="ExitStationSpeed"/>. Position = stationPos + dir·(DockRadius +
-    /// LaunchClearMargin), velocity = dir·ExitStationSpeed, where <c>dir</c> is
-    /// the station→ship direction (a fixed <c>(1,0,0)</c> fallback when the ship
-    /// sits exactly at the station's position). This is the port's undock-launch
-    /// mechanic (born P69, refined P74/P75) — <b>and</b> the exact launch shape
-    /// <c>FedSrvSiteBase::UseRipcord</c>'s station-anchor branch produces by
-    /// delegating to the station's own <c>Launch</c> (<c>FedSrv.CPP:13441-13443</c>:
-    /// native <c>UseRipcord</c> calls <c>((IstationIGC*)pmodel)-&gt;Launch(pship)</c>,
-    /// the same launch the undock path uses). The ripcord teleport calls this
-    /// rather than duplicating the math.
-    /// </summary>
+    /// <summary>Shared undock/ripcord station launch, native stationIGC.cpp:299-382.</summary>
     private void RepositionForLaunch(Ship ship, DataStationIGC station)
     {
-        if (station.Position is not { Length: 3 } sp) return;
-        var stationPos = new Vector3(sp[0], sp[1], sp[2]);
-        var offset = ship.Position - stationPos;
-        var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
-        ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
-        ship.Velocity = dir * ExitStationSpeed;
+        var sector = ship.Mission!.Sectors.FirstOrDefault(s => s.Id == station.ClusterId);
+        var runtime = sector?.StationRuntimes.FirstOrDefault(s => s.StationId == station.StationId);
+        if (runtime is null) return;
+        runtime.Launch(ship, sector!.StationLandingBays?.LaunchGeometry(runtime.Type), _simNow);
     }
 
     /// <summary>
@@ -1845,8 +1874,8 @@ public sealed partial class Server
     /// new docked-NPC "launch" arm of <see cref="HandleOrderChange"/>
     /// (ORDER_CHANGE Stage 6) share one state transition with no duplication:
     /// resolve the ship's docked station in <paramref name="sector"/>, clear
-    /// <see cref="Ship.StationId"/>, push the ship physically clear of
-    /// <see cref="Sector.DockRadius"/> via <see cref="RepositionForLaunch"/>, and
+    /// <see cref="Ship.StationId"/>, apply the station's launch geometry via
+    /// <see cref="RepositionForLaunch"/>, and
     /// start the undock debounce (<see cref="Ship.LastLaunchTime"/>, P75).
     /// <para><b>Why this is safe to share with an NPC.</b> The only part of the
     /// real-peer <see cref="PerformUndock"/> that needs a <see cref="ConnectionId"/>
@@ -1867,19 +1896,12 @@ public sealed partial class Server
     {
         var station = ship.StationId!.Value;
         ship.StationId = null;
+        // Native ChangeStation propagates station state to every child
+        // (FedSrv/FedSrv.CPP:13165-13175). Otherwise a gunner remains marked
+        // docked forever after its parent launches, blocking valid turret input.
+        foreach (var child in ship.ChildShips) child.StationId = null;
 
-        // Push the ship physically clear of DockRadius and start the undock
-        // debounce (Ship.LastLaunchTime / P75). Without the position push,
-        // Sector.ResolveDockCollisions (Sector.cs:453) gates re-docking on
-        // StationId==null alone, so the very next tick can re-latch a ship
-        // that never moved. Reposition just outside DockRadius along the
-        // station->ship direction (a fixed fallback direction if the ship
-        // happens to be exactly at the station's position), with an outward
-        // velocity kick — see the P69/P74 history in the original undock
-        // handler (git blame) for why both the position push and the
-        // LaunchCooldownSeconds debounce below are needed together. (Logic and
-        // comments reproduced verbatim from the former PerformUndock body — the
-        // P152 extraction refactor is behavior-preserving.)
+        // Use the station's native slot rotation, offsets, jitter, and velocity.
         DataStationIGC? stationModel = null;
         foreach (var st in sector.Stations)
             if (st.StationId == station) { stationModel = st; break; }
@@ -1909,8 +1931,8 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// Undock a docked ship: clear its station, push it clear of DockRadius
-    /// with an outward kick, start the re-dock debounce, and re-send
+    /// Undock a docked ship: clear its station, apply its native launch pose
+    /// and outward velocity, start the re-dock debounce, and re-send
     /// FM_S_SET_CLUSTER(7) — the only message that clears the native client's
     /// own GetStation()/GetCluster() model state (appmsg.cpp:1044-1049), which
     /// BaseClient::flyingF() (clintlib.h:1198) and the Hangar screen's launch
@@ -1957,6 +1979,7 @@ public sealed partial class Server
             Cookie = NextCookie(EnsurePeerUpdate(from)),
         };
         SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+        SendTreasureSnapshot(from, live.Sector);
 
         var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {undockedFrom} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
         Console.WriteLine(undockNote);
@@ -1989,7 +2012,7 @@ public sealed partial class Server
     /// <c>bNewHull</c>, mirror <c>FedSrv.CPP:7079-7120</c>: boot boarded
     /// children, refund the ship's hardware value, strip its parts, swap to
     /// the side's Lifepod hull — reusing this port's existing helpers
-    /// (<see cref="ShipValue"/>, <see cref="Ship.ClearLoadout"/>,
+    /// (<see cref="RefundableShipValue"/>, <see cref="Ship.ClearLoadout"/>,
     /// <see cref="Ship.ChangeHull"/>), the same three operations P105/P108
     /// built, <b>not</b> reimplemented. Finally move any boarded children to
     /// the station and the ship itself (<c>FedSrv.CPP:7124-7131</c>).</para>
@@ -2003,6 +2026,8 @@ public sealed partial class Server
             Console.WriteLine($"[teleport] {from} ship {ship.Id}: no mission — teleport request dropped");
             return;
         }
+
+        if (ship.StationId is null || ship.ParentShip is not null || ship.Dead || ship.SideId is not >= 0) return;
 
         // Resolve the named station across every sector (native
         // GetStation(id) spans the mission, FedSrv.CPP:7056).
@@ -2063,31 +2088,12 @@ public sealed partial class Server
             foreach (var kid in ship.ChildShips.ToArray())
                 PerformLeave(kid, ship);
 
-            // Refund the ship's hardware value (FedSrv.CPP:7090-7105) —
-            // computed BEFORE the parts are cleared, per native order, and
-            // (like P108's board refund, Server.cs:2273-2282) deposited into
-            // the side treasury: this port has no per-player wallet and no
-            // MONEY_CHANGE codec, so the side accumulator is the money
-            // primitive. State the simplification, not a silent drop.
-            int refund = ShipValue(ship);
-            if (refund > 0 && ship.SideId is { } refundSideId)
-            {
-                var rs = mission.Sides.FirstOrDefault(s => s.Id == refundSideId);
-                if (rs is not null)
-                {
-                    rs.Money += refund;
-                    // P118: broadcast the pooled-treasury refund to the whole
-                    // side — the port of the native teleport refund
-                    // (FedSrv.CPP:7202-7206), which likewise sends MONEY_CHANGE
-                    // with sidFrom = NA (server-initiated) to the side group.
-                    BroadcastMoneyChangeSideWide(rs.Id, refund, ship.Id);
-                    Console.WriteLine($"[teleport] ship {ship.Id} refunded hardware value {refund} to side {rs.Id} treasury + MONEY_CHANGE(60) to side");
-                }
-            }
+            // Native FedSrv.CPP:7090-7105, same wallet/refund rule as boarding.
+            RefundHardware(ship);
 
             // Sell off / strip all mounted parts (FedSrv.CPP:7107-7113) →
             // ClearLoadout, the P108-ready helper.
-            ship.ClearLoadout();
+            // RefundHardware already stripped the hardware.
 
             // Swap to the side's Lifepod hull (FedSrv.CPP:7116-7117) — the
             // same resolution P105/P107/P108 already use.

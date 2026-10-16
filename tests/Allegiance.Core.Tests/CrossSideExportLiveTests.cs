@@ -387,4 +387,57 @@ public sealed class CrossSideExportLiveTests
 
         Console.WriteLine($"P346-TEAMEXPORT: same-side A({seat.A.Id})/B({seat.B.Id}, side {seat.A.SideId}) -> exactly one EXPORT of the other (hull {ab.HullId}), no cross duplicate [SAME-SIDE INTACT]");
     }
+
+    /// <summary>
+    /// ⭐ P648 — a relaunched ship's NEW HULL reaches an enemy promptly. The
+    /// cross-side identity EXPORT is latched ONCE per (peer, ship); without this
+    /// task's server fix, an enemy that already latched a ship's identity keeps
+    /// that ship's PRE-relaunch hull until the slow P369 self-heal (600 ticks =
+    /// 30 s) — because the hull-changing LOADOUT_CHANGE(96) is broadcast
+    /// same-side only and never reaches the enemy. The fix drops the cross-side
+    /// latch when the ship's HULL changes, so the next sweep re-exports the fresh
+    /// hull promptly.
+    ///
+    /// Proof: two cross-side ships are made mutually visible (each latches one
+    /// EXPORT of the other); A's hull is then changed (SetBaseHullType /
+    /// ChangeHull — the relaunch path); B must receive a NEW EXPORT about A with
+    /// the NEW hull within a window WELL BELOW the 600-tick self-heal cadence.
+    /// FAILING-FIRST: without the fix the latch stays set, so no re-export fires
+    /// below the cadence and this assertion fails.
+    /// </summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Cross_side_hull_change_is_re_exported_to_enemy_promptly()
+    {
+        Require.Artwork();
+        using var seat = SeatPair(sameSide: false);
+        Assert.NotEqual(seat.A.SideId, seat.B.SideId);
+
+        // Mutually visible: each latches exactly one cross-side EXPORT of the other.
+        seat.A.Position = Vector3.Zero;
+        seat.B.Position = seat.A.Position + new Vector3(300f, 0f, 0f);
+        PumpUntil(seat.Server, () => HasExportAbout(seat.ABot, seat.B.Id) && HasExportAbout(seat.BBot, seat.A.Id), 1000);
+        Assert.True(HasExportAbout(seat.BBot, seat.A.Id), "B must see A (precondition)");
+        int before = seat.BBot.Exports.Count(e => e.ShipId == seat.A.Id);
+        Assert.Equal(1, before);
+
+        // Change A's hull (the post-death relaunch's SetBaseHullType path).
+        var newHull = seat.A.Mission!.Core.HullTypes.Values
+            .First(h => h.HullId != seat.A.HullType.HullId);
+        short oldHull = seat.A.HullType.HullId;
+        seat.A.ChangeHull(newHull);
+        Assert.Equal(newHull.HullId, seat.A.HullType.HullId);
+
+        // Bounded window FAR below the 600-tick P369 self-heal: only the P648
+        // prompt re-export (not the cadence) can explain a new EXPORT here.
+        PumpUntil(seat.Server, () => seat.BBot.Exports.Count(e => e.ShipId == seat.A.Id) > before, 200);
+
+        int after = seat.BBot.Exports.Count(e => e.ShipId == seat.A.Id);
+        Assert.True(after > before,
+            $"B did NOT receive A's new hull promptly after A's hull changed (was {before}, now {after}) within a sub-cadence window — the P648 cross-side hull-refresh gap");
+        var refreshed = seat.BBot.Exports.Last(e => e.ShipId == seat.A.Id);
+        Assert.Equal(newHull.HullId, refreshed.HullId);
+        Assert.NotEqual(oldHull, refreshed.HullId);
+        Console.WriteLine($"P648-XHULL: A hull {oldHull}->{newHull.HullId}; B re-exported about A promptly ({before}->{after}) below the self-heal cadence");
+    }
 }

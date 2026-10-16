@@ -26,7 +26,7 @@ namespace Allegiance.Core.Wire;
 /// the server sends <b>only to the owning player</b> (following the existing
 /// per-owner convention where each peer's own update goes only to that peer),
 /// and that carries everything the feedback needs: the lock fraction, the
-/// target ship's identity <i>and</i> world position (so the client can draw the
+/// target object's identity <i>and</i> world position (so the client can draw the
 /// bracket even though it never renders enemy ships), and the missile type's
 /// display name (for the "acquired" tip text — the client has no static core to
 /// look it up from).
@@ -41,7 +41,7 @@ namespace Allegiance.Core.Wire;
 ///   offset  4: short  shipID           (the lock owner — the local player)
 ///   offset  6: short  targetShipID     (NA / -1 when there is no lock target)
 ///   offset  8: byte   lockPercent      (div-240 of MissileLock, 0..240)
-///   offset  9: byte   reserved         (=0)
+///   offset  9: byte   targetType       (low 7 bits); notReady (high bit)
 ///   offset 10: [12]   targetPosition   (Vector3 raw floats; meaningful iff targetShipID != NA)
 ///   offset 22: [13]   missileTypeName  (fixed ASCII, NUL-padded)
 ///   = 35 bytes fixed
@@ -66,7 +66,7 @@ public sealed class MissileLockUpdate : IFedMessage
     /// <summary>The locking ship (always the recipient — the owner).</summary>
     public short ShipId => BinaryPrimitives.ReadInt16LittleEndian(_b.AsSpan(4));
 
-    /// <summary>The lock target's ship id; <c>-1</c> (<c>NA</c>) when there is no
+    /// <summary>The lock target's object id; <c>-1</c> (<c>NA</c>) when there is no
     /// current lock target.</summary>
     public short TargetShipId => BinaryPrimitives.ReadInt16LittleEndian(_b.AsSpan(6));
 
@@ -76,6 +76,10 @@ public sealed class MissileLockUpdate : IFedMessage
 
     /// <summary>Raw div-240 percentage of the lock quality.</summary>
     public byte LockPercent => _b[8];
+
+    // P651: use the former padding byte without widening extension 204.
+    public IgcObjectType TargetType => (IgcObjectType)(_b[9] & 0x7f);
+    public bool IsReady => (_b[9] & 0x80) == 0;
 
     /// <summary>The lock quality 0..1 (full lock == 1).</summary>
     public float LockFraction => LockPercent / 240f;
@@ -106,13 +110,13 @@ public sealed class MissileLockUpdate : IFedMessage
     /// expresses "no lock target".</summary>
     public static MissileLockUpdate From(
         short shipId, short targetShipId, float lockFraction,
-        Vector3 targetPosition, string missileTypeName)
+        Vector3 targetPosition, string missileTypeName, IgcObjectType targetType = IgcObjectType.Ship, bool isReady = true)
     {
         var u = new MissileLockUpdate();
         BinaryPrimitives.WriteInt16LittleEndian(u._b.AsSpan(4), shipId);
         BinaryPrimitives.WriteInt16LittleEndian(u._b.AsSpan(6), targetShipId);
         u._b[8] = CompactQuant.Percent(Math.Clamp(lockFraction, 0f, 1f));
-        u._b[9] = 0;
+        u._b[9] = (byte)((byte)targetType | (isReady ? 0 : 0x80));
         BinaryPrimitives.WriteInt32LittleEndian(u._b.AsSpan(10), BitConverter.SingleToInt32Bits(targetPosition.X));
         BinaryPrimitives.WriteInt32LittleEndian(u._b.AsSpan(14), BitConverter.SingleToInt32Bits(targetPosition.Y));
         BinaryPrimitives.WriteInt32LittleEndian(u._b.AsSpan(18), BitConverter.SingleToInt32Bits(targetPosition.Z));

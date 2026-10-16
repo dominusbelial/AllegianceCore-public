@@ -1,0 +1,1645 @@
+P539C-REPRO booted m2xspiderw :37003 size=2 rendezvous=1052 window=120s
+P539C-REPRO spawned 4 bots (A:2 side0 B:2 side1)
+S1 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-95,-113,10) dead=False stn=- pos=(440,-72,-142) ownTick=496 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+S1 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(77,-116,0) dead=False stn=- pos=(-659,-1684,-181) ownTick=496 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+S1 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-71,-95,5) dead=False stn=- pos=(530,1209,300) ownTick=496 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+S1 name=mcp-b004-2989 side=1 ship=8100 worldSector=1060 serverSector=1060 srv=vel(36,-84,-11) dead=False stn=- pos=(-764,-263,252) ownTick=496 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+S2 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-139,-161,15) dead=False stn=- pos=(-2420,-3390,169) ownTick=945 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+S2 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-4,146,34) dead=False stn=- pos=(-440,-3041,208) ownTick=945 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+S2 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-120,-175,-0) dead=False stn=- pos=(-1845,-2236,305) ownTick=945 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+S2 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=1052 srv=vel(4,151,16) dead=False stn=- pos=(-385,-4403,-17) ownTick=945 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+S3 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(50,-99,30) dead=False stn=- pos=(-1396,430,206) ownTick=1403 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1117,-120,371) lastTick=1403 visible=True
+   xs ship=8100 sector=1052 pos=(-937,-1254,120) lastTick=1403 visible=True
+S3 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-37,73,-22) dead=False stn=- pos=(-1117,-120,371) ownTick=1403 target=8097
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-1397,429,206) lastTick=1403 visible=True
+   xs ship=8099 sector=1052 pos=(-1854,1299,-60) lastTick=1403 visible=True
+S3 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(74,-150,46) dead=False stn=- pos=(-1854,1299,-60) ownTick=1403 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1117,-121,371) lastTick=1403 visible=True
+   xs ship=8100 sector=1052 pos=(-937,-1254,120) lastTick=1403 visible=True
+S3 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=1052 srv=vel(-37,165,12) dead=False stn=- pos=(-937,-1254,120) ownTick=1403 target=8097
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-1396,430,206) lastTick=1403 visible=True
+   xs ship=8099 sector=1052 pos=(-1854,1299,-60) lastTick=1403 visible=True
+S4 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-28,40,-11) dead=False stn=- pos=(-1360,396,166) ownTick=1855 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1162,-2,367) lastTick=1855 visible=True
+   xs ship=8100 sector=1052 pos=(-1254,92,269) lastTick=1855 visible=True
+S4 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(17,-3,10) dead=False stn=- pos=(-1162,-2,367) ownTick=1855 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-1360,396,166) lastTick=1855 visible=True
+   xs ship=8099 sector=1052 pos=(-1304,228,266) lastTick=1855 visible=True
+S4 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-0,0,-0) dead=False stn=- pos=(-1304,228,266) ownTick=1845 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1162,-2,367) lastTick=1855 visible=True
+   xs ship=8100 sector=1052 pos=(-1254,92,269) lastTick=1855 visible=True
+S4 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=1052 srv=vel(0,0,-0) dead=False stn=- pos=(-1254,92,269) ownTick=1855 target=8099
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-1360,396,166) lastTick=1855 visible=True
+   xs ship=8099 sector=1052 pos=(-1304,228,266) lastTick=1855 visible=True
+S5 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-41,57,-14) dead=False stn=- pos=(-2245,1639,-146) ownTick=2315 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-939,-1038,313) lastTick=2315 visible=True
+   xs ship=8100 sector=1052 pos=(-2014,2055,364) lastTick=2315 visible=True
+S5 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(7,-59,-5) dead=False stn=- pos=(-939,-1038,313) ownTick=2315 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2245,1639,-146) lastTick=2315 visible=True
+   xs ship=8099 sector=1052 pos=(-1813,1032,104) lastTick=2315 visible=True
+S5 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-38,55,-18) dead=False stn=- pos=(-1813,1032,104) ownTick=2315 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-939,-1038,313) lastTick=2315 visible=True
+   xs ship=8100 sector=1052 pos=(-2014,2055,364) lastTick=2315 visible=True
+S5 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=1052 srv=vel(-56,141,15) dead=False stn=- pos=(-2014,2055,364) ownTick=2315 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2245,1639,-146) lastTick=2315 visible=True
+   xs ship=8099 sector=1052 pos=(-1814,1032,104) lastTick=2315 visible=True
+S6 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(45,59,-3) dead=False stn=- pos=(-3140,-4202,271) ownTick=2778 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S6 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(7,-59,-5) dead=False stn=- pos=(-780,-2412,188) ownTick=2778 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S6 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(52,68,-4) dead=False stn=- pos=(-3653,-4878,309) ownTick=2778 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S6 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S7 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-2114,-2854,199) ownTick=3245 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S7 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(7,-59,-5) dead=False stn=- pos=(-623,-3799,66) ownTick=3245 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S7 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-2593,-3484,234) ownTick=3245 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S7 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S8 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-1093,-1509,128) ownTick=3712 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S8 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(7,-59,-5) dead=False stn=- pos=(-464,-5185,-59) ownTick=3712 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S8 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-1572,-2139,161) ownTick=3712 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S8 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S9 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-59,-144,58) ownTick=4186 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S9 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-29,52,5) dead=False stn=- pos=(-559,-1521,-83) ownTick=4186 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S9 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(43,58,-3) dead=False stn=- pos=(-536,-775,91) ownTick=4186 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S9 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S10 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(2,5,1) dead=False stn=- pos=(458,642,87) ownTick=4661 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S10 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-2,7,2) dead=False stn=- pos=(-785,-989,27) ownTick=4661 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S10 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(20,21,1) dead=False stn=- pos=(408,439,54) ownTick=4661 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S10 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+INTERIM t=20s shots=603 hits=565 kills=4
+S11 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(0,0,-0) dead=False stn=- pos=(475,733,119) ownTick=5134 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S11 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(5,0,5) dead=False stn=- pos=(-787,-945,50) ownTick=5134 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S11 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(1,0,0) dead=False stn=- pos=(680,576,35) ownTick=5134 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S11 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S12 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(0,5,-5) dead=False stn=- pos=(455,748,103) ownTick=5603 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S12 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(0,0,0) dead=False stn=- pos=(-765,-931,78) ownTick=5603 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S12 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-0,-0,0) dead=False stn=- pos=(714,559,23) ownTick=5603 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S12 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S13 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(0,0,0) dead=False stn=- pos=(437,771,82) ownTick=6070 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S13 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-0,1,0) dead=False stn=- pos=(-749,-899,111) ownTick=6070 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S13 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-5,4,-2) dead=False stn=- pos=(681,565,6) ownTick=6070 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S13 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S14 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(0,-0,0) dead=False stn=- pos=(444,749,91) ownTick=6539 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S14 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-4,5,3) dead=False stn=- pos=(-743,-871,138) ownTick=6539 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S14 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(0,0,0) dead=False stn=- pos=(635,582,-2) ownTick=6539 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S14 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S15 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-0,-0,0) dead=False stn=- pos=(446,739,84) ownTick=7009 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S15 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(2,2,6) dead=False stn=- pos=(-739,-848,171) ownTick=7009 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S15 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(6,0,-3) dead=False stn=- pos=(616,584,24) ownTick=7009 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S15 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S16 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(0,0,0) dead=False stn=- pos=(459,714,50) ownTick=7477 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S16 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(2,2,6) dead=False stn=- pos=(-738,-826,195) ownTick=7477 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S16 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(0,0,0) dead=False stn=- pos=(635,590,-0) ownTick=7477 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S16 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S17 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-104,-120,11) dead=False stn=- pos=(350,-330,-171) ownTick=7945 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S17 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(52,-95,-5) dead=False stn=- pos=(-911,-1353,-209) ownTick=7945 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S17 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-0,-0,-0) dead=False stn=- pos=(643,579,-32) ownTick=7945 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S17 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S18 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-142,-159,17) dead=False stn=- pos=(-2732,-3786,189) ownTick=8411 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-859,-1729,250) lastTick=2548 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S18 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(10,151,-15) dead=False stn=- pos=(-316,-3376,-100) ownTick=8411 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-313) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S18 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-108,-161,-1) dead=False stn=- pos=(-481,-119,334) ownTick=8411 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S18 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2722,2308,-314) lastTick=2548 visible=False
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S19 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-58,94,24) dead=False stn=- pos=(-2289,2736,221) ownTick=8875 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-929,-355,-124) lastTick=8875 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=8875 visible=True
+S19 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-66,145,18) dead=False stn=- pos=(-929,-355,-124) ownTick=8875 target=8097
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2289,2736,221) lastTick=8875 visible=True
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S19 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-120,-178,-1) dead=False stn=- pos=(-3183,-4159,311) ownTick=8875 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-784,-2379,191) lastTick=2767 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=2510 visible=True
+S19 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2289,2736,221) lastTick=8875 visible=True
+   xs ship=8099 sector=1052 pos=(-2699,2322,-313) lastTick=2767 visible=False
+S20 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(22,-33,-9) dead=False stn=- pos=(-2914,3546,817) ownTick=9334 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2166,2536,143) lastTick=9334 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=9334 visible=True
+S20 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-37,94,34) dead=False stn=- pos=(-2166,2536,143) ownTick=9334 target=8099
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2914,3546,817) lastTick=9334 visible=True
+   xs ship=8099 sector=1052 pos=(-2325,2838,234) lastTick=9334 visible=True
+S20 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-31,48,8) dead=False stn=- pos=(-2325,2839,234) ownTick=9334 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2166,2536,143) lastTick=9334 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=9334 visible=True
+S20 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2914,3546,817) lastTick=9334 visible=True
+   xs ship=8099 sector=1052 pos=(-2325,2838,234) lastTick=9334 visible=True
+INTERIM t=40s shots=733 hits=566 kills=4
+S21 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-8,56,5) dead=False stn=- pos=(-2344,3285,306) ownTick=9791 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2124,2715,212) lastTick=9790 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=9790 visible=True
+S21 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(10,-35,-4) dead=False stn=- pos=(-2123,2713,212) ownTick=9791 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2344,3285,306) lastTick=9791 visible=True
+   xs ship=8099 sector=1052 pos=(-2269,3195,552) lastTick=9791 visible=True
+S21 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(5,57,53) dead=False stn=- pos=(-2269,3195,552) ownTick=9791 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2123,2713,212) lastTick=9791 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=9791 visible=True
+S21 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2343,3283,306) lastTick=9790 visible=True
+   xs ship=8099 sector=1052 pos=(-2269,3192,550) lastTick=9790 visible=True
+S22 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-5,2,-4) dead=False stn=- pos=(-2702,3771,207) ownTick=10249 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1863,1455,165) lastTick=10249 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=10249 visible=True
+S22 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(12,-59,-2) dead=False stn=- pos=(-1862,1455,165) ownTick=10249 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2702,3771,207) lastTick=10249 visible=True
+   xs ship=8099 sector=1052 pos=(-2629,3457,984) lastTick=10249 visible=True
+S22 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-23,-1,-31) dead=False stn=- pos=(-2629,3457,984) ownTick=10249 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1862,1455,165) lastTick=10249 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=10249 visible=True
+S22 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2702,3771,207) lastTick=10249 visible=True
+   xs ship=8099 sector=1052 pos=(-2629,3457,984) lastTick=10249 visible=True
+S23 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(0,-0,1) dead=False stn=- pos=(-2733,3788,184) ownTick=10705 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1588,115,117) lastTick=10705 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=10705 visible=True
+S23 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(12,-59,-2) dead=False stn=- pos=(-1588,115,117) ownTick=10705 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2733,3788,184) lastTick=10705 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3466,437) lastTick=10705 visible=True
+S23 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10704 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1588,115,117) lastTick=10705 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=10705 visible=True
+S23 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2733,3788,184) lastTick=10705 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=10705 visible=True
+S24 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(1,-2,5) dead=False stn=- pos=(-2738,3800,172) ownTick=11157 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1321,-1134,72) lastTick=11157 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=11157 visible=True
+S24 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(12,-59,-2) dead=False stn=- pos=(-1321,-1133,72) ownTick=11157 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2739,3801,172) lastTick=11157 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,436) lastTick=11157 visible=True
+S24 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1321,-1134,72) lastTick=11157 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=11157 visible=True
+S24 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2738,3800,172) lastTick=11157 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=11157 visible=True
+S25 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(1,-3,6) dead=False stn=- pos=(-2743,3811,164) ownTick=11612 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1049,-2470,23) lastTick=11612 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=11612 visible=True
+S25 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(12,-59,-2) dead=False stn=- pos=(-1049,-2470,23) ownTick=11612 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2742,3811,164) lastTick=11612 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,436) lastTick=11612 visible=True
+S25 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1049,-2470,23) lastTick=11612 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=11612 visible=True
+S25 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2743,3811,164) lastTick=11612 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=11612 visible=True
+S26 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-1,3,-6) dead=False stn=- pos=(-2747,3823,153) ownTick=12072 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-773,-3822,-25) lastTick=12072 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=12072 visible=True
+S26 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(12,-59,-2) dead=False stn=- pos=(-773,-3821,-25) ownTick=12072 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2747,3823,152) lastTick=12072 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,436) lastTick=12072 visible=True
+S26 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-773,-3822,-25) lastTick=12072 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=12072 visible=True
+S26 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2747,3823,153) lastTick=12072 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=12072 visible=True
+S27 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-1,2,-4) dead=False stn=- pos=(-2753,3836,140) ownTick=12535 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-492,-5181,-75) lastTick=12535 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=12535 visible=True
+S27 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(12,-59,-2) dead=False stn=- pos=(-492,-5181,-75) ownTick=12535 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2753,3836,140) lastTick=12535 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3465,437) lastTick=12535 visible=True
+S27 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-492,-5180,-75) lastTick=12535 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=12535 visible=True
+S27 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2753,3836,140) lastTick=12535 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=12535 visible=True
+S28 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-1,1,-2) dead=False stn=- pos=(-2753,3839,150) ownTick=13000 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5357,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=13000 visible=True
+S28 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-29,52,5) dead=False stn=- pos=(-535,-1551,-86) ownTick=13000 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2751,3833,146) lastTick=12595 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,437) lastTick=12595 visible=True
+S28 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5356,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=13000 visible=True
+S28 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2753,3838,150) lastTick=13000 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=13000 visible=True
+S29 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(0,0,1) dead=False stn=- pos=(-2756,3847,150) ownTick=13464 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5357,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=13464 visible=True
+S29 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-13,7,-6) dead=False stn=- pos=(-890,-1045,-92) ownTick=13464 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2751,3833,146) lastTick=12595 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,437) lastTick=12595 visible=True
+S29 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5356,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=13464 visible=True
+S29 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2756,3847,150) lastTick=13464 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=13464 visible=True
+S30 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-0,1,-1) dead=False stn=- pos=(-2758,3853,154) ownTick=13928 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5357,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=13928 visible=True
+S30 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-1,-1,-1) dead=False stn=- pos=(-945,-1014,-119) ownTick=13928 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2751,3833,146) lastTick=12595 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,437) lastTick=12595 visible=True
+S30 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5356,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=13928 visible=True
+S30 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2758,3853,154) lastTick=13928 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=13928 visible=True
+INTERIM t=60s shots=2421 hits=829 kills=5
+S31 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-0,0,0) dead=False stn=- pos=(-2759,3857,161) ownTick=14393 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5357,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=14393 visible=True
+S31 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-0,0,-0) dead=False stn=- pos=(-977,-1012,-149) ownTick=14393 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2751,3833,146) lastTick=12595 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,437) lastTick=12595 visible=True
+S31 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5356,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=14393 visible=True
+S31 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2759,3857,161) lastTick=14393 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=14393 visible=True
+S32 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(0,-0,1) dead=False stn=- pos=(-2762,3865,163) ownTick=14858 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5357,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=14858 visible=True
+S32 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(-1,-3,-5) dead=False stn=- pos=(-1005,-1008,-183) ownTick=14858 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2751,3833,146) lastTick=12595 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,437) lastTick=12595 visible=True
+S32 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5356,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=14858 visible=True
+S32 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2762,3864,163) lastTick=14858 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=14858 visible=True
+S33 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-1,1,-2) dead=False stn=- pos=(-2764,3873,163) ownTick=15322 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5357,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=15322 visible=True
+S33 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(0,0,0) dead=False stn=- pos=(-1029,-996,-213) ownTick=15322 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2751,3833,146) lastTick=12595 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,437) lastTick=12595 visible=True
+S33 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5356,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=15322 visible=True
+S33 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2764,3873,163) lastTick=15322 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=15322 visible=True
+S34 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-1,3,-4) dead=False stn=- pos=(-2765,3877,171) ownTick=15788 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5357,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=15788 visible=True
+S34 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(33,-33,7) dead=False stn=- pos=(-857,-34,280) ownTick=15788 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1052 pos=(-2751,3833,146) lastTick=12595 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,437) lastTick=12595 visible=True
+S34 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-456,-5356,-81) lastTick=12595 visible=False
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=15788 visible=True
+S34 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2765,3877,170) lastTick=15788 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=15788 visible=True
+S35 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-1,2,-3) dead=False stn=- pos=(-2767,3884,171) ownTick=16251 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-443,-4802,-54) lastTick=16251 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=16251 visible=True
+S35 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-29,137,8) dead=False stn=- pos=(-443,-4802,-54) ownTick=16251 target=8099
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2767,3884,171) lastTick=16251 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3465,437) lastTick=16251 visible=True
+S35 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-443,-4802,-54) lastTick=16251 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=16251 visible=True
+S35 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2767,3884,171) lastTick=16251 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=16251 visible=True
+S36 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-2,4,-5) dead=False stn=- pos=(-2768,3887,177) ownTick=16713 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1454,-1214,199) lastTick=16713 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=16713 visible=True
+S36 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-9,100,35) dead=False stn=- pos=(-1454,-1214,199) ownTick=16713 target=8099
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2769,3888,177) lastTick=16713 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3466,436) lastTick=16713 visible=True
+S36 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1454,-1214,199) lastTick=16713 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=16713 visible=True
+S36 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2768,3887,177) lastTick=16713 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=16713 visible=True
+S37 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-3,6,-9) dead=False stn=- pos=(-2770,3894,180) ownTick=17176 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2248,1665,426) lastTick=17176 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17176 visible=True
+S37 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-54,166,1) dead=False stn=- pos=(-2248,1665,426) ownTick=17176 target=8099
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2770,3894,180) lastTick=17176 visible=True
+   xs ship=8099 sector=1052 pos=(-2835,3466,437) lastTick=17176 visible=True
+S37 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2835,3466,437) ownTick=10812 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2248,1665,426) lastTick=17176 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17176 visible=True
+S37 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2770,3894,180) lastTick=17176 visible=True
+   xs ship=8099 sector=1052 pos=(-2836,3466,437) lastTick=17176 visible=True
+S38 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2740,3398,374) ownTick=17624 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2764,3216,429) lastTick=17633 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17633 visible=True
+S38 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-0,-0,0) dead=False stn=- pos=(-2764,3216,429) ownTick=17531 target=8099
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2740,3398,374) lastTick=17634 visible=True
+   xs ship=8099 sector=1052 pos=(-2742,3345,470) lastTick=17634 visible=True
+S38 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-0,-0,0) dead=False stn=- pos=(-2742,3345,470) ownTick=17633 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2764,3216,429) lastTick=17634 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S38 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2740,3398,374) lastTick=17634 visible=True
+   xs ship=8099 sector=1052 pos=(-2742,3345,470) lastTick=17634 visible=True
+S39 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(0,0,0) dead=False stn=- pos=(-2740,3398,374) ownTick=18074 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2764,3216,429) lastTick=18088 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S39 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-0,-0,0) dead=False stn=- pos=(-2764,3216,429) ownTick=17874 target=8097
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2740,3398,374) lastTick=18088 visible=True
+   xs ship=8099 sector=1052 pos=(-2869,3152,225) lastTick=18088 visible=True
+S39 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(7,-48,-37) dead=False stn=- pos=(-2869,3152,225) ownTick=18088 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2764,3216,429) lastTick=18088 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S39 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2740,3398,374) lastTick=18088 visible=True
+   xs ship=8099 sector=1052 pos=(-2869,3152,225) lastTick=18088 visible=True
+S40 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-2,-60,-33) dead=False stn=- pos=(-2789,2936,-60) ownTick=18551 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2491,5055,-432) lastTick=18551 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S40 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(18,113,-69) dead=False stn=- pos=(-2490,5056,-432) ownTick=18551 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2789,2936,-60) lastTick=18551 visible=True
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S40 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(45,59,-3) dead=False stn=- pos=(-3171,-4246,273) ownTick=18551 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S40 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2789,2936,-60) lastTick=18551 visible=True
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+INTERIM t=80s shots=2831 hits=1163 kills=7
+S41 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-2942,-3942,259) ownTick=19016 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S41 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(18,84,-100) dead=False stn=- pos=(-2065,7366,-2420) ownTick=19016 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S41 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-2149,-2902,201) ownTick=19016 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S41 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S42 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-1925,-2600,191) ownTick=19481 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S42 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(17,58,-116) dead=False stn=- pos=(-1662,8979,-4991) ownTick=19481 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S42 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-1138,-1564,131) ownTick=19480 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S42 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S43 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-906,-1259,121) ownTick=19947 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S43 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(15,38,-124) dead=False stn=- pos=(-1291,10101,-7792) ownTick=19946 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S43 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(-121,-222,63) ownTick=19946 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S43 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S44 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(44,58,-3) dead=False stn=- pos=(116,88,48) ownTick=20415 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S44 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(4,-29,19) dead=False stn=- pos=(-971,10496,-9658) ownTick=20415 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S44 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(7,20,7) dead=False stn=- pos=(482,604,101) ownTick=20415 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S44 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S45 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(3,1,1) dead=False stn=- pos=(566,597,75) ownTick=20884 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S45 name=mcp-b002-9270 side=1 ship=8098 worldSector=1060 serverSector=1060 srv=vel(95,-133,4) dead=False stn=- pos=(-196,-2392,-181) ownTick=20884 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2184 cl1060 pos(-18,-2591,-174) r100 dest2185
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S45 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-0,0,0) dead=False stn=- pos=(495,708,151) ownTick=20884 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S45 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S46 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-0,-0,-0) dead=False stn=- pos=(640,591,96) ownTick=21351 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S46 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(7,127,1) dead=False stn=- pos=(-263,-2493,-29) ownTick=21351 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S46 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(4,5,-4) dead=False stn=- pos=(478,747,153) ownTick=21351 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S46 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S47 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(0,7,0) dead=False stn=- pos=(645,600,119) ownTick=21815 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S47 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(7,127,1) dead=False stn=- pos=(-101,451,3) ownTick=21815 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S47 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(0,-0,0) dead=False stn=- pos=(476,747,152) ownTick=21815 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S47 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S48 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-0,0,-0) dead=False stn=- pos=(641,615,148) ownTick=22281 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S48 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(7,125,1) dead=False stn=- pos=(60,3385,35) ownTick=22281 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S48 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(0,0,0) dead=False stn=- pos=(461,732,113) ownTick=22281 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S48 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S49 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(0,0,0) dead=False stn=- pos=(642,623,184) ownTick=22747 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S49 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(7,125,1) dead=False stn=- pos=(49,5894,221) ownTick=22747 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S49 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-0,-0,0) dead=False stn=- pos=(465,729,84) ownTick=22747 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S49 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S50 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-0,-0,0) dead=False stn=- pos=(646,625,198) ownTick=23215 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S50 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(3,122,21) dead=False stn=- pos=(161,8788,481) ownTick=23215 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S50 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(0,0,0) dead=False stn=- pos=(467,720,50) ownTick=23215 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S50 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+INTERIM t=100s shots=2831 hits=1163 kills=7
+S51 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-0,0,0) dead=False stn=- pos=(617,639,198) ownTick=23681 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S51 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-1,117,39) dead=False stn=- pos=(176,11577,1182) ownTick=23681 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S51 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-5,-5,-7) dead=False stn=- pos=(470,708,14) ownTick=23681 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S51 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S52 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-2,6,-4) dead=False stn=- pos=(590,661,186) ownTick=24148 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S52 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-5,109,57) dead=False stn=- pos=(95,14211,2306) ownTick=24148 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S52 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-118,-134,14) dead=False stn=- pos=(18,-713,-145) ownTick=24148 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S52 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S53 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-103,-152,-1) dead=False stn=- pos=(-211,286,351) ownTick=24605 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S53 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-10,96,74) dead=False stn=- pos=(-74,16568,3783) ownTick=24605 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S53 name=mcp-b003-7202 side=0 ship=8099 worldSector=1053 serverSector=1053 srv=vel(-141,-161,17) dead=False stn=- pos=(-3072,-4212,233) ownTick=24605 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2685,3784,221) lastTick=18335 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17373 visible=True
+S53 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1053 pos=(-2773,2487,-287) lastTick=18335 visible=False
+S54 name=mcp-b001-3877 side=0 ship=8097 worldSector=1053 serverSector=1053 srv=vel(-120,-177,-2) dead=False stn=- pos=(-2603,-3244,323) ownTick=25019 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152
+   xs ship=8098 sector=1052 pos=(-2358,5845,-972) lastTick=18696 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=17646 visible=True
+S54 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-35,-146,-43) dead=False stn=- pos=(-280,15913,4136) ownTick=25019 target=8099
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2489,-307) lastTick=18696 visible=False
+   xs ship=8099 sector=1052 pos=(-2288,2747,234) lastTick=25019 visible=True
+S54 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-54,90,22) dead=False stn=- pos=(-2289,2747,234) ownTick=25019 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-281,15912,4136) lastTick=25019 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=25019 visible=True
+S54 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1053 pos=(-2803,2488,-308) lastTick=18696 visible=False
+   xs ship=8099 sector=1052 pos=(-2289,2747,234) lastTick=25019 visible=True
+S55 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-47,118,46) dead=False stn=- pos=(-2093,2375,116) ownTick=25475 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1187,12271,3025) lastTick=25475 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=25475 visible=True
+S55 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-38,-164,-50) dead=False stn=- pos=(-1185,12279,3028) ownTick=25474 target=8099
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2090,2370,113) lastTick=25474 visible=True
+   xs ship=8099 sector=1052 pos=(-3052,3636,412) lastTick=25474 visible=True
+S55 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-13,5,-4) dead=False stn=- pos=(-3053,3637,412) ownTick=25475 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-1187,12270,3026) lastTick=25475 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=25475 visible=True
+S55 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2093,2375,115) lastTick=25475 visible=True
+   xs ship=8099 sector=1052 pos=(-3053,3637,412) lastTick=25475 visible=True
+S56 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(-38,42,9) dead=False stn=- pos=(-3119,3980,592) ownTick=25928 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2084,8562,1908) lastTick=25928 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=25928 visible=True
+S56 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-47,-164,-48) dead=False stn=- pos=(-2084,8561,1908) ownTick=25928 target=8097
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-3119,3979,592) lastTick=25928 visible=True
+   xs ship=8099 sector=1052 pos=(-3155,3677,379) lastTick=25928 visible=True
+S56 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-2,1,-1) dead=False stn=- pos=(-3155,3677,379) ownTick=25928 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2084,8562,1908) lastTick=25928 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=25928 visible=True
+S56 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-3119,3979,592) lastTick=25928 visible=True
+   xs ship=8099 sector=1052 pos=(-3155,3677,379) lastTick=25928 visible=True
+S57 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(27,18,12) dead=False stn=- pos=(-3323,4280,667) ownTick=26384 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-3185,4972,849) lastTick=26384 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=26384 visible=True
+S57 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(-27,-105,-30) dead=False stn=- pos=(-3185,4972,849) ownTick=26384 target=8097
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-3323,4280,667) lastTick=26384 visible=True
+   xs ship=8099 sector=1052 pos=(-3119,3743,419) lastTick=26384 visible=True
+S57 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(7,51,21) dead=False stn=- pos=(-3119,3743,419) ownTick=26384 target=8098
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-3185,4972,849) lastTick=26384 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=26384 visible=True
+S57 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-3324,4279,666) lastTick=26383 visible=True
+   xs ship=8099 sector=1052 pos=(-3119,3740,418) lastTick=26383 visible=True
+S58 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(17,7,-5) dead=False stn=- pos=(-3090,4538,674) ownTick=26841 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-3374,4563,727) lastTick=26841 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=26601 visible=True
+S58 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(9,-35,-3) dead=False stn=- pos=(-3374,4563,727) ownTick=26841 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-3090,4538,674) lastTick=26841 visible=True
+   xs ship=8099 sector=1052 pos=(-3214,4451,871) lastTick=26841 visible=True
+S58 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-1,5,20) dead=False stn=- pos=(-3214,4451,871) ownTick=26841 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-3374,4563,727) lastTick=26841 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=26841 visible=True
+S58 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-3090,4538,674) lastTick=26841 visible=True
+   xs ship=8099 sector=1052 pos=(-3214,4451,871) lastTick=26841 visible=True
+S59 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(0,0,-0) dead=False stn=- pos=(-2988,4578,648) ownTick=27306 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-3010,3312,624) lastTick=27306 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=27306 visible=True
+S59 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(17,-57,-5) dead=False stn=- pos=(-3011,3316,624) ownTick=27305 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2988,4578,648) lastTick=27305 visible=True
+   xs ship=8099 sector=1052 pos=(-3191,4442,974) lastTick=27305 visible=True
+S59 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(-5,7,3) dead=False stn=- pos=(-3191,4442,974) ownTick=27306 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-3010,3313,624) lastTick=27306 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=27306 visible=True
+S59 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2988,4578,648) lastTick=27306 visible=True
+   xs ship=8099 sector=1052 pos=(-3191,4442,974) lastTick=27306 visible=True
+S60 name=mcp-b001-3877 side=0 ship=8097 worldSector=1052 serverSector=1052 srv=vel(1,-4,0) dead=False stn=- pos=(-2985,4576,650) ownTick=27769 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2622,1984,515) lastTick=27769 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3392,554) lastTick=27769 visible=True
+S60 name=mcp-b002-9270 side=1 ship=8098 worldSector=1052 serverSector=1052 srv=vel(17,-57,-5) dead=False stn=- pos=(-2623,1983,515) ownTick=27769 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2985,4576,650) lastTick=27769 visible=True
+   xs ship=8099 sector=1052 pos=(-3189,4441,975) lastTick=27769 visible=True
+S60 name=mcp-b003-7202 side=0 ship=8099 worldSector=1052 serverSector=1052 srv=vel(5,-8,-3) dead=False stn=- pos=(-3188,4441,975) ownTick=27769 target=8100
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8098 sector=1052 pos=(-2622,1983,516) lastTick=27769 visible=True
+   xs ship=8100 sector=1052 pos=(-2573,3391,554) lastTick=27769 visible=True
+S60 name=mcp-b004-2989 side=1 ship=8100 worldSector=1052 serverSector=-1 srv=absent pos=(-2573,3391,554) ownTick=2510 target=-1
+   worldWarpToRdv=id2153 cl1053 pos(-3680,-4920,307) r100 dest2152 serverWarpToRdv=none
+   xs ship=8097 sector=1052 pos=(-2985,4576,650) lastTick=27769 visible=True
+   xs ship=8099 sector=1052 pos=(-3189,4441,975) lastTick=27769 visible=True
+INTERIM t=120s shots=3859 hits=1378 kills=8
+ARRIVED(at rendezvous) 8097=0:[31/60] 8098=1:[42/60] 8099=0:[30/60] 8100=1:[4/60]
+COMBAT mcp-b001-3877 side=0 shots=1168 hits=301 shieldHits=204 hullHits=97 friendly=0 kills=2
+COMBAT mcp-b002-9270 side=1 shots=964 hits=670 shieldHits=488 hullHits=182 friendly=0 kills=3
+COMBAT mcp-b003-7202 side=0 shots=1568 hits=261 shieldHits=169 hullHits=92 friendly=0 kills=2
+COMBAT mcp-b004-2989 side=1 shots=159 hits=146 shieldHits=61 hullHits=85 friendly=0 kills=1
+COMBAT-TOTAL shotsA=2736 hitsA=562 killsA=4 shotsB=1123 hitsB=816 killsB=4 probeSide=0
+LOG [warp] ship 8098 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+LOG [warp] peer 3 ship 8098 -> SET_CLUSTER sector 1052 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+LOG [warp] ship 8100 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+LOG [warp] peer 5 ship 8100 -> SET_CLUSTER sector 1052 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+LOG [warp] ship 8097 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+LOG [warp] peer 2 ship 8097 -> SET_CLUSTER sector 1052 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+LOG [warp] ship 8099 crossed from 'Omega' (1053) to 'Alderan' (1052) via warp 2153
+LOG [warp] peer 4 ship 8099 -> SET_CLUSTER sector 1052 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+LOG [warp] ship 8097 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+LOG [warp] peer 2 ship 8097 -> SET_CLUSTER sector 1053 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+LOG [warp] ship 8099 crossed from 'Alderan' (1052) to 'Omega' (1053) via warp 2152
+LOG [warp] peer 4 ship 8099 -> SET_CLUSTER sector 1053 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+LOG [warp] ship 8098 crossed from 'Alderan' (1052) to 'Plato' (1060) via warp 2185
+LOG [warp] peer 3 ship 8098 -> SET_CLUSTER sector 1060 (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)
+LOG2 [collision] ship 8100 x asteroid 3315 sector 1052 pos Vector3 { X = -392.5313, Y = -3462.645, Z = 105.704636 } jiggle(13.588452,0) -> COLLISION_EVENT(216) -> 2 peer(s) (union of both parties)
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8097, killer ship 8098 -> 4 peer(s)
+LOG2 [eject] player ship 8097 ejected -> Lifepod hull 33 at Vector3 { X = -1225.1863, Y = 91.28964, Z = 307.72684 }, vel (-40.9,87.2,-26.9), fwd (0.41,-0.87,0.27); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8098, killer ship 8097 -> 4 peer(s)
+LOG2 [eject] player ship 8098 ejected -> Lifepod hull 113 at Vector3 { X = -1236.1115, Y = 117.16446, Z = 299.0067 }, vel (37.5,-79.1,40.7), fwd (-0.39,0.82,-0.42); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8099, killer ship 8100 -> 4 peer(s)
+LOG2 [eject] player ship 8099 ejected -> Lifepod hull 33 at Vector3 { X = -1300.4877, Y = 217.84077, Z = 266.2341 }, vel (-30.4,94.3,-13.9), fwd (0.3,-0.94,0.14); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+LOG2 [collision] ship 8100 x asteroid 3287 sector 1052 pos Vector3 { X = -2573.086, Y = 3391.4307, Z = 554.27905 } jiggle(92.49618,0) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8100, killer ship 8099 -> 4 peer(s)
+LOG2 [eject] player ship 8100 ejected -> Lifepod hull 113 at Vector3 { X = -2573.086, Y = 3391.4307, Z = 554.27905 }, vel (-74.4,227.6,67.2), fwd (0.16,-0.89,-0.43); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+LOG2 [combat] ship 8097 killed by (none) at sim-t 383.800000000053 — KILL_SHIP(105) -> 3 peer(s)
+LOG2 [combat] ship 8097 — SHIP_DELETE(20) SDR_KILLED -> 3 peer(s)
+LOG2 [combat] ship 8098 killed by (none) at sim-t 389.35000000005425 — KILL_SHIP(105) -> 1 peer(s)
+LOG2 [combat] ship 8098 — SHIP_DELETE(20) SDR_KILLED -> 1 peer(s)
+LOG2 [combat] ship 8099 killed by (none) at sim-t 397.5000000000561 — KILL_SHIP(105) -> 3 peer(s)
+LOG2 [combat] ship 8099 — SHIP_DELETE(20) SDR_KILLED -> 3 peer(s)
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8098, killer ship 8099 -> 4 peer(s)
+LOG2 [eject] player ship 8098 ejected -> Lifepod hull 113 at Vector3 { X = -2327.442, Y = 2892.4688, Z = 259.8945 }, vel (68.9,-71.1,13.9), fwd (-0.69,0.71,-0.14); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+LOG2 [combat] ship 8098 killed by (none) at sim-t 780.7999999998376 — KILL_SHIP(105) -> 1 peer(s)
+LOG2 [combat] ship 8098 — SHIP_DELETE(20) SDR_KILLED -> 1 peer(s)
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8099, killer ship 8098 -> 4 peer(s)
+LOG2 [eject] player ship 8099 ejected -> Lifepod hull 33 at Vector3 { X = -2743.1875, Y = 3335.0596, Z = 467.043 }, vel (16.6,94.7,27.6), fwd (-0.17,-0.95,-0.28); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+LOG2 [collision] ship 8099 x asteroid 3287 sector 1052 pos Vector3 { X = -2723.6243, Y = 3469.0493, Z = 506.75372 } jiggle(4.1765227,0) -> COLLISION_EVENT(216) -> 5 peer(s) (union of both parties)
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8097, killer ship 8098 -> 4 peer(s)
+LOG2 [eject] player ship 8097 ejected -> Lifepod hull 33 at Vector3 { X = -2741.0393, Y = 3388.0056, Z = 376.87192 }, vel (4.6,96,-27.6), fwd (-0.05,-0.96,0.28); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8098, killer ship -1 -> 2 peer(s)
+LOG2 [eject] player ship 8098 ejected -> Lifepod hull 113 at Vector3 { X = -1082.9037, Y = 10558.172, Z = -9569.553 }, vel (10.5,-44.2,-55.2), fwd (0.04,0.7,-0.71); EJECT(77) -> 2 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+LOG2 [combat] ship 8098 killed by (none) at sim-t 1028.899999999612 — KILL_SHIP(105) -> 2 peer(s)
+LOG2 [combat] ship 8098 — SHIP_DELETE(20) SDR_KILLED -> 2 peer(s)
+LOG2 [collision] ship 8098 x asteroid 3329 sector 1052 pos Vector3 { X = 130.88513, Y = 4880.4707, Z = 62.853085 } jiggle(28.245667,0) -> COLLISION_EVENT(216) -> 2 peer(s) (union of both parties)
+LOG2 [combat] ship 8099 killed by (none) at sim-t 1190.8499999994647 — KILL_SHIP(105) -> 3 peer(s)
+LOG2 [combat] ship 8099 — SHIP_DELETE(20) SDR_KILLED -> 3 peer(s)
+LOG2 [combat] ship 8097 killed by (none) at sim-t 1208.9999999994482 — KILL_SHIP(105) -> 3 peer(s)
+LOG2 [combat] ship 8097 — SHIP_DELETE(20) SDR_KILLED -> 3 peer(s)
+LOG2 [eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8098, killer ship 8097 -> 4 peer(s)
+LOG2 [eject] player ship 8098 ejected -> Lifepod hull 113 at Vector3 { X = -3287.2363, Y = 4508.538, Z = 724.2713 }, vel (-53.1,84.7,1.8), fwd (0.53,-0.85,-0.02); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+
+
+--- SERVER LOG (tail) ---
+PER SIDE]
+[asteroids] side 1 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ping] 5 <- echo (client 0, server 1318299)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=267944 enqueuedBytes=290099 writtenBytes=296408 peers=5 windowSecs=0.435 enqueued-per-peer-bps=133371.6 written-per-peer-bps=136272.2 gc={gen0=1,gen1=0,gen2=0} allocMB=25.08 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 132 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 132 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 132 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ctrlak] peer 2 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=27 boarded=0 notincluster=6]
+[ctrlak] peer 3 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0E) dropped[cookie=0 noship=0 pregame=25 boarded=0 notincluster=3]
+[ctrlak] peer 4 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=24 boarded=0 notincluster=4]
+[ctrlak] peer 5 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x04) dropped[cookie=0 noship=0 pregame=23 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=310163 enqueuedBytes=334103 writtenBytes=329967 peers=5 windowSecs=0.438 enqueued-per-peer-bps=152635.1 written-per-peer-bps=150745.6 gc={gen0=2,gen1=0,gen2=0} allocMB=31 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[treasure] destroyed 7961 in sector 1054 -> DESTROY_TREASURE(30) whole-mission to 5 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=310958 enqueuedBytes=337738 writtenBytes=337558 peers=5 windowSecs=0.439 enqueued-per-peer-bps=153794.1 written-per-peer-bps=153712.1 gc={gen0=1,gen1=0,gen2=0} allocMB=31.31 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[loot] ship 8098: part 81 amount 1 -> part treasure obj=9465 sector 1052
+[loot] ship 8098: part 21 amount 1 -> part treasure obj=9466 sector 1052
+[autoreload] ship 8098: ammo hit zero, no cargo spare — Ammo depleted (no RELOAD relay)
+[scoring] ship 8098 ejection +1 (player peer)
+[loadout] ship 8098 HullChange -> LOADOUT_CHANGE(96) hull 113 5 part(s) 0 passenger(s) -> 2 same-side peer(s)
+[eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship 8098, killer ship 8097 -> 4 peer(s)
+[eject] player ship 8098 ejected -> Lifepod hull 113 at Vector3 { X = -3287.2363, Y = 4508.538, Z = 724.2713 }, vel (-53.1,84.7,1.8), fwd (0.53,-0.85,-0.02); EJECT(77) -> 4 peer(s) in sector 1052; hull stays in sector (not removed), no SHIP_DELETE
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ctrlak] peer 2 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=27 boarded=0 notincluster=6]
+[ctrlak] peer 3 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0F) dropped[cookie=0 noship=0 pregame=25 boarded=0 notincluster=3]
+[ctrlak] peer 4 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=24 boarded=0 notincluster=4]
+[ctrlak] peer 5 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x04) dropped[cookie=0 noship=0 pregame=23 boarded=0 notincluster=0]
+[p539d] DEATH bot mcp-b002-9270 ship 8098 side 1 cause=gunfire deaths=4 gunfire=4 collision=0
+[p539] bot mcp-b002-9270 (ship 8098) is now a LIFEPOD (hull 113) — stopping combat, flying home to dock
+[p539] pod bot mcp-b002-9270 (ship 8098) flying home to friendly restart-capable station 24466 in sector 1060
+[treasure] destroyed 8408 in sector 1059 -> DESTROY_TREASURE(30) whole-mission to 5 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=322698 enqueuedBytes=349993 writtenBytes=354309 peers=5 windowSecs=0.443 enqueued-per-peer-bps=158008.0 written-per-peer-bps=159956.5 gc={gen0=2,gen1=1,gen2=0} allocMB=30.72 logDrops=0
+[payday] side 0 'Alpha' -> PAYDAY(114) delta=225 balance=1
+[payday] side 1 'Bravo' -> PAYDAY(114) delta=300 balance=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 129 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 128 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=231162 enqueuedBytes=252352 writtenBytes=247152 peers=5 windowSecs=0.431 enqueued-per-peer-bps=117205.1 written-per-peer-bps=114789.9 gc={gen0=1,gen1=0,gen2=0} allocMB=21.64 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 130 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 131 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 132 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ctrlak] peer 2 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=27 boarded=0 notincluster=6]
+[ctrlak] peer 3 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0F) dropped[cookie=0 noship=0 pregame=25 boarded=0 notincluster=3]
+[ctrlak] peer 4 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=24 boarded=0 notincluster=4]
+[ctrlak] peer 5 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x04) dropped[cookie=0 noship=0 pregame=23 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=253234 enqueuedBytes=274399 writtenBytes=275502 peers=5 windowSecs=0.431 enqueued-per-peer-bps=127207.5 written-per-peer-bps=127718.8 gc={gen0=2,gen1=0,gen2=0} allocMB=20.35 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 49 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[treasure] destroyed 7977 in sector 1057 -> DESTROY_TREASURE(30) whole-mission to 5 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 50 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=232512 enqueuedBytes=253672 writtenBytes=257812 peers=5 windowSecs=0.43 enqueued-per-peer-bps=117985.2 written-per-peer-bps=119910.7 gc={gen0=1,gen1=0,gen2=0} allocMB=20.38 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[treasure] destroyed 8407 in sector 1058 -> DESTROY_TREASURE(30) whole-mission to 5 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 51 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 52 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 53 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 53 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 52 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 52 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ctrlak] peer 2 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=27 boarded=0 notincluster=6]
+[ctrlak] peer 3 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0F) dropped[cookie=0 noship=0 pregame=25 boarded=0 notincluster=3]
+[ctrlak] peer 4 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=24 boarded=0 notincluster=4]
+[ctrlak] peer 5 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x04) dropped[cookie=0 noship=0 pregame=23 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 52 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=253910 enqueuedBytes=275080 writtenBytes=275080 peers=5 windowSecs=0.433 enqueued-per-peer-bps=126962.9 written-per-peer-bps=126962.9 gc={gen0=1,gen1=0,gen2=0} allocMB=20.44 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 54 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 54 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 54 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 53 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 52 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 52 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[treasure] destroyed 7973 in sector 1053 -> DESTROY_TREASURE(30) whole-mission to 5 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 52 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 53 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[treasure] destroyed 8400 in sector 1051 -> DESTROY_TREASURE(30) whole-mission to 5 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 53 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 55 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=233305 enqueuedBytes=254470 writtenBytes=254106 peers=5 windowSecs=0.429 enqueued-per-peer-bps=118555.3 written-per-peer-bps=118385.7 gc={gen0=1,gen1=0,gen2=0} allocMB=20.25 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 133 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 56 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 56 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 56 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 57 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 59 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 61 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 61 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 62 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 61 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ctrlak] peer 2 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=27 boarded=0 notincluster=6]
+[ctrlak] peer 3 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0F) dropped[cookie=0 noship=0 pregame=25 boarded=0 notincluster=3]
+[ctrlak] peer 4 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=24 boarded=0 notincluster=4]
+[ctrlak] peer 5 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x04) dropped[cookie=0 noship=0 pregame=23 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 62 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=256891 enqueuedBytes=278066 writtenBytes=278329 peers=5 windowSecs=0.431 enqueued-per-peer-bps=128964.7 written-per-peer-bps=129086.7 gc={gen0=1,gen1=0,gen2=0} allocMB=20.4 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 62 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 62 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 64 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 65 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 65 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 65 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[treasure] destroyed 8403 in sector 1054 -> DESTROY_TREASURE(30) whole-mission to 5 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 65 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 66 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 66 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 66 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=240553 enqueuedBytes=261698 writtenBytes=259695 peers=5 windowSecs=0.431 enqueued-per-peer-bps=121401.1 written-per-peer-bps=120471.9 gc={gen0=1,gen1=0,gen2=0} allocMB=20.36 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 66 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 67 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 67 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 67 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 69 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 69 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 69 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 69 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 71 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ctrlak] peer 2 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=27 boarded=0 notincluster=6]
+[ctrlak] peer 3 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0F) dropped[cookie=0 noship=0 pregame=25 boarded=0 notincluster=3]
+[ctrlak] peer 4 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=24 boarded=0 notincluster=4]
+[ctrlak] peer 5 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x04) dropped[cookie=0 noship=0 pregame=23 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 71 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=262482 enqueuedBytes=283627 writtenBytes=284319 peers=5 windowSecs=0.431 enqueued-per-peer-bps=131595.6 written-per-peer-bps=131916.7 gc={gen0=1,gen1=1,gen2=0} allocMB=20.5 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 71 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 71 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 71 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 72 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 72 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 72 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 72 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 72 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 73 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 74 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=242324 enqueuedBytes=263439 writtenBytes=264612 peers=5 windowSecs=0.432 enqueued-per-peer-bps=121897.3 written-per-peer-bps=122440.1 gc={gen0=2,gen1=0,gen2=0} allocMB=20.3 logDrops=0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 75 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 75 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 75 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 75 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 75 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 76 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 76 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 76 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 1384199)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 76 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ctrlak] peer 2 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=27 boarded=0 notincluster=6]
+[ctrlak] peer 3 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0F) dropped[cookie=0 noship=0 pregame=25 boarded=0 notincluster=3]
+[ctrlak] peer 4 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x0B) dropped[cookie=0 noship=0 pregame=24 boarded=0 notincluster=4]
+[ctrlak] peer 5 ship-update summary: corrections-total=0 replay=0 same-tick=0 accepted=0 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x04) dropped[cookie=0 noship=0 pregame=23 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 76 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=264322 enqueuedBytes=285472 writtenBytes=284299 peers=5 windowSecs=0.429 enqueued-per-peer-bps=132972.4 written-per-peer-bps=132426.0 gc={gen0=1,gen1=0,gen2=0} allocMB=20.49 logDrops=0
+[ping] 2 <- echo (client 0, server 1385449)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 76 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[treasure] destroyed 8410 in sector 1061 -> DESTROY_TREASURE(30) whole-mission to 5 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 76 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ping] 3 <- echo (client 0, server 1386199)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 77 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ping] 4 <- echo (client 0, server 1386899)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 77 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 77 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[ping] 5 <- echo (client 0, server 1387599)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 77 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 3 peer(s) [PER SIDE]
+[stations] side 1 sees 2 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[asteroids] side 0 sees 134 asteroid(s) => ASTEROIDS_UPDATE(179) -> 3 peer(s) [PER SIDE]
+[asteroids] side 1 sees 78 asteroid(s) => ASTEROIDS_UPDATE(179) -> 2 peer(s) [PER SIDE]

@@ -87,6 +87,7 @@ public sealed partial class Server : IDisposable
     // PerPeerRateLimiter). Trimmed in ReleasePeer on peer leave to stay bounded
     // by the live peer set.
     private readonly PerPeerRateLimiter _unsupportedLog = new();
+    private readonly PerPeerRateLimiter _turretLog = new();
 
     // P646 (review finding H3) — rate-limits the "DUPLICATE LOGONREQ from a
     // seated peer" refusal log so a duplicate-logon flood cannot force
@@ -107,15 +108,14 @@ public sealed partial class Server : IDisposable
     private int _nextShipId = 8096;
 
     /// <summary>
-    /// P604 — rolling count of bytes the sim thread enqueued for send this
-    /// window (incremented in <c>SendPeer</c>/<c>SendPeerCoalescing</c>, both
-    /// sim-thread only). Reported every <c>DisconnectSummaryTicks</c> by the
-    /// disconnectSummary step as a <c>[egress] window: bytes=… peers=…
-    /// per-peer-bps=…</c> line, so the A/B can measure real egress per player
-    /// (and compare against native's ~1.6 KB/s heavy/light budget,
-    /// <c>FedSrv.CPP:3836</c>). Diagnostic only; no behavioural effect.
+    /// P604/P670 — payload bytes offered by the publishing sink, before framing,
+    /// coalescing or transport lookup. The [egress] line labels these separately
+    /// from transport-enqueued and socket-written bytes (both include framing).
+    /// Updated atomically by the sim or publisher thread. Diagnostic only.
     /// </summary>
-    private long _egressBytesSent;
+    private long _egressPayloadOfferedBytes;
+    private long _lastEgressWrittenBytes, _lastEgressEnqueuedBytes;
+    private long _egressWindowStarted = System.Diagnostics.Stopwatch.GetTimestamp();
     // P604b — last window's GC collection counts, so the [egress] summary can
     // report the per-window GC delta (ties any allocation-burst tick hitch to a
     // GC pause). Sim-thread only.
@@ -227,7 +227,17 @@ public sealed partial class Server : IDisposable
     /// Counter values are deliberately the native unsigned counter mod 256 (the
     /// wire cookie is one byte).
     /// </summary>
-    private byte NextCookie(PeerShipUpdate p) => p.Cookie = (byte)(p.Cookie + 1);
+    private byte NextCookie(PeerShipUpdate p, bool reposition = true)
+    {
+        if (reposition)
+        {
+            // SET_CLUSTER/respawn/launch is server-authorized motion, not a
+            // client teleport. Rebase travel credit but retain monotonic time.
+            p.HasMovementAnchor = false;
+            p.LastPoseAt = double.NegativeInfinity;
+        }
+        return p.Cookie = (byte)(p.Cookie + 1);
+    }
 
     /// <summary>Fetch or create the P507 per-peer ship-update state for <paramref name="id"/>.</summary>
     private PeerShipUpdate EnsurePeerUpdate(ConnectionId id)
@@ -244,9 +254,19 @@ public sealed partial class Server : IDisposable
     {
         /// <summary>The current cookie the client must echo (native <c>m_cookie</c>).</summary>
         public byte Cookie;
+        public bool HasClientTime, HasMovementAnchor;
+        public uint LastClientTime;
+        public double LastPoseAt = double.NegativeInfinity, MovementBudgetAt;
+        public float MovementCredit;
+        public Vector3 LastPosePosition;
+        public long DroppedReplay, DroppedSameTick;
+        public long TotalCorrections;
 
         /// <summary>Rolling acceptance counters (P507 summary log).</summary>
         public long Accepted, Rejected, OutOfDate, Invalid;
+        // Non-exclusive rejection reasons: a small mean position error alone
+        // cannot distinguish a speed violation from a stale travel anchor.
+        public long RejectedSpeed, RejectedEnvelope, RejectedTravel;
         /// <summary>P518 — rolling DROPPED counters, by reason. A silent drop is
         /// what hid P518 (the server's ship froze parked while the client flew on),
         /// so every drop the dispatch takes before the accept/reject pipeline is
@@ -297,6 +317,18 @@ public sealed partial class Server : IDisposable
     // Present only for peers that have sent a PLAYER_READY; absence is treated
     // as not-ready. Sim-thread only, like the sibling maps. P180.
     private readonly Dictionary<ConnectionId, bool> _playerReady = new();
+
+    // P654 (H-24) — per-peer message/chat token budget, the port of native's
+    // chat budget (c_chatBudgetMax=100 / c_chatBudgetCost=20, fsship.h:24-25;
+    // IncrementChatBudget +1/tick, FedSrv.CPP:8287). Keys are peers that have
+    // spent budget (absent = full). Charged on the sim thread only (dispatch),
+    // refilled LAZILY by elapsed simulation time so no per-tick hook is needed.
+    // Value: {Budget, LastRefillTick}. Removed on peer leave (ReleasePeer) so
+    // the table stays bounded by the live peer set.
+    private readonly Dictionary<ConnectionId, (int Budget, long LastRefillTick)> _chatBudgets = new();
+    private int _chatBudgetMax = 1000;
+    private int _chatBudgetCost = 20;
+    private int _chatBudgetRefillPerTick = 5;
 
     // P184 — pending side-join requests awaiting leader approval. Keyed by the
     // REQUESTER's ConnectionId (the same per-connection storage shape as
@@ -478,10 +510,16 @@ public sealed partial class Server : IDisposable
     // enemy's last-known sector within one interval. Sim-thread only.
     private readonly Dictionary<(ConnectionId, short), long> _crossSideShipStatusTick = new();
 
-    // P265 — last ScoreRosterUpdate(209) send tick per mission, throttling the
-    // periodic in-mission scoreboard broadcast in BroadcastScoreRoster (see
-    // ScoreRosterRefreshTicks). Sim-thread only.
-    private readonly Dictionary<Mission, long> _lastScoreRosterTick = new();
+    // P672 — mission baseline, eligible recipients, and refresh deadlines. Sim-thread only.
+    private sealed class ScoreRosterState
+    {
+        public ScoreRosterEntry[] Entries = [];
+        public HashSet<ConnectionId> Recipients = [];
+        public long LastTick;
+        public double LastFullTime;
+        public MissionStage Stage;
+    }
+    private readonly Dictionary<Mission, ScoreRosterState> _scoreRosterStates = new();
 
     // P200 — last successful full-roster REQPINGDATA(195) request, in sim
     // seconds (_simNow), per requester connection. Implements native's
@@ -553,21 +591,6 @@ public sealed partial class Server : IDisposable
     /// </summary>
     private const float ShieldFractionEpsilon = 0.005f;
 
-    /// <summary>How far past <see cref="Sector.DockRadius"/> an undocking ship
-    /// gets repositioned, so it clears the sphere test
-    /// (<see cref="Sector"/>'s dock-collision pass) before the next tick can
-    /// re-latch it. Arbitrary but generous relative to <c>DirtyEpsilon</c>-scale
-    /// position noise; see the undock handler for the full reasoning.</summary>
-    private const float LaunchClearMargin = 50f;
-
-    /// <summary>Outward speed (world units/sec) given to a ship on undock —
-    /// the native reference's own default <c>c_fExitStationSpeed</c>
-    /// (<c>missionigc.cpp:2689</c>), reused verbatim. Ensures fast initial
-    /// separation from the station; <see cref="Sector.LaunchCooldownSeconds"/>
-    /// (not this alone) is what actually guarantees no re-dock — see the
-    /// undock handler's own P75 comment for why both are needed.</summary>
-    private const float ExitStationSpeed = 50f;
-
     /// <summary>
     /// Optional seam for tests (and future launch logic): replace the default
     /// ship-on-logon allocation with a caller-supplied one. Receives the core,
@@ -579,6 +602,9 @@ public sealed partial class Server : IDisposable
     /// known hull + spawn so the independent trajectory reference shares them.
     /// </summary>
     internal Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)>? ShipSpawner;
+    // Built-in debug arenas are production spawn policies too. Keep the
+    // delegate identity so a test replacing the hook still controls placement.
+    private Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)>? _hangarShipSpawner;
 
     /// <summary>The game worlds, in config order.</summary>
     public IReadOnlyList<Mission> Missions => _missions ?? throw new InvalidOperationException("Boot() first");
@@ -691,10 +717,9 @@ public sealed partial class Server : IDisposable
     /// fsship.cpp ShipStatusSpotted/ShipStatusHidden). 100 ticks @ 20 upd/s = 5 s.</summary>
     private const int CrossSideStatusRefreshTicks = 100;
 
-    /// <summary>Ticks between periodic in-mission SCORE_ROSTER_UPDATE(209)
-    /// broadcasts. 40 ticks @ 20 upd/s = 2 s — fast enough to feel live, slow
-    /// enough to be negligible alongside the per-tick syncs.</summary>
+    // Retain the existing maximum two-second score latency; full recovery every 30 sim seconds.
     private const int ScoreRosterRefreshTicks = 40;
+    private const double ScoreRosterFullRefreshSeconds = 30;
 
     /// <summary>P369 — cadence (ticks) of the slow periodic identity REFRESH for
     /// cross-side ships: re-send the one-shot <c>EXPORT(26)</c> of an already-
@@ -992,7 +1017,7 @@ public sealed partial class Server : IDisposable
 
     /// <summary>Legacy name for <see cref="SendSectorWide"/> retained by the
     /// ripcord call sites; delegates to the canonical generic helper.</summary>
-    private void SendRipcordSectorWide(short sectorId, byte[] encoded) => SendSectorWide(sectorId, encoded);
+    private void SendRipcordSectorWide(Sector sector, byte[] encoded) => SendSectorWide(sector, encoded);
 
     /// <summary>A per-axis uniform-jitter helper for the relaunch's small
     /// <c>random(-0.5f, 0.5f)</c> positional wobble (FedSrv.CPP:12965-12967).
@@ -1048,6 +1073,8 @@ public sealed partial class Server : IDisposable
     {
         short side = ship.SideId!.Value;
         var core = ship.Mission!.Core;
+        bool Friendly(short? other) => other == side ||
+            ship.Mission.AllowAlliedRip && AlliedSides(ship.Mission, side, other);
         double now = ship.Mission.LastUpdate;
         float ripcordSpeed = ship.RipcordSpeed;     // GetRipcordSpeed(), shipIGC.cpp:3796
 
@@ -1073,7 +1100,7 @@ public sealed partial class Server : IDisposable
         // ripcorded to, it is the anchor. (The command-target SHIP case,
         // shipIGC.cpp:3816-3831, is a scoped-out follow-up.)
         if (ship.CommandTarget is Probe cmdProbe &&
-            cmdProbe.SideId == side &&
+            Friendly(cmdProbe.SideId) &&
             cmdProbe.OwnerSector.Id == target.Id &&
             cmdProbe.CanRipcord(now, ripcordSpeed))
             return new Ship.RipcordTarget((short)IgcObjectType.Probe, cmdProbe.Id, target.Id);
@@ -1081,7 +1108,7 @@ public sealed partial class Server : IDisposable
         // Tier 2: friendly c_sabmRipcord station (shipIGC.cpp:3835-3838).
         foreach (var st in target.Stations)
         {
-            if (st.SideId == side &&
+            if (Friendly(st.SideId) &&
                 core.StationTypes.TryGetValue(st.StationTypeId, out var stype) &&
                 stype.HasCapability(DataStationTypeIGC.SabmRipcord))
                 return new Ship.RipcordTarget((short)IgcObjectType.Station, st.StationId, st.ClusterId);
@@ -1098,7 +1125,7 @@ public sealed partial class Server : IDisposable
             foreach (var m in target.Models)
             {
                 if (m is not Probe pr) continue;
-                if (pr.SideId != side || !pr.CanRipcord(now, ripcordSpeed)) continue;
+                if (!Friendly(pr.SideId) || !pr.CanRipcord(now, ripcordSpeed)) continue;
 
                 if (goal is { } g)
                 {
@@ -1122,7 +1149,7 @@ public sealed partial class Server : IDisposable
         {
             var s = peer.Ship;
             if (!ReferenceEquals(s, ship) && s.Sector is not null &&
-                s.Sector.Id == target.Id && s.SideId == side &&
+                s.Sector.Id == target.Id && Friendly(s.SideId) &&
                 s.HullType.HasCapability(habm))
                 return new Ship.RipcordTarget((short)IgcObjectType.Ship, s.Id, target.Id);
         }
@@ -1156,23 +1183,11 @@ public sealed partial class Server : IDisposable
     private void OnNotable(string text) => Notify(text);
 
     /// <summary>
-    /// P473 — resolve the <see cref="TestHarnessConfig"/> that applies to the
-    /// connection <paramref name="from"/>, or <c>null</c> when the grant is
-    /// off / absent (byte-identical to P441) or the connection's character
-    /// name does not start with the configured prefix. A non-prefixed
-    /// (human) connection ALWAYS gets <c>null</c>, so the grant can never
-    /// touch a real player. Reads <see cref="_peerNames"/> (populated at the
-    /// same point the peer seats), so it is sim-thread only like its sibling
-    /// maps — call it from the seat path and the BUY_LOADOUT handler, both on
-    /// the sim thread.
+    /// Resolve a harness grant only after checking both configured name prefix
+    /// and server-verifiable connection provenance (P655).
     /// </summary>
     private TestHarnessConfig? HarnessGrantFor(ConnectionId from)
-    {
-        var th = _config.LiveSettings?.TestHarness;
-        if (th is null || !th.Enabled) return null;
-        if (string.IsNullOrEmpty(th.CharacterNamePrefix)) return null;
-        if (!_peerNames.TryGetValue(from, out var name)) return null;
-        return name.StartsWith(th.CharacterNamePrefix, StringComparison.Ordinal) ? th : null;
-    }
+        => IsHarnessPeer(from, _peerNames.GetValueOrDefault(from)) ? _config.LiveSettings!.TestHarness : null;
+
 
 }

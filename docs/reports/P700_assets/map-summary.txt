@@ -1,0 +1,23 @@
+Command: dotnet tools/missiondump/bin/Debug/net10.0/missiondump.dll /home/domingo/Development/Artwork/PCore001.igc /home/domingo/Development/Artwork/m2xspiderw.igc
+
+m2xspiderw.igc  MAP  clusters=13  warps=44  stations=2  asteroids=134
+  sector 1050 'Ganymede'  seed=371  home=True  active=False  posters=globe4  planet=nebplnt33bmp
+      warp    2167 'Terra'  destSector=2166->'Terra'  sig=1.0
+      warp    2168 'Bug Nebula'  destSector=2169->'Bug Nebula'  sig=1.0
+      warp    2176 'Rigel'  destSector=2177->'Rigel'  sig=1.0
+      warp    2178 'Plato'  destSector=2179->'Plato'  sig=1.0
+      station 4328 'Garrison'  type=15  side=0
+  sector 1051 'Organia'  seed=371  home=True  active=False  posters=globe8  planet=nebplnt43bmp
+      warp    2171 'Tellus'  destSector=2170->'Tellus'  sig=1.0
+      warp    2173 'Aurora'  destSector=2172->'Aurora'  sig=1.0
+      warp    2174 'Gaia'  destSector=2175->'Gaia'  sig=1.0
+      warp    2180 'Juniper'  destSector=2181->'Juniper'  sig=1.0
+      station 4329 'Garrison'  type=15  side=1
+  sector 1052 'Alderan'  seed=371  home=False  active=False  posters=globe3  planet=nebplnt06bmp
+      warp    2150 'Cirrus'  destSector=2151->'Cirrus'  sig=1.0
+      warp    2152 'Omega'  destSector=2153->'Omega'  sig=1.0
+      warp    2183 'Juniper'  destSector=2182->'Juniper'  sig=1.0
+      warp    2185 'Plato'  destSector=2184->'Plato'  sig=1.0
+      warp    2187 'Rigel'  destSector=2186->'Rigel'  sig=1.0
+      warp    2189 'Gaia'  destSector=2188->'Gaia'  sig=1.0
+      asteroid 3202 ''  ore=7884/7884

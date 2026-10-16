@@ -181,6 +181,8 @@ public sealed class SideEliminationLiveTests
         var baseType = h.Core.StationTypes.Values.First();
         var type = baseType with
         {
+            ModelName = "P699_SYNTHETIC_ELIMINATION", // synthetic 40-unit base, no artwork bay
+
             MaxArmorHitPoints = maxArmor,
             MaxShieldHitPoints = maxShield,
             DefenseTypeArmor = defArmor,
@@ -260,6 +262,9 @@ public sealed class SideEliminationLiveTests
                 h.Bots[i] = new FltBot();
                 h.Bots[i].Connect(port, names[i]);
                 h.Bots[i].SendLogonRequest(Request(names[i], 77400000000000000ul + (ulong)i));
+                Assert.True(PumpUntil(h.Server, () => h.Bots[i].ShipAssignment is not null, 4000) < 4000,
+                    $"peer {names[i]} must seat in spawn slot {i}");
+                Assert.Equal(h.Ships[i].Id, h.Bots[i].ShipAssignment!.Ship.ShipId);
             }
             PumpUntil(h.Server, () => h.Bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(h.Bots.All(b => b.ShipAssignment is not null), "all bots must be assigned a ship");
@@ -311,6 +316,8 @@ public sealed class SideEliminationLiveTests
         var baseType = h.Core.StationTypes.Values.First();
         var type = baseType with
         {
+            ModelName = "P699_SYNTHETIC_ELIMINATION", // synthetic 40-unit base, no artwork bay
+
             MaxArmorHitPoints = maxArmor,
             MaxShieldHitPoints = maxShield,
             DefenseTypeArmor = defArmor,
@@ -383,6 +390,11 @@ public sealed class SideEliminationLiveTests
                 h.Bots[i] = new FltBot();
                 h.Bots[i].Connect(port, names[i]);
                 h.Bots[i].SendLogonRequest(Request(names[i], 7790000000000000000ul + (ulong)i));
+                // Bind the named peer to its spawn-slot side before another
+                // receive thread can race this join.
+                Assert.True(PumpUntil(h.Server, () => h.Bots[i].ShipAssignment is not null, 4000) < 4000,
+                    $"peer {names[i]} must seat in spawn slot {i}");
+                Assert.Equal(h.Ships[i].Id, h.Bots[i].ShipAssignment!.Ship.ShipId);
             }
             PumpUntil(h.Server, () => h.Bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(h.Bots.All(b => b.ShipAssignment is not null), "all bots must be assigned a ship");
@@ -500,7 +512,9 @@ public sealed class SideEliminationLiveTests
 
         // The eliminated side's own bot gets the side-only GAME_OVER + GAME_OVER_PLAYERS.
         PumpUntil(h.Server,
-            () => cBot.GameOvers.Count > 0 && cBot.GameOverPlayerBroadcasts.Count > 0,
+            () => cBot.GameOvers.Count > 0 && cBot.GameOverPlayerBroadcasts.Count > 0
+                && aBot.SideInactiveBroadcasts.Any(s => s.SideId == h.SideC && !s.BActive)
+                && bBot.SideInactiveBroadcasts.Any(s => s.SideId == h.SideC && !s.BActive),
             20000);
         var go = Assert.Single(cBot.GameOvers);
         Assert.Equal(GameOver.NA, go.SideWinner);                       // no global winner at side-only elimination

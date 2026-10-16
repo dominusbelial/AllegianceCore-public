@@ -1,0 +1,23 @@
+Test run for /home/domingo/allegiance-codex-p695b/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.73]     Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Corrected_client_converges_after_server_moves_beyond_old_travel_anchor [FAIL]
+[xUnit.net 00:00:00.76]     Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Afterburner_speed_limit_matches_side_scaled_flight_thrust [FAIL]
+  Failed Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Corrected_client_converges_after_server_moves_beyond_old_travel_anchor [77 ms]
+  Error Message:
+   Assert.Empty() Failure: Collection was not empty
+Collection: [Tuple (1, [52, 0, 183, 0, 100, ···])]
+  Stack Trace:
+     at Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Corrected_client_converges_after_server_moves_beyond_old_travel_anchor() in /home/domingo/allegiance-codex-p695b/tests/Allegiance.Core.Tests/P655GameStateIntegrityTests.cs:line 126
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Afterburner_speed_limit_matches_side_scaled_flight_thrust [22 ms]
+  Error Message:
+   Assert.Empty() Failure: Collection was not empty
+Collection: [Tuple (1, [52, 0, 183, 0, 100, ···])]
+  Stack Trace:
+     at Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Afterburner_speed_limit_matches_side_scaled_flight_thrust() in /home/domingo/allegiance-codex-p695b/tests/Allegiance.Core.Tests/P655GameStateIntegrityTests.cs:line 166
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /tmp/p695b/baseline.trx
+
+Failed!  - Failed:     2, Passed:     1, Skipped:     0, Total:     3, Duration: 118 ms - Allegiance.Core.Tests.dll (net10.0)

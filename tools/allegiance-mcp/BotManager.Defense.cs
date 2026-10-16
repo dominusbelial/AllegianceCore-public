@@ -21,10 +21,8 @@ internal sealed partial class BotManager
 
     internal const double DefenseQuietSeconds = 20;
     internal const double DefenseMinimumSeconds = 30;
-    internal const float StationThreatRange = 2500;
     private DefenseSettings? _defenseSettings;
     private DefenseSettings DefenseConfig => _defenseSettings ??= DefenseSettings.Read(Environment.GetEnvironmentVariable);
-    private readonly record struct DefenseKey(uint? Cookie, long Generation, short Side, short Sector);
     private sealed class DefenseIncident(double now)
     {
         public double Started = now;
@@ -45,7 +43,7 @@ internal sealed partial class BotManager
 
     private static bool DefenseAvailable(ActiveBot bot) => IsParticipating(bot) && !bot.SpawnPending
         && !bot.ObjectivesPending && !bot.InScenario && !bot.Arena && bot.Behavior == "combat"
-        && bot.Cs is not null && !bot.IsPod && !bot.PodDocked
+        && bot.Cs is not null && !bot.FinaleEscort && !bot.IsPod && !bot.PodDocked
         && !Catalog.IsLifepodHull(ActualHullId(bot));
 
     private void UpdateDefense(ActiveBot[] bots, double now)
@@ -78,11 +76,19 @@ internal sealed partial class BotManager
                 bot.DefenseChatCursor = cs.World.Events.ChatSequence;
                 if (cs.World.Ships.TryGetValue(bot.ShipId, out var me))
                 {
-                    var threats = VisibleDefenseTargets(bot, cs, me.SectorId, now, alerted: false);
-                    if (threats.Count > 0 && cs.World.Stations.Values.Any(s => s.SideId == bot.Side && s.ClusterId == me.SectorId))
-                        NoteDefenseThreat(DefenseKeyFor(bot, me.SectorId), now);
+                    foreach (var (hit, at) in bot.RecentStationAttackers)
+                        if (now - at < ThreatWindowSeconds
+                            && cs.World.Stations.TryGetValue(hit.Station, out var station)
+                            && station.SideId == bot.Side && station.ClusterId == me.SectorId)
+                            NoteDefenseThreat(DefenseKeyFor(bot, me.SectorId), at);
                 }
             }
+        }
+
+        if (Partition is not null)
+        {
+            ApplyGlobalDefense(bots, now, liveKeys);
+            return;
         }
 
         foreach (var (key, incident) in DefenseIncidents.ToArray())
@@ -123,8 +129,9 @@ internal sealed partial class BotManager
 
     private void NoteDefenseThreat(DefenseKey key, double now)
     {
+        if (Partition is not null) _localThreats[key] = Math.Max(_localThreats.GetValueOrDefault(key, double.NegativeInfinity), now);
         if (!DefenseIncidents.TryGetValue(key, out var incident)) DefenseIncidents[key] = new(now);
-        else incident.LastThreat = now;
+        else incident.LastThreat = Math.Max(incident.LastThreat, now);
     }
 
     private static (int Hops, float Local) DefenseDistance(ActiveBot bot, short sector)
@@ -157,20 +164,29 @@ internal sealed partial class BotManager
         lock (cs.Gate)
         {
             var stations = cs.World.Stations.Values.Where(s => s.SideId == bot.Side && s.ClusterId == sector).ToArray();
-            if (stations.Length == 0 && bot.RecentAssetAttackers.Count == 0) return targets;
+            if (stations.Length == 0) return targets;
             foreach (var ship in cs.World.Ships.Values)
             {
                 if (ship.SideId < 0 || ship.SideId == bot.Side || ship.IsNotVisible || ship.IsDead || ship.IsGone
-                    || ship.SectorId != sector || ship.Latest is not { } pose) continue;
+                    || ship.SectorId != sector || ship.Latest is null) continue;
                 var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
                 if (IgnoreMinerTargets && cls == BotTargetClass.MinerDrone) continue;
-                bool assetAttacker = bot.RecentAssetAttackers.TryGetValue(ship.ShipId, out var at) && now - at < ThreatWindowSeconds;
-                bool nearStation = stations.Any(s => s.Position is { Length: 3 }
-                    && (Vec3(s.Position) - pose.Position).LengthSquared() <= StationThreatRange * StationThreatRange);
-                if (assetAttacker || nearStation || (alerted && stations.Length > 0)) targets.Add(ship.ShipId);
+                bool assetAttacker = bot.RecentStationAttackers.Any(h => h.Key.Attacker == ship.ShipId
+                    && now - h.Value < ThreatWindowSeconds && stations.Any(s => s.StationId == h.Key.Station));
+                if (assetAttacker || alerted) targets.Add(ship.ShipId);
             }
         }
         return targets;
+    }
+
+    private static bool HasVisibleAssetAttacker(ActiveBot bot, ConnectionSession cs, short sector, double now)
+    {
+        lock (cs.Gate)
+            return cs.World.Ships.Values.Any(s => s.SideId >= 0 && s.SideId != bot.Side
+                && !s.IsDead && !s.IsGone && !s.IsNotVisible && s.SectorId == sector && s.Latest is not null
+                && (!IgnoreMinerTargets || CombatTargetSelector.ClassifyTargetId(s.HullId) != BotTargetClass.MinerDrone)
+                && ((bot.RecentAttackers.TryGetValue(s.ShipId, out var at) && now - at < ThreatWindowSeconds)
+                    || (bot.RecentAssetAttackers.TryGetValue(s.ShipId, out var assetAt) && now - assetAt < ThreatWindowSeconds)));
     }
 
     private bool TryDriveDefense(ActiveBot bot, short sector, double now)
@@ -180,12 +196,8 @@ internal sealed partial class BotManager
         var cs = bot.Cs!;
         bool alerted = DefenseIncidents.ContainsKey(DefenseKeyFor(bot, sector));
         bot.DefenseTargets = VisibleDefenseTargets(bot, cs, sector, now, alerted);
-        bool attacked = HasVisibleAttacker(bot, cs, sector, now);
-        if (attacked)
-            foreach (var (id, at) in bot.RecentAttackers)
-                if (now - at < ThreatWindowSeconds) bot.DefenseTargets.Add(id);
         // Nearby fighters and reinforcements defend before considering any outward warp.
-        if (bot.DefenseTargets.Count > 0 || attacked)
+        if (bot.DefenseTargets.Count > 0)
         {
             bot.DefendingInPlace = true;
             EngageCombat(bot, now, null); // fresh candidates: this tick may have just drained a hit
@@ -193,28 +205,23 @@ internal sealed partial class BotManager
             return true;
         }
         bot.DefendingInPlace = false;
+        // An incident must still name an exported friendly station. In particular,
+        // a ship hit in the battle sector is ordinary combat, never base defence.
+        lock (cs.Gate)
+            alerted &= cs.World.Stations.Values.Any(s => s.SideId == bot.Side && s.ClusterId == sector);
         if (alerted)
         {
             bot.DefendingInPlace = true;
+            bot.TargetId = null;
             LoiterCombat(bot, now);
             bot.LastCluster = sector;
             return true;
         }
         if (bot.DefenseSector is not { } home) return false;
+        bot.TargetId = null;
         if (sector == home) LoiterCombat(bot, now);
         else
         {
-            // Keep the existing full-throttle exit clearance on a defence warp leg.
-            if (bot.ExitClearFrom is { } exit && TryCsPose(cs, bot.ShipId, out var pos, out var orient)
-                && !IsClearOfAleph(pos, exit, bot.ExitClearRadius, ExitClearMargin))
-            {
-                if (TryDodgeGoal(cs, bot, pos, out var dodge)) CombatFlyTo(bot, dodge, 15f, 200f, 0);
-                else cs.CommandControls(Allegiance.ClientCore.Flight.AutopilotSteering.Pursue(pos, orient,
-                    ExitClearGoal(pos, exit, bot.ExitClearRadius, ExitClearMargin)), 0);
-                bot.LastCluster = sector;
-                return true;
-            }
-            bot.ExitClearFrom = null;
             List<short>? path;
             lock (cs.Gate) path = cs.World.Graph?.FindShortestPath(sector, home);
             if (path is not { Count: >= 2 } || !TransitWarp(cs, bot, sector, path[1])) LoiterCombat(bot, now);

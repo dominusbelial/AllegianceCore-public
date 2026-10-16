@@ -1,0 +1,6 @@
+{
+  "finished": 1792103521.1261263,
+  "command": "NUGET_HTTP_CACHE_PATH=/tmp/p699b-nuget dotnet build AllegianceCore.slnx --nologo",
+  "warnings": 0,
+  "errors": 0
+}

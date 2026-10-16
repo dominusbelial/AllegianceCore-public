@@ -1,0 +1,1366 @@
+{
+  "task": "P655b",
+  "date": "2026-10-14",
+  "startingCommit": "03ff7036c3c0ba0783f92216db02dfa1d1f9dfc7",
+  "lane": "Codex; no commits or pushes; rig/221/200v200 assigned to Claude",
+  "rawArtifactDirectory": "/tmp/p655b",
+  "build": {
+    "artifact": "build.log",
+    "warnings": 0,
+    "errors": 0
+  },
+  "finalBuild": {
+    "artifact": "build-final.log",
+    "warnings": 0,
+    "errors": 0
+  },
+  "failingFirst": {
+    "artifact": "red-h25.trx",
+    "counters": {
+      "total": 2,
+      "executed": 2,
+      "passed": 0,
+      "failed": 2,
+      "notExecuted": 0
+    },
+    "failures": [
+      {
+        "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H25_Teammate_target_overwrite_and_hidden_lock_fail_visible_self_target_works",
+        "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedTarget = null, Ammo = 800, \u00b7\u00b7\u00b7 }\nActual:   null"
+      },
+      {
+        "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H25_Relayed_order_accepts_and_selects_specific_target_before_detection",
+        "message": "Assert.Equal() Failure: Values differ\nExpected: 5\nActual:   -1"
+      }
+    ],
+    "skipped": []
+  },
+  "preFixLiveObservation": {
+    "artifact": "before-bot.trx",
+    "counters": {
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0
+    },
+    "failures": [],
+    "skipped": []
+  },
+  "reviewEvidenceFromBrief": "Claude: bot-order test fails 3/3 on P655, passes 2/2 on base; not locally rerun on base in this lane.",
+  "isolationMethodCount": 59,
+  "isolationInvocationCount": 177,
+  "isolationPassingCaseExecutions": 186,
+  "isolation": [
+    {
+      "test": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-01-1.trx",
+        "isolated-01-2.trx",
+        "isolated-01-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H25_Relayed_order_accepts_and_selects_specific_target_before_detection",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-02-1.trx",
+        "isolated-02-2.trx",
+        "isolated-02-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H25_Teammate_target_overwrite_and_hidden_lock_fail_visible_self_target_works",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-03-1.trx",
+        "isolated-03-2.trx",
+        "isolated-03-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.AlreadyAcceptedOrder_DoesNotReaccept_KeepsEngaging",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-04-1.trx",
+        "isolated-04-2.trx",
+        "isolated-04-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.FreshShipTargetOrder_AdoptsExactlyTheCommandedTarget_AndAccepts",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-05-1.trx",
+        "isolated-05-2.trx",
+        "isolated-05-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.FreshShipTargetOrder_SupersedesPriorTarget",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-06-1.trx",
+        "isolated-06-2.trx",
+        "isolated-06-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.NoPendingOrder_KeepsOrderedTargetUntilSuperseded",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-07-1.trx",
+        "isolated-07-2.trx",
+        "isolated-07-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.NoPendingOrder_NoCurrentTarget_NothingToDo",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-08-1.trx",
+        "isolated-08-2.trx",
+        "isolated-08-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.NonShipOrder_KeepsPriorTarget",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-09-1.trx",
+        "isolated-09-2.trx",
+        "isolated-09-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.NonShipTargetlessOrder_IsAccepted_ButAdoptsNoShipTarget",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-10-1.trx",
+        "isolated-10-2.trx",
+        "isolated-10-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.ShipOrderWithInvalidTargetId_AdoptsNoShipTarget",
+      "project": "Allegiance.ClientCore.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-11-1.trx",
+        "isolated-11-2.trx",
+        "isolated-11-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.AcceptRejectQueuedOrderLiveTests.Accept_echoing_a_different_command_id_is_refused",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-12-1.trx",
+        "isolated-12-2.trx",
+        "isolated-12-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.AcceptRejectQueuedOrderLiveTests.Accept_promotes_queued_to_accepted",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-13-1.trx",
+        "isolated-13-2.trx",
+        "isolated-13-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.AcceptRejectQueuedOrderLiveTests.Accept_with_no_pending_order_is_noop",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-14-1.trx",
+        "isolated-14-2.trx",
+        "isolated-14-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.AcceptRejectQueuedOrderLiveTests.Auto_reject_clears_after_15_seconds_of_inaction",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-15-1.trx",
+        "isolated-15-2.trx",
+        "isolated-15-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.AcceptRejectQueuedOrderLiveTests.QueuedCommandUpdate_roundtrips_full_shape",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-16-1.trx",
+        "isolated-16-2.trx",
+        "isolated-16-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.AcceptRejectQueuedOrderLiveTests.Reject_clears_the_queued_slot",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-17-1.trx",
+        "isolated-17-2.trx",
+        "isolated-17-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.AcceptRejectQueuedOrderLiveTests.Reject_with_no_pending_order_is_noop",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-18-1.trx",
+        "isolated-18-2.trx",
+        "isolated-18-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveQuickChatOrderWireTests.AttackMyTarget_Team_QueuesOnTeammate_NotSenderOrEnemy",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-19-1.trx",
+        "isolated-19-2.trx",
+        "isolated-19-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveQuickChatOrderWireTests.Everyone_CommandChat_QueuesNobody",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-20-1.trx",
+        "isolated-20-2.trx",
+        "isolated-20-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.OrderChangeAcceptedLiveTests.Accepted_current_and_npc_slots_coexist_independently",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-21-1.trx",
+        "isolated-21-2.trx",
+        "isolated-21-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.OrderChangeAcceptedLiveTests.Real_player_accepts_enemy_peer_across_sides_via_c_cmdAccepted",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-22-1.trx",
+        "isolated-22-2.trx",
+        "isolated-22-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.OrderChangeAcceptedLiveTests.Real_player_accepts_ownerless_npc_ship_via_c_cmdAccepted",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-23-1.trx",
+        "isolated-23-2.trx",
+        "isolated-23-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.OrderChangeAcceptedLiveTests.Real_player_clears_accepted_ship_target_with_na_sentinel",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-24-1.trx",
+        "isolated-24-2.trx",
+        "isolated-24-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.OrderChangeCurrentLiveTests.Real_player_clears_command_target_with_na_sentinel",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-25-1.trx",
+        "isolated-25-2.trx",
+        "isolated-25-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.OrderChangeCurrentLiveTests.Real_player_locks_enemy_peer_across_sides_via_c_cmdCurrent",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-26-1.trx",
+        "isolated-26-2.trx",
+        "isolated-26-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.OrderChangeCurrentLiveTests.Real_player_locks_ownerless_npc_ship_via_c_cmdCurrent",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-27-1.trx",
+        "isolated-27-2.trx",
+        "isolated-27-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.OrderChangeCurrentLiveTests.Station_typed_object_is_documented_no_op_and_does_not_change_target",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-28-1.trx",
+        "isolated-28-2.trx",
+        "isolated-28-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Coasting_rounding_cannot_ratchet_authorized_momentum",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        2,
+        2,
+        2
+      ],
+      "artifacts": [
+        "isolated-29-1.trx",
+        "isolated-29-2.trx",
+        "isolated-29-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Delayed_coasting_snapshot_is_checked_at_server_time",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-30-1.trx",
+        "isolated-30-2.trx",
+        "isolated-30-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_First_pose_after_reposition_tolerates_the_native_clock_window",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-31-1.trx",
+        "isolated-31-2.trx",
+        "isolated-31-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Fitted_afterburner_speed_and_coasting_are_legal_excess_speed_is_corrected",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-32-1.trx",
+        "isolated-32-2.trx",
+        "isolated-32-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Inactive_afterburner_does_not_authorize_boost_velocity",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-33-1.trx",
+        "isolated-33-2.trx",
+        "isolated-33-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Increasing_timestamps_cannot_walk_the_latency_tolerance_each_tick",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-34-1.trx",
+        "isolated-34-2.trx",
+        "isolated-34-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Legitimate_motion_after_several_seconds_of_packet_loss_is_accepted",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-35-1.trx",
+        "isolated-35-2.trx",
+        "isolated-35-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Packet_teleport_chain_and_speed_hack_fail_normal_pose_works",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-36-1.trx",
+        "isolated-36-2.trx",
+        "isolated-36-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H11_Server_reposition_rebases_travel_budget_without_a_correction",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-37-1.trx",
+        "isolated-37-2.trx",
+        "isolated-37-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H12_Docked_controls_and_tick_cannot_move_or_fire_launch_restores_motion",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-38-1.trx",
+        "isolated-38-2.trx",
+        "isolated-38-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H12_Docked_missile_and_mine_requests_preserve_ammo_flying_requests_fire",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-39-1.trx",
+        "isolated-39-2.trx",
+        "isolated-39-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H13_Authenticated_harness_bypasses_native_balance_but_not_capacity",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-40-1.trx",
+        "isolated-40-2.trx",
+        "isolated-40-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H13_Initial_selection_enforces_capacity_and_started_team_balance",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-41-1.trx",
+        "isolated-41-2.trx",
+        "isolated-41-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H13_Pending_approval_cannot_defect_after_start_but_lobby_approval_works",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-42-1.trx",
+        "isolated-42-2.trx",
+        "isolated-42-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H13_Started_defection_fails_lobby_switch_succeeds",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-43-1.trx",
+        "isolated-43-2.trx",
+        "isolated-43-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H16_Configured_harness_bearer_is_required_even_for_an_MCP_name",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-44-1.trx",
+        "isolated-44-2.trx",
+        "isolated-44-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H16_Spoofed_names_do_not_grant_spectator_cheats_or_harness_money",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-45-1.trx",
+        "isolated-45-2.trx",
+        "isolated-45-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H17_Nonfinite_cheat_values_fail_valid_values_work",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        3,
+        3,
+        3
+      ],
+      "artifacts": [
+        "isolated-46-1.trx",
+        "isolated-46-2.trx",
+        "isolated-46-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H29_Pregame_and_nonfinite_buoys_fail_valid_started_buoy_relays",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-47-1.trx",
+        "isolated-47-2.trx",
+        "isolated-47-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H31_Turret_milliseconds_work_replay_and_docked_parent_fail",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-48-1.trx",
+        "isolated-48-2.trx",
+        "isolated-48-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H31_Verbose_turret_flood_has_bounded_logs_and_still_applies_valid_input",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-49-1.trx",
+        "isolated-49-2.trx",
+        "isolated-49-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H33_Sector_and_side_broadcasts_stay_in_the_senders_mission",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-50-1.trx",
+        "isolated-50-2.trx",
+        "isolated-50-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H36_Leader_rejection_without_pending_request_is_native_and_nonleader_fails",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-51-1.trx",
+        "isolated-51-2.trx",
+        "isolated-51-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.P655GameStateIntegrityTests.H38_Teammate_may_command_same_side_NPC_but_not_enemy_NPC",
+      "project": "Allegiance.Core.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-52-1.trx",
+        "isolated-52-2.trx",
+        "isolated-52-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Lobby.Tests.P655DirectoryIntegrityTests.H23_Claimed_address_and_untrusted_forwarded_headers_cannot_spoof_listing",
+      "project": "Allegiance.Lobby.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-53-1.trx",
+        "isolated-53-2.trx",
+        "isolated-53-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Lobby.Tests.P655DirectoryIntegrityTests.H23_Concurrent_registrations_cannot_race_the_source_cap_other_sources_work",
+      "project": "Allegiance.Lobby.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-54-1.trx",
+        "isolated-54-2.trx",
+        "isolated-54-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Lobby.Tests.P655DirectoryIntegrityTests.H23_Expired_entries_are_not_listed_before_background_sweep",
+      "project": "Allegiance.Lobby.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-55-1.trx",
+        "isolated-55-2.trx",
+        "isolated-55-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Lobby.Tests.P655DirectoryIntegrityTests.H23_Only_configured_proxy_may_supply_the_forwarded_source",
+      "project": "Allegiance.Lobby.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-56-1.trx",
+        "isolated-56-2.trx",
+        "isolated-56-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Lobby.Tests.P655DirectoryIntegrityTests.H23_Per_source_cap_blocks_slot_exhaustion_but_heartbeats_work",
+      "project": "Allegiance.Lobby.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-57-1.trx",
+        "isolated-57-2.trx",
+        "isolated-57-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Lobby.Tests.P655DirectoryIntegrityTests.H23_Registration_budget_throttles_heartbeats_without_blocking_initial_normal_request",
+      "project": "Allegiance.Lobby.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-58-1.trx",
+        "isolated-58-2.trx",
+        "isolated-58-3.trx"
+      ]
+    },
+    {
+      "test": "Allegiance.Lobby.Tests.P655DirectoryIntegrityTests.H23_Request_body_limit_refuses_large_payload_normal_registration_works",
+      "project": "Allegiance.Lobby.Tests",
+      "exits": [
+        0,
+        0,
+        0
+      ],
+      "passedCases": [
+        1,
+        1,
+        1
+      ],
+      "artifacts": [
+        "isolated-59-1.trx",
+        "isolated-59-2.trx",
+        "isolated-59-3.trx"
+      ]
+    }
+  ],
+  "fullSuites": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "seconds": 248.27,
+      "exit": 0,
+      "artifact": "client-full-1.trx",
+      "counters": {
+        "total": 895,
+        "executed": 894,
+        "passed": 894,
+        "failed": 0,
+        "notExecuted": 0
+      },
+      "failures": [],
+      "skipped": [
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "seconds": 248.73,
+      "exit": 0,
+      "artifact": "client-full-2.trx",
+      "counters": {
+        "total": 895,
+        "executed": 894,
+        "passed": 894,
+        "failed": 0,
+        "notExecuted": 0
+      },
+      "failures": [],
+      "skipped": [
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "seconds": 248.69,
+      "exit": 0,
+      "artifact": "client-full-3.trx",
+      "counters": {
+        "total": 895,
+        "executed": 894,
+        "passed": 894,
+        "failed": 0,
+        "notExecuted": 0
+      },
+      "failures": [],
+      "skipped": [
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "seconds": 274.92,
+      "exit": 1,
+      "artifact": "core-full.trx",
+      "counters": {
+        "total": 4228,
+        "executed": 4228,
+        "passed": 4226,
+        "failed": 2,
+        "notExecuted": 0
+      },
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide",
+          "message": "System.InvalidOperationException : Sequence contains no matching element"
+        },
+        {
+          "test": "Allegiance.Core.Tests.StationBucketSpawnsConstructorLiveTests.Completing_station_type_bucket_spawns_waiting_constructor_and_build_order_builds",
+          "message": "P425 Build order at a matching rock did not start construction"
+        }
+      ],
+      "skipped": []
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "seconds": 264.76,
+      "exit": 0,
+      "artifact": "monogame-full.trx",
+      "counters": {
+        "total": 2123,
+        "executed": 2120,
+        "passed": 2120,
+        "failed": 0,
+        "notExecuted": 0
+      },
+      "failures": [],
+      "skipped": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+      ]
+    },
+    {
+      "project": "Allegiance.Lobby.Tests",
+      "seconds": 0.97,
+      "exit": 0,
+      "artifact": "lobby-full.trx",
+      "counters": {
+        "total": 19,
+        "executed": 19,
+        "passed": 19,
+        "failed": 0,
+        "notExecuted": 0
+      },
+      "failures": [],
+      "skipped": []
+    }
+  ],
+  "suiteFailureIsolations": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide",
+      "suiteFailure": "System.InvalidOperationException : Sequence contains no matching element",
+      "runs": [
+        {
+          "artifact": "failure-isolated-01-1.trx",
+          "exit": 0,
+          "counters": {
+            "total": 1,
+            "executed": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        },
+        {
+          "artifact": "failure-isolated-01-2.trx",
+          "exit": 0,
+          "counters": {
+            "total": 1,
+            "executed": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        },
+        {
+          "artifact": "failure-isolated-01-3.trx",
+          "exit": 0,
+          "counters": {
+            "total": 1,
+            "executed": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        }
+      ],
+      "classification": "load flake per brief: 3/3 isolated passes"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.StationBucketSpawnsConstructorLiveTests.Completing_station_type_bucket_spawns_waiting_constructor_and_build_order_builds",
+      "suiteFailure": "P425 Build order at a matching rock did not start construction",
+      "runs": [
+        {
+          "artifact": "failure-isolated-02-1.trx",
+          "exit": 0,
+          "counters": {
+            "total": 1,
+            "executed": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        },
+        {
+          "artifact": "failure-isolated-02-2.trx",
+          "exit": 0,
+          "counters": {
+            "total": 1,
+            "executed": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        },
+        {
+          "artifact": "failure-isolated-02-3.trx",
+          "exit": 0,
+          "counters": {
+            "total": 1,
+            "executed": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        }
+      ],
+      "classification": "load flake per brief: 3/3 isolated passes"
+    }
+  ]
+}

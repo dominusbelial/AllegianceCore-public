@@ -1,0 +1,1799 @@
+{
+  "base": "6c3e54ad",
+  "environment": {
+    "os": "Ubuntu 26.04 x86_64",
+    "cpu": "Intel Core Ultra 9 285HX",
+    "processors": 24,
+    "sdk": "10.0.400",
+    "runtime": "10.0.11"
+  },
+  "identity": [
+    {
+      "native": false,
+      "parallel": false,
+      "floor": 0,
+      "ticks": 105,
+      "peers": 144,
+      "packets": 276184,
+      "bytes": 77143800,
+      "offHash": "E9818924260ED254C71902066D533BD620B6C03CCC6EC152F08714E6E1F862D3",
+      "onHash": "E9818924260ED254C71902066D533BD620B6C03CCC6EC152F08714E6E1F862D3"
+    },
+    {
+      "native": false,
+      "parallel": true,
+      "floor": 2,
+      "ticks": 105,
+      "peers": 144,
+      "packets": 276184,
+      "bytes": 83832573,
+      "offHash": "1C4519215B2B37DFB597F3DFB9EEB79F03F61CF88449F9700E9A47D0D40138BD",
+      "onHash": "1C4519215B2B37DFB597F3DFB9EEB79F03F61CF88449F9700E9A47D0D40138BD"
+    },
+    {
+      "native": true,
+      "parallel": false,
+      "floor": 2,
+      "ticks": 105,
+      "peers": 144,
+      "packets": 261064,
+      "bytes": 22996941,
+      "offHash": "3C2919674F7E403C06960B4F070B2134C2663DEE79AB4189FBC429FEC74335F6",
+      "onHash": "3C2919674F7E403C06960B4F070B2134C2663DEE79AB4189FBC429FEC74335F6"
+    },
+    {
+      "native": true,
+      "parallel": true,
+      "floor": 3,
+      "ticks": 105,
+      "peers": 144,
+      "packets": 261064,
+      "bytes": 27521994,
+      "offHash": "27B42CC5C6DE7E55C3B5FF84DB7063A2C982278558722EF0E932DE09D74E11BC",
+      "onHash": "27B42CC5C6DE7E55C3B5FF84DB7063A2C982278558722EF0E932DE09D74E11BC"
+    }
+  ],
+  "tcpIdentity": {
+    "peers": 12,
+    "subjects": 96,
+    "ticks": 30,
+    "packets": 4850,
+    "bytes": 445724,
+    "identicalPerLane": true
+  },
+  "measurements": [
+    {
+      "peers": 256,
+      "snapshot": false,
+      "ticks": 120,
+      "tickMeanMs": 24.048569166666674,
+      "tickP95Ms": 34.9753,
+      "projectionMeanMs": 0,
+      "projectionBytesPerTick": 0,
+      "simAllocatedBytesPerTick": 11719221,
+      "publishMeanMs": 0,
+      "coalesced": 0,
+      "containers": 3,
+      "failures": 0,
+      "receivedFrames": 567113,
+      "csv": "docs/reports/P668_assets/loopback-256-off.csv",
+      "broadcastMeanMs": 20.3562,
+      "broadcastSharePercent": 84.64620019146668,
+      "crossSideExportMeanMs": 1.4012
+    },
+    {
+      "peers": 256,
+      "snapshot": true,
+      "ticks": 120,
+      "tickMeanMs": 12.020064166666673,
+      "tickP95Ms": 17.9764,
+      "projectionMeanMs": 11.438186116666666,
+      "projectionBytesPerTick": 3244575,
+      "simAllocatedBytesPerTick": 3526883,
+      "publishMeanMs": 4.0732735,
+      "coalesced": 0,
+      "containers": 3,
+      "failures": 0,
+      "receivedFrames": 373162,
+      "csv": "docs/reports/P668_assets/loopback-256-on.csv",
+      "broadcastMeanMs": 10.7837,
+      "broadcastSharePercent": 89.71416333953286,
+      "crossSideExportMeanMs": 0.5623
+    },
+    {
+      "peers": 512,
+      "snapshot": false,
+      "ticks": 120,
+      "tickMeanMs": 66.27102499999998,
+      "tickP95Ms": 117.6001,
+      "projectionMeanMs": 0,
+      "projectionBytesPerTick": 0,
+      "simAllocatedBytesPerTick": 31737843,
+      "publishMeanMs": 0,
+      "coalesced": 0,
+      "containers": 3,
+      "failures": 0,
+      "receivedFrames": 1372463,
+      "csv": "docs/reports/P668_assets/loopback-512-off.csv",
+      "broadcastMeanMs": 59.2965,
+      "broadcastSharePercent": 89.47575505283044,
+      "crossSideExportMeanMs": 2.6289
+    },
+    {
+      "peers": 512,
+      "snapshot": true,
+      "ticks": 120,
+      "tickMeanMs": 29.09170583333332,
+      "tickP95Ms": 38.7735,
+      "projectionMeanMs": 28.421658983333334,
+      "projectionBytesPerTick": 6629644,
+      "simAllocatedBytesPerTick": 6963048,
+      "publishMeanMs": 18.952237158333332,
+      "coalesced": 0,
+      "containers": 3,
+      "failures": 0,
+      "receivedFrames": 678446,
+      "csv": "docs/reports/P668_assets/loopback-512-on.csv",
+      "broadcastMeanMs": 26.895599999999998,
+      "broadcastSharePercent": 92.45109294754032,
+      "crossSideExportMeanMs": 1.3859
+    }
+  ],
+  "isolated": [
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Flag_is_opt_in_and_environment_wins",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.31,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Flag_is_opt_in_and_environment_wins",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.34,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Flag_is_opt_in_and_environment_wins",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.27,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Json_setting_binds_and_default_is_off",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.34,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Json_setting_binds_and_default_is_off",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.32,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Json_setting_binds_and_default_is_off",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.32,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Invalid_environment_is_rejected",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.37,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Invalid_environment_is_rejected",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.75,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Invalid_environment_is_rejected",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.7,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Stalled_publisher_coalesces_to_one_pending_tick_preserving_reliable_events_and_own_pose",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Stalled_publisher_coalesces_to_one_pending_tick_preserving_reliable_events_and_own_pose",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.37,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Stalled_publisher_coalesces_to_one_pending_tick_preserving_reliable_events_and_own_pose",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.8,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Dispose_drains_the_final_snapshot_and_joins_workers",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.82,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Dispose_drains_the_final_snapshot_and_joins_workers",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 2.03,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastPublisherTests.Dispose_drains_the_final_snapshot_and_joins_workers",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.38,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotTests.Captured_pose_is_detached_and_byte_identical_after_live_ship_mutation",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.49,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotTests.Captured_pose_is_detached_and_byte_identical_after_live_ship_mutation",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.4,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotTests.Captured_pose_is_detached_and_byte_identical_after_live_ship_mutation",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.44,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 26.39,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 25.93,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 25.03,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Same_recorded_session_receives_identical_TCP_packets_in_each_lane",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.81,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Same_recorded_session_receives_identical_TCP_packets_in_each_lane",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.91,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Same_recorded_session_receives_identical_TCP_packets_in_each_lane",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.9,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 19.12,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 22.65,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 20.15,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Both_broadcasts_are_byte_identical_serial_vs_parallel_at_tick0",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.52,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Both_broadcasts_are_byte_identical_serial_vs_parallel_at_tick0",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.54,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Both_broadcasts_are_byte_identical_serial_vs_parallel_at_tick0",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.54,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Both_broadcasts_are_byte_identical_serial_vs_parallel_at_later_ticks",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.58,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Both_broadcasts_are_byte_identical_serial_vs_parallel_at_later_ticks",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.61,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Both_broadcasts_are_byte_identical_serial_vs_parallel_at_later_ticks",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.57,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.ShipStates_alone_is_byte_identical_serial_vs_parallel",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.54,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.ShipStates_alone_is_byte_identical_serial_vs_parallel",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.51,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.ShipStates_alone_is_byte_identical_serial_vs_parallel",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.52,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.ShipsUpdate_alone_is_byte_identical_serial_vs_parallel",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.4,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.ShipsUpdate_alone_is_byte_identical_serial_vs_parallel",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.39,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.ShipsUpdate_alone_is_byte_identical_serial_vs_parallel",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.44,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_flag_defaults_off_and_config_binds",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.37,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_flag_defaults_off_and_config_binds",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.39,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_flag_defaults_off_and_config_binds",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.41,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_broadcast_verbose_off_emits_zero_pair_diag_lines_and_bytes_unchanged",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.53,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_broadcast_verbose_off_emits_zero_pair_diag_lines_and_bytes_unchanged",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.55,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_broadcast_verbose_off_emits_zero_pair_diag_lines_and_bytes_unchanged",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.57,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_broadcast_survives_join_leave_churn_without_exceptions",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 2.05,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_broadcast_survives_join_leave_churn_without_exceptions",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 2.01,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.ParallelBroadcastByteIdentityTests.Parallel_broadcast_survives_join_leave_churn_without_exceptions",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.96,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateAgeMetricsTests.Crowded_histogram_reports_distance_percentiles_thresholds_and_overflow",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateAgeMetricsTests.Crowded_histogram_reports_distance_percentiles_thresholds_and_overflow",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.31,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateAgeMetricsTests.Crowded_histogram_reports_distance_percentiles_thresholds_and_overflow",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.31,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateAgeMetricsTests.Histogram_sampling_allocates_zero_bytes_after_warmup",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.29,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateAgeMetricsTests.Histogram_sampling_allocates_zero_bytes_after_warmup",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateAgeMetricsTests.Histogram_sampling_allocates_zero_bytes_after_warmup",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Every_visible_ship_meets_floor_even_when_ranking_repeatedly_favours_others",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.64,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Every_visible_ship_meets_floor_even_when_ranking_repeatedly_favours_others",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.67,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Every_visible_ship_meets_floor_even_when_ranking_repeatedly_favours_others",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.68,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Zero_floor_preserves_ranked_bytes_and_deviations_with_metrics_enabled",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.45,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Zero_floor_preserves_ranked_bytes_and_deviations_with_metrics_enabled",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.48,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Zero_floor_preserves_ranked_bytes_and_deviations_with_metrics_enabled",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.45,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Added_floor_bytes_are_exact_and_native_ranking_is_unchanged",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.37,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Added_floor_bytes_are_exact_and_native_ranking_is_unchanged",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.37,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Added_floor_bytes_are_exact_and_native_ranking_is_unchanged",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.41,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Tracking_forgets_hidden_departed_and_reused_ids_and_allocates_zero_when_warm",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.38,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Tracking_forgets_hidden_departed_and_reused_ids_and_allocates_zero_when_warm",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.39,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Tracking_forgets_hidden_departed_and_reused_ids_and_allocates_zero_when_warm",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.4,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Profiler_windows_emit_one_age_line_and_reset_sample_and_byte_counters",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.46,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Profiler_windows_emit_one_age_line_and_reset_sample_and_byte_counters",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.44,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Profiler_windows_emit_one_age_line_and_reset_sample_and_byte_counters",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.45,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Departing_viewers_keep_their_window_samples_and_bytes_without_retaining_ship_state",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.41,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Departing_viewers_keep_their_window_samples_and_bytes_without_retaining_ship_state",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.4,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Departing_viewers_keep_their_window_samples_and_bytes_without_retaining_ship_state",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.46,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Floor_configuration_defaults_to_two_and_rejects_invalid_values",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.34,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Floor_configuration_defaults_to_two_and_rejects_invalid_values",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.34,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.UpdateCadenceTests.Floor_configuration_defaults_to_two_and_rejects_invalid_values",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.34,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.LightShipsUpdate_codec_round_trips_entries_and_inactive_turrets",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.34,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.LightShipsUpdate_codec_round_trips_entries_and_inactive_turrets",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.LightShipsUpdate_codec_round_trips_entries_and_inactive_turrets",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.29,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.HeavyShipsUpdate_codec_round_trips_delta_payload",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.32,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.HeavyShipsUpdate_codec_round_trips_delta_payload",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.29,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.HeavyShipsUpdate_codec_round_trips_delta_payload",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.32,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.ServerActiveTurretUpdate_exact_layout_and_round_trip",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.35,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.ServerActiveTurretUpdate_exact_layout_and_round_trip",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.ServerActiveTurretUpdate_exact_layout_and_round_trip",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.32,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.HeavyShipsUpdate_FromShips_with_typed_active_turrets_round_trips",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.31,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.HeavyShipsUpdate_FromShips_with_typed_active_turrets_round_trips",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.HeavyShipsUpdate_FromShips_with_typed_active_turrets_round_trips",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.35,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.LightShipsUpdate_FromShips_with_inactive_turrets_round_trips",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.LightShipsUpdate_FromShips_with_inactive_turrets_round_trips",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.37,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.LightHeavyShipsUpdateCodecTests.LightShipsUpdate_FromShips_with_inactive_turrets_round_trips",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.31,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateStatusStaggerTests.Teammate_status_refresh_is_staggered_not_synchronized",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.39,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateStatusStaggerTests.Teammate_status_refresh_is_staggered_not_synchronized",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.39,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateStatusStaggerTests.Teammate_status_refresh_is_staggered_not_synchronized",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.4,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateStatusStaggerTests.Teammate_status_refresh_cadence_is_preserved",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.39,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateStatusStaggerTests.Teammate_status_refresh_cadence_is_preserved",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.41,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateStatusStaggerTests.Teammate_status_refresh_cadence_is_preserved",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.43,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammatePositionBroadcastTests.Teammates_commanded_movement_is_broadcast_to_observers_but_enemy_movement_is_not",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.51,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammatePositionBroadcastTests.Teammates_commanded_movement_is_broadcast_to_observers_but_enemy_movement_is_not",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.47,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammatePositionBroadcastTests.Teammates_commanded_movement_is_broadcast_to_observers_but_enemy_movement_is_not",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.73,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammatePositionBroadcastTests.Stationary_teammate_is_still_broadcast_to_observer_once",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 2.29,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammatePositionBroadcastTests.Stationary_teammate_is_still_broadcast_to_observer_once",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 2.28,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammatePositionBroadcastTests.Stationary_teammate_is_still_broadcast_to_observer_once",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 2.06,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateLoadoutBroadcastTests.Teammates_real_loadout_is_broadcast_to_observers_but_enemy_loadout_is_not",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.68,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateLoadoutBroadcastTests.Teammates_real_loadout_is_broadcast_to_observers_but_enemy_loadout_is_not",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 2.63,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.TeammateLoadoutBroadcastTests.Teammates_real_loadout_is_broadcast_to_observers_but_enemy_loadout_is_not",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 2.43,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_same_cluster_ship_exchanges_identity_even_before_detection",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.69,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_same_cluster_ship_exchanges_identity_even_before_detection",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.65,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_same_cluster_ship_exchanges_identity_even_before_detection",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.78,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Late_joining_peer_on_an_already_informed_side_gets_caught_up_cross_side",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.69,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Late_joining_peer_on_an_already_informed_side_gets_caught_up_cross_side",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.57,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Late_joining_peer_on_an_already_informed_side_gets_caught_up_cross_side",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.56,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_identity_refresh_self_heals_on_the_slow_cadence",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 3.13,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_identity_refresh_self_heals_on_the_slow_cadence",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 3.14,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_identity_refresh_self_heals_on_the_slow_cadence",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 3.12,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.46,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.43,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.48,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_hull_change_is_re_exported_to_enemy_promptly",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.5,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_hull_change_is_re_exported_to_enemy_promptly",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 1.51,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.CrossSideExportLiveTests.Cross_side_hull_change_is_re_exported_to_enemy_promptly",
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 1.51,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 1.91,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 2.06,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "method": "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+      "attempt": 3,
+      "exit": 1,
+      "seconds": 27.35,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "failures": [
+        [
+          "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+          "B must receive the mine's EXPORT once its scanner net spots it"
+        ]
+      ]
+    }
+  ],
+  "suites": {
+    "Core": {
+      "counters": {
+        "total": "4318",
+        "executed": "4318",
+        "passed": "4318",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped": []
+    },
+    "ClientCore": {
+      "counters": {
+        "total": "934",
+        "executed": "933",
+        "passed": "933",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+          "reason": "Set ALLEGIANCE_LIVE_P660_SHOWCASE=1 for the full 15v15 MCP proof"
+        }
+      ]
+    },
+    "ClientCore.MonoGame": {
+      "counters": {
+        "total": "2128",
+        "executed": "2125",
+        "passed": "2125",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped": [
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        }
+      ]
+    }
+  },
+  "snapshotChurn": [
+    {
+      "attempt": 1,
+      "exit": 0
+    },
+    {
+      "attempt": 2,
+      "exit": 0
+    },
+    {
+      "attempt": 3,
+      "exit": 0
+    }
+  ],
+  "refinedValidation": [
+    {
+      "label": "final-build",
+      "exit": 0,
+      "seconds": 3.28
+    },
+    {
+      "label": "final-release-build",
+      "exit": 0,
+      "seconds": 2.11
+    },
+    {
+      "label": "refined-benchmark-isolated-1",
+      "exit": 0,
+      "seconds": 19.34,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    },
+    {
+      "label": "refined-benchmark-isolated-2",
+      "exit": 0,
+      "seconds": 19.42,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    },
+    {
+      "label": "refined-benchmark-isolated-3",
+      "exit": 0,
+      "seconds": 19.44,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    },
+    {
+      "label": "refined-release-256",
+      "exit": 0,
+      "seconds": 17.78,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    },
+    {
+      "label": "refined-release-512",
+      "exit": 0,
+      "seconds": 24.99,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    },
+    {
+      "label": "mine-recheck-1",
+      "exit": 0,
+      "seconds": 1.88,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    },
+    {
+      "label": "mine-recheck-2",
+      "exit": 0,
+      "seconds": 1.79,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    },
+    {
+      "label": "mine-recheck-3",
+      "exit": 0,
+      "seconds": 1.83,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    },
+    {
+      "label": "final-suite-Core",
+      "exit": 0,
+      "seconds": 373.47,
+      "counters": {
+        "total": "4318",
+        "executed": "4318",
+        "passed": "4318",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed_methods": []
+    }
+  ],
+  "showcase": [
+    {
+      "attempt": 1,
+      "exit": 0,
+      "seconds": 22.68,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "attempt": 2,
+      "exit": 0,
+      "seconds": 22.59,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "attempt": 3,
+      "exit": 0,
+      "seconds": 22.59,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    }
+  ],
+  "finalCore": {
+    "counters": {
+      "total": "4318",
+      "executed": "4318",
+      "passed": "4318",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "skipped": []
+  }
+}

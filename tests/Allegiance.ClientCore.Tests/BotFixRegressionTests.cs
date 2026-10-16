@@ -37,6 +37,7 @@ public sealed partial class BotFixRegressionTests
         Set(manager, "_removedBots", new List<BotManager.RemovedBotView>());
         Set(manager, "_tickEngagers", new Dictionary<short, int>());
         Set(manager, "_clock", System.Diagnostics.Stopwatch.StartNew());
+        Set(manager, "_defenseSettings", BotManager.DefenseSettings.Read(_ => null));
         return manager;
     }
     private static object Bot(ConnectionSession? cs = null, short id = 1)
@@ -199,6 +200,7 @@ public sealed partial class BotFixRegressionTests
         cs.World.BeginNextMission(); Seat(cs.World, 2);
         Assert.False((bool)Call("RefreshLife", mgr, bot, cs, 1.0)!); // map is not ready yet
         Assert.False(Get<bool>(bot, "Arrived")); Assert.Null(Get<List<short>?>(bot, "RoutePath"));
+        Assert.True(Get<bool>(bot, "MissionLaunchPending"));
         cs.World.Apply(new ClusterInfo { Clusters = [new(1, true), new(44, false)], Warps = [new(1, 44)] });
         cs.World.Apply(new ExportCluster { Cluster = new(0, [0, 1, 0], 0, 0, 0, 44, 0, 0, "Alderan", "", "", 0, 0, 0, true, false) });
         Assert.True((bool)Call("RefreshLife", mgr, bot, cs, 2.0)!);
@@ -232,6 +234,7 @@ public sealed partial class BotFixRegressionTests
         Assert.False(Get<bool>(bot, "Arrived")); Assert.True(Get<bool>(bot, "ObjectivesPending"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void Bomber_SelectsOnlyEnemyStationsInDestination_AndReactsOnlyToVisibleAttackers()
     {
@@ -428,6 +431,43 @@ public sealed partial class BotFixRegressionTests
         var actual = DecisionSnapshot.DeadReckonOrientation(ship, 40);
         Assert.True((expected.GetForward() - actual.GetForward()).Length() < 0.00001f);
         Assert.True((actual.GetForward() - ship.MaterializeOrientation().GetForward()).Length() > 0.1f);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DecisionReadMode_FollowsWorldFlag_AfterBotManagerInitialization(bool initialMode)
+    {
+        bool saved = ClientWorld.DecisionSnapshotEnabled;
+        try
+        {
+            ClientWorld.DecisionSnapshotEnabled = initialMode;
+            RuntimeHelpers.RunClassConstructor(typeof(BotManager).TypeHandle);
+            using var cs = Session();
+            ClientWorld.DecisionSnapshotEnabled = true;
+            cs.World.RequestDecisionRefresh();
+            cs.World.PublishDecisionSnapshot();
+            Assert.Equal((short)1, (short)Call("CsSector", null, cs)!);
+
+            // Keep the published frame at sector 1 while live wire state moves.
+            cs.World.Apply(new SetCluster { Ship = Pose(1, 200), SectorId = 2 });
+            var held = cs.World.Decision;
+            foreach (bool enabled in new[] { false, true, false, true })
+            {
+                ClientWorld.DecisionSnapshotEnabled = enabled;
+                Assert.Equal(enabled ? (short)1 : (short)2, (short)Call("CsSector", null, cs)!);
+                object?[] poseArgs = [cs, (short)1, null, null];
+                var poseMethod = typeof(BotManager).GetMethod("TryCsPose", BindingFlags.Static | Fields)!;
+                Assert.True((bool)poseMethod.Invoke(null, poseArgs)!);
+                Assert.Equal(enabled ? 0f : 200f, ((Vector3)poseArgs[2]!).X);
+                if (!enabled)
+                {
+                    cs.World.RequestDecisionRefresh();
+                    Assert.Same(held, cs.World.PublishDecisionSnapshot());
+                }
+            }
+        }
+        finally { ClientWorld.DecisionSnapshotEnabled = saved; }
     }
 
     [Fact]

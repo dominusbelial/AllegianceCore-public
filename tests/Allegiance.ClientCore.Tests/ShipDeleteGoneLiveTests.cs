@@ -103,6 +103,10 @@ public sealed class ShipDeleteGoneLiveTests
         var s = new ConnectionSession();
         s.Connect(server.BoundPort, name);
         s.SendLogonRequest(Request(name));
+        // All three scenes assign watcher/departer roles by arrival order.
+        // Complete this seat before the caller starts the next connection.
+        Assert.True(PumpUntil(server, () => s.World.MyShipId is not null, 4000) < 4000,
+            $"{name} did not seat");
         return s;
     }
 
@@ -369,7 +373,9 @@ public sealed class ShipDeleteGoneLiveTests
         // so the watcher observed it flying first) — this triggers the dock pass.
         lock (server)
         {
-            docker!.Position = stationPos + new Vector3(20f, 0f, 0f);
+            var arriving = docker!;
+            var home = dockSector!.Stations.First(st => st.SideId == arriving.SideId);
+            arriving.Position = DockTestPlacement.Inside(arriving.Mission!, home, arriving.HullType);
         }
 
         // The docker docks (its OWN world latches StationId).

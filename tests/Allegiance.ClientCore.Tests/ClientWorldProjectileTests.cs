@@ -258,4 +258,33 @@ public class ClientWorldProjectileTests
         world.Apply(Shot(typeId: 4));              // ...until the server echo arrives
         Assert.Single(world.Projectiles);
     }
+    [Fact]
+    public void Probe_source_roundtrips_without_ship_id_collision_or_own_echo_drop()
+    {
+        var world = WorldWithMyShip(5);
+        world.Apply(new ExportShip { ShipId = -1, SideId = 0 });
+        world.OwnEchoDropPredicate = (_, _, _, _) => true;
+        var shot = Shot(launcherId: 5);
+        Assert.Equal(54, shot.Encode().Length);
+        Assert.Equal(IgcObjectType.Ship, ProjectileInstance.Decode(shot.Encode()).LauncherType);
+        shot.LauncherType = IgcObjectType.Probe;
+        var bytes = shot.Encode();
+        Assert.Equal(56, bytes.Length);
+        var decoded = ProjectileInstance.Decode(bytes);
+        Assert.Equal(IgcObjectType.Probe, decoded.LauncherType);
+        Assert.Equal((short)5, decoded.LauncherId);
+        world.Apply(decoded);
+        Assert.Equal(1, world.Diag.FromNeverPosed);
+        world.Apply(new ExportProbe { Probe = new DataProbeExport(
+            P0: new Vector3(100, 0, 0), Time0: 0, ProbeId: 5, ExportF: true,
+            ProbetypeId: 30, SideId: 0, ClusterId: 1, ShipId: 99,
+            OtTarget: -1, OidTarget: -1, CreateNow: true) });
+        world.Apply(decoded);
+        Assert.Equal(1, world.Diag.FromNeverPosed);
+        Assert.Equal(1, world.Diag.ReceivedTeammate);
+        Assert.Equal(0, world.Diag.ReceivedOwn);
+        Assert.Equal(2, world.Projectiles.Count);
+        Assert.All(world.Projectiles, p => Assert.Equal(IgcObjectType.Probe, p.LauncherType));
+    }
+
 }

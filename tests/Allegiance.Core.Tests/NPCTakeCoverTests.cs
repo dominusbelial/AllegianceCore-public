@@ -84,6 +84,7 @@ public sealed class NPCTakeCoverTests
                             new Vector3(x, y, z), Vector3.Zero, Orientation.Identity)
         {
             IsNpc = npc,
+            PilotType = npc ? Ship.PilotTypeMiner : Ship.PilotTypePlayer,
         };
         ship.SideId = side;
         m.PlaceShip(ship, sector);   // gives it Mission + Sector (needed by FindNearestFriendlyStation)

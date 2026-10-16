@@ -233,6 +233,8 @@ public class LiveTeamLobbyTests
         // Now the same control update actually takes effect.
         var shipA = server.Ships.First(s => s.Ship.Id == aId).Ship;
         shipA.Controls = new ControlData(0f, 0f, 0f, 0f);
+        a.SendDocked();
+        Assert.True(PumpUntil(server, () => server.Ships.Single(l => l.Ship.Id == aId).Ship.StationId is null, 3000) < 3000);
         a.CommandControls(new ControlData(0f, 0f, 0f, 1f), stateM: 0x2);
         int cp = PumpUntil(server, () => shipA.Controls.Throttle == 1f, 800);
         Assert.True(cp < 800, "control update not applied after start");

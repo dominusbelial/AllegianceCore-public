@@ -1,0 +1,27 @@
+{
+  "source": "/home/domingo/.claude/jobs/82c1509b/tmp/clash57-podtrips.jsonl",
+  "sha256": "4d3817b396b76e6676b884a462455fa07e6212b0a9c4f303ebfcd528378df459",
+  "results": 829,
+  "outcomes": {
+    "1/death": 184,
+    "0/death": 122,
+    "0/docked": 180,
+    "1/rescued": 16,
+    "1/oxygen": 234,
+    "0/oxygen": 67,
+    "0/rescued": 25,
+    "0/removed": 1
+  },
+  "side0": {
+    "oxygen_with_radius": 22,
+    "with_approach": 22,
+    "with_bay": 0,
+    "median_wait": 76.00000000027649
+  },
+  "side1": {
+    "oxygen_with_radius": 199,
+    "with_approach": 199,
+    "with_bay": 0,
+    "median_wait": 42.05000000015298
+  }
+}

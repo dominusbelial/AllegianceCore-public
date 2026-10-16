@@ -55,6 +55,11 @@ public enum BucketItemType
     /// type's <c>ConstructorNeedRockSound</c>.
     /// </summary>
     BitStationType = 5,
+
+    // Native callback cases exist even though native CreateBuckets currently
+    // comments out their catalog generation (Igc/sideigc.cpp:257-311).
+    BitHullType = 6,
+    BitPartType = 7,
 }
 
 /// <summary>
@@ -111,6 +116,11 @@ public sealed class Bucket : IBucketIgc
     private readonly IIgcSite _site;
     private double _lastUpdate;
     private bool _completionRaised;
+    private int _lastPercentCompleteNotified;
+    private bool _terminated;
+
+    /// <summary>The owning side, bound when its catalog is installed.</summary>
+    public Side? Side { get; internal set; }
 
     /// <summary>The bucket id (<c>BucketID</c> = short, team-scoped).</summary>
     public short Id { get; }
@@ -162,6 +172,8 @@ public sealed class Bucket : IBucketIgc
     /// run the native <c>StationTypeCompleted</c> flow (FedSrv.CPP:11343-11372).
     /// </summary>
     public DataStationTypeIGC? StationType { get; }
+    public DataHullTypeIGC? HullType { get; }
+    public DataPartTypeIGC? PartType { get; }
 
     /// <summary>Money donated so far (native <c>m_investedMoney</c>). Widened to
     /// <c>long</c> to match this port's <see cref="Side.Money"/> widening
@@ -180,6 +192,10 @@ public sealed class Bucket : IBucketIgc
     /// (bucketigc.h:164-168).</summary>
     public int PercentBought => Price > 0 ? (int)((100 * InvestedMoney) / Price) : 0;
 
+    /// <summary>Igc/bucketigc.h:169-172: integer build-time percentage.</summary>
+    public int PercentComplete => TimeToBuild > 0
+        ? (int)(InvestedMilliseconds / (10L * TimeToBuild)) : 0;
+
     /// <summary>Construct a bucket over a site seam, an id and a buyable
     /// definition.</summary>
     public Bucket(
@@ -193,7 +209,9 @@ public sealed class Bucket : IBucketIgc
         short hullIdDrone = -1,
         DataDevelopmentIGC? development = null,
         DataDroneTypeIGC? droneType = null,
-        DataStationTypeIGC? stationType = null)
+        DataStationTypeIGC? stationType = null,
+        DataHullTypeIGC? hullType = null,
+        DataPartTypeIGC? partType = null)
     {
         _site = site;
         Id = id;
@@ -206,6 +224,8 @@ public sealed class Bucket : IBucketIgc
         Development = development;
         DroneType = droneType;
         StationType = stationType;
+        HullType = hullType;
+        PartType = partType;
     }
 
     /// <summary>
@@ -220,7 +240,34 @@ public sealed class Bucket : IBucketIgc
         long leftover = Price - InvestedMoney - amount;   // bucketigc.h:284
         if (leftover < 0) amount += leftover;             // bucketigc.h:285-287: trim overshoot
         InvestedMoney += amount;                          // bucketigc.h:289
+        _site.BucketChangeEvent(BucketChange.MoneyChange, this); // :290, even for zero
         return amount;                                    // bucketigc.h:292 — actually spent
+    }
+
+    /// <summary>Igc/bucketigc.h:274-279: authoritative snapshot, then money notification.</summary>
+    public void SetTimeAndMoney(long milliseconds, long money)
+    {
+        InvestedMilliseconds = milliseconds;
+        InvestedMoney = money;
+        _site.BucketChangeEvent(BucketChange.MoneyChange, this);
+    }
+
+    /// <summary>Igc/bucketigc.h:294-299: reset a repeatable purchase.</summary>
+    public void SetEmpty()
+    {
+        InvestedMoney = InvestedMilliseconds = 0;
+        Completed = _completionRaised = false;
+        _site.BucketChangeEvent(BucketChange.Emptied, this);
+    }
+
+    /// <summary>Igc/bucketigc.cpp:87-101: notify while still in the side's catalog.</summary>
+    public void Terminate()
+    {
+        if (_terminated) return;
+        _terminated = true;
+        _site.BucketChangeEvent(BucketChange.Terminated, this);
+        Side?.RemoveBucket(this);
+        Side = null;
     }
 
     /// <summary>
@@ -236,6 +283,7 @@ public sealed class Bucket : IBucketIgc
     /// </summary>
     public void Update(double now)
     {
+        if (_terminated) return;
         if (InvestedMoney > 0)                             // bucketigc.h:44
         {
             long ttbms = (long)TimeToBuild * 1000;         // bucketigc.h:46
@@ -248,6 +296,12 @@ public sealed class Bucket : IBucketIgc
                     Complete(now);
                 long mim = 1000 * ((InvestedMoney * TimeToBuild) / Price);    // bucketigc.h:58 (price > 0)
                 if (InvestedMilliseconds > mim) InvestedMilliseconds = mim;   // bucketigc.h:59-60
+                int percent = PercentComplete;
+                if (_lastPercentCompleteNotified != percent)
+                {
+                    _site.BucketChangeEvent(BucketChange.PercentCompleteChange, this);
+                    _lastPercentCompleteNotified = percent;
+                }
             }
         }
         _lastUpdate = now;                                 // bucketigc.h:73
@@ -257,6 +311,16 @@ public sealed class Bucket : IBucketIgc
     {
         if (_completionRaised) return;                     // fire once
         _completionRaised = true;
+        // Igc/bucketigc.h:243-256: a stock purchase resets after its typed
+        // callback and may be funded again. Catalog creation remains disabled.
+        if (Side is { } side && (HullType.HasValue || PartType.HasValue))
+        {
+            if (HullType is { } hull) _site.HullTypeCompleted(side, hull);
+            else if (PartType is { } part) _site.PartTypeCompleted(side, part);
+            InvestedMoney = InvestedMilliseconds = 0;
+            _completionRaised = false;
+            return;
+        }
         Completed = true;
         // Detection only — the no-op host seam (nothing is built yet).
         _site.BucketCompleted(this, now);
@@ -385,7 +449,7 @@ public static class BucketCatalog
             // the c_didTeamMoney development (id 1).
             bool teamMoney = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
             int price = teamMoney
-                ? dev.Price
+                ? (int)core.Constants.FloatConstants[12]
                 : (int)(dev.Price * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentCost));
             uint timeToBuild = teamMoney
                 ? dev.TimeToBuild
@@ -541,7 +605,7 @@ public static class BucketCatalog
                 continue;
             bool teamMoney = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
             int price = teamMoney
-                ? dev.Price
+                ? (int)core.Constants.FloatConstants[12]
                 : (int)(dev.Price * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentCost));
             uint timeToBuild = teamMoney
                 ? dev.TimeToBuild

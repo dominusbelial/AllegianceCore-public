@@ -45,16 +45,14 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// P612 — is this connection an admin spectator? Mirrors
-    /// <see cref="CanUseAdminCheats"/>'s allowNames identity (the P602
-    /// <c>adminCheats</c> name list + the Enabled flag), which is the documented
-    /// passive-viewing privilege: an allow-listed name can see everything. The
-    /// optional shared secret additionally gates cheat COMMANDS (chat), while the
-    /// allow-list name is sufficient for the passive spectator view.
+    /// P655: spectator eligibility also requires the configured bearer, or a
+    /// verified loopback socket when no secret is configured. Name matching
+    /// alone never grants visibility to a remote connection.
     /// </summary>
     private bool IsSpectatorAdmin(ConnectionId from)
         => AdminSpectatorAllowed(_config.LiveSettings?.AdminCheats,
-            _peerNames.TryGetValue(from, out var n) ? n : null);
+            _peerNames.TryGetValue(from, out var n) ? n : null)
+            && PrivilegedConnection(from, _config.LiveSettings?.AdminCheats?.Secret, _adminAuthenticated);
 
     /// <summary>Record the sector an admin spectator's free camera is viewing
     /// (NA=-1 clears the override → back to own sector).</summary>
@@ -68,13 +66,13 @@ public sealed partial class Server
         // Only a real sector of the current mission is accepted (never an
         // arbitrary id) — defensively gate so a spoofed request can't target
         // a non-existent cluster.
-        if (SectorById(sectorId) is null) return;
+        if (!_peerShips.TryGetValue(from, out var live) || SectorById(live.Ship.Mission, sectorId) is null) return;
         _spectateSector[from] = sectorId;
     }
 
-    /// <summary>Look up a sector by id in the first/current mission.</summary>
-    private Sector? SectorById(short id)
-        => _missions.Count > 0 ? _missions[0].Sectors.FirstOrDefault(s => s.Id == id) : null;
+    /// <summary>Look up a sector only in the requester's mission.</summary>
+    private static Sector? SectorById(Mission? mission, short id)
+        => mission?.Sectors.FirstOrDefault(s => s.Id == id);
 
     /// <summary>
     /// The sector whose ships this peer's broadcast should serve: the admin
@@ -83,7 +81,7 @@ public sealed partial class Server
     /// </summary>
     private Sector BroadcastSectorFor(ConnectionId from, Sector ownSector)
     {
-        if (_spectateSector.TryGetValue(from, out var sid) && SectorById(sid) is { } spec)
+        if (_spectateSector.TryGetValue(from, out var sid) && _peerShips.TryGetValue(from, out var live) && SectorById(live.Ship.Mission, sid) is { } spec)
             return spec;
         return ownSector;
     }

@@ -29,13 +29,16 @@ public sealed class ServerRegistry
     private readonly TimeProvider _time;
     private readonly int _maxEntries;
     private readonly TimeSpan _maxAge;
+    private readonly object _registrationGate = new();
+    private readonly int _maxEntriesPerAddress;
 
     /// <param name="time">Clock used for <c>RegisteredUtc</c>/<c>LastSeenUtc</c> and expiry checks.</param>
     /// <param name="maxEntries">Hard cap on distinct listings; new registrations are refused once full (heartbeats to existing ids never are).</param>
     /// <param name="maxAge">An entry whose <c>LastSeenUtc</c> is older than this is considered expired.</param>
-    public ServerRegistry(TimeProvider time, int maxEntries = 512, TimeSpan? maxAge = null)
+    public ServerRegistry(TimeProvider time, int maxEntries = 512, TimeSpan? maxAge = null, int maxEntriesPerAddress = 4)
     {
         _time = time;
+        _maxEntriesPerAddress = Math.Max(1, maxEntriesPerAddress);
         _maxEntries = maxEntries;
         _maxAge = maxAge ?? TimeSpan.FromSeconds(90);
     }
@@ -64,13 +67,21 @@ public sealed class ServerRegistry
     /// <returns>The response, or <c>null</c> if the call was rejected (cap reached, or unrecognized token).</returns>
     public RegisterResponse? Register(RegisterRequest req)
     {
+        // Atomic check-and-insert: concurrent POSTs cannot race either cap.
+        lock (_registrationGate) return RegisterCore(req);
+    }
+
+    private RegisterResponse? RegisterCore(RegisterRequest req)
+    {
         ArgumentNullException.ThrowIfNull(req);
         var now = _time.GetUtcNow();
 
         bool isNew = string.IsNullOrWhiteSpace(req.Token);
         if (isNew)
         {
-            if (_entries.Count >= _maxEntries)
+            PruneExpired(_maxAge);
+            if (_entries.Count >= _maxEntries
+                || _entries.Values.Count(e => e.Address == Sanitize(req.Address, AddressMax)) >= _maxEntriesPerAddress)
                 return null;
 
             var id = Guid.NewGuid().ToString("N");
@@ -95,7 +106,7 @@ public sealed class ServerRegistry
 
         // Heartbeat: locate the listing owning this token and refresh it in place.
         var target = _entries.Values.FirstOrDefault(e => e.Token == req.Token);
-        if (target is null)
+        if (target is null || target.Address != Sanitize(req.Address, AddressMax))
             return null; // token present but no match → reject, do not create
 
         var refreshed = target with
@@ -134,16 +145,13 @@ public sealed class ServerRegistry
     /// <summary>
     /// Returns every listing currently in the dictionary as a public DTO.
     ///
-    /// <para>Pruning is owned by the background <see cref="ExpirySweepService"/> (which calls
-    /// <see cref="PruneExpired"/> on a fixed interval), so this method is intentionally
-    /// lock-free and cheap: an entry that has gone stale lingers at most until the next
-    /// sweep removes it (~one interval). That is chosen over pruning inline here so that
-    /// hot read path stays trivially concurrent and the single source of truth for "who
-    /// is live" remains the sweep.</para>
+    /// <para>Expired entries are hidden immediately. Physical removal happens
+    /// during registration or the background sweep; reads remain lock-free.</para>
     /// </summary>
     public IReadOnlyList<ServerListingDto> List()
     {
-        return _entries.Values.Select(ToDto).ToList();
+        var cutoff = _time.GetUtcNow() - _maxAge;
+        return _entries.Values.Where(e => e.LastSeenUtc >= cutoff).Select(ToDto).ToList();
     }
 
     /// <summary>
@@ -189,7 +197,7 @@ public sealed class ServerRegistry
         int n = 0;
         foreach (var ch in value)
         {
-            if (!char.IsControl(ch))
+            if (!char.IsControl(ch) && char.GetUnicodeCategory(ch) != System.Globalization.UnicodeCategory.Format)
                 buffer[n++] = ch;
         }
 

@@ -11,7 +11,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
 /// P564 — renders a station from its ORIGINAL native <c>.mdl</c> mesh + native
-/// texture, parsed at runtime from the artwork source (the same runtime-asset
+/// per-group textures, parsed at runtime from the artwork source (the same runtime-asset
 /// convention as <see cref="NativeShipRenderer"/> / <see cref="NativeAsteroidRenderer"/>).
 /// Replaces the procedural hub+ring <see cref="StationRenderer"/>/<see cref="StationMeshFactory"/>
 /// placeholder with each station type's real native model
@@ -21,8 +21,8 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 /// <remarks>
 /// <para><b>Winding / culling.</b> The native index stream is DirectX
-/// clockwise-front; <see cref="NativeStationResolver.RenderIndices"/> ships it
-/// RAW (P570) so <c>CullCounterClockwiseFace</c> keeps the outside under
+/// clockwise-front; <see cref="NativeStationResolver.RenderIndices"/> preserves
+/// it so <c>CullCounterClockwiseFace</c> keeps the outside under
 /// MonoGame's perspective projection — real front-face culling, solid, no
 /// self-occlusion holes.</para>
 ///
@@ -73,7 +73,7 @@ public sealed class NativeStationRenderer : IDisposable
             }
             var file = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, modelStem + ".mdl"));
             _parsed[modelStem] = file;
-            var geo = NativeStationGeometry.Build(_gd, file.Meshes);
+            var geo = NativeStationGeometry.Build(_gd, file.Meshes, file.LodLevels);
             _models[modelStem] = geo;
             return geo;
         }
@@ -90,6 +90,7 @@ public sealed class NativeStationRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(textureStem)) return null;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
+        if (_missingTextureLogged.Contains(textureStem)) return null;
         try
         {
             if (!_assets.Exists(textureStem + ".mdl"))
@@ -97,17 +98,7 @@ public sealed class NativeStationRenderer : IDisposable
                 LogMissingTexture(textureStem, "not present");
                 return null;
             }
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, textureStem + ".mdl"));
-            var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
-            var cols = new Color[mdlTex.Width * mdlTex.Height];
-            int n = 0;
-            for (int y = 0; y < mdlTex.Height; y++)
-                for (int x = 0; x < mdlTex.Width; x++)
-                {
-                    int si = (y * mdlTex.Width + x) * 4;
-                    cols[n++] = new Color((int)mdlTex.Rgba[si], (int)mdlTex.Rgba[si + 1], (int)mdlTex.Rgba[si + 2], 255);
-                }
-            surf.SetData(cols);
+            var surf = NativeStationTexture.Load(_gd, _assets, textureStem);
             _textures[textureStem] = surf;
             return surf;
         }
@@ -118,7 +109,7 @@ public sealed class NativeStationRenderer : IDisposable
         }
     }
 
-    /// <summary>The merged-bounding-sphere radius of a model's native mesh (native
+    /// <summary>The native origin-centred vertex radius of a model (native
     /// <c>m_radiusMesh</c>), or 0 when unknown → caller leaves scale at native default.</summary>
     public float MeshRadius(string modelStem)
         => MeshFor(modelStem) is { } g ? g.MeshRadius : 0f;
@@ -134,6 +125,11 @@ public sealed class NativeStationRenderer : IDisposable
         if (!_parsed.TryGetValue(modelStem, out var mdl)) return null;
         return NativeStationResolver.ResolveTextureStem(mdl, stationTextureName, modelStem, stem => _assets.Exists(stem + ".mdl"));
     }
+
+    /// <summary>Native lights from the model's lights export, never synthetic anchors.</summary>
+    public IReadOnlyList<MdlLight> LightsFor(string modelStem)
+        => MeshFor(modelStem) is not null && _parsed.TryGetValue(modelStem, out var mdl)
+            ? mdl.Lights : Array.Empty<MdlLight>();
 
     private void LogMissingModel(string stem, string why)
     {
@@ -158,10 +154,13 @@ public sealed class NativeStationRenderer : IDisposable
         Matrix view, Matrix projection, float nativeScale, SectorLighting? lighting)
     {
         var gd = _gd;
-        gd.BlendState = BlendState.Opaque;
+        // ThingGeo brackets the mesh with BlendModeSourceAlpha
+        // (effect/thinggeo.cpp:1642-1645). Binary station skins are opaque;
+        // PNG imports retain their authored alpha.
+        gd.BlendState = BlendState.NonPremultiplied;
         gd.DepthStencilState = DepthStencilState.Default;
         gd.RasterizerState = _cullCcw;
-        gd.SamplerStates[0] = SamplerState.LinearClamp;
+        gd.SamplerStates[0] = SamplerState.LinearWrap;
 
         var local = NativeStationResolver.NoseFlip * Matrix.CreateScale(nativeScale) * world;
 
@@ -175,14 +174,20 @@ public sealed class NativeStationRenderer : IDisposable
             _effect.EnableDefaultLighting();
             _effect.AmbientLightColor = new Vector3(0.32f, 0.34f, 0.36f);
         }
-        _effect.Texture = texture;
-        _effect.TextureEnabled = texture is not null;
         _effect.DiffuseColor = Color.White.ToVector3();
-
-        _effect.CurrentTechnique.Passes[0].Apply();
         gd.SetVertexBuffer(geo.Vertices);
         gd.Indices = geo.Indices;
-        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, geo.TriangleCount);
+        // Native TextureGeo binds its own image inside each GroupGeo state scope
+        // (geometry.cpp:1439-1453, 1079-1082). The parent texture is inherited
+        // only by meshes without a TextureGeo; it is not a station-wide skin.
+        foreach (var part in geo.Parts)
+        {
+            var partTexture = part.TextureStem is { } stem ? TextureFor(stem) : texture;
+            _effect.Texture = partTexture;
+            _effect.TextureEnabled = partTexture is not null;
+            _effect.CurrentTechnique.Passes[0].Apply();
+            gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, part.StartIndex, part.TriangleCount);
+        }
     }
 
     /// <summary>P564 — depth-only pass for soft-particle intersections, using the
@@ -206,21 +211,23 @@ public sealed class NativeStationRenderer : IDisposable
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, geo.TriangleCount);
     }
 
-    /// <summary>A compiled native station model: one vertex/index buffer across all
+    /// <summary>A compiled native station model: one vertex/index buffer with a draw range for each native group across all
     /// meshes (vertex offsets carried into the index stream), with per-vertex
-    /// position/normal/texcoord and the RAW native indices
+    /// position/normal/texcoord and authored native indices
     /// (<see cref="NativeStationResolver.RenderIndices"/>).</summary>
     public sealed class NativeStationGeometry : IDisposable
     {
         public required VertexBuffer Vertices { get; init; }
         public required IndexBuffer Indices { get; init; }
         public required int TriangleCount { get; init; }
+        public required IReadOnlyList<NativeStationPart> Parts { get; init; }
 
-        /// <summary>Merged-bounding-sphere radius of the raw native mesh — native
+        /// <summary>Maximum vertex distance from the origin of the raw native mesh — native
         /// <c>m_radiusMesh</c>, the denominator of <c>m_scale</c>.</summary>
         public required float MeshRadius { get; init; }
 
-        public static NativeStationGeometry Build(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes)
+        public static NativeStationGeometry Build(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes,
+            IReadOnlyList<MdlLodLevel>? lods = null)
         {
             int vertexTotal = 0, indexTotal = 0;
             foreach (var m in meshes) { vertexTotal += m.VertexCount; indexTotal += m.Indices.Length; }
@@ -230,6 +237,7 @@ public sealed class NativeStationRenderer : IDisposable
             var verts = new VertexPositionNormalTexture[vertexTotal];
             var indices = new uint[indexTotal];
             int vc = 0, ic = 0;
+            var parts = new List<NativeStationPart>();
             foreach (var m in meshes)
             {
                 int vb = vc;
@@ -238,10 +246,10 @@ public sealed class NativeStationRenderer : IDisposable
                         new Vector3(m.Positions[3 * v], m.Positions[3 * v + 1], m.Positions[3 * v + 2]),
                         new Vector3(m.Normals[3 * v], m.Normals[3 * v + 1], m.Normals[3 * v + 2]),
                         new Vector2(m.TexCoords[2 * v], m.TexCoords[2 * v + 1]));
-                // P564 — normalise winding per model so CullCounterClockwiseFace keeps
-                // the outside under perspective for ANY station type (ss24a vs ss92
-                // wind oppositely; see NativeStationResolver.OutsideIndices).
-                var renderIdx = NativeStationResolver.OutsideIndices(m);
+                // Preserve authored interior and exterior winding; a centroid
+                // heuristic cannot distinguish a bay wall from an outer hull.
+                var renderIdx = NativeStationResolver.RenderIndices(m.Indices);
+                parts.Add(new NativeStationPart(m.TextureStem, ic, m.TriangleCount));
                 for (int i = 0; i < renderIdx.Length; i++)
                     indices[ic++] = (uint)(renderIdx[i] + vb);
             }
@@ -254,7 +262,8 @@ public sealed class NativeStationRenderer : IDisposable
                 Vertices = vbuf,
                 Indices = ibuf,
                 TriangleCount = indices.Length / 3,
-                MeshRadius = NativeShipResolver.MergedRadius(meshes),
+                Parts = parts,
+                MeshRadius = NativeStationResolver.MeshRadius(meshes, lods),
             };
         }
 
@@ -273,3 +282,6 @@ public sealed class NativeStationRenderer : IDisposable
         _cullCcw.Dispose();
     }
 }
+
+/// <summary>One native TextureGeo draw range in the combined buffers.</summary>
+public readonly record struct NativeStationPart(string? TextureStem, int StartIndex, int TriangleCount);

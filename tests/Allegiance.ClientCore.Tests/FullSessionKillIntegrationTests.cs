@@ -176,7 +176,7 @@ public class FullSessionKillIntegrationTests
         {
             int idx = spawned++;
             short sideId = idx < 2 ? mission.Sides[0].Id : mission.Sides[1].Id;
-            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            var hull = EconomyLoadoutTestSetup.WeaponHull(core);
             // peer0/peer1 close together (teammates); peer2 (attacker) starts far
             // away — it gets repositioned onto the victim's real settled position
             // after the movement phase, so its starting spot doesn't matter.
@@ -187,8 +187,9 @@ public class FullSessionKillIntegrationTests
                 _ => new Vector3(5000f, 5000f, 5000f),
             };
             var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity) { SideId = sideId };
-            mission.PlaceShip(ship, mission.Sectors[0]);
-            return (ship, mission.Sectors[0]);
+            var scene = mission.Sectors.First(s => s.Stations.Any(st => st.SideId == mission.Sides[0].Id));
+            mission.PlaceShip(ship, scene);
+            return (ship, scene);
         };
         field.SetValue(server, spawner);
     }
@@ -307,9 +308,18 @@ public class FullSessionKillIntegrationTests
         short hull1 = peer1.World.Ships[id1].HullId;
         var requested = RealWeaponPart(core);
         Fund(server, id1, 1_000_000);   // P441: fund the loadout purchase (peer1 is flying, no tech gate)
-        peer1.SendBuyLoadout(hull1, fLaunch: false, parts: new[] { requested });
+        // H-06: the real purchase happens docked. The test places the subject
+        // in its friendly hangar before requesting the same loadout and launch.
+        var buyer = FindShip(server, id1);
+        var home = buyer.Mission!.Sectors.First(s => s.Stations.Any(st => st.SideId == buyer.SideId));
+        buyer.Sector!.Remove(buyer);
+        buyer.Mission.PlaceShip(buyer, home);
+        buyer.StationId = home.Stations.First(st => st.SideId == buyer.SideId).StationId;
+        EconomyLoadoutTestSetup.Sell(buyer.Mission, buyer.Mission.Core.PartTypes[requested.PartId]);
+        peer1.SendBuyLoadout(hull1, fLaunch: true, parts: new[] { requested });
         int armed = PumpUntil(server, () => peer1.World.Ships[id1].Loadout is { Count: > 0 }, 4000);
         Assert.True(armed < 4000, "loadout never landed on peer1");
+        Assert.Equal(requested, peer1.BuyLoadoutAcks.Last(a => a.Parts.Count > 0).Parts[0]);
         Assert.Equal(requested, peer1.World.Ships[id1].Loadout![0]);
 
         void AssertPhases1to3Consistent()
@@ -358,7 +368,12 @@ public class FullSessionKillIntegrationTests
 
         // ── PHASE 6: the kill — reposition the real attacker's server-side Ship
         // onto the victim's ACTUAL settled position, mount a weapon, fire ───────
-        Vector3 victimPos = peer1.World.Ships[id1].Latest!.Position;
+        // A launched scout retains flight momentum. Put this final combat
+        // phase in a clear firing lane and explicitly stop both hulls.
+        var victimShip = FindShip(server, id1);
+        Vector3 victimPos = new(5200f, 6200f, 6800f);
+        victimShip.Position = victimPos;
+        victimShip.Velocity = Vector3.Zero;
         var attackerShip = FindShip(server, id2);
         attackerShip.Position = victimPos + new Vector3(0, 0, 180f);   // same stand-off as KillShipLiveTests' TargetZ
         attackerShip.Velocity = Vector3.Zero;
@@ -385,12 +400,13 @@ public class FullSessionKillIntegrationTests
         // unaffected by clearing the side.
         FindShip(server, id1).SideId = null;
 
-        peer2.CommandControls(ControlData.Neutral, ShipControlState.AllWeapons);
-        peer1.CommandControls(ControlData.Neutral, 0);   // hold still to be hit
+        var holdPosition = new ControlData(0f, 0f, 0f, -1f);
+        peer2.CommandControls(holdPosition, ShipControlState.AllWeapons);
+        peer1.CommandControls(holdPosition, 0);   // kill-throttle holds still to be hit
 
         Assert.False(peer0.World.Ships[id1].IsDead, "victim must still be alive going into the kill phase");
         int killTicks = PumpUntil(server, () => peer0.World.Ships.TryGetValue(id1, out var e) && e.IsDead, 4800);
-        Assert.True(killTicks < 4800, $"peer1 never died within {killTicks} ticks as observed by peer0");
+        Assert.True(killTicks < 4800, $"peer1 never died within {killTicks} ticks: fraction={victimShip.Fraction}, victimSector={victimShip.Sector?.Id}, attackerSector={attackerShip.Sector?.Id}, ammo={attackerShip.Ammo}, weapons={attackerShip.Weapons.Count}, state={attackerShip.StateM}, dock={attackerShip.StationId}");
 
         // Third-party view of the death: entity kept, flagged dead, kill logged —
         // and everything from phases 1-5 still holds. Nothing regressed.

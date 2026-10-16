@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  Restored /home/domingo/allegiance-codex-p694/tools/P667Bench/P667Bench.csproj (in 60 ms).
+  1 of 2 projects are up-to-date for restore.
+  Allegiance.Core -> /home/domingo/allegiance-codex-p694/src/Allegiance.Core/bin/Release/net10.0/Allegiance.Core.dll
+  P667Bench -> /home/domingo/allegiance-codex-p694/tools/P667Bench/bin/Release/net10.0/P667Bench.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.65

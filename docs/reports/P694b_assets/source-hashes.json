@@ -1,0 +1,8 @@
+{
+  "src/Allegiance.Core/Collision/BroadPhase.cs": "6883326312128389c9edd04b1081a450bd92bc33b00f6b78f577b8b80e7631d1",
+  "src/Allegiance.Core/Collision/Collider.cs": "02befd0b2834bc133a245c956119c73f57ceee2a6defd7a89522ceb36480118f",
+  "src/Allegiance.Core/Collision/CollisionDetector.cs": "1bea82f6236a570000e6464fb6778a4b86362b2e40a1074f0a4163b4b01ecd68",
+  "src/Allegiance.Core/Collision/CollisionQueue.cs": "03bf738527fbd8cf6bdca52512dff2c3efe6ac689fda3f0b1066c4180b2d7135",
+  "tests/Allegiance.Core.Tests/P694MassEventTickTests.cs": "2e035b17f106c19db6c3bc97290c57f2a3e346dd87b011cf8508c0a252550e85",
+  "tests/Allegiance.Core.Tests/P694bCollisionWorkTests.cs": "08d10a1b847cf2d0f6661777bd61c30395984c2533d334379904600ad7545f0b"
+}

@@ -59,6 +59,35 @@ public class LiveDuplicateLogonTests
 
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    public void Concurrent_same_name_connections_receive_one_clear_refusal_and_one_seat()
+    {
+        Require.Artwork();
+        using var server = new Srv { SpawnInitialMinersAtBoot = false };
+        server.Boot(Config());
+        using var a = new FltBot { AutoSelectSideAfterLogon = false };
+        using var b = new FltBot { AutoSelectSideAfterLogon = false };
+        a.Connect(server.BoundPort, "mcp-probe");
+        b.Connect(server.BoundPort, "MCP-PROBE");
+        a.SendLogonRequest(Request("mcp-probe"));
+        b.SendLogonRequest(Request("MCP-PROBE"));
+        Assert.True(PumpUntil(server, () => a.Ack is not null && b.Ack is not null, 4000) < 4000);
+        var accepted = a.Ack!.FValidated ? a : b;
+        var refused = a.Ack.FValidated ? b : a;
+        Assert.True(accepted.Ack!.FValidated);
+        Assert.False(refused.Ack!.FValidated);
+        Assert.False(refused.Ack.FRetry);
+        Assert.Equal(0, refused.Ack.ShipID);
+        Assert.Contains("character name already in use", refused.Ack.CharNameOrFailureReason);
+        Assert.Equal(1, server.ConnectionScopedCacheCounts().PendingSideSelect);
+        accepted.SendPositionReq(0);
+        Assert.True(PumpUntil(server, () => accepted.ShipAssignment is not null, 4000) < 4000);
+        Assert.Null(refused.ShipAssignment);
+        Assert.Single(server.Ships);
+        Assert.Equal(accepted.Ack.ShipID, server.Ships.Single().Ship.Id);
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Seated_peer_duplicate_LOGONREQ_is_rejected_no_new_ship_no_new_id()
     {
         Require.Artwork();

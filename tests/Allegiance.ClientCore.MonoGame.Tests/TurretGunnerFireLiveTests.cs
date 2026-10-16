@@ -263,7 +263,7 @@ public class TurretGunnerFireLiveTests
                 {
                     case TurretSendAction.Active:
                     {
-                        uint t = (uint)Math.Floor(clock.ServerTimeMs((long)(localT * 1000.0)) / 1000.0);
+                        uint t = clock.ServerTimeMs((long)(localT * 1000.0));
                         var atu = ClientActiveTurretUpdate.From(t, ControlData.Neutral, integrated);
                         expectedForward = atu.Orientation.GetForward();   // the decoded aim the server installs
                         boarder.SendActiveTurret(t, atu);

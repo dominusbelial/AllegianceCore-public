@@ -17,9 +17,9 @@ namespace Allegiance.Tools.McpSpawner;
 /// </summary>
 internal static class McpTools
 {
-    public static IReadOnlyList<Tool> Definitions()
+    public static IReadOnlyList<Tool> Definitions(bool supervisor = false)
     {
-        return
+        Tool[] definitions =
         [
             new Tool
             {
@@ -56,13 +56,16 @@ internal static class McpTools
             new Tool
             {
                 Name = "list_active_bots",
-                Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector, position, (for combat bots) current target ship id, and — when a bot is under a real accepted teammate order — the specific `orderedTarget` ship id it is obeying (distinct from its spawn-time behavior and its current live target). This is the only visibility into spawned bots; there is intentionally no despawn/command tool.",
+                Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector, position, (for combat bots) current target ship id, and — when a bot is under a real accepted teammate order — the specific `orderedTarget` ship id it is obeying (distinct from its spawn-time behavior and its current live target). Includes removal history. Supervisor mode also offers stop_bots, clear_bots and despawn_bot.",
                 InputSchema = Schema(new { type = "object" }),
             },
+            new Tool { Name = "stop_bots", Description = "Disconnect all spawned bots; keep the MCP server and probes running.", InputSchema = Schema(new { type = "object" }) },
+            new Tool { Name = "clear_bots", Description = "Disconnect all spawned bots and clear their removal history.", InputSchema = Schema(new { type = "object" }) },
+            new Tool { Name = "despawn_bot", Description = "Disconnect the named bot (exact name).", InputSchema = Schema(new { type = "object", properties = new { name = new { type = "string" } }, required = new[] { "name" } }) },
             new Tool
             {
                 Name = "spawn_scenario",
-                Description = "Spawn a whole fight in one call. Three compositions: (1) homogeneous — `size` real 'combat' bots PER SIDE of one `hull` (2×size total, the P430 path, optional per-side `tech_a`/`tech_b`); (2) MIXED-FLEET (P557) — `fleet_a`/`fleet_b` (or one `fleet` for both sides) as arrays of {hull, count, tech?}, each entry spawning `count` bots of that hull with its native preferred loadout advanced by `tech` (P555/P556), staging/arena working over the whole mixed fleet; (3) SHOWCASE PRESET (P557) — `preset:\"showcase\"` composes a readable per-side mix (fighters main line + interceptors + scouts + bombers/heavies where available, ~15 per side × `size_scale`) from the real core's player-buyable hulls, gives mine dispensers to a slice of the fleet and enables the native wingman UseMines/UseMissiles/Strafe behaviour. Optional `minefields:{side,count,at}` invests the side's native LAYER-drone bucket and orders the drone to build a minefield (default: in front of the enemy's arrival aleph in the rendezvous sector). Optional `wingman:{strafe,use_missiles,use_mines}` sets the scenario default behaviour mask. Returns a per-side summary with the resolved per-hull loadouts, who carries mines/missiles, and minefield placements; any real per-bot failure is named individually.",
+                Description = "Spawn a whole fight in one call. Three compositions: (1) homogeneous — `size` real 'combat' bots PER SIDE of one `hull` (2×size total, the P430 path, optional per-side `tech_a`/`tech_b`); (2) MIXED-FLEET (P557) — `fleet_a`/`fleet_b` (or one `fleet` for both sides) as arrays of {hull, count, tech?}, each entry spawning `count` bots of that hull with its native preferred loadout advanced by `tech` (P555/P556), staging/arena working over the whole mixed fleet; (3) SHOWCASE PRESET (P557) — `preset:\"showcase\"` composes a readable per-side mix (fighters main line + interceptors + scouts + bombers/heavies where available, ~15 per side × `size_scale`) from the real core's player-buyable hulls, gives mine dispensers to a slice of the fleet and enables the native wingman UseMines/UseMissiles/Strafe behaviour. Optional `minefields:{side,count,at}` invests the side's native LAYER-drone bucket and orders the drone to build a minefield (default: in front of the enemy's arrival aleph in the rendezvous sector). Optional `wingman:{strafe,use_missiles,use_mines}` sets the scenario default behaviour mask. Returns a per-side summary with the resolved per-hull loadouts, who carries mines/missiles, and minefield placements; any real per-bot failure is named individually. Showcase defaults to a mature-battle bomber finale after at least 30 minutes; finale_after_minutes:0 disables it. Read the live finale section in get_perf_stats.",
                 InputSchema = Schema(new
                 {
                     type = "object",
@@ -82,11 +85,20 @@ internal static class McpTools
                         mode = new { type = "string", @enum = new[] { "march", "arena" }, @default = "march", description = "Battle start mode (Domingo, 2026-10-13). `march` (DEFAULT, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. `arena`: both fleets spawn directly in `target_sector` facing each other for an instant clash (server stress test). The legacy `arena: true` flag is an alias for `mode: \"arena\"`." },
                         arena = new { type = "boolean", @default = false, description = "P539d — arena mode: launch both sides DIRECTLY into `target_sector` at mirrored spots so travel can't decide the outcome. Requires `target_sector`." },
                         staging = new { type = "boolean", @default = true, description = "P539d — travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers until its whole living complement is assembled before advancing." },
+                        finale_after_minutes = new { type = "number", minimum = 0, description = "Finale minimum battle age in minutes (showcase default 30; other scenarios default 0; 0 disables). Also requires both sides' pod relaunch share and sustained kills." },
+                        finale_side = new { description = "leader (default, ahead on kills; ties side 0), integer 0 or 1, or both", anyOf = new object[] { new { type = "string", @enum = new[] { "leader", "both" } }, new { type = "integer", minimum = 0, maximum = 1 } } },
+                        finale_min_relaunch_share = new { type = "number", @default = .5, minimum = 0, maximum = 1 },
+                        finale_min_kills_last_5_minutes = new { type = "integer", @default = 5, minimum = 1 },
+                        finale_bombers = new { type = "integer", @default = 12, minimum = 1, maximum = 200 },
+                        finale_escort_share = new { type = "number", @default = .1, minimum = 0, maximum = 1 },
+                        finale_escort_cap = new { type = "integer", @default = 12, minimum = 0, maximum = 200 },
+                        finale_escort_radius = new { type = "number", @default = 1500, exclusiveMinimum = 0 },
+                        finale_escort_leash = new { type = "number", @default = 2500, exclusiveMinimum = 0 },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind. Homogeneous-mode convenience; mixed-fleet/showcase equip their own mines/missiles natively." },
                         minefields = new { type = "object", description = "P557 — lay minefields via native LAYER drones before the fleets meet: { side: 'a'|'b'|'both', count: int (fields per side, default 1), at: 'rendezvous' (default; in front of the enemy's arrival aleph) | 'aleph:<sector>' | { sector, x, y, z } }. Invests the side's layer-drone bucket (the 221 testUnlock money covers it), waits for the drone, and orders it to build at the location." },
                         wingman = new { type = "object", description = "P557 — scenario-default native wingman behaviour mask: { strafe?: bool, use_missiles?: bool, use_mines?: bool }. Default = UseMissiles|UseMines (native WingmanBehaviourBitMask, igc.h:785-794)." },
                     },
-                    required = new[] { "size" },
+                    required = Array.Empty<string>(),
                 }),
             },
             new Tool
@@ -187,6 +199,7 @@ internal static class McpTools
                 }),
             },
         ];
+        return supervisor ? definitions : definitions.Where(t => t.Name is not ("stop_bots" or "clear_bots" or "despawn_bot")).ToArray();
     }
 
     private static JsonElement Schema(object schema) =>
@@ -201,6 +214,10 @@ internal static class McpTools
         {
             var result = name switch
             {
+                "stop_bots" => Ok(JsonSerializer.Serialize(new { stopped = mgr.StopBots(null, false) })),
+                "clear_bots" => Ok(JsonSerializer.Serialize(new { cleared = mgr.StopBots(null, true) })),
+                "despawn_bot" => OptStr(args, "name") is { Length: > 0 } botName
+                    ? Ok(JsonSerializer.Serialize(new { stopped = mgr.StopBots(botName, false) })) : Err("despawn_bot: required name is missing"),
                 "spawn_bot" => SpawnBot(args, mgr),
                 "spawn_scenario" => SpawnScenario(args, mgr),
                 "get_perf_stats" => GetPerfStats(args, mgr),
@@ -398,6 +415,8 @@ internal static class McpTools
 
     private static CallToolResult SpawnScenarioHomogeneous(IDictionary<string, JsonElement> args, BotManager mgr)
     {
+        var finaleSettings = ReadFinaleSettings(args, false);
+        var finaleNames = new List<string>();
         if (!args.TryGetValue("size", out var sizeJe) || TryInt(sizeJe) is not { } size || size < 1)
             return Err("spawn_scenario: required integer argument `size` (bots per side) must be ≥ 1");
 
@@ -522,13 +541,17 @@ internal static class McpTools
                 useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null,
                 routePath: rbPath, routeIndex: rbIdx, reportFailure: false)));
         }
-        var batch = new SpawnBatch(spawnSlots);
+        var batch = new SpawnBatch(mgr.Partition?.Select(spawnSlots) ?? spawnSlots);
+        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = size }, new { side = sideB, requested = size } } }));
         batch.Run(refill, mgr.IsSpawnActive);
-        var grants = GrantReports(batch);
+        var grants = GrantReports(batch, mgr.Partition is not null);
         int warnings = batch.Results.Count(r => r.Warning is not null);
 
+        finaleNames.AddRange(batch.Results.Select(r => r.Name));   // P656 finale roster from the P657 spawn batch
+        var finale = mgr.ConfigureFinale(finaleSettings, finaleNames);
         var summary = new
         {
+            finale,
             size,
             hull = hull.Name,
             targetSector,
@@ -558,7 +581,7 @@ internal static class McpTools
             failures = batch.Failures,
             note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence.",
         };
-        if (batch.Results.Count == 0)
+        if (batch.Results.Count == 0 && (batch.Counts(sideA).requested + batch.Counts(sideB).requested > 0 || mgr.Partition is null))
             return Err(JsonSerializer.Serialize(summary));   // complete failure: an error result
         return Ok(JsonSerializer.Serialize(summary));
     }
@@ -570,6 +593,8 @@ internal static class McpTools
     {
         var core = Catalog.RepresentativeCore();
         string? preset = OptStr(args, "preset");
+        var finaleSettings = ReadFinaleSettings(args, preset == "showcase");
+        var finaleNames = new List<string>();
 
         // Scenario-default native wingman behaviour mask (igc.h:785-794).
         short wingman = Showcase.DefaultScenarioWingman;
@@ -647,7 +672,7 @@ internal static class McpTools
 
         // Lay minefields (native layer drones) BEFORE the fleets meet.
         var minefieldReports = new List<object>();
-        if (args.TryGetValue("minefields", out var mfj) && mfj.ValueKind == JsonValueKind.Object)
+        if (!mgr.PlanOnly && (mgr.Partition is null || mgr.Partition.Index == 0) && args.TryGetValue("minefields", out var mfj) && mfj.ValueKind == JsonValueKind.Object)
             minefieldReports = LayMinefields(mfj, mgr, targetSector, sideA, sideB, core);
 
         var spawnSlots = new List<SpawnBatch.Slot>();
@@ -739,14 +764,18 @@ internal static class McpTools
                 wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
                 role: slot.Role.ToString(), reportFailure: false)));
         }
-        var batch = new SpawnBatch(spawnSlots);
+        var batch = new SpawnBatch(mgr.Partition?.Select(spawnSlots) ?? spawnSlots);
+        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = totalA }, new { side = sideB, requested = totalB } } }));
         batch.Run(refill, mgr.IsSpawnActive);
-        var grants = GrantReports(batch);
+        var grants = GrantReports(batch, mgr.Partition is not null);
         int warnings = batch.Results.Count(r => r.Warning is not null);
 
+        finaleNames.AddRange(batch.Results.Select(r => r.Name));   // P656 finale roster from the P657 spawn batch
+        var finale = mgr.ConfigureFinale(finaleSettings, finaleNames);
         var (faRep, fbRep) = BuildFleetReport(core, slots);
         var summary = new
         {
+            finale,
             battleMode = arena ? "arena" : staging ? "march" : "travel",
             mode = showcase ? "showcase" : (fleetA.Count > 1 || fleetB.Count > 1 ? "mixed-fleet" : "mixed-fleet"),
             preset,
@@ -759,20 +788,24 @@ internal static class McpTools
             maxPerRoute,
             bombersTarget = "enemy home sector (P637 — non-rendezvous roles get their own route/staging toward their own objective, never wait on a fighter wing's release)",
             refill,
-            sideA = new { side = sideA, requested = totalA, spawned = batch.Counts(sideA).spawned, failed = batch.Counts(sideA).failed, refilled = batch.Counts(sideA).refilled, fleet = faRep },
-            sideB = new { side = sideB, requested = totalB, spawned = batch.Counts(sideB).spawned, failed = batch.Counts(sideB).failed, refilled = batch.Counts(sideB).refilled, fleet = fbRep },
+            sideA = new { side = sideA, requested = batch.Counts(sideA).requested, spawned = batch.Counts(sideA).spawned, failed = batch.Counts(sideA).failed, refilled = batch.Counts(sideA).refilled, fleet = faRep },
+            sideB = new { side = sideB, requested = batch.Counts(sideB).requested, spawned = batch.Counts(sideB).spawned, failed = batch.Counts(sideB).failed, refilled = batch.Counts(sideB).refilled, fleet = fbRep },
             minefields = minefieldReports,
             grants,
             warnings,
             failures = batch.Failures,
             note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence. fleet lists the resolved per-hull loadout and whether the slice carries mines (mounted mine dispenser) / missiles; each bot's wingman flags are in `wingman`.",
         };
-        if (batch.Results.Count == 0)
+        if (batch.Results.Count == 0 && (batch.Counts(sideA).requested + batch.Counts(sideB).requested > 0 || mgr.Partition is null))
             return Err(JsonSerializer.Serialize(summary));
         return Ok(JsonSerializer.Serialize(summary));
     }
 
-    private static object[] GrantReports(SpawnBatch batch) => batch.Results.Select(r => (object)new
+    private static object[] GrantReports(SpawnBatch batch, bool worker) => batch.Results.Select(r => worker ? (object)new
+    {
+        side = r.Side, name = r.Name, grantedHull = r.Granted.HullId,
+        grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning, refilled = batch.WasRefilled(r.Name),
+    } : new
     {
         side = r.Side, name = r.Name, grantedHull = r.Granted.HullId,
         grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning,
@@ -1063,6 +1096,14 @@ internal static class McpTools
                 max = ps.DecisionPass.MaxMs,
             },
             decisionRateHz = ps.DecisionRateHz,
+            idleWithTarget = new
+            {
+                currentCount = ps.IdleWithTarget.CurrentCount,
+                botsLastMinute = ps.IdleWithTarget.BotsLastMinute,
+                sampleAgeSeconds = ps.IdleWithTarget.SampleAgeSeconds,
+                units = "Distinct active undocked bots idle with a target, sampled each second; botsLastMinute counts each bot once over 60 seconds. Idle means speed < 1 m/s and no movement for > 5 seconds.",
+            },
+            finale = mgr.FinaleStatus(),
             decisionOverruns = mgr.DecisionOverruns,
             stall = StallWatchdog.JsonSnapshot(ps.Stall),
             removedBots = mgr.RemovedBots(),
@@ -1105,6 +1146,7 @@ internal static class McpTools
                 enemyHullHits = cs.EnemyHullHits,        // enemy hull-or-worse hits
                 podsCreated = cs.PodsCreated,
                 podsDocked = cs.PodsDocked,
+                podsRestarted = cs.PodsRestarted,
                 podsLingering = cs.PodsLingering,
                 // P556 — mean time-to-kill per side (first DAMAGING enemy hit on a
                 // victim → its death, from the MCP's real wire events), the
@@ -1123,6 +1165,7 @@ internal static class McpTools
                     enemyShieldHits = b.EnemyShieldHits, enemyHullHits = b.EnemyHullHits,
                     friendlyHits = b.FriendlyHits, noneHits = b.NoneHits,
                     isPod = b.IsPod, podDocked = b.PodDocked,
+                    podRestarts = b.PodRestarts,
                 }),
             },
             // P635 — per-route (wing) arrival counts, so the multi-route split is
@@ -1354,6 +1397,33 @@ internal static class McpTools
 
     private static string? OptStr(IDictionary<string, JsonElement> a, string key) =>
         a.TryGetValue(key, out var je) ? Str(je) : null;
+
+    internal static ShowcaseFinale.Settings ReadFinaleSettings(IDictionary<string, JsonElement> args, bool showcase)
+    {
+        double Number(string key, double fallback)
+        {
+            if (!args.TryGetValue(key, out var value)) return fallback;
+            if (value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out var n) && double.IsFinite(n)) return n;
+            throw new ArgumentException($"spawn_scenario: {key} must be a finite number");
+        }
+        int Integer(string key, int fallback)
+        {
+            double value = Number(key, fallback);
+            if (value != Math.Truncate(value) || value < int.MinValue || value > int.MaxValue)
+                throw new ArgumentException($"spawn_scenario: {key} must be an integer");
+            return (int)value;
+        }
+        string side = "leader";
+        if (args.TryGetValue("finale_side", out var selection))
+            side = selection.ValueKind == JsonValueKind.String ? selection.GetString()!
+                : selection.ValueKind == JsonValueKind.Number && selection.TryGetInt32(out int id) ? id.ToString(System.Globalization.CultureInfo.InvariantCulture) : "invalid";
+        var result = new ShowcaseFinale.Settings(Number("finale_after_minutes", showcase ? 30 : 0), side,
+            Number("finale_min_relaunch_share", .5), Integer("finale_min_kills_last_5_minutes", 5),
+            Integer("finale_bombers", 12), Number("finale_escort_share", .1), Integer("finale_escort_cap", 12),
+            (float)Number("finale_escort_radius", 1500), (float)Number("finale_escort_leash", 2500));
+        result.Validate();
+        return result;
+    }
 
     private static int? OptInt(IDictionary<string, JsonElement> a, string key) =>
         a.TryGetValue(key, out var je) ? TryInt(je) : null;

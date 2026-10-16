@@ -131,8 +131,8 @@ public static class ShipKinematics
         var drag = velocity * (float)((1.0 - f) / thrustToVelocity);
 
         // P412 — afterburner thrust boost (native shipIGC.cpp:2939-2959). The
-        // mounted afterburner's max thrust (c_gaThrust GA term = 1.0, this
-        // port's established no-GA simplification) sets thrustRatio when the
+        // mounted afterburner's effective max thrust (including c_gaThrust)
+        // sets thrustRatio when the
         // button is held, and an active power ramp adds a backward thrust term
         // into drag so it factors into the engine thrust (shipIGC.cpp:2952-2957).
         bool afterF = (i.StateM & ShipControlState.AfterburnerButton) != 0;

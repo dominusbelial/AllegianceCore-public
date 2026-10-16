@@ -1,0 +1,65 @@
+[
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792120547.5635397,
+    "finished": 1792120549.1882887,
+    "seconds": 1.62,
+    "log": "/tmp/p699c-validation/isolate-json-before-000-isolate-1.log",
+    "trx": "isolate-json-before-000-isolate-1.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "error": "Result {}.EndVelocity: expected System.Single[], got null"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792120549.188439,
+    "finished": 1792120550.7321079,
+    "seconds": 1.54,
+    "log": "/tmp/p699c-validation/isolate-json-before-001-isolate-2.log",
+    "trx": "isolate-json-before-001-isolate-2.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "error": "Result {}.EndVelocity: expected System.Single[], got null"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792120550.7323108,
+    "finished": 1792120552.302236,
+    "seconds": 1.57,
+    "log": "/tmp/p699c-validation/isolate-json-before-002-isolate-3.log",
+    "trx": "isolate-json-before-002-isolate-3.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "error": "Result {}.EndVelocity: expected System.Single[], got null"
+      }
+    ],
+    "skipped": []
+  }
+]

@@ -1,0 +1,25 @@
+6e6192bc 2026-08-31 P35: export warps + stations so bots have something to navigate to
+7f143edf 2026-08-31 P37: send FM_S_MISSION_STAGE -- real WOPR bot flight confirmed, first time ever
+695a569a 2026-09-01 P41: implement warp-transit (sector-crossing) simulation
+4f92201b 2026-09-02 P56: sell mined ore on dock — PaydayEvent at friendly dock turns ore into money
+199aeeff 2026-09-02 P59: live event feed in spectator UI (dock/undock/mine/sell/payday/warp)
+281b09da 2026-09-05 P74: drop undock's arbitrary launch velocity, position-only reposition
+b8df8b13 2026-09-05 P75: undock debounce (LastLaunchTime/LaunchCooldownSeconds), restore velocity
+20912014 2026-09-05 P80: substitute identity orientation for stations with degenerate Up/Forward
+9d3a99fe 2026-09-07 P91: missile collision + damage resolution (Phase 2, slice 5)
+450192e4 2026-09-07 P100: probe combat destructibility — direct-hit target in ResolveCombatCollisions + Probe.ReceiveDamage
+7ff1433f 2026-09-07 P101: warp bombing — missile-vs-warp trigger, whole-mission WARP_BOMB(188) broadcast, 15s delayed real explosion
+8baf38bd 2026-09-08 P102: asteroid combat destructibility — direct-hit target in ResolveCombatCollisions + Asteroid.ReceiveDamage + whole-mission ASTEROID_DESTROYED(86) broadcast
+bf2ba30a 2026-09-08 P109: TURRET_GUNNER_BINDING — a boarded turret gunner actually crews the carrier's weapon: FM_C_ACTIVE/INACTIVE_TURRET_UPDATE(99/100) wire codecs + server handl
+357d3dd4 2026-09-08 P111: RIPCORD_REQUEST(184)/RIPCORD_ACTIVATE(185)/RIPCORD_DENIED(186)/RIPCORD_ABORTED(187) — ship ripcord request/activate/deny/abort handshake
+4525d36e 2026-09-08 P112: RIPCORD_COUNTDOWN — per-tick countdown driver + ContinueRipcord revalidation (no teleport yet)
+2e24e3a8 2026-09-09 P113: RIPCORD_TELEPORT — the real relocation on countdown zero (UseRipcord, FedSrv.CPP:13440-13500)
+a2d91b09 2026-09-09 P125: Station combat damage + STATION_DESTROYED(59) — shield-absorbs-then-overflows-to-armor (CstationIGC::ReceiveDamage port), live ArmorFraction/ShieldFractio
+6b8f3340 2026-09-10 P150: ORDER_CHANGE(93) Stage 4 — command a flying NPC to return to base
+d394680f 2026-09-10 P155: NPC autopilot foundation — same-cluster 'face and thrust' primitive
+72c6b81b 2026-09-11 P157: NPC cross-cluster movement — FindPath + autopilot extension
+bee2f77a 2026-09-11 P168: NPC collision avoidance Stage 1 — dodge primitive
+f20b27ca 2026-09-11 P170: NPC collision avoidance Stage 2 — include stations in the dodge scan
+adfc7641 2026-09-12 P171: Wingman combat Stage 4 — dynamic range maintenance (relative-speed, band 1)
+be549be1 2026-09-12 P172: NPC ripcord-as-travel Stage 1 — safety gate + station-anchor search
+2c5a8b7e 2026-09-12 P179: missile homing stage 1 — real acceleration + turn-rate-limited steering

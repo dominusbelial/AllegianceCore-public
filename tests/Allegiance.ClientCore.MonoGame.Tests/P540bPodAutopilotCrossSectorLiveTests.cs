@@ -26,8 +26,8 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// lifepod in a sector EXACTLY TWO REAL WARP HOPS from the side's rescue
 /// garrison (the nearest friendly rescue target — the production
 /// <see cref="Game1.ChooseEjectRescueTarget"/> pick selects it). A faithful client
-/// pilot then flies the pod with the PRODUCTION cross-sector law
-/// (<see cref="Game1.TryResolveAutopilotGoal"/> + <see cref="AutopilotSteering.SteerToward"/>)
+/// pilot then flies the pod with the PRODUCTION Game1 autopilot, including
+/// cross-sector routing and the station landing-bay entry maneuver,
 /// driving the REAL local sim (<see cref="OwnShipSimulator"/>) and emitting native
 /// <c>SHIP_UPDATE(24)</c> poses the server accepts (P508). The pod transits BOTH
 /// warps and docks via the server's rescue/land path, with ZERO SHIP_RESETs and
@@ -282,16 +282,15 @@ public sealed class P540bPodAutopilotCrossSectorLiveTests
 
         // ── Client pilot: fly the pod with the PRODUCTION cross-sector law. ──
         var sim = new OwnShipSimulator();
+        var pilot = P699HumanPodHomeLiveTests.CreateAutopilot(victim, sim, ArtRoot, target.Value);
         var clock = new OwnShipServerClock();
         double localT = 0.0, lastPing = -0.4;
         byte cookie = 0;
         long clientResets = 0;
         short lastSector = -1;
         long rejectsBefore = Pu(server, "Rejected");
-        float podDecel = 55f;
         {
             var podHull = ServerShip(server, victimId).HullType;
-            podDecel = podHull.Thrust / podHull.Mass;   // the pod's REAL braking (production sizes by hull)
             sim.SetHull(ShipDeadReckoner.HullStats.FromHull(podHull), 0f);
         }
         // Clock calibration (real-time paced so stamps track server SimNow).
@@ -354,20 +353,10 @@ public sealed class P540bPodAutopilotCrossSectorLiveTests
             short srvSec = ServerShip(server, victimId).Sector?.Id ?? -1;
             if (srvSec == currentSector && currentSector != -1)
             {
-                SimVec goal; bool routed;
-                lock (victim.Gate)
-                {
-                    short flightSector = victim.World.Ships[victimId].SectorId;
-                    SimVec? tgtLocal = flightSector == targetSector ? targetPos : (SimVec?)null;
-                    Game1.TryResolveAutopilotGoal(flightSector, targetSector, tgtLocal, AllWarps(victim.World),
-                                                  out goal, out routed);
-                }
-
-                var controls = routed
-                    ? AutopilotSteering.Pursue(sim.Position, sim.Orientation, goal)
-                    : AutopilotSteering.SteerToward(sim.Position, sim.Orientation, goal, sim.Velocity,
-                        brakeDeceleration: podDecel);
-                sim.Step(0.049f, controls, 0);
+                // P699: fly the real Game1 autopilot, including its bay entry;
+                // steering only at the center hid oxygen respawns as "docks".
+                var controls = P699HumanPodHomeLiveTests.AutopilotControls(pilot, .049f);
+                sim.Step(0.049f, controls, P699HumanPodHomeLiveTests.AutopilotMovement(pilot));
 
                 // Send a native SHIP_UPDATE pose (real cadence; clock-tracked server time).
                 if (localT - lastPing >= 0.5) { victim.SendPing(); lastPing = localT; }
@@ -376,7 +365,7 @@ public sealed class P540bPodAutopilotCrossSectorLiveTests
                 {
                     uint t = clock.ServerTimeMs(Environment.TickCount64);
                     var payload = ClientShipUpdate.FromPose(t, sim.Position, sim.Velocity, sim.Orientation,
-                        0, controls, sim.TurnRates, sim.Power);
+                        P699HumanPodHomeLiveTests.AutopilotMovement(pilot), controls, sim.TurnRates, sim.Power);
                     victim.SendShipPose(t, cookie, payload);
                 }
             }
@@ -395,6 +384,8 @@ public sealed class P540bPodAutopilotCrossSectorLiveTests
         Console.WriteLine($"[rescue] ejected pod {victimId} docked (landed) at station {ServerShip(server, victimId).StationId} '{ServerGarrison(server).Name}' via the server's station dock/rescue path after {(transits.Count - 1)} warp transit(s)");
 
         Assert.True(podDocked, $"pod never docked at the garrison after {ticks} ticks (final sector {finalSector})");
+        lock (victim.Gate)
+            Assert.DoesNotContain(victim.World.Events.Kills, k => k.ShipId == victimId && k.BDeathCredit);
         // Both warps crossed: eject sector -> intermediate -> garrison sector.
         Assert.Equal(ownSector, transits[0]);
         Assert.True(transits.Count >= 3, $"expected 2 warp transits (route {string.Join(" -> ", transits)})");

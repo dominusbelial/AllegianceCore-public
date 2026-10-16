@@ -16,8 +16,22 @@ internal interface ITransportEvent { }
 internal readonly record struct PeerJoinedEvt(ConnectionId Id, string Name) : ITransportEvent;
 /// <summary>A peer disconnected, cleanly or abruptly.</summary>
 internal readonly record struct PeerLeftEvt(ConnectionId Id) : ITransportEvent;
-/// <summary>A framed packet (messages + trailing CRC) arrived from a peer.</summary>
-internal readonly record struct ReceivedEvt(ConnectionId From, byte[] Data) : ITransportEvent;
+/// <summary>A reserved framed packet. Prepared is published once by its receive
+/// worker; ReadySequence freezes eligibility at a simulation tick boundary.</summary>
+internal sealed class ReceivedEvt(ConnectionId from, byte[] data, bool pending = false) : ITransportEvent
+{
+    internal ConnectionId From { get; } = from;
+    internal byte[] Data { get; } = data;
+    private InboundPacket? _prepared;
+    internal InboundPacket? Prepared => Volatile.Read(ref _prepared);
+    private long _readySequence = pending ? long.MaxValue : 0;
+    internal long ReadySequence => Volatile.Read(ref _readySequence);
+    internal void Complete(InboundPacket packet, long sequence = 0)
+    {
+        Volatile.Write(ref _prepared, packet);
+        Volatile.Write(ref _readySequence, sequence);
+    }
+}
 /// <summary>The host session ended for reasons other than our own shutdown.</summary>
 internal readonly record struct SessionLostEvt() : ITransportEvent;
 
@@ -44,6 +58,18 @@ internal readonly record struct SessionLostEvt() : ITransportEvent;
 internal sealed class ServerHost : IIgcSite, ITransportSite
 {
     private readonly ConcurrentQueue<ITransportEvent> _events = new();
+    internal bool ReceiveDecouple { get; init; }
+    internal InboundTrace? InboundTrace { get; init; }
+    private uint _lastSelectedPeer;
+    // Only receive workers take this tiny publication lock; Drain just reads
+    // the completed sequence. It never waits for decoding or a worker lock.
+    private readonly object _decodePublication = new();
+    private long _decodeSequence;
+    private long _packetsReceived;
+    internal long PacketsReceived => Interlocked.Read(ref _packetsReceived);
+    private sealed class ReceivePublication { internal bool Closed; }
+    private readonly ConcurrentDictionary<uint, ReceivePublication> _receivePublications = new();
+
 
     // P646b — the drain's per-peer carry-over, owned by the SIMULATION thread
     // (only Drain touches these; the transport threads write solely to
@@ -55,8 +81,8 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     //     carried and eventually handled — its lane is never abandoned);
     //   * per-peer FIFO always holds (carried events precede later arrivals,
     //     which are appended AFTER them, never interleaved);
-    //   * the round-robin order is STABLE across drains (a lane keeps its
-    //     position; keys are only added on first sight and removed when empty).
+    //   * P673 selects round-robin in sorted peer-id order, rotating its start
+    //     across ticks, then applies the selected batch by peer id / FIFO.
     // Worst-case growth is bounded by the receive-side byte reservation (P315):
     // a ReceivedEvt is enqueued only while its peer's reserved in-flight bytes
     // stay under MaxBufferedBytesPerPeer, and a reservation is released only
@@ -86,7 +112,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     // queue never-empty, so an unbounded `while (TryDequeue)` drain would defer
     // simulation/broadcast indefinitely (the reviewer saw one Drain consume
     // 1,000 self-replenishing events). Drain therefore (a) pulls at most the
-    // events present when it began plus <see cref="DrainBudgetEvents"/> more,
+    // events present at its tick-boundary snapshot,
     // and (b) services peers ROUND-ROBIN with a per-peer cap
     // <see cref="DrainFairShareEvents"/>, so one flooding peer cannot starve
     // the others. Anything over the budget is deferred (re-queued, keeping its
@@ -102,8 +128,9 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <summary>P646 — cumulative events handled by <c>Drain</c> (test seam).</summary>
     internal long EventsDrained => Interlocked.Read(ref _eventsDrained);
     /// <summary>P646 — cumulative events deferred (over the per-tick budget /
-    /// per-peer fair share) instead of handled this tick (test seam). Non-zero
-    /// only under overload; 0 in normal 200v200 play.</summary>
+    /// per-peer fair share, or a decoder not ready at the tick boundary)
+    /// instead of handled this tick (test seam). Decode deferral can occur
+    /// during normal arrivals too; it does not by itself indicate overload.</summary>
     internal long EventsDeferred => Interlocked.Read(ref _eventsDeferred);
     /// <summary>P646 — release one peer's byte reservation WITHOUT ever
     /// inserting an entry (a departed peer's entry must not be re-created by a
@@ -270,6 +297,51 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public void BucketCompleted(IBucketIgc bucket, double now) =>
         BucketCompletedHook?.Invoke(bucket, now);
+
+    // FedSrv/FedSrv.CPP:11327-11340. Native intentionally sends no wire message
+    // here; these callbacks deposit stock, not a flying ship or mounted part.
+    public void HullTypeCompleted(ISideIgc side, IHullTypeIgc hull)
+    {
+        if (side is Side owner && hull is DataHullTypeIGC type)
+            owner.AddToStockpile(IgcObjectType.HullType, type.HullId);
+    }
+
+    public void PartTypeCompleted(ISideIgc side, IPartTypeIgc part)
+    {
+        if (side is not Side owner) return;
+        if (part is DataLauncherTypeIGC launcher)
+            owner.AddToStockpile(IgcObjectType.PartType, launcher.PartId, launcher.Amount);
+        else if (part is DataPartTypeIGC type)
+        {
+            bool isLauncher = type.Type.EquipmentType is EquipmentType.ChaffLauncher
+                or EquipmentType.Magazine or EquipmentType.Dispenser;
+            int amount = isLauncher && owner.Mission?.Core.Launchers.TryGetValue(type.PartId, out var data) == true
+                ? data.Amount : 1;
+            owner.AddToStockpile(IgcObjectType.PartType, type.PartId, amount);
+        }
+    }
+
+    // Igc producers also serve host observers. Native FedSrv leaves these
+    // notification-only callbacks at their defaults; clintlib.cpp:2859-2880
+    // forwards them to the client event source. Keep state changes before events.
+    public event Action<BucketChange, Bucket>? BucketChanged;
+    public event Action<Side>? BuildingTechChanged;
+    public event Action<Station>? StationTypeChanged;
+
+    public void BucketChangeEvent(BucketChange change, IBucketIgc bucket)
+    {
+        if (bucket is Bucket concrete) BucketChanged?.Invoke(change, concrete);
+    }
+
+    public void SideBuildingTechChange(ISideIgc side)
+    {
+        if (side is Side concrete) BuildingTechChanged?.Invoke(concrete);
+    }
+
+    public void StationTypeChange(IStationIgc station)
+    {
+        if (station is Station concrete) StationTypeChanged?.Invoke(concrete);
+    }
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="ProjectileCreatedEvent"/> the world missions raise when
@@ -425,6 +497,9 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <see cref="ProjectileCreated"/>/<see cref="MissileDestroyed"/> hooks bridge;
     /// everything else keeps the interface default.</summary>
     public Action<IShipIgc, IPartIgc, LoadoutChange>? LoadoutChange;
+    public bool QueueRipcordUse => true;
+    public Action<Ship, string>? WeaponReadyNotification;
+    public void WeaponReady(Ship ship, string partName) => WeaponReadyNotification?.Invoke(ship, partName);
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.LoadoutChangeEvent"/>: raise the
     /// <see cref="LoadoutChange"/> hook so the owning <see cref="Server"/> can
@@ -533,6 +608,30 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <see cref="MineCreated"/>; joins the same host bridges out of the seam,
     /// everything else keeps the interface default.
     /// </summary>
+    // Igc/igc.h:4870; dispenserigc.cpp:118-121. A concrete host executes
+    // deployment even without a network server attached.
+    public Action<Ship, MountedPart, double>? ExpendableFired;
+    public void FireExpendable(IShipIgc ship, IDispenserIgc dispenser, double timeFired)
+    {
+        if (ship is not Ship s || dispenser is not MountedPart p) return;
+        if (ExpendableFired is { } fire) fire(s, p, timeFired);
+        else s.FireDispenser(p, timeFired);
+    }
+
+    // Igc/probeigc.cpp:151-154,226-230,341-349. The native server leaves
+    // these client notifications at defaults; this host exposes the events
+    // so the authoritative simulation can supply the managed client's feedback.
+    public Action<Probe>? TeleportProbeActivated;
+    public Action<Probe>? TeleportProbeDestroyed;
+    public void ActivateTeleportProbe(IProbeIgc probe)
+    {
+        if (probe is Probe p) TeleportProbeActivated?.Invoke(p);
+    }
+    public void DestroyTeleportProbe(IProbeIgc probe)
+    {
+        if (probe is Probe p) TeleportProbeDestroyed?.Invoke(p);
+    }
+
     public Action<Probe>? ProbeCreated;
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.ProbeCreatedEvent"/>: raise the
@@ -573,6 +672,8 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// uses (P123). The destruction sibling of <see cref="ProbeDestroyed"/>.
     /// </summary>
     public Action<Treasure>? TreasureDestroyed;
+    public Action<Treasure>? TreasureGenerated;
+    public void TreasureGeneratedEvent(Treasure t) => TreasureGenerated?.Invoke(t);
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.TreasureDestroyedEvent"/>: raise the
     /// <see cref="TreasureDestroyed"/> hook so the owning <see cref="Server"/>
@@ -916,13 +1017,18 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // needs no reset here: the sell leg's mutual exclusion (Ship.cs:5139)
         // already nulled it. All four use the existing "unset slot" convention
         // (OrderChange.CidNone default, Ship.cs:971).
-        sh.PlanTarget = null;
-        sh.PlanCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
-        sh.AcceptedTarget = null;
-        sh.AcceptedCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+        // P652: a repair retreat keeps its paused accepted order until the
+        // native ten-second recheck resumes it after repair (shipIGC.cpp:1916-1930).
+        if (!sh.IsRunningAway)
+        {
+            sh.PlanTarget = null;
+            sh.PlanCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+            sh.AcceptedTarget = null;
+            sh.AcceptedCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+        }
         if (sh.IsNpc)
         {
-            var pcNote = $"[npc] ship {sh.Id} arrived at station {ds.Station.StationId} — PlanTarget/AcceptedTarget cleared, ready to re-decide next tick";
+            var pcNote = $"[npc] ship {sh.Id} arrived at station {ds.Station.StationId} — {(sh.IsRunningAway ? "repair retreat order retained" : "PlanTarget/AcceptedTarget cleared, ready to re-decide next tick")}";
             Console.WriteLine(pcNote);
             ReportNotable(pcNote);                 // spectator event feed (same text as dockNote)
         }
@@ -937,7 +1043,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // the ship docking at its OWN side's station (#ALLY comment: "Only
         // offload at your own bases"). (The previous port citation pointed at
         // shipIGC.cpp:1969-1990 — that is the separate NPC teleport-offload leg,
-        // listed as a P551 follow-up; this SetStation branch is the real
+        // now implemented in Ship.TryTeleportUnload by P652; this is the
         // dock-sale gate.)
         // Reuse the established credit-then-report shape of Mission.Update's
         // payday pass (Mission.cs:298-300): credit the owning side's treasury,
@@ -992,20 +1098,6 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         return true;
     }
 
-    /// <summary>The exit-speed boost added to a ship's entry speed when it
-    /// leaves an aleph. Native reads <c>GetFloatConstant(c_fcidExitWarpSpeed)</c>
-    /// (<c>fsship.cpp:126</c>) from the mission's own constants array, which the
-    /// mission constructor unconditionally seeds with
-    /// <c>c_fExitWarpSpeed = 15.0f</c> (<c>missionigc.cpp:2743</c>,
-    /// <c>missionigc.cpp:2688</c>) — never read back from the core at runtime.
-    /// So, per this repo's fixed-mission-constant convention (cf.
-    /// <c>Mission.IncomePerPayday</c>/<c>SecondsBetweenPaydays</c>), the faithful
-    /// port value is exactly <c>15.0f</c> (P246; formerly a smaller stand-in of
-    /// <c>5f</c>). Entering a warp at full throttle thus means exiting
-    /// noticeably faster, hard to instantly reverse course — the reason enemy
-    /// miners cluster near warp exits.</summary>
-    private const float ExitWarpSpeedBonus = 15f;
-
     /// <summary>Uniform source for the small exit-offset jitter, matching the
     /// C++ <c>random(2.0f, 5.0f)</c> (<c>fsship.cpp:130-131</c>). Accessed only
     /// on the simulation thread, so no synchronization is needed.</summary>
@@ -1046,7 +1138,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// (<c>fsship.cpp:77</c>, <c>pwarp->MassLimit()</c>). <c>DataWarpIGC</c>
     /// does not decode a mass limit, so the gate is omitted (everything may
     /// transit).</item>
-    /// <item><b>Fixed exit-speed bonus.</b> See <see cref="ExitWarpSpeedBonus"/>.</item>
+    /// <item><b>Loaded exit-speed bonus.</b> See <c>c_fcidExitWarpSpeed</c> (slot 3, fsship.cpp:126).</item>
     /// <item><b>Reverse is in place.</b> <c>Ship.Orientation</c> is a get-only,
     /// mutable class; <c>Orientation.Set</c> mutates it in place, so the ship
     /// keeps its identity (fine — a ship is uniquely owned here).</item>
@@ -1081,7 +1173,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // 2. Reverse the velocity direction at entry speed + the exit bonus
         //    (fsship.cpp:126-127).
         float entrySpeed = sh.Velocity.Length();
-        sh.Velocity = backward * -(entrySpeed + ExitWarpSpeedBonus);
+        sh.Velocity = backward * -(entrySpeed + sh.Mission!.Core.Constants.FloatConstants[3]);
 
         // P591b — record the warp the ship emerged at (the destination-side
         // partner) so the re-entry guard (Sector.ResolveWarpCollisions) refuses
@@ -1149,8 +1241,13 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         => RequestRipcordReceived?.Invoke((Ship)ship, (Sector)pcluster);
 
     // ── ITransportSite ──────────────────────────────────────────────────────
-    // These run on transport threads; they only reduce to an immutable event.
-    void ITransportSite.OnPeerJoined(ConnectionId id, string name) => _events.Enqueue(new PeerJoinedEvt(id, name));
+    // Transport callbacks publish lifecycle events and reserved receives.
+    // With decoupling enabled, schema decoding stays on the peer's reader.
+    void ITransportSite.OnPeerJoined(ConnectionId id, string name)
+    {
+        if (ReceiveDecouple) _receivePublications[id.Value] = new ReceivePublication();
+        _events.Enqueue(new PeerJoinedEvt(id, name));
+    }
     void ITransportSite.OnPeerLeft(ConnectionId id)
     {
         // P315: drop the departed peer's buffered-byte accounting and log-gate
@@ -1172,10 +1269,49 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // stay bounded by the LIVE peer set (same rationale as _bufferedPerPeer).
         _pingLastReplyUtcTicks.TryRemove(id.Value, out _);
         _pingLog.Remove(id.Value);
-        _events.Enqueue(new PeerLeftEvt(id));
+        if (ReceiveDecouple && _receivePublications.TryRemove(id.Value, out var publication))
+        {
+            // Serialize only publication, never decoding. A pending receive is
+            // already ahead of this leave, even if a send worker disconnects it.
+            lock (publication)
+            {
+                publication.Closed = true;
+                _events.Enqueue(new PeerLeftEvt(id));
+            }
+        }
+        else _events.Enqueue(new PeerLeftEvt(id));
     }
     void ITransportSite.OnSessionLost() => _events.Enqueue(new SessionLostEvt());
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
+    {
+        if (!ReceiveDecouple)
+        {
+            if (EnqueueReceive(from, data, pending: false) is not null)
+                Interlocked.Increment(ref _packetsReceived);
+            return;
+        }
+        // A closed peer cannot publish a late command or recreate accounting.
+        if (!_receivePublications.TryGetValue(from.Value, out var publication)) return;
+        ReceivedEvt? received;
+        lock (publication)
+        {
+            if (publication.Closed) return;
+            received = EnqueueReceive(from, data, pending: true);
+        }
+        if (received is not null)
+        {
+            var prepared = InboundPacket.Prepare(received.Data, decode: true);
+            lock (_decodePublication)
+            {
+                long sequence = _decodeSequence + 1;
+                received.Complete(prepared, sequence);
+                Volatile.Write(ref _decodeSequence, sequence);
+            }
+            Interlocked.Increment(ref _packetsReceived);
+        }
+    }
+
+    private ReceivedEvt? EnqueueReceive(ConnectionId from, ReadOnlySpan<byte> data, bool pending)
     {
         // P315 (H3): bound the shared receive queue per-peer. Only the tick's
         // ~20 Hz drain consumes _events; a flooding peer must not be able to
@@ -1196,9 +1332,14 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
                 Console.WriteLine($"[rx] peer {from} inbound buffered > {MaxBufferedBytesPerPeer} B — dropping excess (P315 queue bound)");
             else if (t.Summarize)
                 Console.WriteLine($"[rx] peer {from}: {t.Suppressed} more inbound frames dropped under the P315 queue bound (rate-limited)");
-            return;
+            return null;
         }
-        _events.Enqueue(new ReceivedEvt(from, data.ToArray()));
+        // Publish a placeholder before decoding. Drain never waits: an
+        // incomplete head defers its whole peer lane (including leave), while
+        // ready peers keep their fair share. Reservation covers all stages.
+        var received = new ReceivedEvt(from, data.ToArray(), pending);
+        _events.Enqueue(received);
+        return received;
     }
 
     /// <summary>
@@ -1218,6 +1359,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public int Drain(Action<ITransportEvent> handle)
     {
+        long readyThrough = Volatile.Read(ref _decodeSequence);
         long budget = DrainBudgetEvents;
         int fairShare = DrainFairShareEvents;
 
@@ -1228,13 +1370,13 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // reservation is NOT released here; it is released only when the event
         // is actually HANDLED, so a deferred event keeps its reservation (it is
         // still occupying queue memory). The pull is bounded (the events
-        // present when we began plus the budget) so the drain phase itself is
+        // present when we began) so the drain phase itself is
         // bounded; the carry-over cannot grow without limit anyway, because the
         // per-peer byte reservation bounds how many un-handled receives a
         // flooding peer can have in flight (see _pendingLanes comment).
         long pulled = 0;
         int snapshot = _events.Count;
-        long pullCap = snapshot + budget;
+        long pullCap = snapshot; // arrivals after this tick snapshot wait for the next boundary
         while (pulled < pullCap && _events.TryDequeue(out var evt))
         {
             uint key = PeerKeyOf(evt);
@@ -1248,32 +1390,43 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             pulled++;
         }
 
-        // Phase 2 — service lanes round-robin (STABLE order: carried lanes keep
-        // their position) until the per-tick budget is consumed or every lane is
+        // Select fairly first; apply the selected immutable tick batch in
+        // (peer id, per-peer arrival sequence) order. Rotate the starting peer
+        // so a small global budget cannot starve higher ids.
+        List<(uint Key, int Sequence, ITransportEvent Event)> selected = [];
+        _pendingOrder.Sort();
+
+        // Phase 2 — select from the rotating round-robin until the per-tick
+        // budget is consumed or every lane is
         // empty / over its fair share. A lane leaves the rotation ONLY when it
         // is empty — never when it merely hits its fair share, so nothing is
         // dropped and a flooding peer's PeerLeftEvt is still carried.
         int processed = 0;
         var handled = new Dictionary<uint, int>();
         int idx = 0;
+        if (_pendingOrder.Count > 0)
+        {
+            int next = _pendingOrder.FindIndex(k => k > _lastSelectedPeer);
+            if (next >= 0) idx = next;
+        }
         int fairSkips = 0;   // consecutive fair-share skips → stop when nobody can be served
         while (_pendingOrder.Count > 0 && processed < budget)
         {
             uint key = _pendingOrder[idx];
             var q = _pendingLanes[key];
-            if (handled.TryGetValue(key, out int done) && done >= fairShare)
+            if ((handled.TryGetValue(key, out int done) && done >= fairShare)
+                || (q.Peek() is ReceivedEvt pending && pending.ReadySequence > readyThrough))
             {
-                // This peer's share for this drain is spent; defer its
-                // remainder but KEEP its lane in the rotation for next drain.
+                // This peer's share is spent or its head was not decoded at
+                // the boundary. Keep its whole FIFO lane for the next drain.
                 if (++fairSkips >= _pendingOrder.Count) break;  // everyone over share
                 idx = (idx + 1) % _pendingOrder.Count;
                 continue;
             }
             fairSkips = 0;
             var evt = q.Dequeue();
-            if (evt is ReceivedEvt r)
-                ReleaseReservation(r);   // a handled receive frees its reserved bytes (never inserts)
-            handle(evt);
+            selected.Add((key, processed, evt));
+            _lastSelectedPeer = key;
             processed++;
             handled[key] = done + 1;
             if (q.Count == 0)
@@ -1290,6 +1443,10 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             }
         }
 
+        selected.Sort(static (a, b) => a.Key != b.Key
+            ? a.Key.CompareTo(b.Key) : a.Sequence.CompareTo(b.Sequence));
+        foreach (var item in selected) HandleDrainedEvent(item.Event, handle);
+
         // Phase 3 — count whatever is left sitting in the lanes as deferred
         // (it keeps its byte reservation and is carried to the next drain).
         int deferred = 0;
@@ -1299,6 +1456,33 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         Interlocked.Add(ref _eventsDrained, processed);
         Interlocked.Add(ref _eventsDeferred, deferred);
         return processed;
+    }
+
+    private void HandleDrainedEvent(ITransportEvent evt, Action<ITransportEvent> handle)
+    {
+        if (evt is ReceivedEvt r)
+            ReleaseReservation(r);   // a handled receive frees its reserved bytes (never inserts)
+        // P654 (H-34) — per-event exception barrier (defence in depth). Every
+        // dispatch branch already has its own try/catch, but the remaining
+        // throwers (logon-path code after decode, CaptureReceived file I/O on
+        // a full disk, ReleasePeer) would previously abort the WHOLE Drain,
+        // dropping every event already pulled into the lanes (PeerLeftEvt →
+        // ghost ship, byte reservations never released). Wrapping each
+        // handle() here means a throwing handler costs only that one event —
+        // the rest of the lane keeps its FIFO and the drain completes.
+        try
+        {
+            handle(evt);
+        }
+        catch (Exception ex)
+        {
+            // The event is gone from the lane (dequeued above) and its byte
+            // reservation already released (for a receive); do not let one
+            // bad event take the lane (and the drain) down. Log once.
+            var et = _dropLog.Ticket(PeerKeyOf(evt));
+            if (et.Emit)
+                Console.WriteLine($"[drain] event handler threw for key {PeerKeyOf(evt)}: {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     /// <summary>The per-peer bucket key for an event: receives and lifecycle
@@ -1335,19 +1519,19 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     }
 
     /// <summary>Send bytes to <paramref name="target"/> through the bound transport.</summary>
-    public void Send(ConnectionId target, byte[] data) => Transport!.Send(target, data, guaranteed: true);
+    public void Send(ConnectionId target, ReadOnlySpan<byte> data) => Transport!.Send(target, data, guaranteed: true);
 
     /// <summary>P606 — send a <b>latest-wins</b> stream frame (ship-state
     /// broadcasts) as non-guaranteed, coalescing per <paramref name="coalesceKey"/>
     /// so a slow client keeps only the newest pending snapshot per key. See
     /// <see cref="ITransport.SendCoalescing"/>.</summary>
-    public void SendCoalescing(ConnectionId target, byte[] data, int coalesceKey)
+    public void SendCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
         => Transport!.SendCoalescing(target, data, coalesceKey);
 
     /// <summary>P608 — coalesce-keyed frame sent guaranteed (see
     /// <see cref="ITransport.SendGuaranteedCoalescing"/>); the owner's own-ship
     /// SingleShipUpdate uses this so it is never superseded by teammate traffic
     /// nor shed under load.</summary>
-    public void SendGuaranteedCoalescing(ConnectionId target, byte[] data, int coalesceKey)
+    public void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
         => Transport!.SendGuaranteedCoalescing(target, data, coalesceKey);
 }

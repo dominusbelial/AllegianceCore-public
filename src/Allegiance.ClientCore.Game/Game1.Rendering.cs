@@ -278,6 +278,9 @@ public sealed partial class Game1
 
     protected override void Draw(GameTime gameTime)
     {
+        _gpuTimer?.Poll(_receiveGpu!);
+        _frameTelemetry?.BeginDraw();
+        _scaledThisFrame = false;
         // P306 — headless capture: once Flying, after a short settle grace (so
         // the client has received teammate exports/positions for every bot and
         // the overview camera framing is stable), redirect the WHOLE frame into
@@ -347,7 +350,8 @@ public sealed partial class Game1
         else // Flying
         {
             var world = _session.World;
-            if (world.MyShipId is { } me && _poses.TryGetValue(me, out var myPose))
+            if (world.MyShipId is { } me && _poses.TryGetValue(me, out var myPose)
+                && _flightEffects.Generation == world.SectorGeneration)
             {
                 var myPos = PoseConverter.ToXna(myPose.Position);
                 var myRot = PoseConverter.ToXnaRotation(myPose.Orientation);
@@ -366,7 +370,7 @@ public sealed partial class Game1
                 // lighting. Falls back to a sane fixed white light when the
                 // cluster is unknown, so objects never render black.
                 _sectorLighting = world.Ships.TryGetValue(me, out var ownLite)
-                    && world.Clusters.TryGetValue(ownLite.SectorId, out var dcLite)
+                    && world.Clusters.TryGetValue(RenderSector(ownLite.SectorId), out var dcLite)
                         ? Allegiance.Core.Rendering.SectorLighting.FromCluster(dcLite.LightDirection, dcLite.LightColor)
                         : Allegiance.Core.Rendering.SectorLighting.FromCluster(null, 0xFFFFFFFF);
 
@@ -484,6 +488,10 @@ public sealed partial class Game1
                 // so the HUD/SpriteBatch UI (drawn after the composite below)
                 // never blooms. Soft particles are active only in Enhanced with
                 // the depth shader + target ready.
+                var outputViewport = GraphicsDevice.Viewport;
+                bool fsr = PrepareUpscaling(outputViewport.Width, outputViewport.Height);
+                bool sceneTarget = fsr || (_bloomEnabled && _post is { BloomReady: true });
+                var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
                 bool bloom = _bloomEnabled && _post is { BloomReady: true };
                 bool soft = _softEnabled && _post is { SoftReady: true };
 
@@ -493,6 +501,7 @@ public sealed partial class Game1
                 // share identical geometry. Depth-gather lists are reset here so
                 // each frame re-collects exactly its own geometry.
                 PrepareSceneGeometry(me, cameraEye, dtSec);
+                _gpuTimer?.Start(_frameTelemetry!.FrameId, post: false);
 
                 // P559 — run the linear-depth pass BEFORE the opaque color pass.
                 // P547 placed it mid-frame (after the treasure draw), switching
@@ -519,7 +528,7 @@ public sealed partial class Game1
                     GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer,
                         Rendering.VfxPostProcessor.DepthClearFar, 1f, 0);
                     DrawSceneDepth(view, proj, cameraEye);
-                    GraphicsDevice.SetRenderTarget(bloom ? _post.SceneRT : (capThis ? _capTarget : (RenderTarget2D?)null));
+                    GraphicsDevice.SetRenderTarget(sceneTarget ? sceneRt : (capThis ? _capTarget : (RenderTarget2D?)null));
                     GraphicsDevice.BlendState = BlendState.Opaque;
                     GraphicsDevice.DepthStencilState = DepthStencilState.Default;
                 }
@@ -528,9 +537,9 @@ public sealed partial class Game1
                     _softContext = null;
                 }
 
-                if (bloom)
+                if (sceneTarget)
                 {
-                    GraphicsDevice.SetRenderTarget(_post!.SceneRT);
+                    GraphicsDevice.SetRenderTarget(sceneRt);
                     GraphicsDevice.Clear(Color.Black);
                 }
 
@@ -577,14 +586,22 @@ public sealed partial class Game1
                 }
                 _debrisRenderer.Draw(_drawDustViews, cameraEye, view, proj);
 
+                // P628 — per-frame LOD bookkeeping reset (counts + far sprite list).
+                _lodFullCount = 0;
+                _lodFarCount = 0;
+                _lodDrawCalls = 0;
+                _drawFarSprites.Clear();
+
                 foreach (var (id, pose) in _poses)
                 {
                     // In cockpit mode the local hull is not drawn — you are inside
                     // it; every OTHER known ship still renders normally.
-                    if (_cameraMode == CameraMode.Cockpit && id == me)
+                    if ((_cameraMode == CameraMode.Cockpit && id == me) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id))
                         continue;
 
+                    if (!ShipInDrawnSector(id, me)) continue;
                     var xnaPos = PoseConverter.ToXna(pose.Position);
+                    var eyeRel = xnaPos - cameraEye;                     // P612b camera-relative
                     var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
                     // P270 — alpha-blend cloaked ships (subtle shimmer over
                     // elapsed wall-clock); fully solid otherwise. The server
@@ -593,45 +610,112 @@ public sealed partial class Game1
                     float shipOpacity = _cloakedShips.Contains(id)
                         ? Flight.CloakVisual.Opacity(gameTime.TotalGameTime.TotalSeconds)
                         : 1f;
-                    var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
-                    // P566 — NATIVE ship path (default): draw the original .mdl mesh +
-                    // native texture at native scale/orientation under pure native sector
-                    // lighting. When the hull's native art failed to decode (ref null /
-                    // geometry null) it falls through to the Meshy content path below.
-                    if (ShipsNativeFor(id)
-                        && _nativeShipRefById.TryGetValue(id, out var nref) && nref is not null
-                        && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo)
+
+                    // P628 — level-of-detail selection. The projected on-screen
+                    // pixel radius (native GetImageRadius, context.cpp:1858-1871)
+                    // drives both the far-tier crossfade and native LODGeo level.
+                    float viewH = GraphicsDevice.Viewport.Height;
+                    float worldRadius = _shipRadiusById.TryGetValue(id, out var wr) && wr > 0f ? wr : 1f;
+                    float px = Rendering.ShipLod.ProjectedPixelRadius(eyeRel, worldRadius, view, proj, viewH);
+                    float farAmt = Rendering.ShipLod.FarAmount(px, _shipLodProfile);
+                    bool wasFar = _shipLodFar.TryGetValue(id, out var wf) && wf;
+                    bool isFar = Rendering.ShipLod.NextFarState(px, wasFar, _shipLodProfile);
+                    _shipLodFar[id] = isFar;
+                    if (isFar) _lodFarCount++; else _lodFullCount++;
+
+                    // P628 — draw the FULL model component whenever the far tier
+                    // hasn't fully taken over (crossfade: model fades out as the
+                    // sprite fades in → no popping). Within the full tier the
+                    // native LODGeo level is chosen by projected pixel radius.
+                    if (farAmt < 1f)
                     {
-                        var ntex = nref.TextureStem is not null ? _nativeShipRenderer.TextureFor(nref.TextureStem) : null;
-                        _nativeShipRenderer.Draw(ngeo, ntex, worldMat, view, proj, shipOpacity, nref.NativeScale, _sectorLighting);
-                    }
-                    else
-                    {
-                        // P333 — PURE VISUAL scale: normalize this ship's model to
-                        // its real hull size (1.0 when unknown). Affects rendering
-                        // only; the server's collision radius is untouched.
-                        float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
-                        // P337 — the real texture bound to this ship's model (paired
-                        // by the same resolved asset); fallback texture when the ship
-                        // fell back to the fallback model (resolved asset null).
-                        var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
-                            ? t : _fallbackTexture;
-                        // P607 — never pass null to ShipRenderer.Draw: when a
-                        // ship has no native art (failed resolution) and no
-                        // Meshy pack fallback (both shipModel and _fallbackModel
-                        // null — the P607 live crash), draw the guaranteed
-                        // procedural stand-in so the ship stays visible and
-                        // targetable, and log it once by ship id.
-                        var drawModel = shipModel ?? _fallbackModel;
-                        if (drawModel is null)
+                        float modelOp = shipOpacity * Rendering.ShipLod.ModelAlpha(farAmt, _shipLodProfile);
+                        var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
+                        // P566 — NATIVE ship path (default): draw the original .mdl
+                        // mesh + native texture at native scale/orientation under
+                        // pure native sector lighting. When the hull's native art
+                        // failed to decode (ref null / geometry null) it falls
+                        // through to the Meshy content path below.
+                        if (ShipsNativeFor(id)
+                            && _nativeShipRefById.TryGetValue(id, out var nref) && nref is not null
+                            && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo0)
                         {
-                            drawModel = _shipStandInModel;
-                            if (_standInLoggedShips.Add(id))
-                                Console.WriteLine($"[client] P607 unresolvable ship #{id} (no native art, no Meshy pack) — rendering procedural stand-in");
+                            var ntex0 = nref.TextureStem is not null ? _nativeShipRenderer.TextureFor(nref.TextureStem) : null;
+                            // P628 native LOD: select the LODGeo level by projected
+                            // pixel radius (geometry.cpp LODGeoImpl::Render), only
+                            // when fully in the near tier (during the crossfade the
+                            // base mesh is kept so the fade-out is seamless).
+                            var drawGeo = ngeo0;
+                            if (farAmt <= 0f && _nativeShipRenderer.LodLevelCount(nref.ModelStem!) > 0)
+                            {
+                                int lev = Rendering.ShipLod.NativeLodLevelFor(px, _nativeShipRenderer.LodPixelRadii(nref.ModelStem!));
+                                if (lev > 0)
+                                    drawGeo = _nativeShipRenderer.LodLevel(nref.ModelStem!, lev - 1) ?? ngeo0;
+                            }
+                            _nativeShipRenderer.Draw(drawGeo, ntex0, worldMat, view, proj, modelOp, nref.NativeScale, _sectorLighting);
+                            _lodDrawCalls++;
                         }
-                        _shipRenderer.Draw(drawModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
+                        else
+                        {
+                            // P333 — PURE VISUAL scale: normalize this ship's model to
+                            // its real hull size (1.0 when unknown). Affects rendering
+                            // only; the server's collision radius is untouched.
+                            float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
+                            // P337 — the real texture bound to this ship's model (paired
+                            // by the same resolved asset); fallback texture when the ship
+                            // fell back to the fallback model (resolved asset null).
+                            var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
+                                ? t : _fallbackTexture;
+                            // P607 — never pass null to ShipRenderer.Draw: when a
+                            // ship has no native art (failed resolution) and no
+                            // Meshy pack fallback (both shipModel and _fallbackModel
+                            // null — the P607 live crash), draw the guaranteed
+                            // procedural stand-in so the ship stays visible and
+                            // targetable, and log it once by ship id.
+                            var drawModel = shipModel ?? _fallbackModel;
+                            if (drawModel is null)
+                            {
+                                drawModel = _shipStandInModel;
+                                if (_standInLoggedShips.Add(id))
+                                    Console.WriteLine($"[client] P607 unresolvable ship #{id} (no native art, no Meshy pack) — rendering procedural stand-in");
+                            }
+                            _shipRenderer.Draw(drawModel, worldMat, view, proj, modelOp, scale, shipTex, _sectorLighting);
+                            _lodDrawCalls++;
+                        }
+                    }
+
+                    // P628 — draw the FAR sprite component (lit, side-tinted point)
+                    // batched one call per hull type; no trails/ribbons at this tier.
+                    if (farAmt > 0f)
+                    {
+                        var (sr2, sg2, sb2) = _shipSideRgbById.TryGetValue(id, out var sc) ? sc : (1f, 1f, 1f);
+                        float alpha = Rendering.ShipLod.SpriteAlpha(farAmt, px, _shipLodProfile);
+                        // Size the billboard so it projects to a small readable point.
+                        float targetPx = 5f;
+                        float dist = eyeRel.Length();
+                        float scalePx = (0.5f * viewH) * proj.M22;
+                        float half = dist > 1e-4f && scalePx > 0f ? targetPx * dist / scalePx : worldRadius;
+                        half = MathF.Min(half, worldRadius * 3f);
+
+                        string lookKey = "";
+                        if (ShipsNativeFor(id)
+                            && _nativeShipRefById.TryGetValue(id, out var fnref) && fnref is not null
+                            && fnref.TextureStem is { } tstem
+                            && _nativeShipRenderer.TextureFor(tstem) is { } ftex)
+                        {
+                            lookKey = tstem;
+                            RegisterLodTexture(lookKey, ftex);   // one draw call per hull type
+                        }
+                        var col = new Color(sr2, sg2, sb2, alpha);
+                        _drawFarSprites.Add(new Rendering.FarSprite(lookKey, eyeRel, half, col, 0f));
                     }
                 }
+
+                // P628 — draw the batched far-tier sprites (one call per hull type)
+                // AFTER the opaque scene so nearer geometry still occludes them via
+                // the depth test.
+                if (_shipLodSpriteRenderer is { } spr)
+                    _lodDrawCalls += spr.Draw(_drawFarSprites, view, proj);
 
                 // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
                 // (fine for the targeting code, which frustum-projects every
@@ -706,7 +790,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownW))
                     {
-                        short myWarpSector = ownW.SectorId;
+                        short myWarpSector = RenderSector(ownW.SectorId);
                         foreach (var (_, wp) in world.Warps)
                         {
                             if (wp.ClusterId != myWarpSector) continue;
@@ -717,6 +801,7 @@ public sealed partial class Game1
                     }
                 }
                 double dt = gameTime.ElapsedGameTime.TotalSeconds;
+                _flightEffects.Advance((float)dt);
                 foreach (var (wId, wPos, wOri, wRadius, wTex) in _drawWarps)
                 {
                     var wXnaPos = PoseConverter.ToXna(wPos);
@@ -769,6 +854,10 @@ public sealed partial class Game1
                         float nscale = Rendering.NativeStationResolver.ScaleForRadius(sRadius, ngeo.MeshRadius);
                         var sWorldNS = sRot * Matrix.CreateTranslation(sXnaPos - cameraEye);
                         _nativeStationRenderer.Draw(ngeo, ntex, sWorldNS, view, proj, nscale, _sectorLighting);
+                        if (Rendering.NativeStationLights.IsVisible(sXnaPos - cameraEye, sRadius,
+                                view, proj, GraphicsDevice.Viewport.Width))
+                            Rendering.NativeStationLights.Append(_nativeStationRenderer.LightsFor(sModel),
+                                sRot * Matrix.CreateTranslation(sXnaPos), nscale, (float)_nowSeconds, _drawNavStrobes);
                     }
                     else
                     {
@@ -779,13 +868,7 @@ public sealed partial class Game1
                         _stationRenderer.Draw(sWorld, view, proj, sTint, _sectorLighting);
                     }
 
-                    // P367 — this visible station's navigation beacon strobes too
-                    // (native LightsGeo is confirmed present in 422 shipped .mdl
-                    // files including stations — this is a common ship+station
-                    // effect, not ship-only). Anchored at the structure's real
-                    // radius and blinked by the same real pulse envelope.
-                    if (sRadius > 0f)
-                        AddNavStrobeAnchors(Rendering.NavStrobeLayout.StationAnchors(sPos, sOri, sRadius), sRadius);
+
                 }
 
                 // P294 — in-progress station constructions. Like stations/probes,
@@ -808,7 +891,7 @@ public sealed partial class Game1
                     world.PruneExpiredBuildingEffects(buildNow);
                     if (world.Ships.TryGetValue(me, out var ownBe))
                     {
-                        short myBeSector = ownBe.SectorId;
+                        short myBeSector = RenderSector(ownBe.SectorId);
                         foreach (var (_, be) in world.BuildingEffects)
                         {
                             if (be.ClusterId != myBeSector) continue;
@@ -1056,7 +1139,7 @@ public sealed partial class Game1
                     world.PruneExpiredMissiles(mNow);
                     if (world.Ships.TryGetValue(me, out var ownMs))
                     {
-                        short myMissileSector = ownMs.SectorId;
+                        short myMissileSector = RenderSector(ownMs.SectorId);
                         foreach (var (_, ms) in world.Missiles)
                         {
                             if (ms.ClusterId != myMissileSector) continue;
@@ -1143,7 +1226,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownPb))
                     {
-                        short myProbeSector = ownPb.SectorId;
+                        short myProbeSector = RenderSector(ownPb.SectorId);
                         foreach (var (_, pe) in world.Probes)
                         {
                             if (pe.ClusterId != myProbeSector) continue;
@@ -1173,7 +1256,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownMine))
                     {
-                        short myMineSector = ownMine.SectorId;
+                        short myMineSector = RenderSector(ownMine.SectorId);
                         var mineTypes = _shopCatalog?.MineTypes;
                         foreach (var (_, me2) in world.Mines)
                         {
@@ -1228,7 +1311,7 @@ public sealed partial class Game1
                 // from the TREASURE(28) spawn broadcast (removed by
                 // DESTROY_TREASURE(30)), so — like probes/mines — the draw loop
                 // filters to the local player's OWN sector: te.ClusterId ==
-                // mySector. A treasure is static (its P0 is final). P586 — each
+                // mySector. Position follows the exported drift curve. P586 — each
                 // is now drawn with its RESOLVED NATIVE visual (part/development
                 // model, acs14 for cash/power-up, the artifact model, or the
                 // biosflag decal for a flag; TreasureVisualResolver), tumbling
@@ -1239,7 +1322,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownTr))
                     {
-                        short myTreasureSector = ownTr.SectorId;
+                        short myTreasureSector = RenderSector(ownTr.SectorId);
                         foreach (var (_, te) in world.Treasures)
                         {
                             if (te.ClusterId != myTreasureSector) continue;
@@ -1320,7 +1403,6 @@ public sealed partial class Game1
                         transitRadius,
                         (float)dt, _trailRandom);
                 }
-                _warpParticles.Update((float)dt);
                 _drawSparkViews.Clear();
                 _drawSparkViews.AddRange(_warpParticles.Enumerate());
                 _warpParticleRenderer.Draw(_drawSparkViews, cameraEye, view, proj);
@@ -1344,7 +1426,6 @@ public sealed partial class Game1
                         emRadius,
                         kv.Key, em.VentCount, (float)dt, _trailRandom);
                 }
-                _damageDebris.Update((float)dt);
                 _drawDebrisViews.Clear();
                 _drawDebrisViews.AddRange(_damageDebris.Enumerate());
                 _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
@@ -1360,12 +1441,13 @@ public sealed partial class Game1
                 // gate), for the local hull AND every visible remote ship.
                 foreach (var kv in _engineTrailEmitters)
                 {
+                    // P628 — no engine trails at the far tier (distant sprite ships).
+                    if (IsFarLod(kv.Key)) continue;
                     var et = kv.Value;
                     _engineTrail.Emit(new Rendering.EngineTrailShip(
                         kv.Key, et.Position, et.Velocity, et.Orientation, et.Radius,
                         _shipThrustPower.GetValueOrDefault(kv.Key)), (float)dt, _trailRandom);
                 }
-                _engineTrail.Update((float)dt);
                 _drawEngineTrailViews.Clear();
                 _drawEngineTrailViews.AddRange(_engineTrail.Enumerate());
                 _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
@@ -1408,7 +1490,7 @@ public sealed partial class Game1
                 // 99-286). Append this frame's ship strobes (the station beacons
                 // were added in the station pass above) and draw the combined set
                 // once: a small tinted decal at every visible ship's wingtips+stern
-                // and every visible station's beacons, each sized by the REAL
+                // and the station's authored lights, each sized by the REAL
                 // LightsGeo::Render pulse envelope (NavStrobeMath.Pulse) from the
                 // elapsed game clock — so the red-port/green-starboard/white-tail
                 // lights genuinely blink (ramp up → flash → ramp down → off,
@@ -1429,9 +1511,11 @@ public sealed partial class Game1
                 // stretches behind every moving visible ship and fades/retracts
                 // when it stops. The anchor/right/colour were gathered under the
                 // Gate above.
-                _motionTrail.Advance((float)dt);
                 _drawMotionTrailStrips.Clear();
-                _drawMotionTrailStrips.AddRange(_motionTrail.Enumerate());
+                // P628 — no motion ribbons at the far tier (distant sprite ships);
+                // filter the enumerated strips by ship id.
+                foreach (var strip in _motionTrail.Enumerate())
+                    if (!IsFarLod(strip.ShipId)) _drawMotionTrailStrips.Add(strip);
                 _motionTrailRenderer.Draw(_drawMotionTrailStrips, cameraEye, view, proj);
 
                 // P263 — explosions. Under the Gate, prune finished blasts and
@@ -1447,7 +1531,7 @@ public sealed partial class Game1
                     world.PruneExpiredExplosions(nowLocalMs);
                     if (world.MyShipId is { } meX && world.Ships.TryGetValue(meX, out var ownX))
                     {
-                        ownSectorId = ownX.SectorId;
+                        ownSectorId = RenderSector(ownX.SectorId);
                         foreach (var ex in world.Explosions)
                             if (ex.ClusterId == ownSectorId) _drawExplosions.Add(ex);
                     }
@@ -1508,7 +1592,6 @@ public sealed partial class Game1
                         : Rendering.HullHitSparkParticles.ShipRadiusDefault;
                     _hullHitParticles.Emit(hit.Position, hit.Normal, hitRadius, _trailRandom);
                 }
-                _hullHitParticles.Update((float)dt);
                 _drawHullHitViews.Clear();
                 _drawHullHitViews.AddRange(_hullHitParticles.Enumerate());
                 _drawHullHitFlashes.Clear();
@@ -1565,7 +1648,6 @@ public sealed partial class Game1
                         shipOrient ?? Orientation.Identity,
                         hit.Position, ellipse, shieldRadius, meshRadius);
                 }
-                _shieldFlareParticles.Update((float)dt);
                 _drawShieldFlares.Clear();
                 _drawShieldFlares.AddRange(_shieldFlareParticles.Enumerate());
                 _shieldFlareRenderer.Draw(_drawShieldFlares, cameraEye, view, proj);
@@ -1574,11 +1656,20 @@ public sealed partial class Game1
                 // FINAL target (backbuffer or the capture target), then the
                 // radar + HUD + SpriteBatch overlays below draw on top of it so
                 // they never bloom. When bloom is off nothing here runs.
+                _gpuTimer?.Stop();
+                _gpuTimer?.Start(_frameTelemetry!.FrameId, post: true);
+                _frameTelemetry?.BeginPost();
+                RenderTarget2D? finalTarget = capThis ? _capTarget : null;
+                Texture2D? upscaleSource = sceneRt;
                 if (bloom && _post is { BloomReady: true })
                 {
-                    GraphicsDevice.SetRenderTarget(capThis ? _capTarget : (RenderTarget2D?)null);
-                    _post.Bloom!.Render(_post.SceneRT!);
+                    GraphicsDevice.SetRenderTarget(fsr ? _fsr!.Bloomed : finalTarget);
+                    _post.Bloom!.Render(sceneRt!);
+                    if (fsr) upscaleSource = _fsr!.Bloomed;
                 }
+                if (fsr) _fsr!.Render(upscaleSource!, finalTarget, _upscaling.Sharpness);
+                _frameTelemetry?.EndPost();
+                _gpuTimer?.Stop();
 
                 // P250 — local current-sector tactical radar. Drawn here (inside
                 // the camera block, so view/proj/cameraEye are live) over the 3D
@@ -1586,6 +1677,7 @@ public sealed partial class Game1
                 // only ever appears when the player has a ship + camera, which is
                 // exactly when a local tactical picture is wanted.
                 // P580 — suppressed while the director is recording (clean b-roll).
+                DrawCommandGrid(view, proj, cameraEye);
                 if (!_directorActive)
                     DrawRadar(view, proj, cameraEye, gameTime.TotalGameTime.TotalSeconds);
 
@@ -1596,7 +1688,7 @@ public sealed partial class Game1
                 // live; default OFF (--aleph-glimpse on).
                 if (_alephGlimpse && world.MyShipId is { } gm
                     && world.Ships.TryGetValue(gm, out var gs)
-                    && world.Clusters.TryGetValue(gs.SectorId, out var gdc))
+                    && world.Clusters.TryGetValue(RenderSector(gs.SectorId), out var gdc))
                 {
                     DrawAlephGlimpses(view, proj, cameraEye, world, gdc);
                 }
@@ -1604,6 +1696,7 @@ public sealed partial class Game1
 
             // 2D HUD overlay on top of the 3D scene (P211).
             DrawHud();
+            DrawCommandHud();
 
             // P501 — semi-transparent touch sticks + buttons, above the HUD but
             // beneath the starmap/chat overlays. Skipped internally when no touch
@@ -1631,6 +1724,7 @@ public sealed partial class Game1
         // NextCargo/NextPart/PrevPart/DropCargo keys are operating on.
         if (!_directorActive)
             DrawCargoHud();
+            DrawFlightPartsHud();
 
             // P217 — the quick-chat voice-macro menu, on top of the chat log
             // (itself above the HUD). Only drawn while a menu level is open.
@@ -1671,6 +1765,9 @@ public sealed partial class Game1
         // while flying, independent of the scoreboard/pilot-info flags.
         if (_state == ClientState.Flying && _teamPaneVisible)
         {
+            string? activeBallotText;
+            // Reading the current ballot can prune expired queue entries.
+            lock (_session.Gate) activeBallotText = _session.World.ActiveBallot?.BallotText;
             var ships = _session.World.Ships;
             var briefs = new Dictionary<string, Rendering.TeamPaneLayout.ShipBrief>();
             foreach (var ent in ships.Values)
@@ -1680,10 +1777,13 @@ public sealed partial class Game1
                 _session.World.ScoreRoster, _session.World.RankTable, briefs,
                 _session.World.IsSideActive,
                 _session.World.MyMoney,
-                _session.World.ActiveBallot?.BallotText,
+                activeBallotText,
                 _session.World.IsTeamLeader,
-                ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null);
-            _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines);
+                ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null,
+                $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} CHARACTER SHEET");
+            if (_consolePanes.Team == TeamConsoleSize.Mini)
+                lines = TeamPaneLayout.Compact(lines, _session.World.ScoreRoster, _session.World.MySideId);
+            _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines, _consolePanes.Team == TeamConsoleSize.Mini);
         }
 
         // P271 — mission-briefing popup (pre-launch): the dismissible briefing
@@ -1722,7 +1822,7 @@ public sealed partial class Game1
         // cockpit scene). Only present while the local ship is actually docked.
         // Its P273 sub-view is the teleport pane (board a teammate's turret /
         // teleport to a station); otherwise the P268 hangar loadout shows.
-        if (_dockedActive && _investActive && _investDefs is not null)
+        if (_dockedActive && _cameraMode != CameraMode.Command && _investActive && _investDefs is not null)
         {
             // P487 — the investment pane sub-view (native PurchasesPaneImpl),
             // drawn in the same docked-panel style as the teleport/hangar views.
@@ -1734,12 +1834,12 @@ public sealed partial class Game1
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, money: _session.World.MyMoney,
                 backdropAlpha: Rendering.DockedScreenRenderer.InvestBackdropAlpha);
         }
-        else if (_dockedActive && _teleportActive && _teleportModel is { } telPane)
+        else if (_dockedActive && _cameraMode != CameraMode.Command && _teleportActive && _teleportModel is { } telPane)
         {
             var telRows = Rendering.TeleportLayout.Build(telPane);
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows, money: _session.World.MyMoney);
         }
-        else if (_dockedActive && _shopModel is { } dockShop)
+        else if (_dockedActive && _cameraMode != CameraMode.Command && !_hangarOnly && _shopModel is { } dockShop)
         {
             // P519 — render the effective hull's real in-game model orbiting
             // behind the panes at native cmExternalOrbit rates; the translucent
@@ -1753,17 +1853,21 @@ public sealed partial class Game1
                 backdropAlpha: 0.62f);
         }
 
+        DrawConsolePanes();
+        DrawMainMenu();
+
         // P262 — game-over result screen, drawn above EVERYTHING (even the help
         // keymap) so it is unmissable: the "why did everything stop" answer.
         // Shows only once the real GAME_OVER(62) wire message has arrived
         // (world.GameOverResult), resolving its real winner/reason via
         // GameOverPanelInfo. The local player's own side (MySideId) decides the
         // victorious/defeated/draw title; all text is real wire data.
-        if (_state == ClientState.Flying
+        if (_state is ClientState.Flying or ClientState.ReadyCheck
             && _session.World.GameOverResult is { } go)
         {
             var info = Rendering.GameOverPanelInfo.From(go, _session.World.MySideId);
-            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, _session.World.GameOverPlayersList);
+            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, _session.World.GameOverPlayersList,
+                _session.World.IsIntermission ? _session.World.CountdownRemainingSeconds() : null);
         }
 
         // P306 — end of frame: if this render was a capture frame, restore the
@@ -1832,12 +1936,12 @@ public sealed partial class Game1
         var world = _session.World;
         DataClusterIGC? sky = null;
         if (world.MyShipId is { } m && world.Ships.TryGetValue(m, out var ownS)
-            && world.Clusters.TryGetValue(ownS.SectorId, out var dc))
+            && world.Clusters.TryGetValue(RenderSector(ownS.SectorId), out var dc))
         {
             sky = dc;
-            if (ownS.SectorId != _skySector)
+            if (RenderSector(ownS.SectorId) != _skySector)
             {
-                _skySector = ownS.SectorId;
+                _skySector = RenderSector(ownS.SectorId);
                 _blackSky.SetCluster(dc);
                 _nativeSky.SetCluster(dc);
                 _hdSky.SetCluster(dc);
@@ -1923,6 +2027,8 @@ public sealed partial class Game1
         if (post is null || depth is null || _softContext is null)
             return false;                                  // no fresh depth this frame
         int w = depth.Width, h = depth.Height;
+        sx = (int)(sx * (double)w / GraphicsDevice.Viewport.Width);
+        sy = (int)(sy * (double)h / GraphicsDevice.Viewport.Height);
         if (sx < 0 || sy < 0 || sx >= w || sy >= h) return false;
         // OpenGL render targets are bottom-left origin; screen coords are
         // top-left, so flip Y before sampling.
@@ -1986,6 +2092,20 @@ public sealed partial class Game1
         }
     }
 
+    /// <summary>P628 — register a far-tier sprite livery texture once per hull
+    /// look key so identical hulls share one batched draw call per type.</summary>
+    private void RegisterLodTexture(string lookKey, Texture2D tex)
+    {
+        if (_lodRegisteredTextures.Add(lookKey))
+            _shipLodSpriteRenderer?.RegisterTexture(lookKey, tex);
+    }
+
+    /// <summary>P628 — is this ship currently in the FAR tier (hysteresis-gated)?
+    /// Used to suppress engine trails / motion ribbons and the model depth
+    /// silhouette for distant sprite ships.</summary>
+    private bool IsFarLod(short id)
+        => _shipLodFar.TryGetValue(id, out var f) && f;
+
     /// <summary>
     /// P559 — gather the opaque scene geometry (ships, asteroids, stations) into
     /// the draw lists ONCE per frame, before the linear-depth pass. Running this
@@ -2015,7 +2135,11 @@ public sealed partial class Game1
         // the depth silhouettes match exactly what the color pass can draw.
         foreach (var (id, pose) in _poses)
         {
-            if (_cameraMode == CameraMode.Cockpit && id == me) continue;
+            if ((_cameraMode == CameraMode.Cockpit && id == me) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id)) continue;
+            if (!ShipInDrawnSector(id, me)) continue;
+            // P628 — far-tier ships draw as sprites, not models: no depth
+            // silhouette (their tiny point must not occlude soft smoke oddly).
+            if (IsFarLod(id)) continue;
             var xnaPos = PoseConverter.ToXna(pose.Position);
             var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
             // P566 — native depth geometry (original .mdl at native scale); else the
@@ -2042,7 +2166,7 @@ public sealed partial class Game1
         {
             if (world.Ships.TryGetValue(me, out var own))
             {
-                short mySector = own.SectorId;
+                short mySector = RenderSector(own.SectorId);
                 foreach (var (id, ast) in world.Asteroids)
                 {
                     if (ast.ClusterId != mySector) continue;
@@ -2087,7 +2211,7 @@ public sealed partial class Game1
         {
             if (world.Ships.TryGetValue(me, out var ownSt))
             {
-                short myStSector = ownSt.SectorId;
+                short myStSector = RenderSector(ownSt.SectorId);
                 _drawStations.AddRange(Rendering.StationSceneGather.ColourPass(world.Stations, myStSector, ResolveStationRadius, ResolveStationModel));
             }
         }
@@ -2408,14 +2532,18 @@ public sealed partial class Game1
                     // P618 — the live sim time scale as a percent (100 = full
                     // speed). Hidden by the renderer at full speed; shown as
                     // "TIME DILATION nn%" when the server slows the game clock.
-                    TimeDilationPercent: 100f * (float)_session.World.TimeScale);
+                    TimeDilationPercent: 100f * (float)_session.World.TimeScale,
+                    WarningMask: world.ShipWarnings.Mask);
             }
         }
         if (!_hideHud && !_directorActive && !_hudHidden)   // P572 --hide-hud; P580 the director always hides the HUD; P612 F1 HUD toggle
             _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
                 _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
                 leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
-                commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner());
+                commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner(),
+                lodOverlay: Environment.GetEnvironmentVariable("ALLEGIANCE_LOD_OVERLAY") == "1"
+                    ? $"LOD full:{_lodFullCount} far:{_lodFarCount}"
+                    : null);
 
         // P578 — the eject/death feedback overlays drawn straight onto the HUD:
         // the critical/tip lines (native SetCriticalTipText/SetTipText), the
@@ -2456,10 +2584,12 @@ public sealed partial class Game1
 
             // Self-expire when RipcordSpeed seconds have elapsed since the
             // activation was decoded (abort clears it sooner via RIPCORD_ABORTED).
-            if (world.RipcordActiveSinceLocalMs is { } start)
+            if (world.RipcordActiveSinceLocalMs is not null)
             {
                 float dur = RipcordDurationSeconds(world);
-                if (dur > 0f && (Environment.TickCount64 - start) / 1000.0 >= dur)
+                float left = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
+                    world.RipcordActiveSinceLocalMs, Environment.TickCount64, dur, world.TimeScale);
+                if (dur > 0f && left <= 0f)
                 {
                     world.ClearRipcord();
                     return null;
@@ -2527,6 +2657,7 @@ public sealed partial class Game1
         // event cadence is unspecified, so the port uses a fixed ~400 ms phase.
         bool flashOn = (((long)gameTime.TotalGameTime.TotalMilliseconds / 400) & 1) == 0;
         var warningSnapshot = new Dictionary<short, short>();
+        var highlights = new HashSet<short>();
         var sites = new List<StarmapLayout.ClusterSite>();
         IReadOnlyList<ClusterInfo.WarpEdge>? edges = null;
         short? current = null;
@@ -2538,6 +2669,7 @@ public sealed partial class Game1
         IReadOnlyDictionary<short, int>? knownEnemySectors = null;
         lock (_session.Gate)
         {
+            highlights.UnionWith(world.HighlightedClusters);
             if (world.Graph is { } g)
             {
                 edges = g.Warps;
@@ -2633,7 +2765,7 @@ public sealed partial class Game1
             float panelY = (vp.Height - panelH) / 2f;
             _starmapRenderer.Draw(sites, edges, current, _selectedSectorId,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors);
+                flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors, highlights);
             if (pane is { } p)
                 _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH,
                     world.MySideId is { } mySide && sideColors.TryGetValue(mySide, out var mc) ? mc : (Color?)null);
@@ -2644,7 +2776,7 @@ public sealed partial class Game1
             // mini-map — current sector + warp topology at a glance, always on.
             _starmapRenderer.DrawMini(sites, edges, current,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, owners, SideColor, knownEnemySectors);
+                flashOn, vp, owners, SideColor, knownEnemySectors, highlights);
         }
     }
 
@@ -2693,7 +2825,7 @@ public sealed partial class Game1
         {
             if (world.MyShipId is not { } me) return;
             if (!world.Ships.TryGetValue(me, out var ownEnt)) return;
-            short mySector = ownEnt.SectorId;
+            short mySector = RenderSector(ownEnt.SectorId);
             // P624 — radar mode filter (All/Default/Target/Minimal) + my side for
             // the enemy/friendly test; snapshot under the gate with everything else.
             var radarMode = _radarMode;
@@ -2709,7 +2841,7 @@ public sealed partial class Game1
                 if (ownEnt.Latest is not { } ownUp) return;
                 ownSimPos = ownUp.Position;
             }
-            var ownPos = PoseConverter.ToXna(ownSimPos);
+            // Project with the eye that drew the scene, including commanding and drone views.
 
             // P326 — the former local function Add(...) is inlined below (it
             // captured per-frame state — ownPos/view/proj/w/h/inset and the
@@ -2721,7 +2853,7 @@ public sealed partial class Game1
             // otherwise still match mySector and show on the radar frozen).
             foreach (var (id, ship) in world.Ships)
             {
-                if (id == me || ship.IsNotVisible) continue;
+                if (id == me || ship.IsNotVisible || ship.Unknown || ship.ParentId >= 0) continue;
                 if (ship.SectorId != mySector) continue;
                 if (ship.Latest is not { }) continue;                     // keep the Latest gate
                 // P527 — anchor to the pose the renderer drew THIS frame (P448b
@@ -2731,7 +2863,7 @@ public sealed partial class Game1
                 // steady miner). Fallback to raw only when not rendered.
                 if (!ResolveRadarContactAnchor(_poses, world.Ships, id, out var shipPos)) continue;
                 var site = RadarProjection.Project(
-                    PoseConverter.ToXna(shipPos), ownPos, view, proj, w, h, inset);
+                    PoseConverter.ToXna(shipPos), cameraEye, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownSimPos - shipPos).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 // P372 — resolve the contact's REAL side colour from the side
@@ -2769,7 +2901,7 @@ public sealed partial class Game1
                 if (st.ClusterId != mySector) continue;
                 var sp = Vec(st.Position);
                 var site = RadarProjection.Project(
-                    PoseConverter.ToXna(sp), ownPos, view, proj, w, h, inset);
+                    PoseConverter.ToXna(sp), cameraEye, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownSimPos - sp).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 bool isSel = RadarTargetSelection.IsSelected(
@@ -2788,7 +2920,7 @@ public sealed partial class Game1
                 if (wp.ClusterId != mySector) continue;
                 var wPos = Vec(wp.Position);
                 var site = RadarProjection.Project(
-                    PoseConverter.ToXna(wPos), ownPos, view, proj, w, h, inset);
+                    PoseConverter.ToXna(wPos), cameraEye, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownSimPos - wPos).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 bool isSel = RadarTargetSelection.IsSelected(
@@ -2815,7 +2947,7 @@ public sealed partial class Game1
                     if (ast.ClusterId != mySector) continue;
                     if (!RadarInvestAsteroidSelection.IsBuildSpot(investAabm, ast.AabmCapabilities)) continue;
                     var aPos = PoseConverter.ToXna(Vec(ast.Position));
-                    var aSite = RadarProjection.Project(aPos, ownPos, view, proj, w, h, inset);
+                    var aSite = RadarProjection.Project(aPos, cameraEye, view, proj, w, h, inset);
                     float aOp = RadarBracketLayout.Opacity((ownSimPos - Vec(ast.Position)).Length(),
                         RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                     _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
@@ -3038,16 +3170,14 @@ public sealed partial class Game1
     /// </summary>
     private int FixedMountCount()
     {
-        var world = _session.World;
-        if (world.MyShipId is { } me
-            && world.Ships.TryGetValue(me, out var ent)
-            && ent.Loadout is { Count: > 0 } lo)
+        lock (_session.Gate)
         {
-            int mounts = lo.Select(p => p.MountId).Where(m => m >= 0).Distinct().Count();
-            if (mounts > 0)
-                return Math.Min(mounts, ShipControlState.SelectedWeaponMask + 1);
+            if (_session.World.MyShipId is { } id && _session.World.Ships.TryGetValue(id, out var ship)
+                && _shopCatalog is { } catalog)
+                foreach (var hull in catalog.Hulls)
+                    if (hull.HullId == ship.HullId) return hull.MaxFixedWeapons;
         }
-        return ShipControlState.SelectedWeaponMask + 1;
+        return 0;
     }
 
     /// <summary>Adopt the sim's <c>float[3]</c> wire position as a <see cref="SimVec"/>.</summary>

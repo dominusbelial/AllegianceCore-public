@@ -1,0 +1,84 @@
+1104bd3a 2026-08-30 P19: wire combat into the live server/bot loop
+c9d3e054 2026-08-30 P25: port FM_CS_CHATMESSAGE(23), wire it live (Everyone + Team)
+511278b9 2026-08-30 P26: port FM_CS_NEW_SHIP_INSTANCE(31), send it before SET_CLUSTER
+ec908746 2026-08-30 P27: port FM_S_EXPORT(26), send it (replacing inert NEW_SHIP_INSTANCE) before SET_CLUSTER
+7df45738 2026-08-30 P28: send FM_S_BUY_LOADOUT_ACK(5) after SET_CLUSTER so the client's dummy ship adopts a real hull
+7746abf8 2026-08-31 P29: port FM_S_MISSIONDEF(38)+FM_S_JOINED_MISSION(95), send before EXPORT so the client loads its static core
+07d20fb9 2026-08-31 P30: export every sector (FM_S_EXPORT 26 / OT_cluster 13) before SET_CLUSTER
+8c3e6790 2026-08-31 P31a: port + send FM_S_PLAYERINFO(10), the side-carrier the SET_CLUSTER handler was missing
+3f7ac0ca 2026-08-31 P33: wire Individual/NoFilter, AllSector, FriendlySector, Group chat targets
+28910ac5 2026-08-31 P33: fix the real WOPR-movement blocker chain -- FM_C_SHIP_UPDATE now flows
+7f143edf 2026-08-31 P37: send FM_S_MISSION_STAGE -- real WOPR bot flight confirmed, first time ever
+cc366830 2026-09-01 P40: send FM_S_SHIP_STATUS -- ScoutExploreMap's primary sweep engages for the first time
+e9a4e78a 2026-09-01 P43: live-combat spectator backend (state broadcast + WebSocket bridge)
+8b52b768 2026-09-01 P47: send FM_S_CLUSTERINFO(200) so ScoutExploreMap's smart targets can engage
+957af812 2026-09-01 P51: wire up PAYDAY (fmid 114) on a 60s cadence
+ba55dc2d 2026-09-02 P53: real docking — arrive -> dock, request -> undock (wire visibility via existing SHIP_STATUS)
+1916abd1 2026-09-02 P54: send FM_S_DOCKED(61) on dock — the trigger that makes native ship.GetStation() resolve
+51fac5a0 2026-09-02 P55: real asteroid mining (part 1) — accumulate ore, wire-visible, no sell
+8cc220bf 2026-09-02 P58: broadcast same-side teammate SHIP_STATUS to each peer
+9e28473a 2026-09-02 P61: real per-part loadout (FM_C_BUY_LOADOUT(4) + real BUY_LOADOUT_ACK tail)
+a9f2cd17 2026-09-03 P62: broadcast a real teammate-ship EXPORT to each peer, once, before its status
+9fc49edc 2026-09-03 P63: broadcast a real teammate-ship PLAYERINFO to each peer, once, after its EXPORT
+d4f35df4 2026-09-03 P67: relay FM_CS_CHATBUOY(108) to selected chat peers
+991fd5f6 2026-09-07 P88: broadcast real projectile instances (Phase 2, slice 2)
+0b2b9f31 2026-09-07 P89: missile wire codecs (wire layer only) (Phase 2, slice 3)
+ed5f9933 2026-09-07 P90: minimal non-homing Missile sim object + fire/destroy same-side broadcast (Phase 2, slice 4)
+c32cae5e 2026-09-07 P93: mine wire codecs (Phase 2, slice 6, wire layer only)
+b235d6e4 2026-09-07 P94: minimal static Mine sim object + deploy/destroy same-side broadcast (Phase 2, slice 7)
+aa298fd4 2026-09-07 P98: probe wire codecs — DataProbeExport / ExportProbe (FM_S_EXPORT 26, OT_probe 4) + ProbeDestroyed (85)
+d49db4c7 2026-09-07 P99: minimal static Probe sim object + same-side create/destroy broadcast
+7ff1433f 2026-09-07 P101: warp bombing — missile-vs-warp trigger, whole-mission WARP_BOMB(188) broadcast, 15s delayed real explosion
+8baf38bd 2026-09-08 P102: asteroid combat destructibility — direct-hit target in ResolveCombatCollisions + Asteroid.ReceiveDamage + whole-mission ASTEROID_DESTROYED(86) broadcast
+2c50e3e2 2026-09-08 P103: FM_C_SUICIDE(80) death slice reuses the combat kill path + FM_S_SHIP_DELETE(20) SDR_KILLED-only broadcast on every ship death
+68dbb02b 2026-09-08 P104: wire codecs FM_S_OBJECT_SPOTTED(6) + FM_S_PLAYER_RESCUED(16), wire only — no trigger
+9a20ceaf 2026-09-08 P105: player-death auto-respawn + FM_S_ENTER_LIFEPOD(166), hooked at the exact P103 seam
+6b7c82b6 2026-09-08 P106: FM_C/S_VIEW_CLUSTER(104/177) docked spectator/map-view request-reply (no new server-side per-player state; reuses same-side visibility gate Server.cs:521)
+4cc5532c 2026-09-08 P108: BOARD_SHIP(103)/BOARD_NACK(178)/LEAVE_SHIP(94) occupancy slice — a player boards another's ship as turret gunner/observer
+bf2ba30a 2026-09-08 P109: TURRET_GUNNER_BINDING — a boarded turret gunner actually crews the carrier's weapon: FM_C_ACTIVE/INACTIVE_TURRET_UPDATE(99/100) wire codecs + server handl
+28413e3a 2026-09-08 P110: TELEPORT_ACK(102) — extend the existing FM_C_DOCKED(48) handler to serve the non-NA teleport/relocation dock request. New FM_S_TELEPORT_ACK(102) codec (st
+357d3dd4 2026-09-08 P111: RIPCORD_REQUEST(184)/RIPCORD_ACTIVATE(185)/RIPCORD_DENIED(186)/RIPCORD_ABORTED(187) — ship ripcord request/activate/deny/abort handshake
+8cc8935d 2026-09-09 P115: RESCUE_SHIP_EVENT — real PLAYER_RESCUED(16) trigger
+43cfd6ee 2026-09-09 P117: RELAUNCH_SHIP real effect — ship-level resupply + launch-slot reposition + broadcast
+a5529e1c 2026-09-09 P118: MONEY_CHANGE(60) + SET_MONEY(115) — the first Phase 4 task
+28c1e806 2026-09-09 P119: bucket construction funding — BUCKET_DONATE(64)/BUCKET_STATUS(65)/CREATE_BUCKETS(191)
+764cd04e 2026-09-09 P120: ASTEROID_MINED(198) real-time ore broadcast — whole-mission, finishes the MineAsteroidEvent seam
+78a724f8 2026-09-09 P121: SET_BRIEFING_TEXT(9) join-sync mission briefing
+b7fdacf2 2026-09-09 P122: PLAYER_DONATE(67)/AUTODONATE(112/116)/REQUEST_MONEY(182) -- confirmed N/A
+96e85f85 2026-09-09 P123: Treasure pickup (cash-only) — TREASURE(28)/DESTROY_TREASURE(30)/ACQUIRE_TREASURE(162)/TREASURE_ACK(163)/TREASURE_SETS(89)
+b23c6011 2026-09-09 P124: SIDE_TECH_CHANGE(75)/SIDE_ATTRIBUTE_CHANGE(76)/POSTER(27) -- confirmed N/A (findings)
+a2d91b09 2026-09-09 P125: Station combat damage + STATION_DESTROYED(59) — shield-absorbs-then-overflows-to-armor (CstationIGC::ReceiveDamage port), live ArmorFraction/ShieldFractio
+a0dc9343 2026-09-10 P126: STATION_CAPTURE(58) — hostile docking captures an enemy station
+f695d3fc 2026-09-10 P127: FM_CS_LOGOFF(3) — graceful client-initiated disconnect. Zero-field CS echo codec (Wire/Logoff.cs, mirrors Suicide.cs). Handler echoes the same message bac
+d3d0fc83 2026-09-10 P128: SHIP_DELETE SDR_LOGGEDOFF(4) — retire the zombie ship a disconnected player leaves behind
+20221cd9 2026-09-10 P129: MUTE(117)/STATIC_MAP_INFO(11)/ICQ_CHAT_ACK(107) -- confirmed N/A
+95127ee8 2026-09-10 P130: RANK_INFO(13) — join-sync rank table. Wire/RankInfo.cs codec (FM_VAR_ITEM ranks + short cRanks; RankInfoEntry 36 B under default MSVC packing per Messages
+207b18f9 2026-09-10 P132: periodic cross-side detection sweep — wires P131's foundation in
+c5c03ad8 2026-09-10 P133: STATIONS_UPDATE(57) — per-side visible-station hull/shield sync
+5d236af4 2026-09-10 P134: ASTEROIDS_UPDATE(179) — per-side visible-asteroid sync
+830e6a16 2026-09-10 P135: PROBES_UPDATE(92) — per-side visible-probe sync
+d2e9e7eb 2026-09-10 P139: per-player LIGHT/HEAVY_SHIPS_UPDATE broadcast — "see other ships" live
+3a28d7d0 2026-09-10 P141: ENTER_GAME(128) — join-sync completion notification
+b1194eed 2026-09-10 P142: HIGHLIGHT_CLUSTER(199) — sector-highlight relay to the sender's side
+e0ecc3ad 2026-09-10 P143: SWAP_PART(34) — in-space mounted-part slot swap (sector-wide broadcast)
+e9dd08c9 2026-09-10 P144: DROP_PART(33) — in-space part-drop, creating a real part-type treasure (first FM_S_TREASURE send)
+9929f852 2026-09-10 P145: ADD_PART(164) — treasure-ack mount placement (pickup round-trip)
+7028b665 2026-09-10 P146: SET_WINGID(106) — wing-group membership tag, side-wide relay
+92c20033 2026-09-10 P147: NPC ship existence + visibility (ORDER_CHANGE Stage 1) — ownerless Ship in sector flows into peers' HEAVY_SHIPS_UPDATE with zero new broadcast code
+e73fe688 2026-09-10 P148: ORDER_CHANGE(93) Stage 2 — command a docked NPC to stay docked
+6b8f3340 2026-09-10 P150: ORDER_CHANGE(93) Stage 4 — command a flying NPC to return to base
+54d6e29d 2026-09-10 P152: ORDER_CHANGE(93) Stage 6 — command a docked NPC to launch
+09105982 2026-09-10 P153: ORDER_CHANGE(93) generic non-NPC path — a real player locks a target
+b63fbb74 2026-09-10 P154: ORDER_CHANGE(93) real-player c_cmdAccepted generic path — accept an order
+58f9dd01 2026-09-11 P164: BUILDINGEFFECT_DESTROYED(181) wire (Stage 2) — interrupted-build whole-mission broadcast
+c7f66482 2026-09-12 P173: wire FM_S_LOADOUT_CHANGE(96) — broadcast a ship's loadout to visible peers
+0800be0c 2026-09-12 P178: win-by-elimination detection + simplified GAME_OVER(62)
+7f5c4232 2026-09-12 P182: chaff/countermeasures — Chaff sim model, Ship.DeployChaff spoof loop, FIRE_EXPENDABLE(82) dispatch + 5 wire codecs
+b8e78ce1 2026-09-12 P187: ballot/voting system — #resign/#draw/#mutiny, BALLOT(17)/CANCEL_BALLOT(18)/VOTE(19), per-mission pending-ballot state + OnPassed effects
+2fd719b6 2026-09-12 P190: team alliances — CHANGE_ALLIANCE(196)/CHANGE_ALLIANCES(197) wire codecs, per-side AllyGroup, UpdateAlliances merge/clear port, owner-gate hardening beyond
+e00c75a2 2026-09-13 P191: conquest/territory game mode — GAME_STATE(155), station-based win conditions
+dfeb0c5a 2026-09-13 P192: cargo bays + RELOAD(129) — separate Ship.CargoHold, cargo-aware SWAP_PART dispatch
+faaf26bf 2026-09-13 P194: GAME_OVER_PLAYERS(63) — per-player endgame broadcast on the shared DeclareGameOver hook
+d0e800ba 2026-09-13 P195: RANDOMIZE_TEAMS(21) — rank-balanced side reassignment (highest-rank-first greedy rebalance across real sides)
+9694ae09 2026-09-13 P199: REQUEST_MONEY(182) — ask whoever holds the team's funds
+a69c2886 2026-09-13 P200: PINGDATA(194)/REQPINGDATA(195) server-wide latency roster

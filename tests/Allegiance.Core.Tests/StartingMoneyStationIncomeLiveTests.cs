@@ -181,8 +181,8 @@ public class StartingMoneyStationIncomeLiveTests
         PumpTo(server, startedAt + 62, 2000);
         Assert.Single(botA.Paydays);
         Assert.Single(botB.Paydays);
-        long periodicA = (long)(Mission.IncomePerPayday * (1.0f + sa.Civilization.IncomeMoney));
-        long periodicB = (long)(Mission.IncomePerPayday * (1.0f + sb.Civilization.IncomeMoney));
+        long periodicA = (long)(mission.IncomePerPayday * (1.0f + sa.Civilization.IncomeMoney));
+        long periodicB = (long)(mission.IncomePerPayday * (1.0f + sb.Civilization.IncomeMoney));
         Assert.Equal(periodicA, botA.Paydays[0].DMoney);
         Assert.Equal(periodicB, botB.Paydays[0].DMoney);
 
@@ -222,7 +222,7 @@ public class StartingMoneyStationIncomeLiveTests
 
         var side = mission.Sides.Single(s => s.Id == mySide);
         long placedIncome = 2000 + 2000 + 180;   // real SpecMine(Si)×2 + Transceiver×1
-        long baseIncome = (long)(Mission.IncomePerPayday * (1.0f + side.Civilization.IncomeMoney));
+        long baseIncome = (long)(mission.IncomePerPayday * (1.0f + side.Civilization.IncomeMoney));
         long expected = baseIncome + placedIncome;
 
         bot.ResetPaydays();
@@ -267,8 +267,8 @@ public class StartingMoneyStationIncomeLiveTests
         FltBot onB = onA == botA ? botB : botA;
         var sideA0 = mission.Sides.Single(s => s.Id == sideA);
         var sideB0 = mission.Sides.Single(s => s.Id == sideB);
-        long baseA = (long)(Mission.IncomePerPayday * (1.0f + sideA0.Civilization.IncomeMoney));
-        long baseB = (long)(Mission.IncomePerPayday * (1.0f + sideB0.Civilization.IncomeMoney));
+        long baseA = (long)(mission.IncomePerPayday * (1.0f + sideA0.Civilization.IncomeMoney));
+        long baseB = (long)(mission.IncomePerPayday * (1.0f + sideB0.Civilization.IncomeMoney));
 
         onA.ResetPaydays(); onB.ResetPaydays();
         PumpTo(server, 61.0, 2000);              // first payday: mine still A's

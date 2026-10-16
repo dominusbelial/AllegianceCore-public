@@ -20,20 +20,30 @@ namespace Allegiance.Server;
 public sealed partial class Server
 {
 
-    /// <summary>Unpack, validate and answer one inbound packet. At the headless
-    /// milestone the only message a client is expected to send is the logon
-    /// request; anything else is reported and ignored (no crash).</summary>
+    /// <summary>Synchronous entry retained for packet-level regression fixtures.
+    /// Live receives use the same dispatcher with worker-prepared commands when
+    /// receive.decouple is enabled.</summary>
     private void ProcessDatagram(ConnectionId from, byte[] data)
-    {
-        byte[][] messages;
-        try { messages = FedPacket.Unpack(data); }
-        catch (FedCrcException e) { Console.WriteLine($"[wire] crc/ framing failure from {from}: {e.Message}"); return; }
+        => ProcessInboundPacket(from, InboundPacket.Prepare(data, decode: false));
 
-        foreach (var m in messages)
+    private void ProcessInboundPacket(ConnectionId from, InboundPacket inbound)
+    {
+        if (inbound.Error is { } error)
         {
-            ushort fmid;
-            try { fmid = FedMessageHeader.Read(m).Fmid; }
-            catch (Exception e) { Console.WriteLine($"[wire] bad message header from {from}: {e.Message}"); continue; }
+            Console.WriteLine($"[wire] crc/ framing failure from {from}: {error.Message}");
+            return;
+        }
+
+        foreach (var command in inbound.Messages)
+        {
+            var m = command.Bytes;
+            if (command.BadHeader)
+            {
+                Console.WriteLine($"[wire] bad message header from {from}: FedMessageHeader needs >= 4 bytes");
+                continue;
+            }
+            ushort fmid = command.Fmid;
+            _host.InboundTrace?.Message(from, fmid, m.Length);
 
             if (fmid == Ping.Fmid)   // FM_CS_PING (Messages.h:280-284)
             {
@@ -47,7 +57,7 @@ public sealed partial class Server
                 // game state (even with no mission assigned).
                 try
                 {
-                    var ping = Ping.Decode(m);
+                    var ping = command.Read<Ping>();
                     // P645 — rate-limit client-triggered replies: the native
                     // client pings at most once per ~6 s (clintlib.cpp:2052-2085
                     // CheckServerLag, maxLagCheck=6.0f), so a peer exceeding the
@@ -76,8 +86,24 @@ public sealed partial class Server
             if (fmid == LogonRequest.Fmid)
             {
                 LogonRequest req;
-                try { req = LogonRequest.Decode(m); }
+                try { req = command.Read<LogonRequest>(); }
                 catch (Exception e) { Console.WriteLine($"[wire] bad LOGONREQ from {from}: {e.Message}"); continue; }
+
+                // P654 (H-28) — reject an out-of-range / control-character
+                // CharacterName up front (before any allocation or seating).
+                // Native: c_cbName = c_cbNameDB + 1 = 25, usable name = 24
+                // (_Utility/Utility.h:60,64); boots when there is no NUL within
+                // it (FedSrv.CPP:5817-5818). A 24+ name or one containing
+                // control/format chars is refused (rate-limited log).
+                if (req.CharacterName is { Length: > 0 } rn && HasIllegalName(rn))
+                {
+                    var nl = _duplicateLogonLog.Ticket(from.Value);
+                    if (nl.Emit)
+                        Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(rn)}': CharacterName rejected (length {rn.Length} > 24 or illegal chars; native c_cbName=25, H-28)");
+                    else if (nl.Summarize)
+                        Console.WriteLine($"[logon] {from}: {nl.Suppressed} more illegal CharacterNames refused (rate-limited)");
+                    continue;
+                }
 
                 // P646 (review finding H3) — ONE LOGON PER CONNECTION. Native
                 // asserts an existing player never sends LOGONREQ
@@ -121,7 +147,20 @@ public sealed partial class Server
                     continue;
                 }
 
-                var validated = req.VersionMatches;
+                // Native private standalone joins refuse duplicate names, case
+                // insensitively (FedSrv/FedSrv.CPP:600-624). USEAUTH instead
+                // removes the old player (:629; fsmission.cpp:1248-1276).
+                // Refuse the newcomer explicitly: an untrusted name must never
+                // evict an existing player. Reserve names during side selection
+                // too, before allocating ids or authenticating privileges.
+                var duplicateName = req.VersionMatches && _missions.Count > 0
+                    && (_pendingSideSelect.Values.Any(p => string.Equals(p.Request.CharacterName ?? "", req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase))
+                        || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])
+                            && _peerNames.TryGetValue(p.Key, out var name)
+                            && string.Equals(name, req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase)));
+                var validated = req.VersionMatches && !duplicateName;
+                var failureReason = duplicateName ? "character name already in use in this mission" : "wrong client version";
+                if (validated) AuthenticatePrivileges(from, req);
                 // P619c — grant a connected HUMAN client (a character name NOT
                 // under the MCP harness prefix) the longer transport liveness
                 // grace, so a real player whose machine hiccups (OBS, a heavy
@@ -160,11 +199,11 @@ public sealed partial class Server
 
                 var ack = new LogonAck
                 {
-                    CharNameOrFailureReason = validated ? $"Welcome {req.CharacterName}" : "wrong client version",
+                    CharNameOrFailureReason = validated ? $"Welcome {req.CharacterName}" : failureReason,
                     TimeServer = (uint)req.Time + 1,
                     ShipID = validated ? shipId : (short)0,
                     FValidated = validated,
-                    FRetry = !validated,
+                    FRetry = !req.VersionMatches,
                     Cookie = (byte)(req.DwCookie & 0xFF),
                 };
                 SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
@@ -193,7 +232,7 @@ public sealed partial class Server
                 // position/velocity/orientation echoes are ignored as authority.
                 try
                 {
-                    var u = ShipUpdate.Decode(m);
+                    var u = command.Read<ShipUpdate>();
                     if (_peerShips.TryGetValue(from, out var live))
                     {
                         // P180 — a genuine pre-game hold: while the mission is
@@ -214,7 +253,7 @@ public sealed partial class Server
                             EnsurePeerUpdate(from).DroppedBoarded++;
                             ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id}: boarded gunner — SHIP_UPDATE ignored, use ACTIVE_TURRET_UPDATE (FedSrv.CPP:4859)");
                         }
-                        else if (live.Ship.Sector is null)
+                        else if (live.Ship.Sector is null || live.Ship.StationId is not null)
                         {
                             // P518 — native also requires the ship to be IN a
                             // cluster (FedSrv.CPP:4857 `pship->GetCluster()`);
@@ -297,9 +336,9 @@ public sealed partial class Server
                 // sender actually being a boarded gunner (FedSrv.CPP:4873-4875).
                 try
                 {
-                    var u = ActiveTurretUpdate.Decode(m);
+                    var u = command.Read<ActiveTurretUpdate>();
                     if (_peerShips.TryGetValue(from, out var live))
-                        HandleActiveTurretUpdate(live.Ship, u.Atu);
+                        HandleActiveTurretUpdate(from, live.Ship, u.Atu);
                     else
                         ConsoleLog.Write($"[turret] {from}: no ship — ACTIVE_TURRET_UPDATE ignored");
                 }
@@ -315,18 +354,18 @@ public sealed partial class Server
                 // Clears the same "shooting" state bit ACTIVE_TURRET_UPDATE set.
                 try
                 {
-                    _ = InactiveTurretUpdate.Decode(m);   // no fields; decode validates cbmsg=4
+                    _ = command.Read<InactiveTurretUpdate>();   // no fields; decode validates cbmsg=4
                     if (_peerShips.TryGetValue(from, out var live))
                     {
                         var gunner = live.Ship;
-                        if (gunner.Sector is not null && gunner.ParentShip is not null && gunner.TurretId is not null)
+                        if (gunner.Mission?.Stage == MissionStage.Started && gunner.StationId is null && gunner.Sector is not null && gunner.ParentShip is { StationId: null } && gunner.TurretId is not null)
                         {
                             // Native server-side stop-shooting: SetInactiveTurretUpdate
                             // → GetIGCShip()->SetStateM(0) (fsship.cpp:1223) — a full
                             // assignment to 0, clearing the weaponsMaskIGC "shooting"
                             // bit (and every other state bit) exactly as native does.
                             gunner.StateM = 0;
-                            Console.WriteLine($"[turret] ship {gunner.Id} INACTIVE_TURRET_UPDATE — SetStateM(0) (stop shooting, fsship.cpp:1223)");
+                            if (ShouldLogTurret(from)) ConsoleLog.Write($"[turret] ship {gunner.Id} INACTIVE_TURRET_UPDATE — SetStateM(0) (stop shooting, fsship.cpp:1223)");
                         }
                         else
                         {
@@ -358,7 +397,7 @@ public sealed partial class Server
                 // crash the server). Matches README's "report and ignore" rule.
                 try
                 {
-                    var chat = ChatMessage.Decode(m);
+                    var chat = command.Read<ChatMessage>();
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
                         ConsoleLog.Write($"[chat] {from}: chat from a peer with no ship — ignored");
@@ -373,24 +412,48 @@ public sealed partial class Server
                         if (!TryHandleAdminCheat(from, senderLive.Ship, chat)
                             && !TryHandleBallotCommand(from, senderLive.Ship, chat.Message))
                         {
-                            var targets = SelectChatTargets(from, chat, senderLive.Ship.SideId);
-                            Console.WriteLine($"[chat] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} '{chat.Message}' " +
-                                              $"target {chat.ChatTarget} -> {targets.Length} peer(s)");
-                            if (targets.Length > 0)
+                            // P654 (H-24) — the per-peer chat budget (native's
+                            // DecrementChatBudget, FedSrv.CPP:3372 / fsship.h:449-465):
+                            // when a peer has exhausted its token bucket, the relay is
+                            // dropped so one chatter cannot amplify into an unbounded
+                            // N-fold fan-out that disconnects recipients (H-05).
+                            if (!TryChargeChatBudget(from))
                             {
-                                byte[] packet = FedPacket.Pack(new[] { m });
-                                foreach (var t in targets) SendPeer(t, packet);
+                                ConsoleLog.Write($"[chat] {from}: chat budget exhausted — message dropped (native chat budget, H-24)");
                             }
-                            // P457 — a relayed COMMAND chat (real CommandID, non-
-                            // Everyone target) queues a queued order on each same-side
-                            // real-player recipient the relay delivers to.
-                            QueueOrdersFromRelayedChat(from, senderLive.Ship, chat, targets);
+                            else
+                            {
+                                var targets = SelectChatTargets(from, chat, senderLive.Ship.SideId);
+                                Console.WriteLine($"[chat] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} '{ConsoleLog.Sanitize(chat.Message, 128)}' " +
+                                                  $"target {chat.ChatTarget} -> {targets.Length} peer(s)");
+                                if (targets.Length > 0)
+                                {
+                                    // P654 (H-05/H-10) — re-encode the relay from the
+                                    // decoded fields instead of forwarding the client's
+                                    // raw bytes: cap the message length (native UI ~255)
+                                    // and stamp the sender's OWN ship id into sidSender
+                                    // (native overwrites pfmChat->cd.sidSender =
+                                    // GetObjectID(), FedSrv.CPP:5249), so an oversized
+                                    // message cannot be amplified verbatim and a forged
+                                    // sender cannot be impersonated.
+                                    var outChat = chat;
+                                    if (outChat.Message.Length > 255)
+                                        outChat.Message = outChat.Message.Substring(0, 255);
+                                    outChat.Cd.SidSender = senderLive.Ship.Id;
+                                    byte[] packet = FedPacket.Pack(new[] { outChat.Encode() });
+                                    foreach (var t in targets) SendPeer(t, packet);
+                                }
+                                // P457 — a relayed COMMAND chat (real CommandID, non-
+                                // Everyone target) queues a queued order on each same-side
+                                // real-player recipient the relay delivers to.
+                                QueueOrdersFromRelayedChat(from, senderLive.Ship, chat, targets);
 
-                            // P469 — an Individual-family chat naming a same-side NPC
-                            // with a legal CommandID makes that DRONE obey the order
-                            // immediately (native CommandToDrone, FedSrv.CPP:3557-3573).
-                            // Real-player recipients are owned by the P457 path above.
-                            TryCommandToDrone(from, senderLive.Ship, chat);
+                                // P469 — an Individual-family chat naming a same-side NPC
+                                // with a legal CommandID makes that DRONE obey the order
+                                // immediately (native CommandToDrone, FedSrv.CPP:3557-3573).
+                                // Real-player recipients are owned by the P457 path above.
+                                TryCommandToDrone(from, senderLive.Ship, chat);
+                            }
                         }
                     }
                 }
@@ -410,7 +473,7 @@ public sealed partial class Server
                 // logged and ignored — never fatal, never creates a ballot.
                 try
                 {
-                    var vote = Vote.Decode(m);
+                    var vote = command.Read<Vote>();
                     if (!_peerShips.TryGetValue(from, out var voterLive))
                     {
                         ConsoleLog.Write($"[vote] {from}: VOTE from a peer with no ship — ignored");
@@ -459,59 +522,85 @@ public sealed partial class Server
                 // CS_PING's echo and ChatMessage's own relay, Server.cs:1281).
                 try
                 {
-                    var buoy = ChatBuoy.Decode(m);
+                    var buoy = command.Read<ChatBuoy>();
+                    // Native stage gate: FedSrv/FedSrv.CPP:5297. Reject poisoned
+                    // positions before routing, orders, logging or relay.
+                    if (!_peerShips.TryGetValue(from, out var buoySender)
+                        || buoySender.Ship.Mission?.Stage != MissionStage.Started
+                        || buoy.Db.Position.Any(v => !float.IsFinite(v))) continue;
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
                         ConsoleLog.Write($"[chatbuoy] {from}: chat from a peer with no ship — ignored");
                     }
                     else
                     {
-                        var targets = SelectChatTargets(from, buoy, senderLive.Ship.SideId);
-                        Console.WriteLine($"[chatbuoy] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} " +
-                                          $"'{buoy.Message}' target {buoy.ChatTarget} buoy {buoy.Db.BuoyId} -> {targets.Length} peer(s)");
-
-                        // P403 — receiving-side execution. Native's c_buoyCluster buoy is
-                        // a "go to this OTHER sector" order (deleted on arrival in the
-                        // cluster, FedSrv.CPP:3302), and ResetWaypoint gives an OT_buoy
-                        // target the plain c_oGoto objective (default case, shipIGC.cpp:
-                        // 4053,4160). This port's v1 has no wingman/squadron-selection
-                        // concept (documented in P403_BUOY_GOTO_COMMAND.md), so the
-                        // commanded ship is the SENDER's own ship — and only when the
-                        // order is addressed to it (the starmap trigger sends
-                        // Individual with oidRecipient = own ship id). The server, as the
-                        // ship's owner/simulation authority, translates the received
-                        // CHATBUOY into a real move order the ship's update loop acts on
-                        // (warp-pathing via the shared navigation resolver). A CHATBUOY
-                        // addressed to anyone else (a teammate, a team, everyone) is
-                        // still relayed as chat but does NOT re-route this sender's own
-                        // ship — commanding a different subordinate is the documented
-                        // follow-up. The relay below is unchanged — the order also still
-                        // lands in the recipient peers' Events.ChatBuoys, matching the
-                        // native echo.
-                        bool orderTargetsSelf =
-                            buoy.Cd.ChatTarget is (int)ChatTarget.Individual or (int)ChatTarget.IndividualNoFilter or (int)ChatTarget.IndividualEcho
-                            && buoy.Cd.OidRecipient == senderLive.Ship.Id;
-                        // P541 — re-route the sender's own ship ONLY when the server
-                        // actually flies it. A real P508 native client flies its own
-                        // ship locally (and steers it toward the clicked sector via its
-                        // own client autopilot); the server autopiloting it too would
-                        // fight the local sim (measured: a native-pose client's accepted
-                        // static poses pin the server's gotoing ship at spawn). Legacy /
-                        // bot senders (NativeClient false) still get the server-side
-                        // GotoPlan move (the P403 behaviour).
-                        bool serverFliesSender = !(_peerShipUpdate.TryGetValue(from, out var senderPu) && senderPu.NativeClient);
-                        if (buoy.Db.Type == DataBuoyIGC.CBuoyCluster && orderTargetsSelf && serverFliesSender)
+                        // P654 (H-24) — per-peer chat budget: when exhausted,
+                        // the CHATBUOY (its relay AND its server-side goto
+                        // translation) is dropped, bounding the N-fold relay
+                        // amplification of H-05 (native DecrementChatBudget,
+                        // FedSrv.CPP:3372).
+                        if (!TryChargeChatBudget(from))
                         {
-                            senderLive.Ship.SetGoto(new GotoOrder(
-                                GotoKind.Cluster,
-                                buoy.Db.ClusterId,
-                                Vector3.Zero));
+                            ConsoleLog.Write($"[chatbuoy] {from}: chat budget exhausted — CHATBUOY dropped (native chat budget, H-24)");
                         }
-
-                        if (targets.Length > 0)
+                        else
                         {
-                            byte[] packet = FedPacket.Pack(new[] { m });
-                            foreach (var t in targets) SendPeer(t, packet);
+                            var targets = SelectChatTargets(from, buoy, senderLive.Ship.SideId);
+                            Console.WriteLine($"[chatbuoy] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} " +
+                                              $"'{ConsoleLog.Sanitize(buoy.Message, 128)}' target {buoy.ChatTarget} buoy {buoy.Db.BuoyId} -> {targets.Length} peer(s)");
+
+                            // P403 — receiving-side execution. Native's c_buoyCluster buoy is
+                            // a "go to this OTHER sector" order (deleted on arrival in the
+                            // cluster, FedSrv.CPP:3302), and ResetWaypoint gives an OT_buoy
+                            // target the plain c_oGoto objective (default case, shipIGC.cpp:
+                            // 4053,4160). This port's v1 has no wingman/squadron-selection
+                            // concept (documented in P403_BUOY_GOTO_COMMAND.md), so the
+                            // commanded ship is the SENDER's own ship — and only when the
+                            // order is addressed to it (the starmap trigger sends
+                            // Individual with oidRecipient = own ship id). The server, as the
+                            // ship's owner/simulation authority, translates the received
+                            // CHATBUOY into a real move order the ship's update loop acts on
+                            // (warp-pathing via the shared navigation resolver). A CHATBUOY
+                            // addressed to anyone else (a teammate, a team, everyone) is
+                            // still relayed as chat but does NOT re-route this sender's own
+                            // ship — commanding a different subordinate is the documented
+                            // follow-up. The relay below is unchanged — the order also still
+                            // lands in the recipient peers' Events.ChatBuoys, matching the
+                            // native echo.
+                            bool orderTargetsSelf =
+                                buoy.Cd.ChatTarget is (int)ChatTarget.Individual or (int)ChatTarget.IndividualNoFilter or (int)ChatTarget.IndividualEcho
+                                && buoy.Cd.OidRecipient == senderLive.Ship.Id;
+                            // P541 — re-route the sender's own ship ONLY when the server
+                            // actually flies it. A real P508 native client flies its own
+                            // ship locally (and steers it toward the clicked sector via its
+                            // own client autopilot); the server autopiloting it too would
+                            // fight the local sim (measured: a native-pose client's accepted
+                            // static poses pin the server's gotoing ship at spawn). Legacy /
+                            // bot senders (NativeClient false) still get the server-side
+                            // GotoPlan move (the P403 behaviour).
+                            bool serverFliesSender = !(_peerShipUpdate.TryGetValue(from, out var senderPu) && senderPu.NativeClient);
+                            if (buoy.Db.Type == DataBuoyIGC.CBuoyCluster && orderTargetsSelf && serverFliesSender)
+                            {
+                                senderLive.Ship.SetGoto(new GotoOrder(
+                                    GotoKind.Cluster,
+                                    buoy.Db.ClusterId,
+                                    Vector3.Zero));
+                            }
+
+                            if (targets.Length > 0)
+                            {
+                                // P654 (H-05/H-10) — re-encode the relay: cap the
+                                // message and stamp the sender's OWN ship id into
+                                // sidSender (native FedSrv.CPP:5301), so an oversized
+                                // buoy cannot be amplified verbatim and its sender
+                                // cannot be spoofed.
+                                var outBuoy = buoy;
+                                if (outBuoy.Message.Length > 255)
+                                    outBuoy.Message = outBuoy.Message.Substring(0, 255);
+                                outBuoy.Cd.SidSender = senderLive.Ship.Id;
+                                byte[] packet = FedPacket.Pack(new[] { outBuoy.Encode() });
+                                foreach (var t in targets) SendPeer(t, packet);
+                            }
                         }
                     }
                 }
@@ -542,7 +631,7 @@ public sealed partial class Server
                 // so no new relay infrastructure is introduced.
                 try
                 {
-                    var hl = HighlightCluster.Decode(m);
+                    var hl = command.Read<HighlightCluster>();
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
                         ConsoleLog.Write($"[highlight] {from}: highlight from a peer with no ship — ignored");
@@ -557,8 +646,21 @@ public sealed partial class Server
                                           $"cluster {hl.ClusterId} highlight {hl.Highlight} -> {targets.Length} same-side peer(s)");
                         if (targets.Length > 0)
                         {
-                            byte[] packet = FedPacket.Pack(new[] { m });
-                            foreach (var t in targets) SendPeer(t, packet);
+                            // P654 (H-05) — re-encode the fixed-size relay from the
+                            // decoded fields instead of forwarding the client's raw
+                            // bytes (which a fixed-size decoder accepts even 65,535
+                            // bytes long) — this bounds the per-message fan-out to
+                            // exactly FixedSize bytes. Budget-charged (H-24) so a
+                            // flood cannot amplify N-fold.
+                            if (!TryChargeChatBudget(from))
+                            {
+                                ConsoleLog.Write($"[highlight] {from}: budget exhausted — HIGHLIGHT_CLUSTER dropped (H-24)");
+                            }
+                            else
+                            {
+                                byte[] packet = FedPacket.Pack(new[] { hl.Encode() });
+                                foreach (var t in targets) SendPeer(t, packet);
+                            }
                         }
                     }
                 }
@@ -592,7 +694,7 @@ public sealed partial class Server
                 //    defer the trigger" discipline).
                 try
                 {
-                    var docked = Docked.Decode(m);
+                    var docked = command.Read<Docked>();
                     if (!_peerShips.TryGetValue(from, out var undockLive))
                     {
                         ConsoleLog.Write($"[undock] {from}: dock message from a peer with no ship — ignored");
@@ -616,24 +718,6 @@ public sealed partial class Server
                     Console.WriteLine($"[wire] bad DOCKED from {from}: {e.Message}");
                 }
             }
-            else if (fmid == 35) // FM_CS_PING (Messages.h:280-283)
-            {
-                // Native's own comment is the entire spec: "just send it back
-                // to client as soon as you get it." No new codec needed --
-                // the client only cares that it gets a well-formed echo of
-                // the exact message it sent, so re-pack the raw bytes
-                // unmodified rather than decoding/re-encoding timeClient/
-                // timeServer/fmg (whose exact native byte widths aren't
-                // worth guessing at when a verbatim echo already satisfies
-                // the spec precisely). This is CommanderResearchAndExpand's
-                // own ~5s heartbeat (its AttachMessages comment: "drive
-                // infrequent updates") -- UndockMinersAndStartMining and
-                // QueueTechForAvailableMoney are only ever called from this
-                // message's client-side handler, so without this echo those
-                // never fire at all, regardless of anything else being
-                // correct server-side.
-                SendPeer(from, FedPacket.Pack(new[] { m }));
-            }
             else if (fmid == BuyLoadoutRequest.Fmid)   // FM_C_BUY_LOADOUT (Messages.h:65-68)
             {
                 // The client's requested loadout (hull + parts) — this message
@@ -643,7 +727,7 @@ public sealed partial class Server
                 // the actual mounted-part tail (nParts = real count, not 0).
                 try
                 {
-                    var buy = BuyLoadoutRequest.Decode(m);
+                    var buy = command.Read<BuyLoadoutRequest>();
                     if (!_peerShips.TryGetValue(from, out var buyLive))
                     {
                         ConsoleLog.Write($"[loadout] {from}: BUY_LOADOUT from a peer with no ship — ignored");
@@ -667,15 +751,13 @@ public sealed partial class Server
                 // no leader (a leaderless side is empty in this port — TryJoinSide
                 // seats the first player as leader), otherwise broadcast
                 // POSITIONREQ(40) whole-mission and record the pending request for
-                // the leader to approve. CheckPositionRequest's ~10 native gates are
-                // all inapplicable here (no defections/bans/squads/invites/rank/
-                // balance/server-pause — see the P184 doc); only "side still exists"
-                // is reachable, and the handler's existence check covers it before
-                // this branch is ever reached. bRejoin / AUTO_ACCEPT / PickNewSide
-                // (iSide==NA) are out of scope per the task.
+                // the leader to approve. P655 validates native's supported
+                // CheckPositionRequest rules before either path, and rechecks
+                // approvals/auto-accept after countdown or occupancy changes.
+                // Initial choices are checked before spawning a ship.
                 try
                 {
-                    var pr = PositionReq.Decode(m);
+                    var pr = command.Read<PositionReq>();
                     // P281 — the initial side-select request: a peer in
                     // _pendingSideSelect (logged on, ship not yet spawned) that
                     // sends POSITIONREQ is choosing its starting side. Record the
@@ -710,6 +792,10 @@ public sealed partial class Server
                             var deny = new DelPositionReq { ShipId = reqLive.Ship.Id, SideId = pr.SideId, Reason = DelPositionReqReason.SideGone };
                             SendPeer(from, FedPacket.Pack(new[] { deny.Encode() }));
                             ConsoleLog.Write($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SideGone) to requester only");
+                        }
+                        else if (CheckPositionRequest(mission, pr.SideId, reqLive.Ship) is { } refusal)
+                        {
+                            SendPeer(from, FedPacket.Pack([new DelPositionReq { ShipId = reqLive.Ship.Id, SideId = pr.SideId, Reason = refusal }.Encode()]));
                         }
                         else if (mission.LockSides)
                         {
@@ -771,7 +857,7 @@ public sealed partial class Server
                 // whole-mission. Silent no-op if there was no matching pending request.
                 try
                 {
-                    var pa = PositionAck.Decode(m);
+                    var pa = command.Read<PositionAck>();
                     if (!_peerShips.TryGetValue(from, out var ackLive))
                     {
                         ConsoleLog.Write($"[posack] {from}: POSITIONACK from a peer with no ship — ignored");
@@ -805,7 +891,9 @@ public sealed partial class Server
                                 {
                                     // Still exists + request still there → seat them.
                                     var targetShip = _peerShips[targetConn.Value].Ship;
-                                    TryJoinSide(targetShip, pa.SideId);
+                                    if (CheckPositionRequest(mission, pa.SideId, targetShip) is { } refusal)
+                                        SendPeer(targetConn.Value, FedPacket.Pack([new DelPositionReq { ShipId = targetShip.Id, SideId = pa.SideId, Reason = refusal }.Encode()]));
+                                    else TryJoinSide(targetShip, pa.SideId);
                                 }
                                 else
                                 {
@@ -844,7 +932,7 @@ public sealed partial class Server
                 // additional broadcast (the relay already told everyone).
                 try
                 {
-                    var del = DelPositionReq.Decode(m);
+                    var del = command.Read<DelPositionReq>();
                     if (!_peerShips.TryGetValue(from, out var delLive))
                     {
                         ConsoleLog.Write($"[delreq] {from}: DELPOSITIONREQ from a peer with no ship — ignored");
@@ -873,12 +961,21 @@ public sealed partial class Server
                             }
                             else
                             {
-                                // Relay the exact bytes whole-mission, then drop the
+                                // P654 (H-05) — re-encode the fixed-size relay from
+                                // the decoded fields (bounds fan-out to exactly the
+                                // fixed size), budget-charged (H-24), then drop the
                                 // matching request without a second broadcast.
-                                SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
-                                var targetConn = selfCancel ? (ConnectionId?)from : FindConnectionOfShip(mission, del.ShipId);
-                                if (targetConn is not null)
-                                    RemovePendingJoinRequest(targetConn.Value, del.SideId);
+                                if (!TryChargeChatBudget(from))
+                                {
+                                    ConsoleLog.Write($"[delreq] {from}: budget exhausted — DELPOSITIONREQ dropped (H-24)");
+                                }
+                                else
+                                {
+                                    SendToMissionPeers(mission, FedPacket.Pack(new[] { del.Encode() }));
+                                    var targetConn = selfCancel ? (ConnectionId?)from : FindConnectionOfShip(mission, del.ShipId);
+                                    if (targetConn is not null)
+                                        RemovePendingJoinRequest(targetConn.Value, del.SideId);
+                                }
                             }
                         }
                     }
@@ -901,7 +998,7 @@ public sealed partial class Server
                 // triggering auto-start if the mission is now fully ready.
                 try
                 {
-                    var ft = ForceTeamReady.Decode(m);
+                    var ft = command.Read<ForceTeamReady>();
                     if (!_peerShips.TryGetValue(from, out var frLive))
                     {
                         ConsoleLog.Write($"[forceready] {from}: FORCE_TEAM_READY from a peer with no ship — ignored");
@@ -923,10 +1020,18 @@ public sealed partial class Server
                         }
                         else
                         {
-                            // Forward-then-apply (native: ForwardMessage then SetForceReady).
-                            SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
-                            frSide.ForceReady = ft.FForceReady;
-                            RecomputeSideReady(frLive.Ship);
+                            // P654 (H-05/H-24) — re-encode the fixed-size relay and
+                            // budget-charge it (native ForwardMessage then SetForceReady).
+                            if (!TryChargeChatBudget(from))
+                            {
+                                ConsoleLog.Write($"[forceready] {from}: budget exhausted — FORCE_TEAM_READY dropped (H-24)");
+                            }
+                            else
+                            {
+                                SendToMissionPeers(mission, FedPacket.Pack(new[] { ft.Encode() }));
+                                frSide.ForceReady = ft.FForceReady;
+                                RecomputeSideReady(frLive.Ship);
+                            }
                         }
                     }
                 }
@@ -955,7 +1060,7 @@ public sealed partial class Server
                 // c_fMissionBriefingCountdown = 15s (igc.h:1005).
                 try
                 {
-                    _ = StartGame.Decode(m);   // zero-field marker; decode validates cbmsg=4
+                    _ = command.Read<StartGame>();   // zero-field marker; decode validates cbmsg=4
                     if (!_peerShips.TryGetValue(from, out var sgLive))
                     {
                         ConsoleLog.Write($"[startgame] {from}: START_GAME from a peer with no ship — ignored");
@@ -1007,7 +1112,7 @@ public sealed partial class Server
                 // ordinary player-initiated side-switch the lock guards.
                 try
                 {
-                    _ = RandomizeTeams.Decode(m);   // zero-field marker; decode validates cbmsg=4
+                    _ = command.Read<RandomizeTeams>();   // zero-field marker; decode validates cbmsg=4
                     if (!_peerShips.TryGetValue(from, out var rtLive))
                     {
                         ConsoleLog.Write($"[randomizeteams] {from}: RANDOMIZE_TEAMS from a peer with no ship — ignored");
@@ -1043,7 +1148,7 @@ public sealed partial class Server
                 // FedSrv.CPP:5516-5658 case FM_C_AUTODONATE.
                 try
                 {
-                    var autoDonate = AutoDonate.Decode(m);
+                    var autoDonate = command.Read<AutoDonate>();
                     if (!_peerShips.TryGetValue(from, out var adLive))
                     {
                         ConsoleLog.Write($"[autodonate] {from}: AUTODONATE from a peer with no ship — ignored");
@@ -1070,7 +1175,7 @@ public sealed partial class Server
                 // recipient resolves.
                 try
                 {
-                    var requestMoney = RequestMoney.Decode(m);
+                    var requestMoney = command.Read<RequestMoney>();
                     if (!_peerShips.TryGetValue(from, out var rmLive))
                     {
                         ConsoleLog.Write($"[requestmoney] {from}: REQUEST_MONEY from a peer with no ship — ignored");
@@ -1097,7 +1202,7 @@ public sealed partial class Server
                 // sender alone with no wallet movement.
                 try
                 {
-                    var playerDonate = PlayerDonate.Decode(m);
+                    var playerDonate = command.Read<PlayerDonate>();
                     if (!_peerShips.TryGetValue(from, out var pdLive))
                     {
                         ConsoleLog.Write($"[playerdonate] {from}: PLAYER_DONATE from a peer with no ship — ignored");
@@ -1128,7 +1233,7 @@ public sealed partial class Server
                 // for wire completeness and any future client UI only.
                 try
                 {
-                    var ll = LockLobby.Decode(m);
+                    var ll = command.Read<LockLobby>();
                     if (!_peerShips.TryGetValue(from, out var llLive))
                     {
                         ConsoleLog.Write($"[locklobby] {from}: LOCK_LOBBY from a peer with no ship — ignored");
@@ -1143,10 +1248,18 @@ public sealed partial class Server
                     }
                     else
                     {
-                        // Forward-then-apply (native: ForwardMessage then SetLockLobby).
-                        SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
-                        mission.LockLobby = ll.FLock;
-                        Console.WriteLine($"[locklobby] ship {llLive.Ship.Id}: LOCK_LOBBY fLock={ll.FLock} whole-mission, Mission.LockLobby={mission.LockLobby}");
+                        // P654 (H-05/H-24) — re-encode the fixed-size relay and
+                        // budget-charge it (native ForwardMessage then SetLockLobby).
+                        if (!TryChargeChatBudget(from))
+                        {
+                            ConsoleLog.Write($"[locklobby] {from}: budget exhausted — LOCK_LOBBY dropped (H-24)");
+                        }
+                        else
+                        {
+                            SendToMissionPeers(mission, FedPacket.Pack(new[] { ll.Encode() }));
+                            mission.LockLobby = ll.FLock;
+                            Console.WriteLine($"[locklobby] ship {llLive.Ship.Id}: LOCK_LOBBY fLock={ll.FLock} whole-mission, Mission.LockLobby={mission.LockLobby}");
+                        }
                     }
                 }
                 catch (Exception e)
@@ -1166,7 +1279,7 @@ public sealed partial class Server
                 // (fsmission.cpp:4590).
                 try
                 {
-                    var ls = LockSides.Decode(m);
+                    var ls = command.Read<LockSides>();
                     if (!_peerShips.TryGetValue(from, out var lsLive))
                     {
                         ConsoleLog.Write($"[locksides] {from}: LOCK_SIDES from a peer with no ship — ignored");
@@ -1181,10 +1294,18 @@ public sealed partial class Server
                     }
                     else
                     {
-                        // Forward-then-apply (native: ForwardMessage then SetLockSides).
-                        SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
-                        mission.LockSides = ls.FLock;
-                        Console.WriteLine($"[locksides] ship {lsLive.Ship.Id}: LOCK_SIDES fLock={ls.FLock} whole-mission, Mission.LockSides={mission.LockSides}");
+                        // P654 (H-05/H-24) — re-encode the fixed-size relay and
+                        // budget-charge it (native ForwardMessage then SetLockSides).
+                        if (!TryChargeChatBudget(from))
+                        {
+                            ConsoleLog.Write($"[locksides] {from}: budget exhausted — LOCK_SIDES dropped (H-24)");
+                        }
+                        else
+                        {
+                            SendToMissionPeers(mission, FedPacket.Pack(new[] { ls.Encode() }));
+                            mission.LockSides = ls.FLock;
+                            Console.WriteLine($"[locksides] ship {lsLive.Ship.Id}: LOCK_SIDES fLock={ls.FLock} whole-mission, Mission.LockSides={mission.LockSides}");
+                        }
                     }
                 }
                 catch (Exception e)
@@ -1206,7 +1327,7 @@ public sealed partial class Server
                 // NOT consume the new Side.Active field.
                 try
                 {
-                    var si = SideInactive.Decode(m);
+                    var si = command.Read<SideInactive>();
                     if (!_peerShips.TryGetValue(from, out var siLive))
                     {
                         ConsoleLog.Write($"[sideinactive] {from}: SIDE_INACTIVE from a peer with no ship — ignored");
@@ -1304,7 +1425,7 @@ public sealed partial class Server
                 // requester via TryJoinSide (fsmission.cpp:4974-5011 SetAutoAccept).
                 try
                 {
-                    var aa = AutoAccept.Decode(m);
+                    var aa = command.Read<AutoAccept>();
                     if (!_peerShips.TryGetValue(from, out var aaLive))
                     {
                         ConsoleLog.Write($"[autoaccept] {from}: AUTO_ACCEPT from a peer with no ship — ignored");
@@ -1330,13 +1451,21 @@ public sealed partial class Server
                         }
                         else
                         {
-                            // Forward-then-apply (native: ForwardMessage then SetAutoAccept).
-                            SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
-                            aaSide.AutoAccept = aa.FAutoAccept;
-                            Console.WriteLine($"[autoaccept] ship {aaLive.Ship.Id}: AUTO_ACCEPT side {aaSideId} fAutoAccept={aa.FAutoAccept} whole-mission, Side.AutoAccept={aaSide.AutoAccept}");
-                            if (aa.FAutoAccept)
+                            // P654 (H-05/H-24) — re-encode the fixed-size relay and
+                            // budget-charge it (native ForwardMessage then SetAutoAccept).
+                            if (!TryChargeChatBudget(from))
                             {
-                                SweepAutoAcceptPending(mission, aaSideId);
+                                ConsoleLog.Write($"[autoaccept] {from}: budget exhausted — AUTO_ACCEPT dropped (H-24)");
+                            }
+                            else
+                            {
+                                SendToMissionPeers(mission, FedPacket.Pack(new[] { aa.Encode() }));
+                                aaSide.AutoAccept = aa.FAutoAccept;
+                                Console.WriteLine($"[autoaccept] ship {aaLive.Ship.Id}: AUTO_ACCEPT side {aaSideId} fAutoAccept={aa.FAutoAccept} whole-mission, Side.AutoAccept={aaSide.AutoAccept}");
+                                if (aa.FAutoAccept)
+                                {
+                                    SweepAutoAcceptPending(mission, aaSideId);
+                                }
                             }
                         }
                     }
@@ -1363,7 +1492,7 @@ public sealed partial class Server
                 // GAME_OVER_PLAYERS from [[allegiance-win-condition-plan]]).
                 try
                 {
-                    var cc = ChangeTeamCiv.Decode(m);
+                    var cc = command.Read<ChangeTeamCiv>();
                     if (!_peerShips.TryGetValue(from, out var ccLive))
                     {
                         ConsoleLog.Write($"[changeciv] {from}: CHANGE_TEAM_CIV from a peer with no ship — ignored");
@@ -1393,11 +1522,19 @@ public sealed partial class Server
                         }
                         else
                         {
-                            // Forward-then-apply (native: ForwardMessage then SetSideCiv).
-                            SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
-                            short oldCivId = ccSide.Civilization.CivilizationId;
-                            ccSide.Civilization = targetCiv;
-                            Console.WriteLine($"[changeciv] ship {ccLive.Ship.Id}: side {ccSideId} civ {oldCivId} -> {targetCiv.CivilizationId} whole-mission");
+                            // P654 (H-05/H-24) — re-encode the fixed-size relay and
+                            // budget-charge it (native ForwardMessage then SetSideCiv).
+                            if (!TryChargeChatBudget(from))
+                            {
+                                ConsoleLog.Write($"[changeciv] {from}: budget exhausted — CHANGE_TEAM_CIV dropped (H-24)");
+                            }
+                            else
+                            {
+                                SendToMissionPeers(mission, FedPacket.Pack(new[] { cc.Encode() }));
+                                short oldCivId = ccSide.Civilization.CivilizationId;
+                                ccSide.Civilization = targetCiv;
+                                Console.WriteLine($"[changeciv] ship {ccLive.Ship.Id}: side {ccSideId} civ {oldCivId} -> {targetCiv.CivilizationId} whole-mission");
+                            }
                         }
                     }
                 }
@@ -1423,7 +1560,7 @@ public sealed partial class Server
                 // fsmission.cpp:5642-5647; here we log-and-ignore up front).
                 try
                 {
-                    var ca = ChangeAlliance.Decode(m);
+                    var ca = command.Read<ChangeAlliance>();
                     if (!_peerShips.TryGetValue(from, out var caLive))
                     {
                         ConsoleLog.Write($"[alliances] {from}: CHANGE_ALLIANCE from a peer with no ship — ignored");
@@ -1470,31 +1607,45 @@ public sealed partial class Server
                 // entry) -- same shape as ChatTarget.Team in SelectChatTargets.
                 try
                 {
-                    var ready = PlayerReady.Decode(m);
+                    var ready = command.Read<PlayerReady>();
                     if (!_peerShips.TryGetValue(from, out var readyLive))
                     {
                         ConsoleLog.Write($"[ready] {from}: PLAYER_READY from a peer with no ship — ignored");
                     }
                     else
                     {
-                        var targets = _peerShips
-                            .Where(kv => kv.Value.Ship.SideId == readyLive.Ship.SideId)
-                            .Select(kv => kv.Key)
-                            .ToArray();
-                        byte[] packet = FedPacket.Pack(new[] { m });
-                        foreach (var t in targets) SendPeer(t, packet);
-                        Console.WriteLine($"[ready] {from} ship {ready.ShipId} side {sideStr(readyLive.Ship.SideId)} fReady={ready.FReady} -> {targets.Length} peer(s)");
+                        // P654 (H-24) — budget-charge the relay (bounded fan-out).
+                        if (!TryChargeChatBudget(from))
+                        {
+                            ConsoleLog.Write($"[ready] {from}: budget exhausted — PLAYER_READY dropped (H-24)");
+                        }
+                        else
+                        {
+                            var targets = _peerShips
+                                .Where(kv => kv.Value.Ship.SideId == readyLive.Ship.SideId)
+                                .Select(kv => kv.Key)
+                                .ToArray();
+                            // P654 (H-19) — re-encode the relay with the sender's
+                            // OWN ship id, never the client's forged ShipId (native
+                            // TrapHackBoot(shipID == GetShipID()), FedSrv.CPP:7019) —
+                            // so a peer can only mark ITSELF ready, and the relay is
+                            // exact-size (H-05).
+                            ready.ShipId = readyLive.Ship.Id;
+                            byte[] packet = FedPacket.Pack(new[] { ready.Encode() });
+                            foreach (var t in targets) SendPeer(t, packet);
+                            Console.WriteLine($"[ready] {from} ship {ready.ShipId} side {sideStr(readyLive.Ship.SideId)} fReady={ready.FReady} -> {targets.Length} peer(s)");
 
-                        // P180 — the real trigger point. This port's analogue of
-                        // native's `PlayerReadyChange` (fsmission.cpp:5485-5489):
-                        // a player's own ready flag just changed, so remember it
-                        // and recompute the side's aggregate readiness, which may
-                        // fire a TEAM_READY broadcast and, in turn, the ready-up
-                        // auto-start. Runs AFTER the existing relay (the real
-                        // client still needs the raw relay for its own roster
-                        // UI — the message is sent to everyone on the team).
-                        _playerReady[from] = ready.FReady;
-                        RecomputeSideReady(readyLive.Ship);
+                            // P180 — the real trigger point. This port's analogue of
+                            // native's `PlayerReadyChange` (fsmission.cpp:5485-5489):
+                            // a player's own ready flag just changed, so remember it
+                            // and recompute the side's aggregate readiness, which may
+                            // fire a TEAM_READY broadcast and, in turn, the ready-up
+                            // auto-start. Runs AFTER the existing relay (the real
+                            // client still needs the raw relay for its own roster
+                            // UI — the message is sent to everyone on the team).
+                            _playerReady[from] = ready.FReady;
+                            RecomputeSideReady(readyLive.Ship);
+                        }
                     }
                 }
                 catch (Exception e)
@@ -1510,7 +1661,7 @@ public sealed partial class Server
                 // every other inbound handler — never crashes the server.
                 try
                 {
-                    Suicide.Decode(m);
+                    _ = command.Read<Suicide>();
                     if (!_peerShips.TryGetValue(from, out var live))
                     {
                         ConsoleLog.Write($"[suicide] {from}: SUICIDE from a peer with no ship — ignored");
@@ -1546,10 +1697,19 @@ public sealed partial class Server
                 // that never validated/logged on.
                 try
                 {
-                    Logoff.Decode(m);
+                    _ = command.Read<Logoff>();
                     SendPeer(from, FedPacket.Pack(new[] { m }));   // guaranteed echo back
                     ReleasePeer(from);
-                    Console.WriteLine($"[logoff] peer {from} logged off (echoed, released)");
+                    // P654 (H-14) — close the transport connection now. Native
+                    // LOGOFF deletes the player and the connection is NOT reused
+                    // (FedSrv.CPP:5787-5802); leaving the socket open re-armed
+                    // LOGONREQ, letting one connection churn unlimited ship ids
+                    // (the P646 one-logon bypass). Closing the socket makes any
+                    // later frame on it impossible; the transport's OnPeerLeft
+                    // fires and ReleasePeer runs again as an idempotent no-op.
+                    RemoveChatBudget(from);
+                    (_host.Transport as TcpTransport)?.ClosePeer(from, DisconnectReason.Shutdown);
+                    Console.WriteLine($"[logoff] peer {from} logged off (echoed, released, connection closed — H-14)");
                 }
                 catch (Exception e)
                 {
@@ -1567,7 +1727,7 @@ public sealed partial class Server
                 // dropped like every other inbound handler.
                 try
                 {
-                    var req = ViewClusterRequest.Decode(m);
+                    var req = command.Read<ViewClusterRequest>();
                     if (!_peerShips.TryGetValue(from, out var reqLive))
                     {
                         ConsoleLog.Write($"[viewcluster] {from}: VIEW_CLUSTER from a peer with no ship — ignored");
@@ -1613,7 +1773,7 @@ public sealed partial class Server
                 // reported and dropped like every other inbound handler.
                 try
                 {
-                    var board = BoardShip.Decode(m);
+                    var board = command.Read<BoardShip>();
                     if (!_peerShips.TryGetValue(from, out var boardLive))
                     {
                         ConsoleLog.Write($"[boardship] {from}: BOARD_SHIP from a peer with no ship — ignored");
@@ -1638,7 +1798,7 @@ public sealed partial class Server
                 // wide. A mount matching no real child is a silent no-op.
                 try
                 {
-                    var promoteReq = PromoteRequest.Decode(m);
+                    var promoteReq = command.Read<PromoteRequest>();
                     if (!_peerShips.TryGetValue(from, out var promoteLive))
                     {
                         ConsoleLog.Write($"[promote] {from}: PROMOTE from a peer with no ship — ignored");
@@ -1664,7 +1824,7 @@ public sealed partial class Server
                 // filled in. A source mount holding no part is a silent no-op.
                 try
                 {
-                    var swapReq = SwapPart.Decode(m);
+                    var swapReq = command.Read<SwapPart>();
                     if (!_peerShips.TryGetValue(from, out var swapLive))
                     {
                         ConsoleLog.Write($"[swappart] {from}: SWAP_PART from a peer with no ship — ignored");
@@ -1689,7 +1849,7 @@ public sealed partial class Server
                 // sector-wide with shipID filled in.
                 try
                 {
-                    var reloadReq = Reload.Decode(m);
+                    var reloadReq = command.Read<Reload>();
                     if (!_peerShips.TryGetValue(from, out var reloadLive))
                     {
                         ConsoleLog.Write($"[reload] {from}: RELOAD from a peer with no ship — ignored");
@@ -1716,7 +1876,7 @@ public sealed partial class Server
                 // A source mount holding no part is a silent no-op.
                 try
                 {
-                    var dropReq = DropPart.Decode(m);
+                    var dropReq = command.Read<DropPart>();
                     if (!_peerShips.TryGetValue(from, out var dropLive))
                     {
                         ConsoleLog.Write($"[droppart] {from}: DROP_PART from a peer with no ship — ignored");
@@ -1742,7 +1902,7 @@ public sealed partial class Server
                 // false, and a side-wide broadcast + server-side WingId mutation.
                 try
                 {
-                    var swReq = SetWingId.Decode(m);
+                    var swReq = command.Read<SetWingId>();
                     if (!_peerShips.TryGetValue(from, out var swLive))
                     {
                         ConsoleLog.Write($"[setwingid] {from}: SET_WINGID from a peer with no ship — ignored");
@@ -1768,7 +1928,7 @@ public sealed partial class Server
                 // current position; either way the pending offer is cleared.
                 try
                 {
-                    var ack = TreasureAck.Decode(m);
+                    var ack = command.Read<TreasureAck>();
                     if (!_peerShips.TryGetValue(from, out var ackLive))
                     {
                         ConsoleLog.Write($"[treasureack] {from}: TREASURE_ACK from a peer with no ship — ignored");
@@ -1791,7 +1951,7 @@ public sealed partial class Server
                 // the port of FedSrv.CPP:7715-7728 and FedSrv.CPP:13319-13378.
                 try
                 {
-                    var req = RipcordRequest.Decode(m);
+                    var req = command.Read<RipcordRequest>();
                     if (!_peerShips.TryGetValue(from, out var ripLive))
                     {
                         ConsoleLog.Write($"[ripcord] {from}: RIPCORD_REQUEST from a peer with no ship — ignored");
@@ -1820,7 +1980,7 @@ public sealed partial class Server
                 // BUCKET_STATUS to the whole side.
                 try
                 {
-                    var donate = BucketDonate.Decode(m);
+                    var donate = command.Read<BucketDonate>();
                     if (!_peerShips.TryGetValue(from, out var donateLive))
                     {
                         ConsoleLog.Write($"[bucketdonate] {from}: BUCKET_DONATE from a peer with no ship — ignored");
@@ -1847,7 +2007,7 @@ public sealed partial class Server
                 // of scope this task and no-ops with a log.
                 try
                 {
-                    var ocReq = OrderChange.Decode(m);
+                    var ocReq = command.Read<OrderChange>();
                     if (!_peerShips.TryGetValue(from, out var ocLive))
                     {
                         ConsoleLog.Write($"[orderchange] {from}: ORDER_CHANGE from a peer with no ship — ignored");
@@ -1875,7 +2035,7 @@ public sealed partial class Server
                 // of scope (separate, already-solved DeployMine/DeployProbe).
                 try
                 {
-                    var feReq = FireExpendableRequest.Decode(m);
+                    var feReq = command.Read<FireExpendableRequest>();
                     if (!_peerShips.TryGetValue(from, out var feLive))
                     {
                         ConsoleLog.Write($"[fireexpendable] {from}: FIRE_EXPENDABLE from a peer with no ship — ignored");
@@ -1909,7 +2069,7 @@ public sealed partial class Server
                 // broadcast) and decrements ammo.
                 try
                 {
-                    var fmReq = FireMissile.Decode(m);
+                    var fmReq = command.Read<FireMissile>();
                     if (!_peerShips.TryGetValue(from, out var fmLive))
                     {
                         ConsoleLog.Write($"[firemissile] {from}: FIRE_MISSILE from a peer with no ship — ignored");
@@ -1937,7 +2097,7 @@ public sealed partial class Server
                 // native CFMConnection::PingQuery (messagecore.h:217-223).
                 try
                 {
-                    _ = ReqPingData.Decode(m);   // zero-field trigger; decode validates cbmsg=4
+                    _ = command.Read<ReqPingData>();   // zero-field trigger; decode validates cbmsg=4
                     HandleReqPingData(from);
                 }
                 catch (Exception e)
@@ -1962,6 +2122,49 @@ public sealed partial class Server
         }
     }
 
+    // ── P654 (H-24) per-peer message/chat token budget ─────────────────────
+    // The port of native's chat budget (c_chatBudgetMax=100 / c_chatBudgetCost=20,
+    // fsship.h:24-25; IncrementChatBudget +1/tick, FedSrv.CPP:8287). Charges are
+    // made on the sim thread only (inside ProcessDatagram), so no locking.
+    // Refilled LAZILY by elapsed simulation ticks, so no per-tick hook.
+    private bool TryChargeChatBudget(ConnectionId peer)
+    {
+        long now = TickIndex;
+        int budget;
+        if (_chatBudgets.TryGetValue(peer, out var cur))
+        {
+            long gained = Math.Max(0, now - cur.LastRefillTick) * (long)_chatBudgetRefillPerTick;
+            budget = (int)Math.Min((long)_chatBudgetMax, (long)cur.Budget + gained);
+        }
+        else
+        {
+            budget = _chatBudgetMax;
+        }
+        if (budget >= _chatBudgetCost)
+        {
+            _chatBudgets[peer] = (budget - _chatBudgetCost, now);
+            return true;   // charged — the message may proceed
+        }
+        _chatBudgets[peer] = (budget, now);
+        return false;      // budget exhausted — drop (bounded amplification)
+    }
+
+    private void RemoveChatBudget(ConnectionId peer) => _chatBudgets.Remove(peer);
+
+    // ── P654 (H-28) CharacterName validation ───────────────────────────────
+    // Native limits the name to c_cbName = c_cbNameDB + 1 = 25 bytes (the usable
+    // name is c_cbNameDB = 24, _Utility/Utility.h:60,64), and boots when there is
+    // no NUL within that (FedSrv.CPP:5817-5818). This port stores the name as a
+    // managed string (no NUL), so the enforceable limit is 24 chars.
+    private static bool HasIllegalName(string name)
+    {
+        if (name.Length > 24) return true;
+        foreach (var c in name)
+            if (char.IsControl(c) || char.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.Format)
+                return true;
+        return false;
+    }
+
     // P507 — the port of native CFSPlayer::SetShipUpdate →
     // CshipIGC::ProcessShipUpdate (fsship.cpp:1173-1200,
     // shipIGC.cpp:3139-3210). Runs the accept/reject pipeline on the peer's own
@@ -1973,6 +2176,13 @@ public sealed partial class Server
     {
         var payload = u.Payload;
 
+        // Native monotonic timestamp gate (FedSrv/fsship.cpp:1175). Use the
+        // payload time, as native does, and refuse conflicting duplicate clocks.
+        if (u.Time != payload.Time || (pu.HasClientTime && payload.Time <= pu.LastClientTime))
+        { pu.DroppedReplay++; return; }
+        // One pose per server simulation instant; queued packets cannot chain
+        // the native 20m acceptance tolerance without advancing the world.
+        if (pu.LastPoseAt == SimNow) { pu.DroppedSameTick++; return; }
         // GetSC (shipIGC.cpp:3067-3071) — the commanded controls and movement-bit
         // mask are ALWAYS applied, "as today" (the task explicitly keeps
         // controls/stateM application; native only reaches this inside the
@@ -2013,16 +2223,56 @@ public sealed partial class Server
         var orientation = payload.Orientation;   // fresh object from decode; CalculateShipPose mutates it in place
         var turnRates = payload.TurnRates;       // fresh float[3]
 
+        float maxSpeed = MathF.Max(ship.MovementSpeedLimit(), ship.Velocity.Length());
+        // Compare at the same instant. A delayed snapshot of authorized boost
+        // or launch momentum may be faster than the server's now-decayed speed.
         ship.CalculateShipPose(deltaT, ref position, ref velocity, orientation, turnRates);
+        float replayedSpeed = velocity.Length();
+        // Each compact direction component rounds by at most 1/480; the
+        // scalar speed is stored in eighths (Wire/Compact/Quant.cs).
+        float wireRounding = .125f + maxSpeed * MathF.Sqrt(3f) / 480f;
+        bool legalVelocity = FiniteVector(velocity) && replayedSpeed <= maxSpeed + wireRounding;
+        // Compact velocity quantisation must not ratchet trusted momentum up
+        // over successive accepted packets. Allow rounding, then cap slightly
+        // below the bound to avoid float normalization rounding it upward.
+        if (legalVelocity && replayedSpeed > maxSpeed)
+            velocity *= (maxSpeed * .999999f) / replayedSpeed;
+
+        if (!pu.HasMovementAnchor)
+        {
+            pu.HasMovementAnchor = true;
+            pu.LastPosePosition = ship.Position;
+            pu.MovementBudgetAt = SimNow;
+            pu.MovementCredit = 20f + maxSpeed * MathF.Abs(deltaT);
+        }
+        // Credit is spent on total travel, not on displacement relative to the
+        // last client-mutated server pose. Latency/packet loss may accumulate at
+        // most 1.5 seconds of hull travel plus the native 20m tolerance. Thus a
+        // sequence of small legal-looking packets cannot manufacture distance.
+        float elapsed = (float)Math.Max(0, SimNow - pu.MovementBudgetAt);
+        // Refill the full elapsed server time after packet loss. Idle credit
+        // stays bounded, but a long legitimate gap may cover its actual travel.
+        float creditCap = maxSpeed * MathF.Max(1.5f, elapsed) + 20f;
+        pu.MovementCredit = MathF.Min(creditCap, pu.MovementCredit + maxSpeed * elapsed);
+        pu.MovementBudgetAt = SimNow;
+        float travel = (position - pu.LastPosePosition).Length();
+        float envelope = 20f + maxSpeed * MathF.Min(1.5f, elapsed + MathF.Abs(deltaT));
 
         // Orientation is ALWAYS accepted (shipIGC.cpp:3178).
         ship.SetOrientation(orientation);
 
         float dSq = (ship.Position - position).LengthSquared();
-        if (dSq < 400.0f)
+        if (legalVelocity && FiniteVector(position) && velocity.Length() <= maxSpeed
+            && dSq < envelope * envelope && travel <= pu.MovementCredit)
         {
-            // Within 20 m (d < 400, shipIGC.cpp:3179-3183) → c_susAccepted.
+            // Native's 20m tolerance (shipIGC.cpp:3179-3183), extended by a
+            // bounded clock/latency allowance and constrained by total travel.
             pu.Accepted++;
+            pu.HasClientTime = true;
+            pu.LastClientTime = payload.Time;
+            pu.LastPoseAt = SimNow;
+            pu.MovementCredit -= travel;
+            pu.LastPosePosition = position;
             ship.Position = position;
             ship.Velocity = velocity;
             ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: ACCEPTED (dist {MathF.Sqrt(dSq):0.##}m, deltaT {deltaT:0.###}s)");
@@ -2034,16 +2284,28 @@ public sealed partial class Server
             // it and echo the cookie, until which its updates are dropped by the
             // dispatch cookie gate.
             pu.Rejected++;
+            pu.TotalCorrections++;
+            pu.LastPoseAt = SimNow;
             pu.RejectDistanceSum += MathF.Sqrt(dSq);
             pu.RejectCount++;
-            byte newCookie = NextCookie(pu);
+            if (!legalVelocity || velocity.Length() > maxSpeed) pu.RejectedSpeed++;
+            if (!FiniteVector(position) || !(dSq < envelope * envelope)) pu.RejectedEnvelope++;
+            if (!(travel <= pu.MovementCredit)) pu.RejectedTravel++;
+            // The reset tells the client to resume from this authoritative pose
+            // (FedSrv/fsship.cpp:1192-1200). Measure its next travel from there
+            // too: the server keeps flying during rejected/lost updates, so the
+            // last accepted client pose can become arbitrarily stale. Retain
+            // the remaining credit and budget clock; cookie renewal must never
+            // grant another 20m allowance for a hostile teleport chain.
+            pu.LastPosePosition = ship.Position;
+            byte newCookie = NextCookie(pu, reposition: false);
             var reset = new ShipReset
             {
                 Ship = ServerShipUpdate.FromModel(ship.Id, ship, (uint)TickIndex),
                 Cookie = newCookie,
             };
             SendPeer(from, FedPacket.Pack(new[] { reset.Encode() }));
-            ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: REJECTED dist {MathF.Sqrt(dSq):0.##}m > 20m — sent SHIP_RESET cookie 0x{newCookie:X2}");
+            ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: REJECTED dist={MathF.Sqrt(dSq):0.##}m envelope={envelope:0.##}m speed={velocity.Length():0.##}/{maxSpeed:0.##}m/s travel={travel:0.##}m credit={pu.MovementCredit:0.##}m deltaT={deltaT:0.###}s outside movement envelope / speed / travel budget — sent SHIP_RESET cookie 0x{newCookie:X2}");
         }
     }
 

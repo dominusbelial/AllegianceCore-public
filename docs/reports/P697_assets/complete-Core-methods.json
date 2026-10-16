@@ -1,0 +1,11 @@
+[
+  "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+  "Allegiance.Core.Tests.ArmedProbeLiveTests.P641_quick_ready_and_shoot_only_target_live",
+  "Allegiance.Core.Tests.BroadcastSnapshotTests.Captured_pose_is_detached_and_byte_identical_after_live_ship_mutation",
+  "Allegiance.Core.Tests.BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes",
+  "Allegiance.Core.Tests.ProbeBroadcastTests.Directly_deployed_probe_broadcasts_create_and_destroy_to_teammate_but_not_enemy",
+  "Allegiance.Core.Tests.ProjectileBroadcastTests.ProjectileInstance_round_trips_the_wire",
+  "Allegiance.Core.Tests.ProjectileBroadcastTests.ProjectileInstance_width_is_54_bytes",
+  "Allegiance.Core.Tests.ProjectileBroadcastTests.Real_weapon_fire_broadcasts_projectile_to_teammate_but_not_enemy",
+  "Allegiance.Core.Tests.WarpBombTests.Live_whole_mission_warp_bomb_reaches_the_cross_side_peer_and_the_delayed_blast_lands"
+]

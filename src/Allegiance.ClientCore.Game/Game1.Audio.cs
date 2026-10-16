@@ -403,20 +403,11 @@ public sealed partial class Game1
             switch (ev.Kind)
             {
                 case ClientSoundEventKind.StationDestroyed:
-                    snd.PlayStationEvent(Audio.StationEventSoundKind.Destroyed);
-                    Console.WriteLine($"[monogame] audio: station destroyed (station {ev.Id})");
-                    break;
                 case ClientSoundEventKind.StationEnemyDestroyed:
-                    snd.PlayStationEvent(Audio.StationEventSoundKind.EnemyDestroyed);
-                    Console.WriteLine($"[monogame] audio: enemy station destroyed (station {ev.Id})");
-                    break;
                 case ClientSoundEventKind.StationCaptured:
-                    snd.PlayStationEvent(Audio.StationEventSoundKind.Captured);
-                    Console.WriteLine($"[monogame] audio: station captured (station {ev.Id})");
-                    break;
                 case ClientSoundEventKind.StationEnemyCaptured:
-                    snd.PlayStationEvent(Audio.StationEventSoundKind.EnemyCaptured);
-                    Console.WriteLine($"[monogame] audio: enemy station captured (station {ev.Id})");
+                    snd.PlayStationEvent(ev, _shopCatalog?.StationTypes);
+                    Console.WriteLine($"[monogame] audio: {ev.Kind} (station {ev.Id}, type {ev.StationTypeId})");
                     break;
                 case ClientSoundEventKind.DevCompleted:
                     snd.PlayDevComplete();
@@ -428,6 +419,12 @@ public sealed partial class Game1
                     snd.PlayRipcordAborted();
                     Console.WriteLine($"[monogame] audio: ripcord aborted (ship {ev.Id})");
                     break;
+                case ClientSoundEventKind.SectorHighlighted:
+                    snd.PlayCommandMessage();
+                    break;
+                case ClientSoundEventKind.PlayerWaiting:
+                    snd.PlayVoice(Rendering.LobbyStatusLayout.PlayerWaitingWave);
+                    break;
                 case ClientSoundEventKind.TeleportArrived:
                     // P638 — our teleport dock request was accepted; native
                     // plays the personalJumpSound (appmsg.cpp:1901), mapped to
@@ -435,8 +432,138 @@ public sealed partial class Game1
                     snd.PlayJump();
                     Console.WriteLine($"[monogame] audio: teleport arrived (station {ev.Id})");
                     break;
+                // ── P710 — wealth announcements (clintlib/appmsg.cpp) ──────
+                case ClientSoundEventKind.PaydayReceived:
+                    snd.PlayPayday();
+                    Console.WriteLine("[monogame] audio: payday");
+                    break;
+                case ClientSoundEventKind.PickupPowerup:
+                    snd.PlayPickupPowerup();
+                    Console.WriteLine("[monogame] audio: powerup pickup");
+                    break;
+                case ClientSoundEventKind.PickupDevelopment:
+                    snd.PlayPickupDevelopment();
+                    Console.WriteLine("[monogame] audio: development pickup");
+                    break;
+                case ClientSoundEventKind.PickupCash:
+                    snd.PlayPickupCash();
+                    Console.WriteLine("[monogame] audio: cash pickup");
+                    break;
+                // ── P710 — incoming-message notification cues
+                // (trekigc.cpp:4536-4560) ───────────────────────────────────
+                case ClientSoundEventKind.ChatCommand:
+                    snd.PlayChatCommand();
+                    break;
+                case ClientSoundEventKind.ChatCommander:
+                    snd.PlayChatCommander();
+                    break;
+                case ClientSoundEventKind.ChatPersonal:
+                    snd.PlayChatPersonal();
+                    break;
+                case ClientSoundEventKind.ChatRegular:
+                    snd.PlayChatRegular();
+                    break;
+                case ClientSoundEventKind.ChatOffline:
+                    snd.PlayChatRegular(offline: true);
+                    break;
+                // ── P711 — ship low-status / combat feedback one-shots ──────
+                case ClientSoundEventKind.HullLow:
+                    snd.PlayHullLow();
+                    Console.WriteLine("[monogame] audio: hull low");
+                    break;
+                case ClientSoundEventKind.AmmoLow:
+                    snd.PlayAmmoLow();
+                    Console.WriteLine("[monogame] audio: ammo low");
+                    break;
+                case ClientSoundEventKind.FuelLow:
+                    snd.PlayFuelLow();
+                    Console.WriteLine("[monogame] audio: fuel low");
+                    break;
+                case ClientSoundEventKind.EnergyLow:
+                    snd.PlayEnergyLow();
+                    Console.WriteLine("[monogame] audio: energy low");
+                    break;
+                case ClientSoundEventKind.NoAmmo:
+                    snd.PlayNoAmmo();
+                    Console.WriteLine("[monogame] audio: no ammo attempt");
+                    break;
+                case ClientSoundEventKind.NoFuel:
+                    snd.PlayNoFuel();
+                    Console.WriteLine("[monogame] audio: no fuel attempt");
+                    break;
+                case ClientSoundEventKind.RipcordDenied:
+                    snd.PlayNoRipcord();
+                    Console.WriteLine("[monogame] audio: ripcord denied (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.CommanderElected:
+                    snd.PlayMadeCommander();
+                    Console.WriteLine("[monogame] audio: you became team leader");
+                    break;
+                case ClientSoundEventKind.InvestorReceived:
+                    snd.PlayMadeInvestor();
+                    Console.WriteLine("[monogame] audio: first investor");
+                    break;
+                case ClientSoundEventKind.EnemyFlagStolen:
+                    snd.PlayStolenEnemyFlag();
+                    Console.WriteLine("[monogame] audio: enemy flag stolen");
+                    break;
+                case ClientSoundEventKind.ArtifactFound:
+                    snd.PlayArtifactFound();
+                    Console.WriteLine("[monogame] audio: artifact found");
+                    break;
+                case ClientSoundEventKind.OurFlagStolen:
+                    snd.PlayStolenFlag();
+                    Console.WriteLine("[monogame] audio: our flag stolen");
+                    break;
+                case ClientSoundEventKind.SectorJump:
+                    // P716 — the own ship crossed a warp; native's jumpSound
+                    // (trekigc.cpp:3998,4415) is the same wavein as the teleport
+                    // cue, so it rides SoundManager.PlayJump.
+                    snd.PlayJump();
+                    Console.WriteLine($"[monogame] audio: sector jump (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.MineDeployed:
+                    // P717 — the own ship deployed a mine (native deployMineSound,
+                    // clintlib.cpp:3253; wave dropmine, sounddef.mdl:368).
+                    snd.PlayMineDeploy();
+                    break;
+                case ClientSoundEventKind.ShieldsOffline:
+                    // P717 — the own shield was knocked offline (native
+                    // salShieldsOfflineSound, shieldIGC.cpp:186; vo_sal_shieldsoffline).
+                    snd.PlayShieldsOffline();
+                    break;
             }
         }
+    }
+
+    /// <summary>
+    /// P711 — the per-frame driver for the ship status alarm EDGE detection
+    /// (SIM-0361..0366, trekigc.cpp:1264-1275) and the two loop gates — the
+    /// ripcord-active loop (SIM-0368, :1287) and the mining loop (SIM-0370,
+    /// :1293). <see cref="ClientWorld.UpdateOwnStatusAlarms"/> runs the pure
+    /// <see cref="ShipStatusAlarms.Classify"/> edge detector under the gate and
+    /// records the one-shot events (drained by <see cref="UpdateSoundEvents"/>);
+    /// the two loop gates are read here from <c>ClientWorld.RipcordActive</c> /
+    /// <c>MiningAsteroidId</c> and replayed against SoundManager. Called once
+    /// per frame with the audio pass. Must run under the gate lock when reading
+    /// world state (same discipline as the other per-frame sound drivers).
+    /// </summary>
+    private void UpdateShipStatusAlarms()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        bool ripcordActive;
+        bool mining;
+        lock (_session.Gate)
+        {
+            world.UpdateOwnStatusAlarms();
+            ripcordActive = world.RipcordActive;
+            mining = world.MiningAsteroidId != -1;
+        }
+
+        snd.UpdateRipcordLoop(ripcordActive);
+        snd.UpdateMiningLoop(mining);
     }
 
     /// <summary>

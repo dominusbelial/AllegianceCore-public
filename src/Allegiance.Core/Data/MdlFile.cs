@@ -30,8 +30,28 @@ public sealed class MdlMesh
     /// <summary>Triangle-list index array, raw order as read from the file.</summary>
     public required ushort[] Indices { get; init; }
 
+    /// <summary>The enclosing TextureGeo image namespace; null means inherit
+    /// ThingGeo's initial texture (geometry.cpp:1079-1082, 1439-1473).</summary>
+    public string? TextureStem { get; init; }
+
     public int VertexCount => Positions.Length / 3;
     public int TriangleCount => Indices.Length / 3;
+}
+
+/// <summary>
+/// P628 — one native LODGeo distance-detail level: its baked pixel-radius
+/// threshold (<c>LODGeoImpl::m_radii</c>, geometry.cpp:1634) and the resolved
+/// lower-detail mesh list for that level. See <see cref="MdlFile.LodLevels"/>.
+/// </summary>
+public sealed class MdlLodLevel
+{
+    /// <summary>The baked pixel-radius threshold (screen pixels) at/above which
+    /// this coarser level kicks in — the artist-authored <c>(pixels, geo)</c>
+    /// value (modeler.cpp:1676-1683).</summary>
+    public required float PixelRadius { get; init; }
+
+    /// <summary>This level's meshes (a reduced-detail variant of the base).</summary>
+    public required IReadOnlyList<MdlMesh> Meshes { get; init; }
 }
 
 /// <summary>
@@ -54,6 +74,11 @@ public sealed class MdlFrame
     public required float[] Up { get; init; }
 }
 
+/// <summary>Serialized native LightData (effect/efapp.cpp:99-112, 330-340).
+/// Positions are model-local, in the same space as mesh vertices.</summary>
+public sealed record MdlLight(float[] Color, float[] Position, float Period,
+    float Phase, float RampUp, float Hold, float RampDown);
+
 /// <summary>
 /// The result of parsing an Allegiance <c>.mdl</c> binary model file: the file
 /// header namespaces/imports/exports plus the resolved geometry (walked only
@@ -62,6 +87,11 @@ public sealed class MdlFrame
 public sealed class MdlFile
 {
     internal MdlFile() { }
+    /// <summary>Only lights reachable from the native "lights" export.</summary>
+    public IReadOnlyList<MdlLight> Lights { get; init; } = [];
+    /// <summary>Unsupported nodes reached while collecting drawable geometry.
+    /// Exposed so asset audits cannot silently accept dropped subgroups.</summary>
+    public IReadOnlyList<string> UnsupportedGeometryNodes { get; init; } = [];
     /// <summary>The namespace name table (file header).</summary>
     public required IReadOnlyList<string> Namespaces { get; init; }
 
@@ -87,6 +117,19 @@ public sealed class MdlFile
     /// flat accumulation across the whole file).
     /// </summary>
     public required IReadOnlyList<MdlFrame> Frames { get; init; }
+
+    /// <summary>
+    /// P628 — the LODGeo's distance-detail levels retained for native LOD
+    /// (<c>engine/geometry.cpp</c> <c>LODGeoImpl</c>; modelled in
+    /// <c>engine/modeler.cpp:1666-1686</c> <c>LODGeoFactory::Apply</c> as
+    /// <c>LODGeo(baseGeo, [(pixels, geo), ...])</c>). Each entry carries the
+    /// baked <b>pixel radius</b> threshold (the <c>m_radii</c> member,
+    /// geometry.cpp:1634, used in <c>LODGeoImpl::Render</c> geometry.cpp:1760-1773)
+    /// and that level's resolved meshes (a lower-triangle-count detail variant).
+    /// Ordered descending by pixel radius (finest→coarsest), matching the
+    /// artist-authored list order. Empty when the model has no LODGeo.
+    /// </summary>
+    public required IReadOnlyList<MdlLodLevel> LodLevels { get; init; }
 
     /// <summary>Parse a <c>.mdl</c> model file from disk.</summary>
     public static MdlFile Parse(string path) => Parse(File.ReadAllBytes(path));
@@ -127,9 +170,12 @@ internal sealed class MdlParser
     private readonly byte[] _data;
     private int _pos;
     private readonly List<string> _importNames = [];
+    private readonly List<string> _importNamespaces = [];
+    private readonly List<string> _unsupportedGeometryNodes = [];
     private readonly List<MdlFrame> _frames = [];
     private readonly Dictionary<uint, MdlNode> _objects = [];
     private readonly List<MdlMesh> _meshes = [];
+    private readonly List<MdlLodLevel> _lodLevels = [];
 
     internal MdlParser(byte[] data) => _data = data;
 
@@ -153,7 +199,7 @@ internal sealed class MdlParser
 
         for (int i = 0; i < countImports; i++)
         {
-            ReadUInt32(); // indexLibrary (ignored; member name carries the identity)
+            _importNamespaces.Add(namespaces[ReadUInt32()]);
             _importNames.Add(ReadCString());
         }
 
@@ -186,6 +232,11 @@ internal sealed class MdlParser
             Exports = exports,
             Meshes = _meshes,
             Frames = _frames,
+            LodLevels = _lodLevels,
+            Lights = Array.IndexOf(exports, "lights") is int li && li >= 0
+                && _objects.TryGetValue((uint)li, out var lights) && lights is MdlLightsGeo lg
+                    ? lg.Lights : [],
+            UnsupportedGeometryNodes = _unsupportedGeometryNodes,
         };
     }
 
@@ -246,7 +297,7 @@ internal sealed class MdlParser
                 case ObjectImport:
                 {
                     uint idx = ReadUInt32();
-                    stack.Push(new MdlImport(_importNames[(int)idx]));
+                    stack.Push(new MdlImport(_importNames[(int)idx], _importNamespaces[(int)idx]));
                     break;
                 }
                 case ObjectPair:
@@ -288,10 +339,13 @@ internal sealed class MdlParser
                 // engine/modeler.cpp LODGeoFactory::Apply pops (geo, lodList) in
                 // push/pop order -- geo is the base/default (highest-detail)
                 // geometry; lodList holds the lower-detail variants for
-                // distance-based swapping. Keep only the base mesh.
+                // distance-based swapping. Keep the base mesh AND retain the
+                // levels so the renderer can select detail by screen size
+                // (P628 native LOD; geometry.cpp LODGeoImpl::Render).
             {
                 var geo = stack.Pop();
-                stack.Pop(); // lodList (discarded entirely)
+                var lodList = stack.Pop();
+                CaptureLodLevels(lodList);
                 return geo;
             }
             default:
@@ -323,10 +377,14 @@ internal sealed class MdlParser
             }
             case "LightsGeo":
             {
-                // Cosmetic only -- sizeof(LightData) = 48 bytes per light.
+                // Color RGBA + position XYZ + five timing floats, 48 bytes.
                 uint count = ReadUInt32();
-                _pos += checked((int)(48 * count));
-                return new MdlGeneric("LightsGeo");
+                var lights = new List<MdlLight>((int)count);
+                for (int i = 0; i < count; i++)
+                    lights.Add(new MdlLight(
+                        [ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle()],
+                        ReadVec3(), ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle()));
+                return new MdlLightsGeo(lights);
             }
             case "FrameData":
             {
@@ -360,32 +418,56 @@ internal sealed class MdlParser
 
     // -- mesh collection (walk the resolved "object" export) --------------
 
-    private void CollectMeshes(MdlNode? node)
+    private void CollectMeshes(MdlNode? node) => CollectMeshes(node, _meshes);
+
+    private void CollectMeshes(MdlNode? node, List<MdlMesh> sink, string? texture = null)
     {
         switch (node)
         {
             case null:
                 return;
             case MdlMeshGeo m:
-                _meshes.Add(BuildMesh(m));
+                sink.Add(BuildMesh(m, texture));
                 break;
             case MdlGroupGeo g:
-                CollectMeshes(g.Children);
+                CollectMeshes(g.Children, sink, texture);
                 break;
             case MdlTextureGeo t:
-                CollectMeshes(t.Geo);
+                CollectMeshes(t.Geo, sink, t.Image is MdlImport image ? image.Namespace : texture);
                 break;
             case MdlList l:
-                foreach (var item in l.Items) CollectMeshes(item);
+                foreach (var item in l.Items) CollectMeshes(item, sink, texture);
                 break;
-            default:
-                // ModifiableNumber / LightsGeo / FrameData / Apply<...>: no mesh
-                // content.
+            case MdlGeneric unknown:
+                _unsupportedGeometryNodes.Add(unknown.Type);
                 break;
         }
     }
 
-    private static MdlMesh BuildMesh(MdlMeshGeo m)
+    /// <summary>P628 — capture the LODGeo lod-list into <see cref="_lodLevels"/>.
+    /// The list is <c>[(pixels, geo), (pixels, geo), ...]</c> (modeler.cpp:1676-1683);
+    /// in the binary each pair is encoded <b>(geo, pixels)</b> — observed on
+    /// fig05/utl18a/bgrnd05 — so <c>pair.A</c> is the reduced-detail geo node
+    /// and <c>pair.B</c> the baked pixel-radius <c>MdlFloat</c> threshold. The
+    /// geo is resolved to meshes here so the renderer can build a GPU level per
+    /// LOD. Malformed entries are skipped defensively.</summary>
+    private void CaptureLodLevels(MdlNode? lodList)
+    {
+        if (lodList is not MdlList list) return;
+        foreach (var item in list.Items)
+        {
+            if (item is not MdlPair pair
+                || pair.B is not MdlFloat px
+                || pair.A is not { } geoNode)
+                continue;
+            var levelMeshes = new List<MdlMesh>();
+            CollectMeshes(geoNode, levelMeshes);
+            if (levelMeshes.Count == 0) continue;
+            _lodLevels.Add(new MdlLodLevel { PixelRadius = px.Value, Meshes = levelMeshes });
+        }
+    }
+
+    private static MdlMesh BuildMesh(MdlMeshGeo m, string? texture)
     {
         int n = m.Verts.Length / 8;
         var pos = new float[3 * n];
@@ -409,6 +491,7 @@ internal sealed class MdlParser
             TexCoords = tc,
             Normals = nr,
             Indices = m.Indices,
+            TextureStem = texture,
         };
     }
 
@@ -490,9 +573,10 @@ internal sealed class MdlPair(MdlNode a, MdlNode b) : MdlNode
     public MdlNode B { get; } = b;
 }
 
-internal sealed class MdlImport(string name) : MdlNode
+internal sealed class MdlImport(string name, string ns) : MdlNode
 {
     public string Name { get; } = name;
+    public string Namespace { get; } = ns;
 }
 
 internal sealed class MdlGroupGeo(MdlNode children) : MdlNode
@@ -525,4 +609,9 @@ internal sealed class MdlFrameData(IReadOnlyList<MdlFrame> frames) : MdlNode
 internal sealed class MdlGeneric(string type) : MdlNode
 {
     public string Type { get; } = type;
+}
+
+internal sealed class MdlLightsGeo(IReadOnlyList<MdlLight> lights) : MdlNode
+{
+    public IReadOnlyList<MdlLight> Lights { get; } = lights;
 }

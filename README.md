@@ -87,6 +87,10 @@ dotnet run --project src/Allegiance.ClientCore.MonoGame -- 127.0.0.1 6073 "My Pi
 **What you should see:** the client logs on and opens the **READY CHECK** screen. Pick a
 team, press **Y** to ready up — a game starts once every team with a player in it is ready,
 so alone you start right away — and after a 15 s countdown you launch into space.
+After game over, connected players enter the next match automatically: a default
+30-second scoreboard intermission, then the normal 15-second briefing. See
+[automatic next-match configuration](docs/NEXT_MATCH.md) to change or disable it.
+Both timers follow simulation time under dilation.
 **F1** shows every key; **F6** rebinds them. If the log says
 `HD sky asset '…' unavailable`, the sky pack path isn't set (step 3).
 
@@ -107,8 +111,8 @@ showcase battles below):
 
 ```json
 "broadcast":    { "parallelBuild": true, "shipUpdateModel": "native" },
-"transport":    { "mode": "pool" },
-"liveSettings": { "timeDilation": "off" }
+"transport":    { "mode": "pool", "maxConnections": 2048, "maxConnectionsPerIp": 1024 },
+"liveSettings": { "timeDilation": "auto" }
 ```
 
 …or set them per run with environment variables (same effect, no file edits):
@@ -117,6 +121,8 @@ showcase battles below):
 ALLEGIANCE_BROADCAST_PARALLEL_BUILD=1 \
 ALLEGIANCE_SHIP_UPDATE_MODEL=native \
 ALLEGIANCE_TRANSPORT_MODE=pool \
+ALLEGIANCE_TRANSPORT_MAX_CONNECTIONS=2048 \
+ALLEGIANCE_TRANSPORT_MAX_PER_IP=1024 \
 dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance.Server/server.json
 ```
 
@@ -125,8 +131,23 @@ dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance
   roughly a fifth of the bandwidth of `port` at 400 players, and what keeps bot hosts
   responsive in big battles.
 - `transport: pool` serves all connections from a small worker pool.
-- Server GC is on by default. `timeDilation: auto` (EVE-style slow motion under load) is
-  available but off while we tune it.
+- `maxConnectionsPerIp` (default 64) is raised to 1024 for the big battles because
+  the ~390 bots all originate from ONE Mac bot host — the default per-IP ceiling is a
+  sane limit for a public server but would refuse the rig.
+- Server GC is on by default.
+- `timeDilation: auto` (the default) is EVE-style slow motion under load: when one crowded
+  sector makes ticks run long, the game slows slightly instead of stuttering. In our 200v200
+  tests it kept every tick under 150 ms with no disconnects, at about 0.92× speed on
+  average (0.73× at the heaviest moment). Set `"off"` to disable.
+
+Inbound decoding can also run on the existing receive workers with
+`"receive": { "decouple": true }` or `ALLEGIANCE_RECEIVE_DECOUPLE=1` (default off;
+the environment overrides config). Commands still apply at tick boundaries in
+peer-id/arrival order, with bounded fair carry-over. For diagnosis, add
+`"measure": true` to that section: `[inbound]` reports each tick's message
+counts/bytes by fmid and peer, and `[inbound-window]` retains a 100-tick histogram
+including drain time. These detailed logs are opt-in. See the
+[P673 report](docs/reports/P673_RECEIVE_DECOUPLE.md) for local A/B evidence.
 
 **Client** — always a Release build; join *before* bots spawn so you see the whole battle:
 

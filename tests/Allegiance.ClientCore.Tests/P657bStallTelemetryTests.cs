@@ -340,12 +340,18 @@ public sealed class P657bStallTelemetryTests
         Set("_removedBots", new List<BotManager.RemovedBotView>());
         Set("_stallTelemetry", watchdog);
         Set("_cadence", new DecisionMetrics.LoopCadence(50));
+        Set("_clock", System.Diagnostics.Stopwatch.StartNew());
+        Set("_idleTargetMetrics", new IdleTargetMetrics());
         var botType = typeof(BotManager).GetNestedType("ActiveBot", BindingFlags.NonPublic)!;
         Set("_bots", (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(botType))!);
         var args = new Dictionary<string, JsonElement> { ["bot"] = JsonSerializer.SerializeToElement("does-not-match") };
         var response = McpTools.Handle("get_perf_stats", args, manager);
         Assert.False(response.IsError);
         using var doc = JsonDocument.Parse(Assert.IsType<TextContentBlock>(Assert.Single(response.Content)).Text);
+        var idle = doc.RootElement.GetProperty("idleWithTarget");
+        Assert.Equal(0, idle.GetProperty("currentCount").GetInt32());
+        Assert.Equal(0, idle.GetProperty("botsLastMinute").GetInt32());
+        Assert.Equal(JsonValueKind.Null, idle.GetProperty("sampleAgeSeconds").ValueKind);
         var stall = doc.RootElement.GetProperty("stall");
         var minute = stall.GetProperty("lastCompletedMinute");
         Assert.Equal(1500, minute.GetProperty("decisionPassMaxMs").GetDouble());

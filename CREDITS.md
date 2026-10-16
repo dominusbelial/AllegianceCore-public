@@ -20,7 +20,7 @@ repository (MIT, "Copyright (c) 2017 FreeAllegiance"; notice in `NOTICE`):
 
 | Files | Where |
 |---|---|
-| 418 game sounds (`.ogg`) | `src/Allegiance.ClientCore.MonoGame/Content/Sounds/` |
+| 460 game sounds (`.ogg`) | `src/Allegiance.ClientCore.MonoGame/Content/Sounds/` |
 | `sounddef.mdl`, `quickchat.mdl` (sound and quick-chat definitions) | `src/Allegiance.ClientCore.MonoGame/Content/` |
 
 Renders of original ship models (reference images used to generate the Meshy
@@ -101,3 +101,10 @@ does not imply endorsement by ESA, NASA, NOIRLab or any of their staff of this
 project. **NASA imagery** is generally not subject to copyright in the US; it's
 credited here per NASA's media guidelines. Images were processed (cropped, star
 removal, background removal, feathering, rescaling) for use in the game.
+
+### AMD FidelityFX Super Resolution 1
+
+EASU edge-adaptive upsampling and RCAS sharpening are ported from
+[AMD GPUOpen FidelityFX-FSR](https://github.com/GPUOpen-Effects/FidelityFX-FSR),
+revision `a21ffb8f6c13233ba336352bdff293894c706575` (MIT, copyright 2021 AMD).
+The full license is in `NOTICE`. This is a modern client addition (P643).

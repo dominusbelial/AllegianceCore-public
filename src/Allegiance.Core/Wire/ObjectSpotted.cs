@@ -25,13 +25,12 @@ namespace Allegiance.Core.Wire;
 /// envelope's <c>objecttype</c> discriminator (<see cref="ExportProbe"/> /
 /// <see cref="ExportShip"/>), unrelated to this struct's members, exactly as
 /// <c>DataProbeExport</c> established for its own <c>otTarget</c>
-/// (<c>DataProbeExport.cs:50-54</c>). <b>Wire only.</b> The real native
+/// (<c>DataProbeExport.cs:50-54</c>). The real native
 /// senders emit <c>OBJECT_SPOTTED</c> while traversing a side's vision
 /// system (<c>FedSrv.CPP:11015</c>, ally branch; <c>FedSrv.CPP:11058</c>,
 /// spotting-side branch), each assigning <c>otObject/oidObject</c> from the
-/// model and <c>otSpotter/oidSpotter</c> from the spotting ship. That trigger
-/// needs a scanning/detection system this port lacks — no trigger is wired
-/// here, this slice only defines the message shape.
+/// model and <c>otSpotter/oidSpotter</c> from the spotting ship. Client handling
+/// follows <c>clintlib/appmsg.cpp:3223-3318</c> (P675).
 /// </summary>
 public sealed class ObjectSpotted : IFedMessage
 {
@@ -66,8 +65,8 @@ public sealed class ObjectSpotted : IFedMessage
 
     public static ObjectSpotted Decode(ReadOnlySpan<byte> buf)
     {
-        if (buf.Length < FixedSize)
-            throw new ArgumentException($"OBJECT_SPOTTED needs >= {FixedSize} bytes, got {buf.Length}");
+        if (buf.Length != FixedSize)
+            throw new ArgumentException($"OBJECT_SPOTTED needs exactly {FixedSize} bytes, got {buf.Length}");
         var hdr = FedMessageHeader.Read(buf);
         if (hdr.Fmid != Fmid) throw new ArgumentException($"expected OBJECT_SPOTTED fmid={Fmid}, got {hdr.Fmid}");
         if (hdr.CbMsg != buf.Length) throw new ArgumentException($"cbmsg={hdr.CbMsg} != buffer length {buf.Length}");

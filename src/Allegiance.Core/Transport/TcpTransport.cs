@@ -1,5 +1,7 @@
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -135,7 +137,63 @@ public sealed class TcpTransport : ITransport
 
     private const int LenWidth = 4;
     private const int HeaderWidth = 1 + LenWidth;
+
+    // P654 (H-02/H-21) — the SANITY cap for the CLIENT half's inbound frames
+    // (server -> client): a connected client may legitimately receive a large
+    // world/export burst, so it keeps the historical ~16 MiB ceiling.
     private const int MaximumFrame = 1 << 24; // sanity cap (~16 MiB)
+
+    // P654 (H-02) — the SERVER half's inbound DATA-phase frame cap. Client ->
+    // server traffic is tiny: the largest legitimate client message is about a
+    // 1.1 KB LOGONREQ, so 64 KiB is generous. A pre-auth peer can no longer
+    // claim a 16 MiB body up front (the old code allocated `new byte[lenRaw]`
+    // before a single body byte arrived -> 512 MiB held with 32 slowloris
+    // connections). Bounding each in-progress frame to 64 KiB also bounds the
+    // per-frame CRC work to a negligible amount on the sim thread (H-21).
+    // Internal/settable so the server binds it from config and tests can
+    // shrink it.
+    public static uint ServerInboundMaxFrame { get; set; } = 64u * 1024;
+
+    // P654 (H-02) — a read DEADLINE for a frame whose body is in progress (a
+    // peer that has sent a header then dribbles body bytes, or stalls) is
+    // dropped after this long rather than parking a buffer + thread forever.
+    // Applied ONLY once a frame's header has been read (completing its body),
+    // never to an idle-but-healthy data session — an idle peer between frames
+    // is unaffected. Internal/settable for the suite.
+    public static TimeSpan DataFrameReadTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// P671 — the IDLE timeout for a host-side peer's inbound data session: a
+    /// peer that sends NO bytes at all for this long (silent link) is dropped
+    /// as link-dead. This is the counterpart to <see cref="DataFrameReadTimeout"/>:
+    /// that bounds a frame once it has STARTED (header byte seen), while this
+    /// bounds the silence BETWEEN frames. Aligned with the native client's
+    /// link-dead tolerance <c>g_sDeadTime = 30</c> (clintlib.cpp:2047). A healthy
+    /// client never trips it, because the shared client session keep-alive sends
+    /// a <c>CS_PING</c> every 6 s (<c>clintlib.cpp:2050-2087 CheckServerLag</c>),
+    /// so a well-behaved peer always has traffic well inside this window.
+    /// Internal/settable so the server binds it from config and the suite can
+    /// shrink it for a fast, deterministic test.
+    /// </summary>
+    public static TimeSpan DataLinkIdleTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    // P654 (H-15) — resource caps on the accept path. Without them a hostile
+    // or runaway peer can open unbounded connections (one thread per
+    // connection) and consume the process. All internal/settable so the server
+    // binds them from config and the suite can shrink them for fast tests.
+    //    MaxConnections       — hard ceiling on live connections (greet +
+    //                           established). 1024 accommodates the 200v200
+    //                           rig comfortably.
+    //    MaxConnectionsPerIp   — ceiling on connections from one source address
+    //                           (default 64: a sane public-server default; the
+    //                           200v200 rig's ~390 bots all come from one MAC
+    //                           host, so the rig's recommended config raises
+    //                           this — see README).
+    //    MaxPendingHandshake   — ceiling on connections still in the greeting
+    //                           phase (the pre-OnPeerJoined window).
+    public static int MaxConnections { get; set; } = 1024;
+    public static int MaxConnectionsPerIp { get; set; } = 64;
+    public static int MaxPendingHandshake { get; set; } = 256;
 
     // P312: the greeting body is just a player name (a few dozen bytes), so a
     // staller must never be able to claim a 16 MiB greeting and force that
@@ -152,14 +210,9 @@ public sealed class TcpTransport : ITransport
     internal static int SendTimeoutMs { get; set; } = 10_000;
     private const int SendBufferSize = 8 * 1024;
 
-    // P605 — pool mode: a much tighter per-write socket timeout than the 10 s
-    // thread-per-peer default. Each peer's whole-frame write runs on a SHARED
-    // worker, so a stalled peer must give up its blocking write almost
-    // immediately (and be dropped) rather than tying up the worker (and every
-    // neighbour behind it) for up to 10 s. Healthy writes are instantaneous, so
-    // this budget never bites a normal peer. Steady-state protection is the
-    // not-writable skip in <see cref="PeerSender.TryWriteHead"/>; this bounds
-    // only the rare write-already-started-then-stalled transient.
+    // P670 — pooled sockets are NON-BLOCKING (P645). SendTimeout does not
+    // bound normal pool turns; Socket.Send returns partial progress / WouldBlock.
+    // Retain the historical defensive timeout; it is not the pool's fairness budget.
     private const int PoolSendTimeoutMs = 250;
 
     // P312: the default greeting-read timeout on an accepted socket (10 s). A
@@ -225,12 +278,35 @@ public sealed class TcpTransport : ITransport
     private readonly object _gate = new();
     private readonly Dictionary<ConnectionId, PeerSender> _peers = new();
     private readonly List<Thread> _threads = new();
+    // P654 (H-15) — accept-path resource accounting, guarded by _gate:
+    //   _activeByIp        — every LIVE connection (greet or established) by
+    //                        source address, for the per-IP cap.
+    //   _pendingGreets     — connections still between accept and the end of
+    //                        their greeting (pre-OnPeerJoined), for the
+    //                        pending-handshake cap and the total-cap tally.
+    //   _peerIpById        — each ESTABLISHED peer's source address, removed
+    //                        exactly once when the peer is reaped (so the
+    //                        per-IP count stays accurate across the data
+    //                        session).
+    private readonly Dictionary<IPAddress, int> _activeByIp = new();
+    private readonly Dictionary<ConnectionId, IPAddress> _peerIpById = new();
+    private int _pendingGreets;
     // P605 — send-draining mode and (in pool mode) the fixed worker pool.
     // The client half always uses a dedicated writer (a single connection gains
     // nothing from the pool), so _pool is only ever populated on the host.
     private readonly TransportMode _mode;
     private readonly int _poolWorkerCount;
     private SendWorkerPool? _pool;
+    private readonly SendCounters _sendCounters = new();
+    private readonly SendStallDetector _sendStallDetector = new();
+    private long _sendWindowStarted = Stopwatch.GetTimestamp();
+    private long _lastEnqueued, _lastWritten, _lastQueued;
+
+    /// <summary>Lifetime host bytes actually accepted by Socket.Send / NetworkStream.Write,
+    /// including outer framing. Does not imply receipt by the remote application.</summary>
+    public long TotalWrittenBytes => Interlocked.Read(ref _sendCounters.Written);
+    public long TotalEnqueuedBytes => Interlocked.Read(ref _sendCounters.Enqueued);
+
     // P605 test seam (InternalsVisibleTo): the mode a transport constructed
     // without an explicit mode argument falls back to. Lets the transport test
     // suite run the SAME body under both modes. Default thread-per-peer =
@@ -283,6 +359,10 @@ public sealed class TcpTransport : ITransport
     public bool IsConnected { get; private set; }
     public ConnectionId LocalId { get; private set; } = ConnectionId.Me;
     public ushort BoundPort => _boundPort;
+
+    /// <summary>P661: optional host-only accounting. Set before Host; client
+    /// transports retain the null fast path. No send policy depends on it.</summary>
+    public EgressAccounting? Egress { get; init; }
 
     public void Host(ushort port = 0)
     {
@@ -383,7 +463,7 @@ public sealed class TcpTransport : ITransport
         }
         // Enqueue-and-return: never blocks on socket I/O. A dead/disconnected
         // peer's sender no-ops its enqueue internally.
-        ps.Enqueue(BuildFrame(FrameType.Data, data), guaranteed, coalesceKey);
+        ps.EnqueueData(data, guaranteed, coalesceKey);
     }
 
     /// <summary>
@@ -402,6 +482,12 @@ public sealed class TcpTransport : ITransport
     /// stays bounded). See <see cref="ITransport.SendGuaranteedCoalescing"/>.</summary>
     public void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey)
         => Send(target, data, guaranteed: true, coalesceKey);
+
+    /// <summary>Server-observed socket provenance; never uses greeting/name data.</summary>
+    public bool IsPeerLoopback(ConnectionId id)
+    {
+        lock (_gate) return _peers.TryGetValue(id, out var peer) && peer.IsLoopback;
+    }
 
     /// <summary>
     /// P619c — mark a connection as a connected HUMAN client (the server calls
@@ -461,6 +547,47 @@ public sealed class TcpTransport : ITransport
             {
                 TcpClient client = l.AcceptTcpClient();
                 ConfigureAcceptedSocket(client);
+                // P654 (H-15) — resource caps before we commit a thread to this
+                // connection: total connections, per-source-IP, and pending
+                // (greet-phase) handshakes. A refused connection is closed
+                // immediately (never gets a greet thread) and logged once. The
+                // per-IP cap is why a single hostile host (or a runaway bot
+                // host) can no longer exhaust the process; the 200v200 rig's
+                // ~390 bots all come from one MAC host, so its recommended
+                // config raises MaxConnectionsPerIp (see README).
+                var remote = RemoteIpOf(client);
+                bool accepted;
+                lock (_gate)
+                {
+                    int live = _peers.Count + _pendingGreets;
+                    int perIp = _activeByIp.TryGetValue(remote, out var c) ? c : 0;
+                    if (live >= MaxConnections)
+                    {
+                        accepted = false;
+                        LogCapRefusal(client, $"total connection cap {MaxConnections} reached");
+                    }
+                    else if (perIp >= MaxConnectionsPerIp)
+                    {
+                        accepted = false;
+                        LogCapRefusal(client, $"per-IP cap {MaxConnectionsPerIp} reached for {remote}");
+                    }
+                    else if (_pendingGreets >= MaxPendingHandshake)
+                    {
+                        accepted = false;
+                        LogCapRefusal(client, $"pending-handshake cap {MaxPendingHandshake} reached");
+                    }
+                    else
+                    {
+                        accepted = true;
+                        _pendingGreets++;
+                        _activeByIp[remote] = perIp + 1;
+                    }
+                }
+                if (!accepted)
+                {
+                    try { client.Dispose(); } catch { /* best effort */ }
+                    continue;
+                }
                 // P312: the greeting read now runs on ITS OWN thread per
                 // connection (HandlePeer), so AcceptTcpClient() returns
                 // immediately. Previously HandlePeer ran inline here and its
@@ -469,7 +596,7 @@ public sealed class TcpTransport : ITransport
                 // silently blocked every new join (review finding C2). With the
                 // read off the accept loop, a stalled greet blocks only that
                 // connection's own thread and the loop keeps accepting.
-                var greet = new Thread(() => HandlePeer(client))
+                var greet = new Thread(() => HandlePeer(client, remote))
                 { IsBackground = true, Name = "greet" };
                 greet.Start();
             }
@@ -496,10 +623,11 @@ public sealed class TcpTransport : ITransport
         client.ReceiveTimeout = (int)GreetTimeout.TotalMilliseconds;
     }
 
-    private void HandlePeer(TcpClient client)
+    private void HandlePeer(TcpClient client, IPAddress remote)
     {
         NetworkStream? stream = null;
         ConnectionId id = default;
+        bool established = false;
         try
         {
             stream = client.GetStream();
@@ -528,8 +656,18 @@ public sealed class TcpTransport : ITransport
             // never produce the same id. (_nextPeerId starts at 0 and
             // Interlocked.Increment yields 1 for the first peer.)
             id = new ConnectionId(unchecked((uint)Interlocked.Increment(ref _nextPeerId)));
-            var sender = new PeerSender(stream, client, r => DropPeer(id, r));
-            lock (_gate) _peers[id] = sender;
+            var sender = new PeerSender(stream, client, r => DropPeer(id, r))
+            {
+                Counters = _sendCounters,
+                Egress = Egress,
+                EgressHarness = name.StartsWith("mcp-", StringComparison.Ordinal),
+            };
+            lock (_gate)
+            {
+                _peers[id] = sender;
+                _peerIpById[id] = remote;   // P654 (H-15) — attribute the IP for the per-IP cap
+                established = true;          // this connection survived the greeting
+            }
             StartOrPool(id, sender);
             // Constraint: OnPeerJoined BEFORE the app sees any datagram. The
             // greeting above was consumed internally; OnReceive cannot fire
@@ -549,6 +687,23 @@ public sealed class TcpTransport : ITransport
             client.Dispose();
             RecordDisconnectRaw(gr, $"greeting failed ({gr})");
             return;
+        }
+        finally
+        {
+            // P654 (H-15) — the greeting phase is over either way: release the
+            // pending-handshake slot. A connection that FAILED the greeting is
+            // also released from the per-IP tally (it never became a peer); an
+            // established peer keeps its per-IP entry until reaped
+            // (RaisePeerLeftIfFirst).
+            lock (_gate)
+            {
+                if (_pendingGreets > 0) _pendingGreets--;
+                if (!established && _activeByIp.TryGetValue(remote, out var cnt))
+                {
+                    if (cnt > 1) _activeByIp[remote] = cnt - 1;
+                    else _activeByIp.Remove(remote);
+                }
+            }
         }
 
         NetworkStream peer = stream!;
@@ -611,6 +766,25 @@ public sealed class TcpTransport : ITransport
         }
     }
 
+    /// <summary>P654 (H-14) — proactively disconnect one host-side peer by id
+    /// (e.g. the server after a graceful LOGOFF, which must not leave the socket
+    /// open to re-arm LOGONREQ and churn ship ids). Raises
+    /// <see cref="ITransportSite.OnPeerLeft"/> exactly once with the given
+    /// reason, closes the peer's sender (unblocking its read loop). No-op for a
+    /// peer that is already gone / for a non-host transport.</summary>
+    public void ClosePeer(ConnectionId id, DisconnectReason reason = DisconnectReason.Shutdown)
+    {
+        if (!_isHost) return;
+        DropPeer(id, reason);
+    }
+
+    /// <summary>P654 (H-15) test seam: the number of live connections (greet +
+    /// established) currently counted by the accept-path caps.</summary>
+    internal int LiveConnectionCount()
+    {
+        lock (_gate) return _peers.Count + _pendingGreets;
+    }
+
     /// <summary>Raise <see cref="ITransportSite.OnPeerLeft"/> exactly once per
     /// peer, whichever of the read-loop finally / DropPeer gets there first.
     /// The <paramref name="reason"/> is counted into the per-window disconnect
@@ -622,10 +796,44 @@ public sealed class TcpTransport : ITransport
         if (_peerEnded.TryAdd(id, 0))
         {
             _disconnectCounts.AddOrUpdate(reason, 1, (_, c) => c + 1);
+            // P654 (H-15) — release the established peer's per-IP accounting so
+            // the per-IP tally stays accurate across the data session (this
+            // peer's slot was held since accept, or since it became a peer).
+            if (_peerIpById.TryGetValue(id, out var ip))
+            {
+                _peerIpById.Remove(id);
+                if (_activeByIp.TryGetValue(ip, out var cnt))
+                {
+                    if (cnt > 1) _activeByIp[ip] = cnt - 1;
+                    else _activeByIp.Remove(ip);
+                }
+            }
             if (logLine)
                 Console.WriteLine($"[conn-drop] peer {id} left reason={reason}");
             _site.OnPeerLeft(id);
         }
+    }
+
+    /// <summary>P654 (H-15) — the source IP of an accepted socket, for the
+    /// per-IP connection cap. Falls back to IPv4Loopback if the remote endpoint
+    /// is unavailable (it never is on an accepted socket).</summary>
+    private static IPAddress RemoteIpOf(TcpClient client)
+    {
+        try
+        {
+            if (client.Client.RemoteEndPoint is IPEndPoint ep && ep.Address is { } a)
+                return a;
+        }
+        catch { /* socket torn down mid-check */ }
+        return IPAddress.Loopback;
+    }
+
+    /// <summary>P654 (H-15) — one (rate-friendly) log line for a refused
+    /// connection, so an operator sees a cap was enforced without every
+    /// refused attempt spamming the log.</summary>
+    private static void LogCapRefusal(TcpClient client, string why)
+    {
+        Console.WriteLine($"[conn] refused connection from {RemoteIpOf(client)}: {why}");
     }
 
     /// <summary>P606 — record a disconnect that never earned a connection id
@@ -666,6 +874,41 @@ public sealed class TcpTransport : ITransport
         int total = 0;
         foreach (var v in _disconnectCounts.Values) total += v;
         return total;
+    }
+
+    /// <summary>P670: allocation-free, single-consumer profiler sample into reusable storage.
+    /// Buffers must cover the configured connection and worker caps; aggregate totals also
+    /// include peers that departed during the window. No send policy depends on this.</summary>
+    public SendWindow DrainSendWindow(Span<PeerSendWindow> peers, Span<SendWorkerWindow> workers)
+    {
+        long now = Stopwatch.GetTimestamp();
+        double seconds = (now - _sendWindowStarted) / (double)Stopwatch.Frequency;
+        _sendWindowStarted = now;
+        long queued = 0;
+        int peerCount = 0, workerCount = _pool?.WorkerCount ?? 0;
+        lock (_gate)
+        {
+            if (peers.Length < _peers.Count || workers.Length < workerCount)
+                throw new ArgumentException("send diagnostic buffers must cover live peers and pool workers");
+            foreach (var (id, sender) in _peers)
+            {
+                var row = sender.DrainSendWindow(id);
+                peers[peerCount++] = row;
+                queued += row.QueuedBytes;
+            }
+        }
+        if (_pool is { } pool)
+            for (int i = 0; i < workerCount; i++) workers[i] = pool._workers[i].Diagnostics.Drain(i);
+        long enqueued = Interlocked.Read(ref _sendCounters.Enqueued);
+        long written = TotalWrittenBytes;
+        long growth = queued - _lastQueued;
+        var window = new SendWindow(seconds, enqueued - _lastEnqueued, written - _lastWritten,
+            queued, growth, peerCount, workerCount,
+            _sendStallDetector.Observe(seconds, enqueued - _lastEnqueued, written - _lastWritten, growth));
+        _lastEnqueued = enqueued;
+        _lastWritten = written;
+        _lastQueued = queued;
+        return window;
     }
 
     /// <summary>
@@ -735,7 +978,31 @@ public sealed class TcpTransport : ITransport
         {
             while (_running)
             {
-                (byte type, byte[] body) = ReadFrame(s);
+                // P654 (H-02/H-21): the HOST's inbound data frames are capped at
+                // ServerInboundMaxFrame (a pre-auth peer can no longer claim a
+                // huge body up front), and the body has a read deadline so a
+                // header-then-stall connection is dropped instead of parking a
+                // buffer + thread. The CLIENT half keeps the larger MaximumFrame
+                // (server -> client world/export bursts) and no deadline (it is
+                // the trusted server speaking).
+                //
+                // P671 — split the HOST's read bounds into two distinct
+                // timeouts, because the old single deadline (computed here,
+                // BEFORE ReadFrame) measured IDLE time, not a stalled in-progress
+                // frame — so a client that simply sent nothing for 30 s (a docked
+                // or staged bot that never sends CS_PING) was wrongly dropped as
+                // ReadErrorOrEof. Now:
+                //   * DataLinkIdleTimeout  bounds the SILENCE between frames (no
+                //     byte at all) — the link-dead case; a healthy client never
+                //     hits it because it pings every 6 s;
+                //   * DataFrameReadTimeout  bounds a frame once it has STARTED
+                //     (first header byte seen), preserving P654's protection
+                //     against header-then-stall attackers.
+                uint cap = _isHost ? ServerInboundMaxFrame : MaximumFrame;
+                long idleDeadline = _isHost
+                    ? Environment.TickCount64 + (long)DataLinkIdleTimeout.TotalMilliseconds : 0;
+                long frameTimeoutMs = _isHost ? (long)DataFrameReadTimeout.TotalMilliseconds : 0;
+                (byte type, byte[] body) = ReadFrame(s, cap, idleDeadline, frameTimeoutMs);
                 if (type != (byte)FrameType.Data) { CloseQuiet(s); return; }
                 _site.OnReceive(from, body);
             }
@@ -762,16 +1029,55 @@ public sealed class TcpTransport : ITransport
         return frame;
     }
 
-    private static (byte Type, byte[] Body) ReadFrame(NetworkStream s, uint maxBodyLen = MaximumFrame)
+    /// <summary>P654 (H-02) + P671 — assemble one complete data frame. The body
+    /// buffer is grown as bytes actually arrive (starting small, doubling up to
+    /// the declared length capped at <paramref name="maxBodyLen"/>), instead of
+    /// the old code's `new byte[lenRaw]` up front — so a hostile peer that claims
+    /// a large body but never sends it never forces the allocation. The read is
+    /// bounded by TWO separate deadlines:
+    ///   * <paramref name="idleDeadlineMs"/> (may be 0 = none) bounds waiting for
+    ///     the frame's FIRST byte — the SILENT/idle link case. It is anchored at
+    ///     entry, before the header is read.
+    ///   * <paramref name="frameTimeoutMs"/> (may be 0 = none) bounds the rest of
+    ///     the frame once it has STARTED (first header byte seen) — the
+    ///     header-then-stall slowloris case, preserving P654 (H-02). It is
+    ///     anchored AFTER the first byte arrives, so it bounds a STALLED
+    ///     in-progress frame, never an idle-but-healthy data session.</summary>
+    private static (byte Type, byte[] Body) ReadFrame(NetworkStream s, uint maxBodyLen = MaximumFrame,
+                                                      long idleDeadlineMs = 0, long frameTimeoutMs = 0)
     {
         Span<byte> hdr = stackalloc byte[HeaderWidth];
-        ReadExactly(s, hdr);
+        // P671 — the IDLE deadline bounds only the frame's first byte: a link
+        // that sends nothing at all is link-dead. Once a byte has arrived the
+        // frame is in progress and the (separate) FRAME deadline takes over.
+        int first = ReadSome(s, hdr.Slice(0, 1), idleDeadlineMs);
+        if (first <= 0) throw new EndOfStreamException("peer closed before frame");
+        // P671 — anchor the frame deadline NOW that the frame has started. A
+        // header that stalls, or a body that dribbles, must complete within
+        // frameTimeoutMs of the header's first byte.
+        long frameDeadline = frameTimeoutMs > 0
+            ? Environment.TickCount64 + frameTimeoutMs : 0;
+        ReadExactly(s, hdr.Slice(1), frameDeadline);
         byte type = hdr[0];
         uint lenRaw = BinaryPrimitives.ReadUInt32LittleEndian(hdr.Slice(1));
         if (lenRaw > maxBodyLen)
             throw new IOException($"frame length {lenRaw} exceeds safety cap {maxBodyLen}");
-        var body = new byte[(int)lenRaw];
-        ReadExactly(s, body);
+        if (lenRaw == 0) return (type, Array.Empty<byte>());
+        // Grow the body buffer as bytes arrive: start at 4 KiB and double up to
+        // the (capped) declared length, so the allocation tracks real arrival.
+        var body = new byte[(int)Math.Min(lenRaw, 4096)];
+        int filled = 0;
+        while (filled < (int)lenRaw)
+        {
+            if (filled == body.Length)
+            {
+                int grow = (int)Math.Min(lenRaw, (long)body.Length * 2);
+                Array.Resize(ref body, grow);
+            }
+            int n = ReadSome(s, body.AsSpan(filled, body.Length - filled), frameDeadline);
+            if (n <= 0) throw new EndOfStreamException("peer closed mid-frame");
+            filled += n;
+        }
         return (type, body);
     }
 
@@ -792,11 +1098,41 @@ public sealed class TcpTransport : ITransport
     /// ready (an idle-wake); shows the efficient-block path is engaged.</summary>
     public static long WouldBlockWaits => Interlocked.Read(ref _wouldBlockWaits);
 
-    private static void ReadExactly(Stream s, Span<byte> dst)
+    private static void ReadExactly(Stream s, Span<byte> dst, long deadlineMs = 0)
     {
         int off = 0;
         while (off < dst.Length)
         {
+            int n = ReadSome(s, dst.Slice(off, dst.Length - off), deadlineMs);
+            if (n <= 0) throw new EndOfStreamException("peer closed mid-frame");
+            off += n;
+        }
+    }
+
+    /// <summary>P654 (H-02) + P671 — one read of up to <paramref name="dst"/>
+    /// bytes with P646's efficient-blocking (Poll-based) handling for
+    /// non-blocking pool sockets, plus the data-session read bound. Returns the
+    /// bytes read; throws on EOF / socket error. When <paramref name="deadlineMs"/>
+    /// is non-zero and elapses, throws an <see cref="IOException"/> so the
+    /// stalled/idle connection is dropped. The bound is honored on BOTH socket
+    /// kinds:
+    ///   * NON-BLOCKING (pool) — P646 parks in <c>Socket.Poll</c> (250 ms) and
+    ///     re-checks the deadline each wake, so no CPU is burned and no
+    ///     would-block exception is thrown per idle peer per ms;
+    ///   * BLOCKING (thread-per-peer) — a plain blocking <c>Read</c> parks the
+    ///     thread forever and cannot be interrupted by a wall-clock check, so the
+    ///     socket is given a receive timeout equal to the remaining budget and a
+    ///     timed-out read is translated into the bound-exceeded error. Only set
+    ///     when a deadline is active: the greet handshake (deadline 0) keeps its
+    ///     P312 socket <c>ReceiveTimeout</c> undisturbed, and the client half
+    ///     (deadline 0) keeps the infinite read it relies on to detect EOF.
+    ///     Sends stay non-blocking (P645's partial-write safety is untouched).</summary>
+    private static int ReadSome(Stream s, Span<byte> dst, long deadlineMs)
+    {
+        while (true)
+        {
+            if (deadlineMs != 0 && Environment.TickCount64 > deadlineMs)
+                throw new IOException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
             // P646 — block efficiently on a NON-BLOCKING pool socket instead of
             // throwing+catching a would-block IOException every ~1 ms (P645's
             // Thread.Sleep(1) retry burned CPU and allocated an exception object
@@ -809,11 +1145,7 @@ public sealed class TcpTransport : ITransport
             // thread-per-peer data reads) must keep using the plain blocking
             // Read, because Socket.Poll bypasses the socket's ReceiveTimeout and
             // would defeat the greeting timeout (a silent connection would never
-            // be dropped). A blocking Read parks the thread with no exception, so
-            // it needs no Poll. Sends stay non-blocking (P645's partial-write
-            // safety is untouched); the would-block catch below remains as a
-            // belt-and-suspenders fallback for the reader/worker race on a
-            // shared socket.
+            // be dropped).
             if (s is NetworkStream ns && ns.Socket is { Blocking: false } sock
                 && !sock.Poll(ReadPollTimeoutMicros, SelectMode.SelectRead))
             {
@@ -822,10 +1154,19 @@ public sealed class TcpTransport : ITransport
                     throw new IOException("socket error");
                 continue;
             }
+            // P671 — a BLOCKING (thread-per-peer) data socket honors the bound by
+            // bounding the blocking Read itself. Only applied when a deadline is
+            // active; greeting (deadline 0) keeps its P312 socket ReceiveTimeout
+            // and the client half (deadline 0) keeps its infinite read.
+            if (s is NetworkStream bn && bn.Socket is { Blocking: true } && deadlineMs != 0)
+            {
+                long remain = deadlineMs - Environment.TickCount64;
+                bn.ReadTimeout = remain > 0 ? (int)remain : 1;
+            }
             int n;
             try
             {
-                n = s.Read(dst.Slice(off, dst.Length - off));
+                n = s.Read(dst);
             }
             catch (Exception ex) when (IsWouldBlock(ex))
             {
@@ -838,8 +1179,17 @@ public sealed class TcpTransport : ITransport
                 Thread.Sleep(1);
                 continue;
             }
-            if (n <= 0) throw new EndOfStreamException("peer closed mid-frame");
-            off += n;
+            catch (IOException ioex) when (IsSocketTimeout(ioex) && deadlineMs != 0)
+            {
+                // P671 — a BLOCKING socket's receive timeout fired. Re-check the
+                // wall clock: if the bound truly passed, the top of the loop
+                // throws the real bound-exceeded error; otherwise (spurious early
+                // timeout) retry with a fresh remaining budget.
+                if (Environment.TickCount64 > deadlineMs)
+                    throw new IOException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
+                continue;
+            }
+            return n;
         }
     }
 
@@ -932,6 +1282,7 @@ public sealed class TcpTransport : ITransport
 
         private readonly NetworkStream _stream;
         private readonly TcpClient _tcpClient;
+        public bool IsLoopback { get; }
         private readonly Action<DisconnectReason> _onDead;
         private readonly CancellationTokenSource _cts = new();
         // P634 — TWO per-peer send lanes instead of one shared FIFO. Join and
@@ -955,6 +1306,29 @@ public sealed class TcpTransport : ITransport
         private readonly LinkedList<QueuedFrame> _orderedQueue = new();
         private readonly LinkedList<QueuedFrame> _streamQueue = new();
         private readonly object _sync = new();
+        private readonly Stack<LinkedListNode<QueuedFrame>> _freeNodes = new();
+        // A peer's frames return on a different thread from their producer.
+        // A private pool retains its recurring status bursts without competing
+        // for the shared pool's small cross-thread bucket capacity.
+        private readonly ArrayPool<byte> _framePool = ArrayPool<byte>.Create(
+            maxArrayLength: 1 << 20, maxArraysPerBucket: 512);
+        private LinkedListNode<QueuedFrame> RentNode(QueuedFrame frame)
+        {
+            if (!_freeNodes.TryPop(out var node)) return new(frame);
+            node.Value = frame;
+            return node;
+        }
+        private void RecycleNode(LinkedListNode<QueuedFrame> node)
+        {
+            node.Value = default;
+            // Keep the reusable node cache bounded even after a reliable burst.
+            if (_freeNodes.Count < 512) _freeNodes.Push(node);
+        }
+        private void ReturnFrame(QueuedFrame frame)
+        {
+            if (frame.Pooled) _framePool.Return(frame.Frame);
+        }
+
         // P606 — latest-wins coalescing over the STREAM lane only:
         // coalesceKey -> the stream-queue node holding that key's newest
         // pending frame. Lets Enqueue supersede an older pending stream frame
@@ -972,7 +1346,15 @@ public sealed class TcpTransport : ITransport
         // connection is closed (unknown progress on a timed-out write), never
         // abandoned-and-continued on the same socket.
         private byte[]? _inflight;
-        private int _inflightOffset;
+        private int _inflightOffset, _inflightLength;
+        private bool _inflightPooled;
+        private bool _inflightStream;
+        internal EgressAccounting? Egress;
+        internal SendCounters? Counters;
+        private long _enqueuedBytes, _writtenBytes, _reportedEnqueued, _reportedWritten;
+        // Classification is diagnostic only, independent of IsHuman (which
+        // controls liveness policy). Greeting classification covers join traffic.
+        internal bool EgressHarness;
         // P611 — the peer's liveness clock, in ticks: the last time the socket
         // accepted ANY bytes (a send completed partially or fully). Updated by
         // the writer/pool worker on every successful write. A peer whose socket
@@ -1013,6 +1395,7 @@ public sealed class TcpTransport : ITransport
 
         public PeerSender(NetworkStream stream, TcpClient tcpClient, Action<DisconnectReason> onDead)
         {
+            IsLoopback = tcpClient.Client.RemoteEndPoint is IPEndPoint ep && IPAddress.IsLoopback(ep.Address);
             _stream = stream;
             _tcpClient = tcpClient;
             _onDead = onDead;
@@ -1034,11 +1417,28 @@ public sealed class TcpTransport : ITransport
         /// place) any older pending frame for the same peer+key — latest-wins —
         /// instead of appending a stale duplicate (P606).</summary>
         public void Enqueue(byte[] frame, bool guaranteed, int coalesceKey)
+            => EnqueueCore(frame, frame.Length, false, guaranteed, coalesceKey);
+
+        internal void EnqueueData(ReadOnlySpan<byte> body, bool guaranteed, int coalesceKey)
+        {
+            if (_disconnected) return;
+            int length = HeaderWidth + body.Length;
+            var frame = _framePool.Rent(length);
+            frame[0] = (byte)FrameType.Data;
+            BinaryPrimitives.WriteUInt32LittleEndian(frame.AsSpan(1), (uint)body.Length);
+            body.CopyTo(frame.AsSpan(HeaderWidth));
+            EnqueueCore(frame, length, true, guaranteed, coalesceKey);
+        }
+
+        private void EnqueueCore(byte[] frame, int length, bool pooled, bool guaranteed, int coalesceKey)
         {
             bool fireDisconnect = false;
             lock (_sync)
             {
-                if (_disconnected) return;
+                if (_disconnected) { if (pooled) _framePool.Return(frame); return; }
+                _enqueuedBytes += length;
+                if (Counters is { } counters) Interlocked.Add(ref counters.Enqueued, length);
+                Egress?.Record(frame.AsSpan(0, length), EgressHarness, coalesceKey != 0, EgressEvent.Offered);
                 // Was the peer's send path fully drained before this enqueue?
                 // If so the peer is current (idle or caught up); its writer
                 // gets a fresh liveness window rather than being judged stale
@@ -1060,9 +1460,11 @@ public sealed class TcpTransport : ITransport
                         // same key is superseded in place, so the collapsed
                         // frame keeps its stream-lane position and the byte
                         // accounting stays exact.
-                        _queuedBytes -= existing.Value.Frame.Length;
-                        existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks);
-                        _queuedBytes += frame.Length;
+                        _queuedBytes -= existing.Value.Length;
+                        Egress?.Record(existing.Value.Frame.AsSpan(0, existing.Value.Length), EgressHarness, true, EgressEvent.Coalesced);
+                        ReturnFrame(existing.Value);
+                        existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled);
+                        _queuedBytes += length;
                     }
                     else
                     {
@@ -1070,10 +1472,11 @@ public sealed class TcpTransport : ITransport
                         // capacity (guaranteed traffic is never dropped here).
                         // Streaming ship-state frames are sent non-guaranteed,
                         // so they are the natural shed candidates.
-                        while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                        var node = _streamQueue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks));
+                        while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                        var node = RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled));
+                        _streamQueue.AddLast(node);
                         _coalesceNodes[coalesceKey] = node;
-                        _queuedBytes += frame.Length;
+                        _queuedBytes += length;
                     }
                 }
                 else
@@ -1084,9 +1487,9 @@ public sealed class TcpTransport : ITransport
                     // before any stream frame — so world data never starves
                     // behind the position stream. Also shed stream traffic if
                     // over capacity so an ordered burst can still land.
-                    while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                    _orderedQueue.AddLast(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks));
-                    _queuedBytes += frame.Length;
+                    while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                    _orderedQueue.AddLast(RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled)));
+                    _queuedBytes += length;
                 }
                 Monitor.Pulse(_sync);
 
@@ -1224,6 +1627,21 @@ public sealed class TcpTransport : ITransport
             return SendInflight();
         }
 
+        internal PeerSendWindow DrainSendWindow(ConnectionId id)
+        {
+            lock (_sync)
+            {
+                long written = Interlocked.Read(ref _writtenBytes);
+                long queued = _queuedBytes + (_inflight is not null ? _inflightLength - _inflightOffset : 0);
+                var row = new PeerSendWindow(id, _enqueuedBytes - _reportedEnqueued,
+                    written - _reportedWritten, queued, queued > 0
+                        ? Math.Max(0, (DateTime.UtcNow.Ticks - Interlocked.Read(ref _lastWriteProgressUtcTicks)) / TimeSpan.TicksPerMillisecond) : 0);
+                _reportedEnqueued = _enqueuedBytes;
+                _reportedWritten = written;
+                return row;
+            }
+        }
+
         /// <summary>P605 — can this peer's socket take a write right now without
         /// blocking? Polls with a zero timeout (select-for-write) so a stalled
         /// client — its OS send buffer full — is reported not-writable and the
@@ -1252,9 +1670,12 @@ public sealed class TcpTransport : ITransport
             {
                 if (!node.Value.Guaranteed)
                 {
-                    _queuedBytes -= node.Value.Frame.Length;
+                    Egress?.Record(node.Value.Frame.AsSpan(0, node.Value.Length), EgressHarness, true, EgressEvent.Dropped);
+                    _queuedBytes -= node.Value.Length;
                     if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                     _streamQueue.Remove(node);
+                    ReturnFrame(node.Value);
+                    RecycleNode(node);
                     return true;
                 }
             }
@@ -1286,8 +1707,12 @@ public sealed class TcpTransport : ITransport
             // pointing at this (now-consumed) node.
             if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
             _inflight = node.Value.Frame;
+            _inflightLength = node.Value.Length;
+            _inflightPooled = node.Value.Pooled;
             _inflightOffset = 0;
-            _queuedBytes -= _inflight.Length;
+            _inflightStream = node.Value.CoalesceKey != 0;
+            _queuedBytes -= _inflightLength;
+            RecycleNode(node);
             if (_orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
             else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
             return true;
@@ -1322,9 +1747,13 @@ public sealed class TcpTransport : ITransport
         /// Caller must NOT hold <c>_sync</c>.</summary>
         private DrainResult SendInflight()
         {
+            var diagnostics = OwnerWorker?.Diagnostics;
             if (SendOverride is { } ov)
             {
-                var o = ov(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset);
+                SendOutcome o;
+                diagnostics?.BeginWrite();
+                try { o = ov(_inflight!, _inflightOffset, _inflightLength - _inflightOffset); }
+                finally { diagnostics?.EndWrite(); }
                 if (o.Timeout) { FailAndClose(DisconnectReason.SendTimeout); return DrainResult.Dead; }
                 if (o.Error) { FailAndClose(DisconnectReason.SendError); return DrainResult.Dead; }
                 if (o.WouldBlock) return DrainResult.Blocked;
@@ -1336,7 +1765,9 @@ public sealed class TcpTransport : ITransport
                 int n;
                 try
                 {
-                    n = sock.Send(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset, SocketFlags.None);
+                    diagnostics?.BeginWrite();
+                    try { n = sock.Send(_inflight!, _inflightOffset, _inflightLength - _inflightOffset, SocketFlags.None); }
+                    finally { diagnostics?.EndWrite(); }
                 }
                 catch (SocketException se)
                 {
@@ -1358,8 +1789,10 @@ public sealed class TcpTransport : ITransport
             // controlled-stream test seam can drive the write behaviour.
             try
             {
-                _stream.Write(_inflight!, _inflightOffset, _inflight!.Length - _inflightOffset);
-                return AdvanceInflight(_inflight.Length - _inflightOffset);
+                diagnostics?.BeginWrite();
+                try { _stream.Write(_inflight!, _inflightOffset, _inflightLength - _inflightOffset); }
+                finally { diagnostics?.EndWrite(); }
+                return AdvanceInflight(_inflightLength - _inflightOffset);
             }
             catch (Exception ex) when (IsSocketTimeout(ex))
             {
@@ -1386,17 +1819,25 @@ public sealed class TcpTransport : ITransport
                 // a 0-length result). Keep the in-flight frame; not a dead peer.
                 return DrainResult.Blocked;
             }
-            // Real write progress: the OS accepted these bytes — refresh the
-            // no-progress liveness clock so a slow-but-flowing peer is never cut.
-            Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
-            _inflightOffset += n;
-            if (_inflightOffset >= _inflight!.Length)
+            lock (_sync)
             {
-                _inflight = null;
-                _inflightOffset = 0;
-                return DrainResult.Wrote;   // frame fully on the wire
+                // Real write progress: the OS accepted these bytes — refresh the
+                // no-progress liveness clock so a slow-but-flowing peer is never cut.
+                Interlocked.Exchange(ref _lastWriteProgressUtcTicks, DateTime.UtcNow.Ticks);
+                Interlocked.Add(ref _writtenBytes, n);
+                if (Counters is { } counters) Interlocked.Add(ref counters.Written, n);
+                Egress?.Record(_inflight!.AsSpan(0, _inflightLength), EgressHarness, _inflightStream, EgressEvent.Sent, _inflightOffset, n);
+                _inflightOffset += n;
+                if (_inflightOffset >= _inflightLength)
+                {
+                    if (_inflightPooled) _framePool.Return(_inflight!);
+                    _inflight = null;
+                    _inflightPooled = false;
+                    _inflightOffset = 0;
+                    return DrainResult.Wrote;   // frame fully on the wire
+                }
+                return DrainResult.Wrote;       // partial progress — resume next turn
             }
-            return DrainResult.Wrote;       // partial progress — still in flight, next call continues
         }
 
         /// <summary>P645 — stamp the disconnect reason and tear the peer down
@@ -1486,7 +1927,17 @@ public sealed class TcpTransport : ITransport
         public void Close()
         {
             _cts.Cancel();
-            lock (_sync) { _disconnected = true; Monitor.PulseAll(_sync); }
+            lock (_sync)
+            {
+                _disconnected = true;
+                foreach (var frame in _orderedQueue) ReturnFrame(frame);
+                foreach (var frame in _streamQueue) ReturnFrame(frame);
+                _orderedQueue.Clear(); _streamQueue.Clear(); _coalesceNodes.Clear();
+                _queuedBytes = 0;
+                // The sole writer may still be inside Send. It owns the in-flight
+                // lease until completion; Close never returns its buffer early.
+                Monitor.PulseAll(_sync);
+            }
             CloseQuiet(_stream);
             try { _tcpClient.Dispose(); } catch { }
         }
@@ -1498,15 +1949,19 @@ public sealed class TcpTransport : ITransport
         private readonly struct QueuedFrame
         {
             public readonly byte[] Frame;
+            public readonly int Length;
+            public readonly bool Pooled;
             public readonly bool Guaranteed;
             public readonly int CoalesceKey;
             // P634 — enqueue timestamp (Utc ticks) so the transport can report
             // the age of the oldest pending guaranteed frame (join/world
             // head-of-line delay) for the live measurements.
             public readonly long EnqueuedUtcTicks;
-            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey, long enqueuedUtcTicks)
+            public QueuedFrame(byte[] frame, bool guaranteed, int coalesceKey, long enqueuedUtcTicks, int length = -1, bool pooled = false)
             {
                 Frame = frame;
+                Length = length < 0 ? frame.Length : length;
+                Pooled = pooled;
                 Guaranteed = guaranteed;
                 CoalesceKey = coalesceKey;
                 EnqueuedUtcTicks = enqueuedUtcTicks;
@@ -1553,7 +2008,7 @@ public sealed class TcpTransport : ITransport
     /// </summary>
     private sealed class SendWorkerPool
     {
-        private readonly Worker[] _workers;
+        internal readonly Worker[] _workers;
 
         public SendWorkerPool(int workerCount)
         {
@@ -1602,6 +2057,7 @@ public sealed class TcpTransport : ITransport
             private readonly object _sync = new();
             private Thread? _thread;
             private volatile bool _running = true;
+            internal readonly SendWorkerDiagnostics Diagnostics = new();
 
             public void Assign(PeerSender peer)
             {
@@ -1642,10 +2098,16 @@ public sealed class TcpTransport : ITransport
             {
                 while (_running)
                 {
+                    Diagnostics.State(SendWorkerState.Scanning);
                     PeerSender[] snapshot;
                     lock (_sync)
                     {
-                        if (_peers.Count == 0) { Monitor.Wait(_sync, 200); continue; }
+                        if (_peers.Count == 0)
+                        {
+                            Diagnostics.State(SendWorkerState.Idle);
+                            Monitor.Wait(_sync, 200);
+                            continue;
+                        }
                         snapshot = _peers.ToArray();
                     }
 
@@ -1661,7 +2123,13 @@ public sealed class TcpTransport : ITransport
                     }
 
                     if (progressed) continue;                       // keep pumping
-                    if (anyBlocked) { Thread.Sleep(2); continue; }  // all blocked: re-poll shortly
+                    if (anyBlocked)
+                    {
+                        Diagnostics.State(SendWorkerState.Backpressure);
+                        Thread.Sleep(2);
+                        continue;
+                    }
+                    Diagnostics.State(SendWorkerState.Idle);
                     lock (_sync) { Monitor.Wait(_sync, 50); }       // idle: sleep until a Wake
                 }
             }

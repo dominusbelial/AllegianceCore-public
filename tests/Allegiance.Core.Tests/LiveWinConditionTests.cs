@@ -368,7 +368,6 @@ public class LiveWinConditionTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(ConfigThreeSides());
-        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var clients = new[] { new WireClient(), new WireClient(), new WireClient() };
         try
         {
@@ -376,6 +375,9 @@ public class LiveWinConditionTests
             for (int i = 0; i < 3; i++) clients[i].Logon(Request($"P{i}"));
             int got = PumpUntil(server, () => clients.All(c => c.ShipAssignment is not null), 4000);
             Assert.True(got < 4000, "no assignments");
+            // XXV_simple has bases for two sides. Join the three-side win-condition
+            // fixture in the lobby, before native NoBase gates started joins.
+            foreach (var mission in server.Missions) mission.Stage = MissionStage.Started;
 
             clients[2].Dispose();                            // side 2 empties; sides 0 & 1 remain
             int settled = PumpUntil(server,
@@ -557,6 +559,12 @@ public class LiveWinConditionTests
         Assert.True(got < 4000, "no assignment");
         short myId = client.ShipAssignment!.Ship.ShipId;
 
+        // P653 H-26 restores native's child-or-CAN_CHEAT suicide gate (FedSrv.CPP:6338):
+        // a lone pod may no longer suicide. Enable the configured admin predicate for the
+        // test connection (native's CanCheat escape hatch) — this is the Started-stage
+        // CONTROL proving the message/handler reachability the refusal test then negates.
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig { Enabled = true, AllowNames = ["GUINEA"] };
+
         client.SendSuicide();
         int killed = PumpUntil(server,
             () => client.Deletes.Any(d => d.ShipId == myId && d.Sdr == ShipDelete.SdrKilled),
@@ -624,10 +632,12 @@ public class LiveWinConditionTests
             short carId = sp.Carrier.Id;
             WaitDocked(control, sp.Carrier, sp.Boarder);
 
-            boarder.SendBoard(carId);
+            // The spawner assigns roles by logon drain order, not connection order.
+            var actualBoarder = new[] { carrier, boarder }.Single(c => c.ShipAssignment!.Ship.ShipId == sp.Boarder.Id);
+            actualBoarder.SendBoard(carId);
             int boarded = PumpUntil(control, () => sp.Boarder.ParentShip is not null, 8000);
             Assert.True(boarded < 8000, "control: board should succeed while Started");
-            Assert.Equal(0, boarder.BoardNacks);
+            Assert.Equal(0, actualBoarder.BoardNacks);
         }
 
         // ── Refusal leg: the same setup, but the mission is Over ──────────
@@ -645,8 +655,9 @@ public class LiveWinConditionTests
             WaitDocked(server, sp.Carrier, sp.Boarder);
 
             server.Missions[0].Stage = MissionStage.Over;    // end the mission behind the gate
-            boarder.SendBoard(sp.Carrier.Id);
-            int nacked = PumpUntil(server, () => boarder.BoardNacks > 0, 8000);
+            var actualBoarder = new[] { carrier, boarder }.Single(c => c.ShipAssignment!.Ship.ShipId == sp.Boarder.Id);
+            actualBoarder.SendBoard(sp.Carrier.Id);
+            int nacked = PumpUntil(server, () => actualBoarder.BoardNacks > 0, 8000);
             Assert.True(nacked < 8000, "boarder should get BOARD_NACK once the mission is Over");
             Assert.Null(sp.Boarder.ParentShip);              // refused — not boarded
 

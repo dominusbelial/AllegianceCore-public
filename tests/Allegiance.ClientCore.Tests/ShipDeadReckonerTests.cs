@@ -119,6 +119,80 @@ public class ShipDeadReckonerTests
         return MathF.Acos(Math.Clamp(dot, -1f, 1f)) * 180f / MathF.PI;
     }
 
+    [Theory]
+    [InlineData(5, "turn")]
+    [InlineData(2, "turn")]
+    [InlineData(5, "throttle")]
+    [InlineData(2, "throttle")]
+    [InlineData(5, "reversal")]
+    [InlineData(2, "reversal")]
+    public void Interest_tier_TCP_poses_bound_extrapolation_error(int hz, string manoeuvre)
+    {
+        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        using var sender = new System.Net.Sockets.TcpClient { NoDelay = true };
+        sender.Connect(System.Net.IPAddress.Loopback, ((System.Net.IPEndPoint)listener.LocalEndpoint).Port);
+        using var receiver = listener.AcceptTcpClient();
+        receiver.ReceiveTimeout = 10000;
+        var ship = RealClimbingShip();
+        var dr = new ShipDeadReckoner();
+        float maxError = 0, maxCorrection = 0, maxFrameStep = 0;
+        double sumSquared = 0;
+        Vector3 previous = ship.Position;
+        int samples = 0;
+        const int frames = 600;
+        // Truth runs at 20 Hz; render queries run at 60 Hz. TCP carries the
+        // production HEAVY codec, including relative position quantization.
+        for (int frame = 0; frame <= frames; frame++)
+        {
+            double now = frame / 60d;
+            if (frame % 3 == 0 && frame != 0)
+            {
+                int tick = frame / 3;
+                if (manoeuvre == "throttle") ship.Controls = ship.Controls with { Throttle = tick % 40 < 20 ? .8f : -.5f };
+                if (manoeuvre == "reversal") ship.Controls = ship.Controls with { Yaw = tick % 40 < 20 ? .15f : -.15f };
+                ship.ExecuteMove(now - .05, now);
+                ship.Position += ship.Velocity * .05f;
+            }
+            if (frame % (60 / hz) == 0)
+            {
+                dr.PoseAt(now, out var before, out _);
+                var wire = new HeavyShipsUpdate { TimeReference = (uint)(frame / 3),
+                    PositionReference = Vector3.Zero,
+                    HeavyShipEntries = [HeavyShipUpdateEntry.From((uint)(frame / 3), Vector3.Zero, ship, (uint)(frame / 3))] };
+                byte[] packet = FedPacket.Pack(wire.Encode());
+                sender.GetStream().Write(packet);
+                byte[] received = new byte[packet.Length];
+                receiver.GetStream().ReadExactly(received);
+                var heavy = HeavyShipsUpdate.Decode(FedPacket.Unpack(received).Single());
+                var entry = heavy.HeavyShipEntries.Single();
+                var update = ServerShipUpdate.FromValues(entry.ShipId, entry.StateM, entry.Controls,
+                    entry.Time(heavy.TimeReference), entry.Position(heavy.PositionReference), entry.Orientation,
+                    entry.Velocity, entry.TurnRates, entry.HullFraction, entry.ShieldFraction,
+                    entry.AmmoFraction, entry.FuelFraction, entry.EnergyFraction, entry.OreFraction, entry.Power);
+                if (frame > 0) maxCorrection = Math.Max(maxCorrection, (before - update.Position).Length());
+                dr.Seed(update, ShipDeadReckoner.HullStats.FromHull(Hull), 0, now);
+            }
+            // At sub-tick render frames compare to linearly advanced truth,
+            // rather than treating the server's tick-and-hold pose as motion.
+            Vector3 truth = ship.Position + ship.Velocity * ((frame % 3) / 60f);
+            dr.PoseAt(now, out var position, out _);
+            float error = (position - truth).Length();
+            maxError = Math.Max(maxError, error);
+            sumSquared += error * error;
+            if (frame > 0) maxFrameStep = Math.Max(maxFrameStep, (position - previous).Length());
+            previous = position;
+            samples++;
+        }
+        var result = new { hz, manoeuvre, seconds = frames / 60d, samples,
+            maxPositionError = maxError, rmsPositionError = Math.Sqrt(sumSquared / samples),
+            maxCorrection, maxRenderFrameStep = maxFrameStep };
+        _output.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+        File.WriteAllText($"/tmp/p677-prediction-{hz}-{manoeuvre}.json", System.Text.Json.JsonSerializer.Serialize(result));
+        Assert.True(maxError < (manoeuvre == "turn" ? 4 : 12), $"extrapolation error: {maxError} m");
+        Assert.True(maxFrameStep < 14, $"render step: {maxFrameStep} m");
+    }
+
     [Fact]
     public void DeadReckon_TracksRealShip_OperativeGapSubMetre_StressSmall_BeatsRaw()
     {

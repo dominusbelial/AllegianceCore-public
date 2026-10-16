@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Allegiance.Core;
 using Microsoft.Xna.Framework;
 
@@ -21,17 +22,15 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <c>ss90</c>, <c>ss101</c>, <c>ss301</c>, <c>ss98</c>, …
 /// (<c>DataStationTypeIGC.ModelName</c>).</para>
 ///
-/// <para><b>Winding / culling.</b> Exactly the P570 conclusion for ships and
-/// rocks: the native <c>.mdl</c> index stream, shipped RAW, keeps the outside
-/// faces under MonoGame's PERSPECTIVE projection with
-/// <c>CullCounterClockwiseFace</c> (see <see cref="RenderIndices"/> and the
-/// <c>P570NativeCullingTests</c>). Per-vertex normals are unchanged.</para>
+/// <para><b>Winding / culling.</b> This station pass preserves native winding
+/// through <see cref="RenderIndices"/>; it never infers a group's facing from
+/// its centroid. Per-vertex normals are unchanged.</para>
 ///
 /// <para><b>Scale.</b> Native sizes every model to its gameplay collision
 /// radius: <c>ThingGeo::SetRadius</c> sets <c>m_scale = radius / m_radiusMesh</c>
 /// (thinggeo.cpp:1185-1187) and the station passes
 /// <c>SetRadius(m_myStationType.GetRadius())</c> (stationIGC.cpp:249), where
-/// <c>m_radiusMesh</c> is the mesh's merged bounding-sphere radius and
+/// <c>m_radiusMesh</c> is its maximum vertex distance from the model origin and
 /// <c>radius = DataStationTypeIGC.Radius</c>. So the native uniform scale is
 /// <c>radius / meshRadius</c> — identical to an asteroid's
 /// <see cref="NativeAsteroidResolver.ScaleForRadius"/>.</para>
@@ -60,115 +59,33 @@ public static class NativeStationResolver
     /// </summary>
     public static readonly Matrix NoseFlip = Matrix.CreateRotationY(MathHelper.Pi);
 
-    /// <summary>
-    /// P564/P570 — the index stream shipped to the GPU for a native station mesh,
-    /// normalised so <c>CullCounterClockwiseFace</c> keeps the OUTSIDE under
-    /// MonoGame's PERSPECTIVE projection for ANY station model.
-    /// <see cref="RenderIndices"/> ships the raw DirectX winding unchanged (the
-    /// P570 conclusion for ships and rocks — the raw winding is correct under
-    /// perspective), but the shipped station corpus is not uniform: a Garrison
-    /// (<c>ss24a</c>) and an Outpost (<c>ss92</c>) were measured to wind OPPOSITE on
-    /// their near surface under the game transform. Shipping raw everywhere would
-    /// make one of them render inside-out/see-through — exactly the per-model defect
-    /// class this task hunts. <see cref="OutsideIndices"/> therefore keeps the raw
-    /// winding when the near surface is already kept by <c>CullCounterClockwiseFace</c>
-    /// (<see cref="OutsideKeptFraction"/> ≥ 0.5) and reverses it otherwise, so every
-    /// station renders solid. Per-vertex normals are unchanged.
-    /// </summary>
+    /// <summary>Native defaults to CullModeCCW (engine/context.cpp:345) and
+    /// uploads the file's indices unchanged (modeler.cpp:1637-1660;
+    /// VBIBManager.cpp:503). Keep every group's authored winding, including
+    /// concave bay walls; a radial centroid does not identify their front faces.</summary>
     public static ushort[] RenderIndices(ushort[] indices) => indices;
 
-    /// <summary>Reverse each triangle's indices (<c>a b c</c> → <c>c b a</c>) —
-    /// the same reversal <see cref="NativeShipResolver.CorrectWinding"/> applies.</summary>
-    public static ushort[] CorrectWinding(ushort[] indices)
+    /// <summary>Native TMeshGeo::GetRadius is the maximum vertex distance from
+    /// the model origin (geometry.cpp:408-418); GroupGeo and LODGeo take the
+    /// maximum child radius (geometry.cpp:1486-1496, 1748-1757). An enclosing
+    /// bounding-box sphere changes the size of bays and their light decals.</summary>
+    public static float MeshRadius(IReadOnlyList<MdlMesh> meshes, IReadOnlyList<MdlLodLevel>? lods = null)
     {
-        var outIdx = new ushort[indices.Length];
-        int whole = indices.Length - (indices.Length % 3);
-        for (int t = 0; t < whole; t += 3)
+        float radiusSquared = 0f;
+        void Include(IReadOnlyList<MdlMesh> group)
         {
-            outIdx[t] = indices[t + 2];
-            outIdx[t + 1] = indices[t + 1];
-            outIdx[t + 2] = indices[t];
+            foreach (var mesh in group)
+                for (int i = 0; i < mesh.Positions.Length; i += 3)
+                {
+                    var p = mesh.Positions;
+                    radiusSquared = MathF.Max(radiusSquared, p[i] * p[i] + p[i+1] * p[i+1] + p[i+2] * p[i+2]);
+                }
         }
-        for (int k = whole; k < indices.Length; k++)
-            outIdx[k] = indices[k];
-        return outIdx;
+        Include(meshes);
+        if (lods is not null)
+            foreach (var lod in lods) Include(lod.Meshes);
+        return MathF.Sqrt(radiusSquared);
     }
-
-    /// <summary>
-    /// The index stream that keeps the station's OUTSIDE solid under the game
-    /// perspective: the raw native winding when its near surface is already kept by
-    /// <c>CullCounterClockwiseFace</c> (≥50%), else the reversed winding. Deterministic
-    /// per model, so a station never renders inside-out regardless of authoring polarity.
-    /// </summary>
-    public static ushort[] OutsideIndices(MdlMesh mesh)
-        => OutsideKeptFraction(mesh) >= 0.5f ? mesh.Indices : CorrectWinding(mesh.Indices);
-
-    /// <summary>
-    /// The fraction of a model's camera-facing near-surface triangles kept by
-    /// <c>CullCounterClockwiseFace</c> under the game transform (nose flip + a camera
-    /// 600 units ahead + a 50° FOV perspective). The same pure measure the
-    /// <see cref="NativeStationRenderer"/>'s build uses to pick the winding. A fraction
-    /// near 1 means the raw winding is solid; near 0 means it is reversed (would be
-    /// inside-out) and must be corrected.
-    /// </summary>
-    public static float OutsideKeptFraction(MdlMesh mesh)
-    {
-        if (mesh.VertexCount == 0 || mesh.Indices.Length < 3) return 0f;
-        var pos = mesh.Positions;
-        var idx = mesh.Indices;
-
-        var noseFlip = Matrix.CreateRotationY(MathHelper.Pi);
-        var world = Matrix.CreateTranslation(new Vector3(0f, 0f, -600f));
-        var local = noseFlip * world;
-        var view = Matrix.CreateLookAt(Vector3.Zero, new Vector3(0f, 0f, -600f), Vector3.Up);
-        var proj = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(50f), 16f / 9f, 0.1f, 60000f);
-        var localViewProj = local * view * proj;
-
-        Vector3 meshCentroid = Vector3.Zero;
-        for (int v = 0; v < mesh.VertexCount; v++)
-            meshCentroid += new Vector3(pos[3 * v], pos[3 * v + 1], pos[3 * v + 2]);
-        meshCentroid /= Math.Max(1, mesh.VertexCount);
-
-        double alignSum = 0;
-        for (int t = 0; t + 2 < idx.Length; t += 3)
-        {
-            int ia = idx[t], ib = idx[t + 1], ic = idx[t + 2];
-            if (ia < 0 || ib < 0 || ic < 0) continue;
-            var pa = V3(pos, ia); var pb = V3(pos, ib); var pc = V3(pos, ic);
-            var n = Vector3.Cross(pb - pa, pc - pa);
-            alignSum += Vector3.Dot(n, (pa + pb + pc) / 3f - meshCentroid);
-        }
-        float globalSign = alignSum >= 0 ? 1f : -1f;
-
-        int kept = 0, culled = 0;
-        for (int t = 0; t + 2 < idx.Length; t += 3)
-        {
-            int ia = idx[t], ib = idx[t + 1], ic = idx[t + 2];
-            if (ia < 0 || ib < 0 || ic < 0) continue;
-            var pa = V3(pos, ia); var pb = V3(pos, ib); var pc = V3(pos, ic);
-            var wa = Vector3.Transform(pa, local);
-            var wb = Vector3.Transform(pb, local);
-            var wc = Vector3.Transform(pc, local);
-            var outward = globalSign * Vector3.TransformNormal(Vector3.Cross(pb - pa, pc - pa), local);
-            var centroid = (wa + wb + wc) / 3f;
-            bool cameraFacing = Vector3.Dot(outward, -centroid) > 0f;
-            if (!cameraFacing) continue;
-
-            Vector4 ca = Vector4.Transform(new Vector4(pa, 1f), localViewProj);
-            Vector4 cb = Vector4.Transform(new Vector4(pb, 1f), localViewProj);
-            Vector4 cc = Vector4.Transform(new Vector4(pc, 1f), localViewProj);
-            if (ca.W <= 1e-6f || cb.W <= 1e-6f || cc.W <= 1e-6f) continue;
-            float ax = ca.X / ca.W, ay = ca.Y / ca.W;
-            float bx = cb.X / cb.W, by = cb.Y / cb.W;
-            float cx = cc.X / cc.W, cy = cc.Y / cc.W;
-            float signedArea = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-            if (signedArea < 0f) kept++; else culled++;
-        }
-        int total = kept + culled;
-        return total == 0 ? 0f : (float)kept / total;
-    }
-
-    private static Vector3 V3(float[] p, int v) => new(p[3 * v], p[3 * v + 1], p[3 * v + 2]);
 
     /// <summary>
     /// Native uniform scale for a station: <c>m_scale = radius / m_radiusMesh</c>
@@ -182,38 +99,20 @@ public static class NativeStationResolver
         return radius / meshRadius;
     }
 
-    /// <summary>
-    /// The native texture STEM (the <c>.mdl</c> basename to decode) for a station
-    /// model. Stations call <c>Load(0, modelName, textureName, ...)</c>
-    /// (stationIGC.cpp:240). A real station <c>TextureName</c> override wins when
-    /// meaningful (trekigc.cpp:1837-1839). Otherwise a station prefers its OWN
-    /// exterior skin <c>&lt;modelName&gt;bmp</c> (e.g. <c>ss24abmp</c>) over the
-    /// generic "first namespace" ship rule — a deliberate, documented station
-    /// deviation: station <c>.mdl</c> files embed MULTIPLE texture namespaces
-    /// (exterior skin, hangar-bay interior, background), and the ship rule's
-    /// "first existing namespace" picks the wrong one for a Garrison
-    /// (<c>ss24a.mdl</c> lists <c>bgrnd03bmp</c> before <c>ss24abmp</c>) leaving the
-    /// station painted as a background bitmap. The station's exterior is always
-    /// <c>&lt;stem&gt;bmp</c> in the corpus (ss24abmp, ss92bmp, ss27bmp, ss300bmp,
-    /// ss101bmp…), so prefer it when present, else fall back to
-    /// <see cref="NativeShipResolver.ResolveTextureStem"/>. Returns null when no
-    /// texture unit resolves → caller renders lit-solid (never invisible).
-    /// </summary>
+    /// <summary>ThingGeo's initial parent texture: a meaningful station override,
+    /// else the first TextureGeo found depth-first (thinggeo.cpp:1035-1043;
+    /// geometry.cpp:1459-1473). Each group's TextureGeo subsequently binds its
+    /// own image; this fallback affects only geometry without a texture wrapper.</summary>
     public static string? ResolveTextureStem(
         MdlFile model, string? stationTextureName, string modelName, Func<string, bool> fileExists)
     {
-        // A real station TextureName override wins (trekigc.cpp:1837-1839).
         if (!string.IsNullOrWhiteSpace(stationTextureName) && char.IsLetter(stationTextureName[0])
             && !string.Equals(stationTextureName, modelName, StringComparison.OrdinalIgnoreCase)
             && fileExists(stationTextureName))
             return stationTextureName;
 
-        // Prefer the station's own exterior skin <modelName>bmp when present.
-        string ownSkin = modelName + "bmp";
-        if (fileExists(ownSkin))
-            return ownSkin;
-
-        // Fall back to the ship rule (first existing imported namespace).
-        return NativeShipResolver.ResolveTextureStem(model, null, modelName, fileExists);
+        foreach (var mesh in model.Meshes)
+            if (mesh.TextureStem is { } stem && fileExists(stem)) return stem;
+        return null;
     }
 }

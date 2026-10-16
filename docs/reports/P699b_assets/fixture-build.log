@@ -1,0 +1,15 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Allegiance.Core -> /home/domingo/allegiance-codex-p699b/src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll
+  Allegiance.ClientCore -> /home/domingo/allegiance-codex-p699b/src/Allegiance.ClientCore/bin/Debug/net10.0/Allegiance.ClientCore.dll
+  Allegiance.ClientCore.Game -> /home/domingo/allegiance-codex-p699b/src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.ClientCore.Game.dll
+  fsr-proof -> /home/domingo/allegiance-codex-p699b/tools/fsr-proof/bin/Debug/net10.0/fsr-proof.dll
+  Allegiance.Bot -> /home/domingo/allegiance-codex-p699b/src/Allegiance.Bot/bin/Debug/net10.0/Allegiance.Bot.dll
+  Allegiance.Server -> /home/domingo/allegiance-codex-p699b/src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Server.dll
+  Allegiance.ClientCore.MonoGame.Tests -> /home/domingo/allegiance-codex-p699b/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.34

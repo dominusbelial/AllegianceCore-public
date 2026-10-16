@@ -99,13 +99,14 @@ public class MissileFireLiveTests
         Ship? placedTarget = null;
         SetShipSpawner(server, (core, mission, shipId) =>
         {
-            var hull = core.HullTypes.Values.First();
-            var ship = new Ship(shipId, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            // H-08 / launchertypeigc.h:130-145: use real magazine capacity.
+            var hull = core.HullTypes.Values.First(h => h.CapacityMagazine >= 3 * NoLockMissile(core).LauncherExpendableSize) with { ScannerRange = 20000, Signature = 100 };
+            var ship = new Ship(shipId, hull, new Vector3(0f, 5000f, 5000f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
             mission.PlaceShip(ship, mission.Sectors[0]);
 
             // An enemy target in the same sector, directly ahead, in range.
-            var target = new Ship((short)(shipId + 777), hull, new Vector3(250f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            var target = new Ship((short)(shipId + 777), hull, new Vector3(250f, 5000f, 5000f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 1) target.SideId = mission.Sides[1].Id; else target.SideId = 99;
             mission.PlaceShip(target, mission.Sectors[0]);
             ship.Orientation.Set((target.Position - ship.Position).Normalize());
@@ -137,6 +138,8 @@ public class MissileFireLiveTests
         Assert.NotNull(placedShip);
         Assert.NotNull(placedCore);
         Assert.NotNull(placedTarget);
+        PumpUntil(server, () => placedTarget!.SeenBySide(placedShip!.SideId!.Value), 1000);
+        Assert.True(placedTarget!.SeenBySide(placedShip.SideId!.Value), "missile target must be detected");
 
         var launcher = placedShip.Parts.First(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
         Assert.Equal(3, launcher.Amount);

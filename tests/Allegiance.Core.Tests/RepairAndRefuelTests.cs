@@ -201,7 +201,7 @@ public class RepairAndRefuelTests
 
         ship.RepairAndRefuel(Garrison());
 
-        Assert.Equal((byte)255, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon).FractionMounted);
+        Assert.Equal(ExpandedPartData.FullyMounted, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon).FractionMounted);
         Assert.Equal(expectPack, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Pack).Amount);
         Assert.Equal((short)100, ship.Ammo);
     }
@@ -261,7 +261,7 @@ public class RepairAndRefuelTests
     {
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var sector = mission.Sectors.First(s => s.Stations.Contains(station));
-        var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+        var ship = new Ship(shipId, hull, DockTestPlacement.Inside(mission, station, hull), Vector3.Zero, Orientation.Identity)
         {
             SideId = station.SideId,
         };

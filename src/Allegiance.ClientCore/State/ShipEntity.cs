@@ -18,8 +18,10 @@ public sealed class ShipEntity
     /// <c>OidTarget</c> in SINGLE_SHIP_UPDATE / <c>ShipID</c> in SHIP_STATUS).</summary>
     public short ShipId { get; init; }
 
+    public short WingId { get; internal set; }
+
     /// <summary>True iff this is the local player's own ship (learned from the
-    /// SET_CLUSTER assignment).</summary>
+    /// JOINED_MISSION identity or SET_CLUSTER assignment).</summary>
     public bool IsMine { get; internal set; }
 
     /// <summary>True once a KILL_SHIP(105) names this ship as the victim. The
@@ -55,6 +57,19 @@ public sealed class ShipEntity
     /// gates on this single property so a docked/warped ship is hidden exactly
     /// where a dead ship already is.</summary>
     public bool IsNotVisible => IsDead || IsGone;
+
+    /// <summary>The sector confirmed by in-view telemetry, separate from the
+    /// last-known strategic SHIP_STATUS sector. Identity/loadout refreshes and
+    /// cross-sector teammate poses cannot establish cluster membership.</summary>
+    public short? PoseSectorId { get; internal set; }
+
+    /// <summary>Shared hull/effect gather gate. Native caches departed ships in
+    /// the null cluster (clintlib/appmsg.cpp:475-488) and renders only current
+    /// scanner visibility (WinTrek/trekigc.cpp:2167-2169).</summary>
+    public bool CanDrawInSector(short sectorId) =>
+        !IsNotVisible && !Unknown && State != ShipStatusMessage.StateDocked
+        && ParentId < 0 && PoseSectorId == sectorId && SectorId == sectorId
+        && Latest is not null;
 
     /// <summary>P373 — transient latch recording that the one-shot
     /// "new contact" sound cue has already been played for this ship for its
@@ -153,7 +168,8 @@ public sealed class ShipEntity
     public short StationId { get; internal set; }
 
     /// <summary>Status.GetParentID() (NA/-1 when not docked/turreted).</summary>
-    public short ParentId { get; internal set; }
+    // Native starts unparented (Igc/shipIGC.cpp:37); ship 0 is a real id.
+    public short ParentId { get; internal set; } = -1;
 
     /// <summary>The ordered ShipState enum value (bits 0-5).</summary>
     public byte State { get; internal set; }

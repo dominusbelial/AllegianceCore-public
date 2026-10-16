@@ -1,0 +1,14 @@
+0ac4bff0 2026-08-30 P20: isolate live network tests from parallel-execution contention
+3978b486 2026-08-30 P23: arm every fixed hardpoint, not just mount 0
+f0fe1f9b 2026-08-31 P36: fix SET_CLUSTER's stray alignment pad -- ship position finally lands
+2e410948 2026-09-01 P47: add CLUSTERINFO_P47.md writeup (proof + follow-up live-pass scope)
+45a5cbda 2026-09-02 P60: drop sends to a reaped peer instead of crashing the whole server
+1efd0d97 2026-09-04 P72: vizfight camera auto-follows a moving ship
+02cc29db 2026-09-09 P114: RELAUNCH_SHIP foundation — carrier/land-on-carrier/rescue capability bits + .cvh-frame landing-bay decode + simplified InGarage
+d13c6e25 2026-09-09 P116: LAND-ON-CARRIER trigger — real per-tick InGarage detection (no relaunch yet)
+32296910 2026-09-10 P136: LIGHT/HEAVY_SHIPS_UPDATE(175/176) codecs — multi-ship visibility foundation slice
+5dd82a94 2026-09-10 P137: type turret-relay codecs — ServerActiveTurretUpdate(16B) + ShipID[] inactive blob
+d1648708 2026-09-10 P138: per-cluster ship-update candidate list for LIGHT/HEAVY_SHIPS_UPDATE
+b515ce7e 2026-09-12 P175: stop hardcoding /home/domingo/... artwork/native-source paths
+02685d39 2026-09-12 P185: Native AOT support for Allegiance.Server
+35bd3ceb 2026-09-12 P188: start countdown + manual START_GAME trigger + PING echo

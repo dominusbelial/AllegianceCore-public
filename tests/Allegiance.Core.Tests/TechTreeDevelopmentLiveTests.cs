@@ -479,7 +479,7 @@ public class TechTreeDevelopmentLiveTests
         Assert.Empty(c.DevCompleteds);   // mission-B peer got no DEV_COMPLETED either
         // Mission B's side gas/techs are untouched.
         Assert.Equal(mB.Sides[0].Civilization.GasBaseAttributes[1], mB.Sides[0].GlobalAttributes.Get(1));
-        Assert.Equal(mB.Sides[0].Civilization.TtbmBaseTechs, mB.Sides[0].DevelopmentTechs.ToBytes());
+        Assert.Equal(mB.Research.StartingTechs(mB.Sides[0].Civilization).ToBytes(), mB.Sides[0].DevelopmentTechs.ToBytes());
 
         Console.WriteLine($"DEVMULTI-LIVE: dev complete on mission-A side {sideA.Id} -> SIDE_ATTRIBUTE_CHANGE(76) to 2 mission-A peers (both sides), 0 mission-B peers");
     }

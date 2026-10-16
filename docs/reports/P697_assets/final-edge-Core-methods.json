@@ -1,0 +1,22 @@
+[
+  "Allegiance.Core.Tests.LiveViewClusterTests.Docked_request_bare_cluster_gets_reply_naming_it",
+  "Allegiance.Core.Tests.LiveViewClusterTests.Docked_request_invisible_or_wrong_cluster_target_gets_bare_reply",
+  "Allegiance.Core.Tests.LiveViewClusterTests.Docked_request_named_visible_object_returns_its_position",
+  "Allegiance.Core.Tests.LiveViewClusterTests.Flying_ship_request_gets_no_reply",
+  "Allegiance.Core.Tests.LiveViewClusterTests.ViewClusterReply_emits_exact_declared_bytes",
+  "Allegiance.Core.Tests.LiveViewClusterTests.ViewClusterRequest_emits_exact_declared_bytes",
+  "Allegiance.Core.Tests.LiveViewClusterTests.ViewCluster_messages_round_trip",
+  "Allegiance.Core.Tests.MineBroadcastTests.Directly_deployed_mine_broadcasts_create_and_destroy_to_teammate_but_not_enemy",
+  "Allegiance.Core.Tests.MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.AdminSpectatorAllowed_gates_on_the_allow_names_list",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.AdminSpectatorAllowed_is_case_insensitive",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.AdminSpectatorAllowed_is_false_when_admin_cheats_disabled",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.AdminSpectatorAllowed_is_false_when_config_absent",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.AdminSpectatorAllowed_matches_any_entry",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.AdminSpectatorAllowed_supports_prefix_wildcards",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.ClampTimeScale_clamps_to_admin_range",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.ClampTimeScale_range_constants_match_the_brief",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.TimescaleUpdate_defaults_to_normal_speed",
+  "Allegiance.Core.Tests.P612ServerCinematicTests.TimescaleUpdate_round_trips_the_scale",
+  "Allegiance.Core.Tests.ProbeBroadcastTests.Directly_deployed_probe_broadcasts_create_and_destroy_to_teammate_but_not_enemy"
+]

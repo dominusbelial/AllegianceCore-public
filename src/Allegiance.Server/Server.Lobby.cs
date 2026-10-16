@@ -402,8 +402,12 @@ public sealed partial class Server
     {
         mission.Stage = MissionStage.Over;
 
-        var gameOver = GameOver.ForMission(mission, winnerId, reason);
-        byte[] packet = FedPacket.Pack(new[] { gameOver.Encode() });
+        // Native finalizes scores, queues GAME_OVER + GAME_OVER_PLAYERS and
+        // flushes the mission group before resetting any player/world state
+        // (FedSrv/fsmission.cpp:3225-3263,3427-3454). Freeze one result frame
+        // and one audience before migration can replace their mission/ships.
+        FinalizeMissionScores(mission, winnerId);
+        byte[] packet = EncodeGameOverResult(mission, winnerId, reason);
 
         // Whole-mission audience, scoped to THIS mission: every peer whose ship
         // belongs to it (the mission-scoped sibling of the whole-mission idiom
@@ -418,18 +422,6 @@ public sealed partial class Server
                           $"{targets.Length} peer(s)");
         foreach (var t in targets)
             SendPeer(t, packet);
-
-        // P583 — finalize every seated peer's score for this mission (rank
-        // ratio, win ×2, dtPlayed, repair sync) via the full CalculateScore,
-        // BEFORE the game-over roster is built so the end screen shows the real
-        // numbers. Native does this in ProcessGameOver (fsmission.cpp:3225-3263).
-        FinalizeMissionScores(mission, winnerId);
-
-        // P194 — GAME_OVER_PLAYERS(63): per-player endgame broadcast, an
-        // addition fired at the exact same shared hook, not a replacement. It
-        // rides the same whole-mission audience and reports P193's PlayerScore
-        // for every currently-connected peer on a REAL side.
-        BroadcastGameOverPlayers(mission);
 
         // P439 — rotate the finished mission to a freshly-assembled NotStarted
         // one so the server is joinable again (the only way it ever leaves Over
@@ -463,10 +455,8 @@ public sealed partial class Server
     /// safety it established (<c>IsShipIdLive</c> checking <c>_peerShips</c>
     /// before <c>_missions</c>) is retained. The defensive <c>idx &lt; 0</c>
     /// guard below still stands.</para>
-    /// <para><b>Structural safety:</b> swapping by index (not Add/Remove) keeps
-    /// the <c>_missions</c> list length constant, so game-over fired from inside
-    /// a <c>foreach (var m in _missions)</c> sim step (e.g. conquest during
-    /// <c>m.Update</c>) cannot invalidate the enumerator.</para>
+    /// <para>SimPass iterates a snapshot, so replacement during an Update cannot
+    /// invalidate its enumerator. Mission indexes remain stable.</para>
     /// </summary>
     private void RotateMissionAfterGameOver(Mission mission)
     {
@@ -492,9 +482,16 @@ public sealed partial class Server
         // start-countdown deadline, pending ballots, the MapGen tag and the
         // score-roster throttle.
         _startCountdownDeadline.Remove(mission);
+        _autoRestartDeadline.Remove(mission);
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
-        _lastScoreRosterTick.Remove(mission);
+        _scoreRosterStates.Remove(mission);
+        RetireBroadcastProjectionCaches();
+        // Clients discard the old warning state on Over. An unchanged station
+        // layout must be announced again in the new world (trekigc.cpp:327-383
+        // computes warnings from each fresh cluster's assets).
+        foreach (var side in mission.Sides) _lastSectorAssetMaskBySide.Remove(side.Id);
+        if (idx == 0) _clusterInfoBytes = null; // MapGen can rebuild a different graph.
 
         // Rebuild the world from the SAME config that made the original (native
         // regenerates on the next start; this port assembles now). _config.Games
@@ -507,11 +504,17 @@ public sealed partial class Server
                           $"{fresh.Sectors.Sum(s => s.Stations.Count)} stations, " +
                           $"{fresh.Sectors.Sum(s => s.Asteroids.Count)} asteroids); new joiners land here NotStarted");
 
-        // Match boot-time ordering (Lifecycle.cs): SpawnInitialMiners runs once
-        // _missions is assigned, then the P387 debug-mode auto-start follows.
+        // Arm BEFORE migrating: preserved ready flags and debug auto-start must
+        // not bypass the intermission. Native ProcessGameOver announces timeStart
+        // while NotStarted (fsmission.cpp:3539-3546). Default policy is P660.
+        var next = _config.LiveSettings?.AutoNextMatch ?? new AutoNextMatchConfig();
+        var gc = _config.Games[idx];
+        if (next.Enabled || gc.AutoRestart)
+            _autoRestartDeadline[fresh] = _simNow + (next.Enabled
+                ? next.IntermissionSeconds : gc.RestartCountdownSeconds ?? 60.0);
         SpawnInitialMiners(fresh);
         if (_config.LiveSettings?.DebugMode == true)
-            TryAutoStart(fresh);   // P387: rebuilt debug mission auto-starts, exactly as at boot
+            TryAutoStart(fresh);
 
         // P480 — migrate the old mission's still-connected peers into the fresh
         // mission, exactly as native Vacate()+Reset(true) leaves them: still
@@ -527,18 +530,10 @@ public sealed partial class Server
         // the side-group broadcast to the peers migration just re-seated.
         ApplyTestUnlock(fresh);
 
-        // P598 — native's unattended auto-restart (bAutoRestart): after a
-        // game-over rotation, arm the rebuilt NotStarted mission to auto-start
-        // on a timer (fsmission.cpp:3539-3546, `timeStart = Now +
-        // fRestartCountdown`) instead of waiting for a ready-up. Off by default
-        // (GameConfig.AutoRestart=false); when off the Phase 4 ready recompute +
-        // the ready-up path (above) is what restarts the mission.
-        var gc = idx >= 0 && idx < _config.Games.Count ? _config.Games[idx] : null;
-        if (gc is { AutoRestart: true })
+        if (_autoRestartDeadline.TryGetValue(fresh, out var deadline))
         {
-            double restartSecs = gc.RestartCountdownSeconds ?? 60.0;
-            _autoRestartDeadline[fresh] = _simNow + restartSecs;
-            Console.WriteLine($"[autorestart] P598: mission #{idx} armed for auto-restart in {restartSecs}s (GameConfig.AutoRestart) — {(_peerShips.Values.Count(v => ReferenceEquals(v.Ship.Mission, fresh)) > 0 ? "peers connected" : "no peers yet")}");
+            BroadcastCountdownTime(fresh, deadline);
+            Console.WriteLine($"[intermission] mission #{idx} next match in {deadline - _simNow:0.###} sim seconds; connected players carried forward");
         }
     }
 
@@ -558,8 +553,8 @@ public sealed partial class Server
     /// the new world via <see cref="AssignShip"/>/<see cref="SpawnDefaultShip"/>
     /// (native Reset(true) gives the player a reset ship; old drones are not
     /// carried over because native deletes them in <c>Vacate()</c>).</item>
-    /// <item><b>Ready cleared and wallet reset</b> — <c>_playerReady</c> entry
-    /// removed and the fresh <see cref="PlayerWallet"/> starts at 0 (native
+    /// <item><b>Ready preserved and wallet reset</b> — individual ready flags
+    /// survive (fsmission.cpp:3468-3481); the fresh <see cref="PlayerWallet"/> starts at 0 (native
     /// resets <c>rgfReady</c>/<c>rgfMoney</c> at fsmission.cpp:3493-3521;
     /// P443 then seeds + pays starting money at the next real start).</item>
     /// <item><b>Leadership / ownership re-established</b> — re-seating re-runs
@@ -617,6 +612,11 @@ public sealed partial class Server
         foreach (var (conn, live) in migrants)
         {
             short oldSide = live.Ship.SideId ?? -1;
+            // P660 policy: spectators/unseated peers also enter the next match.
+            // Preserve existing seats; auto-complete side selection for the rest.
+            if (!freshSideIds.Contains(oldSide) && (_config.LiveSettings?.AutoNextMatch?.Enabled ?? true))
+                oldSide = fresh.Sides.OrderBy(side => prepared.Count(p => p.SideId == side.Id)
+                    + migrants.Count(p => p.Live.Ship.SideId == side.Id)).ThenBy(side => side.Id).First().Id;
             short newShipId = AllocateShipId();
             LogonRequest req = _peerRequests.TryGetValue(conn, out var r) ? r
                 : new LogonRequest { CharacterName = _peerNames.TryGetValue(conn, out var nm) ? nm : $"Ship {live.Ship.Id}" };
@@ -629,7 +629,7 @@ public sealed partial class Server
             // the spawner is a join-time placement policy for NEW joiners; a
             // migrated peer is an EXISTING player being re-seated, so a test
             // spawner must not hijack (or crash on) its re-placement.
-            var newLive = AssignMigratedShip(newShipId, oldSide != -1 ? oldSide : null);
+            var newLive = AssignMigratedShip(fresh, newShipId, oldSide != -1 ? oldSide : null);
 
             // Wallet reset (native fsmission.cpp:3493-3521: a fresh PlayerWallet
             // already starts at 0). Ready is PRESERVED, not cleared — native
@@ -719,6 +719,9 @@ public sealed partial class Server
     /// silence a new-world identity send.</summary>
     private void ClearPeerJoinLatches(ConnectionId conn, short oldShipId)
     {
+        // Drop old Ship/Sector references immediately while preserving this
+        // connection's current P659/P661 byte/age accounting window.
+        RetireViewerUpdateCadence(conn);
         _teammateExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
@@ -834,7 +837,7 @@ public sealed partial class Server
     /// <c>QueueGameoverMessage</c>, fsmission.cpp:3094-3141): one
     /// <see cref="GameOverPlayerEntry"/> per currently-connected peer on a real
     /// side of the mission, in <c>_peerShips</c> order. Shared by the full
-    /// whole-mission game-over (<see cref="BroadcastGameOverPlayers"/>) and the
+    /// whole-mission game-over (<see cref="EncodeGameOverResult"/>) and the
     /// P455b side-only game-over (<see cref="SendSideOnlyGameOver"/>), whose
     /// only difference is the recipient set — native builds the SAME full player
     /// list in both cases (fsmission.cpp:3115-3141), addressing it to whoever
@@ -882,64 +885,40 @@ public sealed partial class Server
     /// is not over for the other sides.</summary>
     private void SendSideOnlyGameOver(Mission mission, short winnerId, string reason, IReadOnlyList<ConnectionId> targets)
     {
-        var gameOver = GameOver.ForMission(mission, winnerId, reason);
-        byte[] goPacket = FedPacket.Pack(new[] { gameOver.Encode() });
-        var players = new GameOverPlayers { Entries = BuildGameOverPlayerEntries(mission) };
-        byte[] gpPacket = FedPacket.Pack(new[] { players.Encode() });
+        // Native side-only results use the same queue + guaranteed flush,
+        // addressed only to the eliminated side (fsmission.cpp:5420-5426).
+        byte[] packet = EncodeGameOverResult(mission, winnerId, reason);
 
         Console.WriteLine($"[sidegameover] mission #{_missions.IndexOf(mission)} -> side-only GAME_OVER(62) \"{reason}\" + " +
                           $"GAME_OVER_PLAYERS(63) to {targets.Count} peer(s) on the eliminated side (mission NOT ended, no rotation)");
         foreach (var t in targets)
-        {
-            SendPeer(t, goPacket);
-            SendPeer(t, gpPacket);
-        }
+            SendPeer(t, packet);
     }
 
-    /// <summary>
-    /// P194 — broadcast <see cref="Wire.GameOverPlayers"/>(63) to every peer
-    /// still connected to <paramref name="mission"/> (the same whole-mission
-    /// audience <see cref="DeclareGameOver"/> already addresses GAME_OVER(62)
-    /// to), carrying each connected player's name/side/P193 <c>PlayerScore</c>.
-    /// This is the port of native's per-player endgame loop
-    /// (<c>FedSrv/fsmission.cpp:3094-3141</c>, inside
-    /// <c>CFSMission::QueueGameoverMessage</c>, itself invoked from
-    /// <c>ProcessGameOver</c>).
-    /// <para><b>Player filters (native's real ones, ported).</b> Native includes
-    /// only players who have actually played (<c>GetTimePlayed() &gt; 0</c>) and
-    /// are on a real side (<c>GetSide()-&gt;GetObjectID() != SIDE_TEAMLOBBY</c>,
-    /// fsmission.cpp:3103). This port has no time-played counter at all (nothing
-    /// in P193's <c>PlayerScore</c> tracks play time), so the "has actually
-    /// played" filter collapses to "is a seated connection" — the task's allowed
-    /// fallback when no equivalent concept exists. The real-side filter is
-    /// ported: a peer whose ship has <c>SideId == null</c> is the closest
-    /// analogue of native's team-lobby membership (this port has no explicit
-    /// lobby side), and is excluded exactly as native excludes
-    /// <c>SIDE_TEAMLOBBY</c>.</para>
-    /// <para><b>Simplification, stated plainly:</b> native's second loop over
-    /// <c>m_oldPlayers</c> (recently-disconnected-but-still-tracked players,
-    /// fsmission.cpp:3115-3128) is out of scope — this port has no
-    /// "keep a disconnected player's stats around briefly" mechanism, so a
-    /// disconnected player simply isn't in the list here, whereas native would
-    /// still include them if they'd played and disconnected recently.</para>
-    /// <para><b>Chunking:</b> native splits the list into ≤50-player messages
-    /// (fsmission.cpp:3131-3141); this port sends one message (judged unneeded
-    /// at this port's scale — missions seat a handful of peers).</para>
+    /// <summary>Queue the mission result and full player roster into one
+    /// guaranteed frame, as native QueueGameoverMessage + FM_FLUSH does
+    /// (FedSrv/fsmission.cpp:3094-3141,3427-3429). Both full-mission and
+    /// side-only results use this builder; the caller owns the audience.
+    /// The port retains its connected-real-side roster policy (no old-player
+    /// tracking or time-played filter). Native's 50-player message chunks are
+    /// preserved within the frame so large rosters use the same wire shape.
     /// </summary>
-    private void BroadcastGameOverPlayers(Mission mission)
+    private byte[] EncodeGameOverResult(Mission mission, short winnerId, string reason)
     {
+        var messages = new List<byte[]> { GameOver.ForMission(mission, winnerId, reason).Encode() };
         var entries = BuildGameOverPlayerEntries(mission);
-        var players = new GameOverPlayers { Entries = entries };
-        byte[] packet = FedPacket.Pack(new[] { players.Encode() });
-
-        var targets = _peerShips
-            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
-            .Select(kv => kv.Key)
-            .ToArray();
-
-        Console.WriteLine($"[gameover-players] mission #{_missions.IndexOf(mission)} -> {entries.Length} player(s) to {targets.Length} peer(s)");
-        foreach (var t in targets)
-            SendPeer(t, packet);
+        // Keep the existing empty-roster notification for connected spectators.
+        if (entries.Length == 0)
+            messages.Add(new GameOverPlayers { Entries = [] }.Encode());
+        // Native queues chunks from the end of the roster (fsmission.cpp:3131-3141).
+        for (int remaining = entries.Length; remaining > 0;)
+        {
+            int count = Math.Min(remaining, 50);
+            remaining -= count;
+            messages.Add(new GameOverPlayers { Entries = entries[remaining..(remaining + count)] }.Encode());
+        }
+        Console.WriteLine($"[gameover-players] mission #{_missions.IndexOf(mission)} -> {entries.Length} player(s) queued with GAME_OVER");
+        return FedPacket.Pack(messages);
     }
 
 /// <summary>
@@ -959,14 +938,9 @@ public sealed partial class Server
     /// "has a cluster" faithfully means placed <b>and</b> not docked:
     /// <c>Sector != null &amp;&amp; StationId == null</c>. Docked/off-sector
     /// ships are a no-op — no kill, no broadcast — matching the native gate.</item>
-    /// <item><b>Deliberate relaxation (documented, not a silent drop): the
-    /// child-ship / cheat gate collapses.</b> Native also requires
-    /// <c>GetParentShip() != NULL</c> (a boarded/turret gunner) <em>or</em>
-    /// <c>CanCheat()</c> (admin). This port has <em>neither</em> — no
-    /// boarding/child-ship concept (Phase 3 cluster E) and no admin/cheat
-    /// concept at all. Following the P100 precedent (a gate collapses to
-    /// always-true when its own prerequisite doesn't exist yet), any placed
-    /// ship may suicide. Revisit only when boarding lands.</item>
+    /// <item><b>Gate: child ship or admin.</b> Native permits a boarded child
+    /// or CanCheat player (FedSrv.CPP:6338); the port's configured admin
+    /// predicate is shared with spectator/cheat access.</item>
     /// <item><b>Kill path reused, not rebuilt.</b> Triggering uses the exact
     /// seam a combat death's lethal branch raises
     /// (<c>Ship.ReceiveDamage</c> → <c>Mission.Site.KillShipEvent</c>,
@@ -998,7 +972,8 @@ public sealed partial class Server
                               $"{(ship.Sector is null ? "no cluster" : "docked")} — refused (gate: GetCluster(), FedSrv.CPP:6338)");
             return;
         }
-        // Relaxed child/cheat gate (see doc comment): ANY placed ship may suicide.
+        // Native FedSrv.CPP:6338: only a child ship or a CanCheat player.
+        if (ship.ParentShip is null && !IsSpectatorAdmin(from)) return;
         Console.WriteLine($"[suicide] {from} ship {ship.Id} — re-triggering the combat kill path (KillShipEvent, launcher NULL)");
         mission.Site.KillShipEvent(mission.LastUpdate, ship, null, 1.0f, ship.Position, Vector3.Zero);
     }
@@ -1136,8 +1111,8 @@ public sealed partial class Server
     /// unready side of the same id).</para></summary>
     private void TryAutoStart(Mission mission)
     {
-        if (mission.Stage != MissionStage.NotStarted)
-            return;   // already started (or over) — nothing to do
+        if (mission.Stage != MissionStage.NotStarted || _autoRestartDeadline.ContainsKey(mission))
+            return;   // intermission holds even when everybody is ready
         if (!IsAllOccupiedSidesReady(mission))
             return;   // at least one occupied side is not yet ready
 
@@ -1183,8 +1158,8 @@ public sealed partial class Server
     /// tick once the target time passes.</summary>
     private void StartCountdown(Mission mission, float countdownSeconds)
     {
-        if (mission.Stage != MissionStage.NotStarted)
-            return;   // native allows re-starting from STAGE_STARTING too, but
+        if (mission.Stage != MissionStage.NotStarted || _autoRestartDeadline.ContainsKey(mission))
+            return;   // intermission is authoritative; native allows re-starting from STAGE_STARTING too, but
                       // this port has no re-trigger path — refuse
 
         mission.Stage = MissionStage.Starting;
@@ -1198,11 +1173,21 @@ public sealed partial class Server
         // during the earlier NotStarted hold learns the stage moved on.
         BroadcastMissionStageToMission(mission, MissionStage.Starting);
 
-        var msg = new SetStartTime { TimeStart = (uint)(target * 1000.0) };
-        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
-        int n = SendToMissionPeers(mission, packet);
+        int n = SendToMissionPeers(mission, CountdownPacket(target));
         Console.WriteLine($"[start] mission #{_missions.IndexOf(mission)} countdown begun ({countdownSeconds}s) -> STAGE_STARTING, SET_START_TIME(14) whole-mission to {n} peer(s)");
     }
+
+    // SET_START_TIME is native (fsmission.cpp:1931-1938, 3539-3546).
+    // P660 adaptation: include a PING server-clock sample so a client can use
+    // the absolute deadline even with a different epoch or time dilation.
+    private byte[] CountdownPacket(double target) => FedPacket.Pack(new[]
+    {
+        new Ping { TimeServer = (uint)(_simNow * 1000.0) }.Encode(),
+        new SetStartTime { TimeStart = (uint)(target * 1000.0) }.Encode(),
+    });
+
+    private void BroadcastCountdownTime(Mission mission, double target) =>
+        SendToMissionPeers(mission, CountdownPacket(target));
 
 /// <summary>P188 — the per-tick countdown driver: any mission in
     /// <see cref="MissionStage.Starting"/> whose recorded target start time
@@ -1243,6 +1228,10 @@ public sealed partial class Server
             if (now < deadline) continue;
             _autoRestartDeadline.Remove(m);
             Console.WriteLine($"[autorestart] mission #{_missions.IndexOf(m)} auto-restart deadline reached -> start countdown (no ready-up required)");
+            foreach (var peer in _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, m)))
+                _playerReady[peer.Key] = true;
+            foreach (var peer in _peerShips.Values.Where(v => ReferenceEquals(v.Ship.Mission, m)).ToArray())
+                RecomputeSideReady(peer.Ship);
             StartCountdown(m, BriefingCountdownSeconds);
         }
     }
@@ -1799,6 +1788,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             live.Ship.SideId = null;
             BroadcastQuitMission(mission, live.Ship.Id, QuitSideReason.LinkDead);
             _peerShips.Remove(conn);
+            RetireViewerUpdateCadence(conn);
             _peerNames.Remove(conn);
             _playerReady.Remove(conn);
         }
@@ -2302,7 +2292,9 @@ private void CompleteStartCountdown(Mission mission, double now)
             _pendingJoinRequests.Remove(targetConn);   // removed regardless of outcome
             if (_peerShips.TryGetValue(targetConn, out var live) && ReferenceEquals(live.Ship.Mission, mission))
             {
-                TryJoinSide(live.Ship, sideId);
+                if (CheckPositionRequest(mission, sideId, live.Ship) is { } refusal)
+                    SendPeer(targetConn, FedPacket.Pack([new DelPositionReq { ShipId = live.Ship.Id, SideId = sideId, Reason = refusal }.Encode()]));
+                else TryJoinSide(live.Ship, sideId);
                 seated++;
             }
             else
@@ -2691,6 +2683,15 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (requestedSideId is { } requested && ship.SideId != requested)
             sector = RepositionShipToSideHome(ship, mission, requested);
 
+        // P653 H-03: free-spawn provenance — server-granted spawn hardware has no
+        // purchase cost to refund, for BOTH the default and injected spawn paths.
+        ship.MarkSpawnLoadoutFree();
+
+        // Native fresh seats enter the hangar (fsmission.cpp:791-796).
+        // Include built-in debug arenas used by MCP BUY_LOADOUT(fLaunch).
+        // An explicitly replaced test hook still owns its placement/state.
+        if (ShipSpawner is null || ReferenceEquals(ShipSpawner, _hangarShipSpawner))
+            DockInitialLoadout(ship, sector);
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
     }
 
@@ -2706,10 +2707,10 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// home-sector placement + fresh <see cref="PlayerScore"/>/<see cref="PlayerWallet"/>
     /// (wallet reset to 0; P443 pays starting money at the next real start) that
     /// a first-seat ship gets.</summary>
-    private LiveShip AssignMigratedShip(short shipId, short? requestedSideId = null)
+    private LiveShip AssignMigratedShip(Mission mission, short shipId, short? requestedSideId = null)
     {
-        var mission = _missions[0];
         var (ship, sector) = SpawnDefaultShip(mission, shipId, requestedSideId);
+        DockInitialLoadout(ship, sector);
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
     }
 
@@ -2807,6 +2808,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (!_pendingSideSelect.Remove(from, out var pend))
             return;   // not pending (already seated/launched) — nothing to do
         var mission = _missions[0];
+        bool autoSelection = requestedSideId == -1;
 
         // Validate an explicit side before touching anything; refuse with
         // DPR_SideGone to the requester only (native FedSrv.CPP:6692-6704) and
@@ -2822,6 +2824,24 @@ private void CompleteStartCountdown(Mission mission, double now)
             return;
         }
 
+        // Validate both explicit and auto-assigned initial picks, before spawning.
+        // Choose the least populated eligible side for auto-pick; no full-side
+        // fallback can bypass the cap when the timeout seats a silent peer.
+        if (requestedSideId == -1)
+        {
+            var eligible = mission.Sides.Where(s => CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, s.Id) is null)
+                .OrderBy(s => _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == s.Id)).FirstOrDefault();
+            if (eligible is not null) requestedSideId = eligible.Id;
+        }
+        var selectionRefusal = requestedSideId == -1 ? DelPositionReqReason.TeamFull : CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, requestedSideId);
+        if (selectionRefusal is { } denied)
+        {
+            SendPeer(from, FedPacket.Pack([new DelPositionReq { ShipId = pend.ShipId, SideId = requestedSideId, Reason = denied }.Encode()]));
+            ConsoleLog.Write($"[sideselect] {from} '{pend.Request.CharacterName}' -> side {requestedSideId} DENIED ({denied}); still pending, choose another side or auto-pick");
+            _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq);
+            return;
+        }
+
         // Create the ship. The default spawn seats it in its final side's
         // home sector (P368: the requested side is threaded in BEFORE
         // placement so a single correct PlaceShip puts the ship in that side's
@@ -2833,8 +2853,9 @@ private void CompleteStartCountdown(Mission mission, double now)
         // TryJoinSide (leader + mission-owner election, native AddPlayerToSide);
         // that only sets SideId/leadership/roster — the ship is already in the
         // correct sector, so no relocation is needed.
-        LiveShip live = AssignShip(pend.Request, pend.ShipId, requestedSideId != -1 ? requestedSideId : null);
-        if (requestedSideId != -1)
+        LiveShip live = AssignShip(pend.Request, pend.ShipId,
+            autoSelection && ShipSpawner is not null ? null : requestedSideId);
+        if (!autoSelection)
         {
             TryJoinSide(live.Ship, requestedSideId);
             Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' chose side {requestedSideId} (ship {pend.ShipId})");
@@ -2888,28 +2909,22 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// (ClientWorld.Apply(JoinSide), P438).</para></summary>
     private void SendSideTechToPeer(ConnectionId to, Side side)
     {
-        // P560 — broadcast the mask the side's buckets were actually BUILT from
-        // (the civ's base techs, Mission.Assemble → Side ctor → ForSide), NOT
-        // the possibly-testUnlock-inflated `side.DevelopmentTechs`. The P487
-        // id-alignment contract is: CREATE_BUCKETS must equal the bucket-build
-        // mask, so a client that synthesizes its bucket catalog from this mask
-        // (BucketCatalog.Describe) reproduces the server's exact bucket ids.
-        // liveSettings.testUnlock inflates DevelopmentTechs to the required-tech
-        // union AFTER Assemble but leaves the buckets built from base techs; if
-        // we broadcast the inflated mask the client's synthesized ids drift from
-        // the server's and an id-addressed invest targets the WRONG bucket (the
-        // P560 live finding: the 221 layer-drone id resolved to a different
-        // server bucket, so the invest never funded the layer drone).
-        var techs = TechTreeBitMask.FromBytes(side.Civilization.TtbmBaseTechs);
+        // P656c — native sends CURRENT developments and INITIAL bucket techs
+        // separately (fsmission.cpp:4255-4258; appmsg.cpp:2385-2387).
+        // P560 sent base techs in both fields to preserve bucket ids, hiding
+        // testUnlock/research from late joiners' shop. Keep that stable bucket
+        // seed (including native path permissions) in TtbmInitial; buyability
+        // must use the actual development mask.
+        var initial = side.InitialTechs;
         SendPeer(to, FedPacket.Pack(new[]
         {
             new CreateBuckets
             {
-                TtbmDevelopments = techs.ToBytes(),
-                TtbmInitial = techs.ToBytes(),
+                TtbmDevelopments = side.DevelopmentTechs.ToBytes(),
+                TtbmInitial = initial.ToBytes(),
             }.Encode(),
         }));
-        Console.WriteLine($"[createbuckets] peer {to} -> CREATE_BUCKETS(191) ttbmDevelopments={techs.PopCount} bits ttbmInitial={techs.PopCount} bits (side {side.Id}, bucket-build mask)");
+        Console.WriteLine($"[createbuckets] peer {to} -> CREATE_BUCKETS(191) ttbmDevelopments={side.DevelopmentTechs.PopCount} bits ttbmInitial={initial.PopCount} bits (side {side.Id})");
         foreach (var bkt in side.Buckets)
         {
             SendPeer(to, FedPacket.Pack(new[]
@@ -3097,6 +3112,11 @@ private void CompleteStartCountdown(Mission mission, double now)
             }.Encode(),
         }));
         Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
+        // P642: native seeds groups through MISSIONDEF.rgfAllies
+        // (appmsg.cpp:2424; fsmission.cpp:5288-5291). The port uses its
+        // existing CHANGE_ALLIANCES codec for the same initial state.
+        SendPeer(from, FedPacket.Pack([CreateAllianceSnapshot(mdSides).Encode()]));
+
 
         // FM_S_EXPORT(26) first: this is the real object-creation
         // message the C++ client's dispatcher handles
@@ -3453,9 +3473,9 @@ private void CompleteStartCountdown(Mission mission, double now)
         // exported (P64) — the map is m2xspiderw.igc, 134 real
         // rocks — since the client's UndockMinersAndStartMining
         // (CommanderResearchAndExpand.cs:1563-1568) searches
-        // GetAsteroids() for He3-named rocks. Treasure, mines and
-        // probes are intentionally skipped (none exist in this
-        // map / this codebase's scope), matching the task.
+        // GetAsteroids() for He3-named rocks. Runtime treasures in the
+        // entered sector are exported below, after SET_CLUSTER; they
+        // are not part of this static, all-sectors map export.
         //
         // Unconditional — no SeenBySide()/fog-of-war gate, exactly
         // as P30 reasoned for clusters (Server.cs:742-747): this
@@ -3482,6 +3502,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             Cookie = NextCookie(EnsurePeerUpdate(from)),   // P507 — native's NewCookie(): the client echoes this in SHIP_UPDATE (fsship.cpp:767)
         };
         SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+        SendTreasureSnapshot(from, live.Sector);
 
         // FM_S_BUY_LOADOUT_ACK(5): after the client has been told
         // its object (EXPORT 26) and its launch (SET_CLUSTER 7),
@@ -3518,6 +3539,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 FLaunch = false,
             }.Encode(),
         }));
+        SendInitialDockState(from, live.Ship);
 
         // FM_S_MISSION_STAGE(37): the message this whole join burst
         // was missing (P37, 2026-08-31). The native client's entire
@@ -3558,6 +3580,11 @@ private void CompleteStartCountdown(Mission mission, double now)
             new MissionStageMessage { Stage = realStage }.Encode(),
         }));
         Console.WriteLine($"[stage] peer {from} '{req.CharacterName}' -> MISSION_STAGE(37) {(MissionStage)realStage}");
+        // Late joiners receive the remaining intermission/briefing deadline too.
+        if (live.Ship.Mission is { } timerMission &&
+            (_autoRestartDeadline.TryGetValue(timerMission, out var timerTarget)
+             || _startCountdownDeadline.TryGetValue(timerMission, out timerTarget)))
+            SendPeer(from, CountdownPacket(timerTarget));
 
         // FM_S_SHIP_STATUS(90): the message ScoutExploreMap's whole
         // autonomous sweep/exploration is gated on (P39 finding —
@@ -3712,4 +3739,13 @@ private void CompleteStartCountdown(Mission mission, double now)
             }
         }
     }
+    // Initial alliance state for joins; native MISSIONDEF.rgfAllies, appmsg.cpp:2424.
+    internal static ChangeAlliances CreateAllianceSnapshot(IReadOnlyList<Side> sides)
+    {
+        var message = new ChangeAlliances { Allies = Enumerable.Repeat((sbyte)-1, ChangeAlliances.SideAlliesMax).ToArray() };
+        foreach (var side in sides)
+            if (side.Id >= 0 && side.Id < message.Allies.Length) message.Allies[side.Id] = side.AllyGroup ?? -1;
+        return message;
+    }
+
 }

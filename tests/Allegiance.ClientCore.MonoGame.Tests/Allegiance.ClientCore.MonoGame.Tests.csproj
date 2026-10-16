@@ -22,15 +22,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Fixtures/P701StationModels.json" CopyToOutputDirectory="PreserveNewest" />
     <Using Include="Xunit" />
   </ItemGroup>
 
   <!-- P597 — shared skip-helpers for corpus-backed tests (see TestRequire.cs). -->
   <ItemGroup>
+    <Compile Include="../_shared/JsonDefaultsGuard.cs" Link="_shared/JsonDefaultsGuard.cs" />
     <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
+    <Compile Include="../_shared/EconomyLoadoutTestSetup.cs" Link="_shared/EconomyLoadoutTestSetup.cs" />
+    <Compile Include="../_shared/DockTestPlacement.cs" Link="_shared/DockTestPlacement.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../tools/fsr-proof/fsr-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
     <ProjectReference Include="../../src/Allegiance.Server/Allegiance.Server.csproj" />
     <ProjectReference Include="../../src/Allegiance.Bot/Allegiance.Bot.csproj" />

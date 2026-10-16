@@ -28,6 +28,7 @@
          project so hull/part resolution is proven against the real PCore001.igc
          (mirrors Core.csproj's InternalsVisibleTo convention). -->
     <InternalsVisibleTo Include="Allegiance.ClientCore.Tests" />
+    <InternalsVisibleTo Include="p655-proof" />
   </ItemGroup>
 
   <ItemGroup>

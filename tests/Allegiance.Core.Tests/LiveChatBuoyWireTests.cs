@@ -70,6 +70,7 @@ public class LiveChatBuoyWireTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var mission in server.Missions) mission.Stage = Allegiance.Core.Sim.MissionStage.Started;
         ushort port = server.BoundPort;
 
         var bots = new FltBot[3];

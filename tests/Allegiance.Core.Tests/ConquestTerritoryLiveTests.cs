@@ -122,9 +122,23 @@ public sealed class ConquestTerritoryLiveTests
         try
         {
             string[] names = { "mA0", "mB0", "mA1" };
-            for (int i = 0; i < 3; i++) { bots[i].Connect(port, names[i]); bots[i].SendLogonRequest(Request(names[i])); }
+            // The spawner assigns mission/side by spawn slot. Finish each join
+            // before opening the next so receive-thread scheduling cannot swap
+            // the named mission-A and mission-B peers.
+            for (int i = 0; i < 3; i++)
+            {
+                bots[i].Connect(port, names[i]);
+                bots[i].SendLogonRequest(Request(names[i]));
+                Assert.True(PumpUntil(server, () => bots[i].ShipAssignment is not null, 4000) < 4000,
+                    $"peer {names[i]} must seat in its intended spawn slot");
+            }
             int got = PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(got < 4000, "no assignments");
+            // Spawn sequence routes peers to missions; socket drain order may differ.
+            var peersA = bots.Where(b => ReferenceEquals(server.Ships.Single(s =>
+                s.Ship.Id == b.ShipAssignment!.Ship.ShipId).Ship.Mission, server.Missions[0])).ToArray();
+            Assert.Equal(2, peersA.Length);
+            var peerB = Assert.Single(bots.Except(peersA));
             foreach (var s in server.Ships) s.Ship.Velocity = Vector3.Zero;
 
             // The mission A capturer is the boardable side-0 peer on mission A.
@@ -149,20 +163,20 @@ public sealed class ConquestTerritoryLiveTests
             // wire packets; condition-wait until mission A's peer has actually
             // ingested both before asserting on them (mission B stays untouched).
             int seenPackets = PumpUntil(server,
-                () => a0.GameStates.Count > 0 && a0.GameOvers.Count > 0, 20000);
+                () => peersA.All(b => b.GameStates.Count > 0 && b.GameOvers.Count > 0), 20000);
             Assert.True(seenPackets < 20000, "mission A peers must see GAME_STATE + GAME_OVER");
 
             // Mission A ended with the right winner...
             Assert.Equal(MissionStage.Over, missionA.Stage);
             Assert.Equal(MissionStage.Started, server.Missions[1].Stage);
-            Assert.True(a0.GameStates.Count > 0 && a0.GameOvers.Count > 0, "mission A peers must see GAME_STATE + GAME_OVER");
+            Assert.True(peersA.All(b => b.GameStates.Count > 0 && b.GameOvers.Count > 0), "mission A peers must see GAME_STATE + GAME_OVER");
 
             // ...and mission B's peer heard NOTHING (whole-mission scoped per mission).
-            Assert.Empty(b0.GameStates);
-            Assert.Empty(b0.GameOvers);
+            Assert.Empty(peerB.GameStates);
+            Assert.Empty(peerB.GameOvers);
 
-            Console.WriteLine($"P191-MULTI-LIVE: mission A conquest win -> A peers saw {a0.GameStates.Count} GAME_STATE / {a0.GameOvers.Count} GAME_OVER; " +
-                              $"mission B peer saw {b0.GameStates.Count} GAME_STATE / {b0.GameOvers.Count}, stage {server.Missions[1].Stage}");
+            Console.WriteLine($"P191-MULTI-LIVE: mission A conquest win -> A peers saw {peersA[0].GameStates.Count} GAME_STATE / {peersA[0].GameOvers.Count} GAME_OVER; " +
+                              $"mission B peer saw {peerB.GameStates.Count} GAME_STATE / {peerB.GameOvers.Count}, stage {server.Missions[1].Stage}");
         }
         finally
         {
@@ -222,6 +236,8 @@ public sealed class ConquestTerritoryLiveTests
         var baseType = core.StationTypes.Values.First();
         var type = baseType with
         {
+            ModelName = "P699_SYNTHETIC_CONQUEST", // synthetic 40-unit base, no artwork bay
+
             // P550 — a real land-capable base. The dock pass now enforces the
             // native land-ability gate (shipIGC.cpp:725-727) before capture, so
             // a flag base granted only SabmFlag could no longer be docked at or
@@ -295,6 +311,9 @@ public sealed class ConquestTerritoryLiveTests
                 seat.Bots[i] = new FltBot();
                 seat.Bots[i].Connect(port, names[i]);
                 seat.Bots[i].SendLogonRequest(Request(names[i]));
+                Assert.True(PumpUntil(seat.Server, () => seat.Bots[i].ShipAssignment is not null, 4000) < 4000,
+                    $"peer {names[i]} must seat in spawn slot {i}");
+                Assert.Equal(seat.Ships[i].Id, seat.Bots[i].ShipAssignment!.Ship.ShipId);
             }
             PumpUntil(seat.Server, () => seat.Bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(seat.Bots.All(b => b.ShipAssignment is not null), "all bots must be assigned a ship");

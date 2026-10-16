@@ -158,7 +158,10 @@ public sealed class P542RemoteProjectilesLiveTests
             Sector? s0 = null; Vector3 bravoSpawn = default;
             SetShipSpawner(server, (core, mission, id) =>
             {
-                var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+                var hull = core.HullTypes.Values
+                    .Where(h => h.MaxEnergy > 0 && h.MaxAmmo > 0 && h.MaxFixedWeapons > 0
+                        && h.Hardpoints.Length > 0 && h.Hardpoints[0].Fixed)
+                    .OrderBy(h => h.HullId).First();
                 s0 = mission.Sectors[0];
                 if (placed == 0)   // Alpha (the local player) at the origin
                 {
@@ -211,6 +214,9 @@ public sealed class P542RemoteProjectilesLiveTests
                     return alpha.World.Ships.TryGetValue(bravoId, out var e) && e.Latest is not null && !e.IsNotVisible;
             }, 3000);
 
+            Assert.True(learned < 3000, "Alpha must know the firing enemy pose");
+            Assert.Null(alphaServer.StationId);
+            Assert.Null(bravoServer.StationId);
             var t0 = DateTime.UtcNow;
             var deadline = t0.AddSeconds(windowSeconds);
             var camEye = new Vector3(0f, 0f, 12f);   // cockpit-ish eye 12 u ahead of the local ship

@@ -3,33 +3,14 @@ using Allegiance.Core.Model;
 
 namespace Allegiance.Core.Sim;
 
-/// <summary>
-/// A live projectile as a sector model — the port of <c>CprojectileIGC</c>
-/// (<c>src/Igc/projectileIGC.cpp</c>, 231 lines), kept to this slice's need: a
-/// real <see cref="Model"/> that lives in a <see cref="Sector"/>, moves in a
-/// straight line at a constant velocity inherited from its firing ship, ticks
-/// with the sector like any other model, and <b>expires</b> after its decoded
-/// <see cref="DataProjectileTypeIGC.Lifespan"/>, removing itself from the sector
-/// (leaked projectiles would otherwise accumulate invisibly).
-/// </summary>
-/// <remarks>
-/// Being a <see cref="Model"/> in the sector's model list is the point: it is
-/// what makes the existing collision detector <i>see</i> it — the next task
-/// (damage) hooks that detector up; here the projectile only has to exist and
-/// tick. Following the port rules, the expiry semantics mirror
-/// <c>CprojectileIGC::Update</c> (<c>projectileIGC.cpp:120-144</c>):
-/// the projectile advances <c>position += velocity·dt</c> each chunk, and on the
-/// first tick whose <c>now</c> reaches its expiry time it is removed from the
-/// sector. (The C++ creates a blast explosion on that tick and integrates one
-/// further substep before the <c>GetMyLastUpdate() &gt;= m_timeExpire</c>
-/// check kills it; blasts/explosions are explicitly out of this task's scope, so
-/// the projectile just expires here — the removal is the observable contract the
-/// task asserts.)
-/// </remarks>
+/// <summary>A ballistic round. Native Igc/projectileIGC.cpp:120-143 creates
+/// the burnout blast at the exact expiry position, advances through the tick,
+/// then terminates on the following update.</summary>
 public sealed class Projectile : Model, IOrdnance
 {
     private readonly Sector _sector;
     private readonly double _timeExpire;
+    private bool _terminated;
 
     /// <summary>Construct a projectile in <paramref name="sector"/> at
     /// <paramref name="position"/> with <paramref name="velocity"/>, facing
@@ -117,43 +98,24 @@ public sealed class Projectile : Model, IOrdnance
     /// <inheritdoc/>
     public override Vector3 CollisionVelocity => Velocity;
 
-    /// <summary>
-    /// One chunk's work: advance the straight-line position by
-    /// <c>velocity·dt</c>, and expire (remove self from <see cref="OwnerSector"/>)
-    /// once <paramref name="now"/> reaches <see cref="TimeExpire"/> —
-    /// <c>projectileIGC.cpp:120-144</c>. An area-effect round
-    /// (<see cref="ProjectileType.BlastPower"/> ≠ 0) that burns out without
-    /// hitting anything still detonates: a real <see cref="Explosion"/> at its
-    /// <em>current</em> expiry position, handed to
-    /// <see cref="Sector.ResolveExplosion"/> before removal, mirroring
-    /// <c>projectileIGC.cpp:128-139</c> (blast at
-    /// <c>position + velocity·(expire − lastUpdate)</c>). Removing <c>this</c>
-    /// from the sector during this call is safe: the sector ticks over a
-    /// snapshot (<c>Sector.Update</c>).
-    /// </summary>
+    /// <summary>Native Igc/projectileIGC.cpp:120-143.</summary>
     protected override void OnUpdate(double now, double dt)
     {
-        Position += Velocity * (float)dt;
-        if (now >= _timeExpire)
+        if (_terminated) return;
+        if (LastUpdate >= _timeExpire)
         {
-            if (ProjectileType.BlastPower != 0f)
-            {
-                // Native projects the blast to the exact expiry instant
-                // (projectileIGC.cpp:136-137: position + velocity·(expire − lastUpdate)).
-                // Our per-chunk advance has already overshot `now` past expiry, so
-                // unwind that overshoot to the precise straight-line position at
-                // _timeExpire — making the blast centre the true burnout point.
-                var expiryPos = Position - Velocity * (float)(now - _timeExpire);
-                var blast = new Explosion(
-                    ProjectileType.DamageType,
-                    ProjectileType.BlastPower,
-                    ProjectileType.BlastRadius,
-                    _timeExpire,
-                    expiryPos,
-                    Launcher);
-                _sector.ResolveExplosion(blast, _timeExpire);
-            }
+            _terminated = true;
             _sector.Remove(this);
+            return;
         }
+        if (now >= _timeExpire && ProjectileType.BlastPower != 0)
+        {
+            var expiryPos = Position + Velocity * (float)(_timeExpire - LastUpdate);
+            float damageScale = (Launcher as Ship)?.GlobalAttributeFactor(GlobalAttributeSet.DamageGuns) ?? 1;
+            _sector.ResolveExplosion(new Explosion(ProjectileType.DamageType,
+                ProjectileType.BlastPower * damageScale, ProjectileType.BlastRadius,
+                _timeExpire, expiryPos, Launcher), _timeExpire);
+        }
+        Position += Velocity * (float)dt;
     }
 }

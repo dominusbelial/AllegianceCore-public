@@ -13,6 +13,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
     <RollForward>Major</RollForward>
     <AssemblyName>Allegiance.ClientCore.MonoGame</AssemblyName>
     <RootNamespace>Allegiance.ClientCore.MonoGame</RootNamespace>

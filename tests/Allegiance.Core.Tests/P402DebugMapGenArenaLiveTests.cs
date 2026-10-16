@@ -275,6 +275,10 @@ public sealed class P402DebugMapGenArenaLiveTests
         // (native bLifepod → bKilled, FedSrv.CPP:11776-11780), not an eject.
         var lp = mission.Core.HullTypes[mission.Sides.First(s => s.Id == side0).Civilization.Lifepod];
         ship.ChangeHull(lp);
+        // H-26 / FedSrv.CPP:6338: this death-fixture connection has CanCheat.
+        server.Config.LiveSettings.AdminCheats = new global::Allegiance.Server.AdminCheatsConfig
+            { Enabled = true, AllowNames = ["p402_death"] };
+        ship.StationId = null;
         bot.SendSuicide();
 
         int ticks = PumpUntil(server, () =>

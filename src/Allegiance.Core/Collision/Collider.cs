@@ -250,12 +250,16 @@ public sealed class Collider
     private sealed class HullSupport
     {
         private readonly Vector3[] _vertices;
+        private readonly float[] _x, _y, _z;
         private readonly int[][] _adjacency;
         private readonly int[] _octantExtremes = new int[8];
 
         private HullSupport(CvhHull hull)
         {
             _vertices = hull.Vertices.Select(v => v.Position).ToArray();
+            _x = _vertices.Select(v => v.X).ToArray();
+            _y = _vertices.Select(v => v.Y).ToArray();
+            _z = _vertices.Select(v => v.Z).ToArray();
             _adjacency = hull.Vertices.Select(v => v.AdjacentIndices).ToArray();
             ComputeOctantExtremes();
         }
@@ -288,14 +292,18 @@ public sealed class Collider
         /// <summary>Hill-climb to the support vertex: start at <paramref name="start"/> and move while a neighbour dots higher — the C++ GetHullExtreme loop (<c>HitTest.cpp:517-548</c>). Terminates at the global support on a convex hull.</summary>
         private int Climb(int start, Vector3 dir)
         {
+            // Reuse direction components throughout the support walk. Keep
+            // the native float multiply/add order and strict improvement/tie
+            // rule; no vector temporaries or accessor calls in the inner loop.
+            float dx = dir.X, dy = dir.Y, dz = dir.Z;
             var pcv = start;
             while (true)
             {
-                float dotMax = dir * _vertices[pcv];
+                float dotMax = dx * _x[pcv] + dy * _y[pcv] + dz * _z[pcv];
                 int pcvNext = -1;
                 foreach (var adj in _adjacency[pcv])
                 {
-                    float dot = dir * _vertices[adj];
+                    float dot = dx * _x[adj] + dy * _y[adj] + dz * _z[adj];
                     if (dot > dotMax) { dotMax = dot; pcvNext = adj; }
                 }
                 if (pcvNext < 0) return pcv;

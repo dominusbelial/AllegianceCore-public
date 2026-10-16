@@ -32,65 +32,68 @@ public sealed class ServerShipUpdate
     /// <summary>Wire width, bytes.</summary>
     public const int Width = 47;
 
-    private readonly byte[] _b = new byte[Width];
+    private byte[]? _bytes;
+    private ShipWireSnapshot? _snapshot;
+    private ShipUpdateEncodingCounters? _counters;
+    private byte[] Bytes => _bytes ??= Materialize();
 
-    private ServerShipUpdate() { }
+    private ServerShipUpdate(bool captured = false) { if (!captured) _bytes = new byte[Width]; }
 
     /// <summary>The embedded ship id (short).</summary>
-    public short ShipId => BinaryPrimitives.ReadInt16LittleEndian(_b);
+    public short ShipId => BinaryPrimitives.ReadInt16LittleEndian(Bytes);
 
     /// <summary>stateM bitmask; values stored in the ushort as an unsigned mask (igc.h:2266).</summary>
-    public int StateM => (int)BinaryPrimitives.ReadUInt16LittleEndian(_b.AsSpan(2));
+    public int StateM => (int)BinaryPrimitives.ReadUInt16LittleEndian(Bytes.AsSpan(2));
 
     /// <summary>Decoded controls — four axes each <c>char/127</c>.</summary>
     public ControlData Controls => new(
-        CompactQuant.DeControlAxis(_b[4]),
-        CompactQuant.DeControlAxis(_b[5]),
-        CompactQuant.DeControlAxis(_b[6]),
-        CompactQuant.DeControlAxis(_b[7]));
+        CompactQuant.DeControlAxis(Bytes[4]),
+        CompactQuant.DeControlAxis(Bytes[5]),
+        CompactQuant.DeControlAxis(Bytes[6]),
+        CompactQuant.DeControlAxis(Bytes[7]));
 
     /// <summary>Server time (uint).</summary>
-    public uint Time => BinaryPrimitives.ReadUInt32LittleEndian(_b.AsSpan(8));
+    public uint Time => BinaryPrimitives.ReadUInt32LittleEndian(Bytes.AsSpan(8));
 
     /// <summary>World position — raw full-precision floats.</summary>
     public Vector3 Position => ReadVec(12);
 
     /// <summary>Attitude reconstructed from the compact quaternion.</summary>
-    public Orientation Orientation => CompactOrientationCodec.Decode(_b.AsSpan(24, 8));
+    public Orientation Orientation => CompactOrientationCodec.Decode(Bytes.AsSpan(24, 8));
 
     /// <summary>World velocity reconstructed from the compact form.</summary>
-    public Vector3 Velocity => CompactQuant.DecodeVelocity(_b.AsSpan(32, 5));
+    public Vector3 Velocity => CompactQuant.DecodeVelocity(Bytes.AsSpan(32, 5));
 
     /// <summary>Three turn rates, rad/s, in yaw/pitch/roll order.</summary>
     public float[] TurnRates => new[]
     {
-        CompactQuant.DeTurnRate(_b[37]),
-        CompactQuant.DeTurnRate(_b[38]),
-        CompactQuant.DeTurnRate(_b[39]),
+        CompactQuant.DeTurnRate(Bytes[37]),
+        CompactQuant.DeTurnRate(Bytes[38]),
+        CompactQuant.DeTurnRate(Bytes[39]),
     };
 
     /// <summary>Hull fraction (0..1), from the 6-byte <c>CompactShipFractions</c>.</summary>
-    public float HullFraction => CompactQuant.DePercent(_b[40]);
+    public float HullFraction => CompactQuant.DePercent(Bytes[40]);
     /// <summary>Shield fraction (0..1).</summary>
-    public float ShieldFraction => CompactQuant.DePercent(_b[41]);
+    public float ShieldFraction => CompactQuant.DePercent(Bytes[41]);
     /// <summary>Ammo fraction (0..1).</summary>
-    public float AmmoFraction => CompactQuant.DePercent(_b[42]);
+    public float AmmoFraction => CompactQuant.DePercent(Bytes[42]);
     /// <summary>Fuel fraction (0..1). P377 — for the OWNING peer's payload of an
     /// adrift Lifepod this slot carries the server-computed remaining-oxygen
     /// fraction instead (a coasting pod has no real fuel), surfaced client-side
     /// as the OXYGEN countdown.</summary>
-    public float FuelFraction => CompactQuant.DePercent(_b[43]);
+    public float FuelFraction => CompactQuant.DePercent(Bytes[43]);
     /// <summary>Energy fraction (0..1).</summary>
-    public float EnergyFraction => CompactQuant.DePercent(_b[44]);
+    public float EnergyFraction => CompactQuant.DePercent(Bytes[44]);
     /// <summary>Ore fraction (0..1).</summary>
-    public float OreFraction => CompactQuant.DePercent(_b[45]);
+    public float OreFraction => CompactQuant.DePercent(Bytes[45]);
 
     /// <summary>Power (0..1).</summary>
-    public float Power => CompactQuant.DePercent(_b[46]);
+    public float Power => CompactQuant.DePercent(Bytes[46]);
 
     private Vector3 ReadVec(int off)
     {
-        var s = _b.AsSpan(off);
+        var s = Bytes.AsSpan(off);
         return new Vector3(
             BitConverter.ToSingle(s),
             BitConverter.ToSingle(s.Slice(4)),
@@ -111,21 +114,29 @@ public sealed class ServerShipUpdate
     public static ServerShipUpdate FromModel(short shipId, Ship ship, uint time, int extraStateBits = 0, bool carryEndurance = false)
     {
         var u = new ServerShipUpdate();
-        CompactQuant.WriteShort(u._b, 0, shipId);
-        BinaryPrimitives.WriteUInt16LittleEndian(u._b.AsSpan(2), unchecked((ushort)(ship.StateM | extraStateBits)));
-        u._b[4] = CompactQuant.ControlAxis(ship.Controls.Yaw);
-        u._b[5] = CompactQuant.ControlAxis(ship.Controls.Pitch);
-        u._b[6] = CompactQuant.ControlAxis(ship.Controls.Roll);
-        u._b[7] = CompactQuant.ControlAxis(ship.Controls.Throttle);
-        BinaryPrimitives.WriteUInt32LittleEndian(u._b.AsSpan(8), time);
-        WriteVec(u._b.AsSpan(12), ship.Position);
-        CompactOrientationCodec.Encode(ship.Orientation, u._b.AsSpan(24, 8));
-        CompactQuant.EncodeVelocity(ship.Velocity, u._b.AsSpan(32, 5));
-        u._b[37] = CompactQuant.TurnRate(ship.TurnRates[0]);
-        u._b[38] = CompactQuant.TurnRate(ship.TurnRates[1]);
-        u._b[39] = CompactQuant.TurnRate(ship.TurnRates[2]);
-        u._b[40] = CompactQuant.Percent(Math.Clamp(ship.Fraction, 0f, 1f));   // hull (real: damage lowers it)
-        u._b[41] = CompactQuant.Percent(Math.Clamp(ship.ShieldFraction, 0f, 1f));   // shield (P87: real shield state; 0 for a ship with no shield mounted)
+        WriteModel(u.Bytes, shipId, ship, time, extraStateBits, carryEndurance);
+        return u;
+    }
+
+    /// <summary>Write the canonical pose into caller-owned storage without allocating.</summary>
+    public static void WriteModel(Span<byte> destination, short shipId, Ship ship, uint time,
+        int extraStateBits = 0, bool carryEndurance = false)
+    {
+        CompactQuant.WriteShort(destination, 0, shipId);
+        BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(2), unchecked((ushort)(ship.StateM | extraStateBits)));
+        destination[4] = CompactQuant.ControlAxis(ship.Controls.Yaw);
+        destination[5] = CompactQuant.ControlAxis(ship.Controls.Pitch);
+        destination[6] = CompactQuant.ControlAxis(ship.Controls.Roll);
+        destination[7] = CompactQuant.ControlAxis(ship.Controls.Throttle);
+        BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8), time);
+        WriteVec(destination.Slice(12), ship.Position);
+        CompactOrientationCodec.Encode(ship.Orientation, destination.Slice(24, 8));
+        CompactQuant.EncodeVelocity(ship.Velocity, destination.Slice(32, 5));
+        destination[37] = CompactQuant.TurnRate(ship.TurnRates[0]);
+        destination[38] = CompactQuant.TurnRate(ship.TurnRates[1]);
+        destination[39] = CompactQuant.TurnRate(ship.TurnRates[2]);
+        destination[40] = CompactQuant.Percent(Math.Clamp(ship.Fraction, 0f, 1f));   // hull (real: damage lowers it)
+        destination[41] = CompactQuant.Percent(Math.Clamp(ship.ShieldFraction, 0f, 1f));   // shield (P87: real shield state; 0 for a ship with no shield mounted)
         // P362 — ammo is now REAL: P361 made Ship.Ammo a live magazine that
         // drains as projectile weapons fire and refills on reload. Previously
         // hardcoded to 1.0 (a flight-demo constant), so the own-ship ammo gauge
@@ -134,7 +145,7 @@ public sealed class ServerShipUpdate
         // truthful data, which the client HUD needs to detect the >0→0
         // transition and the reload's recovery.
         float ammoFrac = ship.HullType.MaxAmmo > 0 ? ship.Ammo / (float)ship.HullType.MaxAmmo : 0f;
-        u._b[42] = CompactQuant.Percent(Math.Clamp(ammoFrac, 0f, 1f));   // ammo
+        destination[42] = CompactQuant.Percent(Math.Clamp(ammoFrac, 0f, 1f));   // ammo
         // P377 — the FUEL slot (a coasting lifepod has no real fuel): the port
         // keeps fuel at a flat 1.0 for every remote ship (no fuel pool exists),
         // but the OWNING peer's own payload (`carryEndurance`) instead carries
@@ -144,7 +155,7 @@ public sealed class ServerShipUpdate
         // else's does (self-only, mirroring native's ModelData::GetEndurance
         // gate). Time base is the sim clock (Mission.LastUpdate == now when the
         // broadcast step runs), not the wire uint tick slot.
-        u._b[43] = CompactQuant.Percent(carryEndurance
+        destination[43] = CompactQuant.Percent(carryEndurance
             ? ship.LifepodEnduranceFraction(ship.Mission?.LastUpdate ?? 0.0)
             : 1.0f);   // fuel (owner-lifepod → oxygen fraction; else flat 1.0)
         // P461 — energy is now REAL: P461 added the in-flight recharge
@@ -160,10 +171,9 @@ public sealed class ServerShipUpdate
         // c_gaMaxEnergy bump widens the ceiling without inflating the 0..1 readout.
         float eMax = ship.EffectiveMaxEnergy();
         float energyFrac = eMax > 0f ? ship.Energy / eMax : 0f;
-        u._b[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));   // energy
-        u._b[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / ship.EffectiveMineCapacity(), 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre(GetOreCapacity(), m_fOre) — GA-scaled capacity, P477)
-        u._b[46] = CompactQuant.Percent(1.0f);   // power
-        return u;
+        destination[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));   // energy
+        destination[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / ship.EffectiveMineCapacity(), 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre(GetOreCapacity(), m_fOre) — GA-scaled capacity, P477)
+        destination[46] = CompactQuant.Percent(1.0f);   // power
     }
 
     /// <summary>
@@ -185,31 +195,31 @@ public sealed class ServerShipUpdate
         float energyFrac, float oreFrac, float power)
     {
         var u = new ServerShipUpdate();
-        CompactQuant.WriteShort(u._b, 0, shipId);
-        BinaryPrimitives.WriteUInt16LittleEndian(u._b.AsSpan(2), unchecked((ushort)stateM));
-        u._b[4] = CompactQuant.ControlAxis(controls.Yaw);
-        u._b[5] = CompactQuant.ControlAxis(controls.Pitch);
-        u._b[6] = CompactQuant.ControlAxis(controls.Roll);
-        u._b[7] = CompactQuant.ControlAxis(controls.Throttle);
-        BinaryPrimitives.WriteUInt32LittleEndian(u._b.AsSpan(8), time);
-        WriteVec(u._b.AsSpan(12), position);
-        CompactOrientationCodec.Encode(orientation, u._b.AsSpan(24, 8));
-        CompactQuant.EncodeVelocity(velocity, u._b.AsSpan(32, 5));
-        u._b[37] = CompactQuant.TurnRate(turnRates[0]);
-        u._b[38] = CompactQuant.TurnRate(turnRates[1]);
-        u._b[39] = CompactQuant.TurnRate(turnRates[2]);
-        u._b[40] = CompactQuant.Percent(Math.Clamp(hullFrac, 0f, 1f));   // hull
-        u._b[41] = CompactQuant.Percent(Math.Clamp(shieldFrac, 0f, 1f)); // shield
-        u._b[42] = CompactQuant.Percent(Math.Clamp(ammoFrac, 0f, 1f));   // ammo
-        u._b[43] = CompactQuant.Percent(Math.Clamp(fuelFrac, 0f, 1f));   // fuel
-        u._b[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));// energy
-        u._b[45] = CompactQuant.Percent(Math.Clamp(oreFrac, 0f, 1f));   // ore
-        u._b[46] = CompactQuant.Percent(Math.Clamp(power, 0f, 1f));     // power
+        CompactQuant.WriteShort(u.Bytes, 0, shipId);
+        BinaryPrimitives.WriteUInt16LittleEndian(u.Bytes.AsSpan(2), unchecked((ushort)stateM));
+        u.Bytes[4] = CompactQuant.ControlAxis(controls.Yaw);
+        u.Bytes[5] = CompactQuant.ControlAxis(controls.Pitch);
+        u.Bytes[6] = CompactQuant.ControlAxis(controls.Roll);
+        u.Bytes[7] = CompactQuant.ControlAxis(controls.Throttle);
+        BinaryPrimitives.WriteUInt32LittleEndian(u.Bytes.AsSpan(8), time);
+        WriteVec(u.Bytes.AsSpan(12), position);
+        CompactOrientationCodec.Encode(orientation, u.Bytes.AsSpan(24, 8));
+        CompactQuant.EncodeVelocity(velocity, u.Bytes.AsSpan(32, 5));
+        u.Bytes[37] = CompactQuant.TurnRate(turnRates[0]);
+        u.Bytes[38] = CompactQuant.TurnRate(turnRates[1]);
+        u.Bytes[39] = CompactQuant.TurnRate(turnRates[2]);
+        u.Bytes[40] = CompactQuant.Percent(Math.Clamp(hullFrac, 0f, 1f));   // hull
+        u.Bytes[41] = CompactQuant.Percent(Math.Clamp(shieldFrac, 0f, 1f)); // shield
+        u.Bytes[42] = CompactQuant.Percent(Math.Clamp(ammoFrac, 0f, 1f));   // ammo
+        u.Bytes[43] = CompactQuant.Percent(Math.Clamp(fuelFrac, 0f, 1f));   // fuel
+        u.Bytes[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));// energy
+        u.Bytes[45] = CompactQuant.Percent(Math.Clamp(oreFrac, 0f, 1f));   // ore
+        u.Bytes[46] = CompactQuant.Percent(Math.Clamp(power, 0f, 1f));     // power
         return u;
     }
 
     /// <summary>Encode the 47 canonical bytes at the writer's current position.</summary>
-    public void EncodeBody(ref WireWriter w) => w.WriteBytes(_b);
+    public void EncodeBody(ref WireWriter w) => w.WriteBytes(Bytes);
 
     /// <summary>Read a 47-byte body from the reader's current position.</summary>
     public static ServerShipUpdate DecodeBody(ref WireReader r)
@@ -217,7 +227,7 @@ public sealed class ServerShipUpdate
         if (r.HasRemaining && r.Length - r.Position < Width)
             throw new ArgumentException($"ServerShipUpdate needs {Width} bytes, got {r.Length - r.Position}");
         var u = new ServerShipUpdate();
-        r.ReadBytes(Width).CopyTo(u._b);
+        r.ReadBytes(Width).CopyTo(u.Bytes);
         return u;
     }
 
@@ -226,5 +236,23 @@ public sealed class ServerShipUpdate
         BinaryPrimitives.WriteSingleLittleEndian(dst, v.X);
         BinaryPrimitives.WriteSingleLittleEndian(dst.Slice(4), v.Y);
         BinaryPrimitives.WriteSingleLittleEndian(dst.Slice(8), v.Z);
+    }
+
+    /// <summary>Copy encoder inputs without quantizing or retaining the live ship.</summary>
+    public static ServerShipUpdate CaptureModel(short shipId, Ship ship, uint time,
+        int extraStateBits = 0, bool carryEndurance = false, ShipUpdateEncodingCounters? counters = null) => new(captured: true)
+    {
+        _bytes = null,
+        _snapshot = ShipWireSnapshot.Capture(shipId, ship, time, extraStateBits, carryEndurance),
+        _counters = counters,
+    };
+
+    private byte[] Materialize()
+    {
+        if (_counters is not null) Interlocked.Increment(ref _counters.SingleRecords);
+        var s = _snapshot!;
+        return FromValues(s.Id, s.State, s.Controls, s.Time, s.Position, s.Orientation,
+            s.Velocity, [s.Yaw, s.Pitch, s.Roll], s.Hull, s.Shield, s.Ammo,
+            s.Fuel, s.Energy, s.Ore, 1f).Bytes;
     }
 }

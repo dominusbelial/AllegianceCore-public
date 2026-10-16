@@ -24,11 +24,15 @@
 
   <!-- P597 — shared skip-helpers for corpus-backed tests (see TestRequire.cs). -->
   <ItemGroup>
+    <Compile Include="../_shared/JsonDefaultsGuard.cs" Link="_shared/JsonDefaultsGuard.cs" />
     <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
+    <Compile Include="../_shared/EconomyLoadoutTestSetup.cs" Link="_shared/EconomyLoadoutTestSetup.cs" />
+    <Compile Include="../_shared/DockTestPlacement.cs" Link="_shared/DockTestPlacement.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Allegiance.Core\Allegiance.Core.csproj" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
     <ProjectReference Include="..\..\src\Allegiance.Server\Allegiance.Server.csproj" />
     <ProjectReference Include="..\..\src\Allegiance.Bot\Allegiance.Bot.csproj" />
     <ProjectReference Include="..\..\src\Allegiance.Lobby\Allegiance.Lobby.csproj" />

@@ -7,6 +7,12 @@ using Allegiance.ClientCore.State;
 
 namespace Allegiance.ClientCore.Tests;
 
+// Scoped overrides must also exclude readers/publishers outside this collection.
+// LiveNetwork already excludes parallel execution; give the flag scopes the same
+// protection against socket-free session tests in other collections.
+[CollectionDefinition("DecisionSnapshotFlag", DisableParallelization = true)]
+public sealed class DecisionSnapshotFlagCollection;
+
 /// <summary>
 /// P636 — the lock-free decision snapshot published by a <see cref="ClientWorld"/>'s
 /// receive thread and read by the bot decision loop. These pin the immutability /

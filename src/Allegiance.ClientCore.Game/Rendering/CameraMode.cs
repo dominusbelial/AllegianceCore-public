@@ -25,7 +25,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// and the two command views) were a named future follow-up when P295 wrote
 /// this. P580 ports seven of them — Target, Base, Orbit, Station, FlyBy,
 /// FlyByTarget and Override — each with native placement maths and native
-/// default keys (the two command views remain out of scope).
+/// default keys (P640 ports the two command views).
 /// </para>
 /// Toggled with <c>V</c> in <see cref="Game1"/>, which cycles through the modes
 /// available to the pilot's current state (the external-turret view is offered
@@ -34,7 +34,15 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public enum CameraMode
 {
+/// <summary>Native cmExternalCommandView34 / TD (WinTrek.cpp:7424-7544).</summary>
+Command,
+/// <summary>Port addition: chase the commanded teammate using native source-ship resolution (WinTrek.cpp:7507).</summary>
+DroneFollow,
+/// <summary>Port addition: view through that teammate with the existing cockpit camera.</summary>
+DroneCockpit,
 Chase,
+/// <summary>Native cmExternal: free orientation at the remembered external distance.</summary>
+External,
 Cockpit,
 
 /// <summary>

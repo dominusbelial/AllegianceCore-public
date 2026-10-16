@@ -1,0 +1,65 @@
+[
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792118126.5362458,
+    "finished": 1792118127.9929397,
+    "seconds": 1.46,
+    "log": "/tmp/p699c-validation/isolate-privatepaths-before-000-isolate-1.log",
+    "trx": "isolate-privatepaths-before-000-isolate-1.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+        "error": "Absolute private-home path(s) found in tracked source files:\ntools/hud-gauge-proof/GaugeHarness.cs\ntools/hud-polish-proof/HUDPolishHarness.cs"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792118127.993076,
+    "finished": 1792118129.4589438,
+    "seconds": 1.47,
+    "log": "/tmp/p699c-validation/isolate-privatepaths-before-001-isolate-2.log",
+    "trx": "isolate-privatepaths-before-001-isolate-2.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+        "error": "Absolute private-home path(s) found in tracked source files:\ntools/hud-gauge-proof/GaugeHarness.cs\ntools/hud-polish-proof/HUDPolishHarness.cs"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792118129.4591243,
+    "finished": 1792118130.8356311,
+    "seconds": 1.38,
+    "log": "/tmp/p699c-validation/isolate-privatepaths-before-002-isolate-3.log",
+    "trx": "isolate-privatepaths-before-002-isolate-3.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+        "error": "Absolute private-home path(s) found in tracked source files:\ntools/hud-gauge-proof/GaugeHarness.cs\ntools/hud-polish-proof/HUDPolishHarness.cs"
+      }
+    ],
+    "skipped": []
+  }
+]

@@ -37,9 +37,9 @@ public sealed class P602AdminCheatSafetyTests
         var msg = Srv.AdminCheatBootWarning(new Ac { Enabled = true, AllowNames = ["admin"] }, boundToLoopbackOnly: false);
         Assert.NotNull(msg);
         Assert.Contains("NEVER ENABLE ADMIN CHEATS ON A PUBLIC/SHARED SERVER", msg);
-        Assert.Contains("NAME-BASED TRUST IS SELF-DECLARED AND SPOOFABLE", msg);
-        // No secret configured → the warning calls out the name-only default.
-        Assert.Contains("NO shared secret set (name-only trust)", msg);
+        Assert.Contains("NAMES ARE ONLY FILTERS; PRIVILEGES REQUIRE SERVER-VERIFIED PROVENANCE", msg);
+        // No secret configured → remote names cannot authenticate.
+        Assert.Contains("NO shared secret set: privileges restricted to verified loopback sockets.", msg);
     }
 
     [Fact]

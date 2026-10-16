@@ -1,224 +1,224 @@
 area,native_item,native_cite,port_status,port_cite_or_reason,weight
 commands,TK_NoKeyMapping,Igc/igc.h:226,na,sentinel; not a command,1
-commands,TK_NextCommMsg,Igc/igc.h:227,done,Rendering/ChatScroll.cs; Game1.FlightInput.cs; Rendering/ChatRenderer.cs,2
-commands,TK_PrevCommMsg,Igc/igc.h:228,done,Rendering/ChatScroll.cs; Game1.FlightInput.cs; Rendering/ChatRenderer.cs,2
-commands,TK_PrevWeapon,Igc/igc.h:229,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:280,4
-commands,TK_NextWeapon,Igc/igc.h:230,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:272,4
-commands,TK_ToggleGroupFire,Igc/igc.h:231,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:57,4
-commands,TK_PrevPart,Igc/igc.h:232,done,Rendering/CargoSelector.cs; Game1.InFlightUtility.cs; InputActionCatalog.cs,3
-commands,TK_NextPart,Igc/igc.h:233,done,Rendering/CargoSelector.cs; Game1.InFlightUtility.cs; InputActionCatalog.cs,3
-commands,TK_MountPart,Igc/igc.h:234,partial,"mounting via docked loadout screen, not in-flight key",3
-commands,TK_ReplacePart,Igc/igc.h:235,partial,replacement via docked loadout screen,3
-commands,TK_UnmountPart,Igc/igc.h:236,partial,unmount via docked loadout screen,3
-commands,TK_DropPart,Igc/igc.h:237,partial,"drop part via loadout/dock, not in-flight key",2
-commands,TK_ZoomOut,Igc/igc.h:238,partial,starmap zoom via mouse wheel (no key),3
-commands,TK_ZoomIn,Igc/igc.h:239,partial,starmap zoom via mouse wheel (no key),3
-commands,TK_PitchUp,Igc/igc.h:240,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:102,5
-commands,TK_PitchDown,Igc/igc.h:241,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:102,5
-commands,TK_YawLeft,Igc/igc.h:242,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:101,5
-commands,TK_YawRight,Igc/igc.h:243,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:101,5
-commands,TK_RollLeft,Igc/igc.h:244,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:109,5
-commands,TK_RollRight,Igc/igc.h:245,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:109,5
-commands,TK_MainMenu,Igc/igc.h:248,partial,Esc menu limited; no full main menu screen,3
-commands,TK_ViewFrontLeft,Igc/igc.h:249,done,InputActionCatalog.cs CAMERA/VIEW 'ViewFrontLeft' (D1); HeadLook.cs FrontLeft=1.75pi; held head-yaw cockpit/chase,2
-commands,TK_ViewFrontRight,Igc/igc.h:250,done,InputActionCatalog.cs 'ViewFrontRight' (D2); HeadLook.cs FrontRight=0.25pi,2
-commands,TK_ViewLeft,Igc/igc.h:251,done,InputActionCatalog.cs 'ViewLeft' (D3); HeadLook.cs Left=1.5pi,2
-commands,TK_ViewRight,Igc/igc.h:252,done,InputActionCatalog.cs 'ViewRight' (D4); HeadLook.cs Right=0.5pi,2
-commands,TK_ViewExternal,Igc/igc.h:253,partial,no dedicated external; F9 orbit / F8 free cam,4
-commands,TK_ViewFlyby,Igc/igc.h:254,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F5 external fly-by (native wins F-row),2
-commands,TK_ViewMissile,Igc/igc.h:255,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle missile-cam,4
-commands,TK_ViewTarget,Igc/igc.h:256,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F7 external target (native wins F-row),3
-commands,TK_ViewChase,Igc/igc.h:257,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle chase,4
-commands,TK_ViewTurret,Igc/igc.h:258,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:125 V cycle turret,4
-commands,TK_ViewBase,Igc/igc.h:259,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F10 external base (native wins F-row),2
-commands,TK_ViewSector,Igc/igc.h:260,done,src/Allegiance.ClientCore.Game/Game1.StarmapClick.cs Tab starmap,4
-commands,TK_ViewCommand,Igc/igc.h:261,missing,no tactical command-view camera,3
+commands,TK_NextCommMsg,Igc/igc.h:227,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:769; src/Allegiance.ClientCore.Game/Rendering/ChatScroll.cs:22; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:365,2
+commands,TK_PrevCommMsg,Igc/igc.h:228,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:769; src/Allegiance.ClientCore.Game/Rendering/ChatScroll.cs:22; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:364,2
+commands,TK_PrevWeapon,WinTrek/WinTrek.cpp:9509,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1156; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:104,4
+commands,TK_NextWeapon,WinTrek/WinTrek.cpp:9516,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1156; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:105,4
+commands,TK_ToggleGroupFire,WinTrek/WinTrek.cpp:9523,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1156; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:103,4
+commands,TK_PrevPart,Igc/igc.h:232,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:35; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:150,3
+commands,TK_NextPart,Igc/igc.h:233,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:35; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:151,3
+commands,TK_MountPart,Igc/igc.h:234,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:143,3
+commands,TK_ReplacePart,Igc/igc.h:235,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145,3
+commands,TK_UnmountPart,Igc/igc.h:236,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:144,3
+commands,TK_DropPart,Igc/igc.h:237,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:146,2
+commands,TK_ZoomOut,WinTrek/WinTrek.cpp:10469,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:56; src/Allegiance.ClientCore.Game/Rendering/FlightCameraZoom.cs:12; src/Allegiance.ClientCore.Game/Game1.Commanding.cs:16; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:311,3
+commands,TK_ZoomIn,WinTrek/WinTrek.cpp:10470,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:56; src/Allegiance.ClientCore.Game/Rendering/FlightCameraZoom.cs:12; src/Allegiance.ClientCore.Game/Game1.Commanding.cs:16; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:312,3
+commands,TK_PitchUp,Igc/igc.h:240,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:73,5
+commands,TK_PitchDown,Igc/igc.h:241,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:74,5
+commands,TK_YawLeft,Igc/igc.h:242,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:75,5
+commands,TK_YawRight,Igc/igc.h:243,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:76,5
+commands,TK_RollLeft,Igc/igc.h:244,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:77,5
+commands,TK_RollRight,Igc/igc.h:245,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:78,5
+commands,TK_MainMenu,WinTrek/WinTrek.cpp:9304,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:270,3
+commands,TK_ViewFrontLeft,WinTrek/WinTrek.cpp:9751,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1322; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:281,2
+commands,TK_ViewFrontRight,WinTrek/WinTrek.cpp:9760,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1323; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:282,2
+commands,TK_ViewLeft,WinTrek/WinTrek.cpp:9778,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1324; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:283,2
+commands,TK_ViewRight,WinTrek/WinTrek.cpp:9787,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1325; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:284,2
+commands,TK_ViewExternal,WinTrek/WinTrek.cpp:9796,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:25; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:267,4
+commands,TK_ViewFlyby,WinTrek/WinTrek.cpp:9814,done,src/Allegiance.ClientCore.Game/Rendering/InputBindings.cs:174; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:293,2
+commands,TK_ViewMissile,WinTrek/WinTrek.cpp:9820,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:295; src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:815; src/Allegiance.ClientCore.Game/Game1.Director.cs:482; src/Allegiance.ClientCore.Game/Game1.Camera.cs:352; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:57; P675: discrete rebindable missile/cockpit toggle; native keyboard default unbound,4
+commands,TK_ViewTarget,WinTrek/WinTrek.cpp:9826,done,src/Allegiance.ClientCore.Game/Rendering/InputBindings.cs:174; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:294,3
+commands,TK_ViewChase,WinTrek/WinTrek.cpp:9838,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:296; src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:816; src/Allegiance.ClientCore.Game/Game1.Director.cs:482; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:57; P675: discrete rebindable chase/cockpit toggle; native keyboard default unbound,4
+commands,TK_ViewTurret,WinTrek/WinTrek.cpp:9858,partial,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:299; src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:817; src/Allegiance.ClientCore.Game/Game1.Director.cs:482; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:57; P675: rebindable port gunner camera toggle; native handler and registration are disabled (WinTrek.cpp:9856-9864; trekinput.cpp:196); retain partial for this deliberate extension,4
+commands,TK_ViewBase,WinTrek/WinTrek.cpp:9865,done,src/Allegiance.ClientCore.Game/Rendering/InputBindings.cs:174; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:295,2
+commands,TK_ViewSector,WinTrek/WinTrek.cpp:9882,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:922; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:316,4
+commands,TK_ViewCommand,WinTrek/WinTrek.cpp:9894,done,src/Allegiance.ClientCore.Game/Game1.Commanding.cs:16; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:303,3
 commands,TK_CycleChatMsgs,Igc/igc.h:262,na,native does nothing (igc.h comment),1
-commands,TK_AcceptCommand,Igc/igc.h:263,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs Home accept (rebindable),4
-commands,TK_ClearCommand,Igc/igc.h:264,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs Delete clear (rebindable),4
-commands,TK_RejectCommand,Igc/igc.h:265,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs End reject (rebindable),4
-commands,TK_ToggleAutoPilot,Igc/igc.h:266,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs G autopilot toggle,5
-commands,TK_ThrustLeft,Igc/igc.h:267,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:114,4
-commands,TK_ThrustRight,Igc/igc.h:268,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:115,4
-commands,TK_ThrustUp,Igc/igc.h:269,done,InputActionCatalog.cs 'ThrustUp' (Insert); FlightInput.cs UpButton; ShipKinematics.cs:157-162,3
-commands,TK_ThrustDown,Igc/igc.h:270,done,InputActionCatalog.cs 'ThrustDown' (X); FlightInput.cs DownButton; ShipKinematics.cs:157-162,3
-commands,TK_ThrustForward,Igc/igc.h:271,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:112,5
-commands,TK_ThrustBackward,Igc/igc.h:272,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:113,5
-commands,TK_FireBooster,Igc/igc.h:273,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:121,5
-commands,TK_ConModeGameState,Igc/igc.h:274,partial,panes exist but no modal console switching,2
-commands,TK_QuickChatMenu,Igc/igc.h:275,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs R opens quick-chat (rebindable),5
-commands,TK_ToggleLODSlider,Igc/igc.h:276,missing,LOD auto-managed; no slider,2
-commands,TK_StartChat,Igc/igc.h:277,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs Enter opens chat (rebindable),5
-commands,TK_FireWeapon,Igc/igc.h:278,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:135,5
-commands,TK_FireMissile,Igc/igc.h:279,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs missile control (L-Ctrl),5
-commands,TK_LockVector,Igc/igc.h:280,done,InputActionCatalog.cs 'LockVector' (L); FlightInput.cs VectorLock->CoastButton; ShipKinematics.cs:167-171,3
-commands,TK_ThrottleUp,Igc/igc.h:281,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:178,4
-commands,TK_ThrottleDown,Igc/igc.h:282,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:185,4
-commands,TK_ThrottleZero,Igc/igc.h:283,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:205,4
-commands,TK_Throttle33,Igc/igc.h:284,done,"src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:205 preset, unbound (native default unbound)",3
-commands,TK_Throttle66,Igc/igc.h:285,done,"src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:205 preset, unbound (native default unbound)",3
-commands,TK_ThrottleFull,Igc/igc.h:286,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:205,4
-commands,TK_ToggleBooster,Igc/igc.h:287,partial,native toggle unwired; port uses hold-Shift only,3
-commands,TK_LODUp,Igc/igc.h:288,missing,no LOD control,2
-commands,TK_LODDown,Igc/igc.h:289,missing,no LOD control,2
-commands,TK_ConModeCombat,Igc/igc.h:290,partial,HUD combat view exists,3
-commands,TK_ConModeCommand,Igc/igc.h:291,partial,starmap exists; no command console,2
-commands,TK_ConModeNav,Igc/igc.h:292,partial,starmap exists,2
-commands,TK_ConModeInventory,Igc/igc.h:293,partial,loadout screen exists; no in-flight inv console,2
-commands,TK_ConModeInvest,Igc/igc.h:294,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs investment screen (P487),3
-commands,TK_ConModeTeam,Igc/igc.h:295,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs team pane,3
-commands,TK_ViewRear,Igc/igc.h:296,done,InputActionCatalog.cs 'ViewRear' (D7); HeadLook.cs Rear=pi,2
-commands,TK_Target,Igc/igc.h:297,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs T cycle,5
-commands,TK_TargetNearest,Igc/igc.h:298,partial,generic cycle only; no separate nearest,4
-commands,TK_TargetPrev,Igc/igc.h:299,partial,generic cycle wraps; no explicit prev,4
-commands,TK_TargetFriendly,Igc/igc.h:300,partial,friendly cycle via targeting,4
-commands,TK_TargetFriendlyNearest,Igc/igc.h:301,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs Shift+U friendly nearest,4
-commands,TK_TargetFriendlyPrev,Igc/igc.h:302,missing,no friendly prev step,3
-commands,TK_TargetEnemy,Igc/igc.h:303,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,5
-commands,TK_TargetEnemyNearest,Igc/igc.h:304,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs U enemy nearest,5
-commands,TK_TargetEnemyPrev,Igc/igc.h:305,missing,no enemy prev step,3
-commands,TK_TargetEnemyBase,Igc/igc.h:306,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,4
-commands,TK_TargetEnemyBaseNearest,Igc/igc.h:307,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs Z enemy base nearest,4
-commands,TK_TargetEnemyBasePrev,Igc/igc.h:308,missing,no base prev step,3
-commands,TK_TargetFriendlyBase,Igc/igc.h:309,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,4
-commands,TK_TargetFriendlyBaseNearest,Igc/igc.h:310,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs Shift+Z friendly base,4
-commands,TK_TargetFriendlyBasePrev,Igc/igc.h:311,missing,no friendly-base prev step,3
-commands,TK_TargetCommand,Igc/igc.h:312,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs targets command object,4
-commands,TK_TargetCenter,Igc/igc.h:313,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs mouse-R reticle center,5
-commands,TK_TargetHostile,Igc/igc.h:314,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 HostileDamageTracker 40s window + src/Allegiance.Core/Wire/VictimDamaged.cs (server→victim attribution),4
-commands,TK_Suicide,Igc/igc.h:315,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs K suicide (rebindable),4
-commands,TK_ToggleGrid,Igc/igc.h:316,missing,no combat-view grid,2
-commands,TK_ToggleCloak,Igc/igc.h:317,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:146,4
-commands,TK_DropMine,Igc/igc.h:318,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs N drop mine/probe (rebindable),4
-commands,TK_Ripcord,Igc/igc.h:319,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs L ripcord (rebindable),5
-commands,TK_ViewRearLeft,Igc/igc.h:320,done,InputActionCatalog.cs 'ViewRearLeft' (D6); HeadLook.cs RearLeft=1.25pi,2
-commands,TK_ViewRearRight,Igc/igc.h:321,done,InputActionCatalog.cs 'ViewRearRight' (D8); HeadLook.cs RearRight=0.75pi,2
-commands,TK_TargetSelf,Igc/igc.h:323,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs,3
+commands,TK_AcceptCommand,WinTrek/WinTrek.cpp:10390,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:211; src/Allegiance.ClientCore.Game/Game1.Orders.cs:41; src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs:20; src/Allegiance.ClientCore/State/ClientWorld.Orders.cs:17; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:75; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:167; P675: accept and select legal queued target without engaging autopilot; distinct ExecuteCommand action,4
+commands,TK_ClearCommand,WinTrek/WinTrek.cpp:10402,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:213; src/Allegiance.ClientCore.Game/Game1.Orders.cs:41; src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs:20; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:121; P675: clear accepted slot while preserving pending queued order,4
+commands,TK_RejectCommand,WinTrek/WinTrek.cpp:10396,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:212; src/Allegiance.ClientCore.Game/Game1.Orders.cs:41; src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs:20; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:121; P675: reject queued slot while preserving accepted order,4
+commands,TK_ToggleAutoPilot,WinTrek/WinTrek.cpp:10359,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1528; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:155,5
+commands,TK_ThrustLeft,Igc/igc.h:267,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:55,4
+commands,TK_ThrustRight,Igc/igc.h:268,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:56,4
+commands,TK_ThrustUp,Igc/igc.h:269,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:66,3
+commands,TK_ThrustDown,Igc/igc.h:270,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:67,3
+commands,TK_ThrustForward,Igc/igc.h:271,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:53,5
+commands,TK_ThrustBackward,Igc/igc.h:272,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:54,5
+commands,TK_FireBooster,Igc/igc.h:273,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:79,5
+commands,TK_ConModeGameState,WinTrek/WinTrek.cpp:9871,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:25; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:263,2
+commands,TK_QuickChatMenu,WinTrek/WinTrek.cpp:9410,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:747; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:354,5
+commands,TK_ToggleLODSlider,WinTrek/WinTrek.cpp:9448,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; LOD auto-managed; no slider,2
+commands,TK_StartChat,WinTrek/WinTrek.cpp:9441,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:710; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:351,5
+commands,TK_FireWeapon,Igc/igc.h:278,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:101,5
+commands,TK_FireMissile,Igc/igc.h:279,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:102,5
+commands,TK_LockVector,WinTrek/WinTrek.cpp:9458,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:72,3
+commands,TK_ThrottleUp,WinTrek/WinTrek.cpp:10515,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1197; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:82,4
+commands,TK_ThrottleDown,WinTrek/WinTrek.cpp:10524,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1197; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:83,4
+commands,TK_ThrottleZero,Igc/igc.h:283,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1197; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:84,4
+commands,TK_Throttle33,WinTrek/WinTrek.cpp:10945,partial,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:237; Preset arithmetic exists but no action-map entry or live preset dispatch,3
+commands,TK_Throttle66,WinTrek/WinTrek.cpp:10951,partial,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:237; Preset arithmetic exists but no action-map entry or live preset dispatch,3
+commands,TK_ThrottleFull,Igc/igc.h:286,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1197; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:91,4
+commands,TK_ToggleBooster,Igc/igc.h:287,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:112,3
+commands,TK_LODUp,WinTrek/WinTrek.cpp:10415,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no LOD control,2
+commands,TK_LODDown,WinTrek/WinTrek.cpp:10421,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no LOD control,2
+commands,TK_ConModeCombat,WinTrek/WinTrek.cpp:9977,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:25; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:262,3
+commands,TK_ConModeCommand,WinTrek/WinTrek.cpp:9895,done,src/Allegiance.ClientCore.Game/Game1.Commanding.cs:16; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:303,2
+commands,TK_ConModeNav,WinTrek/WinTrek.cpp:9881,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:25; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:264,2
+commands,TK_ConModeInventory,WinTrek/WinTrek.cpp:10001,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:25; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:265,2
+commands,TK_ConModeInvest,WinTrek/WinTrek.cpp:10025,partial,src/Allegiance.ClientCore.Game/Game1.Panes.cs:50; Investment pane action is docked-only; native can toggle investment while airborne,3
+commands,TK_ConModeTeam,WinTrek/WinTrek.cpp:10038,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:25; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:339,3
+commands,TK_ViewRear,WinTrek/WinTrek.cpp:9769,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1321; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:286,2
+commands,TK_Target,WinTrek/WinTrek.cpp:10274,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:154,5
+commands,TK_TargetNearest,WinTrek/WinTrek.cpp:10275,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:239,4
+commands,TK_TargetPrev,WinTrek/WinTrek.cpp:10276,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:240,4
+commands,TK_TargetFriendly,WinTrek/WinTrek.cpp:10287,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:243,4
+commands,TK_TargetFriendlyNearest,WinTrek/WinTrek.cpp:10288,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:157,4
+commands,TK_TargetFriendlyPrev,WinTrek/WinTrek.cpp:10289,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:244,3
+commands,TK_TargetEnemy,WinTrek/WinTrek.cpp:10154,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:241,5
+commands,TK_TargetEnemyNearest,WinTrek/WinTrek.cpp:10155,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:156,5
+commands,TK_TargetEnemyPrev,WinTrek/WinTrek.cpp:10156,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:242,3
+commands,TK_TargetEnemyBase,WinTrek/WinTrek.cpp:10194,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:245,4
+commands,TK_TargetEnemyBaseNearest,WinTrek/WinTrek.cpp:10195,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:158,4
+commands,TK_TargetEnemyBasePrev,WinTrek/WinTrek.cpp:10196,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:246,3
+commands,TK_TargetFriendlyBase,WinTrek/WinTrek.cpp:10210,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:247,4
+commands,TK_TargetFriendlyBaseNearest,WinTrek/WinTrek.cpp:10211,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:159,4
+commands,TK_TargetFriendlyBasePrev,WinTrek/WinTrek.cpp:10212,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:248,3
+commands,TK_TargetCommand,WinTrek/WinTrek.cpp:10408,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:210; src/Allegiance.ClientCore.Game/Game1.Orders.cs:41; src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs:20; src/Allegiance.ClientCore/State/ClientWorld.Orders.cs:10; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:103; P675: select independent accepted command target; pending queue and selection never replace accepted state,4
+commands,TK_TargetCenter,WinTrek/WinTrek.cpp:10127,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:1217; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:161,5
+commands,TK_TargetHostile,WinTrek/WinTrek.cpp:10101,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:1361; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:206,4
+commands,TK_Suicide,WinTrek/WinTrek.cpp:10427,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1005; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:117,4
+commands,TK_ToggleGrid,WinTrek/WinTrek.cpp:10433,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:56; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:268,2
+commands,TK_ToggleCloak,WinTrek/WinTrek.cpp:9468,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:114,4
+commands,TK_DropMine,Igc/igc.h:318,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1100; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:116,4
+commands,TK_Ripcord,WinTrek/WinTrek.cpp:9475,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1063; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:115,5
+commands,TK_ViewRearLeft,WinTrek/WinTrek.cpp:9733,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1326; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:285,2
+commands,TK_ViewRearRight,WinTrek/WinTrek.cpp:9742,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1327; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:287,2
+commands,TK_TargetSelf,WinTrek/WinTrek.cpp:10440,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:1183; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:261,3
 commands,TK_ToggleCollisions,Igc/igc.h:324,na,era debug/cheat toggle; not applicable,1
-commands,TK_OccupyNextTurret,Igc/igc.h:325,partial,turret gunning supported but no occupy-next key,3
-commands,TK_TargetNothing,Igc/igc.h:326,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs ; clears target,4
-commands,TK_MatchSpeed,Igc/igc.h:327,done,InputActionCatalog.cs 'MatchSpeed' (/); FlightInput.cs MatchSpeedThrottle (GetThrottle); Game1.TryMatchSpeedThrottle,3
-commands,TK_ChatPageUp,Igc/igc.h:328,done,Rendering/ChatScroll.cs; Game1.FlightInput.cs; InputActionCatalog.cs,2
-commands,TK_ChatPageDown,Igc/igc.h:329,done,Rendering/ChatScroll.cs; Game1.FlightInput.cs; InputActionCatalog.cs,2
-commands,TK_ViewExternalOrbit,Igc/igc.h:330,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F4 external orbit (native wins F-row),3
-commands,TK_ViewExternalStation,Igc/igc.h:331,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs F11 external station (native wins F-row),3
-commands,TK_DebugTest1,Igc/igc.h:342,na,native debug hook; not a player command,1
-commands,TK_DebugTest2,Igc/igc.h:343,na,native debug hook; not a player command,1
-commands,TK_DebugTest3,Igc/igc.h:344,na,native debug hook; not a player command,1
-commands,TK_DebugTest4,Igc/igc.h:345,na,native debug hook; not a player command,1
-commands,TK_DebugTest5,Igc/igc.h:346,na,native debug hook; not a player command,1
-commands,TK_DebugTest6,Igc/igc.h:347,na,native debug hook; not a player command,1
-commands,TK_DebugTest7,Igc/igc.h:348,na,native debug hook; not a player command,1
-commands,TK_DebugTest8,Igc/igc.h:349,na,native debug hook; not a player command,1
-commands,TK_DebugTest9,Igc/igc.h:350,na,native debug hook; not a player command,1
-commands,TK_DropChaff,Igc/igc.h:351,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs C drop chaff (rebindable),4
-commands,TK_ToggleCommand,Igc/igc.h:352,missing,no command 3/4 toggle,3
-commands,TK_SwapWeapon1,Igc/igc.h:353,missing,no swap bindings; weapon swap via [ / ] only,2
-commands,TK_SwapWeapon2,Igc/igc.h:354,missing,no swap bindings,2
-commands,TK_SwapWeapon3,Igc/igc.h:355,missing,no swap bindings,2
-commands,TK_SwapWeapon4,Igc/igc.h:356,missing,no swap bindings,2
-commands,TK_SwapTurret1,Igc/igc.h:357,missing,no swap bindings,2
-commands,TK_SwapTurret2,Igc/igc.h:358,missing,no swap bindings,2
-commands,TK_SwapTurret3,Igc/igc.h:359,missing,no swap bindings,2
-commands,TK_SwapTurret4,Igc/igc.h:360,missing,no swap bindings,2
-commands,TK_SwapMissile,Igc/igc.h:361,missing,no swap bindings,2
-commands,TK_SwapChaff,Igc/igc.h:362,missing,no swap bindings,2
-commands,TK_SwapShield,Igc/igc.h:363,missing,no swap bindings,2
-commands,TK_SwapCloak,Igc/igc.h:364,missing,no swap bindings,2
-commands,TK_SwapAfterburner,Igc/igc.h:365,missing,no swap bindings,2
-commands,TK_SwapMine,Igc/igc.h:366,missing,no swap bindings,2
-commands,TK_NextCargo,Igc/igc.h:367,done,Rendering/CargoSelector.cs; Game1.InFlightUtility.cs; InputActionCatalog.cs,2
-commands,TK_ToggleWeapon1,Igc/igc.h:368,missing,no per-weapon select keys; single-fire via [ / ] + group toggle,3
-commands,TK_ToggleWeapon2,Igc/igc.h:369,missing,no per-weapon select keys,3
-commands,TK_ToggleWeapon3,Igc/igc.h:370,missing,no per-weapon select keys,3
-commands,TK_ToggleWeapon4,Igc/igc.h:371,missing,no per-weapon select keys,3
-commands,TK_DropCargo,Igc/igc.h:372,done,Rendering/CargoSelector.cs; Game1.InFlightUtility.cs; Wire/DropPart.cs; Server.ShipCommands.cs HandleDropPart cargo path,2
-commands,TK_Reload,Igc/igc.h:373,done,Game1.InFlightUtility.cs; Session/ConnectionSession.cs; Wire/Reload.cs,3
-commands,TK_ExecuteCommand,Igc/igc.h:374,done,src/Allegiance.ClientCore.Game/Flight/FlightInput.cs accept+autopilot,4
-commands,TK_PauseTM,Igc/igc.h:375,partial,training exists (NATIVE_TRAINING_SCRIPT) but no pause key,2
-commands,TK_TargetEnemyBomber,Igc/igc.h:377,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyFighter,Igc/igc.h:378,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyConstructor,Igc/igc.h:379,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyMiner,Igc/igc.h:380,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyMajorBase,Igc/igc.h:381,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyBomber,Igc/igc.h:382,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyFighter,Igc/igc.h:383,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyConstructor,Igc/igc.h:384,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyMiner,Igc/igc.h:385,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyLifepod,Igc/igc.h:386,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyMajorBase,Igc/igc.h:387,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFlag,Igc/igc.h:388,missing,no flag target,3
-commands,TK_TargetArtifact,Igc/igc.h:389,missing,no artifact target,3
-commands,TK_TargetEnemyBomberNearest,Igc/igc.h:391,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyFighterNearest,Igc/igc.h:392,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyConstructorNearest,Igc/igc.h:393,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyMinerNearest,Igc/igc.h:394,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyMajorBaseNearest,Igc/igc.h:395,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyBomberNearest,Igc/igc.h:396,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyFighterNearest,Igc/igc.h:397,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyConstructorNearest,Igc/igc.h:398,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyMinerNearest,Igc/igc.h:399,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyLifepodNearest,Igc/igc.h:400,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyMajorBaseNearest,Igc/igc.h:401,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFlagNearest,Igc/igc.h:402,missing,no flag target,3
-commands,TK_TargetArtifactNearest,Igc/igc.h:403,missing,no artifact target,3
-commands,TK_TargetEnemyBomberPrev,Igc/igc.h:405,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyFighterPrev,Igc/igc.h:406,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyConstructorPrev,Igc/igc.h:407,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyMinerPrev,Igc/igc.h:408,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetEnemyMajorBasePrev,Igc/igc.h:409,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyBomberPrev,Igc/igc.h:410,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyFighterPrev,Igc/igc.h:411,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyConstructorPrev,Igc/igc.h:412,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyMinerPrev,Igc/igc.h:413,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyLifepodPrev,Igc/igc.h:414,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFriendlyMajorBasePrev,Igc/igc.h:415,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs P623 ClassFilterSpec (abm role bit) + StepCycle nearest/next/prev triad (WinTrek.cpp:8963-8969),3
-commands,TK_TargetFlagPrev,Igc/igc.h:416,missing,no flag target,2
-commands,TK_TargetArtifactPrev,Igc/igc.h:417,missing,no artifact target,2
-commands,TK_TargetWarp,Igc/igc.h:419,missing,no warp target,3
-commands,TK_TargetWarpNearest,Igc/igc.h:420,missing,no warp target,3
-commands,TK_TargetWarpPrev,Igc/igc.h:421,missing,no warp target,2
-commands,TK_SkipTMGoal,Igc/igc.h:424,missing,no skip-goal key,2
-commands,TK_IncreaseTMClockSpeed,Igc/igc.h:425,missing,no TM clock keys,1
-commands,TK_DecreaseTMClockSpeed,Igc/igc.h:426,missing,no TM clock keys,1
-commands,TK_ResetTMClockSpeed,Igc/igc.h:427,missing,no TM clock keys,1
-commands,TK_Help,Igc/igc.h:428,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs H help overlay now LIVE from ActionMap; says how to open rebind (F6 Controls),4
-commands,TK_CycleRadar,Igc/igc.h:430,done,InputActionCatalog.cs 'CycleRadar' (.); Rendering/RadarLod.cs All/Default/Target/Minimal; DrawRadar filter,3
-commands,TK_ConModeMiniTeam,Igc/igc.h:431,missing,no mini-team pane,2
-commands,TK_CommandFinishTM,Igc/igc.h:433,missing,no finish-TM key,2
-commands,TK_RollModifier,Igc/igc.h:434,missing,no roll modifier key,2
-commands,TK_TrackCommandView,Igc/igc.h:435,missing,no command view tracking,2
-commands,TK_ConModeTeleport,Igc/igc.h:436,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs teleport pane (P273),3
-commands,TK_ToggleMouse,Igc/igc.h:437,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs M mouse-flight toggle (rebindable),4
-commands,TK_PromoteTurret1,Igc/igc.h:438,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 1-4 promote turret,3
-commands,TK_PromoteTurret2,Igc/igc.h:439,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
-commands,TK_PromoteTurret3,Igc/igc.h:440,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
-commands,TK_PromoteTurret4,Igc/igc.h:441,done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingTable.cs:88 promote turret,3
-commands,TK_VoteYes,Igc/igc.h:442,done,Game1.InFlightUtility.cs; ClientWorld.cs Apply(Ballot); Session/ConnectionSession.cs; Wire/Vote.cs,3
-commands,TK_VoteNo,Igc/igc.h:443,done,Game1.InFlightUtility.cs; ClientWorld.cs Apply(Ballot); Session/ConnectionSession.cs; Wire/Vote.cs,3
-commands,TK_ScrnShot,Igc/igc.h:445,done,"src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs PrintScreen screenshot (native default, defaultinputmap.mdl:108); F11 freed for station camera; rebindable via Controls F6",3
-commands,TK_TargetAlliedBase,Igc/igc.h:447,partial,ally base target via friendly-base cycle,3
-commands,TK_TargetAlliedBaseNearest,Igc/igc.h:448,partial,ally base via friendly-base cycle,3
-commands,TK_TargetAlliedBasePrev,Igc/igc.h:449,missing,no ally-base prev step,2
+commands,TK_OccupyNextTurret,WinTrek/WinTrek.cpp:10452,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:168; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:269,3
+commands,TK_TargetNothing,WinTrek/WinTrek.cpp:10446,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:1207; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:160,4
+commands,TK_MatchSpeed,WinTrek/WinTrek.cpp:10881,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1349; src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:107; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:96,3
+commands,TK_ChatPageUp,WinTrek/WinTrek.cpp:9398,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:769; src/Allegiance.ClientCore.Game/Rendering/ChatScroll.cs:22; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:366,2
+commands,TK_ChatPageDown,WinTrek/WinTrek.cpp:9404,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:769; src/Allegiance.ClientCore.Game/Rendering/ChatScroll.cs:22; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:367,2
+commands,TK_ViewExternalOrbit,WinTrek/WinTrek.cpp:9802,done,src/Allegiance.ClientCore.Game/Rendering/InputBindings.cs:174; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:292,3
+commands,TK_ViewExternalStation,WinTrek/WinTrek.cpp:9808,done,src/Allegiance.ClientCore.Game/Rendering/InputBindings.cs:174; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:296,3
+commands,TK_DebugTest1,WinTrek/WinTrek.cpp:10535,na,native debug hook; not a player command,1
+commands,TK_DebugTest2,WinTrek/WinTrek.cpp:10536,na,native debug hook; not a player command,1
+commands,TK_DebugTest3,WinTrek/WinTrek.cpp:10537,na,native debug hook; not a player command,1
+commands,TK_DebugTest4,WinTrek/WinTrek.cpp:10538,na,native debug hook; not a player command,1
+commands,TK_DebugTest5,WinTrek/WinTrek.cpp:10539,na,native debug hook; not a player command,1
+commands,TK_DebugTest6,WinTrek/WinTrek.cpp:10540,na,native debug hook; not a player command,1
+commands,TK_DebugTest7,WinTrek/WinTrek.cpp:10541,na,native debug hook; not a player command,1
+commands,TK_DebugTest8,WinTrek/WinTrek.cpp:10542,na,native debug hook; not a player command,1
+commands,TK_DebugTest9,WinTrek/WinTrek.cpp:10543,na,native debug hook; not a player command,1
+commands,TK_DropChaff,Igc/igc.h:351,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1022; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:113,4
+commands,TK_ToggleCommand,WinTrek/WinTrek.cpp:9936,done,src/Allegiance.ClientCore.Game/Game1.Commanding.cs:16; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:304,3
+commands,TK_SwapWeapon1,WinTrek/WinTrek.cpp:9535,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings; weapon swap via [ / ] only,2
+commands,TK_SwapWeapon2,WinTrek/WinTrek.cpp:9541,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapWeapon3,WinTrek/WinTrek.cpp:9547,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapWeapon4,WinTrek/WinTrek.cpp:9553,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapTurret1,WinTrek/WinTrek.cpp:9559,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapTurret2,WinTrek/WinTrek.cpp:9565,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapTurret3,WinTrek/WinTrek.cpp:9571,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapTurret4,WinTrek/WinTrek.cpp:9577,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapMissile,WinTrek/WinTrek.cpp:9604,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapChaff,WinTrek/WinTrek.cpp:9610,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapShield,WinTrek/WinTrek.cpp:9616,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapCloak,WinTrek/WinTrek.cpp:9622,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapAfterburner,WinTrek/WinTrek.cpp:9628,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_SwapMine,WinTrek/WinTrek.cpp:9634,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings,2
+commands,TK_NextCargo,WinTrek/WinTrek.cpp:9640,done,src/Allegiance.ClientCore.Game/Game1.InFlightUtility.cs:58; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:147,2
+commands,TK_ToggleWeapon1,WinTrek/WinTrek.cpp:9650,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:107,3
+commands,TK_ToggleWeapon2,WinTrek/WinTrek.cpp:9656,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:108,3
+commands,TK_ToggleWeapon3,WinTrek/WinTrek.cpp:9662,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:109,3
+commands,TK_ToggleWeapon4,WinTrek/WinTrek.cpp:9668,done,src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:93; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:110,3
+commands,TK_DropCargo,WinTrek/WinTrek.cpp:9698,done,src/Allegiance.ClientCore.Game/Game1.InFlightUtility.cs:80; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:148,2
+commands,TK_Reload,WinTrek/WinTrek.cpp:9674,done,src/Allegiance.ClientCore.Game/Game1.InFlightUtility.cs:97; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:149,3
+commands,TK_ExecuteCommand,WinTrek/WinTrek.cpp:10389,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:209; src/Allegiance.ClientCore.Game/Game1.Orders.cs:41; src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs:20; src/Allegiance.ClientCore/State/ClientWorld.Orders.cs:89; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:75; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:91; tests/Allegiance.ClientCore.Tests/P675CommandLiveTests.cs:17; P675: accept legal queued targets and engage autopilot only while undocked/unparented with a known target sector; join changes wing without replacing accepted,4
+commands,TK_PauseTM,Igc/igc.h:375,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; Training scripts are not an implemented pause command; no action/handler,2
+commands,TK_TargetEnemyBomber,WinTrek/WinTrek.cpp:10162,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:173,3
+commands,TK_TargetEnemyFighter,WinTrek/WinTrek.cpp:10170,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:176,3
+commands,TK_TargetEnemyConstructor,WinTrek/WinTrek.cpp:10186,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:179,3
+commands,TK_TargetEnemyMiner,WinTrek/WinTrek.cpp:10178,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:182,3
+commands,TK_TargetEnemyMajorBase,WinTrek/WinTrek.cpp:10202,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:185,3
+commands,TK_TargetFriendlyBomber,WinTrek/WinTrek.cpp:10295,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:188,3
+commands,TK_TargetFriendlyFighter,WinTrek/WinTrek.cpp:10303,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:191,3
+commands,TK_TargetFriendlyConstructor,WinTrek/WinTrek.cpp:10319,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:194,3
+commands,TK_TargetFriendlyMiner,WinTrek/WinTrek.cpp:10311,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:197,3
+commands,TK_TargetFriendlyLifepod,WinTrek/WinTrek.cpp:10327,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:200,3
+commands,TK_TargetFriendlyMajorBase,WinTrek/WinTrek.cpp:10266,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:203,3
+commands,TK_TargetFlag,WinTrek/WinTrek.cpp:10343,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:252,3
+commands,TK_TargetArtifact,WinTrek/WinTrek.cpp:10335,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:255,3
+commands,TK_TargetEnemyBomberNearest,WinTrek/WinTrek.cpp:10163,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:174,3
+commands,TK_TargetEnemyFighterNearest,WinTrek/WinTrek.cpp:10171,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:177,3
+commands,TK_TargetEnemyConstructorNearest,WinTrek/WinTrek.cpp:10187,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:180,3
+commands,TK_TargetEnemyMinerNearest,WinTrek/WinTrek.cpp:10179,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:183,3
+commands,TK_TargetEnemyMajorBaseNearest,WinTrek/WinTrek.cpp:10203,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:186,3
+commands,TK_TargetFriendlyBomberNearest,WinTrek/WinTrek.cpp:10296,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:189,3
+commands,TK_TargetFriendlyFighterNearest,WinTrek/WinTrek.cpp:10304,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:192,3
+commands,TK_TargetFriendlyConstructorNearest,WinTrek/WinTrek.cpp:10320,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:195,3
+commands,TK_TargetFriendlyMinerNearest,WinTrek/WinTrek.cpp:10312,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:198,3
+commands,TK_TargetFriendlyLifepodNearest,WinTrek/WinTrek.cpp:10328,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:201,3
+commands,TK_TargetFriendlyMajorBaseNearest,WinTrek/WinTrek.cpp:10267,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:204,3
+commands,TK_TargetFlagNearest,WinTrek/WinTrek.cpp:10344,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:253,3
+commands,TK_TargetArtifactNearest,WinTrek/WinTrek.cpp:10336,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:256,3
+commands,TK_TargetEnemyBomberPrev,WinTrek/WinTrek.cpp:10164,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:175,3
+commands,TK_TargetEnemyFighterPrev,WinTrek/WinTrek.cpp:10172,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:178,3
+commands,TK_TargetEnemyConstructorPrev,WinTrek/WinTrek.cpp:10188,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:181,3
+commands,TK_TargetEnemyMinerPrev,WinTrek/WinTrek.cpp:10180,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:184,3
+commands,TK_TargetEnemyMajorBasePrev,WinTrek/WinTrek.cpp:10204,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:187,3
+commands,TK_TargetFriendlyBomberPrev,WinTrek/WinTrek.cpp:10297,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:190,3
+commands,TK_TargetFriendlyFighterPrev,WinTrek/WinTrek.cpp:10305,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:193,3
+commands,TK_TargetFriendlyConstructorPrev,WinTrek/WinTrek.cpp:10321,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:196,3
+commands,TK_TargetFriendlyMinerPrev,WinTrek/WinTrek.cpp:10313,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:199,3
+commands,TK_TargetFriendlyLifepodPrev,WinTrek/WinTrek.cpp:10329,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:202,3
+commands,TK_TargetFriendlyMajorBasePrev,WinTrek/WinTrek.cpp:10268,done,src/Allegiance.ClientCore.Game/Game1.Targeting.cs:899; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:782; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:205,3
+commands,TK_TargetFlagPrev,WinTrek/WinTrek.cpp:10345,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:254,2
+commands,TK_TargetArtifactPrev,WinTrek/WinTrek.cpp:10337,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:257,2
+commands,TK_TargetWarp,WinTrek/WinTrek.cpp:10351,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:249,3
+commands,TK_TargetWarpNearest,WinTrek/WinTrek.cpp:10352,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:250,3
+commands,TK_TargetWarpPrev,WinTrek/WinTrek.cpp:10353,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:251,2
+commands,TK_SkipTMGoal,Igc/igc.h:424,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no skip-goal key,2
+commands,TK_IncreaseTMClockSpeed,Igc/igc.h:425,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no TM clock keys,1
+commands,TK_DecreaseTMClockSpeed,Igc/igc.h:426,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no TM clock keys,1
+commands,TK_ResetTMClockSpeed,Igc/igc.h:427,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no TM clock keys,1
+commands,TK_Help,WinTrek/WinTrek.cpp:9300,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:368; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:340,4
+commands,TK_CycleRadar,WinTrek/WinTrek.cpp:9955,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1333; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:291,3
+commands,TK_ConModeMiniTeam,WinTrek/WinTrek.cpp:10061,done,src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs:25; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:266,2
+commands,TK_CommandFinishTM,Igc/igc.h:433,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no finish-TM key,2
+commands,TK_RollModifier,Igc/igc.h:434,missing,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no roll modifier key,2
+commands,TK_TrackCommandView,WinTrek/WinTrek.cpp:9434,done,src/Allegiance.ClientCore.Game/Game1.Commanding.cs:16; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:305,2
+commands,TK_ConModeTeleport,WinTrek/WinTrek.cpp:10085,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs:50; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:397,3
+commands,TK_ToggleMouse,WinTrek/WinTrek.cpp:9421,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:841; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:314,4
+commands,TK_PromoteTurret1,WinTrek/WinTrek.cpp:9583,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:2859; src/Allegiance.ClientCore.Game/Flight/PromoteTurretKey.cs:37; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:118,3
+commands,TK_PromoteTurret2,WinTrek/WinTrek.cpp:9584,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:2859; src/Allegiance.ClientCore.Game/Flight/PromoteTurretKey.cs:37; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:119,3
+commands,TK_PromoteTurret3,WinTrek/WinTrek.cpp:9585,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:2859; src/Allegiance.ClientCore.Game/Flight/PromoteTurretKey.cs:37; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:120,3
+commands,TK_PromoteTurret4,WinTrek/WinTrek.cpp:9586,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:2859; src/Allegiance.ClientCore.Game/Flight/PromoteTurretKey.cs:37; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:121,3
+commands,TK_VoteYes,WinTrek/WinTrek.cpp:10377,done,src/Allegiance.ClientCore.Game/Game1.InFlightUtility.cs:24; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:235,3
+commands,TK_VoteNo,WinTrek/WinTrek.cpp:10383,done,src/Allegiance.ClientCore.Game/Game1.InFlightUtility.cs:24; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:236,3
+commands,TK_ScrnShot,WinTrek/WinTrek.cpp:9284,done,src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1584; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:342,3
+commands,TK_TargetAlliedBase,WinTrek/WinTrek.cpp:10238,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:258,3
+commands,TK_TargetAlliedBaseNearest,WinTrek/WinTrek.cpp:10239,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:259,3
+commands,TK_TargetAlliedBasePrev,WinTrek/WinTrek.cpp:10240,done,src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:155; src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs:96; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:260,2
 commands,TK_Max,Igc/igc.h:451,na,enum sentinel; not a command,1
 fedmsg,1 LOGONREQ,Inc/Messages.h:36,done,Wire/LogonRequest.cs,5
 fedmsg,2 LOGONACK,Inc/Messages.h:53,done,Wire/LogonAck.cs,5
 fedmsg,3 LOGOFF,Inc/Messages.h:62,done,Wire/Logoff.cs,4
 fedmsg,4 BUY_LOADOUT,Inc/Messages.h:65,done,Wire/BuyLoadoutRequest.cs,5
 fedmsg,5 BUY_LOADOUT_ACK,Inc/Messages.h:70,done,Wire/BuyLoadoutAck.cs,5
-fedmsg,6 OBJECT_SPOTTED,Inc/Messages.h:76,partial,Wire/ObjectSpotted.cs (server emits; no client handler found),4
+fedmsg,6 OBJECT_SPOTTED,Inc/Messages.h:76,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1112; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:52; tests/Allegiance.ClientCore.Tests/P675MissionDiscoveryTests.cs:86; tests/Allegiance.Core.Tests/Wire/P675MissionDiscoveryWireTests.cs:9; P675: native discovery text and criticality for ships/stations/probes and station/asteroid/warp discoveries (clintlib/appmsg.cpp:3223-3318),4
 fedmsg,7 SET_CLUSTER,Inc/Messages.h:83,done,Wire/SetCluster.cs,4
 fedmsg,8 DEV_COMPLETED,Inc/Messages.h:89,done,Wire/DevCompleted.cs,4
 fedmsg,9 SET_BRIEFING_TEXT,Inc/Messages.h:93,done,Wire/SetBriefingText.cs,4
 fedmsg,10 PLAYERINFO,Inc/Messages.h:98,done,Wire/PlayerInfo.cs,4
 fedmsg,11 STATIC_MAP_INFO,Inc/Messages.h:127,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),2
 fedmsg,12 PROJECTILE_INSTANCE,Inc/Messages.h:131,done,Wire/ProjectileInstance.cs,5
-fedmsg,13 RANK_INFO,Inc/Messages.h:148,done,"Wire/RankInfo.cs + Session/ConnectionSession.cs + State/ClientWorld.cs (P639: client consumes; rank table shown on leaderboard/char sheet/team pane via Wire/RankNameLookup.cs)",4
+fedmsg,13 RANK_INFO,Inc/Messages.h:148,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:744; src/Allegiance.ClientCore/State/ClientWorld.cs:2459,4
 fedmsg,14 SET_START_TIME,Inc/Messages.h:153,done,Wire/SetStartTime.cs,4
 fedmsg,15 SET_TEAM_INFO,Inc/Messages.h:157,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
-fedmsg,16 PLAYER_RESCUED,Inc/Messages.h:163,done,Wire/PlayerRescued.cs; dispatched in ConnectionSession (P627; world Apply already existed),4
-fedmsg,17 BALLOT,Inc/Messages.h:170,done,"Wire/Ballot.cs; dispatched+applied (ActiveBallot, P626) — was a false-positive partial",4
-fedmsg,18 CANCEL_BALLOT,Inc/Messages.h:179,partial,Wire/CancelBallot.cs (server emits; no client handler found),4
+fedmsg,16 PLAYER_RESCUED,Inc/Messages.h:163,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1167; src/Allegiance.ClientCore/State/ClientWorld.cs:3221,4
+fedmsg,17 BALLOT,Inc/Messages.h:170,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:873; src/Allegiance.ClientCore/State/ClientWorld.cs:3150,4
+fedmsg,18 CANCEL_BALLOT,Inc/Messages.h:179; clintlib/appmsg.cpp:377-392; clintlib/clintlib.cpp:2497-2522,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1048; src/Allegiance.ClientCore/State/ClientWorld.cs:1009; src/Allegiance.ClientCore/State/ClientWorld.cs:1011; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1680; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:100; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:115; P678: Remove all matching queued ballots; preserve unrelated ballots; native FIFO/strict expiry and vote dequeue. No native or port production sender found; real encoded receive replay covers cancellation.,4
 fedmsg,19 VOTE,Inc/Messages.h:183,done,Wire/Vote.cs,4
 fedmsg,20 SHIP_DELETE,Inc/Messages.h:196,done,Wire/ShipDelete.cs,5
 fedmsg,21 RANDOMIZE_TEAMS,Inc/Messages.h:201,done,Wire/RandomizeTeams.cs,4
@@ -229,27 +229,27 @@ fedmsg,27 POSTER,Inc/Messages.h:245,na,dead/not-applicable registry (src/Allegia
 fedmsg,28 TREASURE,Inc/Messages.h:253,done,Wire/TreasureSpawn.cs,4
 fedmsg,30 DESTROY_TREASURE,Inc/Messages.h:257,done,Wire/DestroyTreasure.cs,4
 fedmsg,31 NEW_SHIP_INSTANCE,Inc/Messages.h:262,partial,Wire/NewShipInstance.cs (codec only; neither side wired),4
-fedmsg,33 DROP_PART,Inc/Messages.h:266,done,Wire/DropPart.cs,4
-fedmsg,34 SWAP_PART,Inc/Messages.h:273,partial,Wire/SwapPart.cs (server handled; client consumer not found),4
+fedmsg,33 DROP_PART,Inc/Messages.h:266,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:867; src/Allegiance.ClientCore/State/ClientWorld.FlightParts.cs:28,4
+fedmsg,34 SWAP_PART,Inc/Messages.h:273,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:864; src/Allegiance.ClientCore/State/ClientWorld.FlightParts.cs:14,4
 fedmsg,35 PING,Inc/Messages.h:280,done,Wire/Ping.cs,4
 fedmsg,36 URLROOT,Inc/Messages.h:286,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,37 MISSION_STAGE,Inc/Messages.h:290,done,Wire/MissionStage.cs,5
 fedmsg,38 MISSIONDEF,Inc/Messages.h:294,done,Wire/MissionDef.cs,4
 fedmsg,39 POSITIONREQ,Inc/Messages.h:320,done,Wire/PositionReq.cs,4
-fedmsg,40 POSITIONREQ,Inc/Messages.h:325,partial,Wire/PositionReqBroadcast.cs (server emits; no client handler found),4
+fedmsg,40 POSITIONREQ,Inc/Messages.h:325; clintlib/appmsg.cpp:2470-2483; clintlib/clintlib.cpp:943-954,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:1051; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:20; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:50; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Side/ship request membership, duplicate/member guard, own-leader critical notice and native player-waiting voice; live receipt on both peers.",4
 fedmsg,41 POSITIONACK,Inc/Messages.h:331,done,Wire/PositionAck.cs,4
-fedmsg,42 DELPOSITIONREQ,Inc/Messages.h:366,partial,Wire/DelPositionReq.cs (server handled; client consumer not found),3
-fedmsg,43 LOCK_LOBBY,Inc/Messages.h:372,partial,Wire/LockLobby.cs (server handled; client consumer not found),4
-fedmsg,44 LOCK_SIDES,Inc/Messages.h:376,partial,Wire/LockSides.cs (server handled; client consumer not found),4
+fedmsg,42 DELPOSITIONREQ,Inc/Messages.h:366; clintlib/appmsg.cpp:2486-2499; WinTrek/teamscreen.cpp:3545-3658; clintlib/clintlib.cpp:4133-4135,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:1054; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:39; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:74; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P655d/P688: ConnectionSession.LastPositionRefusal retains own-session diagnostics; tests/Allegiance.ClientCore.Tests/P655PositionRefusalTests.cs and P655ProbeWorkersLiveTests.cs. P678: Scoped removal plus bounded result events even for absent players/requests; own rejection UI, quiet cancellation; JOIN_SIDE satisfies membership.",3
+fedmsg,43 LOCK_LOBBY,Inc/Messages.h:372; clintlib/appmsg.cpp:2611-2617,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:1060; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:49; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:27; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Authoritative mission lobby lock state, echo-only mutation, shown in side-select/ready-check; live on/off relay.",4
+fedmsg,44 LOCK_SIDES,Inc/Messages.h:376; clintlib/appmsg.cpp:2620-2627,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:1063; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:50; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:27; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Authoritative side lock state independent of lobby lock, shown in lobby screens; live locked refusal/unlock receipt.",4
 fedmsg,45 PLAYER_READY,Inc/Messages.h:380,done,Wire/PlayerReady.cs,5
 fedmsg,46 TEAM_READY,Inc/Messages.h:386,done,Wire/TeamReady.cs,4
 fedmsg,47 FORCE_TEAM_READY,Inc/Messages.h:392,done,Wire/ForceTeamReady.cs,4
 fedmsg,48 DOCKED,Inc/Messages.h:399,done,Wire/Docked.cs,4
 fedmsg,51 CHANGE_TEAM_CIV,Inc/Messages.h:407,partial,Wire/ChangeTeamCiv.cs (server handled; client consumer not found),4
-fedmsg,52 AUTO_ACCEPT,Inc/Messages.h:413,partial,Wire/AutoAccept.cs (server handled; client consumer not found),4
+fedmsg,52 AUTO_ACCEPT,Inc/Messages.h:413; clintlib/appmsg.cpp:2602-2609,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1066; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:48; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:27; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Per-side authoritative auto-accept state and lobby display; live on/off relay and pending-request acceptance sweep.,4
 fedmsg,57 STATIONS_UPDATE,Inc/Messages.h:425,done,Wire/StationsUpdate.cs,4
-fedmsg,58 STATION_CAPTURE,Inc/Messages.h:429,done,Wire/StationCapture.cs,4
-fedmsg,59 STATION_DESTROYED,Inc/Messages.h:436,done,Wire/StationDestroyed.cs,4
+fedmsg,58 STATION_CAPTURE,Inc/Messages.h:429,done,src/Allegiance.ClientCore/State/ClientWorld.cs:2825; src/Allegiance.ClientCore.Game/Audio/StationEventSoundMap.cs:13; tests/Allegiance.ClientCore.MonoGame.Tests/P664StationEventSoundTests.cs:81; P664 core-type capture sounds with alliance and unrelated-side gates,4
+fedmsg,59 STATION_DESTROYED,Inc/Messages.h:436,done,src/Allegiance.ClientCore/State/ClientWorld.cs:2810; src/Allegiance.ClientCore.Game/Audio/StationEventSoundMap.cs:13; tests/Allegiance.ClientCore.MonoGame.Tests/P664StationEventSoundTests.cs:57; P664 core-type destruction sounds captured before removal with alliance gates,4
 fedmsg,60 MONEY_CHANGE,Inc/Messages.h:441,done,Wire/MoneyChange.cs,5
 fedmsg,61 DOCKED,Inc/Messages.h:448,done,Wire/DockedNotify.cs,4
 fedmsg,62 GAME_OVER,Inc/Messages.h:467,done,Wire/GameOver.cs,5
@@ -271,24 +271,24 @@ fedmsg,85 PROBE_DESTROYED,Inc/Messages.h:608,done,Wire/ProbeDestroyed.cs,4
 fedmsg,86 ASTEROID_DESTROYED,Inc/Messages.h:613,partial,Wire/AsteroidDestroyed.cs (server emits; no client handler found),4
 fedmsg,87 FIRE_EXPENDABLE,Inc/Messages.h:619,partial,Wire/FireExpendable.cs (server emits; no client handler found),4
 fedmsg,89 TREASURE_SETS,Inc/Messages.h:624,partial,Wire/TreasureSets.cs (server emits; no client handler found),4
-fedmsg,90 SHIP_STATUS,Inc/Messages.h:630,done,Wire/ShipStatus.cs (ShipStatusMessage); dispatched+applied — was a false-positive partial,4
+fedmsg,90 SHIP_STATUS,Inc/Messages.h:630,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:786; src/Allegiance.ClientCore/State/ClientWorld.cs:2150,4
 fedmsg,92 PROBES_UPDATE,Inc/Messages.h:644,partial,Wire/ProbesUpdate.cs (server emits; no client handler found),4
-fedmsg,93 ORDER_CHANGE,Inc/Messages.h:648,done,Wire/OrderChange.cs,4
-fedmsg,94 LEAVE_SHIP,Inc/Messages.h:656,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(LeaveShip),4
-fedmsg,95 JOINED_MISSION,Inc/Messages.h:660,partial,Wire/JoinedMission.cs (server emits; no client handler found),5
-fedmsg,96 LOADOUT_CHANGE,Inc/Messages.h:667,partial,Wire/LoadoutChange.cs (server emits; no client handler found),4
+fedmsg,93 ORDER_CHANGE,Inc/Messages.h:648,done,Wire/OrderChange.cs; src/Allegiance.ClientCore/State/ClientWorld.Orders.cs:97; P675 also consumes own accepted-slot relays and records explicitly sent accepted orders; tests/Allegiance.ClientCore.Tests/FedMsgDispatchCoverageTests.cs:219,4
+fedmsg,94 LEAVE_SHIP,Inc/Messages.h:656,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1221; src/Allegiance.ClientCore/State/ClientWorld.cs:3315,4
+fedmsg,95 JOINED_MISSION,Inc/Messages.h:660,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1103; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:21; tests/Allegiance.ClientCore.Tests/P675MissionDiscoveryTests.cs:39; tests/Allegiance.ClientCore.Tests/P675CommandLiveTests.cs:17; P675: named shared static core load and pre-launch identity; failed core rejects join (clintlib/appmsg.cpp:2150-2214),5
+fedmsg,96 LOADOUT_CHANGE,Inc/Messages.h:667; clintlib/appmsg.cpp:1991-2084; FedSrv/fsship.cpp:708-735,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1020; src/Allegiance.ClientCore/State/ClientWorld.cs:3190; P648RelaunchVisibilityTests.LoadoutChange_RevivesDeadShip_AdoptsNewHullAndParts (tests/Allegiance.ClientCore.Tests/P648RelaunchVisibilityTests.cs:70); P648RelaunchVisibilityTests.LoadoutChange_ReparentsBoardedChildren (tests/Allegiance.ClientCore.Tests/P648RelaunchVisibilityTests.cs:139); FedMsgDispatchCoverageTests.EveryExpectedServerSentMessage_IsConsumed_NotUnknownFmid (tests/Allegiance.ClientCore.Tests/FedMsgDispatchCoverageTests.cs:220); P648 consumes native 96; applies hull/parts/passengers and revives non-pod relaunch.,4
 fedmsg,99 ACTIVE_TURRET_UPDATE,Inc/Messages.h:673,done,Wire/ActiveTurretUpdate.cs,4
 fedmsg,100 INACTIVE_TURRET_UPDATE,Inc/Messages.h:678,done,Wire/InactiveTurretUpdate.cs,4
-fedmsg,102 TELEPORT_ACK,Inc/Messages.h:681,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(TeleportAck),4
+fedmsg,102 TELEPORT_ACK,Inc/Messages.h:681,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1186; src/Allegiance.ClientCore/State/ClientWorld.cs:3242,4
 fedmsg,103 BOARD_SHIP,Inc/Messages.h:686,done,Wire/BoardShip.cs,4
 fedmsg,104 VIEW_CLUSTER,Inc/Messages.h:690,done,Wire/ViewClusterRequest.cs,4
 fedmsg,105 KILL_SHIP,Inc/Messages.h:696,done,Wire/KillShip.cs,5
-fedmsg,106 SET_WINGID,Inc/Messages.h:705,partial,Wire/SetWingId.cs (server handled; client consumer not found),4
+fedmsg,106 SET_WINGID,Inc/Messages.h:705,partial,Wire/SetWingId.cs; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; tests/Allegiance.ClientCore.Tests/P675MissionDiscoveryTests.cs:100; P675 consumes wing ids for command joining and discovery priority; native assignment notice and roster UI notifications remain absent (clintlib/appmsg.cpp:2129-2147),4
 fedmsg,107 ICQ_CHAT_ACK,Inc/Messages.h:711,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,108 CHATBUOY,Inc/Messages.h:716,done,Wire/ChatBuoy.cs,4
 fedmsg,109 CREATE_CHAFF,Inc/Messages.h:724,done,Wire/CreateChaff.cs,4
-fedmsg,110 MISSILE_SPOOFED,Inc/Messages.h:731,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(MissileSpoofed),4
-fedmsg,111 END_SPOOFING,Inc/Messages.h:735,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(EndSpoofing),4
+fedmsg,110 MISSILE_SPOOFED,Inc/Messages.h:731,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1206; src/Allegiance.ClientCore/State/ClientWorld.cs:3274,4
+fedmsg,111 END_SPOOFING,Inc/Messages.h:735,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1211; src/Allegiance.ClientCore/State/ClientWorld.cs:3286,4
 fedmsg,112 AUTODONATE,Inc/Messages.h:738,done,Wire/AutoDonate.cs,4
 fedmsg,113 MISSIONPARAMS,Inc/Messages.h:743,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,114 PAYDAY,Inc/Messages.h:747,done,Wire/Payday.cs,4
@@ -310,11 +310,11 @@ fedmsg,157 START_GAME,Inc/Messages.h:868,done,Wire/StartGame.cs,4
 fedmsg,162 ACQUIRE_TREASURE,Inc/Messages.h:871,partial,Wire/AcquireTreasure.cs (server emits; no client handler found),4
 fedmsg,163 TREASURE_ACK,Inc/Messages.h:877,done,Wire/TreasureAck.cs,4
 fedmsg,164 ADD_PART,Inc/Messages.h:881,partial,Wire/AddPart.cs (server emits; no client handler found),4
-fedmsg,166 ENTER_LIFEPOD,Inc/Messages.h:886,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(EnterLifepod),4
+fedmsg,166 ENTER_LIFEPOD,Inc/Messages.h:886,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1216; src/Allegiance.ClientCore/State/ClientWorld.cs:3298,4
 fedmsg,175 LIGHT_SHIPS_UPDATE,Inc/Messages.h:890,done,Wire/LightShipsUpdate.cs,4
 fedmsg,176 HEAVY_SHIPS_UPDATE,Inc/Messages.h:895,done,Wire/HeavyShipsUpdate.cs,4
-fedmsg,177 VIEW_CLUSTER,Inc/Messages.h:907,partial,Wire/ViewClusterReply.cs (server emits; no client handler found),4
-fedmsg,178 BOARD_NACK,Inc/Messages.h:913,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(BoardNack),4
+fedmsg,177 VIEW_CLUSTER,Inc/Messages.h:907,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1198; src/Allegiance.ClientCore/State/ClientWorld.Commanding.cs:15,4
+fedmsg,178 BOARD_NACK,Inc/Messages.h:913,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1201; src/Allegiance.ClientCore/State/ClientWorld.cs:3262,4
 fedmsg,179 ASTEROIDS_UPDATE,Inc/Messages.h:926,done,Wire/AsteroidsUpdate.cs,4
 fedmsg,180 ASTEROID_DRAINED,Inc/Messages.h:930,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,181 BUILDINGEFFECT_DESTROYED,Inc/Messages.h:936,done,Wire/BuildingEffectDestroyed.cs,4
@@ -325,40 +325,40 @@ fedmsg,185 RIPCORD_ACTIVATE,Inc/Messages.h:955,done,Wire/RipcordActivate.cs,4
 fedmsg,186 RIPCORD_DENIED,Inc/Messages.h:962,done,Wire/RipcordDenied.cs,4
 fedmsg,187 RIPCORD_ABORTED,Inc/Messages.h:965,done,Wire/RipcordAborted.cs,4
 fedmsg,188 WARP_BOMB,Inc/Messages.h:969,partial,Wire/WarpBomb.cs (server emits; no client handler found),4
-fedmsg,189 PROMOTE,Inc/Messages.h:975,partial,Wire/Promote.cs — client SEND path done (SendPromote P416); server PROMOTE(189) broadcast NOT consumed by real client (P627),4
-fedmsg,190 PROMOTE,Inc/Messages.h:979,partial,Wire/Promote.cs (codec only; no server handler),4
+fedmsg,189 PROMOTE,Inc/Messages.h:975,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1192; src/Allegiance.ClientCore/State/ClientWorld.Commanding.cs:39,4
+fedmsg,190 PROMOTE,Inc/Messages.h:979,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:481; src/Allegiance.Server/Server.ShipCommands.cs:283,4
 fedmsg,191 CREATE_BUCKETS,Inc/Messages.h:983,done,Wire/CreateBuckets.cs,4
 fedmsg,192 RELAUNCH_SHIP,Inc/Messages.h:988,partial,Wire/RelaunchShip.cs (server emits; no client handler found),4
 fedmsg,193 BANDWIDTH,Inc/Messages.h:1000,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,194 PINGDATA,Inc/Messages.h:1006,partial,Wire/PingData.cs (server emits; no client handler found),4
 fedmsg,195 REQPINGDATA,Inc/Messages.h:1012,done,Wire/ReqPingData.cs,4
 fedmsg,196 CHANGE_ALLIANCE,Inc/Messages.h:1017,done,Wire/ChangeAlliance.cs,4
-fedmsg,197 CHANGE_ALLIANCES,Inc/Messages.h:1022,partial,Wire/ChangeAlliances.cs (server emits; no client handler found),4
-fedmsg,198 ASTEROID_MINED,Inc/Messages.h:1027,done,Session/ConnectionSession.cs + State/ClientWorld.cs Apply(AsteroidMined),4
-fedmsg,199 HIGHLIGHT_CLUSTER,Inc/Messages.h:1033,partial,Wire/HighlightCluster.cs (server handled; client consumer not found),4
+fedmsg,197 CHANGE_ALLIANCES,Inc/Messages.h:1022,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:861; src/Allegiance.ClientCore/State/ClientWorld.Alliances.cs:10,4
+fedmsg,198 ASTEROID_MINED,Inc/Messages.h:1027,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1226; src/Allegiance.ClientCore/State/ClientWorld.cs:3345,4
+fedmsg,199 HIGHLIGHT_CLUSTER,Inc/Messages.h:1033,done,src/Allegiance.ClientCore/Session/ConnectionSession.cs:1195; src/Allegiance.ClientCore/State/ClientWorld.Commanding.cs:25,4
 fedmsg,200 CLUSTERINFO,Inc/Messages.h:1039,done,Wire/ClusterInfo.cs,4
 screens,Main game screen / HUD,WinTrek/gamescreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs,5
 screens,Chat pane,WinTrek/chatpane.cpp,done,src/Allegiance.ClientCore.Game/Rendering/ChatRenderer.cs,5
 screens,Hangar / loadout screen,WinTrek/hangarscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/DockedScreenRenderer.cs + Shop (P519),5
 screens,Game-over screen,WinTrek/gameoverscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs (P262),5
-screens,Scoreboard / leaderboard screen,WinTrek/leaderboardscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs + ScoreboardOverlayRenderer.cs full leaderboard (P639: position/side/rank-name/score/combat/k/d/bk/bc, sort by score, RANK_INFO rank names); career-ladder DB columns = infra constraint,4
+screens,Scoreboard / leaderboard screen,WinTrek/leaderboardscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs:46; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1655; live match stats; career database remains unavailable,4
 screens,Game-starting (countdown) screen,WinTrek/gamestartingscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + ReadyCheckOverlayRenderer (P188/P180),4
 screens,Intro screen,WinTrek/introscreen.cpp,partial,boots to connect screen; no animated intro sequence,2
 screens,Splash / loading screen,WinTrek/splashscreen.cpp,partial,connect/loading states exist,2
 screens,Training screen,WinTrek/trainingscreen.cpp,partial,docs/NATIVE_TRAINING_SCRIPT.md; no full training-mission UI,3
 screens,Video screen (cinematic),WinTrek/videoscreen.cpp,missing,no cinematic playback,2
-screens,Character-info screen,WinTrek/CharInfoScreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/PilotInfoLayout.cs + PilotInfoOverlayRenderer.cs full character sheet (P639: identity, rank banner via RANK_INFO, full live stat breakdown); career medals/squads/civ = infra constraint,4
+screens,Character-info screen,WinTrek/CharInfoScreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/PilotInfoLayout.cs:33; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1665; live match stats; career database remains unavailable,4
 screens,Squads screen,WinTrek/SquadsScreen.cpp,na,no squad/clan system in this port,2
 screens,Zone Club screen (online account),WinTrek/ZoneClubScreen.cpp,na,Internet Zone/account system not applicable (TCP+local server),1
 screens,Zone events screen,WinTrek/zoneeventsscreen.cpp,na,Zone event feed not applicable,1
 screens,Selection pane,WinTrek/selpane.cpp,partial,targeting/selection via RadarBracketRenderer + Game1.Targeting,3
-screens,Team pane / screen,"WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",done,src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs + TeamPaneRenderer.cs full roster (P639: per-side pilots/rank/status/kills/deaths + money/active-ballot footer, Ctrl+T); wing roster (SET_WINGID 106) = infra constraint,4
+screens,Team pane / screen,"WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",done,src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:37; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1693; wing assignment/control remains unavailable,4
 screens,Teleport pane,WinTrek/teleportpane.cpp,done,src/Allegiance.ClientCore.Game/Rendering/TeleportPaneModel.cs (P273),3
 screens,Loadout panel (shop),WinTrek hangar loadout,done,src/Allegiance.ClientCore.Game/Shop + DockedScreenRenderer (P519),5
 screens,Investment screen,WinTrek investment,done,src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs + InvestmentBuildGates.cs (P487/P495),4
-screens,Commander / sector map,WinTrek command view,done,"src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs + StarmapClick (Tab map, P249/P460)",4
+screens,Commander / sector map,WinTrek command view,done,src/Allegiance.ClientCore.Game/Rendering/CommandGridRenderer.cs:8; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1590,4
 screens,Sector info pane,WinTrek sector info,done,src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneRenderer.cs (P272),4
-screens,F-key help overlay(s),WinTrek F-key overlays,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs + InputBindings.cs LIVE help overlay (H) generated from the ActionMap; F6 opens the in-game Controls rebind popup (KeyBindingRenderer.cs + KeyBindingController.cs),4
+screens,F-key help overlay(s),WinTrek F-key overlays,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:26; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1717,4
 screens,Mission briefing screen,WinTrek briefing,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs (P271),3
 screens,Side-select screen,WinTrek team lobby side select,done,src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs (P281),4
 screens,Server list / lobby browser,native lobby,done,src/Allegiance.Lobby + ServerListing.cs (P174-P177),4
@@ -371,7 +371,7 @@ parts,Chaff (ET_ChaffLauncher=0),Igc/igc.h ET_ChaffLauncher,done,src/Allegiance.
 parts,Shields (ET_Shield=4),Igc/igc.h ET_Shield,done,src/Allegiance.Core/Sim/Ship.cs shield + P87/P450,5
 parts,Cloaks (ET_Cloak=5),Igc/igc.h ET_Cloak,done,src/Allegiance.Core/Sim/Ship.cs UpdateCloak + P269/P270,4
 parts,"Afterburners/Boosters (ET_Afterburner=7, ET_Pack=6)",Igc/igc.h ET_Afterburner,done,src/Allegiance.Core/Sim/Ship.cs Afterburner + P220,4
-parts,Fuel/ammo packs (ET_Pack=6),Igc/igc.h ET_Pack,partial,ammo/fuel reload via cargo bay (P192); no fuel-consumption economy,3
+parts,Fuel/ammo packs (ET_Pack=6),Igc/shipIGC.h:608-651; FedSrv/FedSrv.CPP:6552-6591; Igc/afterburnerIGC.cpp:148-159,done,"src/Allegiance.Core/Sim/Ship.cs:3202; src/Allegiance.Core/Sim/Ship.cs:7564; FuelPoolAndAfterburnerTests.Fuel_pack_reload_drain_refills_to_the_real_max (tests/Allegiance.Core.Tests/FuelPoolAndAfterburnerTests.cs:238); AutoReloadOnEmptyTests.Firing_ammo_to_zero_auto_reloads_from_cargo_spare (tests/Allegiance.Core.Tests/AutoReloadOnEmptyTests.cs:152); P650SimRulesTests.Afterburner_uses_GA_thrust_and_current_step_power_without_scaling_fuel (tests/Allegiance.Core.Tests/P650SimRulesTests.cs:120); loaded mount-rate debounce, real fuel depletion and cargo refill implemented; ready/reload sounds tracked separately.",3
 parts,c_habmBoard,Igc/igc.h:726,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmBoard + BOARD_SHIP P108,4
 parts,c_habmRescue,Igc/igc.h:727,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmRescue + rescue P115,4
 parts,c_habmLifepod,Igc/igc.h:728,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmLifepod + eject P308,4
@@ -381,7 +381,7 @@ parts,c_habmNoRipcord,Igc/igc.h:731,done,src/Allegiance.Core/Data/DataHullTypeIG
 parts,c_habmIsRipcordTarget,Igc/igc.h:732,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmIsRipcordTarget + RIP 111-113,4
 parts,c_habmFighter,Igc/igc.h:733,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmFighter,4
 parts,c_habmRemoteLeadIndicator,Igc/igc.h:734,partial,decoded (HabmRemoteLeadIndicator); remote lead relay partial,3
-parts,c_habmThreatToStation,Igc/igc.h:735,partial,decoded (HabmThreatToStation); base-threat scoring partial,3
+parts,c_habmThreatToStation,Igc/igc.h:735; Igc/igc.h:5390,partial,"tools/allegiance-mcp/Showcase.cs:105; tools/allegiance-mcp/CombatTargetSelector.cs:82; BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode (tests/Allegiance.ClientCore.Tests/P656ShowcaseFinaleTests.cs:424); P656 implements bomber/defense classification; tool policy does not close native simulation wingman command/behavior gaps, so partial retained.",3
 parts,c_habmCarrier,Igc/igc.h:736,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmCarrier + carrier P368,4
 parts,c_habmLeadIndicator,Igc/igc.h:737,done,src/Allegiance.Core/Data/DataHullTypeIGC.cs HabmLeadIndicator + P266,4
 parts,c_habmIsLtRipcordTarget,Igc/igc.h:738,partial,decoded (HabmIsLtRipcordTarget); lt-ripcord target behavior partial,3
@@ -391,12 +391,12 @@ parts,c_habmBuilder,Igc/igc.h:741,done,src/Allegiance.Core/Data/DataHullTypeIGC.
 parts,c_eabmShootShips,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs ShootShips,3
 parts,c_eabmShootStations,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs ShootStations,3
 parts,c_eabmShootMissiles,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs ShootMissiles,3
-parts,c_eabmShootOnlyTarget,Igc equip ability,partial,decoded; shoot-only-target restraint partial,3
+parts,c_eabmShootOnlyTarget,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs:496,3
 parts,c_eabmWarpBombSingle,Igc equip ability,done,src/Allegiance.Core/Data/DataMissileTypeIGC.cs + WARP_BOMB P101,4
 parts,c_eabmWarpBombDual,Igc equip ability,done,src/Allegiance.Core/Data/DataMissileTypeIGC.cs + WARP_BOMB P101,4
 parts,c_eabmRipcord,Igc equip ability,done,src/Allegiance.Core/Sim/Ship.cs ripcord + P111-113,4
 parts,c_eabmCapture,Igc equip ability,partial,decoded; capture-capable probe/equip partial,3
-parts,c_eabmQuickReady,Igc equip ability,partial,decoded; quick-ready mechanic partial,3
+parts,c_eabmQuickReady,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs:128,3
 parts,Ripcord travel,Igc ripcord,done,src/Allegiance.Core/Sim/Ship.cs + RIP 111-113/P172,5
 parts,Rescue (pick up lifepods),Igc rescue,done,src/Allegiance.Core/Sim/Ship.cs + P115,4
 parts,Mining (collect He3),Igc mining,done,src/Allegiance.Core/Sim/Ship.cs + MINING P55/P477,5
@@ -416,13 +416,13 @@ commander,Team chat,team chat,done,src/Allegiance.Server/Server.Dispatch.cs Chat
 commander,Quick-chat / orders menu,quick chat,done,src/Allegiance.ClientCore.Game/QuickChat/ + P217/P457,5
 commander,ChatBuoy (buoy-targeted orders),chat buoy,done,src/Allegiance.Server/Server.Dispatch.cs ChatBuoy + CHATBUOY_RELAY_P67,4
 commander,"Team leadership / owner (promote, owner-only cmds)",leadership,done,src/Allegiance.Server/Server.Lobby.cs + TEAM_LEADERSHIP_P183,4
-commander,Commander sector-map overlays,command map,done,src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs + P460/P249,4
+commander,Commander sector-map overlays,command map,done,src/Allegiance.ClientCore.Game/Game1.Commanding.cs:256,4
 commander,"Stats / scoring (score roster, kill bonus)",stats,done,src/Allegiance.Core/Wire/ScoreRosterUpdate.cs + P193/P215/P278,4
 commander,"Economic commands (autodonate, donate, request money)",economy,done,src/Allegiance.Server/PlayerWallet.cs + P197/P199/P203,4
 commander,Wingman AI (attack/defend lead solving),wingman,done,src/Allegiance.Server/Server.Combat.cs + NPC_WINGMAN P162/P166/P169,4
 commander,Sector threat / alerts,alert system,done,src/Allegiance.Server/Server.Combat.cs + P374/P451,4
 commander,Voice chat,voice chat,na,"no voice transport in this port (TCP, text chat only)",4
-commander,Commander drone view / follow,drone follow,partial,command via targeting + orders; no dedicated commander drone-cam,3
+commander,Commander drone view / follow,drone follow,done,src/Allegiance.ClientCore.Game/Game1.Commanding.cs:126,3
 lobby,Server list / browse lobby,lobby,done,src/Allegiance.Lobby/ServerListing.cs + LOBBY_STAGE P174-P177,4
 lobby,Connect to server (host/IP + character),connect dialog,done,src/Allegiance.ClientCore.Game/Game1.ConnectScreen.cs + CONNECT,5
 lobby,Create game / new game wizard,WinTrek/newgamescreen.cpp,partial,mission is created from server config; no GUI create-game wizard,4
@@ -435,5 +435,5 @@ lobby,Mission briefing screen,briefing,done,src/Allegiance.ClientCore.Game/Rende
 lobby,Lobby chat,lobby chat,done,src/Allegiance.ClientCore.Game/ChatRenderer.cs + CLIENTCORE_MONOGAME_LOBBY_CHAT P214,4
 lobby,Training missions (tutorial),WinTrek/trainingscreen.cpp,partial,docs/NATIVE_TRAINING_SCRIPT.md server-scripted scenarios; no full client tutorial UI,4
 lobby,Team lobby / team pane,team lobby,done,src/Allegiance.ClientCore.Game/Panes + TEAM_LOBBY_P180,4
-screens,in-game key rebinding popup,WinTrek/trekinput.cpp:1631+ (InputMapPopup),done,Rendering/KeyBindingRenderer.cs + KeyBindingController.cs (F6); defaultinputmap.mdl parser + keymap.json persistence + conflict/swap/reset,4
-commands,Every game command routed through the action map,InputActionCatalog.cs + InputBindings.cs (P625b),done,"all flight/combat/order/camera/spectator/director/pane/menu/lobby/session keys resolve via ActionDown(KeyOf(action)); edge latches track the action binding, never a raw key; raw keys remain only for text entry + the rebind popup's capture + the ISO-backslash ThrottleFull alias, all guarded by P625bActionMapGuardTests",5
+screens,in-game key rebinding popup,WinTrek/trekinput.cpp:1631+ (InputMapPopup),done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingController.cs:31; src/Allegiance.ClientCore.Game/Game1.KeyBind.cs:38,4
+commands,Every game command routed through the action map,InputActionCatalog.cs + InputBindings.cs (P625b),done,src/Allegiance.ClientCore.Game/Rendering/InputBindings.cs:174; src/Allegiance.ClientCore.Game/Rendering/ActionPressEdges.cs:8,5

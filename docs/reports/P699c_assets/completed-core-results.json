@@ -1,0 +1,29 @@
+[
+  {
+    "project": "Core",
+    "filter": "(unfiltered)",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792119683.7999349,
+    "finished": 1792120521.82702,
+    "seconds": 838.03,
+    "log": "/tmp/p699c-validation/completed-core-000-Core.log",
+    "trx": "completed-core-000-Core.trx.gz",
+    "passed": 4629,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+        "error": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   1"
+      },
+      {
+        "name": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "error": "Result {}.EndVelocity: expected System.Single[], got null"
+      }
+    ],
+    "skipped": []
+  }
+]

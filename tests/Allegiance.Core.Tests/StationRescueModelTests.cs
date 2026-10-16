@@ -174,4 +174,20 @@ public class StationRescueModelTests
         Assert.Empty(sector.DrainStationRescues());
         Console.WriteLine("STATION-RESCUE-RANGE: lifepod @1000u from c_sabmRescue station (threshold 425.5) -> NO rescue (proximity gate)");
     }
+    [SkippableTheory, Trait("Requires", "Artwork")]
+    [InlineData(true, DataStationTypeIGC.SabmLand)]
+    [InlineData(false, DataStationTypeIGC.SabmCapLand)]
+    public void Landing_capability_takes_precedence_over_station_rescue(bool fighter, short landing)
+    {
+        Require.Artwork();
+        var m = Assembly();
+        AddStation(m, FlySector, 0, 7710, (short)(DataStationTypeIGC.SabmRescue | landing), 0, 0, 0);
+        var pod = Lifepod(m, FlySector, 1, new Vector3(0, 0, 300), 0);
+        pod.ChangeHull(pod.HullType with { HabmCapabilities = (short)(DataHullTypeIGC.HabmLifepod
+            | (fighter ? DataHullTypeIGC.HabmFighter : 0)) });
+        var sector = m.Sectors.Single(s => s.Id == FlySector);
+        sector.Update(.05);
+        Assert.Empty(sector.DrainStationRescues());
+    }
+
 }

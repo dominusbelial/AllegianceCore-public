@@ -127,6 +127,8 @@ public sealed class StationCaptureLiveTests
                 var baseType = core.StationTypes.Values.First();
                 var type = baseType with
                 {
+                    // Synthetic 40-unit base tests capture gates, not artwork bays.
+                    ModelName = "P699_SYNTHETIC_CAPTURE",
                     MaxArmorHitPoints = 5000f,
                     MaxShieldHitPoints = 100f,      // regenRatio = 10/100 = 0.1 → shield 0.7 after capture
                     ShieldRegeneration = 10f,

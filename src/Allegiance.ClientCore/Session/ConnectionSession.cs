@@ -28,6 +28,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private readonly object _gate = new();
     private readonly ClientWorld _world = new();
     private LogonAck? _ack;
+    private DelPositionReq? _lastPositionRefusal;
     // P473 — every FM_S_BUY_LOADOUT_ACK(5) received, in arrival order: the raw
     // server answer to SendBuyLoadout, mirrored from Bot so the combat/spawn
     // harness paths can compare the granted hull/parts with the requested ones
@@ -39,6 +40,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     // any outside ±1.5 s of SimNow), and these echoes feed the client's
     // OwnShipServerClock. Locked via _gate like _ack.
     private readonly List<(uint ServerMs, long LocalMs)> _pingEchoes = new();
+    private long _connectionGeneration;
+
+    /// <summary>Changes only when Connect starts a new server connection, not on mission rotation.</summary>
+    public long ConnectionGeneration { get { lock (_gate) return _connectionGeneration; } }
 
     // P633 — cumulative inbound wire bytes delivered to OnReceive (fed + crc +
     // framing overhead). Used by get_perf_stats to report the bot's real decode
@@ -66,8 +71,50 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     // session to the server is lost; read safely from the render thread every frame.
     private volatile bool _lost;
 
+    // P671 — native keep-alive, ported from BaseClient::CheckServerLag
+    // (clintlib.cpp:2050-2087). Every connected client (bot OR MonoGame human)
+    // sends a CS_PING every <c>maxLagCheck = 6.0f</c> seconds, in EVERY state
+    // (lobby, hangar, docked, flying, pod, dead) — the server echoes each one
+    // (Server.Dispatch.cs:38-67). The UNANSWERED-ping session-loss rule mirrors
+    // native: when more than <c>g_cPingsTimeout(5)</c> pings have gone unanswered
+    // AND at least <c>g_sDeadTime(30)</c> has elapsed since any server message,
+    // the session is declared lost (clintlib.cpp:2063-2068).
+    private const int KeepAliveIntervalMs = 6000;   // maxLagCheck = 6.0f
+    private const int PingsTimeout = 5;             // g_cPingsTimeout
+    private const int DeadTimeMs = 30000;           // g_sDeadTime (s -> ms)
+    private Thread? _keepAliveThread;
+    private readonly ManualResetEventSlim _keepAliveGate = new(false); // set = wake/stop
+    private int _keepAliveStop;
+    private int _unansweredPings;        // guarded by _gate
+    private long _lastServerMessageTick; // Environment.TickCount64, guarded by _gate
+    private long _keepAlivePingsSent;    // guarded by _gate
+
     /// <summary>True while the underlying transport is connected.</summary>
     public bool Connected => _transport?.IsConnected ?? false;
+
+    /// <summary>P671 test seam — total CS_PING keep-alive frames sent by this
+    /// session's keep-alive thread since connect. Proves a bot/client session
+    /// actually pings at the 6 s cadence without having to sniff the wire.</summary>
+    public long KeepAlivePingsSent { get { lock (_gate) return _keepAlivePingsSent; } }
+
+    /// <summary>
+    /// P671 — start the native keep-alive thread up-front, in the constructor,
+    /// NOT in <see cref="Connect"/>. The MCP harness (ObservedSession /
+    /// StallWatchdog) injects a <c>TcpTransport</c> directly into this session's
+    /// private <c>_transport</c> and calls <c>Transport.Join(...)</c> — never
+    /// this class's <see cref="Connect"/>. Tying the keep-alive to
+    /// <see cref="Connect"/> therefore left every MCP-seated bot (idle/weave
+    /// BotClass and combat ConnectionSession alike) without a keep-alive, so a
+    /// silently-docked bot was dropped by the server's <c>DataLinkIdleTimeout</c>
+    /// at ~30 s. The thread is started here, references the current
+    /// <c>_transport</c> lazily each tick, and is persistent (it survives a
+    /// reconnect and skips ticks while disconnected), so it covers every
+    /// connection path.
+    /// </summary>
+    public ConnectionSession()
+    {
+        StartKeepAlive();
+    }
 
     /// <summary>
     /// P320 — true once the established TCP session to the server has been lost
@@ -88,6 +135,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
     /// <summary>The last LOGONACK (or rejection) received; null until one arrives.</summary>
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
+
+    /// <summary>The server's latest refusal of this session's side request;
+    /// cleared on connect and before a new request.</summary>
+    public DelPositionReq? LastPositionRefusal { get { lock (_gate) return _lastPositionRefusal; } }
 
     /// <summary>Every <c>FM_S_BUY_LOADOUT_ACK(5)</c> received, in arrival order —
     /// the raw server answer to <see cref="SendBuyLoadout"/> (P473), mirrored
@@ -160,12 +211,85 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         lock (_gate)
         {
             _ack = null;                 // a fresh session has no ack yet
+            _lastPositionRefusal = null;
             _lost = false;               // a new session is not lost (was latched true by a dropped one)
             _world.Reset();
+            _pingEchoes.Clear();
+            _connectionGeneration++;
         }
 
         _transport = new TcpTransport(this);
         _transport.Join(host, port, playerName);
+        StartKeepAlive();
+    }
+
+    /// <summary>P671 — (re)arm the native keep-alive thread for this session.
+    /// Idempotent: resets the unanswered-ping / last-server-message bookkeeping
+    /// (so a reconnect starts clean) and starts the thread if it is not already
+    /// running (it may have exited after a detected loss). The thread is first
+    /// started from the constructor, so this is a no-op on the common path.</summary>
+    private void StartKeepAlive()
+    {
+        lock (_gate)
+        {
+            _unansweredPings = 0;
+            _lastServerMessageTick = Environment.TickCount64;
+            _keepAlivePingsSent = 0;
+        }
+        if (_keepAliveThread != null) return;          // already running
+        Volatile.Write(ref _keepAliveStop, 0);
+        _keepAliveGate.Reset();
+        var t = new Thread(KeepAliveLoop) { IsBackground = true, Name = "session-keepalive" };
+        _keepAliveThread = t;
+        t.Start();
+    }
+
+    /// <summary>
+    /// P671 — the native keep-alive + session-loss rule loop, ported from
+    /// <c>BaseClient::CheckServerLag</c> (clintlib.cpp:2050-2087): while
+    /// connected, send a <c>CS_PING</c> every 6 s in every state, and when more
+    /// than 5 pings have gone unanswered for at least 30 s since any server
+    /// message, declare the session lost (native <c>g_cPingsTimeout(5)</c> +
+    /// <c>g_sDeadTime(30)</c>, clintlib.cpp:2063-2068). The server echoes each
+    /// ping (Server.Dispatch.cs:38-67) and any inbound resets the counters, so a
+    /// healthy link is never lost. PERSISTENT: it survives a not-yet-connected
+    /// window and a reconnect (skipping ticks while disconnected) so it works for
+    /// every connection path, including the MCP harness's direct
+    /// <c>Transport.Join</c>. Exits only on <see cref="StopKeepAlive"/> (dispose)
+    /// or a detected loss; on exit it clears <c>_keepAliveThread</c> so a later
+    /// reconnect can re-arm it.
+    /// </summary>
+    private void KeepAliveLoop()
+    {
+        try
+        {
+            while (true)
+            {
+                if (_keepAliveGate.Wait(KeepAliveIntervalMs)) return;   // stop requested
+                if (Volatile.Read(ref _keepAliveStop) != 0) return;
+                bool lostNow = false;
+                lock (_gate)
+                {
+                    if (_lost) return;
+                    // Skip this tick while not connected (pre-connect window,
+                    // between transports during a reconnect, etc.); never exit.
+                    if (_transport is { IsConnected: true })
+                    {
+                        SendPing();
+                        _unansweredPings++;
+                        _keepAlivePingsSent++;
+                        if (_unansweredPings > PingsTimeout
+                            && Environment.TickCount64 - _lastServerMessageTick >= DeadTimeMs)
+                            lostNow = true;
+                    }
+                }
+                if (lostNow) { RaiseLost(); return; }
+            }
+        }
+        finally
+        {
+            _keepAliveThread = null;   // allow re-arm after loss / dispose
+        }
     }
 
     /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>
@@ -234,6 +358,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// The server streams that sector's ships to an ADMIN spectator (ignoring
     /// side visibility) and ignores it for non-admins (no information leak).
     /// </summary>
+    /// <summary>Native sectormap.cpp:1499-1507, team sector-mark relay.</summary>
+    public void SendHighlightCluster(short clusterId, bool highlight) =>
+        Send(FedPacket.Pack([new HighlightCluster { ClusterId = clusterId, Highlight = highlight }.Encode()]));
+
     public void SendViewClusterRequest(short clusterId)
     {
         var msg = new ViewClusterRequest { ClusterId = clusterId, OtTarget = -1, OidTarget = -1 };
@@ -431,8 +559,16 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// in SET_CLUSTER (which sets <see cref="ClientWorld.MyShipId"/>).</summary>
     public void SendPositionReq(short sideId)
     {
+        lock (_gate) _lastPositionRefusal = null;
         var msg = new PositionReq { SideId = sideId };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Join the target wing (WinTrek.cpp:10659-10662).</summary>
+    public void SendWingId(short shipId, short wingId)
+    {
+        var message = new SetWingId { ShipID = shipId, WingId = wingId };
+        Send(FedPacket.Pack([message.Encode()]));
     }
 
     /// <summary>P281 — send a real <c>FM_C_RANDOMIZE_TEAMS(21)</c>, the mission
@@ -444,6 +580,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         var msg = new RandomizeTeams();
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
+
+    /// <summary>Native lobby controls. Settings change only on the server echo;
+    /// the server checks mission ownership / team leadership.</summary>
+    public void SendLockLobby(bool locked) => Send(FedPacket.Pack([new LockLobby { FLock = locked }.Encode()]));
+    public void SendLockSides(bool locked) => Send(FedPacket.Pack([new LockSides { FLock = locked }.Encode()]));
+    public void SendAutoAccept(short sideId, bool enabled) =>
+        Send(FedPacket.Pack([new AutoAccept { SideId = sideId, FAutoAccept = enabled }.Encode()]));
+    public void SendPositionAck(short shipId, short sideId, bool accepted) =>
+        Send(FedPacket.Pack([new PositionAck { ShipId = shipId, SideId = sideId, FAccepted = accepted }.Encode()]));
+    public void SendDelPositionReq(short shipId, short sideId, DelPositionReqReason reason) =>
+        Send(FedPacket.Pack([new DelPositionReq { ShipId = shipId, SideId = sideId, Reason = reason }.Encode()]));
 
     /// <summary>Send a real <c>FM_C_BOARD_SHIP(103)</c> — the client's
     /// dual-purpose board/leave request, the mirror of <c>Bot.SendBoard</c>.
@@ -528,6 +675,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             CommandId = commandId,
             Command = command,
         };
+        lock (_gate) _world.Apply(msg);
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -587,6 +735,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P641 — guaranteed native in-flight move/swap (clintlib.h:2371-2400).</summary>
+    public void SendSwapPart(EquipmentType type, sbyte oldMount, sbyte newMount)
+    {
+        var msg = new SwapPart { EtOld = type, MountOld = oldMount, MountNew = newMount };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>
     /// P626 — send a real <c>FM_C_VOTE(19)</c> casting <paramref name="agree"/>
     /// on the in-flight ballot <paramref name="ballotId"/> (the server relays
@@ -599,6 +754,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     {
         var msg = new Vote { BallotId = ballotId, Agree = agree };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
+        // Native Vote() pops the answered ballot (clintlib.cpp:2510-2522).
+        lock (_gate) _world.DismissBallot(ballotId);
     }
 
     /// <summary>
@@ -646,13 +803,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// (one launch-data entry, <c>TargetId = NA</c>) and lets the server resolve
     /// the mounted launcher + its lock against the ship's own CommandTarget. Held
     /// callers (the <c>Game1</c> Left-Control fire key) re-send while the button is
-    /// held; the server's lock-rebuild rate-limits actual launches.
+    /// held; the client waits for the server's load-readiness update.
     /// </summary>
     public void SendFireMissile()
     {
+        float lockFraction;
+        lock (_gate) lockFraction = _world.MissileLock.LockFraction;
         var msg = new FireMissile
         {
-            Lock = 0f,                               // server-computed lock governs
+            Lock = lockFraction,    // normalized lock; server applies the type MaxLock
             TimeFired = 0u,                          // server-authoritative time
             MissileTypeId = 0,                       // server overrides from mounted launcher
             LauncherId = 0,                          // server overrides
@@ -700,6 +859,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// </summary>
     void ITransportSite.OnSessionLost()
     {
+        RaiseLost();
+    }
+
+    /// <summary>P671 — latch <see cref="Lost"/> and raise <see cref="SessionLost"/>
+    /// exactly once. Shared by the transport's <see cref="ITransportSite.OnSessionLost"/>
+    /// (server death / EOF) and the keep-alive thread's native unanswered-ping
+    /// rule (<c>CheckServerLag</c>, clintlib.cpp:2063-2068). Safe to call from
+    /// either the transport receive thread or the keep-alive thread; the first
+    /// caller wins and subsequent calls are no-ops.</summary>
+    private void RaiseLost()
+    {
         if (_lost) return;
         _lost = true;
         SessionLost?.Invoke();
@@ -707,6 +877,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
+        if (_lost) return; // a rejected core cannot be followed by a partial join burst
         // P633 — count every inbound byte for the decode-throughput metric
         // (atomic; the read side diffs over a wall window).
         Interlocked.Add(ref _decodedBytes, data.Length);
@@ -719,6 +890,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
         lock (_gate)
         {
+            // P671 — any inbound server traffic proves the link is alive: refresh
+            // the last-server-message timestamp and clear the unanswered-ping
+            // count (native updates m_timeLastServerMessage / resets
+            // m_cUnansweredPings on receipt, appmsg.cpp:25-46, clintlib.cpp:405).
+            _lastServerMessageTick = Environment.TickCount64;
+            _unansweredPings = 0;
+
             foreach (var m in messages)
             {
                 ushort fmid;
@@ -747,6 +925,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         {
                             var ping = Ping.Decode(m);
                             _pingEchoes.Add((ping.TimeServer, Environment.TickCount64));
+                            _world.Apply(ping);
                         }
                         catch { /* ignore a malformed echo */ }
                         break;
@@ -838,6 +1017,14 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _buyLoadoutAcks.Add(bla);
                         _world.Apply(bla);
                         break;
+                    case Allegiance.Core.Wire.LoadoutChange.Fmid:
+                        // P648 — FM_S_LOADOUT_CHANGE(96): a ship's loadout/hull
+                        // changed (same-side broadcast; a post-death relaunch
+                        // sends this with the new hull). Previously dropped as
+                        // unknown; now applied so a same-side peer revives a
+                        // relaunched teammate and adopts its new hull.
+                        _world.Apply(Allegiance.Core.Wire.LoadoutChange.Decode(m));
+                        break;
                     case Reload.Fmid:
                         // P362 — a successful reload relay (P361 auto-reload, or
                         // the manual RELOAD path): the world counts it per ship so
@@ -847,6 +1034,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // no wire-protocol change.
                         _world.Apply(Reload.Decode(m));
                         break;
+                    case ChangeAlliances.Fmid:
+                        _world.Apply(ChangeAlliances.Decode(m));
+                        break;
+                    case SwapPart.Fmid:
+                        _world.Apply(SwapPart.Decode(m));
+                        break;
+                    case DropPart.Fmid:
+                        _world.Apply(DropPart.Decode(m));
+                        break;
                     case ChatMessage.Fmid:
                         _world.Apply(ChatMessage.Decode(m));
                         break;
@@ -854,6 +1050,27 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P626 — a new in-flight ballot was announced (P187); the
                         // world latches it as the ActiveBallot for the vote keys.
                         _world.Apply(Ballot.Decode(m));
+                        break;
+                    case CancelBallot.Fmid:
+                        _world.Apply(CancelBallot.Decode(m));
+                        break;
+                    case PositionReqBroadcast.Fmid:
+                        _world.Apply(PositionReqBroadcast.Decode(m));
+                        break;
+                    case DelPositionReq.Fmid:
+                        var refusal = DelPositionReq.Decode(m);
+                        if (_ack is { } ack && refusal.ShipId == ack.ShipID)
+                            _lastPositionRefusal = refusal;
+                        _world.Apply(refusal);
+                        break;
+                    case LockLobby.Fmid:
+                        _world.Apply(LockLobby.Decode(m));
+                        break;
+                    case LockSides.Fmid:
+                        _world.Apply(LockSides.Decode(m));
+                        break;
+                    case AutoAccept.Fmid:
+                        _world.Apply(AutoAccept.Decode(m));
                         break;
                     case ChatBuoy.Fmid:
                         _world.Apply(ChatBuoy.Decode(m));
@@ -888,6 +1105,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case PlayerReady.Fmid:
                         _world.Apply(PlayerReady.Decode(m));
+                        break;
+                    case JoinedMission.Fmid:
+                        _world.Apply(JoinedMission.Decode(m));
+                        if (_world.JoinError is not null)
+                        {
+                            _lost = true;
+                            SessionLost?.Invoke();
+                            return;
+                        }
+                        break;
+                    case ObjectSpotted.Fmid:
+                        _world.Apply(ObjectSpotted.Decode(m));
+                        break;
+                    case SetWingId.Fmid:
+                        _world.Apply(SetWingId.Decode(m));
+                        break;
+                    case OrderChange.Fmid:
+                        _world.Apply(OrderChange.Decode(m));
                         break;
                     case MissionDef.Fmid:
                         _world.Apply(MissionDef.Decode(m));
@@ -1023,6 +1258,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // records it so Game1 can drive the warning loop.
                         _world.Apply(MissileTrackWarningUpdate.Decode(m));
                         break;
+                    case ScoreRosterDelta.Fmid:
+                        _world.Apply(ScoreRosterDelta.Decode(m));
+                        break;
                     case ScoreRosterUpdate.Fmid:
                         // P265 — periodic owner-only in-mission scoreboard
                         // snapshot (name/side/kills/deaths); the world keeps the
@@ -1091,6 +1329,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P374 — a side's per-sector threat state changed; the
                         // world stores the level + queues the sound/status cues.
                         _world.Apply(ClusterWarningUpdate.Decode(m));
+                        break;
+                    case ShipWarningUpdate.Fmid:
+                        _world.Apply(ShipWarningUpdate.Decode(m));
                         break;
                     case CreateBuckets.Fmid:
                         // P284 — the join-sync CREATE_BUCKETS preface; the world
@@ -1169,6 +1410,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // real client never heard the denial or the arrival jump.
                         _world.Apply(TeleportAck.Decode(m));
                         break;
+                    case Promote.Fmid:
+                        _world.Apply(Promote.Decode(m));
+                        break;
+                    case HighlightCluster.Fmid:
+                        _world.Apply(HighlightCluster.Decode(m));
+                        break;
+                    case ViewClusterReply.Fmid:
+                        _world.Apply(ViewClusterReply.Decode(m));
+                        break;
                     case BoardNack.Fmid:
                         // P638 — FM_S_BOARD_NACK(178): boarding refusal
                         // (appmsg.cpp:1899). Previously dropped silently.
@@ -1222,8 +1472,27 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         _world.PublishDecisionSnapshot();
     }
 
+    /// <summary>P671 — stop the keep-alive thread (on dispose). Sets the stop
+    /// flag and wakes the gate so the loop exits within its 6 s wait; joins
+    /// briefly. Does not acquire <c>_gate</c>, so it cannot deadlock against the
+    /// loop's own locked iteration. Called ONLY from <see cref=\"Dispose\"/>: the
+    /// thread is persistent, so a <see cref=\"Shutdown\"/> (used by a reconnect's
+    /// old-transport teardown) must NOT stop it.</summary>
+    private void StopKeepAlive()
+    {
+        Volatile.Write(ref _keepAliveStop, 1);
+        _keepAliveGate.Set();
+        var t = _keepAliveThread;
+        _keepAliveThread = null;
+        try { t?.Join(1000); } catch { /* best effort */ }
+    }
+
     /// <summary>Close the client socket. The server sees EOF / a dropped peer.</summary>
     public void Shutdown() => _transport?.Shutdown();
 
-    public void Dispose() => Shutdown();
+    public void Dispose()
+    {
+        StopKeepAlive();
+        Shutdown();
+    }
 }

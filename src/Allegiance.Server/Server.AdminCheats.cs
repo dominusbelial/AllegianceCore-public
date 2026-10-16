@@ -33,7 +33,8 @@ public sealed partial class Server
     /// P554 — is this connection privileged to issue admin cheats? The port of
     /// native's <c>!CanCheat() &amp;&amp; !UTL::PrivilegedUser(name)</c> join gate
     /// (<c>FedSrv.CPP:664</c>): privilege = <c>liveSettings.adminCheats.Enabled</c>
-    /// AND the sender's character name in <c>AllowNames</c> (case-insensitive,
+    /// AND server-verifiable privilege provenance (P655), plus a character name
+    /// in <c>AllowNames</c> (case-insensitive,
     /// mirroring native's upper-cased allow-list comparison,
     /// <c>_Utility/Utility.cpp:60-67</c>). Disabled unless configured, so a
     /// default server never interprets any chat line as a cheat.
@@ -89,8 +90,7 @@ public sealed partial class Server
     /// cheats are not enabled (nothing printed, matching P554's silent default).
     /// When enabled, returns the active banner; when additionally bound to a
     /// NON-loopback address (this server always binds 0.0.0.0/all interfaces),
-    /// appends a LOUD never-run-on-a-public-server warning, because name-based
-    /// trust is self-declared and spoofable.
+    /// appends a deployment warning; credentials use the plaintext game transport.
     /// </summary>
     internal static string? AdminCheatBootWarning(AdminCheatsConfig? cfg, bool boundToLoopbackOnly)
     {
@@ -101,17 +101,17 @@ public sealed partial class Server
         if (boundToLoopbackOnly)
             return banner + " ***";
         string secretNote = string.IsNullOrEmpty(cfg.Secret)
-            ? "NO shared secret set (name-only trust)."
-            : "A shared secret is set — a cheat line must present it as its first token.";
+            ? "NO shared secret set: privileges restricted to verified loopback sockets."
+            : "A shared secret is set — authenticate at logon or with a secret-prefixed command.";
         return banner + "; *** WARNING: THE SERVER LISTENS ON A NON-LOOPBACK ADDRESS WITH ADMIN CHEATS ENABLED — "
-            + "NEVER ENABLE ADMIN CHEATS ON A PUBLIC/SHARED SERVER (NAME-BASED TRUST IS SELF-DECLARED AND SPOOFABLE, P602). "
+            + "NEVER ENABLE ADMIN CHEATS ON A PUBLIC/SHARED SERVER (NAMES ARE ONLY FILTERS; PRIVILEGES REQUIRE SERVER-VERIFIED PROVENANCE, P655). "
             + secretNote + " ***";
     }
 
     private bool CanUseAdminCheats(ConnectionId from, Ship ship)
     {
         var cfg = _config.LiveSettings?.AdminCheats;
-        if (cfg is not { Enabled: true }) return false;
+        if (cfg is not { Enabled: true } || !PrivilegedConnection(from, cfg.Secret, _adminAuthenticated)) return false;
         if (!_peerNames.TryGetValue(from, out var name) || string.IsNullOrEmpty(name)) return false;
         foreach (var allowed in cfg.AllowNames)
             if (AdminNameMatches(allowed, name))
@@ -131,17 +131,23 @@ public sealed partial class Server
     private bool TryHandleAdminCheat(ConnectionId from, Ship ship, ChatMessage chat)
     {
         if (chat.Message is not { Length: > 0 } msg) return false;
-        if (!CanUseAdminCheats(from, ship)) return false;   // not privileged → ordinary chat
+        var authCfg = _config.LiveSettings?.AdminCheats;
+        // Authenticate a secret-bearing command before enabling passive viewing.
+        // Only enabled, allow-listed peers may use this bootstrap.
+        if (AdminSpectatorAllowed(authCfg, _peerNames.GetValueOrDefault(from))
+            && ConsumeSecretPrefix(authCfg?.Secret, msg, out _)) _adminAuthenticated.Add(from);
+        if (!CanUseAdminCheats(from, ship)) return false;
 
-        // P602 — optional shared secret: when configured, the leading token of
-        // the line must present the secret (a bearer). A line without it is
-        // ordinary chat, never a cheat — only clients that present the secret
-        // are trusted (in addition to the allow-listed name).
+        // Strip a presented bearer. Authenticated logon sessions may also send
+        // commands without repeating it. Secret-bearing unknown commands are
+        // consumed below so credentials cannot fall through to chat relay.
         var cfg = _config.LiveSettings?.AdminCheats;
-        if (cfg is { Secret: { Length: > 0 } }
-            && !ConsumeSecretPrefix(cfg.Secret, msg, out msg))
-            return false;
-        if (msg.Length == 0) return false;
+        bool presentedSecret = ConsumeSecretPrefix(cfg?.Secret, msg, out var command);
+        if (presentedSecret) msg = command;
+        // LOGONREQ bearer authentication also authorizes subsequent commands.
+        // The secret need not be repeated in every MCP chat line.
+
+        if (msg.Length == 0) return presentedSecret;
 
         // Token = first whitespace-delimited word (native ZString::GetToken,
         // FedSrv.CPP:2819), matched case-insensitively like native's lstrcmpi.
@@ -164,9 +170,16 @@ public sealed partial class Server
             return true;
         }
 
+        // P661: read-only transport diagnostic, printed to the server log.
+        if (token.Equals("egress", StringComparison.OrdinalIgnoreCase))
+        {
+            DumpEgressWindow();
+            return true;
+        }
+
         // Privileged but an unrecognized/out-of-scope token → not a cheat
         // (native fIsCheat=false) → forwarded as ordinary chat.
-        return false;
+        return presentedSecret;
     }
 
     private static int IndexWhitespace(string s)
@@ -200,24 +213,20 @@ public sealed partial class Server
         _config.LiveSettings?.TestHarness?.CharacterNamePrefix is { Length: > 0 } p ? p : "mcp-";
 
     /// <summary>
-    /// P554 — the relocate ownership rule ("a ship the privileged player controls
-    /// or launched — the MCP's own bots"): a privileged sender may relocate their
-    /// OWN ship, or any ship belonging to another connection whose character name
-    /// starts with the MCP harness prefix (<c>mcp-</c>) — i.e. the MCP's own bots,
-    /// which the probe ("mcp-probe", the allow-listed sender) launched and manages.
-    /// An arbitrary human ship (no harness prefix) is never touchable by this cheat.
+    /// A privileged sender can relocate their own ship or an authenticated
+    /// test-harness connection. A matching prefix alone is insufficient (P655).
     /// </summary>
     private bool MayRelocate(Ship senderShip, Ship targetShip, string? targetName)
     {
         if (ReferenceEquals(senderShip, targetShip)) return true;          // own ship
-        return targetName is { Length: > 0 } tn
-               && tn.StartsWith(HarnessPrefix, StringComparison.Ordinal);  // the MCP's own bots
+        var targetConn = ConnOf(targetShip);
+        return targetConn is { } conn && HarnessGrantFor(conn) is not null;  // the MCP's own bots
     }
 
     private void HandleRelocateCheat(ConnectionId from, Ship ship, string rest)
     {
         var parts = rest.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 6)
+        if (parts.Length != 5 && parts.Length != 8)
         {
             SendAdminReply(from, ship.Id, "relocate: need <shipId> <sectorId> <x> <y> <z> [fx fy fz]");
             return;
@@ -271,12 +280,14 @@ public sealed partial class Server
         }
 
         Vector3 pos = new(x, y, z);
-        Vector3 fwd = parts.Length >= 9
-            && float.TryParse(parts[5], NumberStyles.Float, CultureInfo.InvariantCulture, out float fx)
-            && float.TryParse(parts[6], NumberStyles.Float, CultureInfo.InvariantCulture, out float fy)
-            && float.TryParse(parts[7], NumberStyles.Float, CultureInfo.InvariantCulture, out float fz)
-            ? new Vector3(fx, fy, fz)
-            : target.Orientation.GetForward();
+        Vector3 fwd = target.Orientation.GetForward();
+        if (parts.Length == 8)
+        {
+            if (!float.TryParse(parts[5], NumberStyles.Float, CultureInfo.InvariantCulture, out float fx)
+                || !float.TryParse(parts[6], NumberStyles.Float, CultureInfo.InvariantCulture, out float fy)
+                || !float.TryParse(parts[7], NumberStyles.Float, CultureInfo.InvariantCulture, out float fz)) return;
+            fwd = new Vector3(fx, fy, fz);
+        }
 
         if (RelocateShipToSector(target, dest, pos, fwd))
             SendAdminReply(from, ship.Id, $"relocate: ship {target.Id} -> sector {sectorId} ({dest.Name}) at ({x:F1},{y:F1},{z:F1})");
@@ -301,6 +312,10 @@ public sealed partial class Server
     /// </summary>
     public bool RelocateShipToSector(Ship ship, Sector dest, Vector3 pos, Vector3 facing)
     {
+        // Validate before mutating sector membership or any component of pose.
+        if (!FiniteVector(pos) || !FiniteVector(facing)
+            || !float.IsFinite(facing.LengthSquared()) || facing.LengthSquared() <= 0f
+            || ship.Mission is null || !ship.Mission.Sectors.Contains(dest)) return false;
         if (ship.Sector is not { } src) return false;
         if (!ReferenceEquals(src, dest))
         {
@@ -319,6 +334,8 @@ public sealed partial class Server
     /// <c>SendChatf(NULL, CHAT_INDIVIDUAL_NOFILTER, shipID, NA, text)</c> (the
     /// exact shape <c>SendBallotReply</c> uses; native cheats reply the same way,
     /// FedSrv.CPP:2834).</summary>
+    private static bool FiniteVector(Vector3 v) => float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
+
     private void SendAdminReply(ConnectionId to, short shipId, string text)
     {
         var msg = new ChatMessage

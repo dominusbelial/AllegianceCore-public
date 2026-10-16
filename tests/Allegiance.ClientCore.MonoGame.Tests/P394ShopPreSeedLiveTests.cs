@@ -78,12 +78,14 @@ public sealed class P394ShopPreSeedLiveTests
     private static (Ship Ship, Sector Sector) SpawnDocked(
         StaticCore core, Mission mission, short shipId, out short stationId)
     {
-        var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        // H-07: the shield must fit the actual equipment slot.
+        var shield = core.PartTypes[RealShieldPart().PartId];
+        var hull = core.HullTypes.Values.First(h => h.GroupId >= 0 && h.CanMountPart(shield, 0));
         var st = mission.Sectors.SelectMany(s => s.Stations).First(s => s.SideId >= 0);
         var sector = mission.Sectors.First(s => s.Stations.Contains(st));
         var ship = new Ship(shipId, hull, StationPos(st) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
         {
-            SideId = st.SideId,
+            SideId = st.SideId, StationId = st.StationId,
         };
         mission.PlaceShip(ship, sector);
         stationId = st.StationId;

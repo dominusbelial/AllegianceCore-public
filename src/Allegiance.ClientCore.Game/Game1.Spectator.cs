@@ -479,6 +479,15 @@ public sealed partial class Game1
         string s = m.ToString();
         switch (m)
         {
+            case CameraMode.Command:
+                s += ":" + _commandCamera.TopDown;
+                if (_commandCamera.Tracking) s += ":track:" + _autoTarget;
+                lock (_session.Gate) s += ":sector:" + RenderSector(CurrentOwnSector() ?? -1);
+                break;
+            case CameraMode.DroneFollow:
+            case CameraMode.DroneCockpit:
+                s += ":" + _commandee?.Id;
+                break;
             case CameraMode.ExternalTarget:
             case CameraMode.ExternalFlyBy:
             case CameraMode.ExternalFlyByTarget:
@@ -488,7 +497,7 @@ public sealed partial class Game1
                 s += ":st" + (_autoTarget is { Kind: TargetKind.Station } st ? st.Id.ToString() : "any");
                 break;
             case CameraMode.ExternalMissile:
-                s += ":miss" + (TryGetLatestMissilePos(out _) ? "1" : "0");
+                s += ":miss" + (TryGetMissileCameraFrame(out _, out _) ? "1" : "0");
                 break;
             case CameraMode.ExternalOverride:
                 s += ":ov" + (_overrideTarget is { } ? "1" : "0");

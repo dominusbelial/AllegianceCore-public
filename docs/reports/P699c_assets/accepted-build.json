@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "started": 1792128382.7478173,
+  "finished": 1792128385.5246277,
+  "command": "dotnet build AllegianceCore.slnx --nologo"
+}

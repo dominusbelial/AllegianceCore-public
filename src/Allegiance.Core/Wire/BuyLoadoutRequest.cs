@@ -32,6 +32,8 @@ namespace Allegiance.Core.Wire;
 public sealed class BuyLoadoutRequest : IFedMessage
 {
     public const ushort Fmid = 4;
+    // Native FedSrv/fsship.h:32 c_cbLoadout; FedSrv.CPP:6180.
+    public const int MaxParts = 20;
 
     /// <summary>Wire width of <c>ShipLoadout</c> with <c>nParts = 0</c> (the 2-byte hullID).</summary>
     public const int ShipLoadoutSize = 2;
@@ -91,6 +93,8 @@ public sealed class BuyLoadoutRequest : IFedMessage
         if (vi.Cb < ShipLoadoutSize || (vi.Cb - ShipLoadoutSize) % ExpandedPartData.Size != 0)
             throw new ArgumentException($"loadout cb={vi.Cb} is not a ShipLoadout({ShipLoadoutSize}) + whole ExpandedPartData({ExpandedPartData.Size}) tail");
         int nParts = (vi.Cb - ShipLoadoutSize) / ExpandedPartData.Size;
+        if (nParts > MaxParts || vi.Ib < FixedSize - ShipLoadoutSize || (int)vi.Ib + vi.Cb > buf.Length)
+            throw new ArgumentException("BUY_LOADOUT exceeds the native part limit or has an invalid loadout span");
 
         bool flaunch = (buf[8] & 1) != 0;
 

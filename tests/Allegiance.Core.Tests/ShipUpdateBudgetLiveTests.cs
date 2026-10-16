@@ -59,6 +59,8 @@ public sealed class ShipUpdateBudgetLiveTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        Broadcast = new() { MinUpdateHz = 0 }, // exercises the ranked budget without P659's additive floor
+
         Games =
         [
             new Gm { Name = "Ship Update Budget Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

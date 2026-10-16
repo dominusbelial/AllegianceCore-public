@@ -14,6 +14,10 @@ namespace Allegiance.Server;
 ///   - <see cref="LobbyRegisterRequest"/> / <see cref="LobbyRegisterResponse"/> — the
 ///     lobby-heartbeat HTTP payloads, written camelCase to a byte-identical wire shape.
 ///
+/// Config properties use setters so absent JSON members retain their initializers.
+/// Init-only members can be assigned default(T) by the generated constructor path;
+/// the reflection guard in ConfigDefaultsJsonTests covers this entire contract graph.
+///
 /// A single option set reproduces the union of both former paths' behaviour:
 /// <see cref="JsonSourceGenerationOptionsAttribute.PropertyNamingPolicy"/> =
 /// CamelCase only affects WRITES (the heartbeat request — the old
@@ -37,6 +41,7 @@ namespace Allegiance.Server;
 [JsonSerializable(typeof(MapGenConfig))]
 [JsonSerializable(typeof(LobbyRegisterRequest))]
 [JsonSerializable(typeof(LobbyRegisterResponse))]
+[JsonSerializable(typeof(Allegiance.Core.Transport.EgressWindow))]
 internal sealed partial class ServerJsonContext : JsonSerializerContext
 {
 }

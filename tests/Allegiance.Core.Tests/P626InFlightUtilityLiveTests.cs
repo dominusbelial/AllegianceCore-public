@@ -75,7 +75,11 @@ public class P626InFlightUtilityLiveTests
         bot.SendLogonRequest(Request(name));
         int n = PumpUntil(server, () => bot.ShipAssignment is not null, 4000);
         Assert.True(n < 4000, $"{name} did not seat");
-        return bot.ShipAssignment!.Ship.ShipId;
+        short shipId = bot.ShipAssignment!.Ship.ShipId;
+        // H-06/H-22: utility inventory actions require a flying ship.
+        bot.SendBuyLoadout(ShipOf(server, shipId).HullType.HullId, fLaunch: true);
+        Assert.True(PumpUntil(server, () => ShipOf(server, shipId).StationId is null, 4000) < 4000);
+        return shipId;
     }
 
     private static Ship ShipOf(Srv server, short shipId) =>
@@ -180,14 +184,14 @@ public class P626InFlightUtilityLiveTests
             var ship = server.Ships.Single(s => s.Ship.Id == aId).Ship;
 
             // Mounted weapon (positive mount) + a cargo pack (slot 1 = -2).
-            ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);
+            ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 0, fractionMounted: 255);
             ship.MountPart(AmmoPackType(), amount: 7, mountId: 0, fractionMounted: 255);
             a.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -2);
             PumpUntil(server, () => ship.CargoHold[Ship.CargoSlotForMount(-2)] is not null, 4000);
 
             var ack = ship.ExportInventoryForAck();
             // The mounted weapon keeps a non-negative mount…
-            Assert.Contains(ack, p => p.MountId == 1 && p.PartId == ship.Parts.Single(x => x.MountId == 1).PartId);
+            Assert.Contains(ack, p => p.MountId == 0 && p.PartId == ship.Parts.Single(x => x.MountId == 0 && x.EquipmentType == EquipmentType.Weapon).PartId);
             // …and the cargo pack rides a negative (high-bit) mount, amount intact.
             Assert.Contains(ack, p => p.MountId == unchecked((byte)-2) && p.PartId == 904 && p.Amount == 7);
         }

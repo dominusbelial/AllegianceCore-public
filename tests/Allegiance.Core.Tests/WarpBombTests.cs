@@ -461,6 +461,9 @@ public sealed class WarpBombTests
         double now = mission.LastUpdate;
         var missile = new Missile(958, sector, missileType, warpPos, Vector3.Zero, new Vector3(0f, 0f, -1f), now, shooter);
         sector.Add(missile);
+        // Match Ship.FireMissile's wire lifecycle before the first collision
+        // tick consumes this manually placed missile at the warp.
+        mission.Site.MissileCreatedEvent(missile);
 
         // (1) The bomb arms on the first tick and reaches EVERY peer, cross-side included.
         PumpUntil(seat.Server,

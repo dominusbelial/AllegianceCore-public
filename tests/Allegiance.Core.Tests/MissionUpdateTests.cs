@@ -66,6 +66,8 @@ public class MissionUpdateTests
         var map = SomeMap.Value;
         var mission = Mission.Assemble(core, map, SideSpecs(), site);
         mission.Stage = MissionStage.Started;
+        // P691 runtime station construction now notifies; observe only the tick below.
+        if (site is RecordingIgcSite recording) recording.Reset();
         return mission;
     }
 
@@ -229,4 +231,24 @@ public class MissionUpdateTests
         // And the cluster pass dominates the rest (no stray side update after chunk 1).
         Assert.All(site.Calls.Skip(firstClusterIndex), c => Assert.StartsWith("ClusterUpdateEvent(", c));
     }
+    [SkippableTheory]
+    [InlineData(1.0)]
+    [InlineData(0.25)]
+    public void P660_Assembly_at_late_sim_time_seeds_clock_before_immediate_start(double scale)
+    {
+        Require.Artwork();
+        const double now = 2636.1478201210366;
+        var mission = Mission.Assemble(RepresentativeCore.Value, SomeMap.Value, SideSpecs(), new NullIgcSite(), now);
+        Assert.Equal(now, mission.LastUpdate);
+        Assert.All(mission.Sectors, sector => Assert.Equal(now, sector.LastUpdate));
+        // NotStarted tracks the server clock, then an immediate ready/start
+        // before another NotStarted tick must still have a small first delta.
+        mission.Update(now + .05 * scale);
+        mission.Stage = MissionStage.Starting;
+        mission.Update(now + .10 * scale);
+        mission.Stage = MissionStage.Started;
+        mission.Update(now + .15 * scale);
+        Assert.Equal(now + .15 * scale, mission.LastUpdate);
+    }
+
 }

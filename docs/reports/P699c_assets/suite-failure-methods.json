@@ -1,0 +1,6 @@
+[
+  [
+    "Core",
+    "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath"
+  ]
+]

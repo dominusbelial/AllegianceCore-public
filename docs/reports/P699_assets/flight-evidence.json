@@ -1,0 +1,119 @@
+[
+  {
+    "role": "bot",
+    "run": 1,
+    "seconds_wall": 54.47,
+    "trace": "bot-1.trx",
+    "sha256": "3e24a5f4a4c2d8ca192ddac736d7b350647bd23490572b1b61e174c1e0a1ca36",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "MCP route=1051 -> 1052 -> 1053 elapsed=250.00 endurance=300.00 landed=True relaunchTraffic=12",
+      "[dock] ship 8097 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked"
+    ]
+  },
+  {
+    "role": "bot",
+    "run": 2,
+    "seconds_wall": 53.93,
+    "trace": "bot-2.trx",
+    "sha256": "bc00b4ed14b68ff855b47f564ba9348aa07f7df25ca7e169790c8ca382dbe310",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "MCP route=1051 -> 1052 -> 1053 elapsed=247.80 endurance=300.00 landed=True relaunchTraffic=12",
+      "[dock] ship 8097 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked"
+    ]
+  },
+  {
+    "role": "bot",
+    "run": 3,
+    "seconds_wall": 53.51,
+    "trace": "bot-3.trx",
+    "sha256": "c356d585ce346f63e0d6d86c190b4eaa4290d902abbc8a023f453a5351e549ac",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "MCP route=1051 -> 1052 -> 1053 elapsed=246.00 endurance=300.00 landed=True relaunchTraffic=12",
+      "[dock] ship 8097 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked"
+    ]
+  },
+  {
+    "role": "human",
+    "run": 1,
+    "seconds_wall": 12.65,
+    "trace": "human-1.trx",
+    "sha256": "2b4f6ca4ac3c653d912ff848b8e1fc2e87855bb1bd61c8e313696f41bbae2ac9",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "POSE accepted=1441 rejected=2",
+      "HUMAN route=1051 -> 1052 -> 1053 elapsed=240.30 oxygen=300.00 station=1051",
+      "[dock] ship 8096 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked"
+    ]
+  },
+  {
+    "role": "human",
+    "run": 2,
+    "seconds_wall": 12.6,
+    "trace": "human-2.trx",
+    "sha256": "1f6a1f0f8a2743721abb6389acb7a8de398ce6684c3aa4487ec62de833d03bdd",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "POSE accepted=1443 rejected=2",
+      "HUMAN route=1051 -> 1052 -> 1053 elapsed=240.70 oxygen=300.00 station=1051",
+      "[dock] ship 8096 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked"
+    ]
+  },
+  {
+    "role": "human",
+    "run": 3,
+    "seconds_wall": 12.86,
+    "trace": "human-3.trx",
+    "sha256": "d0eb859cce785b102ffde63047ca9be14068e3928023e2c80a5375a823c7b78f",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "POSE accepted=1442 rejected=1",
+      "HUMAN route=1051 -> 1052 -> 1053 elapsed=240.30 oxygen=300.00 station=1051",
+      "[dock] ship 8096 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked"
+    ]
+  },
+  {
+    "role": "human-clock",
+    "run": 1,
+    "seconds_wall": 239.57,
+    "trace": "human-clock-1.trx",
+    "sha256": "cb39175fa31e99b6bd910fff1d536db0abd582f403c8034d1739a1a05674a527",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "[p540b] plan: eject sector 1051 -> 1052 -> garrison sector 1053 (2 warps), first warp mouth <3733.3333, 3911.111, 606.72705>, garrison @ Vector3 { X = 0, Y = 0, Z = 0 }",
+      "[dock] ship 8096 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked",
+      "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4895/11000",
+      "[p540b] LIVE-P540B: pod 8096 ejected in 1051, flew through 1052 to garrison 1053 (2 real warp transits) and docked \u2014 0 rejects, 0 SHIP_RESETs \u2014 RESULT PASS"
+    ]
+  },
+  {
+    "role": "human-clock",
+    "run": 2,
+    "seconds_wall": 239.69,
+    "trace": "human-clock-2.trx",
+    "sha256": "1d7b226b36f7f3010b603536ab9d3455991fea13f300a59ac4186dc437201512",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "[p540b] plan: eject sector 1051 -> 1052 -> garrison sector 1053 (2 warps), first warp mouth <3733.3333, 3911.111, 606.72705>, garrison @ Vector3 { X = 0, Y = 0, Z = 0 }",
+      "[dock] ship 8096 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked",
+      "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4899/11000",
+      "[p540b] LIVE-P540B: pod 8096 ejected in 1051, flew through 1052 to garrison 1053 (2 real warp transits) and docked \u2014 0 rejects, 0 SHIP_RESETs \u2014 RESULT PASS"
+    ]
+  },
+  {
+    "role": "human-clock",
+    "run": 3,
+    "seconds_wall": 239.82,
+    "trace": "human-clock-3.trx",
+    "sha256": "78c8196bf7f961bae8eb41ce2bca34dd94dfc5489d9f8751c94ff3021d82c2ba",
+    "oxygen_expiry_log_count": 0,
+    "summary": [
+      "[p540b] plan: eject sector 1051 -> 1052 -> garrison sector 1053 (2 warps), first warp mouth <3733.3333, 3911.111, 606.72705>, garrison @ Vector3 { X = 0, Y = 0, Z = 0 }",
+      "[dock] ship 8096 docked at station 1051 'Garrison' (side 0) in sector 'Ceto' \u2014 next SHIP_STATUS(90) carries StationID + State=c_ssDocked",
+      "[p540b] transits 1051 -> 1052 -> 1053; final sector 1053; docked=True; rejects 0; SHIP_RESETs 0; ticks 4899/11000",
+      "[p540b] LIVE-P540B: pod 8096 ejected in 1051, flew through 1052 to garrison 1053 (2 real warp transits) and docked \u2014 0 rejects, 0 SHIP_RESETs \u2014 RESULT PASS"
+    ]
+  }
+]

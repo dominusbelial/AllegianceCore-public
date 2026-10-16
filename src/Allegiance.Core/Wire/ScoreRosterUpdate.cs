@@ -6,16 +6,10 @@ namespace Allegiance.Core.Wire;
 /// <summary>
 /// One per-player roster record inside the <see cref="ScoreRosterUpdate"/>
 /// (209) message's <c>FM_VAR_ITEM(rgPlayers)</c> blob.
-/// <para><b>This port's own shape</b> — native has no in-mission live
-/// scoreboard wire message (its client reads the score object directly from
-/// the local IGC sim, and its FM_S_PLAYERINFO(10) is a one-shot join-time
-/// roster snapshot whose stats fields this server leaves at 0). So this
-/// record mirrors the convention the P194 <c>GameOverPlayerEntry</c> already
-/// established for reporting P193's <c>PlayerScore</c> to the renderer-only
-/// MonoGame client (no static core to read scores from): a fixed
-/// <c>characterName[c_cbName]</c> name followed by small numeric columns,
-/// padded to natural (MSVC) alignment. It is a deliberate redesign, not a
-/// byte-compat claim against a real native client.</para>
+/// <para>Port-specific score row. Native seeds counts in PLAYERINFO
+/// (FedSrv/FedSrv.CPP:2080-2088), then updates them from KILL_SHIP events
+/// (clintlib/appmsg.cpp:2766-2773,2807-2810). The renderer-only port uses
+/// snapshots (209) and sparse ordered patches (219) instead.</para>
 /// <para><b>Fields &amp; layout.</b> Kills/Deaths come straight from P193's
 /// <c>PlayerScore</c> (P215 now mutates them on real combat); SideId is the
 /// player ship's real side. Both are carried as 16-bit to match the wire
@@ -38,7 +32,8 @@ namespace Allegiance.Core.Wire;
 ///   offset 34: — pad (2) — align score float to 4
 ///   offset 36: float score
 ///   offset 40: float combatRating
-///   = 44 bytes
+///   offset 44: short ejections, rescues, baseKills, baseCaptures, artifacts, flags
+///   = 56 bytes
 /// </code>
 /// </summary>
 public readonly record struct ScoreRosterEntry(
@@ -117,37 +112,11 @@ public readonly record struct ScoreRosterEntry(
 }
 
 /// <summary>
-/// <c>ScoreRosterUpdate</c> (id 209) — a periodic, owner-only, in-mission
-/// scoreboard snapshot: every connected player on a real side, with their
-/// real P193 <c>PlayerScore</c> kills/deaths. This is the smallest real wire
-/// addition that lets the renderer-only MonoGame client draw a live roster.
-///
-/// <para><b>Why a new message (and why this shape).</b> The only existing
-/// player-roster message, FM_S_PLAYERINFO(10), is sent same-side one-shot at
-/// join (<c>Server.BroadcastShipStates</c>) with its nKills/nEjections/nDeaths
-/// fields hard-zeroed (<c>PlayerInfo.cs</c>) — it is a structural identity
-/// snapshot, not a live score stream, and it is never resent. The per-tick
-/// SHIP_UPDATE carries physics, not scores. So none of the existing traffic
-/// can surface P215's real Kills/Deaths to the client. Following the
-/// established owner-only periodic-extension precedent (P230 <c>MissileLockUpdate</c>
-/// 204, P255 <c>OwnShipMiningUpdate</c> 206, P264 <c>MissileTrackWarningUpdate</c>
-/// 208) and the P194 var-item-list reporting shape, this message broadcasts
-/// the whole in-mission roster (both real sides) on a slow periodic tick.</para>
-///
-/// <para><b>Layout</b> — a single <c>FM_VAR_ITEM</c> blob with no explicit
-/// count field (count = blob length ÷ <see cref="ScoreRosterEntry.Size"/>),
-/// exactly like <c>GameOverPlayers</c>(63)/<c>ProbesUpdate</c>(92):</para>
-/// <code>
-///   offset 0: ushort cbmsg
-///   offset 2: ushort fmid = 209
-///   offset 4: ushort ib (blob offset, from byte 0)
-///   offset 6: ushort cb (blob byte length = n × 32)
-///   offset 8: blob — n × ScoreRosterEntry(32)
-///   = 8 + blob bytes total
-/// </code>
-/// <para>FMID 209 sits above native's real max (<c>FMID_MAX</c> ≈ 200) and the
-/// port's earlier owner-only additions (204-208), so it can never collide with
-/// a real wire message.</para>
+/// <c>ScoreRosterUpdate</c> (209), full in-mission roster snapshot. P672 retains
+/// its existing layout: cbmsg/fmid (4), ib/cb (4), then n * 56-byte rows.
+/// Sent on join/rejoin, mission-stage changes and every 30 simulation seconds;
+/// ScoreRosterDelta(219) supplies changes between snapshots. Harness peers do
+/// not consume this feed. Both messages use the guaranteed ordered lane.
 /// </summary>
 public sealed class ScoreRosterUpdate : IFedMessage
 {
@@ -165,6 +134,8 @@ public sealed class ScoreRosterUpdate : IFedMessage
 
     public byte[] Encode()
     {
+        if (Entries.Length > ScoreRosterDelta.MaxEntries)
+            throw new ArgumentException("Score roster exceeds cbmsg bounds");
         int blobLen = Entries.Length * ScoreRosterEntry.Size;
         var buf = new byte[FixedSize + blobLen];
         WireWriter w = new(buf);
@@ -194,17 +165,12 @@ public sealed class ScoreRosterUpdate : IFedMessage
         if (hdr.CbMsg != buf.Length) throw new ArgumentException($"cbmsg={hdr.CbMsg} != buffer length {buf.Length}");
 
         var it = VarItem.Read(buf.Slice(4));   // the single ib/cb pair
+        if (it.Ib != FixedSize || it.Ib + it.Cb != buf.Length || it.Cb % ScoreRosterEntry.Size != 0)
+            throw new ArgumentException("Invalid score roster blob offset/length/stride");
         var entries = new List<ScoreRosterEntry>();
-        if (it.IsPresent)
-        {
-            if (it.Ib < 0 || it.Ib + it.Cb > buf.Length)
-                throw new ArgumentException($"SCORE_ROSTER_UPDATE blob [{it.Ib},{it.Ib + it.Cb}) out of range for length {buf.Length}");
-            if (it.Cb % ScoreRosterEntry.Size != 0)
-                throw new ArgumentException($"SCORE_ROSTER_UPDATE blob length {it.Cb} is not a multiple of {ScoreRosterEntry.Size}");
-            var blob = buf.Slice(it.Ib, it.Cb);
-            for (int i = 0; i < it.Cb / ScoreRosterEntry.Size; i++)
-                entries.Add(ScoreRosterEntry.Read(blob.Slice(i * ScoreRosterEntry.Size, ScoreRosterEntry.Size)));
-        }
+        var blob = buf.Slice(it.Ib, it.Cb);
+        for (int i = 0; i < it.Cb / ScoreRosterEntry.Size; i++)
+            entries.Add(ScoreRosterEntry.Read(blob.Slice(i * ScoreRosterEntry.Size, ScoreRosterEntry.Size)));
         return new ScoreRosterUpdate { Entries = entries.ToArray() };
     }
 }
