@@ -761,94 +761,33 @@ public sealed partial class Server
             return;
         }
 
-        // P224 — dispatch the mounted launcher by its construction-only subtype:
-        // chaff / mine / probe. Native resolves the expendable from the
-        // dispenser's expenditureTypeID and branches on its object type
-        // (OT_chaffType / OT_mineType / OT_probeType, FedSrv.CPP:5696); the port's
-        // mounted-part subtype (DataPartTypeIGC.ChaffLauncher / MineLauncher /
-        // ProbeLauncher, DataPartTypeIGC.cs) is that resolution's stand-in.
-        bool sectorWide;          // chaff: sector source audience; mine/probe: also same-side
-        List<byte[]> enc;
-        string deployed;          // human-readable description for the log line
-        switch (part.Type.Type)
+        FireMountedExpendable(ship, part, mission.LastUpdate);
+    }
+
+    // Both the real IGC callback and explicit C_FIRE_EXPENDABLE requests arrive
+    // here. Existing wire audiences and transport batching are preserved.
+    private void FireMountedExpendable(Ship ship, MountedPart part, double now)
+    {
+        if (ship.FireDispenser(part, now, _rand) is not { } deployment) return;
+        // P697 audiences are keyed on the emitter's sector; the IGC callback has no
+        // LiveShip, so use the ship's own sector (the same value for a connected peer).
+        if (ship.Sector is not { } sector) return;
+        bool sectorWide = deployment.Model is Chaff;
+        var enc = new List<byte[]>
         {
-            case DataPartTypeIGC.ChaffLauncher cl:
+            new FireExpendable { LauncherId = ship.Id, EquipmentType = part.EquipmentType }.Encode()
+        };
+        if (deployment.Model is Chaff chaff)
+        {
+            enc.Add(new CreateChaff
             {
-                if (!mission.Core.ChaffTypes.TryGetValue(cl.ExpendableTypeId, out var chaffType))
-                {
-                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: chaff launcher names unknown chaff type {cl.ExpendableTypeId} — ignored");
-                    return;
-                }
-
-                // Deploy the chaff at the ship's position/velocity and run the native
-                // missile-retarget loop; the result names the new Chaff and the spoofed
-                // missiles (fed by the server's shared _rand, like native's global random).
-                var result = ship.DeployChaff(chaffType, mission.LastUpdate, _rand);
-                sectorWide = true;
-
-                // Build all four broadcasts in one guaranteed batch (native creates them
-                // in this same handler and flushes once: SendMessages(GetGroupSectorFlying
-                // (pcluster), FM_GUARANTEED, FM_FLUSH), FedSrv.CPP:5749). Audience: the
-                // whole cluster, all sides — GetGroupSectorFlying(pcluster), the exact
-                // SendSectorWide audience.
-                enc = new List<byte[]>
-                {
-                    new FireExpendable { LauncherId = ship.Id, EquipmentType = req.Et }.Encode(),
-                    new CreateChaff
-                    {
-                        P0 = result.Chaff.Position,
-                        V0 = result.Chaff.Velocity,
-                        Time0 = (uint)TickIndex,   // this project's uint-Time convention (cf. BroadcastFireMissile)
-                        Etid = chaffType.ExpendableTypeId,
-                    }.Encode(),
-                };
-                foreach (var sp in result.Spoofed)
-                    enc.Add(new MissileSpoofed { MissileId = sp.Id }.Encode());
-                enc.Add(new EndSpoofing().Encode());   // exactly once, even when nothing was spoofed
-                deployed = $"chaff {chaffType.ExpendableTypeId} (pos {result.Chaff.Position} vel {result.Chaff.Velocity}) " +
-                           $"-> FE(87)+CREATE_CHAFF(109)+[{result.Spoofed.Count}×MISSILE_SPOOFED]+END_SPOOFING(111)";
-                break;
-            }
-            case DataPartTypeIGC.MineLauncher ml:
-            {
-                if (!mission.Core.MineTypes.TryGetValue(ml.ExpendableTypeId, out var mineType))
-                {
-                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: mine launcher names unknown mine type {ml.ExpendableTypeId} — ignored");
-                    return;
-                }
-                var mine = ship.DeployMine(mineType, mission.LastUpdate);
-                sectorWide = false;
-                // Mine/probe carry no dedicated instance message: native's single
-                // S FIRE_EXPENDABLE (pfmSFE) plus the mine object exported through the
-                // generic CreateObject/OT_mine path. The object EXPORT is triggered here
-                // automatically by DeployMine → MineCreatedEvent → BroadcastExportMine.
-                enc = new List<byte[]> { new FireExpendable { LauncherId = ship.Id, EquipmentType = req.Et }.Encode() };
-                deployed = $"mine {mineType.ExpendableTypeId} (id {mine.Id}) -> FE(87)+EXPORT(26)/OT_mine";
-                break;
-            }
-            case DataPartTypeIGC.ProbeLauncher pl:
-            {
-                if (!mission.Core.ProbeTypes.TryGetValue(pl.ExpendableTypeId, out var probeType))
-                {
-                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: probe launcher names unknown probe type {pl.ExpendableTypeId} — ignored");
-                    return;
-                }
-                var probe = ship.DeployProbe(probeType, mission.LastUpdate);
-                sectorWide = false;
-                enc = new List<byte[]> { new FireExpendable { LauncherId = ship.Id, EquipmentType = req.Et }.Encode() };
-                deployed = $"probe {probeType.ExpendableTypeId} (id {probe.Id}) -> FE(87)+EXPORT(26)/OT_probe";
-                break;
-            }
-            default:
-            {
-                ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: mounted {req.Et}@0 is {part.Type.Type.GetType().Name}, not a chaff/mine/probe launcher — ignored");
-                return;
-            }
+                P0 = chaff.Position, V0 = chaff.Velocity, Time0 = (uint)TickIndex,
+                Etid = chaff.ChaffType.ExpendableTypeId
+            }.Encode());
+            foreach (var missile in deployment.Spoofed)
+                enc.Add(new MissileSpoofed { MissileId = missile.Id }.Encode());
+            enc.Add(new EndSpoofing().Encode());
         }
-
-        // Decrement the dispenser's ammo (FedSrv.CPP:5744-5745).
-        short newAmount = (short)(part.Amount - 1);
-        ship.SetPartAmount(part, newAmount);
 
         byte[] packet = FedPacket.Pack(enc.ToArray());
         int n = 0;
@@ -856,19 +795,18 @@ public sealed partial class Server
         {
             // Native's cluster batch (FedSrv.CPP:5781), filtered for the port's
             // cloak-hidden ships and ordered behind a reliable source pose.
-            n = BroadcastShipEmission(ship, live.Sector, packet);
+            n = BroadcastShipEmission(ship, sector, packet);
         }
         else if (ship.SideId is { } sideId)
         {
             // Object knowledge remains side-wide; the deployment animation is
             // local to the emitter's sector and uses the same pose dependency.
             foreach (var peer in _peerShips)
-                if (peer.Value.Ship.SideId == sideId && PeerInSector(peer.Key, live.Sector)
-                    && SendShipEmission(peer.Key, ship, live.Sector, packet)) n++;
+                if (peer.Value.Ship.SideId == sideId && PeerInSector(peer.Key, sector)
+                    && SendShipEmission(peer.Key, ship, sector, packet)) n++;
         }
 
-        Console.WriteLine($"[fireexpendable] {from} ship {ship.Id} fired {deployed} to {n} {(sectorWide ? "cluster" : "same-side")} peer(s); " +
-                          $"dispenser {newAmount + 1} -> {newAmount}");
+        Console.WriteLine($"[fireexpendable] ship {ship.Id} fired {deployment.Model.GetType().Name} to {n} peer(s)");
     }
 
     /// <summary>

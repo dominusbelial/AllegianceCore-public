@@ -678,6 +678,20 @@ public sealed partial class Server
         Console.WriteLine($"[bucketstatus] mission-wide -> BUCKET_STATUS(65) iBucket={bucket.Id} (team-money dev) money={bucket.InvestedMoney}/{bucket.Price} timeMs={bucket.InvestedMilliseconds} to {targets.Length} peer(s)");
     }
 
+    private void OnBucketChanged(BucketChange change, Bucket bucket)
+    {
+        // Native client simulates bucket time locally. This port's investment
+        // pane consumes authoritative snapshots instead: carry the same integer
+        // percentage transition over the existing BUCKET_STATUS message.
+        // Donation already sends MoneyChange in its wallet/status transaction.
+        if (change is not (BucketChange.PercentCompleteChange or BucketChange.Emptied)
+            || bucket.Side is not { Mission: { } mission } side) return;
+        if (bucket.Development is { DevelopmentId: Mission.TeamMoneyDevelopmentId })
+            BroadcastBucketStatusMissionWide(mission, side.Id, bucket);
+        else
+            BroadcastBucketStatusSideWide(mission, side.Id, bucket);
+    }
+
 /// <summary>
     /// P119 completion-<em>detection</em> handler, wired to
     /// <see cref="ServerHost.BucketCompleted"/> (raised from

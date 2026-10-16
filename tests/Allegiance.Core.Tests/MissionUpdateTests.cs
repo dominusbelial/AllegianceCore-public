@@ -66,6 +66,8 @@ public class MissionUpdateTests
         var map = SomeMap.Value;
         var mission = Mission.Assemble(core, map, SideSpecs(), site);
         mission.Stage = MissionStage.Started;
+        // P691 runtime station construction now notifies; observe only the tick below.
+        if (site is RecordingIgcSite recording) recording.Reset();
         return mission;
     }
 

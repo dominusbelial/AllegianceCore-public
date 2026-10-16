@@ -181,6 +181,25 @@ The deterministic missing-runtime synthetic-station fixture failure and the old
 flight test's global -Z assumption were fixed and revalidated; they are **not**
 classified as flakes. Commands, complete attempt history, profiles and native
 citations: [P694 report](reports/P694_MASS_EVENT_TICKS.md).
+## P691 observation (2026-10-15)
+
+Final complete unfiltered sequential runs: Core **4,581 passed / 0 failed**,
+ClientCore **1,006 passed / 0 failed** (local P660 next-match showcase enabled),
+and MonoGame **2,186 passed / 0 failed / 3 existing optional Meshy-pack skips**.
+All 62 affected methods passed three individual invocations each; the local
+15v15 battle recorded **10 kills** with **30/30 bots reached**, both real MCP
+relaunch cases passed 3/3, and mining/ore sale passed 3/3.
+
+The first MonoGame attempt exited 1 after 25.294 seconds without a TRX file,
+final counters, or a named assertion failure. Its detailed console log contains
+2,162 pass entries and ends during the P540 eject fixture. The exact
+`P540EjectLiveProofTests.Client_applies_Eject_and_picks_nearest_friendly_rescue_target_and_pod_docks`
+method then passed **3/3 alone**; a subsequent unfiltered assembly run with the
+standard console logger completed cleanly. The interruption's cause was not
+established. These observations do **not** attribute a failed assertion or a
+load-flake cause to P540. No product code, assertions, deadlines, or quarantine
+traits changed for this observation. See the [P691 report](reports/P691_PARITY_WAVE9.md)
+and [invocation ledger](reports/P691_RESULTS.json), including the incomplete run.
 
 ## P685 observation (2026-10-15)
 
@@ -1000,3 +1019,29 @@ was a fixture warmup defect and was corrected separately; it is not classified a
 a load flake. See the [report](reports/P694_MASS_EVENT_TICKS.md) and
 [ledger](reports/P694b_assets/verification.json) for raw counters, errors, stack
 traces, timing profiles and all isolated attempts.
+## P690 observation (2026-10-15)
+
+The final unfiltered Core, ClientCore (including the enabled local 15v15 next-match showcase), and MonoGame suites produced the raw counts in [P690 report](reports/P690_PARITY_WAVE8.md). After all three suites finished, every failed method below passed **3/3 exact-method isolated runs**, satisfying the task's load-flake rule. No assertions, deadlines, quarantine traits, or product behavior were changed for these observations.
+
+| Test | Full-pass symptom | Isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | Assert.Single() Failure: The collection was empty | 3/3 pass |
+| `Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer` | Assert.DoesNotContain() Failure: Filter matched in collection | 3/3 pass |
+
+See [P690_RESULTS.json](reports/P690_RESULTS.json) for commands, raw counts, messages, and artifact paths. Isolated passes do not establish a fix for the underlying timing/transport behavior.
+
+
+## P692 observation (2026-10-15)
+
+The final unfiltered sequential suites reported Core **4,615 pass / 2 fail / 0 skip**, ClientCore **1,014 pass / 0 fail / 0 skip**, and MonoGame **2,187 pass / 0 fail / 3 existing private Meshy-pack skips**. The enabled local P660 15v15 bots/humans next-match showcase passed (21.753 seconds). The affected cohort passed **399 individual exact-method invocations / 651 case executions**, with zero failures or skips.
+
+After all three full suites completed, both failed Core methods passed **3/3 exact-method isolated reruns**, satisfying P692's explicit load-flake classification rule:
+
+| Test | Full-suite symptom | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | `Assert.Single`: abort receipt collection was empty. | 3/3 pass |
+| `Allegiance.Core.Tests.LiveP388DebugNoGameOverTests.Debug_mode_disconnect_does_not_end_mission_and_miners_keep_cycling` | Side-0 miner 8096 completed only one counted mine/sell cycle within 240,000 ticks. | 3/3 pass |
+
+No assertions, deadlines, quarantine traits, or product behavior were changed for these observations. The isolated passes do not establish the underlying cause or a fix for the receipt/cycle observation. The real loopback mining/sale and MCP purchase/death/pod/relaunch/refire checks separately passed 3/3 alone, and the controlled real bot TCP battle recorded one credited kill per isolated run.
+
+See the [P692 report](reports/P692_PARITY_WAVE10.md) and [invocation ledger](reports/P692_RESULTS.json) for raw counts, exact filters, failure messages/stacks, and per-run TRX/log paths. Preliminary overlapping runs were discarded from certification; the complete affected cohort was subsequently rerun serially under a verifier lock.

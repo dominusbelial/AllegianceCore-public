@@ -23,8 +23,12 @@ public sealed class Probe : Model, IProbeIgc
     // target (CprobeIGC::m_nextFire/m_ammo/m_target, probeigc.h:327-335).
     private double _nextFire;
     private short _ammo;
+    private bool _seenByAll;
+    private bool _terminated;
     private Model? _target;
     private readonly Random _rng = new();
+
+    public Mission? OwnerMission => Mission;
 
     private Mission? Mission => _sector.Mission ?? (Launcher as Ship)?.Mission;
 
@@ -52,7 +56,8 @@ public sealed class Probe : Model, IProbeIgc
         Vector3 position,
         double now,
         short? sideId,
-        Model? launcher = null)
+        Model? launcher = null,
+        double? createdAt = null)
         : base(id, position)
     {
         _sector = sector ?? throw new ArgumentNullException(nameof(sector));
@@ -73,10 +78,11 @@ public sealed class Probe : Model, IProbeIgc
         _nextFire = now + (((probeType.EabmCapabilities & c_eabmQuickReady) != 0) ? 5.0 : 30.0);
         // A probe sits at rest until expiry — matching CprobeIGC::Initialize
         // (probeigc.cpp:115,142) and the Mine port's own no-movement premise.
-        InitClock(now);
-        // Zero-delay activation happens during initialization, not on a
-        // later update (probeigc.cpp:151-154).
-        if (probeType.DtRipcord == 0)
+        double creationTime = createdAt ?? now;
+        InitClock(creationTime);
+        // An imported/backdated probe may already be active when created
+        // (probeigc.cpp:151-154); zero delay is the ordinary deployment case.
+        if (probeType.DtRipcord >= 0 && creationTime - now >= probeType.DtRipcord)
             Mission?.Site.ActivateTeleportProbe(this);
     }
 
@@ -487,9 +493,7 @@ public sealed class Probe : Model, IProbeIgc
 
         if (acquired)
         {
-            // Native's m_bSeenByAll cross-side reveal on first shot
-            // (probeigc.cpp:444-465) is deliberately NOT ported — probe
-            // visibility rules are out of scope (P491 brief; P454 likewise).
+            RevealOnFiring();
 
             // Aim the barrel at the lead direction and orient (probeigc.cpp:468-470).
             var o = Orientation;
@@ -571,6 +575,40 @@ public sealed class Probe : Model, IProbeIgc
         }
     }
 
+    // Igc/probeigc.cpp:444-465: retry on subsequent shots until every side
+    // already knows the probe or has a scanner in this cluster. Range and LOS
+    // do not participate in this firing reveal.
+    private void RevealOnFiring()
+    {
+        if (_seenByAll || Mission is not { } mission) return;
+        _seenByAll = true;
+        foreach (var side in mission.Sides)
+        {
+            if (SeenBySide(side.Id))
+            {
+                SideVisibility.RetainPredictableToSide(side.Id);
+                continue;
+            }
+            // Native clusterIGC.h:145-148 excludes boarded ships; docked
+            // ships have no cluster (shipIGC.h:448-470). Managed docked ships
+            // can remain in Models for bookkeeping, so test that state here.
+            bool hasScanner = _sector.Models.Any(m => m is Ship { StationId: null, ParentShip: null } s && s.SideId == side.Id ||
+                m is Probe p && p.SideId == side.Id) || _sector.StationRuntimes.Any(s => s.SideId == side.Id);
+            if (hasScanner || (mission.AllowAlliedViz && IsFriendlySide(side.Id)))
+                SideVisibility.RevealPredictableToSide(side.Id);
+            else _seenByAll = false;
+        }
+    }
+
+    // Called by the owning sector's removal operation, including manual
+    // removal, expiry, damage and ammo exhaustion (probeigc.cpp:222-245).
+    internal void OnRemoved()
+    {
+        if (_terminated) return;
+        _terminated = true;
+        if (ProbeType.DtRipcord >= 0) Mission?.Site.DestroyTeleportProbe(this);
+    }
+
     private bool SameSector(Model target) => target switch
     {
         Ship ship => ReferenceEquals(ship.Sector, _sector),
@@ -646,6 +684,7 @@ public sealed class Probe : Model, IProbeIgc
     /// <summary>Native Igc/probeigc.cpp:333-352.</summary>
     protected override void OnUpdate(double now, double dt)
     {
+        if (_terminated) return;
         if (now >= _timeExpire)
         {
             _sector.Remove(this);

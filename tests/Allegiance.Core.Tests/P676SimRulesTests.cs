@@ -93,7 +93,7 @@ public sealed class P676SimRulesTests
     [InlineData(Ship.PilotTypeMiner, 1000f, false)] [InlineData(Ship.PilotTypeWingman, 2500f, false)]
     public void Repair_mine_decision_checks_pilot_distance_amount_and_load_time(byte pilot, float distance, bool deploy)
     {
-        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s, -10);
+        Require.Artwork(); var m = Domain(new Allegiance.Server.ServerHost()); var s = Place(m); Gun(s, -10);
         var target = Place(m, 101, z: -500); target.SetFraction(0.5f); s.SetRepairOrder(target); s.WingmanBehaviour = 4;
         Place(m, 102, 1, x: distance, pilot: pilot);
         var type = m.Core.MineTypes.Values.First();

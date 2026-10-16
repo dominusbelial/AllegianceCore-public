@@ -60,7 +60,7 @@ public readonly record struct DataPartTypeIGC(
     short SuccessorPartId,
     short PartMask,
     string InventoryLineMdl,
-    DataPartTypeIGC.Subtype Type)
+    DataPartTypeIGC.Subtype Type) : Sim.IPartTypeIgc
 {
     /// <summary>Base payload size before the subtype tail: <c>sizeof(DataPartTypeIGC)</c>.</summary>
     public const int Size = 396;

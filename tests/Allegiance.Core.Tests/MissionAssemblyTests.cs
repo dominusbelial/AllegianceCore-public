@@ -154,10 +154,13 @@ public class MissionAssemblyTests
         var mission = Mission.Assemble(core, map, TwoSides(), rec);
         Assert.Same(rec, mission.Site);
 
-        // Static assembly performs no host callbacks (the C++ only calls back
-        // during runtime object construction, modelIGC.cpp:117), so a
-        // RecordingIgcSite observes zero calls here. It must not invent one.
-        Assert.Empty(rec.Calls);
+        // Runtime stations now notify after registration, as native
+        // stationIGC.cpp:65-75 requires; building-tech events precede each
+        // station event only when the side's union actually changes.
+        Assert.Equal(mission.Sectors.Sum(s => s.StationRuntimes.Count),
+            rec.Calls.Count(c => c.StartsWith("StationTypeChange(")));
+        Assert.All(rec.Calls, c => Assert.True(c.StartsWith("StationTypeChange(")
+            || c.StartsWith("SideBuildingTechChange(")));
 
         // A mission with no site cannot tick — assembling without one fails loudly.
         Assert.Throws<ArgumentNullException>(() => Mission.Assemble(core, map, TwoSides(), null!));
