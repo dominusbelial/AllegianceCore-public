@@ -36,6 +36,18 @@ public sealed class P699bPodTelemetryTests
         pod.Position = home.Center; tracker.Sample(10);
         var result = tracker.End(pod, 12, outcome)!;
         Assert.Equal(outcome, result.Outcome);
+        Assert.Equal((short)444, result.PodHull);
+        Assert.Equal(pod.HullType.HabmCapabilities, result.PodCapabilities);
+        Assert.Equal(home.Type.StationTypeId, result.StationType);
+        Assert.Equal(home.Type.ModelName, result.StationModel);
+        Assert.Equal(home.Radius, result.StationRadius);
+        Assert.Equal(new float[] { home.Center.X, home.Center.Y, home.Center.Z }, result.StationPosition);
+        Assert.Equal(new float[] { 0, 0, -1 }, result.StationForward);
+        Assert.Equal(new float[] { 0, 1, 0 }, result.StationUp);
+        Assert.Equal(new float[] { 0, 0, 0 }, result.EndVelocity);
+        Assert.Equal(new float[] { 0, 0, -1 }, result.EndForward);
+        Assert.Equal(new float[] { 0, 1, 0 }, result.EndUp);
+        Assert.Equal(new float[] { 0, 0, 0 }, result.EndTurnRates);
         Assert.Equal(300, result.OxygenAllowance);
         Assert.Equal(5, result.HomeAt); Assert.Equal(10, result.RadiusAt); Assert.Null(result.BayAt);
         Assert.Equal(2, result.WaitedAtBay);

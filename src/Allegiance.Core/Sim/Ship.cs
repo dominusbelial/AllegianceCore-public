@@ -5265,6 +5265,7 @@ public sealed class Ship : Model, IShipIgc
         if (StationId is not null) return;
         if (!IsNpc && GotoWaypoint is null) return;          // real player Controls are wire-only (P155) — UNLESS a player-issued goto is active (P403)
         if (Sector is not { } sector) return;
+        StateM &= ~ShipControlState.MoveButtonsMask; // recompute this frame's docking RCS
 
         // P652b: an arrived miner holds its stopped mining position before
         // travel avoidance. Native mining controls precede generic movement
@@ -5376,7 +5377,7 @@ public sealed class Ship : Model, IShipIgc
                 // station has bays of this hull's class the dock-steer owns the
                 // tick (return); otherwise we fall through to the plain
                 // centre/goto — the native no-bay "power glide in".
-                if (TryDockApproach(st, sector))
+                if (TryDockApproach(st, sector, (float)(now - LastUpdate)))
                     return;
                 goal = new Vector3(sp[0], sp[1], sp[2]);      // same-cluster gate (Sector.cs:33) — direct flight
                 goalIsWarp = false;
@@ -5579,7 +5580,7 @@ public sealed class Ship : Model, IShipIgc
     /// the same source the server's <c>InGarage</c> dock test consumes — so the
     /// approach physically enters the bay the gate checks.</para>
     /// </summary>
-    private bool TryDockApproach(DataStationIGC station, in Sector sector)
+    private bool TryDockApproach(DataStationIGC station, in Sector sector, float dt)
     {
         if (sector.StationLandingBays is not { } cache) return false;
 
@@ -5629,7 +5630,9 @@ public sealed class Ship : Model, IShipIgc
 
         Controls = DockApproach.Steer(
             step, Position, Orientation, Velocity, distanceRest,
-            maxTurnRateRoll: EffectiveMaxTurnRate(ControlData.AxisRoll));
+            dt: Math.Max(dt, .001f), maxTurnRateRoll: EffectiveMaxTurnRate(ControlData.AxisRoll), turnState: DockApproach.TurnState.FromShip(this));
+        StateM = (StateM & ~ShipControlState.MoveButtonsMask) | DockApproach.MovementButtons(
+            step, Position, Orientation, Velocity, DockApproach.TurnState.FromShip(this));
         return true;
     }
 
@@ -6848,8 +6851,9 @@ public sealed class Ship : Model, IShipIgc
     /// Time, rather than centre distance, includes radius and relative velocity.</summary>
     private void UpdateWingmanCombat(float dt)
     {
-        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire | ShipControlState.MoveButtonsMask);
+        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire);
         if (AttackTarget is not { } target) return;
+        StateM &= ~ShipControlState.MoveButtonsMask;
         if (target.Dead || target.StationId is not null || target.Sector != Sector ||
             SideId is null || target.SideId is null || IsFriendlySide(target.SideId))
         {

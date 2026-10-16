@@ -355,8 +355,8 @@ public sealed class P540bPodAutopilotCrossSectorLiveTests
             {
                 // P699: fly the real Game1 autopilot, including its bay entry;
                 // steering only at the center hid oxygen respawns as "docks".
-                var controls = P699HumanPodHomeLiveTests.AutopilotControls(pilot);
-                sim.Step(0.049f, controls, 0);
+                var controls = P699HumanPodHomeLiveTests.AutopilotControls(pilot, .049f);
+                sim.Step(0.049f, controls, P699HumanPodHomeLiveTests.AutopilotMovement(pilot));
 
                 // Send a native SHIP_UPDATE pose (real cadence; clock-tracked server time).
                 if (localT - lastPing >= 0.5) { victim.SendPing(); lastPing = localT; }
@@ -365,7 +365,7 @@ public sealed class P540bPodAutopilotCrossSectorLiveTests
                 {
                     uint t = clock.ServerTimeMs(Environment.TickCount64);
                     var payload = ClientShipUpdate.FromPose(t, sim.Position, sim.Velocity, sim.Orientation,
-                        0, controls, sim.TurnRates, sim.Power);
+                        P699HumanPodHomeLiveTests.AutopilotMovement(pilot), controls, sim.TurnRates, sim.Power);
                     victim.SendShipPose(t, cookie, payload);
                 }
             }

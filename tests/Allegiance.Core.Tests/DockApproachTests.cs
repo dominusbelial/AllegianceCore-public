@@ -77,6 +77,18 @@ public class DockApproachTests
         Assert.Equal(-180f, step.Facing.Z, 3);
     }
 
+    [Theory]
+    [InlineData(.02f, 0f)]
+    [InlineData(0f, -.02f)]
+    public void Aligned_but_turning_waits_before_entering(float yaw, float pitch)
+    {
+        var ship = new Vector3(0, 0, 200);
+        var step = DockApproach.DockStation(ship, Vector3.Zero, Orientation.Identity,
+            Vector3.Zero, new[] { BayZPlus }, 1, 0, ship, R, yaw, pitch, false);
+        Assert.True(step.IsPivot());
+        Assert.False(step.IsEnter());
+    }
+
     /// <summary>
     /// <b>Native staging point (drift branch).</b> When the rest position is far
     /// from the approach line (error² &gt; 36), native stages on the approach line:
@@ -202,13 +214,15 @@ public class DockApproachTests
         Assert.NotEqual(0f, ctrlRolled.Roll);
     }
 
-    /// <summary>Power-glide steering = full forward at the centre (Fast).</summary>
+    /// <summary>Aligned power glide enables full forward throttle toward the
+    /// centre (Fast); native common.cpp:2231-2235 gates thrust on facing.</summary>
     [Fact]
     public void Power_glide_steers_full_forward_at_the_centre()
     {
         var step = DockApproach.PowerGlide(new Vector3(10f, 20f, 30f));
         Assert.True(step.IsFast());
-        var ctrl = DockApproach.Steer(step, Vector3.Zero, Orientation.Identity, Vector3.Zero, distanceRest: 0f);
+        var orientation = new Orientation(); orientation.Set(step.Goal.Normalize());
+        var ctrl = DockApproach.Steer(step, Vector3.Zero, orientation, Vector3.Zero, distanceRest: 0f);
         Assert.True(ctrl.Throttle > 0.9f);
     }
 }

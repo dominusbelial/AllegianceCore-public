@@ -1,0 +1,69 @@
+[
+  {
+    "project": "Core",
+    "filter": "(unfiltered)",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792117993.4295895,
+    "finished": 1792118041.2285004,
+    "seconds": 47.8,
+    "log": "/tmp/p699c-validation/final-suites-000-Core.log",
+    "trx": "final-suites-000-Core.trx.gz",
+    "passed": 3590,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+        "error": "Absolute private-home path(s) found in tracked source files:\ntools/hud-gauge-proof/GaugeHarness.cs\ntools/hud-polish-proof/HUDPolishHarness.cs"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792118041.2327006,
+    "finished": 1792118737.6938062,
+    "seconds": 696.46,
+    "log": "/tmp/p699c-validation/final-suites-001-ClientCore.log",
+    "trx": "final-suites-001-ClientCore.trx.gz",
+    "passed": 1061,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792118737.6967154,
+    "finished": 1792119673.273245,
+    "seconds": 935.58,
+    "log": "/tmp/p699c-validation/final-suites-002-ClientCore.MonoGame.log",
+    "trx": "final-suites-002-ClientCore.MonoGame.trx.gz",
+    "passed": 2233,
+    "failed": [],
+    "skipped": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+    ]
+  },
+  {
+    "project": "Lobby",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792119673.2756226,
+    "finished": 1792119674.511165,
+    "seconds": 1.24,
+    "log": "/tmp/p699c-validation/final-suites-003-Lobby.log",
+    "trx": "final-suites-003-Lobby.trx.gz",
+    "passed": 19,
+    "failed": [],
+    "skipped": []
+  }
+]

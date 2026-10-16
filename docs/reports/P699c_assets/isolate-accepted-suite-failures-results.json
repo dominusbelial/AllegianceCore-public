@@ -1,0 +1,44 @@
+[
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792132294.8090138,
+    "finished": 1792132297.0040455,
+    "seconds": 2.2,
+    "log": "/tmp/p699c-verified-validation/isolate-accepted-suite-failures-000-isolate-1.log",
+    "trx": "isolate-accepted-suite-failures-000-isolate-1.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792132297.0041943,
+    "finished": 1792132299.164907,
+    "seconds": 2.16,
+    "log": "/tmp/p699c-verified-validation/isolate-accepted-suite-failures-001-isolate-2.log",
+    "trx": "isolate-accepted-suite-failures-001-isolate-2.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792132299.1651065,
+    "finished": 1792132301.3504379,
+    "seconds": 2.19,
+    "log": "/tmp/p699c-verified-validation/isolate-accepted-suite-failures-002-isolate-3.log",
+    "trx": "isolate-accepted-suite-failures-002-isolate-3.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "project": "Core",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792125838.9970927,
+    "finished": 1792126626.5959918,
+    "seconds": 787.6,
+    "log": "/tmp/p699c-verified-validation/accepted-suites-000-Core.log",
+    "trx": "accepted-suites-000-Core.trx.gz",
+    "passed": 4660,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792126626.6027417,
+    "finished": 1792127324.7663126,
+    "seconds": 698.16,
+    "log": "/tmp/p699c-verified-validation/accepted-suites-001-ClientCore.log",
+    "trx": "accepted-suites-001-ClientCore.trx.gz",
+    "passed": 1061,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792127324.7690692,
+    "finished": 1792128260.7906759,
+    "seconds": 936.02,
+    "log": "/tmp/p699c-verified-validation/accepted-suites-002-ClientCore.MonoGame.log",
+    "trx": "accepted-suites-002-ClientCore.MonoGame.trx.gz",
+    "passed": 2233,
+    "failed": [],
+    "skipped": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+    ]
+  },
+  {
+    "project": "Lobby",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792128260.7929132,
+    "finished": 1792128261.8097155,
+    "seconds": 1.02,
+    "log": "/tmp/p699c-verified-validation/accepted-suites-003-Lobby.log",
+    "trx": "accepted-suites-003-Lobby.trx.gz",
+    "passed": 19,
+    "failed": [],
+    "skipped": []
+  }
+]

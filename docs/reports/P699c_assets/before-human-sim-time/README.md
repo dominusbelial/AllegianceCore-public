@@ -1,0 +1,1 @@
+Historical complete passing validation before the human turn horizon was corrected to simulation seconds and the accelerated human docking test gained a 50% time-dilation case. These results are superseded by the root accepted-* artifacts. Ledger TRX paths are relative to this directory.

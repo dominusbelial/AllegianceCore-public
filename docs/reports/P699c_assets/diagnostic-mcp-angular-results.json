@@ -1,0 +1,83 @@
+[
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792123955.95248,
+    "finished": 1792124083.1985278,
+    "seconds": 127.25,
+    "log": "/tmp/p699c-verified-validation/accepted-focused-159-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-1.log",
+    "trx": "diagnostic-mcp-angular-1.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(side: 0)",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+        "error": "Assert.DoesNotContain() Failure: Filter matched in collection\n                                                                                                                           \u2193 (pos 1)\nCollection: [KillShip { BDeathCredit = False, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }, KillShip { BDeathCredit = True, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }]"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(side: 1)",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+        "error": "Assert.DoesNotContain() Failure: Filter matched in collection\n                                                                                                                           \u2193 (pos 1)\nCollection: [KillShip { BDeathCredit = False, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }, KillShip { BDeathCredit = True, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }]"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792124083.1991713,
+    "finished": 1792124209.8898542,
+    "seconds": 126.69,
+    "log": "/tmp/p699c-verified-validation/accepted-focused-160-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-2.log",
+    "trx": "diagnostic-mcp-angular-2.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(side: 1)",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+        "error": "Assert.DoesNotContain() Failure: Filter matched in collection\n                                                                                                                           \u2193 (pos 1)\nCollection: [KillShip { BDeathCredit = False, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }, KillShip { BDeathCredit = True, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }]"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(side: 0)",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+        "error": "Assert.DoesNotContain() Failure: Filter matched in collection\n                                                                                                                           \u2193 (pos 1)\nCollection: [KillShip { BDeathCredit = False, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }, KillShip { BDeathCredit = True, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }]"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792124209.890577,
+    "finished": 1792124337.3688178,
+    "seconds": 127.48,
+    "log": "/tmp/p699c-verified-validation/accepted-focused-161-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-3.log",
+    "trx": "diagnostic-mcp-angular-3.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(side: 1)",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+        "error": "Assert.DoesNotContain() Failure: Filter matched in collection\n                                                                                                                           \u2193 (pos 1)\nCollection: [KillShip { BDeathCredit = False, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }, KillShip { BDeathCredit = True, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }]"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(side: 0)",
+        "outcome": "Failed",
+        "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+        "error": "Assert.DoesNotContain() Failure: Filter matched in collection\n                                                                                                                           \u2193 (pos 1)\nCollection: [KillShip { BDeathCredit = False, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }, KillShip { BDeathCredit = True, BKillCredit = False, IdCredit = -1, ShipId = 8097, SideIdKiller = -1, \u00b7\u00b7\u00b7 }]"
+      }
+    ],
+    "skipped": []
+  }
+]

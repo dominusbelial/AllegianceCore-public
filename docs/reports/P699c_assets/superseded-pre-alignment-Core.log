@@ -1,0 +1,32 @@
+Test run for /home/domingo/allegiance-codex-p699c/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:32.64]     Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic [FAIL]
+  Failed Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic [31 s]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   2
+  Stack Trace:
+     at Allegiance.Core.Tests.P699bPodLoadTests.Run(Boolean rescueTraffic) in /home/domingo/allegiance-codex-p699c/tests/Allegiance.Core.Tests/P699bPodLoadTests.cs:line 155
+   at Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic() in /home/domingo/allegiance-codex-p699c/tests/Allegiance.Core.Tests/P699bPodLoadTests.cs:line 18
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Standard Output Messages:
+ FAILED ship=20023 outcome=oxygen route=1052,1059,1050 homeAt=77.99999999999771 radiusAt= endPosition=1414.5658,1883.6466,-5.5693116 seconds=300.00000000003394
+ FAILED ship=20037 outcome=oxygen route=1052,1059,1050 homeAt=117.94999999999544 radiusAt= endPosition=1421.3501,1882.7598,0.6093514 seconds=300.00000000004314
+ baseline=False rescueTraffic=True docked=164 rescued=34 total=198/200 oxygen=2 other=0 homeReached=170 launchTraffic=112 median=213.40 p95=275.10 bays=1:3303,0:1053
+
+
+[xUnit.net 00:01:27.32]     Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: Pool) [FAIL]
+  Failed Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: Pool) [2 ms]
+  Error Message:
+   System.Threading.ThreadStateException : Thread has not been started.
+  Stack Trace:
+     at System.Threading.Thread.<Join>g____PInvoke|56_0(ObjectHandleOnStack __thread_native, Int32 __millisecondsTimeout_native)
+   at System.Threading.Thread.<Join>g____PInvoke|56_0(ObjectHandleOnStack __thread_native, Int32 __millisecondsTimeout_native)
+   at System.Threading.Thread.Join(Int32 millisecondsTimeout)
+   at Allegiance.Core.Transport.TcpTransport.Shutdown() in /home/domingo/allegiance-codex-p699c/src/Allegiance.Core/Transport/TcpTransport.cs:line 533
+   at Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(TransportMode mode) in /home/domingo/allegiance-codex-p699c/tests/Allegiance.Core.Tests/Transport/P670SendStallTests.cs:line 151
+   at Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(TransportMode mode)
+   at InvokeStub_P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(Object, Span`1)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)

@@ -1,0 +1,69 @@
+[
+  {
+    "Ship": 20075,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 119.99999999999532,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 119.99999999999532
+      },
+      {
+        "Sector": 1059,
+        "At": 128.29999999999492
+      },
+      {
+        "Sector": 1050,
+        "At": 197.95000000001076
+      }
+    ],
+    "HomeAt": 197.95000000001076,
+    "RadiusAt": null,
+    "BayAt": null,
+    "ApproachAt": 261.45000000002517,
+    "EndAt": 420.0000000000612,
+    "EndSector": 1050,
+    "EndPosition": [
+      1413.1642,
+      1877.825,
+      -2.3980446
+    ],
+    "Seconds": 300.0000000000659,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 158.55000000003605,
+    "PodHull": 444,
+    "PodCapabilities": 164,
+    "StationType": 115,
+    "StationModel": "ss27",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -12.334151,
+      9.600494,
+      -13.038739
+    ],
+    "EndForward": [
+      -0.716708,
+      0.6720835,
+      0.18610094
+    ]
+  }
+]

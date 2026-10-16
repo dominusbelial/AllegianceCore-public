@@ -1,0 +1,892 @@
+{
+  "affected_methods": 67,
+  "isolated_invocations": 201,
+  "isolated_data_cases": 315,
+  "final_build": {
+    "exit": 0,
+    "started": 1792128382.7478173,
+    "finished": 1792128385.5246277,
+    "command": "dotnet build AllegianceCore.slnx --nologo"
+  },
+  "suites": [
+    {
+      "project": "Core",
+      "passed": 4660,
+      "failed": [],
+      "skipped": [],
+      "seconds": 766.04
+    },
+    {
+      "project": "ClientCore",
+      "passed": 1060,
+      "failed": [
+        {
+          "name": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors",
+          "outcome": "Failed",
+          "method": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors",
+          "error": "Assert.NotSame() Failure: Values are the same instance"
+        }
+      ],
+      "skipped": [],
+      "seconds": 697.27
+    },
+    {
+      "project": "ClientCore.MonoGame",
+      "passed": 2234,
+      "failed": [],
+      "skipped": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before"
+      ],
+      "seconds": 958.44
+    },
+    {
+      "project": "Lobby",
+      "passed": 19,
+      "failed": [],
+      "skipped": [],
+      "seconds": 1.02
+    }
+  ],
+  "suite_failures_passing_three_isolated_retries": [
+    [
+      "ClientCore",
+      "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors"
+    ]
+  ],
+  "artifacts": [
+    {
+      "file": "accepted-focused-000-P699cStationCorpusTests-Npc_docking_thrusters_survive_idle_combat_and_clear_on_next_order-1.trx.gz",
+      "sha256": "b163c3165fa6fde5a293ea85e74b9d5bb978fe169a087bb418a7fdb7daf908c8"
+    },
+    {
+      "file": "accepted-focused-001-P699cStationCorpusTests-Npc_docking_thrusters_survive_idle_combat_and_clear_on_next_order-2.trx.gz",
+      "sha256": "475b439a5f0622bdb279ed77f9a517b0839e4c1f87034717d69a3c2c69238a3f"
+    },
+    {
+      "file": "accepted-focused-002-P699cStationCorpusTests-Npc_docking_thrusters_survive_idle_combat_and_clear_on_next_order-3.trx.gz",
+      "sha256": "59d8a28949f2b297be960e2829064f810710bc5ca2d94ec54ed1312fe5f9d98c"
+    },
+    {
+      "file": "accepted-focused-003-P699cStationCorpusTests-Native_turn_controller_brakes_current_angular_motion-1.trx.gz",
+      "sha256": "95e4e8b57bf139b2ca7667b162240c99833a6559dc58ad0b81d39c8e6650820a"
+    },
+    {
+      "file": "accepted-focused-004-P699cStationCorpusTests-Native_turn_controller_brakes_current_angular_motion-2.trx.gz",
+      "sha256": "426f008cf08d0b07208b39926b58613ec198317e6d4281bf9c586fc71e7f9695"
+    },
+    {
+      "file": "accepted-focused-005-P699cStationCorpusTests-Native_turn_controller_brakes_current_angular_motion-3.trx.gz",
+      "sha256": "28f4603a7e7cf08171c538713e9ad0502d9ff64540a1e42267e886ef751c15f7"
+    },
+    {
+      "file": "accepted-focused-006-P699cStationCorpusTests-Rearward_goal_uses_native_full_yaw_instead_of_remaining_motionless-1.trx.gz",
+      "sha256": "a535ff70674a3eb51adfe46cce419718bf3e82411ffb47398e8138a95edfb3cc"
+    },
+    {
+      "file": "accepted-focused-007-P699cStationCorpusTests-Rearward_goal_uses_native_full_yaw_instead_of_remaining_motionless-2.trx.gz",
+      "sha256": "0e395bec8da6c6350e73a91eb8d8391e71718a092f64772e3f78dd0782665882"
+    },
+    {
+      "file": "accepted-focused-008-P699cStationCorpusTests-Rearward_goal_uses_native_full_yaw_instead_of_remaining_motionless-3.trx.gz",
+      "sha256": "91745da0cf6ce8fd23afb10191c40b53b593504beb7567741d18b5dea8e3491c"
+    },
+    {
+      "file": "accepted-focused-009-P699cStationCorpusTests-Seek_kills_forward_throttle_until_within_native_turn_angle-1.trx.gz",
+      "sha256": "3997498989a62cb458663b27a401e623c02c6f9811f9af2dd6f042ed968124c5"
+    },
+    {
+      "file": "accepted-focused-010-P699cStationCorpusTests-Seek_kills_forward_throttle_until_within_native_turn_angle-2.trx.gz",
+      "sha256": "b8e95c475878389736910148e4a9b19f9e517af608f31917092295796aefa571"
+    },
+    {
+      "file": "accepted-focused-011-P699cStationCorpusTests-Seek_kills_forward_throttle_until_within_native_turn_angle-3.trx.gz",
+      "sha256": "34d44b3142a2c16e92b4dcaf17652edb54d74a87d03a6cfe28a9c7aed94e5f95"
+    },
+    {
+      "file": "accepted-focused-012-P699cStationCorpusTests-Native_wide_angle_seek_uses_dominant_axis_thrusters-1.trx.gz",
+      "sha256": "c282c795c5faf0cd2d9e4e5f66a396336cc05ac17add5e7da38a3e857287c88b"
+    },
+    {
+      "file": "accepted-focused-013-P699cStationCorpusTests-Native_wide_angle_seek_uses_dominant_axis_thrusters-2.trx.gz",
+      "sha256": "2f795c96f09daab3e24abc512e4fd57233a4304ae6548090fe4e40dfe7c03961"
+    },
+    {
+      "file": "accepted-focused-014-P699cStationCorpusTests-Native_wide_angle_seek_uses_dominant_axis_thrusters-3.trx.gz",
+      "sha256": "c318de057f9f9133157d0ad8eabc0a4f99ef78f2319eaa57d7b36d109b4137fb"
+    },
+    {
+      "file": "accepted-focused-015-P699cStationCorpusTests-Garage_uses_oriented_native_vertices_and_requires_every_subhull_inside-1.trx.gz",
+      "sha256": "3f8f20dec042e1c56dce43ba5fe3049bf69123c0e83d6a941fcc1dd83f55a09d"
+    },
+    {
+      "file": "accepted-focused-016-P699cStationCorpusTests-Garage_uses_oriented_native_vertices_and_requires_every_subhull_inside-2.trx.gz",
+      "sha256": "509348737c0ccf48c502b3b0d4c5eceea1c0cb3b9d85c0ee455932e88ef4b0bc"
+    },
+    {
+      "file": "accepted-focused-017-P699cStationCorpusTests-Garage_uses_oriented_native_vertices_and_requires_every_subhull_inside-3.trx.gz",
+      "sha256": "11c09d1ed0ad5a037cf27d469f99fe68bd23b4e287312ac416c6dbb203a8b113"
+    },
+    {
+      "file": "accepted-focused-018-P699cStationCorpusTests-Every_dockable_station_slot_admits_all_ten_native_pods_and_civilization_fighters-1.trx.gz",
+      "sha256": "d91c559b15c3e465de2a7bbeaa2db1e27c122972ab1cbd472840f7ed032a3a70"
+    },
+    {
+      "file": "accepted-focused-019-P699cStationCorpusTests-Every_dockable_station_slot_admits_all_ten_native_pods_and_civilization_fighters-2.trx.gz",
+      "sha256": "127934fa0cd0797ad501221087c792f0b49b3edeeebd1d53565fff1589e2fb24"
+    },
+    {
+      "file": "accepted-focused-020-P699cStationCorpusTests-Every_dockable_station_slot_admits_all_ten_native_pods_and_civilization_fighters-3.trx.gz",
+      "sha256": "7d5270d0e82ca249f924c19d3aea464db1d7710f231664568af33d0240c7d72d"
+    },
+    {
+      "file": "accepted-focused-021-P699cStationCorpusTests-Pod_recovers_from_the_recorded_staging_orbit_neighborhood-1.trx.gz",
+      "sha256": "4310b41a0ee5fe9a2b81e8a3af8d32e8175c8335ba5624308b40c131e1f379ec"
+    },
+    {
+      "file": "accepted-focused-022-P699cStationCorpusTests-Pod_recovers_from_the_recorded_staging_orbit_neighborhood-2.trx.gz",
+      "sha256": "4a9a76229b58be0864452b6f894c3eb84e5ba006f90f74438522882142727aa9"
+    },
+    {
+      "file": "accepted-focused-023-P699cStationCorpusTests-Pod_recovers_from_the_recorded_staging_orbit_neighborhood-3.trx.gz",
+      "sha256": "80d4ddf8e715c59a430f98cd2386ff15b1af12aba738f3872d8ef8a819502f89"
+    },
+    {
+      "file": "accepted-focused-024-DockDockingTests-Docked_message_round_trips-1.trx.gz",
+      "sha256": "e69e2b4796f44689d7ff555973f0d3b848ebb66d9915d991acb279c5d60bb77a"
+    },
+    {
+      "file": "accepted-focused-025-DockDockingTests-Docked_message_round_trips-2.trx.gz",
+      "sha256": "a5639093751d92c8dd99d74c5f3f8061d1a390afce8f3096f7cd8705a761d43b"
+    },
+    {
+      "file": "accepted-focused-026-DockDockingTests-Docked_message_round_trips-3.trx.gz",
+      "sha256": "0f7ffa76416e2f4680977469d97f02dfeb03ec057d4c51b5f8a0a3e84bfe9085"
+    },
+    {
+      "file": "accepted-focused-027-DockDockingTests-Docked_message_emits_exact_declared_bytes-1.trx.gz",
+      "sha256": "0bc430902e9554882708333ade75488292e7827d23a10efdc0b6094eff90653d"
+    },
+    {
+      "file": "accepted-focused-028-DockDockingTests-Docked_message_emits_exact_declared_bytes-2.trx.gz",
+      "sha256": "3ef45713310e42a90dbe5f5bd3a0c2b26a9d6a7b82e1a469303f9153c2f17738"
+    },
+    {
+      "file": "accepted-focused-029-DockDockingTests-Docked_message_emits_exact_declared_bytes-3.trx.gz",
+      "sha256": "ca7438f1ef08cec8684cff911f643ff96b07e9380d561a798a8bdcef8f8ef234"
+    },
+    {
+      "file": "accepted-focused-030-DockDockingTests-DockedNotify_message_round_trips-1.trx.gz",
+      "sha256": "c446a18808979068c37965f86dc07af89915f1e988daf5ce3cfadfdd223ad87f"
+    },
+    {
+      "file": "accepted-focused-031-DockDockingTests-DockedNotify_message_round_trips-2.trx.gz",
+      "sha256": "69ba7aa1eb902640f5a11ed0f656eabd18c36c6f390916cd991c28bb5289864d"
+    },
+    {
+      "file": "accepted-focused-032-DockDockingTests-DockedNotify_message_round_trips-3.trx.gz",
+      "sha256": "c90be653e0780352188d969df59bfabf491c915176841b0fbca2124eba19f5c4"
+    },
+    {
+      "file": "accepted-focused-033-DockDockingTests-DockedNotify_message_emits_exact_declared_bytes-1.trx.gz",
+      "sha256": "8f72ef4e671e8fc79dc6718e87f61f41de2583e48164ad1e7b72c4f867f863d8"
+    },
+    {
+      "file": "accepted-focused-034-DockDockingTests-DockedNotify_message_emits_exact_declared_bytes-2.trx.gz",
+      "sha256": "8a9506e921b4cc4cd10e9a0f4630f2db619ecfa291d872e18b8262392474fb6c"
+    },
+    {
+      "file": "accepted-focused-035-DockDockingTests-DockedNotify_message_emits_exact_declared_bytes-3.trx.gz",
+      "sha256": "7a68919a5b959a305155dc64aa1fac6a4559f496f0292597d1ab68a01da064ea"
+    },
+    {
+      "file": "accepted-focused-036-DockDockingTests-FriendlyDock_sets_StationId_and_StateDocked_then_Undock_clears-1.trx.gz",
+      "sha256": "1276dfa3741c457e200a009a1540356eea017271071f931117d73cd593fa89eb"
+    },
+    {
+      "file": "accepted-focused-037-DockDockingTests-FriendlyDock_sets_StationId_and_StateDocked_then_Undock_clears-2.trx.gz",
+      "sha256": "e77931d093322ca489bf16c84034d741056ef35f957ce5fd3e3a6dd467508cc5"
+    },
+    {
+      "file": "accepted-focused-038-DockDockingTests-FriendlyDock_sets_StationId_and_StateDocked_then_Undock_clears-3.trx.gz",
+      "sha256": "375a0159a37ccfa22e6461d78b5ba4fdf37f7e63ebca672713cad175abd9640b"
+    },
+    {
+      "file": "accepted-focused-039-DockDockingTests-FriendlyDock_sends_exactly_one_DockedNotify_per_event_with_correct_station-1.trx.gz",
+      "sha256": "c09ff5381f8198ed77690cb50e8ab3e120913f55f023890298816490c83dc28a"
+    },
+    {
+      "file": "accepted-focused-040-DockDockingTests-FriendlyDock_sends_exactly_one_DockedNotify_per_event_with_correct_station-2.trx.gz",
+      "sha256": "902ea6c4c3d50346aa888aa9c46b33356acf675bf79f2257c0d52f80ab96419a"
+    },
+    {
+      "file": "accepted-focused-041-DockDockingTests-FriendlyDock_sends_exactly_one_DockedNotify_per_event_with_correct_station-3.trx.gz",
+      "sha256": "552a095d8c5a1fa735296344eed81abe21a11406d0878e9636a66e65f4c6103c"
+    },
+    {
+      "file": "accepted-focused-042-DockDockingTests-HostileStation_in_radius_does_not_trigger_dock-1.trx.gz",
+      "sha256": "8d698627bb94ea3518b9dd211d7915a3d2669790d05996bb77912f960a005a80"
+    },
+    {
+      "file": "accepted-focused-043-DockDockingTests-HostileStation_in_radius_does_not_trigger_dock-2.trx.gz",
+      "sha256": "3961ba3898f3db71a256ba6257e5729bdc610176a720b3ff64742160045bfacf"
+    },
+    {
+      "file": "accepted-focused-044-DockDockingTests-HostileStation_in_radius_does_not_trigger_dock-3.trx.gz",
+      "sha256": "259e5a83b19a597fcf0eef7d7386f8ad8a38199c2d433ecfc96dd466fe4141d4"
+    },
+    {
+      "file": "accepted-focused-045-DockDockingTests-Ship_nowhere_near_a_station_is_unaffected-1.trx.gz",
+      "sha256": "b1d93609d501390406b6c35067bbe2aa6655f12e3f3b68847e39a7d366744a17"
+    },
+    {
+      "file": "accepted-focused-046-DockDockingTests-Ship_nowhere_near_a_station_is_unaffected-2.trx.gz",
+      "sha256": "18a7700c861697bbe067b4a93cc46ada4a959f7c69270c5449bb7c1d7d905c08"
+    },
+    {
+      "file": "accepted-focused-047-DockDockingTests-Ship_nowhere_near_a_station_is_unaffected-3.trx.gz",
+      "sha256": "c086dd126824e172e90f49cd5d18bade59218ce6474cb10e3854dd6c32a935e9"
+    },
+    {
+      "file": "accepted-focused-048-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-1.trx.gz",
+      "sha256": "7f80dda09f65c852df77f774d495bfbe537a74a6993f1da66e22b4f559769c48"
+    },
+    {
+      "file": "accepted-focused-049-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-2.trx.gz",
+      "sha256": "696145e49a3cd885b5252476cf585fc1f239863931569f743320589346a9528b"
+    },
+    {
+      "file": "accepted-focused-050-P699bPodLoadTests-Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic-3.trx.gz",
+      "sha256": "7d96390c04647214ffe9b1258c374555c636cacbaa6b3f412d8c920befc32cb8"
+    },
+    {
+      "file": "accepted-focused-051-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-1.trx.gz",
+      "sha256": "64f84084838b8c99e7896330338bc102f313ea908cec2522207e7a5b2fb50ad1"
+    },
+    {
+      "file": "accepted-focused-052-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-2.trx.gz",
+      "sha256": "248a733043c9b50467de84773825936e596f341fcb961073ccb5ef997f541bf2"
+    },
+    {
+      "file": "accepted-focused-053-P699bPodLoadTests-Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic-3.trx.gz",
+      "sha256": "f548c172909ab0e5540bfe85b7b27a261626b2059e2cac4f89d37154ff61bfdd"
+    },
+    {
+      "file": "accepted-focused-054-P699bPodLoadTests-Hundred_pods_in_one_bay_dock_in_one_tick_without_slot_occupancy-1.trx.gz",
+      "sha256": "c530c7e518625e6e093990a679e11df8338db4f7d0200b816087acae38bf9653"
+    },
+    {
+      "file": "accepted-focused-055-P699bPodLoadTests-Hundred_pods_in_one_bay_dock_in_one_tick_without_slot_occupancy-2.trx.gz",
+      "sha256": "5824dcd226d4803c1a4b79c524fbfb414323ab9e5874a5243b85848f35902723"
+    },
+    {
+      "file": "accepted-focused-056-P699bPodLoadTests-Hundred_pods_in_one_bay_dock_in_one_tick_without_slot_occupancy-3.trx.gz",
+      "sha256": "9daaffbcd3b98a45ffa48251e7d9dccd533b560bd7fd28c86b408ef977e28954"
+    },
+    {
+      "file": "accepted-focused-057-P699bPodNavigationTests-Equal_hop_routes_take_nearest_mouth_instead_of_lowest_sector_id-1.trx.gz",
+      "sha256": "5f9aec3a66ee825863634593c63c3b538ee5e8f1794abe8eb04fca8209de293b"
+    },
+    {
+      "file": "accepted-focused-058-P699bPodNavigationTests-Equal_hop_routes_take_nearest_mouth_instead_of_lowest_sector_id-2.trx.gz",
+      "sha256": "691e58d96c8101d875d8a97f5a1d81c2eb6e848f1579e6100a409e634ba44a5a"
+    },
+    {
+      "file": "accepted-focused-059-P699bPodNavigationTests-Equal_hop_routes_take_nearest_mouth_instead_of_lowest_sector_id-3.trx.gz",
+      "sha256": "b7270923bfc5366cec34c37bf9b143796579a1b4cd4eed72c7c0d9cba95d4536"
+    },
+    {
+      "file": "accepted-focused-060-P699bPodNavigationTests-A_short_three_jump_flight_beats_a_long_two_jump_sector_crossing-1.trx.gz",
+      "sha256": "12747bc389fdf6c633fb5b19bb2c52f22dd974be07e1049bbb712381e976eec9"
+    },
+    {
+      "file": "accepted-focused-061-P699bPodNavigationTests-A_short_three_jump_flight_beats_a_long_two_jump_sector_crossing-2.trx.gz",
+      "sha256": "66f3972122bf883d4759331d6c8696ac84cddab4e5446990ca6ed96d4389cff8"
+    },
+    {
+      "file": "accepted-focused-062-P699bPodNavigationTests-A_short_three_jump_flight_beats_a_long_two_jump_sector_crossing-3.trx.gz",
+      "sha256": "47fe7f0255e91614a7c18f53dbccafee92ab57e119162963612479ed96674d44"
+    },
+    {
+      "file": "accepted-focused-063-P699bPodNavigationTests-Stopping_distance_matches_integrated_native_drag_equation-1.trx.gz",
+      "sha256": "33fd33e44b918c85453bdae66864d15e6b23b989af398df1f7ae3cddca0328df"
+    },
+    {
+      "file": "accepted-focused-064-P699bPodNavigationTests-Stopping_distance_matches_integrated_native_drag_equation-2.trx.gz",
+      "sha256": "f32505853d709662dd6835bcaa8af8d67d10af8bdbdbe2b5410f71712e7757f8"
+    },
+    {
+      "file": "accepted-focused-065-P699bPodNavigationTests-Stopping_distance_matches_integrated_native_drag_equation-3.trx.gz",
+      "sha256": "23a9c3bea4f3c50983a5d29254abb9a044c58551e4985cca361679be0616dfda"
+    },
+    {
+      "file": "accepted-focused-066-P699bPodNavigationTests-Bay_ties_spread_without_overriding_the_nearest_approach_or_reserving_a_slot-1.trx.gz",
+      "sha256": "e6cc60acdcfe2acde16844f61df357a57564654d5f14c6e9bb53763b953c4d02"
+    },
+    {
+      "file": "accepted-focused-067-P699bPodNavigationTests-Bay_ties_spread_without_overriding_the_nearest_approach_or_reserving_a_slot-2.trx.gz",
+      "sha256": "30394dcf7b3964bc8980347313d6b6bb94c2ceec348d0b2d3f360ef01e55ac6c"
+    },
+    {
+      "file": "accepted-focused-068-P699bPodNavigationTests-Bay_ties_spread_without_overriding_the_nearest_approach_or_reserving_a_slot-3.trx.gz",
+      "sha256": "1c32787dc886fe76f02f5da42fb3e601afa3a40f54259e76c68cf4be571d32da"
+    },
+    {
+      "file": "accepted-focused-069-P699bPodTelemetryTests-Trip_keeps_authoritative_route_milestones_position_and_terminal_outcome-1.trx.gz",
+      "sha256": "d106c99b038c03fcba36e9618951917b25928566cd1e7db94b57eaa41287a461"
+    },
+    {
+      "file": "accepted-focused-070-P699bPodTelemetryTests-Trip_keeps_authoritative_route_milestones_position_and_terminal_outcome-2.trx.gz",
+      "sha256": "fd98ad361b1c4b06117988f62cf04d6ec103b9e29269c3db4e6a28b1f5a81e87"
+    },
+    {
+      "file": "accepted-focused-071-P699bPodTelemetryTests-Trip_keeps_authoritative_route_milestones_position_and_terminal_outcome-3.trx.gz",
+      "sha256": "ecef1bccb2ccaa526f21af755af1906b413959d0d88ed81bfdf800ec422eb078"
+    },
+    {
+      "file": "accepted-focused-072-DockApproachTests-No_bays_power_glides_at_the_centre-1.trx.gz",
+      "sha256": "f1e1cd48815e657b68f5cb03a3acb9a60baa7b9bce62a41f3e55f03d05e1d4d7"
+    },
+    {
+      "file": "accepted-focused-073-DockApproachTests-No_bays_power_glides_at_the_centre-2.trx.gz",
+      "sha256": "84874dbe8659c2bc1e1082136de1322b910ec20cd573d8ad9f1a6c49dea012a7"
+    },
+    {
+      "file": "accepted-focused-074-DockApproachTests-No_bays_power_glides_at_the_centre-3.trx.gz",
+      "sha256": "63b50aeabf671a8f75599cbb70ddcd1a3f0dcd38a9f43919e8a134c600c437ac"
+    },
+    {
+      "file": "accepted-focused-075-DockApproachTests-Aligned_not_turning_enters_with_roll_at_the_bay_centre-1.trx.gz",
+      "sha256": "9b2826037c82990bc33e1c04b0f61d466f9bcacd55d268475f03f015c9a831b6"
+    },
+    {
+      "file": "accepted-focused-076-DockApproachTests-Aligned_not_turning_enters_with_roll_at_the_bay_centre-2.trx.gz",
+      "sha256": "92070bf1ea981d27869a5fc0f8933bfb9c26a133d8296553fa94db9d80cedcd2"
+    },
+    {
+      "file": "accepted-focused-077-DockApproachTests-Aligned_not_turning_enters_with_roll_at_the_bay_centre-3.trx.gz",
+      "sha256": "77a8ce77c6777f29adff9d7ff9e0fa9953c83e497d5efef14a6d70dc0348d18b"
+    },
+    {
+      "file": "accepted-focused-078-DockApproachTests-Aligned_but_turning_waits_before_entering-1.trx.gz",
+      "sha256": "385a9193a47ed2e68b18b4cf08a6a0d59342390fe9958db08077fc954c16dae0"
+    },
+    {
+      "file": "accepted-focused-079-DockApproachTests-Aligned_but_turning_waits_before_entering-2.trx.gz",
+      "sha256": "48fd85ac2caeba025ee9852083eec98ffa5dcfc92ee51752da1f3fb707b7461e"
+    },
+    {
+      "file": "accepted-focused-080-DockApproachTests-Aligned_but_turning_waits_before_entering-3.trx.gz",
+      "sha256": "5d97089c229cde204f50b3bc33be6f0df12f4d2f6b84ef848896e5775615194d"
+    },
+    {
+      "file": "accepted-focused-081-DockApproachTests-Drift_stage_flies_at_the_native_staging_point-1.trx.gz",
+      "sha256": "33f1a0615f799ad5ca8e694690f9f3b69c522f6a2cc5dde82341edb63c3b3373"
+    },
+    {
+      "file": "accepted-focused-082-DockApproachTests-Drift_stage_flies_at_the_native_staging_point-2.trx.gz",
+      "sha256": "556359c4e612036f7110466b552f1be28b49f17f8ccf602975713d3b8228a4b1"
+    },
+    {
+      "file": "accepted-focused-083-DockApproachTests-Drift_stage_flies_at_the_native_staging_point-3.trx.gz",
+      "sha256": "5ccef80b6bcc03597dd35067489baa898f1542e7235d600ece24b3c0441650e5"
+    },
+    {
+      "file": "accepted-focused-084-DockApproachTests-Misaligned_on_the_line_pivots_to_face_the_bay-1.trx.gz",
+      "sha256": "96cb73265955079c995c027a5c798053e785075f44f90f2afdcbfbbb04edbbbb"
+    },
+    {
+      "file": "accepted-focused-085-DockApproachTests-Misaligned_on_the_line_pivots_to_face_the_bay-2.trx.gz",
+      "sha256": "537ba6d8b5e8bad6f26d41cadacb449c216fcc77d764bbb9655e85a35763cda6"
+    },
+    {
+      "file": "accepted-focused-086-DockApproachTests-Misaligned_on_the_line_pivots_to_face_the_bay-3.trx.gz",
+      "sha256": "bd9858b1f4d4a0a02feeacd361be3784e04815c72262b7581d425209f3921cee"
+    },
+    {
+      "file": "accepted-focused-087-DockApproachTests-Selects_the_nearest_bay-1.trx.gz",
+      "sha256": "e4e9e2ca0e8ce1c9150490cc5d7f5d0368703f438da6ad410429cab61cabafd3"
+    },
+    {
+      "file": "accepted-focused-088-DockApproachTests-Selects_the_nearest_bay-2.trx.gz",
+      "sha256": "28a8ae8f62b46f58178e1483e6a35ed9bb0b26e10b8dd5e9fe8c5629ccc1a659"
+    },
+    {
+      "file": "accepted-focused-089-DockApproachTests-Selects_the_nearest_bay-3.trx.gz",
+      "sha256": "02160cf62bfe1f6349ae88f5bac435bd46301561190534d8e3167c543e5362b5"
+    },
+    {
+      "file": "accepted-focused-090-DockApproachTests-Fighter_uses_all_bays_capital_only_the_cap_set-1.trx.gz",
+      "sha256": "3ff8b9c6c80194e971a2c9413b022b7d05ec3612913f47c21b276ac48b7b8b84"
+    },
+    {
+      "file": "accepted-focused-091-DockApproachTests-Fighter_uses_all_bays_capital_only_the_cap_set-2.trx.gz",
+      "sha256": "4bd7935f2c77ee162757d92a1f7950b691d8f1fa2359c88ad9d18ac021c29f00"
+    },
+    {
+      "file": "accepted-focused-092-DockApproachTests-Fighter_uses_all_bays_capital_only_the_cap_set-3.trx.gz",
+      "sha256": "58c797c0b55b1dde331229337ec196d00f1f99053f54eec9aaec0b1c3e8ce0aa"
+    },
+    {
+      "file": "accepted-focused-093-DockApproachTests-Enter_step_charges_full_throttle_and_rolls_to_level_up-1.trx.gz",
+      "sha256": "759d9e97d63103b2a5386237646c4f40b67dee1e84c99f49566c8d0052b2ed20"
+    },
+    {
+      "file": "accepted-focused-094-DockApproachTests-Enter_step_charges_full_throttle_and_rolls_to_level_up-2.trx.gz",
+      "sha256": "4ce0aa9f1d6664d3a08e9d89eed2bdcf64225117a08948f03b595c88888237f6"
+    },
+    {
+      "file": "accepted-focused-095-DockApproachTests-Enter_step_charges_full_throttle_and_rolls_to_level_up-3.trx.gz",
+      "sha256": "111321ee4b572e8acfbdb4aa445d865b59c0e134ce00e5082aeb8286ea73dc3a"
+    },
+    {
+      "file": "accepted-focused-096-DockApproachTests-Power_glide_steers_full_forward_at_the_centre-1.trx.gz",
+      "sha256": "56d4ec7e3dcdb3a1cbc693245f50d4363c658cce5206529da69734e0b748e5f2"
+    },
+    {
+      "file": "accepted-focused-097-DockApproachTests-Power_glide_steers_full_forward_at_the_centre-2.trx.gz",
+      "sha256": "20ec0b2586c5bc428b17a7c6fafec72b5c4e0ab93cb8e417f7f8ec8ce92c0402"
+    },
+    {
+      "file": "accepted-focused-098-DockApproachTests-Power_glide_steers_full_forward_at_the_centre-3.trx.gz",
+      "sha256": "dd8360c66f77e875b335d09287f03febb78718a3df50f81e201209f79d58bfc9"
+    },
+    {
+      "file": "accepted-focused-099-P699StationBayTests-Station_appends_fighter_bays_after_capital_prefix_using_native_slot_numbers-1.trx.gz",
+      "sha256": "f54eef2f5d344207d3deaec42e41e5afb84aefd80ad33cf805b54a4e690924b0"
+    },
+    {
+      "file": "accepted-focused-100-P699StationBayTests-Station_appends_fighter_bays_after_capital_prefix_using_native_slot_numbers-2.trx.gz",
+      "sha256": "2261fc433a1766092e69361d127df3a31397ff493e2e3fe6dbbf1b7a73b703e3"
+    },
+    {
+      "file": "accepted-focused-101-P699StationBayTests-Station_appends_fighter_bays_after_capital_prefix_using_native_slot_numbers-3.trx.gz",
+      "sha256": "405cd580af5111565b209909fe5937f66900c2fcd72a001bf526edd4c7e282de"
+    },
+    {
+      "file": "accepted-focused-102-P699StationBayTests-Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay-1.trx.gz",
+      "sha256": "080a02c03b4a21140bbdd1fa587aa5ea121b942bfe3f9f87601c50bfccd1a7a9"
+    },
+    {
+      "file": "accepted-focused-103-P699StationBayTests-Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay-2.trx.gz",
+      "sha256": "d463a3e4e2df45a47cbc7e6a313678f53383a75b6f576f0c55855ca1b84f6296"
+    },
+    {
+      "file": "accepted-focused-104-P699StationBayTests-Real_garrison_has_fighter_bays_but_no_capital_bays_and_center_is_not_a_bay-3.trx.gz",
+      "sha256": "26322c1b10f162a17107495854a4222e15b88526460e639145e954addbaed51e"
+    },
+    {
+      "file": "accepted-focused-105-P699StationBayTests-Bay_entry_halfspace_does_not_dock_a_pod_far_outside_station_collision_range-1.trx.gz",
+      "sha256": "32c115980ec7e6b7019910e656b4535b9bebd87902ed247c46dd94a66851e228"
+    },
+    {
+      "file": "accepted-focused-106-P699StationBayTests-Bay_entry_halfspace_does_not_dock_a_pod_far_outside_station_collision_range-2.trx.gz",
+      "sha256": "199fcb72f68864cce305581ded889c7076a0cee9b5073f15ad62c3879b9c3a47"
+    },
+    {
+      "file": "accepted-focused-107-P699StationBayTests-Bay_entry_halfspace_does_not_dock_a_pod_far_outside_station_collision_range-3.trx.gz",
+      "sha256": "394b4a78b7328ca048894c08d1e9249c0ec110684b610abfe622f51d81723b26"
+    },
+    {
+      "file": "accepted-focused-108-P699StationBayTests-Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline-1.trx.gz",
+      "sha256": "00a7df6d1c5e4363bdbcfcd9dca64b7efd63af5140f4146f1f1312093b13be34"
+    },
+    {
+      "file": "accepted-focused-109-P699StationBayTests-Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline-2.trx.gz",
+      "sha256": "f15345d704f2f8eb7bd99ca71f9aa20d32070fd68536c8310b57a6eb782cffe7"
+    },
+    {
+      "file": "accepted-focused-110-P699StationBayTests-Pod_enters_real_bay_from_oblique_cruise_before_native_oxygen_deadline-3.trx.gz",
+      "sha256": "aa2d0ff8f817dd66c79583bd925d3cac42dd9f246505345aa60cf2a694bda985"
+    },
+    {
+      "file": "accepted-focused-111-StationRescueModelTests-Lifepod_near_rescue_capable_station_is_detected-1.trx.gz",
+      "sha256": "5bb774f0148d75ae9e99ffa70bd2d13dc0fd535530d678f74545bd580d4f21d4"
+    },
+    {
+      "file": "accepted-focused-112-StationRescueModelTests-Lifepod_near_rescue_capable_station_is_detected-2.trx.gz",
+      "sha256": "dd27d6fe5d3aa68b50219bc4262ff4c516ed5c7ae9a169d43b4f8ef9f7903319"
+    },
+    {
+      "file": "accepted-focused-113-StationRescueModelTests-Lifepod_near_rescue_capable_station_is_detected-3.trx.gz",
+      "sha256": "83ccd2c0217e7de73b754239d437acca8f75ac121f11b7d1ea2c9473ba990049"
+    },
+    {
+      "file": "accepted-focused-114-StationRescueModelTests-Lifepod_near_non_rescue_station_is_NOT_detected-1.trx.gz",
+      "sha256": "99f87ee90df72e2ab9927406aaa5ebf3db67b9f925a74b2f869eb97dcd006ab7"
+    },
+    {
+      "file": "accepted-focused-115-StationRescueModelTests-Lifepod_near_non_rescue_station_is_NOT_detected-2.trx.gz",
+      "sha256": "3c406c3692c45e0c3bcfd88551cbf0402a93c07365a9b232a61d0854deff3259"
+    },
+    {
+      "file": "accepted-focused-116-StationRescueModelTests-Lifepod_near_non_rescue_station_is_NOT_detected-3.trx.gz",
+      "sha256": "194a6676ecb978c66cf0be6715bb0be63dc8a1c8ad4cbdee6d65e842c0d883de"
+    },
+    {
+      "file": "accepted-focused-117-StationRescueModelTests-Opposite_side_rescue_station_is_NOT_detected-1.trx.gz",
+      "sha256": "9879eefc5c8bf6448a0c61f28db78ab193d654ecc705216e33f8254798e2d35e"
+    },
+    {
+      "file": "accepted-focused-118-StationRescueModelTests-Opposite_side_rescue_station_is_NOT_detected-2.trx.gz",
+      "sha256": "e30e43b2047db845f7432945f4ae30a75a935537ebfdc076e278f450b3378d62"
+    },
+    {
+      "file": "accepted-focused-119-StationRescueModelTests-Opposite_side_rescue_station_is_NOT_detected-3.trx.gz",
+      "sha256": "26ce3de7360526a017ece2e63d7cc18924f551c333b8f9db4e7d7feb18a9c46e"
+    },
+    {
+      "file": "accepted-focused-120-StationRescueModelTests-Out_of_range_rescue_station_is_NOT_detected-1.trx.gz",
+      "sha256": "25cae6ac0bfece37b8b2ded05c155ccc38372ec309e98a606ce2444b2ed07481"
+    },
+    {
+      "file": "accepted-focused-121-StationRescueModelTests-Out_of_range_rescue_station_is_NOT_detected-2.trx.gz",
+      "sha256": "8593338a19051886064f4828e71da03d9d7eabe3b7ac4032d6cef7c3aa60f9f9"
+    },
+    {
+      "file": "accepted-focused-122-StationRescueModelTests-Out_of_range_rescue_station_is_NOT_detected-3.trx.gz",
+      "sha256": "634fe1c6451077059d8f8ad17d22ff1a631edab4b21e555ef82c58be9ef0b102"
+    },
+    {
+      "file": "accepted-focused-123-StationRescueModelTests-Landing_capability_takes_precedence_over_station_rescue-1.trx.gz",
+      "sha256": "d9a6367f2116442c381b3905c5e351bfe60c2330875d22a21194e340d506de83"
+    },
+    {
+      "file": "accepted-focused-124-StationRescueModelTests-Landing_capability_takes_precedence_over_station_rescue-2.trx.gz",
+      "sha256": "baee5751732900bd5063c2313bf2f7926f2ac00d645003ba0a31363821989a10"
+    },
+    {
+      "file": "accepted-focused-125-StationRescueModelTests-Landing_capability_takes_precedence_over_station_rescue-3.trx.gz",
+      "sha256": "32321863832a57c08d3bbf6aae6355d45bde237318f36b30d7c4c4401b1e5355"
+    },
+    {
+      "file": "accepted-focused-126-LiveStationRescueTests-Lifepod_reaching_rescue_station_is_docked_without_player_rescued-1.trx.gz",
+      "sha256": "dad0a83594fdd3d20c1aa8e48e17c494a7f1fa582e4a69d139e80be6dc05dadb"
+    },
+    {
+      "file": "accepted-focused-127-LiveStationRescueTests-Lifepod_reaching_rescue_station_is_docked_without_player_rescued-2.trx.gz",
+      "sha256": "a96c94a0251e19e33c5f6bc5a44bb9f6c4caa504a6761a7b808431c6469c1601"
+    },
+    {
+      "file": "accepted-focused-128-LiveStationRescueTests-Lifepod_reaching_rescue_station_is_docked_without_player_rescued-3.trx.gz",
+      "sha256": "4535ff54bb501d924e60de74ffdda28eca5cb5df3f53b1c9577942614c1575a4"
+    },
+    {
+      "file": "accepted-focused-129-LiveStationRescueTests-Lifepod_at_non_rescue_station_is_not_docked-1.trx.gz",
+      "sha256": "713605f064db64a7224b79f9c55362797e38908ed4bec06cf8650472811c57c5"
+    },
+    {
+      "file": "accepted-focused-130-LiveStationRescueTests-Lifepod_at_non_rescue_station_is_not_docked-2.trx.gz",
+      "sha256": "e2c94fb0df9df68898dcadfd8e4406d5726062dd6d27c5b00752986c84e3e670"
+    },
+    {
+      "file": "accepted-focused-131-LiveStationRescueTests-Lifepod_at_non_rescue_station_is_not_docked-3.trx.gz",
+      "sha256": "e1833f331f6708f3ef65d71ab851a86bb790ed24b93a35ee88c67999e63dce28"
+    },
+    {
+      "file": "accepted-focused-132-P550DockAndRespawnTests-Fighter_docks_at_sabml_and_capable_station-1.trx.gz",
+      "sha256": "6547ad3d21bb7ca8a9fe177e327a3cf54e8f7e01b1a99e755dc5a39df3603316"
+    },
+    {
+      "file": "accepted-focused-133-P550DockAndRespawnTests-Fighter_docks_at_sabml_and_capable_station-2.trx.gz",
+      "sha256": "45e0d51655f0902c9435a5b28251aa850713c5c35184e56af03b260bd0d4e0df"
+    },
+    {
+      "file": "accepted-focused-134-P550DockAndRespawnTests-Fighter_docks_at_sabml_and_capable_station-3.trx.gz",
+      "sha256": "cdac943ed7bd41cd060fb0b2f624a3314f18f375604a5f43042e4cb2cd6365be"
+    },
+    {
+      "file": "accepted-focused-135-P550DockAndRespawnTests-Fighter_is_refused_at_station_without_sabml_and-1.trx.gz",
+      "sha256": "09f36a707d9b0fb50fcc34fc8d6930336698df5a43587c07a8c7df5c435f6e69"
+    },
+    {
+      "file": "accepted-focused-136-P550DockAndRespawnTests-Fighter_is_refused_at_station_without_sabml_and-2.trx.gz",
+      "sha256": "f0934166643b60c2b7558e39fe5470062eb6e338e4902dad1241b5e8374f6b02"
+    },
+    {
+      "file": "accepted-focused-137-P550DockAndRespawnTests-Fighter_is_refused_at_station_without_sabml_and-3.trx.gz",
+      "sha256": "9e6031a61716da952331c604ae62a6b1025e7d1350b1a3d4680b1505993bb5ca"
+    },
+    {
+      "file": "accepted-focused-138-P550DockAndRespawnTests-Capital_needs_sabmc_apland-1.trx.gz",
+      "sha256": "45148f7d44c25d466c26145fb85feb60afb8812154dcac1c5e6052893f9b526a"
+    },
+    {
+      "file": "accepted-focused-139-P550DockAndRespawnTests-Capital_needs_sabmc_apland-2.trx.gz",
+      "sha256": "c3ed2cc3cf45a155c96a160be0c66e4fc4c689d197a3bd53f091942f21eccb53"
+    },
+    {
+      "file": "accepted-focused-140-P550DockAndRespawnTests-Capital_needs_sabmc_apland-3.trx.gz",
+      "sha256": "3261a47aa5fa154a9e03cf316487a2a6083821abbc79e59f084902f177535a43"
+    },
+    {
+      "file": "accepted-focused-141-P550DockAndRespawnTests-Docking_requires_native_landing_geometry_not_just_a_200u_sphere-1.trx.gz",
+      "sha256": "9d5756ee8d2a43bf890dba5a11bd4a5834ed9ac33a51719d1763f0459cb4bc34"
+    },
+    {
+      "file": "accepted-focused-142-P550DockAndRespawnTests-Docking_requires_native_landing_geometry_not_just_a_200u_sphere-2.trx.gz",
+      "sha256": "ae31b1e385c36821a086db9d69baccc5598093a5cad3e50c7b6e86f8e7a04196"
+    },
+    {
+      "file": "accepted-focused-143-P550DockAndRespawnTests-Docking_requires_native_landing_geometry_not_just_a_200u_sphere-3.trx.gz",
+      "sha256": "cbb2f3c7dd282f8f9e5d45b48fc1b09a0c52e38a50ae03771bdaa3606d781a4b"
+    },
+    {
+      "file": "accepted-focused-144-P550DockAndRespawnTests-Respawn_picks_nearest_restart_capable_station_skipping_one_without_restart-1.trx.gz",
+      "sha256": "c51790e0537e98313263cbc460f06a425da21d4d2496bdbe380c9032f8368a2e"
+    },
+    {
+      "file": "accepted-focused-145-P550DockAndRespawnTests-Respawn_picks_nearest_restart_capable_station_skipping_one_without_restart-2.trx.gz",
+      "sha256": "b779bf60410148a491f76c40b76ccdb3863b256bff5dd9c002ce9b96d39159c7"
+    },
+    {
+      "file": "accepted-focused-146-P550DockAndRespawnTests-Respawn_picks_nearest_restart_capable_station_skipping_one_without_restart-3.trx.gz",
+      "sha256": "14e08714df3da528a9f62ae5a049103994032cdddf1233adc0bb574a241f6796"
+    },
+    {
+      "file": "accepted-focused-147-P550DockAndRespawnTests-Respawn_picks_the_nearer_of_two_restart_stations-1.trx.gz",
+      "sha256": "efecd7d4ee7b1bff785cc9f174c332b5f0e2c9471560eb54caa57f65caae9f2d"
+    },
+    {
+      "file": "accepted-focused-148-P550DockAndRespawnTests-Respawn_picks_the_nearer_of_two_restart_stations-2.trx.gz",
+      "sha256": "2b2c92dd80de3af91d0e5035542f47afa4f18bcd071cb41c9ed073ea4eee72ea"
+    },
+    {
+      "file": "accepted-focused-149-P550DockAndRespawnTests-Respawn_picks_the_nearer_of_two_restart_stations-3.trx.gz",
+      "sha256": "3153b1b0d00fdd8ce9563f488990f0d5cdc5d735d8aa2dbf1e3aff62d5597e91"
+    },
+    {
+      "file": "accepted-focused-150-P550DockAndRespawnTests-Respawn_returns_null_when_no_restart_capable_friendly_station_exists-1.trx.gz",
+      "sha256": "2117fffda11ecf9056be5bbecceb7f25327bff17cb6d88aa8f3f84ac396dd917"
+    },
+    {
+      "file": "accepted-focused-151-P550DockAndRespawnTests-Respawn_returns_null_when_no_restart_capable_friendly_station_exists-2.trx.gz",
+      "sha256": "799e498d660fb91ce4ebb57406908e8619e9db323d1a4e044ca1224f18c17e33"
+    },
+    {
+      "file": "accepted-focused-152-P550DockAndRespawnTests-Respawn_returns_null_when_no_restart_capable_friendly_station_exists-3.trx.gz",
+      "sha256": "15cb2695d4b07a2e230cbfda6ea9033f6bdd69acb55f996083a6d00d4f540537"
+    },
+    {
+      "file": "accepted-focused-153-P550LiveDockGateTests-Real_client_docks_at_geometry_bearing_valid_station-1.trx.gz",
+      "sha256": "eba51e1c4943e31cc40e12abca15f2f6c5392faed6bb294d32d3f1d43ab4b1d0"
+    },
+    {
+      "file": "accepted-focused-154-P550LiveDockGateTests-Real_client_docks_at_geometry_bearing_valid_station-2.trx.gz",
+      "sha256": "5849208805a3c458ea56d6aca54dbc5c027dec5bc6f6b30652e17392254954f5"
+    },
+    {
+      "file": "accepted-focused-155-P550LiveDockGateTests-Real_client_docks_at_geometry_bearing_valid_station-3.trx.gz",
+      "sha256": "716d0a0fc1576416cea6656c06d45c9bf538c6d0dd7f96df0832bee3b9e3c016"
+    },
+    {
+      "file": "accepted-focused-156-P550LiveDockGateTests-Real_client_is_refused_at_station_without_sabml_and-1.trx.gz",
+      "sha256": "999356a8a626673f61679835719d2b878aae41728ad4283740217143cc850336"
+    },
+    {
+      "file": "accepted-focused-157-P550LiveDockGateTests-Real_client_is_refused_at_station_without_sabml_and-2.trx.gz",
+      "sha256": "8dbddcbd293ddaab09983568c7efc926e5a8f3630f93daaa2584a6fcf049c7be"
+    },
+    {
+      "file": "accepted-focused-158-P550LiveDockGateTests-Real_client_is_refused_at_station_without_sabml_and-3.trx.gz",
+      "sha256": "9d811136f2272d9a0d629c0c4c3bc76754848abcbb238fca9b4a1ca7c9c2141c"
+    },
+    {
+      "file": "accepted-focused-159-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-1.trx.gz",
+      "sha256": "8cc85447f3dc9340c9542c83e71b5c49685a1f09eded4b2efee187852b406b46"
+    },
+    {
+      "file": "accepted-focused-160-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-2.trx.gz",
+      "sha256": "3c70f8fdd702faa8a2bc2b26268dc1d6b4e56e0079f82c7d68518fed35eebf17"
+    },
+    {
+      "file": "accepted-focused-161-P699PodHomeLiveTests-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-3.trx.gz",
+      "sha256": "283c78ec44a11e8e92a2efa76e06fe45e515c78f735486199425c20223a3ba15"
+    },
+    {
+      "file": "accepted-focused-162-P699PodOutcomeTests-Pod_outcome_counts_a_true_death_restart_separately_from_flying_home-1.trx.gz",
+      "sha256": "714e3af7b76e3e8543cf6a6135f90bd8ede79b636f18f29589fab3080689ad55"
+    },
+    {
+      "file": "accepted-focused-163-P699PodOutcomeTests-Pod_outcome_counts_a_true_death_restart_separately_from_flying_home-2.trx.gz",
+      "sha256": "27949b2baac670418ec52f358d88cc9c9c014849b6f8621bc37d6094c3e5b8b5"
+    },
+    {
+      "file": "accepted-focused-164-P699PodOutcomeTests-Pod_outcome_counts_a_true_death_restart_separately_from_flying_home-3.trx.gz",
+      "sha256": "8006fc86920f7e1fa7239bb49927cf1427232558411a63c626544b010c63f811"
+    },
+    {
+      "file": "accepted-focused-165-P560PodHomeStationTests-Picks_reachable_restart_station_over_a_closer_unreachable_one-1.trx.gz",
+      "sha256": "6ddd217d81a36af1f31e2dd5f8902702c503fd6f98b54bb4abd0cea446ca6fe4"
+    },
+    {
+      "file": "accepted-focused-166-P560PodHomeStationTests-Picks_reachable_restart_station_over_a_closer_unreachable_one-2.trx.gz",
+      "sha256": "314a89c41311e00c7f50e6c9e04f3b10d2ea227c92d0437b91bdc9680d981895"
+    },
+    {
+      "file": "accepted-focused-167-P560PodHomeStationTests-Picks_reachable_restart_station_over_a_closer_unreachable_one-3.trx.gz",
+      "sha256": "bdbac5dbc72394b44e1becee1d7b445fc4451b91220a64e45085342ab13357c1"
+    },
+    {
+      "file": "accepted-focused-168-P560PodHomeStationTests-Ignores_non_restart_stations_even_if_nearest-1.trx.gz",
+      "sha256": "1543b8e0f7ed454f0c3d1d310d5f8dfb11c74a2d82d3e39cfd18a1f8665a7211"
+    },
+    {
+      "file": "accepted-focused-169-P560PodHomeStationTests-Ignores_non_restart_stations_even_if_nearest-2.trx.gz",
+      "sha256": "c820f21fd254ea8b9b1fe09daac8a63829a718609cdbd569006432154615bced"
+    },
+    {
+      "file": "accepted-focused-170-P560PodHomeStationTests-Ignores_non_restart_stations_even_if_nearest-3.trx.gz",
+      "sha256": "750a1f18acb27997a3dcee7c45944ad4ac0492a01a88ac5f49c23a8a942d355a"
+    },
+    {
+      "file": "accepted-focused-171-P560PodHomeStationTests-Prefers_the_same_sector_restart_station_zero_hops-1.trx.gz",
+      "sha256": "c89dc32a596ee06936f00bd74509ac2ebd61b085cbbede8df6c997d115dedabb"
+    },
+    {
+      "file": "accepted-focused-172-P560PodHomeStationTests-Prefers_the_same_sector_restart_station_zero_hops-2.trx.gz",
+      "sha256": "a4d0ad589e6f02630e3c78eba123cd891ef35fab0a5537fb2f25bc1ec0ace214"
+    },
+    {
+      "file": "accepted-focused-173-P560PodHomeStationTests-Prefers_the_same_sector_restart_station_zero_hops-3.trx.gz",
+      "sha256": "714246b8da55e486a6c9d00f4bd2cc842912d83fb8e5d323ff6be0a4d76a493a"
+    },
+    {
+      "file": "accepted-focused-174-P560PodHomeStationTests-Ignores_enemy_stations-1.trx.gz",
+      "sha256": "92c02b1bb6124a26895a6abe61cde8364aa08799a9169c2ee875aaf8e0a69ec4"
+    },
+    {
+      "file": "accepted-focused-175-P560PodHomeStationTests-Ignores_enemy_stations-2.trx.gz",
+      "sha256": "154284cc8c5d7feafcf71405fb2cf1f3e5c189c0e26b02da34a27c6febc5957d"
+    },
+    {
+      "file": "accepted-focused-176-P560PodHomeStationTests-Ignores_enemy_stations-3.trx.gz",
+      "sha256": "b37fe731b26c7ad4ecc6a322b578e2e3481572138d6c162a16b14750dadcd200"
+    },
+    {
+      "file": "accepted-focused-177-P560PodHomeStationTests-Returns_null_when_no_reachable_restart_station-1.trx.gz",
+      "sha256": "76871bf5fad9c85e77ea0ee58bfffedc13b5c80752092be9b3101a861c050bab"
+    },
+    {
+      "file": "accepted-focused-178-P560PodHomeStationTests-Returns_null_when_no_reachable_restart_station-2.trx.gz",
+      "sha256": "53ddd9d9419c222884d4c3bf4dfc0bc7f5ff627d517bd76206c2eb1df6075a15"
+    },
+    {
+      "file": "accepted-focused-179-P560PodHomeStationTests-Returns_null_when_no_reachable_restart_station-3.trx.gz",
+      "sha256": "bcfe95179c8f53234f15e810b53ba997f17aee6855fe6a2a20f10549cde9f747"
+    },
+    {
+      "file": "accepted-focused-180-P560PodHomeStationTests-Ties_break_by_euclidean_within_same_hop_count-1.trx.gz",
+      "sha256": "2c8bacb31e996ac4de8153d45806562f5ff672f7bbc5ffda5410d0e7217cd3a8"
+    },
+    {
+      "file": "accepted-focused-181-P560PodHomeStationTests-Ties_break_by_euclidean_within_same_hop_count-2.trx.gz",
+      "sha256": "8114aad29e8e6e29851c4efc7b679a8f6c60d7d22bddb3a852834b401e3a5c65"
+    },
+    {
+      "file": "accepted-focused-182-P560PodHomeStationTests-Ties_break_by_euclidean_within_same_hop_count-3.trx.gz",
+      "sha256": "ea61acaccde1f45f0c8619b72348d64d15d2a17ba7dcee181ad73375f69be096"
+    },
+    {
+      "file": "accepted-focused-183-P560PodWarpLegClosedLoopTests-Pod_warp_leg_Pursue_never_returns_across_the_exited_aleph_but_slow_crossing_does-1.trx.gz",
+      "sha256": "2b86db8cfc742ea80f38febc18984e12b3cf8826213d6405931fafdf7090b9c0"
+    },
+    {
+      "file": "accepted-focused-184-P560PodWarpLegClosedLoopTests-Pod_warp_leg_Pursue_never_returns_across_the_exited_aleph_but_slow_crossing_does-2.trx.gz",
+      "sha256": "41ffc54912426a465ba5c1e1c3fe166bc3e418038e65333818b2fd8e5d0c9b02"
+    },
+    {
+      "file": "accepted-focused-185-P560PodWarpLegClosedLoopTests-Pod_warp_leg_Pursue_never_returns_across_the_exited_aleph_but_slow_crossing_does-3.trx.gz",
+      "sha256": "fc353d5a8b4f875ccdd2a9c1039cab3bd091339ca87a4902f25d9e79211b1230"
+    },
+    {
+      "file": "accepted-focused-186-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-1.trx.gz",
+      "sha256": "3ff22d1d50a209e2b43f7aedc0550e791e0d070382d25de849e04b8b1b20d2c1"
+    },
+    {
+      "file": "accepted-focused-187-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-2.trx.gz",
+      "sha256": "dc22080936e1f228fa5cddc773ffbd50e4293de32b661838be90583a39c657b2"
+    },
+    {
+      "file": "accepted-focused-188-P699HumanPodHomeLiveTests-Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn-3.trx.gz",
+      "sha256": "b96a524e8ef06983f359e345eb08f5a28b82be940806f75e9a4cdadbda2462d0"
+    },
+    {
+      "file": "accepted-focused-189-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-1.trx.gz",
+      "sha256": "98720282c557605c59e3b0231467cd55e966b6b1cb96d6a92305b9cb9116ccf3"
+    },
+    {
+      "file": "accepted-focused-190-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-2.trx.gz",
+      "sha256": "9ee94105381a56a580bc237e0ed0ec78549744e0782922b42cba3b864a5cf8a5"
+    },
+    {
+      "file": "accepted-focused-191-P540bPodAutopilotCrossSectorLiveTests-EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets-3.trx.gz",
+      "sha256": "cecae5dbab4f963841eb6b6fe1109a3db1f63049f0b8a2b752dffa193d45b1c1"
+    },
+    {
+      "file": "accepted-focused-192-P541GotoFlyLiveTests-Client_router_navigates_the_goto_from_start_to_a_two_warp_target_on_the_live_map-1.trx.gz",
+      "sha256": "4e00001cafe1662bcc43a1356360e5200f41e4ef58ac1297900d08afdb88e76f"
+    },
+    {
+      "file": "accepted-focused-193-P541GotoFlyLiveTests-Client_router_navigates_the_goto_from_start_to_a_two_warp_target_on_the_live_map-2.trx.gz",
+      "sha256": "8e133f62d9d1bdadbab9b4972772aaeb04f372e448efa8a224fc22d0dcd4fc12"
+    },
+    {
+      "file": "accepted-focused-194-P541GotoFlyLiveTests-Client_router_navigates_the_goto_from_start_to_a_two_warp_target_on_the_live_map-3.trx.gz",
+      "sha256": "44d09641cdaa5ce1b4e9eef621e2335af1bba46e6855543b104d7a23f454716f"
+    },
+    {
+      "file": "isolate-accepted-extra-000-isolate-1.trx.gz",
+      "sha256": "9e1a39bd3505afea45d0135b0e494499c2708745bbad25e8e35aa56a4dd1c132"
+    },
+    {
+      "file": "isolate-accepted-extra-001-isolate-2.trx.gz",
+      "sha256": "faafa9137a0c0cbdc194b89b48f8570c87978d649b5f4739739d66bd67a5450f"
+    },
+    {
+      "file": "isolate-accepted-extra-002-isolate-3.trx.gz",
+      "sha256": "38efcfcfc47e21dda23d080c3c4e5fd069a98db67209be95ac98567c0d4c669c"
+    },
+    {
+      "file": "isolate-accepted-extra-003-isolate-1.trx.gz",
+      "sha256": "e56f57189a0e12e518b11a0021f3011301603b658f39fe49e0072dc788091d70"
+    },
+    {
+      "file": "isolate-accepted-extra-004-isolate-2.trx.gz",
+      "sha256": "2c2477bf88091cd676d65539b0cca2c32bcd9bcc0c41c833ef3c5e69f759ce7d"
+    },
+    {
+      "file": "isolate-accepted-extra-005-isolate-3.trx.gz",
+      "sha256": "55b15d304caf041c86dd9d7a1be727da60a7226764a36123a921aa328c04de3a"
+    },
+    {
+      "file": "accepted-suites-000-Core.trx.gz",
+      "sha256": "608f7391d2934507fe650f85256dc19d89a80d6b8d96e31e6dfd143756d99245"
+    },
+    {
+      "file": "accepted-suites-001-ClientCore.trx.gz",
+      "sha256": "4966426903d19e25ec5ec16994864580b353ef8d37f2d04515c02ab2eddd9961"
+    },
+    {
+      "file": "accepted-suites-002-ClientCore.MonoGame.trx.gz",
+      "sha256": "a8146714fd42161c7cdd263972d32af51a54a3fddee38f0ad3e22da3336e8209"
+    },
+    {
+      "file": "accepted-suites-003-Lobby.trx.gz",
+      "sha256": "419697ababcbdec3ed7780e977c7d4a7aae8f5c1e921899997b2a3341b5bd999"
+    },
+    {
+      "file": "isolate-accepted-suite-failures-000-isolate-1.trx.gz",
+      "sha256": "2a76e599962155671631076fce42a88f0eeb6630423e52e813de8c30a0f5856d"
+    },
+    {
+      "file": "isolate-accepted-suite-failures-001-isolate-2.trx.gz",
+      "sha256": "55d872e773e53cc271c55dabf16b600d7c1779a3eb8e86e300ca94c9a8a7140a"
+    },
+    {
+      "file": "isolate-accepted-suite-failures-002-isolate-3.trx.gz",
+      "sha256": "ca582e3f8e9803b3cf7e080e2783d660155249ef9065218f86b9c44e5a21c47a"
+    }
+  ]
+}

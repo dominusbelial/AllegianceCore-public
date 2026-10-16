@@ -1,0 +1,66 @@
+[
+  {
+    "file": "src/Allegiance.ClientCore.Game/Game1.FlightInput.cs",
+    "sha256": "87affc8422e16fcedcefe2ec19c76493133a77743f3a53f1556c9eb3ca842636"
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/DockApproach.cs",
+    "sha256": "e99f0f019340189d8a21e745415f4c6b87229719ca951c69711538e789c29c11"
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/Ship.cs",
+    "sha256": "f15de5eb89a9677f4c3919a99432d29bb63748419690df83bc967004ec42e707"
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/Station.cs",
+    "sha256": "5be5fadbd7b4fabeba54efd769bed311f42513a7263b590adaf211564e57c6bb"
+  },
+  {
+    "file": "src/Allegiance.Server/PodTripTelemetry.cs",
+    "sha256": "84f5259475259671a7e473a643587307663fcdbc44595b88d9f5f77384ae2cd0"
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.MonoGame.Tests/P540bPodAutopilotCrossSectorLiveTests.cs",
+    "sha256": "bcd4469a8b593c1113a4dad62301a96a8616f952344c290c47afe5ea894fdc13"
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.MonoGame.Tests/P699HumanPodHomeLiveTests.cs",
+    "sha256": "e2cf1eb533db14ca97f0d8eacd207f41c14daea5d0c5f8a7690cd3e376270501"
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.Tests/P699PodHomeLiveTests.cs",
+    "sha256": "96e3ea56a672b4f6951afb18601f5b2ecfc46b9b51504b350b30491af060c52c"
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+    "sha256": "0f1186484f13d5069b6d2a9bed4175a6d7f4d9c03d0dd52679120a59200c177d"
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/DockApproachTests.cs",
+    "sha256": "c45c9b554ff59109629dd1b168a4012bc83d8f40feaa4651044df0e6ed07237b"
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P699bPodLoadTests.cs",
+    "sha256": "47f9f03729beafbb05ff732f52025689c74e14327794b35c104480944751f8a8"
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P699bPodTelemetryTests.cs",
+    "sha256": "4e251b4b75d100996dab2f7f6cd87c1c784306d12098f85443ad94f4fdab0541"
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P699cStationCorpusTests.cs",
+    "sha256": "3d1e6b734b0f5bd8417f05fbaed17feb56910a336c6a39a0856946f5fb22c6f7"
+  },
+  {
+    "file": "tools/allegiance-mcp/BotManager.cs",
+    "sha256": "b91114657306c1df525d2178208adb3f570d5935ecff67ebe6f8e7f758bff0a1"
+  },
+  {
+    "file": "tools/hud-gauge-proof/GaugeHarness.cs",
+    "sha256": "5c8340b5b0ca6efe324a7399bb29ac4c356f8ac8f9b1ca4698f49f2a0e9995cd"
+  },
+  {
+    "file": "tools/hud-polish-proof/HUDPolishHarness.cs",
+    "sha256": "a96f18eac0f6c8e2c4ee2403421872ce3f264ad1e935359e61e50114667fcc9e"
+  }
+]

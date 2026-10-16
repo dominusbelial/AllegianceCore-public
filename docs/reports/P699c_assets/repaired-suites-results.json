@@ -1,0 +1,81 @@
+[
+  {
+    "project": "Core",
+    "filter": "(unfiltered)",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792120751.543308,
+    "finished": 1792121548.8080015,
+    "seconds": 797.26,
+    "log": "/tmp/p699c-validation/repaired-suites-000-Core.log",
+    "trx": "repaired-suites-000-Core.trx.gz",
+    "passed": 4628,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire",
+        "error": "System.InvalidOperationException : no shooter ship"
+      },
+      {
+        "name": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+        "error": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   2"
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: Pool)",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals",
+        "error": "System.Threading.ThreadStateException : Thread has not been started."
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792121548.8144035,
+    "finished": 1792122242.874776,
+    "seconds": 694.06,
+    "log": "/tmp/p699c-validation/repaired-suites-001-ClientCore.log",
+    "trx": "repaired-suites-001-ClientCore.trx.gz",
+    "passed": 1061,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792122242.8790946,
+    "finished": 1792123179.0880752,
+    "seconds": 936.21,
+    "log": "/tmp/p699c-validation/repaired-suites-002-ClientCore.MonoGame.log",
+    "trx": "repaired-suites-002-ClientCore.MonoGame.trx.gz",
+    "passed": 2233,
+    "failed": [],
+    "skipped": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+    ]
+  },
+  {
+    "project": "Lobby",
+    "filter": "(unfiltered)",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792123179.0902352,
+    "finished": 1792123180.1128194,
+    "seconds": 1.02,
+    "log": "/tmp/p699c-validation/repaired-suites-003-Lobby.log",
+    "trx": "repaired-suites-003-Lobby.trx.gz",
+    "passed": 19,
+    "failed": [],
+    "skipped": []
+  }
+]

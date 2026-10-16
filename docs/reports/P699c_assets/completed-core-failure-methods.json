@@ -1,0 +1,10 @@
+[
+  [
+    "Core",
+    "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively"
+  ],
+  [
+    "Core",
+    "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic"
+  ]
+]

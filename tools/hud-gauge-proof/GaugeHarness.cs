@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.ClientCore.MonoGame.Rendering;
@@ -50,8 +51,7 @@ public sealed class GaugeHarness : Game
         _white = new Texture2D(GraphicsDevice, 1, 1);
         _white.SetData(new[] { Color.White });
 
-        string artwork = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-                         ?? "/home/domingo/Development/Artwork";
+        string artwork = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
         _gauges = GaugeTextures.Load(GraphicsDevice, artwork);
         Console.WriteLine($"[proof] gauges loaded: {_gauges.LoadedCount}/6");
 
