@@ -361,4 +361,86 @@ public class ClientWorldSoundEventTests
         world.Apply(new GainFlag { SideidFlag = 3, ShipidRecipient = 929 });
         Assert.Empty(world.TakeSoundEvents());
     }
+
+    // ── P716 — combat & physics feedback one-shots ─────────────────────────
+    // The own ship's warp transit (SET_CLUSTER landing in a new sector beside
+    // its aleph) plays the native jumpSound (trekigc.cpp:3998,4415; the same
+    // wavein cue the teleport path uses). The collision wire (COLLISION_EVENT,
+    // 216) is buffered for the positional collision-sound pass (P463c).
+    // Failing-first: ClientSoundEventKind.SectorJump did not exist before P716
+    // (a compile error in these tests on the pre-change tree).
+
+    private static ServerShipUpdate PoseAt(short id, Vector3 pos) =>
+        ServerShipUpdate.FromValues(
+            id, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 1u,
+            pos, Orientation.Identity, Vector3.Zero,
+            turnRates: new[] { 0f, 0f, 0f },
+            hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+            energyFrac: 1f, oreFrac: 0f, power: 0f);
+
+    private static void SeatMe(ClientWorld w, short me, short sector, Vector3 pos) =>
+        w.Apply(new SetCluster { SectorId = sector, Ship = PoseAt(me, pos), Cookie = 0x1 });
+
+    private static void SeedWarp(ClientWorld w, short id, short cluster, Vector3 pos) =>
+        w.Apply(new ExportWarp
+        {
+            ObjectType = ExportWarp.OtWarp,
+            Warp = new DataWarpIGC(id, (short)(id + 900), 60, "aleph", "", "w",
+                new[] { pos.X, pos.Y, pos.Z }, new[] { 0f, 0f, -1f },
+                new[] { 0f, 0f, 0f, 1f }, 0f, cluster),
+        });
+
+    [Fact]
+    public void OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump()
+    {
+        var w = new ClientWorld();
+        SeatMe(w, 770, sector: 1, Vector3.Zero);                 // join sector 1
+        SeedWarp(w, 880, cluster: 2, new Vector3(500f, 0f, 0f)); // destination aleph
+
+        w.Apply(new SetCluster { SectorId = 2, Ship = PoseAt(770, new Vector3(500f, 0f, 0f)), Cookie = 0x2 });
+
+        var ev = Assert.Single(w.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.SectorJump, ev.Kind);
+        Assert.Equal((short)770, ev.Id);
+    }
+
+    [Fact]
+    public void OwnShipSameSectorReSeat_NoSectorJump()
+    {
+        var w = new ClientWorld();
+        SeatMe(w, 770, sector: 1, Vector3.Zero);
+        SeedWarp(w, 884, cluster: 1, new Vector3(20f, 0f, 0f));
+
+        w.Apply(new SetCluster { SectorId = 1, Ship = PoseAt(770, Vector3.Zero), Cookie = 0x2 });
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void RemoteShipSectorArrival_NoSectorJump()
+    {
+        var w = new ClientWorld();
+        SeatMe(w, 777, sector: 1, Vector3.Zero);                 // own ship stays put
+        SeedWarp(w, 887, cluster: 2, new Vector3(510f, 0f, 0f));
+
+        w.Apply(new SetCluster { SectorId = 2, Ship = PoseAt(989, new Vector3(510f, 0f, 0f)), Cookie = 0x2 });
+
+        Assert.Empty(w.TakeSoundEvents());                       // only the OWN ship cues
+    }
+
+    [Fact]
+    public void CollisionWire_IsBufferedForTheCollisionSoundPass()
+    {
+        var w = new ClientWorld();
+        w.Apply(new Allegiance.Core.Wire.CollisionEvent
+        {
+            Party1Id = 1, Party2Id = 2, ClusterId = 3,
+            Jiggle1 = 0.5f, Jiggle2 = 0.0f, Position = new Vector3(10f, 0f, 0f),
+        });
+
+        var ce = Assert.Single(w.TakeCollisionEvents());
+        Assert.Equal((short)1, ce.Party1Id);
+        Assert.Equal((short)2, ce.Party2Id);
+        Assert.Equal((short)3, ce.ClusterId);
+    }
 }

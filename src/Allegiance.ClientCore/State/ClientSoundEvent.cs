@@ -169,6 +169,17 @@ public enum ClientSoundEventKind
     /// side's flag (FM_S_GAIN_FLAG whose flag origin is our side,
     /// appmsg.cpp:3169; wave <c>vo_stolen_flag</c>, sounddef.mdl:771).</summary>
     OurFlagStolen,
+
+    // ── P716 (parity wave 16: combat & physics feedback one-shots) ─────────
+    // The own ship's warp TRANSIT (leave one sector / emerge in the next)
+    // plays the <c>jumpSound</c> cue. Native fires it both on departure
+    // (trekigc.cpp:3998, <c>pship->SetCluster</c>) and on arrival beside the
+    // destination aleph (trekigc.cpp:4415); this pure-renderer client observes
+    // the transit as the own ship's SET_CLUSTER landing in a new sector beside
+    // its aleph (the P585 aleph-emergence edge), and plays the same
+    // <c>jumpSound</c> (wave <c>jumpin</c>, SoundManager.PlayJump) once per
+    // warp crossing. This is the same wave native's jumpSound plays.</summary>
+    SectorJump,
 }
 
 /// <summary>A single observed sound event.</summary>
