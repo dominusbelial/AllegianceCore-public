@@ -34,6 +34,8 @@ public static class ShipControlState
     /// Driven by <see cref="Ship.UpdateCloak"/>, which derives activation from
     /// this bit like every other toggled control in <see cref="Ship.OnUpdate"/>.
     /// </summary>
+    public const int DroneRip = 0x1000; // Igc/igc.h:821
+
     public const int CloakActive = 0x800;    // 512*coastButtonIGC = 2048 (igc.h:820)
 
     /// <summary>All six manual-thrust buttons (<c>left|right|up|down|forward|backward</c>), the gate for the manual-control branch (<c>shipIGC.cpp:2965</c>).</summary>

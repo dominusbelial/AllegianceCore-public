@@ -1,0 +1,55 @@
+Test run for /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.82]     Allegiance.Core.Tests.P708ShipUpdateTests.Defend_acquisition_uses_strict_radius_and_combat_pilots(distance: 1499, pilot: 2, acquire: True) [FAIL]
+[xUnit.net 00:00:00.84]     Allegiance.Core.Tests.P708ShipUpdateTests.Goto_reacquires_visible_accepted_attack_and_temporary_aggression_is_consumed [FAIL]
+  Failed Allegiance.Core.Tests.P708ShipUpdateTests.Defend_acquisition_uses_strict_radius_and_combat_pilots(distance: 1499, pilot: 2, acquire: True) [5 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Allegiance.Core.Tests.P708ShipUpdateTests.Defend_acquisition_uses_strict_radius_and_combat_pilots(Single distance, Byte pilot, Boolean acquire) in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs:line 82
+   at InvokeStub_P708ShipUpdateTests.Defend_acquisition_uses_strict_radius_and_combat_pilots(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.Core.Tests.P708ShipUpdateTests.Goto_reacquires_visible_accepted_attack_and_temporary_aggression_is_consumed [10 ms]
+  Error Message:
+   Assert.Same() Failure: Values are not the same instance
+Expected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedTarget = null, Ammo = 1000, ··· }
+Actual:   null
+  Stack Trace:
+     at Allegiance.Core.Tests.P708ShipUpdateTests.Goto_reacquires_visible_accepted_attack_and_temporary_aggression_is_consumed() in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs:line 215
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.86]     Allegiance.Core.Tests.P708ShipUpdateTests.Goto_opportunism_waits_ten_seconds_and_one_hundred_passes_then_resumes_route [FAIL]
+[xUnit.net 00:00:00.91]     Allegiance.Core.Tests.P708ShipUpdateTests.Missile_selection_requires_behavior_full_lock_and_strict_transverse_speed(behavior: 2, quality: 1, transverse: 49.9900017, fire: True) [FAIL]
+  Failed Allegiance.Core.Tests.P708ShipUpdateTests.Goto_opportunism_waits_ten_seconds_and_one_hundred_passes_then_resumes_route [13 ms]
+  Error Message:
+   Assert.Same() Failure: Values are not the same instance
+Expected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedTarget = null, Ammo = 1000, ··· }
+Actual:   null
+  Stack Trace:
+     at Allegiance.Core.Tests.P708ShipUpdateTests.Goto_opportunism_waits_ten_seconds_and_one_hundred_passes_then_resumes_route() in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs:line 192
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Allegiance.Core.Tests.P708ShipUpdateTests.Missile_selection_requires_behavior_full_lock_and_strict_transverse_speed(behavior: 2, quality: 1, transverse: 49.9900017, fire: True) [5 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Allegiance.Core.Tests.P708ShipUpdateTests.Missile_selection_requires_behavior_full_lock_and_strict_transverse_speed(Int32 behavior, Single quality, Single transverse, Boolean fire) in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs:line 179
+   at InvokeStub_P708ShipUpdateTests.Missile_selection_requires_behavior_full_lock_and_strict_transverse_speed(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.93]     Allegiance.Core.Tests.P708ShipUpdateTests.Defend_scans_only_after_two_hundred_complete_passes_and_rearms_on_new_plan [FAIL]
+  Failed Allegiance.Core.Tests.P708ShipUpdateTests.Defend_scans_only_after_two_hundred_complete_passes_and_rearms_on_new_plan [12 ms]
+  Error Message:
+   Assert.Same() Failure: Values are not the same instance
+Expected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedTarget = null, Ammo = 1000, ··· }
+Actual:   null
+  Stack Trace:
+     at Allegiance.Core.Tests.P708ShipUpdateTests.Defend_scans_only_after_two_hundred_complete_passes_and_rearms_on_new_plan() in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs:line 64
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /home/domingo/allegiance-codex-p708/docs/reports/P708_assets/development.trx
+
+Failed!  - Failed:     5, Passed:    26, Skipped:     0, Total:    31, Duration: 320 ms - Allegiance.Core.Tests.dll (net10.0)

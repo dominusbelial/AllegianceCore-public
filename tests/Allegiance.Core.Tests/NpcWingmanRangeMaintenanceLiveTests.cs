@@ -285,38 +285,28 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
             wingman.AttackTarget = enemy;                                  // directly committed, bypassing nearest-search noise
 
             const float approach = 120f;
-            // Measure the Wingman's issued throttle on ONE tick each way, from a
-            // freshly-reset state (wingman at rest at wp, nose toward the enemy),
-            // so relativeSpeed is dominated by the target's prescribed motion.
-            float ThrottleFor(Vector3 targetVel)
+            // Native range control uses manual thrust buttons with base throttle
+            // (Igc/shipIGC.cpp:2494-2509), replacing P171's throttle substitute.
+            (int Buttons, float ForwardSpeed) MovementFor(Vector3 targetVel)
             {
                 wingman.Position = wp;
                 wingman.Velocity = Vector3.Zero;
-                wingman.Orientation.Set(new Vector3(1f, 0f, 0f), new Vector3(0f, 1f, 0f)); // complete orthonormal +X frame
+                wingman.StateM = 0;
+                wingman.Orientation.Set(new Vector3(1f, 0f, 0f), new Vector3(0f, 1f, 0f));
                 for (int axis = 0; axis < 3; axis++) wingman.SetTurnRate(axis, 0);
                 enemy.Position = wp + new Vector3(sep, 0f, 0f);
                 enemy.Velocity = targetVel;
                 srv.TickSim();
-                return wingman.Controls.Throttle;
+                return (wingman.StateM & ShipControlState.MoveButtonsMask, wingman.Velocity.X);
             }
-
-            // Case A — target moving TOWARD the Wingman (closing too fast):
-            // relativeSpeed = own(0) − targetDir(−120) = +120 > 20 → BACK OFF (−1).
-            float closeThrottle = ThrottleFor(new Vector3(-approach, 0f, 0f));
-            // Case B — target fleeing AWAY (falling behind): relativeSpeed =
-            // own(0) − targetDir(+120) = −120 < −20 → PRESS IN (+1).
-            float fleeThrottle = ThrottleFor(new Vector3(approach, 0f, 0f));
-
-            Console.WriteLine($"P171-LIVE-THR: closing={closeThrottle:F3}, fleeing={fleeThrottle:F3} (sep fixed at {sep:F1})");
-
-            Assert.True(closeThrottle <= -0.499f,
-                $"target closing too fast must back off (Throttle −1): got {closeThrottle:F3} at fixed sep {sep:F1} — " +
-                "the fixed standoff-hold would not issue a distinct back-off here");
-            Assert.True(fleeThrottle >= 0.499f,
-                $"target fleeing must press in (Throttle +1): got {fleeThrottle:F3} — " +
-                "the fixed standoff-hold (distance-ramp) would give the same value for both cases, so this must differ to prove " +
-                "the throttle is speed-driven");
-            Assert.Same(enemy, wingman.AttackTarget);                  // still engaged after the measurements
+            var close = MovementFor(new Vector3(-approach, 0f, 0f));
+            var flee = MovementFor(new Vector3(approach, 0f, 0f));
+            Console.WriteLine($"P708 native range: closing={close}, fleeing={flee}");
+            Assert.Equal(ShipControlState.BackwardButton, close.Buttons);
+            Assert.Equal(ShipControlState.ForwardButton, flee.Buttons);
+            Assert.True(close.ForwardSpeed < 0, $"Backward input must produce real braking: {close}");
+            Assert.True(flee.ForwardSpeed > 0, $"Forward input must produce real acceleration: {flee}");
+            Assert.Same(enemy, wingman.AttackTarget);
         }
     }
 }

@@ -1,0 +1,13 @@
+Test run for /home/domingo/allegiance-codex-p708/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:01:30.46]     Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds [FAIL]
+  Failed Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds [1 m 30 s]
+  Error Message:
+   Parked >5s: {"Name":"mcp-b010-7262","ShipId":8106,"Side":0,"Hull":"Hvy Interceptor","Sector":1052,"Behavior":"combat","Position":[706.6237182617188,528.9952392578125,-8.635096549987793],"Target":8116,"OrderedTarget":null,"Engagers":3,"WorldReady":true,"WorldReadyDelaySec":0.042879699999999965,"WorldNotReadyAttempts":0,"RouteIndex":0,"RouteName":"R0:1050\u21921059\u21921052","Role":"Interceptor","State":"active","DefenseSector":null,"TargetSector":1052,"StagingSector":1059,"StagePhase":2,"Velocity":[0,0,0],"Speed":0,"Idle":false}
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds() in /home/domingo/allegiance-codex-p708/tests/Allegiance.ClientCore.Tests/P700ShowcaseLiveTests.cs:line 51
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /home/domingo/allegiance-codex-p708/docs/reports/P708_assets/parking-final-02.trx
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 1 m 30 s - Allegiance.ClientCore.Tests.dll (net10.0)

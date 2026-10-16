@@ -1,0 +1,170 @@
+{
+  "protected_ship_methods": {
+    "AdvanceFlightMounts": {
+      "file": "src/Allegiance.Core/Sim/Ship.cs",
+      "unchanged": true,
+      "sha256": "dbd514ebd84cb10c5c67dbfc1c045b161e1d3c062be6c2b0601387b6ed8a3e37"
+    },
+    "UpdateDispensers": {
+      "file": "src/Allegiance.Core/Sim/Ship.Equipment.cs",
+      "unchanged": true,
+      "sha256": "ca50a9ba0edb7e68c41222c7f20ff0d1b272ae9057e869609ea5c8549fe60073"
+    },
+    "UpdateMountedMissileLock": {
+      "file": "src/Allegiance.Core/Sim/Ship.cs",
+      "unchanged": true,
+      "sha256": "080d4768c86c4a04ee33ac8c39b45b7b32c7b93a6bb6e4925a6bd2be35e3afc4"
+    },
+    "TryFireMissile": {
+      "file": "src/Allegiance.Core/Sim/Ship.cs",
+      "unchanged": true,
+      "sha256": "91edc1bdbd62aeb9a0a1de0c25829766851065cfc079b6bf00d8dedda32d5355"
+    },
+    "UpdateAfterburner": {
+      "file": "src/Allegiance.Core/Sim/Ship.cs",
+      "unchanged": true,
+      "sha256": "4ad632b95eed8e39fbddb6686efbec077a34bb458d36c010a122ef27f81ab08d"
+    }
+  },
+  "protected_files": {
+    "src/Allegiance.Core/Sim/Ship.Equipment.cs": {
+      "unchanged": true,
+      "sha256": "b0c111523a1d66ad60af458d377270b2dd50b47a7760eed87d17603222c82431"
+    },
+    "src/Allegiance.Core/Model/Sector.cs": {
+      "unchanged": true,
+      "sha256": "abf2c46314aceb19c43aa2cd081fbe8ef59aaa882c604eea3f30307b88a91d7f"
+    },
+    "tools/allegiance-mcp/WorkerPartition.cs": {
+      "unchanged": true,
+      "sha256": "9e98e9d83470df0517069b31287d81c8ec4fcf5f0bbf65f69688f32129e66982"
+    },
+    "tools/allegiance-mcp/IdleTargetMetrics.cs": {
+      "unchanged": true,
+      "sha256": "6b2e0cfd6a9e399ae1ebb8871ccd77e98bf881e9030d0ee1bd38331693347d9c"
+    },
+    "tools/allegiance-mcp/SpawnLaunch.cs": {
+      "unchanged": true,
+      "sha256": "89c5a96516f7b8478b25158d629b753e2959917d0ec31835e44c5a9d9d7dddb3"
+    },
+    "tools/allegiance-mcp/ScenarioCoordination.cs": {
+      "unchanged": true,
+      "sha256": "11ef48d6444877fbbd900d0c760f1c84b73c9642c1bae3e03438f78fd84a15ad"
+    },
+    "tools/allegiance-mcp/Showcase.cs": {
+      "unchanged": true,
+      "sha256": "6741a7ff8598147eac1f6127209f3af30343e82a6135f1d91fbf465d7f60eae1"
+    },
+    "tools/allegiance-mcp/DroneCommands.cs": {
+      "unchanged": true,
+      "sha256": "226167dfe433c88b0e07e632cc0b03b28f2013d7b0bfbb1fe5fe33d08b41b34c"
+    },
+    "tools/allegiance-mcp/SpawnBatch.cs": {
+      "unchanged": true,
+      "sha256": "1a11f7dfeb8f1300eb4c3136342e911fe656d3ca4119774e76af22dbb6ba0e33"
+    },
+    "tools/allegiance-mcp/Catalog.cs": {
+      "unchanged": true,
+      "sha256": "b734a720633863d41143780a9d17e466d9ba275c48f91065109ee46a3c090e24"
+    },
+    "tools/allegiance-mcp/CombatTargetSelector.cs": {
+      "unchanged": true,
+      "sha256": "b8351805526af68c7199829d887bc052942fecd81410f11c09edd2ca2470a758"
+    },
+    "tools/allegiance-mcp/BotManager.Defense.cs": {
+      "unchanged": true,
+      "sha256": "be90e16afced382107b9c0e06bdf4c1e3154229b1dc89fa4cf3542d203e54197"
+    },
+    "tools/allegiance-mcp/PendingOwnership.cs": {
+      "unchanged": true,
+      "sha256": "d5785985f12fdb5c0da934c5c64904019414431335c3e1d4ba1e856dda7733ba"
+    },
+    "tools/allegiance-mcp/DecisionMetrics.cs": {
+      "unchanged": true,
+      "sha256": "cbfa1e179e9e8314a2c4f8fd65e80f3d75154833eaaf105d377592c12a9eef9e"
+    },
+    "tools/allegiance-mcp/Program.cs": {
+      "unchanged": true,
+      "sha256": "f64e0abb81f9348137891887a9f72b8ed2dc7842b6869f47c60d7da8687d5dc4"
+    },
+    "tools/allegiance-mcp/BotManager.Coordination.cs": {
+      "unchanged": true,
+      "sha256": "b2212ea6ffe2ae2c09acb55b536579ba7c94b28e5361a0542b33693638d08dce"
+    },
+    "tools/allegiance-mcp/WorkerSupervisor.cs": {
+      "unchanged": true,
+      "sha256": "51184ba30eafde3c71270eb8f4e5aff93f75af07eebbbde50ff1d55707a4abea"
+    },
+    "tools/allegiance-mcp/BotManager.Lifecycle.cs": {
+      "unchanged": true,
+      "sha256": "4c8ea1a296e50bb42b1e7943d1f0c5639f16e15d26205272aa6fb9b549a0010d"
+    },
+    "tools/allegiance-mcp/BotManager.Finale.cs": {
+      "unchanged": true,
+      "sha256": "9b9ea1421c793a978ff6488fe0902a62f39696a2256ea1014731f44daea53e0c"
+    },
+    "tools/allegiance-mcp/SupervisorResults.cs": {
+      "unchanged": true,
+      "sha256": "1d4225b1543c646a5aa02dc8d0d21da0ed678fc952c35b20b4583b6c5db60197"
+    },
+    "tools/allegiance-mcp/StallWatchdog.cs": {
+      "unchanged": true,
+      "sha256": "0c3586958fe9bddd089ec65c27cc16b2c3003302c0992d2a89bdfbb64a92647c"
+    },
+    "tools/allegiance-mcp/ObservedSession.cs": {
+      "unchanged": true,
+      "sha256": "906bef0245a726c25560bfb62332639250eacff1aa493409f203c9556e091e94"
+    },
+    "tools/allegiance-mcp/BotManager.DecisionFrame.cs": {
+      "unchanged": true,
+      "sha256": "543eca46e6d50f771415fffe16b4b365f762cc265889c0f2493dbc0f5a76418f"
+    },
+    "tools/allegiance-mcp/ScenarioPlanner.cs": {
+      "unchanged": true,
+      "sha256": "a90b8af2bbb6ad7099b1cd999d8be28be852a85a198c96937ae9948d7f43fc56"
+    },
+    "tools/allegiance-mcp/BotSpatialIndex.cs": {
+      "unchanged": true,
+      "sha256": "cc34fcd8812fdf2c28b78b4a3745982802da9acd46689a9b16270b6414c8db58"
+    },
+    "tools/allegiance-mcp/BotManager.cs": {
+      "unchanged": true,
+      "sha256": "1300ae627075f1d5664fa47c644e277a17eb29147b85d51cf889591fe413139d"
+    },
+    "tools/allegiance-mcp/MatrixPlanner.cs": {
+      "unchanged": true,
+      "sha256": "8e3c5ce7fa428026e120911ec3d9cb29ccea3eba06b86d7f5e88b9a89acc88c7"
+    },
+    "tools/allegiance-mcp/WorkerRpc.cs": {
+      "unchanged": true,
+      "sha256": "2d416571db1e7c7b0ea554d149ccd65821fe2635ddfe28138adb19f173f87331"
+    },
+    "tools/allegiance-mcp/McpTools.cs": {
+      "unchanged": true,
+      "sha256": "029810c60dd94de6d25b4da9f7eb19e8a9d2b9b075d6267c8dd37a098f14a012"
+    },
+    "tools/allegiance-mcp/StallMetrics.cs": {
+      "unchanged": true,
+      "sha256": "c697c79f799744c7980cd9960efe1f13579e787804822febfe347d2d0dab8ce2"
+    },
+    "tools/allegiance-mcp/ShowcaseFinale.cs": {
+      "unchanged": true,
+      "sha256": "497e41ae77ddbd508463882189b5cbde255ee5b40d1d8ac00070524237fe5cfa"
+    },
+    "tools/allegiance-mcp/BotManager.Scenarios.cs": {
+      "unchanged": true,
+      "sha256": "722089a0f295a788835384d840a8e9804c1c6cead0b756d661d630d0828e9417"
+    }
+  },
+  "changed_simulation_rows": [
+    "SIM-0104",
+    "SIM-0108",
+    "SIM-0112",
+    "SIM-0113",
+    "SIM-0114",
+    "SIM-0115",
+    "SIM-0117",
+    "SIM-0118"
+  ],
+  "head_unchanged": true
+}

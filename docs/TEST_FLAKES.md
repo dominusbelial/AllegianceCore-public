@@ -4,6 +4,36 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P708 observation (2026-10-16)
+
+The first unfiltered Core run passed **4,729/4,729**. The final-build Core rerun
+reported **4,727 pass / 2 fail / 0 skip**. Both failed methods then passed
+**3/3 exact-method isolated invocations**, satisfying P708's load-flake rule:
+
+| Method | Full-suite failure | Isolated evidence |
+| --- | --- | --- |
+| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | One of 200 pods exhausted oxygen; 199 docked and all 200 reached home. | `P708_assets/suite-retry-001-{1,2,3}.trx.gz`: 3/3 pass |
+| `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction` | B did not receive the mine EXPORT before the original deadline. | `P708_assets/suite-retry-000-{1,2,3}.trx.gz`: 3/3 pass |
+
+ClientCore passed **1,073/1,073**; MonoGame passed **2,234** with **0 failures**
+and the three existing optional Meshy-pack skips. The local P542 projectile
+proof and P660 15v15 showcase were enabled. Neither failed method, its
+assertions/deadlines, the pod/docking implementation, nor quarantine settings
+were changed to obtain the isolated passes.
+
+The separate required parking gate was **7 pass / 3 fail**, with stopped combat
+targets in runs 02, 03 and 10. Recovery in runs 04–06 does **not** satisfy its
+zero-failure requirement. The wave report preserves that integration hold,
+all ten attempts, and the entry-revision comparison; it does not relabel the
+parking gate as passed on the basis of the broad suites or isolated recovery.
+The separately built entry revision passed 3/3 parking runs, and the final P708
+build passed 3/3 post-suite parking retries. Those observations do not identify
+a cause or replace the required ten-run gate; no P707 attribution is claimed.
+
+See [P708 report](reports/P708_PARITY_WAVE11.md),
+[invocation ledger](reports/P708_assets/verification.json), and
+[scope audit](reports/P708_assets/scope-audit.json).
+
 ## P702 observation (2026-10-15)
 
 The first unfiltered Core run reported **4,570 pass / 5 fail / 0 skip**.
