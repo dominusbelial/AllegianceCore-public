@@ -49,6 +49,7 @@ public sealed partial class BotFixRegressionTests
         world.Apply(new ShipStatusMessage { ShipId = id, HullId = hull, SectorId = 1, StationId = -1 });
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void DefenseAlert_BoundedNearestWing_ResumesOriginalRouteAfterQuietAndMinimum()
     {
@@ -89,6 +90,7 @@ public sealed partial class BotFixRegressionTests
         finally { foreach (var cs in sessions) cs.Dispose(); }
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void DefenseRepeatedAlerts_ExtendSameWing_AndRespectSideCapAcrossBases()
     {
@@ -117,6 +119,7 @@ public sealed partial class BotFixRegressionTests
         finally { foreach (var cs in sessions) cs.Dispose(); }
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber()
     {
@@ -137,6 +140,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal((short?)4, Get<short?>(bot, "TargetSector"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void DefenseTravellingFighter_AnswersReceivedHitOnSelfOrFriendlyAsset_ThenResumes(bool asset)
@@ -156,6 +160,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal(new short[] { 1, 2, 3, 4 }, Get<List<short>>(bot, "Path"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void DefenseDisableSwitch_RestoresTravelPastThreats_AndIgnoresAlerts()
     {
@@ -169,6 +174,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Null(Get<short?>(bot, "TargetId")); Assert.NotEmpty(Get<List<short>>(bot, "Path"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void DefenseAfterArrival_ReturnsToOriginalObjective_AndPreservesStaging()
     {
@@ -187,6 +193,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal(BotManager.StageReleasedPhase, Get<byte>(bot, "StagePhase"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void DefenseDelayedWorldSync_GetsFullMinimumDeployment()
     {
@@ -200,6 +207,7 @@ public sealed partial class BotFixRegressionTests
         DefensePass(mgr, 56, bot); Assert.Null(Get<short?>(bot, "DefenseSector"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void DefenseDetour_FliesHomeWarp_PreservesObjectivePath_AndRecordsArrival()
     {
@@ -220,6 +228,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal((short?)4, Get<short?>(bot, "TargetSector"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Theory]
     [InlineData("bomber")] [InlineData("scout")]
     public void DefenseAlert_DoesNotPullOtherRoles(string role)
@@ -229,6 +238,7 @@ public sealed partial class BotFixRegressionTests
         DefensePass(Manager(bot), 0, bot); Assert.Null(Get<short?>(bot, "DefenseSector"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void DefenseObservations_IgnoreHiddenEnemiesAndUnrelatedChat_AndExpireOnRotation()
     {

@@ -234,6 +234,7 @@ public sealed partial class BotFixRegressionTests
         Assert.False(Get<bool>(bot, "Arrived")); Assert.True(Get<bool>(bot, "ObjectivesPending"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void Bomber_SelectsOnlyEnemyStationsInDestination_AndReactsOnlyToVisibleAttackers()
     {

@@ -63,6 +63,7 @@ public sealed partial class BotFixRegressionTests
         Set(bot, "WeaponPartId", Catalog.FirstWeaponPartId(loadout.Parts));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void P700_ShipHitsInBattleSectorNeverBecomeStationDefense(bool friendlyAsset)
@@ -84,6 +85,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal((short?)9, Get<short?>(bot, "TargetId"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void P700_PassiveVisibleEnemyDoesNotStartOrRefreshDefense()
     {
@@ -102,6 +104,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal(new short[] { 1, 2, 3, 4 }, Get<List<short>>(bot, "Path"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void P700_DefenderApproachesThenFires_AndDoesNotParkAtMatchedZeroSpeed()
     {
@@ -124,6 +127,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal(2, Get<Dictionary<short, int>>(mgr, "_tickEngagers")[9]);
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void P700_FriendlyObstruction_Repositions_AndFriendsBehindTargetDoNotBlock(bool behindTarget)
@@ -140,6 +144,7 @@ public sealed partial class BotFixRegressionTests
         Assert.NotEqual(0, controls.StateM & (ShipControlState.LeftButton | ShipControlState.RightButton | ShipControlState.ForwardButton));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void P700_WarpExitClearancePrecedesImmediateDefense()
     {
@@ -157,6 +162,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Null(Get<short?>(bot, "TargetId"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void P700_StationHitStartsDefense_OriginalHitTimeBoundsAllClear()
     {
@@ -177,6 +183,7 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal(new short[] { 1, 2, 3, 4 }, Get<List<short>>(bot, "Path"));
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void P700_TargetDirectlyBehindCommandsTurn()
     {
@@ -235,6 +242,7 @@ public sealed partial class BotFixRegressionTests
         finally { foreach (var cs in sessions) cs.Dispose(); }
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void P700_AmbiguousOrWrongSectorShipHitDoesNotInventStationAttack(bool ambiguous)

@@ -60,8 +60,7 @@ public sealed class HUDPolishHarness : Game
         _white = new Texture2D(GraphicsDevice, 1, 1);
         _white.SetData(new[] { Color.White });
 
-        string artwork = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-                         ?? "/home/domingo/Development/Artwork";
+        string artwork = Allegiance.Core.ExternalPaths.Require(Allegiance.Core.ExternalResourceKind.Artwork);   // env var or local.env; no machine paths in source
         _gauges = GaugeTextures.Load(GraphicsDevice, artwork);
         Console.WriteLine($"[proof] gauges loaded: {_gauges.LoadedCount}/6");
         _hud = new HudRenderer(_sb, _white, _small, _big, _gauges);

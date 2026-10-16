@@ -336,6 +336,7 @@ public sealed partial class BotFixRegressionTests
         Assert.False((bool)Call("StageReleaseRequired", manager, (short)0, (short)4, 0, 0.0, null, (uint?)123)!);
     }
 
+    [Trait("Requires", "Artwork")]   // loads PCore001.igc (artwork corpus)
     [Fact]
     public void WorkerAppliesGlobalRecallAndRestoresItsOriginalObjectiveWhenReleased()
     {
