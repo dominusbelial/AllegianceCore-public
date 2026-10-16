@@ -12,8 +12,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// states (from the real PLAYER_READY(45) relays the server sends to the whole
 /// side, incl. the sender — <see cref="ClientWorld.Roster"/>), the per-side
 /// aggregate <c>TEAM_READY(46)</c> broadcast, and a leader force-ready trigger
-/// (<c>FORCE_TEAM_READY(47)</c>) surfaced only to the mission owner (the same
-/// <c>AmMissionOwner</c> gate P281's randomize-teams uses).
+/// (<c>FORCE_TEAM_READY(47)</c>) surfaced to each team commander (teamscreen.cpp:1554-1559).
 ///
 /// Follows the same discipline as <see cref="SideSelectLayout"/>: pure,
 /// headless-testable, every string printable ASCII 32..126 (the HUD
@@ -52,9 +51,7 @@ public static class ReadyCheckLayout
     /// <c>TEAM_READY(46)</c> for the own side (null until one arrives);
     /// <paramref name="forcedReady"/> is the own side's force flag (from the
     /// <c>FORCE_TEAM_READY(47)</c> echo). The force-ready hint is appended only
-    /// when <paramref name="amMissionOwner"/> (the server leader-gates the
-    /// message anyway; the mission owner is the owning side's leader, so this
-    /// stays honest — same pattern as P281's randomize hint).</param>
+    /// when <paramref name="canForceTeamReady"/> is true (mission ownership is independent).
     /// <param name="launchCountdown">P522 — seconds remaining in the
     /// mission-start countdown (STAGE_STARTING), or <see langword="null"/>
     /// when it hasn't begun. While non-null the local ship is held (not
@@ -68,14 +65,14 @@ public static class ReadyCheckLayout
         IReadOnlyList<PlayerRow> players,
         bool? sideAggregateReady,
         bool forcedReady,
-        bool amMissionOwner,
+        bool canForceTeamReady,
         int? launchCountdown = null)
     {
         var rows = new List<Row>();
 
         rows.Add(Row.Of(Kind.Title, "READY CHECK"));
         rows.Add(Row.Of(Kind.Hint, "Y TOGGLE READY"));
-        if (amMissionOwner) rows.Add(Row.Of(Kind.Hint, "O FORCE TEAM READY"));
+        if (canForceTeamReady) rows.Add(Row.Of(Kind.Hint, "O TOGGLE TEAM READY"));
 
         // P522 — the countdown hold: while the mission is STAGE_STARTING the
         // ship is held (not flying), so surface the launch countdown loudly.

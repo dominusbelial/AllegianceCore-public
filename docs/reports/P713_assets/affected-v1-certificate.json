@@ -1,0 +1,1170 @@
+{
+  "methods": 114,
+  "individual_invocations": 342,
+  "case_passes": 381,
+  "earlier_runner_end_cutoff_unix": 1792171041.472894,
+  "source_sha256": {
+    "src/Allegiance.ClientCore.Game/Game1.Panes.cs": "327e2a544f31ae751d9d45eb0fc81e6b7761966cbbdfd8ff760b30133b76013f",
+    "src/Allegiance.ClientCore.Game/Game1.Rendering.cs": "696c1527e2a5acd34f4522d78e5c3c13c2bae8f3b25d372489e5015d1dfd46c3",
+    "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs": "ad7d8421d46d9035e0d4c77fd2bf164f3e22c5c7cb59c657da1f1419f22a4b6e",
+    "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs": "303a00b7bef671c1a595d0ae9268d4f96a5fa5d3bd6a8385344e9ab64f49a1c3",
+    "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs": "7c0f7170d2d27a01da0505680a9bdd139d17a4cdf854b3fe0e059190a8dba076",
+    "src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs": "381323007cb80be0f323b7afdad447690fcf5e7ae13390c62d1061585910eb1f",
+    "src/Allegiance.ClientCore/State/LobbyScreenState.cs": "4c581827fc42bef47bd03bf1ac08570b50c2bdf3c11e79001873971465027f85",
+    "src/Allegiance.ClientCore/State/WingNames.cs": "6a1a4e1ab9c1f37be62be9356ad5a8ff59ee93cae0c355302e10a9e45f783e17",
+    "src/Allegiance.Core/Wire/MissionDef.cs": "53ac4e2796eb0ba0f97519e9e10ce4e2133d40e614b515d64377f910d630146c",
+    "src/Allegiance.Core/Wire/SetWingId.cs": "1a13499e1298f50f5f9022a0d61bfc64bf9f4f6e2d6c45ecc0b4b9486a3e7f26",
+    "src/Allegiance.Server/Server.Lobby.cs": "068b1930786b7d50ab031a41d6202a1d146919cbef3be35560d3f2579c6cc207",
+    "src/Allegiance.Server/Server.ShipCommands.cs": "e1c9dca7397069d842334fee002e66d962ef678247585a2d8ddd0f06620a1d43",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs": "ac33e35cac38513dadaca051559d733f389f5dd6fd61146c7eb58e771b258257",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs": "01c052bc809b24c7c539adadd859bf3b7a9fe45a81e6a084b3070f18af0547f7",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckLayoutTests.cs": "f865b1134ec12af211d01484d6d5098dba9af27e96254d0d5038305432168f0a",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckRosterTests.cs": "09c640b508f9f0e701bd50216c128b97137e8cc4775b76aa302ec3935a1b3daf",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs": "4fbb76b14f7ab462e220a93b7e142b2ba88d3d429f931a74960d6596b87ad567",
+    "tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs": "98bc353d4429ce0582f0dd8c73b49552b800b779437f070611575cbb2c532209",
+    "tests/Allegiance.Core.Tests/LiveTeamLeadershipTests.cs": "39d511827dfdeda1755c47792758748289acb82f47f3a57cab98b126073becc1",
+    "tests/Allegiance.Core.Tests/Wire/P713LobbyWireTests.cs": "bf1b6658f3dd7661767e737afc81633156a4ce3ee8f1e29dba04ff387f5ddf99"
+  },
+  "cohort": [
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyTests.TeamReady_round_trips_exact_bytes",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-000-1",
+        "serial-affected-000-2",
+        "serial-affected-000-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyTests.Mission_boots_not_started_and_control_update_ignored_before_start",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-001-1",
+        "serial-affected-001-2",
+        "serial-affected-001-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyTests.Both_sides_ready_broadcasts_team_ready_and_autostarts",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-002-1",
+        "serial-affected-002-2",
+        "serial-affected-002-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyTests.One_side_ready_does_not_autostart",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-003-1",
+        "serial-affected-003-2",
+        "serial-affected-003-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-004-1",
+        "serial-affected-004-2",
+        "serial-affected-004-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyTests.Late_joiner_to_started_mission_still_gets_enter_game",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-005-1",
+        "serial-affected-005-2",
+        "serial-affected-005-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyTests.Existing_stage_gates_refuse_while_not_started",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-006-1",
+        "serial-affected-006-2",
+        "serial-affected-006-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyTests.Multi_mission_ready_up_scopes_per_mission",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-007-1",
+        "serial-affected-007-2",
+        "serial-affected-007-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Leadership_pair_codecs_round_trip_exact_bytes",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-008-1",
+        "serial-affected-008-2",
+        "serial-affected-008-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Quit_codecs_round_trip_exact_bytes_with_message_blob",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-009-1",
+        "serial-affected-009-2",
+        "serial-affected-009-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.First_on_empty_side_becomes_leader_and_mission_owner",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-010-1",
+        "serial-affected-010-2",
+        "serial-affected-010-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Second_on_occupied_side_does_not_become_leader",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-011-1",
+        "serial-affected-011-2",
+        "serial-affected-011-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Multi_mission_leadership_scopes_per_mission",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-012-1",
+        "serial-affected-012-2",
+        "serial-affected-012-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Leader_disconnect_promotes_first_other_player_exactly",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-013-1",
+        "serial-affected-013-2",
+        "serial-affected-013-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Leader_last_on_side_migrates_mission_owner_to_other_occupied_side",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-014-1",
+        "serial-affected-014-2",
+        "serial-affected-014-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Owner_side_leader_leaves_migrates_owner_to_auto_elected_leader_and_ends_game",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-015-1",
+        "serial-affected-015-2",
+        "serial-affected-015-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Sole_leader_owner_disconnect_clears_both_roles",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-016-1",
+        "serial-affected-016-2",
+        "serial-affected-016-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Any_disconnect_broadcasts_quit_mission_to_remaining_peers",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-017-1",
+        "serial-affected-017-2",
+        "serial-affected-017-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLeadershipTests.Non_leader_departure_broadcasts_only_quit_mission",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-018-1",
+        "serial-affected-018-2",
+        "serial-affected-018-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Position_request_codecs_round_trip_exact_bytes",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-019-1",
+        "serial-affected-019-2",
+        "serial-affected-019-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Ack_del_force_codecs_round_trip_exact_bytes",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-020-1",
+        "serial-affected-020-2",
+        "serial-affected-020-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Del_position_req_reason_values_match_native",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-021-1",
+        "serial-affected-021-2",
+        "serial-affected-021-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-022-1",
+        "serial-affected-022-2",
+        "serial-affected-022-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Occupied_side_request_broadcasts_and_does_not_seat",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-023-1",
+        "serial-affected-023-2",
+        "serial-affected-023-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Leader_accept_seats_requester_and_clears_pending",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-024-1",
+        "serial-affected-024-2",
+        "serial-affected-024-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Leader_reject_broadcasts_and_leaves_unseated",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-025-1",
+        "serial-affected-025-2",
+        "serial-affected-025-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Non_leader_ack_refused",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-026-1",
+        "serial-affected-026-2",
+        "serial-affected-026-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Self_cancel_clears_and_foreign_cancel_refused",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-027-1",
+        "serial-affected-027-2",
+        "serial-affected-027-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Leader_reject_via_delpositionreq_reaches_same_end_state",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-028-1",
+        "serial-affected-028-2",
+        "serial-affected-028-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Nonexistent_side_request_gets_sidegone_to_requester_only",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-029-1",
+        "serial-affected-029-2",
+        "serial-affected-029-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Requester_disconnect_broadcasts_delpositionreq_rejected",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-030-1",
+        "serial-affected-030-2",
+        "serial-affected-030-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Force_team_ready_true_auto_starts_even_with_unready_teammate",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-031-1",
+        "serial-affected-031-2",
+        "serial-affected-031-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Force_team_ready_false_reverts_to_normal_check",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-032-1",
+        "serial-affected-032-2",
+        "serial-affected-032-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Force_team_ready_non_leader_refused",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "serial-affected-033-1",
+        "serial-affected-033-2",
+        "serial-affected-033-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LivePositionRequestTests.Multi_mission_position_and_force_scope_per_mission",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-034-1",
+        "final-affected-034-2",
+        "final-affected-034-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerReadyTests.PlayerReady_round_trips_exactly",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-035-1",
+        "final-affected-035-2",
+        "final-affected-035-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerReadyTests.PlayerReady_is_relayed_back_to_the_sender",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-036-1",
+        "final-affected-036-2",
+        "final-affected-036-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveMissionStageTests.Join_while_mission_not_started_receives_non_started_stage",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-037-1",
+        "final-affected-037-2",
+        "final-affected-037-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveMissionStageTests.Ready_up_auto_start_broadcasts_started_stage_to_already_joined_peers",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-038-1",
+        "final-affected-038-2",
+        "final-affected-038-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveMissionStageTests.Late_joiner_into_started_mission_receives_started_stage",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-039-1",
+        "final-affected-039-2",
+        "final-affected-039-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveEnterGameTests.Join_ready_up_auto_start_sends_one_enter_game_to_each_bot",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-040-1",
+        "final-affected-040-2",
+        "final-affected-040-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Toggle_codecs_round_trip_exact_bytes",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-041-1",
+        "final-affected-041-2",
+        "final-affected-041-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Lobby_lock_from_owner_relays_and_sets_flag",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-042-1",
+        "final-affected-042-2",
+        "final-affected-042-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Lobby_lock_from_non_owner_refused",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-043-1",
+        "final-affected-043-2",
+        "final-affected-043-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Sides_lock_from_owner_relays_and_non_owner_refused",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-044-1",
+        "final-affected-044-2",
+        "final-affected-044-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Sides_lock_refuses_side_switch_and_unlock_restores_p184",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-045-1",
+        "final-affected-045-2",
+        "final-affected-045-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Auto_accept_on_seats_pending_requester",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-046-1",
+        "final-affected-046-2",
+        "final-affected-046-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Auto_accept_on_seats_new_request_to_led_side",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-047-1",
+        "final-affected-047-2",
+        "final-affected-047-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Auto_accept_from_non_leader_refused",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-048-1",
+        "final-affected-048-2",
+        "final-affected-048-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Auto_accept_na_variant_ignored",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-049-1",
+        "final-affected-049-2",
+        "final-affected-049-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Change_team_civ_from_leader_pre_start_changes_and_relays",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-050-1",
+        "final-affected-050-2",
+        "final-affected-050-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Change_team_civ_refused_once_started",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-051-1",
+        "final-affected-051-2",
+        "final-affected-051-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Change_team_civ_refused_from_non_leader",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-052-1",
+        "final-affected-052-2",
+        "final-affected-052-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Change_team_civ_refused_for_unknown_civ",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-053-1",
+        "final-affected-053-2",
+        "final-affected-053-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTeamLobbyToggleTests.Multi_mission_lock_sides_scopes_per_mission",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-054-1",
+        "final-affected-054-2",
+        "final-affected-054-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.SetWingIdTests.SetWingId_codec_roundtrips_fixed_10_byte_layout",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-055-1",
+        "final-affected-055-2",
+        "final-affected-055-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.SetWingIdTests.SetWingId_widmax_is_ten",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-056-1",
+        "final-affected-056-2",
+        "final-affected-056-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.SetWingIdTests.SetWingId_self_tag_relays_sidewide_not_sectorwide_and_mutates",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-057-1",
+        "final-affected-057-2",
+        "final-affected-057-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.SetWingIdTests.SetWingId_foreign_ship_target_is_silently_ignored",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-058-1",
+        "final-affected-058-2",
+        "final-affected-058-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.MissionDef_FixedSizes_AreDeclared",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-059-1",
+        "final-affected-059-2",
+        "final-affected-059-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.MissionDef_RoundTrips_ThroughWire",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-060-1",
+        "final-affected-060-2",
+        "final-affected-060-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.MissionDef_PlacesKeyFieldsAtCompilerConfirmedOffsets_AndZerosTheRest",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-061-1",
+        "final-affected-061-2",
+        "final-affected-061-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.MissionDef_RealUsage_BaseNameRoundTrips",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-062-1",
+        "final-affected-062-2",
+        "final-affected-062-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.MissionDef_TruncatesOverLongStaticFileName_KeepingNullTerminator",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-063-1",
+        "final-affected-063-2",
+        "final-affected-063-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.MissionDef_RejectsWrongFmid_AndWrongLength",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-064-1",
+        "final-affected-064-2",
+        "final-affected-064-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.JoinedMission_FixedSizes_AreDeclared",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-065-1",
+        "final-affected-065-2",
+        "final-affected-065-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.JoinedMission_RoundTrips_ThroughWire",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-066-1",
+        "final-affected-066-2",
+        "final-affected-066-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.JoinedMission_EmitsExactDeclaredBytes",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-067-1",
+        "final-affected-067-2",
+        "final-affected-067-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.JoinedMission_NonZeroFields_LandExactly",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-068-1",
+        "final-affected-068-2",
+        "final-affected-068-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.MissionDefJoinedMissionWireTests.JoinedMission_RejectsWrongFmid_AndWrongLength",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-069-1",
+        "final-affected-069-2",
+        "final-affected-069-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.P680CountdownWireTests.Duration_and_start_epoch_use_native_MissionParams_offsets_and_leave_neighbors_intact",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-070-1",
+        "final-affected-070-2",
+        "final-affected-070-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.Core.Tests.Wire.P713LobbyWireTests.Mission_definition_leaders_use_native_short_array_without_touching_neighbor_fields",
+      "project": "Allegiance.Core.Tests",
+      "labels": [
+        "final-affected-071-1",
+        "final-affected-071-2",
+        "final-affected-071-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-072-1",
+        "final-affected-072-2",
+        "final-affected-072-3"
+      ],
+      "case_passes": 30
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Every_team_commander_can_toggle_both_directions_and_clears_own_afk",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-073-1",
+        "final-affected-073-2",
+        "final-affected-073-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Eliminated_player_stays_in_picker_until_join_side_admits_an_active_team",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-074-1",
+        "final-affected-074-2",
+        "final-affected-074-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Join_dispatch_loads_shared_core_and_assigns_identity_before_launch_then_playerinfo_sets_side",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-075-1",
+        "final-affected-075-2",
+        "final-affected-075-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Failed_core_rejects_join_without_assigning_identity_or_consuming_later_packet_messages",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-076-1",
+        "final-affected-076-2",
+        "final-affected-076-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Discovery_formats_native_spotter_and_enemy_station_critical_feedback",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-077-1",
+        "final-affected-077-2",
+        "final-affected-077-3"
+      ],
+      "case_passes": 15
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Allied_discovery_is_noncritical_and_nonzero_wing_suppresses_other_critical_discoveries",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-078-1",
+        "final-affected-078-2",
+        "final-affected-078-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Discovery_ignores_missing_entities_and_lobby_and_bounds_pending_feedback",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-079-1",
+        "final-affected-079-2",
+        "final-affected-079-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Session_gate_serializes_discovery_receive_and_reader_drains",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-080-1",
+        "final-affected-080-2",
+        "final-affected-080-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P675CommandLiveTests.Real_session_loads_core_accepts_order_and_joins_wing_without_replacing_accepted_target",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-081-1",
+        "final-affected-081-2",
+        "final-affected-081-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ReadyCheckLiveTests.Mission_stays_not_started_while_any_same_side_peer_is_unready_then_starts_when_last_readies",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-082-1",
+        "final-affected-082-2",
+        "final-affected-082-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ReadyCheckLiveTests.Only_the_mission_owner_can_force_team_ready_and_it_starts_the_mission",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-083-1",
+        "final-affected-083-2",
+        "final-affected-083-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.PlayerReadyLiveTests.SendPlayerReady_RelaysToWholeTeam_UpdatesBothRosters",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-084-1",
+        "final-affected-084-2",
+        "final-affected-084-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.PlayerReadyLiveTests.SendPlayerReady_NotReadyToggle_FlipsRoster_KeepsHistory",
+      "project": "Allegiance.ClientCore.Tests",
+      "labels": [
+        "final-affected-085-1",
+        "final-affected-085-2",
+        "final-affected-085-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckLayoutTests.Build_yields_title_hint_aggregate_and_roster_rows",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-086-1",
+        "final-affected-086-2",
+        "final-affected-086-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckLayoutTests.Aggregates_yes_and_forced_flag_are_reflected",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-087-1",
+        "final-affected-087-2",
+        "final-affected-087-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckLayoutTests.Aggregate_null_shows_dash_before_first_team_ready_arrives",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-088-1",
+        "final-affected-088-2",
+        "final-affected-088-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckLayoutTests.Force_ready_hint_shown_only_when_commander_can_toggle",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-089-1",
+        "final-affected-089-2",
+        "final-affected-089-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckLayoutTests.Empty_roster_shows_wait_message",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-090-1",
+        "final-affected-090-2",
+        "final-affected-090-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckLayoutTests.LaunchCountdown_Emits_LAUNCHING_IN_Row",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-091-1",
+        "final-affected-091-2",
+        "final-affected-091-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckLayoutTests.LaunchCountdown_Null_Omits_LAUNCHING_IN_Row",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-092-1",
+        "final-affected-092-2",
+        "final-affected-092-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckRosterTests.Gather_lists_same_side_players_with_real_ready_flags_and_excludes_enemies",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-093-1",
+        "final-affected-093-2",
+        "final-affected-093-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckRosterTests.Gather_reflects_own_ready_toggle_and_team_ready_aggregate",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-094-1",
+        "final-affected-094-2",
+        "final-affected-094-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckRosterTests.Gather_adds_roster_only_player_with_no_entity_by_ship_id",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-095-1",
+        "final-affected-095-2",
+        "final-affected-095-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckRosterTests.Gather_excludes_known_foreign_ready_flags_after_side_change",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-096-1",
+        "final-affected-096-2",
+        "final-affected-096-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ReadyCheckRosterTests.Gather_uses_side_roster_display_name_when_available",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-097-1",
+        "final-affected-097-2",
+        "final-affected-097-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Commander_and_afk_markers_follow_roster_state_independently_of_location",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-098-1",
+        "final-affected-098-2",
+        "final-affected-098-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_groups_by_side_and_sorts_pilots_by_name",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-099-1",
+        "final-affected-099-2",
+        "final-affected-099-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_derives_ship_status_from_entity",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-100-1",
+        "final-affected-100-2",
+        "final-affected-100-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_puts_rank_name_on_each_row",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-101-1",
+        "final-affected-101-2",
+        "final-affected-101-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_highlights_the_self_row",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-102-1",
+        "final-affected-102-2",
+        "final-affected-102-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-103-1",
+        "final-affected-103-2",
+        "final-affected-103-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_hides_ballot_for_non_leaders",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-104-1",
+        "final-affected-104-2",
+        "final-affected-104-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_output_is_always_pure_ascii",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-105-1",
+        "final-affected-105-2",
+        "final-affected-105-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.SideSelectLayoutTests.Build_yields_title_two_side_rows_and_hint",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-106-1",
+        "final-affected-106-2",
+        "final-affected-106-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.SideSelectLayoutTests.Highlights_the_selected_row",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-107-1",
+        "final-affected-107-2",
+        "final-affected-107-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.SideSelectLayoutTests.Null_or_empty_roster_shows_wait_message",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-108-1",
+        "final-affected-108-2",
+        "final-affected-108-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.SideSelectLayoutTests.Randomize_hint_shown_only_to_mission_owner",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-109-1",
+        "final-affected-109-2",
+        "final-affected-109-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.SideSelectLayoutTests.SelectableSideIds_excludes_inactive_sides",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-110-1",
+        "final-affected-110-2",
+        "final-affected-110-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.SideSelectLayoutTests.Build_marks_inactive_side_destroyed_and_never_highlights_it",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-111-1",
+        "final-affected-111-2",
+        "final-affected-111-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P713LobbyScreenLiveTests.Non_owner_commander_screen_toggles_real_team_ready_and_readies_self",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-112-1",
+        "final-affected-112-2",
+        "final-affected-112-3"
+      ],
+      "case_passes": 3
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P675CommandActionTests.Join_order_changes_wing_without_targeting_or_overwriting_accepted_or_engaging",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "labels": [
+        "final-affected-113-1",
+        "final-affected-113-2",
+        "final-affected-113-3"
+      ],
+      "case_passes": 3
+    }
+  ]
+}

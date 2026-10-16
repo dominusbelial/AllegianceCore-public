@@ -155,6 +155,9 @@ public class P675CommandActionTests
     {
         var world = World(); var input = new CommandActionInput(); var map = Map();
         Queue(world, 20, IgcObjectType.Station); input.Step(new(Keys.Home), false, map, world);
+        // Native SET_WINGID is side-scoped; joining a wing needs a teammate.
+        world.Apply(new PlayerInfo { ShipId = 10, ISide = 0, CharacterName = "me" });
+        world.Apply(new JoinSide { ShipId = 11, SideId = 0 });
         world.Apply(new SetWingId { ShipID = 11, WingId = 4 }); Queue(world, cid: OrderChange.CidJoin);
         var result = input.Step(new(Keys.F16), false, map, world);
         Assert.Equal<short?>(4, result.JoinWing); Assert.Equal(4, world.Ships[10].WingId);

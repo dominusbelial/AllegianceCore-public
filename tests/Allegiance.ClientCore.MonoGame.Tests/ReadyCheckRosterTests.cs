@@ -81,6 +81,22 @@ public class ReadyCheckRosterTests
     }
 
     [Fact]
+    public void Gather_excludes_known_foreign_ready_flags_after_side_change()
+    {
+        var w = World();
+        w.Apply(new PlayerReady { ShipId = 202, FReady = true });
+        w.Apply(new PlayerReady { ShipId = 101, FReady = true });
+        w.Apply(new JoinSide { ShipId = 101, SideId = 8 });
+        w.Apply(new PlayerReady { ShipId = 303, FReady = false });
+        var (_, players, _) = ReadyCheckRoster.Gather(w, Gate, false);
+        Assert.Equal(2, players.Count); // self and the genuinely unknown relay
+        Assert.Contains(players, p => p.Name == "sid303" && !p.Ready);
+        Assert.DoesNotContain(players, p => p.Name is "sid202" or "sid101" or "Alpha" or "Enemy");
+        w.Apply(new JoinSide { ShipId = 101, SideId = MySide });
+        Assert.Contains(ReadyCheckRoster.Gather(w, Gate, false).Players, p => p.Name == "Alpha" && p.Ready);
+    }
+
+    [Fact]
     public void Gather_uses_side_roster_display_name_when_available()
     {
         var w = World();

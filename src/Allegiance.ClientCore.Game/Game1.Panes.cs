@@ -918,31 +918,21 @@ public sealed partial class Game1
             return;
         }
 
-        if (_session.World.MyShipId is not null)
+        var world = _session.World;
+
+        bool admitted;
+        lock (_session.Gate)
+            admitted = State.LobbyScreenState.CanLeaveSideSelection(world, _sideSelectFromGameOver);
+        if (admitted)
         {
+            _sideSelectFromGameOver = false;
             _state = ClientState.ReadyCheck;
             return;
         }
 
-        var world = _session.World;
-
         // P572 — --auto-side: request the side as soon as the roster is known
         // (a one-shot; falls back to the server's 30 s auto-assign if unknown).
         ApplyAutoProofSideSelect();
-
-        // P481 — elimination-mode exit: entered from the game-over Back on an
-        // eliminated side; once the player is seated on an ACTIVE side (the
-        // server's TryJoinSide re-seated them after their POSITIONREQ), leave
-        // the picker for ReadyCheck (which immediately flies a Started mission).
-        if (_sideSelectFromGameOver)
-        {
-            if (world.MySideId is { } sid && world.IsSideActive(sid))
-            {
-                _sideSelectFromGameOver = false;
-                _state = ClientState.ReadyCheck;
-                return;
-            }
-        }
 
         // Picker over the ACTIVE (selectable) sides only (P481): an eliminated /
         // inactive side is excluded so it can't be re-picked.
@@ -1019,13 +1009,9 @@ public sealed partial class Game1
     /// mission starts). The server holds the mission at NotStarted until every
     /// occupied side is aggregate-ready (P180 TryAutoStart); here the player
     /// toggles their own ready flag (Y), which sends a real PLAYER_READY(45)
-    /// — the exact thing the old auto-ready hack faked. The mission owner can
-    /// force their whole side ready (O, FORCE_TEAM_READY(47)), gated the same
-    /// way P281's randomize-teams trigger is. As soon as the start countdown
-    /// begins (all sides ready → server SET_START_TIME broadcast), leave for
-    /// Flying — the client's Mission.Stage is pinned to Started by the join
-    /// burst, so the countdown-began receipt is the real "the game is
-    /// launching" signal (P216).</summary>
+    /// — the exact thing the old auto-ready hack faked. Each team commander can toggle team ready
+    /// (O, FORCE_TEAM_READY(47)); remain here through the countdown until the
+    /// authoritative mission stage becomes Started.</summary>
     private void UpdateReadyCheck(KeyboardState ks)
     {
         var world = _session.World;
@@ -1113,7 +1099,7 @@ public sealed partial class Game1
             }
         }
 
-        // P501 — gamepad: A toggles ready (confirm), X is the owner's force-ready
+        // P501 — gamepad: A toggles ready (confirm), X toggles the commander's team-ready flag
         // (all-false on desktop without a connected pad).
         var nav = GamePadNavNow();
 
@@ -1127,17 +1113,11 @@ public sealed partial class Game1
         _rcYWasDown = y;
 
         bool o = ActionDown(ks, "ForceReady") || nav.X;
-        if (o && !_rcOWasDown && world.AmMissionOwner && world.MySideId is { } sideId)
-        {
-            // Mission-owner override, gated exactly like P281's randomize-teams
-            // trigger (the same AmMissionOwner / IsMissionOwnerPlayer gate).
-            _session.SendForceTeamReady(true, sideId);
-            Console.WriteLine($"[monogame] ready-check: mission owner FORCE_TEAM_READY side {sideId}");
-        }
+        if (o && !_rcOWasDown) ToggleTeamReady();
         _rcOWasDown = o;
 
-        // P501 — touch: tap the big READY/UNREADY button to toggle; the owner taps
-        // FORCE READY to force their whole side ready.
+        // P501 — touch: tap the big READY/UNREADY button to toggle; the commander taps
+        // FORCE READY to toggle their team-ready flag.
         if (TouchAvailable())
         {
             var vp = GraphicsDevice.Viewport;
@@ -1152,13 +1132,26 @@ public sealed partial class Game1
                     Console.WriteLine($"[monogame] ready-check: tapped toggle -> {_ownReady} (PLAYER_READY ship {pid})");
                     return;
                 }
-                if (world.AmMissionOwner && world.MySideId is { } tside && force.Contains(tx, ty))
+                if (force.Contains(tx, ty))
                 {
-                    _session.SendForceTeamReady(true, tside);
-                    Console.WriteLine($"[monogame] ready-check: tapped FORCE_TEAM_READY side {tside}");
+                    ToggleTeamReady();
                     return;
                 }
             }
+        }
+    }
+
+    private void ToggleTeamReady()
+    {
+        State.LobbyScreenState.ForceReadyAction? action;
+        lock (_session.Gate)
+            action = State.LobbyScreenState.ToggleTeamReady(_session.World, _ownReady);
+        if (action is not { } a) return;
+        _session.SendForceTeamReady(a.ForceReady, a.SideId);
+        if (a.ReadySelf)
+        {
+            _ownReady = true;
+            _session.SendPlayerReady(true, a.ShipId);
         }
     }
 
@@ -1168,8 +1161,14 @@ public sealed partial class Game1
     {
         var world = _session.World;
         var (sideName, players, agg) = Rendering.ReadyCheckRoster.Gather(world, _session.Gate, _ownReady);
-        bool forced = world.MySideId is { } sideId
-            && world.ForceReadyBySideId.TryGetValue(sideId, out var f) && f;
+        bool forced;
+        bool canForce;
+        lock (_session.Gate)
+        {
+            forced = world.MySideId is { } sideId
+                && world.ForceReadyBySideId.TryGetValue(sideId, out var f) && f;
+            canForce = State.LobbyScreenState.ToggleTeamReady(world, _ownReady) is not null;
+        }
 
         // P522 — while the mission is STAGE_STARTING the local ship is held
         // (ReadyCheck stays up; the ReadyCheck→Flying handoff waits for
@@ -1184,7 +1183,7 @@ public sealed partial class Game1
         }
 
         var rows = Rendering.ReadyCheckLayout.Build(
-            sideName, _ownReady, players, agg, forced, world.AmMissionOwner, launchCountdown);
+            sideName, _ownReady, players, agg, forced, canForce, launchCountdown);
         lock (_session.Gate)
             rows = rows.Concat(Rendering.LobbyStatusLayout.Build(world)
                 .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToArray();

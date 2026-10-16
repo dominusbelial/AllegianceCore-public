@@ -45,15 +45,9 @@ namespace Allegiance.Core.Wire;
 /// has no <c>FM_VAR_ITEM</c>, so it is header(4) + the fields exactly as the
 /// compiler lays them out.
 ///
-/// <b>Field rationale (grep-verified, not guessed):</b> the only fields the
-/// join path actually reads are <c>szIGCStaticFile</c> and <c>verIGCcore</c>;
-/// everything else is zero-filled (false bitfields / 0 counters / empty
-/// strings are simulation policy this headless server neither implements nor
-/// consults — the sole <c>GetMissionParams()</c> consumer elsewhere is
-/// <c>appmsg.cpp:2492</c> in the DELPOSITIONREQ lobby path, unreachable for a
-/// direct-connect bot). <c>DwCookie</c> is populated for the
-/// <c>MissionInfo</c> identity; <c>ISideMissionOwner</c>/<c>Stage</c> are
-/// exposed for completeness but are not read by this flow.
+/// P713 also exposes the native leader array so the join burst can declare
+/// empty leadership before sending the player roster and role snapshots.
+/// Unspecified fields keep the historical zero-filled codec representation.
 /// </summary>
 public sealed class MissionDef : IFedMessage
 {
@@ -76,6 +70,9 @@ public sealed class MissionDef : IFedMessage
     private const int DwCookieOffset = 460;
     private const int ISideMissionOwnerOffset = 464;
     private const int StageOffset = 468;
+    // Messages.h:302-315; serverName[25], serverAddr[64], sideNames[6][40],
+    // one alignment byte, stationIds[6] => rgShipIDLeaders at 814.
+    private const int LeadersOffset = 814;
 
     /// <summary>Width of <c>char c_cbFileName</c> (<c>_Utility/Utility.h:62-63</c>: 12+1 = 13) holding the static-core file name.</summary>
     public const int StaticFileBufSize = 13;
@@ -90,7 +87,7 @@ public sealed class MissionDef : IFedMessage
     /// <summary><c>MISSIONDEF.dwCookie</c> — the cookie the <c>MissionInfo</c> constructor stores (appmsg.cpp:2416); matches the JOINED_MISSION dwCookie.</summary>
     public uint DwCookie;
 
-    /// <summary><c>MISSIONDEF.iSideMissionOwner</c> (short) — lobby team-leader field; not read by the join flow, zeroed.</summary>
+    /// <summary><c>MISSIONDEF.iSideMissionOwner</c> (short) — the side whose team leader owns the mission; -1 means no owner.</summary>
     public short ISideMissionOwner;
 
     /// <summary><c>MISSIONDEF.stage</c> (enum STAGE, int) — not read by the join flow, zeroed.</summary>
@@ -115,6 +112,10 @@ public sealed class MissionDef : IFedMessage
     /// must exist in the static core or <c>UpdateSides</c>'s <c>GetCivilization</c>
     /// asserts (missionigc.cpp:3751). Entries beyond the supplied count are zeroed.</summary>
     public short[] RgCivId = Array.Empty<short>();
+
+    /// <summary>Native rgShipIDLeaders[6] (Messages.h:311). Use -1 for an
+    /// empty side; zero-filled unspecified entries retain the legacy codec default.</summary>
+    public short[] RgShipIdLeaders = Array.Empty<short>();
 
     public ushort GetFmid() => Fmid;
 
@@ -160,6 +161,9 @@ public sealed class MissionDef : IFedMessage
         w.WriteI16(ISideMissionOwner);
         w.Advance(StageOffset - w.Position);
         w.WriteI32(Stage);
+        w.Advance(LeadersOffset - w.Position);
+        for (int i = 0; i < 6; i++)
+            w.WriteI16(i < RgShipIdLeaders.Length ? RgShipIdLeaders[i] : (short)0);
 
         // pad to exact total first, then stamp cbmsg = the full 864 (a message
         // length is the whole thing, not just the fields we happened to write).
@@ -198,6 +202,9 @@ public sealed class MissionDef : IFedMessage
         var rgCivId = new short[6];
         for (int i = 0; i < rgCivId.Length; i++)
             rgCivId[i] = BitConverter.ToInt16(buf.Slice(RgCivIdOffset + i * 2));
+        var leaders = new short[6];
+        for (int i = 0; i < leaders.Length; i++)
+            leaders[i] = BitConverter.ToInt16(buf.Slice(LeadersOffset + i * 2));
 
         return new MissionDef
         {
@@ -210,6 +217,7 @@ public sealed class MissionDef : IFedMessage
             TimeStart = BitConverter.ToUInt32(buf.Slice(TimeStartOffset)),
             NTems = nTems,
             RgCivId = rgCivId,
+            RgShipIdLeaders = leaders,
         };
     }
 

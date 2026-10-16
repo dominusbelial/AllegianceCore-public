@@ -234,7 +234,7 @@ fedmsg,34 SWAP_PART,Inc/Messages.h:273,done,src/Allegiance.ClientCore/Session/Co
 fedmsg,35 PING,Inc/Messages.h:280,done,Wire/Ping.cs,4
 fedmsg,36 URLROOT,Inc/Messages.h:286,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,37 MISSION_STAGE,Inc/Messages.h:290,done,Wire/MissionStage.cs,5
-fedmsg,38 MISSIONDEF,Inc/Messages.h:294,done,Wire/MissionDef.cs,4
+fedmsg,38 MISSIONDEF,Inc/Messages.h:294-318; FedSrv/fsmission.cpp:3943-3974,done,src/Allegiance.Core/Wire/MissionDef.cs:73; src/Allegiance.Server/Server.Lobby.cs:3035; tests/Allegiance.Core.Tests/Wire/P713LobbyWireTests.cs:8; P713 native_intent=design: leader short-array codec and explicit empty-role sentinels before roster/role join snapshots; prevents native role handler dereference of unknown old leader,4
 fedmsg,39 POSITIONREQ,Inc/Messages.h:320,done,Wire/PositionReq.cs,4
 fedmsg,40 POSITIONREQ,Inc/Messages.h:325; clintlib/appmsg.cpp:2470-2483; clintlib/clintlib.cpp:943-954,done,"src/Allegiance.ClientCore/Session/ConnectionSession.cs:1051; src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:20; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:50; src/Allegiance.ClientCore.Game/Rendering/LobbyStatusLayout.cs:14; tests/Allegiance.ClientCore.MonoGame.Tests/P678LobbyStatusTests.cs:13; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs:45; P678: Side/ship request membership, duplicate/member guard, own-leader critical notice and native player-waiting voice; live receipt on both peers.",4
 fedmsg,41 POSITIONACK,Inc/Messages.h:331,done,Wire/PositionAck.cs,4
@@ -283,7 +283,7 @@ fedmsg,102 TELEPORT_ACK,Inc/Messages.h:681,done,src/Allegiance.ClientCore/Sessio
 fedmsg,103 BOARD_SHIP,Inc/Messages.h:686,done,Wire/BoardShip.cs,4
 fedmsg,104 VIEW_CLUSTER,Inc/Messages.h:690,done,Wire/ViewClusterRequest.cs,4
 fedmsg,105 KILL_SHIP,Inc/Messages.h:696,done,Wire/KillShip.cs,5
-fedmsg,106 SET_WINGID,Inc/Messages.h:705,partial,Wire/SetWingId.cs; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; tests/Allegiance.ClientCore.Tests/P675MissionDiscoveryTests.cs:100; P675 consumes wing ids for command joining and discovery priority; native assignment notice and roster UI notifications remain absent (clintlib/appmsg.cpp:2129-2147),4
+fedmsg,106 SET_WINGID,Inc/Messages.h:705; clintlib/appmsg.cpp:2129-2147; FedSrv/FedSrv.CPP:5312-5344; FedSrv/fsmission.cpp:697-709,done,src/Allegiance.Server/Server.ShipCommands.cs:861; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:92; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:22; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: commander teammate assignment with corrected commanded bit; known-side update; critical own-assignment notice; live roster wing names and late-join wing snapshots; self echoes remain server authoritative,4
 fedmsg,107 ICQ_CHAT_ACK,Inc/Messages.h:711,na,dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs),4
 fedmsg,108 CHATBUOY,Inc/Messages.h:716,done,Wire/ChatBuoy.cs,4
 fedmsg,109 CREATE_CHAFF,Inc/Messages.h:724,done,Wire/CreateChaff.cs,4
@@ -342,7 +342,7 @@ screens,Chat pane,WinTrek/chatpane.cpp,done,src/Allegiance.ClientCore.Game/Rende
 screens,Hangar / loadout screen,WinTrek/hangarscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/DockedScreenRenderer.cs + Shop (P519),5
 screens,Game-over screen,WinTrek/gameoverscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs (P262),5
 screens,Scoreboard / leaderboard screen,WinTrek/leaderboardscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs:46; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1655; live match stats; career database remains unavailable,4
-screens,Game-starting (countdown) screen,WinTrek/gamestartingscreen.cpp,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + ReadyCheckOverlayRenderer (P188/P180),4
+screens,Game-starting (countdown) screen,clintlib/appmsg.cpp:2314-2346; WinTrek/WinTrek.cpp:8129-8137,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs:1047; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:83; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckLayoutTests.cs:94; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: hold through countdown with commander/readiness state intact; release only at Started,4
 screens,Intro screen,WinTrek/introscreen.cpp,partial,boots to connect screen; no animated intro sequence,2
 screens,Splash / loading screen,WinTrek/splashscreen.cpp,partial,connect/loading states exist,2
 screens,Training screen,WinTrek/trainingscreen.cpp,partial,docs/NATIVE_TRAINING_SCRIPT.md; no full training-mission UI,3
@@ -351,8 +351,8 @@ screens,Character-info screen,WinTrek/CharInfoScreen.cpp,done,src/Allegiance.Cli
 screens,Squads screen,WinTrek/SquadsScreen.cpp,na,no squad/clan system in this port,2
 screens,Zone Club screen (online account),WinTrek/ZoneClubScreen.cpp,na,Internet Zone/account system not applicable (TCP+local server),1
 screens,Zone events screen,WinTrek/zoneeventsscreen.cpp,na,Zone event feed not applicable,1
-screens,Selection pane,WinTrek/selpane.cpp,partial,targeting/selection via RadarBracketRenderer + Game1.Targeting,3
-screens,Team pane / screen,"WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",done,src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:37; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1693; wing assignment/control remains unavailable,4
+screens,Selection pane,WinTrek/selpane.cpp:17-52; WinTrek/selpane.cpp:71-100,na,P713 native_intent=era constraint: native ValuePane/RowPane framework scaffolding; empty SelectionPane.OnSelChange only returns true and SelectModelPane wraps an externally supplied child; no standalone selection-screen behavior to port. Inventory correction only; actual targeting remains in Game1.Targeting and RadarBracketRenderer,3
+screens,Team pane / screen,WinTrek/teampane.cpp:627-638; WinTrek/teamscreen.cpp:452-505,done,src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:49; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1766; tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs:18; P713 native_intent=design: real commander/AFK/wing fields; synchronized roster gathering; manual wing-picker UI remains unavailable,4
 screens,Teleport pane,WinTrek/teleportpane.cpp,done,src/Allegiance.ClientCore.Game/Rendering/TeleportPaneModel.cs (P273),3
 screens,Loadout panel (shop),WinTrek hangar loadout,done,src/Allegiance.ClientCore.Game/Shop + DockedScreenRenderer (P519),5
 screens,Investment screen,WinTrek investment,done,src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs + InvestmentBuildGates.cs (P487/P495),4
@@ -360,9 +360,9 @@ screens,Commander / sector map,WinTrek command view,done,src/Allegiance.ClientCo
 screens,Sector info pane,WinTrek sector info,done,src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneRenderer.cs (P272),4
 screens,F-key help overlay(s),WinTrek F-key overlays,done,src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:26; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1717,4
 screens,Mission briefing screen,WinTrek briefing,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs (P271),3
-screens,Side-select screen,WinTrek team lobby side select,done,src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs (P281),4
+screens,Side-select screen,WinTrek/teamscreen.cpp:2962-2982,done,src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs:55; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: preserve eliminated-side picker until authoritative active-side join,4
 screens,Server list / lobby browser,native lobby,done,src/Allegiance.Lobby + ServerListing.cs (P174-P177),4
-screens,Ready-check (pre-flight),native ready,done,src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs (P282),4
+screens,Ready-check (pre-flight),WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793,done,src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:64; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: display and input use same team-commander authority and forced-state echo,4
 parts,Weapons (ET_Weapon=1),Igc/igc.h ET_Weapon,done,src/Allegiance.Core/Sim/Weapon.cs + WEAPON_FIRE_P221/P225,5
 parts,"Missiles (ET_Magazine=2, ET_Pack ammo)",Igc/igc.h ET_Magazine,done,src/Allegiance.Core/Sim/Missile.cs + P179/P181/P226/P230,5
 parts,Mines (ET_Dispenser=3),Igc/igc.h ET_Dispenser,done,src/Allegiance.Core/Sim/Mine.cs + P94/P95/P224,4
@@ -426,14 +426,14 @@ commander,Commander drone view / follow,drone follow,done,src/Allegiance.ClientC
 lobby,Server list / browse lobby,lobby,done,src/Allegiance.Lobby/ServerListing.cs + LOBBY_STAGE P174-P177,4
 lobby,Connect to server (host/IP + character),connect dialog,done,src/Allegiance.ClientCore.Game/Game1.ConnectScreen.cs + CONNECT,5
 lobby,Create game / new game wizard,WinTrek/newgamescreen.cpp,partial,mission is created from server config; no GUI create-game wizard,4
-lobby,Join game,join,done,src/Allegiance.ClientCore.Game/Game1.Session.cs (join flow),5
-lobby,Side select (choose team),side select,done,src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs + P281,5
-lobby,Ready / force-ready check,ready,done,src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs + P282/P180,5
+lobby,Join game,FedSrv/fsmission.cpp:3936-3974,done,src/Allegiance.Server/Server.Lobby.cs:3544; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: join snapshot restores current commanders/owner and non-default ready/force/active state; first commander no longer misses its election,5
+lobby,Side select (choose team),WinTrek/teamscreen.cpp:2962-2982,done,src/Allegiance.ClientCore/State/LobbyScreenState.cs:10; src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: eliminated ship cannot bypass active-team admission,5
+lobby,Ready / force-ready check,WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793,done,src/Allegiance.ClientCore/State/LobbyScreenState.cs:18; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: every team commander toggles force both ways and clears own AFK,5
 lobby,AFK / auto-seat handling,afk,done,src/Allegiance.Server/Server.Lobby.cs side-select timeout seating + P281,3
 lobby,Kick / ban / mute (moderation),moderation,partial,"src/Allegiance.Server/Server.AdminCheats.cs + Server.Dispatch ban; admin-cheat based, no native moderation UI",4
 lobby,Mission briefing screen,briefing,done,src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + P271,4
 lobby,Lobby chat,lobby chat,done,src/Allegiance.ClientCore.Game/ChatRenderer.cs + CLIENTCORE_MONOGAME_LOBBY_CHAT P214,4
 lobby,Training missions (tutorial),WinTrek/trainingscreen.cpp,partial,docs/NATIVE_TRAINING_SCRIPT.md server-scripted scenarios; no full client tutorial UI,4
-lobby,Team lobby / team pane,team lobby,done,src/Allegiance.ClientCore.Game/Panes + TEAM_LOBBY_P180,4
+lobby,Team lobby / team pane,WinTrek/teamscreen.cpp:452-505; FedSrv/fsmission.cpp:3943-3974,done,src/Allegiance.Server/Server.Lobby.cs:3544; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs:72; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckRosterTests.cs:84; P713 native_intent=design: current leadership/readiness on join and side-scoped roster after side changes,4
 screens,in-game key rebinding popup,WinTrek/trekinput.cpp:1631+ (InputMapPopup),done,src/Allegiance.ClientCore.Game/Rendering/KeyBindingController.cs:31; src/Allegiance.ClientCore.Game/Game1.KeyBind.cs:38,4
 commands,Every game command routed through the action map,InputActionCatalog.cs + InputBindings.cs (P625b),done,src/Allegiance.ClientCore.Game/Rendering/InputBindings.cs:174; src/Allegiance.ClientCore.Game/Rendering/ActionPressEdges.cs:8,5

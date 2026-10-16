@@ -57,10 +57,8 @@ public sealed class SetWingId : IFedMessage
     /// Valid wing ids are <c>[0, WidMax)</c>.</summary>
     public const short WidMax = 10;
 
-    /// <summary>The id of the tagged ship. Per this port's self-targeting-only
-    /// simplification (no team-leader system), the server requires this to be
-    /// the <em>sending</em> player's own ship id (<c>FedSrv.CPP:5323</c>) — the
-    /// client sends its own id (<c>PigSrv/PigShip.cpp:240</c>).</summary>
+    /// <summary>The id of the tagged ship. The sender may target itself, or its current commander may
+    /// assign a teammate (FedSrv.CPP:5323-5330).</summary>
     public short ShipID;
 
     /// <summary>The wing-group id being assigned (a <c>short</c>, <c>[0, WidMax)</c>
@@ -69,9 +67,8 @@ public sealed class SetWingId : IFedMessage
 
     /// <summary>Whether the assignment is leader-issued (<c>true</c>) or a
     /// self-assignment (<c>false</c>) — a UI-display distinction on the client,
-    /// not simulation-relevant. The server always corrects it; with the
-    /// self-targeting-only simplification it is always <c>false</c>
-    /// (<c>FedSrv.CPP:5334-5335</c>).</summary>
+    /// not simulation-relevant. The server derives it: false for self assignments, true for
+    /// commander assignments to another teammate (FedSrv.CPP:5330-5335).</summary>
     public bool BCommanded;
 
     public ushort GetFmid() => Fmid;

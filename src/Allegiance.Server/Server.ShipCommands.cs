@@ -871,12 +871,14 @@ public sealed partial class Server
             return;
         }
 
-        // Self-targeting-only simplification: without a team-leader system the
-        // native leader-retags-another-ship branch (FedSrv.CPP:5323-5330) is
-        // unreachable, so shipID must be the sender's own ship; otherwise silent.
-        if (req.ShipID != ship.Id)
+        // FedSrv.CPP:5323-5330: a commander may assign another teammate;
+        // ordinary pilots may only assign themselves. Leadership already
+        // exists in the port, so retain the native commanded-assignment path.
+        var target = req.ShipID == ship.Id ? ship : IsSideLeader(mission, ship)
+            ? FindSameSideShip(req.ShipID, ship.SideId, mission) : null;
+        if (target is null)
         {
-            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: SET_WINGID for ship {req.ShipID} != own ship — ignored (self-targeting-only, FedSrv.CPP:5323)");
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: no assignable teammate {req.ShipID} — ignored");
             return;
         }
 
@@ -888,14 +890,12 @@ public sealed partial class Server
             return;
         }
 
-        // Server-corrected message: bCommanded always false for a self-assignment
-        // (FedSrv.CPP:5334-5335); the branch that would set true (leader retag)
-        // is removed with the leader system.
+        // FedSrv.CPP:5330-5335: the server derives bCommanded.
         var corrected = new SetWingId
         {
-            ShipID = ship.Id,
+            ShipID = target.Id,
             WingId = req.WingId,
-            BCommanded = false,
+            BCommanded = target != ship,
         };
         byte[] packet = FedPacket.Pack(new[] { corrected.Encode() });
 
@@ -912,9 +912,9 @@ public sealed partial class Server
 
         // Mutate the target ship's wing server-side
         // (pfsShip->GetIGCShip()->SetWingID(pfmSW->wingID), FedSrv.CPP:5338).
-        ship.WingId = req.WingId;
+        target.WingId = req.WingId;
 
-        Console.WriteLine($"[setwingid] {from} ship {ship.Id}: wingID -> {req.WingId} (bCommanded=false) side {sideId} to {targets.Length} peer(s)");
+        Console.WriteLine($"[setwingid] {from} ship {target.Id}: wingID -> {req.WingId} (bCommanded={corrected.BCommanded}) side {sideId} to {targets.Length} peer(s)");
     }
 
     /// <summary>

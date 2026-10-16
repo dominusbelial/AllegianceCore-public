@@ -8,7 +8,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// Pure-logic tests for the P282 ready-check layout — every emitted row is
 /// printable ASCII 32..126 (the HUD spritefonts bake ASCII only) and encodes
 /// the local ready toggle, the live same-side roster of ready states, the
-/// per-side TEAM_READY aggregate, and the mission-owner force-ready hint.
+/// per-side TEAM_READY aggregate, and the commander team-ready hint.
 /// </summary>
 public class ReadyCheckLayoutTests
 {
@@ -28,7 +28,7 @@ public class ReadyCheckLayoutTests
     [Fact]
     public void Build_yields_title_hint_aggregate_and_roster_rows()
     {
-        var rows = ReadyCheckLayout.Build("Bios", ownReady: true, TwoPlayers, sideAggregateReady: false, forcedReady: false, amMissionOwner: false);
+        var rows = ReadyCheckLayout.Build("Bios", ownReady: true, TwoPlayers, sideAggregateReady: false, forcedReady: false, canForceTeamReady: false);
         AssertPureAscii(rows);
 
         var joined = string.Join("\n", rows.Select(r => r.Text));
@@ -48,7 +48,7 @@ public class ReadyCheckLayoutTests
     [Fact]
     public void Aggregates_yes_and_forced_flag_are_reflected()
     {
-        var rows = ReadyCheckLayout.Build("IronCo", ownReady: true, TwoPlayers, sideAggregateReady: true, forcedReady: true, amMissionOwner: false);
+        var rows = ReadyCheckLayout.Build("IronCo", ownReady: true, TwoPlayers, sideAggregateReady: true, forcedReady: true, canForceTeamReady: false);
         var joined = string.Join("\n", rows.Select(r => r.Text));
         Assert.Contains("TEAM IronCo  READY: YES", joined);
         Assert.Contains("(FORCED)", joined);
@@ -57,20 +57,20 @@ public class ReadyCheckLayoutTests
     [Fact]
     public void Aggregate_null_shows_dash_before_first_team_ready_arrives()
     {
-        var rows = ReadyCheckLayout.Build("Bios", ownReady: false, TwoPlayers, sideAggregateReady: null, forcedReady: false, amMissionOwner: false);
+        var rows = ReadyCheckLayout.Build("Bios", ownReady: false, TwoPlayers, sideAggregateReady: null, forcedReady: false, canForceTeamReady: false);
         var joined = string.Join("\n", rows.Select(r => r.Text));
         Assert.Contains("READY: --", joined);
         Assert.Contains("NOT READY", joined);
     }
 
     [Fact]
-    public void Force_ready_hint_shown_only_to_mission_owner()
+    public void Force_ready_hint_shown_only_when_commander_can_toggle()
     {
-        var owner = ReadyCheckLayout.Build("Bios", false, TwoPlayers, false, false, amMissionOwner: true);
-        Assert.Contains("O FORCE TEAM READY", string.Join("\n", owner.Select(r => r.Text)));
+        var owner = ReadyCheckLayout.Build("Bios", false, TwoPlayers, false, false, canForceTeamReady: true);
+        Assert.Contains("O TOGGLE TEAM READY", string.Join("\n", owner.Select(r => r.Text)));
 
-        var nonOwner = ReadyCheckLayout.Build("Bios", false, TwoPlayers, false, false, amMissionOwner: false);
-        Assert.DoesNotContain("O FORCE TEAM READY", string.Join("\n", nonOwner.Select(r => r.Text)));
+        var nonOwner = ReadyCheckLayout.Build("Bios", false, TwoPlayers, false, false, canForceTeamReady: false);
+        Assert.DoesNotContain("O TOGGLE TEAM READY", string.Join("\n", nonOwner.Select(r => r.Text)));
     }
 
     [Fact]

@@ -85,6 +85,7 @@ public class LeaderSameSideBotClientLiveTests
         public Sector Sector = null!;
         public ConnectionSession Leader = null!;   // real client (ClientWorld)
         public ConnectionSession Mate = null!;     // real non-leader client
+        public ConnectionSession OtherLeader = null!; // balances the other team
         public short Side0;
         public Ship LeaderShip = null!;
 
@@ -92,6 +93,7 @@ public class LeaderSameSideBotClientLiveTests
         {
             Leader?.Dispose();
             Mate?.Dispose();
+            OtherLeader?.Dispose();
             Server?.Dispose();
         }
     }
@@ -127,16 +129,29 @@ public class LeaderSameSideBotClientLiveTests
             "A must become the leader of side 0 (TryJoinSide)");
         rig.Leader = a;
 
-        // Mate B (real client) — a second peer on the same mission. It auto-joins
-        // the other side by default; that makes it a genuine NON-leader (it can
-        // never be the leader of A's side), and the resolver's same-side gate
-        // independently returns null for it (covering the "non-leader sees nothing"
-        // half with real wire state too).
+        // Native elects the first player on EVERY empty team (fsmission.cpp:
+        // 601-613). Seed the other team so the real Started-stage balance rule
+        // permits B to join A as an ordinary member; keep the default imbalance.
+        short otherSide = rig.Mission.Sides.First(s => s.Id != rig.Side0).Id;
+        var other = new ConnectionSession();
+        other.Connect(rig.Server.BoundPort, "ldr_other");
+        other.SendLogonRequest(Request("ldr_other"));
+        other.SendPositionReq(otherSide);
+        PumpUntil(rig.Server, () => other.World.MyShipId is not null && other.World.MySideId == otherSide, 4000);
+        Assert.True(other.World.MyShipId is not null && other.World.MySideId == otherSide,
+            "other team's player must seat before B, preserving team balance");
+        rig.OtherLeader = other;
+
+        // B is a real same-side NON-leader. The old fixture placed B first on
+        // the other team and incorrectly expected it not to lead that team.
         var b = new ConnectionSession();
         b.Connect(rig.Server.BoundPort, "ldr_b");
         b.SendLogonRequest(Request("ldr_b"));
-        PumpUntil(rig.Server, () => b.World.MyShipId is not null, 4000);
-        Assert.True(b.World.MyShipId is not null, "mate B did not seat");
+        b.SendPositionReq(rig.Side0);
+        bool MemberStateArrived() => b.World.MyShipId is not null && b.World.MySideId == rig.Side0
+            && b.World.TeamLeaderShipIdFor(rig.Side0) == rig.LeaderShip.Id;
+        PumpUntil(rig.Server, MemberStateArrived, 4000);
+        Assert.True(MemberStateArrived(), "B must seat on A's side and learn A's leadership");
         rig.Mate = b;
         return rig;
     }
@@ -182,6 +197,14 @@ public class LeaderSameSideBotClientLiveTests
         Assert.StartsWith("DOCK", cmd.Value.Label);          // the flying bot -> DOCK prompt
         Assert.Equal(npc.Id, cmd.Value.TargetShipId);
 
+        // Both clients must know the same real NPC before testing authority;
+        // a missing target would otherwise make the negative result vacuous.
+        int mateSeen = PumpUntil(rig.Server,
+            () => rig.Mate.World.Ships.TryGetValue(npc.Id, out var memberBot)
+                  && memberBot.SideId == rig.Side0 && memberBot.HullId == npc.HullType.HullId
+                  && memberBot.CharacterName.Length > 0 && memberBot.Player is null && memberBot.Latest is not null,
+            4000);
+        Assert.True(mateSeen < 4000, "non-leader B must receive the same-side NPC identity and pose");
         // A NON-leader on the same side sees NO command for the same bot.
         var mateCmd = LeaderBotCommandResolver.Resolve(rig.Mate.World, npc.Id);
         Assert.Null(mateCmd);
