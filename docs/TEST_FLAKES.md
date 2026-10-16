@@ -1045,3 +1045,31 @@ After all three full suites completed, both failed Core methods passed **3/3 exa
 No assertions, deadlines, quarantine traits, or product behavior were changed for these observations. The isolated passes do not establish the underlying cause or a fix for the receipt/cycle observation. The real loopback mining/sale and MCP purchase/death/pod/relaunch/refire checks separately passed 3/3 alone, and the controlled real bot TCP battle recorded one credited kill per isolated run.
 
 See the [P692 report](reports/P692_PARITY_WAVE10.md) and [invocation ledger](reports/P692_RESULTS.json) for raw counts, exact filters, failure messages/stacks, and per-run TRX/log paths. Preliminary overlapping runs were discarded from certification; the complete affected cohort was subsequently rerun serially under a verifier lock.
+
+## P707 observation (2026-10-16)
+
+The corrected P707 revision passed its 74-method affected cohort three times
+alone (222 invocations / 363 case passes), ten standalone parking-showcase runs,
+and both final ClientCore sweeps, including the parking test. The final two
+complete solution sweeps recorded **16,037 passes / 1 failure / 6 existing
+optional Meshy-pack skips**.
+
+The single final-suite failure was
+`Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`
+in the first Core sweep: `TimeoutException: no OnPeerJoined for raw peer`.
+The second Core sweep passed. After all final suites finished, the failed
+method passed **3/3 fresh exact-method isolated runs**, with unchanged
+assertions and deadlines, satisfying P707's explicit load-flake rule. This
+observation does not establish the timeout's underlying cause.
+
+The rejected clock-only candidate's parking failure is **not** classified as a
+load flake: its isolated reruns passed only 2/3. A separate deterministic
+moving-echo cancellation regression then reproduced the remaining defect, and
+the final revision added a sustained escape hold. The candidate's failed runs
+and its two diagnostic suite sweeps remain recorded separately from final-code
+certification.
+
+See the [P707 report](reports/P707_WAVES_PARKING.md) and
+[complete invocation ledger](reports/P707_assets/results.json) for every
+command, raw counter, failure message/stack, source fingerprint and artifact
+path. No failed attempt was discarded or assertion relaxed.
