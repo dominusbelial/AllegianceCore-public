@@ -323,10 +323,9 @@ public class TechTreeDevelopmentLiveTests
     /// <summary>⭐ A tech-only development whose effect techs the side already
     /// fully holds (obsolete per <see cref="DevelopmentLogic.IsObsolete"/>) is
     /// <b>omitted</b> from the side's bucket catalog (so it can never be funded
-    /// or broadcast anything); and completing a non-obsolete tech-only dev whose
-    /// effects the side has been given meanwhile applies <em>no new bit</em> —
-    /// no <c>SIDE_TECH_CHANGE</c>, and (being tech-only) no
-    /// <c>SIDE_ATTRIBUTE_CHANGE</c>.</summary>
+    /// or broadcast anything). If its effects become known later, native AdjustBuckets
+    /// marks it complete without DevelopmentCompleted (sideigc.h:629-633): no
+    /// DEV_COMPLETED, SIDE_TECH_CHANGE or SIDE_ATTRIBUTE_CHANGE is emitted.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Obsolete_development_is_never_reapplied_or_rebroadcast()
@@ -347,8 +346,8 @@ public class TechTreeDevelopmentLiveTests
         _ = DevBucket(side, 2);
 
         // Live "second time": pre-seed dev 2's effect bit into the side's techs,
-        // then complete its bucket — the completion introduces no new bit (no
-        // SIDE_TECH_CHANGE) and dev 2 is tech-only (no SIDE_ATTRIBUTE_CHANGE).
+        // then let native AdjustBuckets reconcile it. Known research is a no-op completion,
+        // not a second paid purchase or DevelopmentCompleted event (sideigc.h:629-633).
         using var bot = new FltBot();
         SeatOne(server, bot, "obsolete");
         short botSideId = SideOf(server, bot);
@@ -359,16 +358,18 @@ public class TechTreeDevelopmentLiveTests
         GrantPrereq(botSide, b2);   // P551: unlock dev 2 so the side can buy/fund it
         botSide.DevelopmentTechs = botSide.DevelopmentTechs.Or(TechTreeBitMask.FromBytes(dev2.TtbmEffects));
         int bitsBefore = botSide.DevelopmentTechs.PopCount;
-        FundAndComplete(server, bot, botSide, b2);
-        int rx = PumpUntil(server, () => bot.DevCompleteds.Count >= 1, 400);
-        Assert.True(rx < 400, "DEV_COMPLETED not received for pre-known dev");
+        int rx = PumpUntil(server, () => b2.Completed && bot.BucketStatuses.Any(b => b.IBucket == b2.Id
+            && b.MoneyTotal == b2.Price && b.TimeTotal == (long)b2.TimeToBuild * 1000), 400);
+        Assert.True(rx < 400, "known development was not marked complete and synchronized");
+        Assert.Equal(bitsBefore, botSide.DevelopmentTechs.PopCount);
+        Assert.Equal(b2.Price, b2.InvestedMoney);
+        Assert.Equal((long)b2.TimeToBuild * 1000, b2.InvestedMilliseconds);
+        Assert.DoesNotContain(b2.Id, server.BucketCompletions);
+        Assert.Empty(bot.DevCompleteds);
+        Assert.Empty(bot.SideTechChanges);
+        Assert.Empty(bot.SideAttributeChanges);
 
-        Assert.Equal(bitsBefore, botSide.DevelopmentTechs.PopCount);   // no re-application
-        Assert.Single(bot.DevCompleteds);                              // DEV_COMPLETED still sent
-        Assert.Empty(bot.SideTechChanges);                             // no new bits → no SIDE_TECH_CHANGE
-        Assert.Empty(bot.SideAttributeChanges);                        // tech-only → no attribute change
-
-        Console.WriteLine($"DEVOBSOLETE-LIVE: obsolete dev 22 omitted from civ-1 catalog; completing pre-known dev 2 -> DEV_COMPLETED only, no re-apply/no SIDE_TECH_CHANGE/no SIDE_ATTRIBUTE_CHANGE");
+        Console.WriteLine("DEVOBSOLETE-LIVE: known dev 2 marked complete without purchase, completion effects or completion sounds (native AdjustBuckets)");
     }
 
     // ── (4) TechTreeBitMask / GlobalAttributeSet unit correctness ─────────

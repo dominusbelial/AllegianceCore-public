@@ -452,6 +452,12 @@ public sealed partial class Mission
     /// <summary>Selected plans keyed by side id; consumed by the P703 commander.</summary>
     public Dictionary<short, ResearchPlan> ResearchPlans { get; } = new();
 
+    /// <summary>P703 port-extension identity for client executor reset across rotations.</summary>
+    public string ResearchEpoch { get; } = Guid.NewGuid().ToString("N");
+    /// <summary>P703 explicit showcase extension; scales periodic native income only, before
+    /// DoPayday distributes it to player wallets. Starting money and mining are unchanged.</summary>
+    public double ShowcaseIncomeMultiplier { get; set; } = 1;
+
     public ResearchSettings Research { get; private set; } = new();
 
     /// <summary>
@@ -672,6 +678,7 @@ public sealed partial class Mission
                 {
                     long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
                                 + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
+                    income = (long)(income * ShowcaseIncomeMultiplier); // P703 opt-in pacing extension
                     side.Money += income;                          // fsmission.cpp:2536
                     Site.PaydayEvent(side, income);                // site seam → host payout
                 }

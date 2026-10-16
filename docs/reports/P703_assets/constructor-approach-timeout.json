@@ -1,0 +1,2539 @@
+{
+  "purpose": "Preserved intermittent first-branch timeout; no assertion or deadline was relaxed",
+  "samples": [
+    {
+      "wall": 0.0019297,
+      "sim": 0.9000000000000002,
+      "stage": "NotStarted",
+      "research": [],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        }
+      ],
+      "builders": []
+    },
+    {
+      "wall": 20.13221,
+      "sim": 741.5999999998733,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 7,
+          "TotalSteps": 157,
+          "Action": "develop",
+          "Name": "Lt Booster 1",
+          "Status": "building bucket",
+          "ProgressPercent": 4.2184182590233545,
+          "StepProgressPercent": 62.291666666666664,
+          "Money": 1581733,
+          "EtaSeconds": 45.25,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Retro Booster",
+            "MRM Seeker 2",
+            "Med Shield 2",
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 4,
+          "TotalSteps": 181,
+          "Action": "station",
+          "Name": "[R]esearch",
+          "Status": "building bucket",
+          "ProgressPercent": 1.8295349907918967,
+          "StepProgressPercent": 31.145833333333332,
+          "Money": 3581175,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Upgrade Garrison"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade"
+          ],
+          "Constructor": null,
+          "ReservedRock": 66,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        }
+      ],
+      "builders": []
+    },
+    {
+      "wall": 40.1661428,
+      "sim": 1483.8499999991982,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 12,
+          "TotalSteps": 157,
+          "Action": "drone",
+          "Name": ".Carrier",
+          "Status": "building bucket",
+          "ProgressPercent": 7.006369426751593,
+          "StepProgressPercent": 0,
+          "Money": 3148917,
+          "EtaSeconds": 120,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Retro Booster",
+            "MRM Seeker 2",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Counter 2",
+            "Weedcore 03",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 7,
+          "TotalSteps": 181,
+          "Action": "station",
+          "Name": "Shipyard",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 3.591160220994475,
+          "StepProgressPercent": 50,
+          "Money": 7136175,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Upgrade Garrison",
+            "Upgrade Supremacy"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy"
+          ],
+          "Constructor": 8109,
+          "ReservedRock": 76,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8109,
+          "SideId": 1,
+          "Position": {
+            "X": 86.46329,
+            "Y": -76.926926,
+            "Z": -629.53125
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 76,
+          "type": "Shipyard"
+        }
+      ]
+    },
+    {
+      "wall": 60.2015565,
+      "sim": 2163.199999999104,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 17,
+          "TotalSteps": 157,
+          "Action": "develop",
+          "Name": "Hvy Sig Cloak 1",
+          "Status": "building bucket",
+          "ProgressPercent": 10.191082802547772,
+          "StepProgressPercent": 0,
+          "Money": 4581385,
+          "EtaSeconds": 120,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Counter 2",
+            "Weedcore 03",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 11,
+          "TotalSteps": 181,
+          "Action": "station",
+          "Name": "Shipyard (Dry)",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 5.801104972375691,
+          "StepProgressPercent": 50,
+          "Money": 10376175,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Upgrade Medium Class",
+            "Upgrade Light Class",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard"
+          ],
+          "Constructor": 8111,
+          "ReservedRock": 77,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8111,
+          "SideId": 1,
+          "Position": {
+            "X": -1767.0896,
+            "Y": 165.70197,
+            "Z": 409.21454
+          },
+          "IsBuilding": true,
+          "WaitsForBuildOrder": true,
+          "target": null,
+          "type": "Shipyard (Dry)"
+        }
+      ]
+    },
+    {
+      "wall": 80.244709,
+      "sim": 2864.3500000016547,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "building bucket",
+          "ProgressPercent": 12.835589171974524,
+          "StepProgressPercent": 15.187499999999924,
+          "Money": 6129636,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": null,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 15,
+          "TotalSteps": 181,
+          "Action": "station",
+          "Name": "Expansion (Adv)",
+          "Status": "building bucket",
+          "ProgressPercent": 7.818024861878453,
+          "StepProgressPercent": 15.062500000000037,
+          "Money": 13926175,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Upgrade Medium Class",
+            "Upgrade Light Class",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion"
+          ],
+          "Constructor": null,
+          "ReservedRock": 68,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        }
+      ],
+      "builders": []
+    },
+    {
+      "wall": 100.2864677,
+      "sim": 3570.7500000042246,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 7716479,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 18,
+          "TotalSteps": 181,
+          "Action": "station",
+          "Name": "Tactical (Adv)",
+          "Status": "building bucket",
+          "ProgressPercent": 9.555593922651932,
+          "StepProgressPercent": 29.562499999999925,
+          "Money": 17486175,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Upgrade Medium Class",
+            "Upgrade Light Class",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical"
+          ],
+          "Constructor": null,
+          "ReservedRock": 10022,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1901.8123,
+            "Y": 2221.1514,
+            "Z": -22.566011
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 120.3301798,
+      "sim": 4281.900000006812,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 9300157,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 23,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "[P+R] Rocket Targeting",
+          "Status": "funding",
+          "ProgressPercent": 12.154696132596685,
+          "StepProgressPercent": 0,
+          "Money": 21055175,
+          "EtaSeconds": 120,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Hvy Bomber",
+            "Bomber",
+            "Upgrade Medium Class",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[P+R] Mustang",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1918.4036,
+            "Y": 2229.9045,
+            "Z": -33.29645
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 140.3733962,
+      "sim": 4991.550000009393,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 10748187,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 28,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "Stealth Fighter",
+          "Status": "building bucket",
+          "ProgressPercent": 15.08402394106814,
+          "StepProgressPercent": 30.208333333333332,
+          "Money": 24313675,
+          "EtaSeconds": 83.75,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Hvy Bomber",
+            "Bomber",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1902.0885,
+            "Y": 2241.354,
+            "Z": -75.43184
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 160.4141803,
+      "sim": 5705.35000001199,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 12329743,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 33,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "Troop Transport",
+          "Status": "building bucket",
+          "ProgressPercent": 18.00920810313076,
+          "StepProgressPercent": 59.66666666666697,
+          "Money": 27879675,
+          "EtaSeconds": 48.399999999999636,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Adv Stl Fighter",
+            "Stealth Fighter",
+            "Hvy Interceptor",
+            "Interceptor",
+            "Stealth Bomber",
+            "Hvy Bomber",
+            "Bomber",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1858.8907,
+            "Y": 2239.798,
+            "Z": -92.26019
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 180.4569101,
+      "sim": 6404.300000014533,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 13913365,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 38,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "Afterburner 2",
+          "Status": "building bucket",
+          "ProgressPercent": 20.76887661141805,
+          "StepProgressPercent": 59.166666666666664,
+          "Money": 31450675,
+          "EtaSeconds": 49,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Adv Stl Fighter",
+            "Stealth Fighter",
+            "Hvy Interceptor",
+            "Interceptor",
+            "Stealth Bomber",
+            "Hvy Bomber",
+            "Bomber",
+            "Hvy Troop Transport",
+            "Troop Transport",
+            "Enh Carrier Drone",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[R] Guardian",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)",
+            "Outpost"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Outpost"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1836.3556,
+            "Y": 2229.541,
+            "Z": -77.42415
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 200.4985415,
+      "sim": 7108.800000017096,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 15497289,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 43,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "Adv Constructor",
+          "Status": "building bucket",
+          "ProgressPercent": 23.699585635359114,
+          "StepProgressPercent": 89.62499999999939,
+          "Money": 35028675,
+          "EtaSeconds": 12.450000000000728,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Adv Stl Fighter",
+            "Stealth Fighter",
+            "Hvy Interceptor",
+            "Interceptor",
+            "Stealth Bomber",
+            "Hvy Bomber",
+            "Bomber",
+            "Hvy Troop Transport",
+            "Troop Transport",
+            "Afterburner 2",
+            "Afterburner 3",
+            "XRM Torpedo 1",
+            "XRM Torpedo 2",
+            "Enh Constructor",
+            "Enh Carrier Drone",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[R] Guardian",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)",
+            "Outpost"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Outpost"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1833.824,
+            "Y": 2224.429,
+            "Z": -66.63479
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 220.5414116,
+      "sim": 7816.40000001967,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 16947960,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 49,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "EW Sniper Rifle 2",
+          "Status": "building bucket",
+          "ProgressPercent": 26.519337016574585,
+          "StepProgressPercent": 0,
+          "Money": 38302675,
+          "EtaSeconds": 120,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Adv Stl Fighter",
+            "Stealth Fighter",
+            "Hvy Interceptor",
+            "Interceptor",
+            "Stealth Bomber",
+            "Hvy Bomber",
+            "Bomber",
+            "Hvy Troop Transport",
+            "Troop Transport",
+            "Afterburner 2",
+            "Afterburner 3",
+            "XRM Torpedo 1",
+            "XRM Torpedo 2",
+            "Enh Constructor",
+            "Adv Constructor",
+            "Adv Miner",
+            "Enh Miner",
+            "EW Utl Cannon 3",
+            "EW Utl Cannon 2",
+            "EW Sniper Rifle 1",
+            "Enh Carrier Drone",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[R] Guardian",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)",
+            "Outpost"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Outpost"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1841.2297,
+            "Y": 2217.1792,
+            "Z": -46.897884
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 240.5796281,
+      "sim": 8524.3500000162,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 18528852,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 54,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "PW SkyCap 2",
+          "Status": "building bucket",
+          "ProgressPercent": 29.644337016574585,
+          "StepProgressPercent": 65.625,
+          "Money": 41882675,
+          "EtaSeconds": 41.25,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Adv Stl Fighter",
+            "Stealth Fighter",
+            "Hvy Interceptor",
+            "Interceptor",
+            "Stealth Bomber",
+            "Hvy Bomber",
+            "Bomber",
+            "Hvy Troop Transport",
+            "Troop Transport",
+            "Afterburner 2",
+            "Afterburner 3",
+            "XRM Torpedo 1",
+            "XRM Torpedo 2",
+            "Enh Constructor",
+            "Adv Constructor",
+            "Adv Miner",
+            "Enh Miner",
+            "EW Utl Cannon 3",
+            "EW Utl Cannon 2",
+            "EW Sniper Rifle 1",
+            "EW Sniper Rifle 2",
+            "PW Mini-Gun 3",
+            "PW Mini-Gun 2",
+            "PW EMP Cannon 2",
+            "PW EMP Cannon 1",
+            "Enh Carrier Drone",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[R] Guardian",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)",
+            "Outpost"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Outpost"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1872.0902,
+            "Y": 2220.9456,
+            "Z": -45.482254
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 260.6234397,
+      "sim": 9232.2000000059,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 20111790,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 59,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "LRM Killer 1",
+          "Status": "building bucket",
+          "ProgressPercent": 32.37546040515653,
+          "StepProgressPercent": 59.958333333332426,
+          "Money": 45462675,
+          "EtaSeconds": 48.05000000000109,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Adv Stl Fighter",
+            "Stealth Fighter",
+            "Hvy Interceptor",
+            "Interceptor",
+            "Stealth Bomber",
+            "Hvy Bomber",
+            "Bomber",
+            "Hvy Troop Transport",
+            "Troop Transport",
+            "Afterburner 2",
+            "Afterburner 3",
+            "XRM Torpedo 1",
+            "XRM Torpedo 2",
+            "Enh Constructor",
+            "Adv Constructor",
+            "Adv Miner",
+            "Enh Miner",
+            "EW Utl Cannon 3",
+            "EW Utl Cannon 2",
+            "EW Sniper Rifle 1",
+            "EW Sniper Rifle 2",
+            "PW Mini-Gun 3",
+            "PW Mini-Gun 2",
+            "PW EMP Cannon 2",
+            "PW EMP Cannon 1",
+            "PW SkyCap 3",
+            "PW SkyCap 2",
+            "ER Nanite 2",
+            "LRM Hunter 3",
+            "LRM Hunter 2",
+            "Enh Carrier Drone",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[R] Guardian",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)",
+            "Outpost"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Outpost"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1878.9786,
+            "Y": 2230.665,
+            "Z": -66.27106
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 280.668343,
+      "sim": 9941.099999995584,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 21690829,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 65,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "SRM Tactical Nuke 2",
+          "Status": "building bucket",
+          "ProgressPercent": 35.35911602209944,
+          "StepProgressPercent": 0,
+          "Money": 49038675,
+          "EtaSeconds": 120,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Adv Stl Fighter",
+            "Stealth Fighter",
+            "Hvy Interceptor",
+            "Interceptor",
+            "Stealth Bomber",
+            "Hvy Bomber",
+            "Bomber",
+            "Hvy Troop Transport",
+            "Troop Transport",
+            "Afterburner 2",
+            "Afterburner 3",
+            "XRM Torpedo 1",
+            "XRM Torpedo 2",
+            "Enh Constructor",
+            "Adv Constructor",
+            "Adv Miner",
+            "Enh Miner",
+            "EW Utl Cannon 3",
+            "EW Utl Cannon 2",
+            "EW Sniper Rifle 1",
+            "EW Sniper Rifle 2",
+            "PW Mini-Gun 3",
+            "PW Mini-Gun 2",
+            "PW EMP Cannon 2",
+            "PW EMP Cannon 1",
+            "PW SkyCap 3",
+            "PW SkyCap 2",
+            "ER Nanite 2",
+            "LRM Hunter 3",
+            "LRM Hunter 2",
+            "LRM Killer 2",
+            "LRM Killer 1",
+            "SRM Seismic",
+            "SRM EMP Missile",
+            "XRM Hunter Killer 3",
+            "XRM Hunter Killer 2",
+            "Enh Carrier Drone",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[R] Guardian",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)",
+            "Outpost"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Outpost"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1855.1146,
+            "Y": 2233.1953,
+            "Z": -80.881
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    },
+    {
+      "wall": 298.7089874,
+      "sim": 10583.24999998624,
+      "stage": "Started",
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 21,
+          "TotalSteps": 157,
+          "Action": "station",
+          "Name": "Supremacy",
+          "Status": "constructor travelling/building",
+          "ProgressPercent": 13.05732484076433,
+          "StepProgressPercent": 50,
+          "Money": 23142182,
+          "EtaSeconds": null,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Bomber",
+            "Retro Booster",
+            "Enh Constructor",
+            "Enh Miner",
+            "ER Nanite 2",
+            "MRM Seeker 2",
+            "SRM Seismic",
+            "Med Shield 2",
+            "Lt Booster 1",
+            "Hvy Sig Cloak 1",
+            "Counter 2",
+            "Weedcore 03",
+            "Enh Carrier Drone",
+            "MRM Quickfire 2"
+          ],
+          "Stations": [
+            "Garrison",
+            "Teleport (Hvy)",
+            "Outpost (Hvy)"
+          ],
+          "Constructor": 8116,
+          "ReservedRock": 10003,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_b",
+          "Step": 69,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "Large Shield 2",
+          "Status": "building bucket",
+          "ProgressPercent": 37.89042357274401,
+          "StepProgressPercent": 58.16666666666605,
+          "Money": 52322675,
+          "EtaSeconds": 50.20000000000073,
+          "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Adv Scout",
+            "Adv Fighter",
+            "Enh Fighter",
+            "Adv Stl Fighter",
+            "Stealth Fighter",
+            "Hvy Interceptor",
+            "Interceptor",
+            "Stealth Bomber",
+            "Hvy Bomber",
+            "Bomber",
+            "Hvy Troop Transport",
+            "Troop Transport",
+            "Afterburner 2",
+            "Afterburner 3",
+            "XRM Torpedo 1",
+            "XRM Torpedo 2",
+            "Enh Constructor",
+            "Adv Constructor",
+            "Adv Miner",
+            "Enh Miner",
+            "EW Utl Cannon 3",
+            "EW Utl Cannon 2",
+            "EW Sniper Rifle 1",
+            "EW Sniper Rifle 2",
+            "PW Mini-Gun 3",
+            "PW Mini-Gun 2",
+            "PW EMP Cannon 2",
+            "PW EMP Cannon 1",
+            "PW SkyCap 3",
+            "PW SkyCap 2",
+            "ER Nanite 2",
+            "LRM Hunter 3",
+            "LRM Hunter 2",
+            "LRM Killer 2",
+            "LRM Killer 1",
+            "SRM Seismic",
+            "SRM EMP Missile",
+            "XRM Hunter Killer 3",
+            "XRM Hunter Killer 2",
+            "SRM Tactical Nuke 2",
+            "XRM Cruise 2",
+            "XRM Cruise 1",
+            "MRM Seismic",
+            "Enh Carrier Drone",
+            "Upgrade Medium Class",
+            "Hvy Scout",
+            "Upgrade Light Class",
+            "[P+R] PT Bomber",
+            "[R] Guardian",
+            "[P+R] Mustang",
+            "[P+R] Rocket Targeting",
+            "Upgrade Garrison",
+            "Upgrade Supremacy",
+            "Upgrade Tactical Lab",
+            "Upgrade Expansion",
+            "Upgrade Heavy Class"
+          ],
+          "Stations": [
+            "Garrison",
+            "Garrison (Str)",
+            "[P]alisade",
+            "[R]esearch",
+            "Supremacy",
+            "Shipyard",
+            "Shipyard (Dry)",
+            "Supremacy (Adv)",
+            "Expansion",
+            "Expansion (Adv)",
+            "Tactical",
+            "Tactical (Adv)",
+            "Outpost"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "stations": [
+        {
+          "SideId": 0,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 0,
+          "Name": "Teleport (Hvy)"
+        },
+        {
+          "SideId": 0,
+          "Name": "Outpost (Hvy)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison"
+        },
+        {
+          "SideId": 1,
+          "Name": "Garrison (Str)"
+        },
+        {
+          "SideId": 1,
+          "Name": "[P]alisade"
+        },
+        {
+          "SideId": 1,
+          "Name": "[R]esearch"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard"
+        },
+        {
+          "SideId": 1,
+          "Name": "Shipyard (Dry)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Supremacy (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion"
+        },
+        {
+          "SideId": 1,
+          "Name": "Expansion (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical"
+        },
+        {
+          "SideId": 1,
+          "Name": "Tactical (Adv)"
+        },
+        {
+          "SideId": 1,
+          "Name": "Outpost"
+        }
+      ],
+      "builders": [
+        {
+          "Id": 8116,
+          "SideId": 0,
+          "Position": {
+            "X": 1836.7913,
+            "Y": 2226.86,
+            "Z": -71.660904
+          },
+          "IsBuilding": false,
+          "WaitsForBuildOrder": true,
+          "target": 10003,
+          "type": "Supremacy"
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,19 @@ using Allegiance.Core;
 
 namespace Allegiance.Server;
 
+/// <summary>P703 showcase-only extensions. At incomeMultiplier=1 the periodic economy is native.
+/// Income still enters the team treasury and is distributed to real player wallets (fsmission.cpp:2294-2324).</summary>
+public sealed class ShowcaseConfig
+{
+    public double IncomeMultiplier { get; set; } = 1;
+    public bool LoopResearchPlans { get; set; }
+    public void Validate()
+    {
+        if (!double.IsFinite(IncomeMultiplier) || IncomeMultiplier < 1 || IncomeMultiplier > 10000)
+            throw new InvalidDataException("showcase.incomeMultiplier must be finite and between 1 and 10000");
+    }
+}
+
 /// <summary>
 /// One playable game world (a mission) drawn from the configuration. In the
 /// reference engine the per-team civilizations and names come from
@@ -653,6 +666,7 @@ public sealed class ReceiveConfig
 /// </summary>
 public sealed class ServerConfig
 {
+    public ShowcaseConfig Showcase { get; set; } = new();
     /// <summary>P629 simulation rules, including the stress-test crowding override.</summary>
     public SimConfig Sim { get; set; } = new();
     public ReceiveConfig? Receive { get; set; }

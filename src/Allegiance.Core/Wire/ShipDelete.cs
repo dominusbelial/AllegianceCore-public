@@ -20,8 +20,9 @@ namespace Allegiance.Core.Wire;
 ///   offset  8: int32  sdr      (ShipDeleteReason — plain enum, 4 bytes)
 ///   = 12 B fixed, no var items → cbmsg = 12
 /// </code>
-/// This slice emits <b>four</b> reasons: <c>SDR_KILLED</c>(1) — the reason this
-/// port's kill path drives (<c>BroadcastKillShip</c>); (P128) <c>SDR_LOGGEDOFF</c>(4)
+/// This slice emits <b>five</b> reasons: <c>SDR_KILLED</c>(1) — the reason this
+/// port's kill path drives (<c>BroadcastKillShip</c>); <c>SDR_TERMINATE</c>(5)
+/// quietly consumes constructors/layers (FedSrv.CPP:12025); (P128) <c>SDR_LOGGEDOFF</c>(4)
 /// — the reason the disconnect path drives (<c>ReleasePeer</c>); and (P370)
 /// <c>SDR_LEFTSECTOR</c>(2) and <c>SDR_DOCKED</c>(3) — the two "this ship is no
 /// longer in your view" notices that close the frozen-ghost gap: a ship that
@@ -31,7 +32,7 @@ namespace Allegiance.Core.Wire;
 /// same shape the death path already uses (<c>SDR_KILLED</c>), following native
 /// <c>CFSShip::AnnounceExit</c> (<c>fsship.cpp:196-226</c>). The remaining
 /// <c>ShipDeleteReason</c> ordinals (<c>SDR_OUTOFRANGE</c> 0,
-/// <c>SDR_TERMINATE</c> 5, <c>SDR_SUPERCEDED</c> 6) need mechanisms this port
+/// <c>SDR_SUPERCEDED</c> 6) need mechanisms this port
 /// does not have (see <c>SUICIDE_SHIP_DELETE_P103.md</c>); they are deliberately
 /// not constructible here.</summary>
 public sealed class ShipDelete : IFedMessage
@@ -62,6 +63,9 @@ public sealed class ShipDelete : IFedMessage
     /// waste their ship and everything about it"</i>. Driven by the P128
     /// disconnect path.</summary>
     public const int SdrLoggedOff = 4;
+
+    /// <summary>Quiet constructor consumption, native FedSrv.CPP:12025 (amount == 0).</summary>
+    public const int SdrTerminate = 5;
 
     public short ShipId;           // the victim (ShipID = ObjectID = short)
     public int Sdr = SdrKilled;    // ShipDeleteReason — this slice emits SDR_KILLED / SDR_LEFTSECTOR / SDR_DOCKED / SDR_LOGGEDOFF

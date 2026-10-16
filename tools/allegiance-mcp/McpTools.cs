@@ -153,14 +153,14 @@ internal static class McpTools
             new Tool
             {
                 Name = "invest",
-                Description = "P486 — fund a REAL investment on the chosen side through the harness commander's P473-granted wallet, then report the observed BUCKET_STATUS progress (or completion + the drone that appeared on the wire). `bucket` is a drone-type or station-type bucket name or id (resolved with the same ids the server bakes into its list — see list_drones context); a development bucket is refused. Donates `amount` (default: the remaining price), so completing a bucket also requires the build time (TimeToBuild seconds) to elapse, which the tool waits out up to `observe_seconds`. Works entirely as an ordinary same-side player — the native drone AI then flies the spawned drone.",
+                Description = "P486 — fund a REAL investment on the chosen side through the commander's real player wallet, then report the observed BUCKET_STATUS progress (or completion + the drone that appeared on the wire). `bucket` is a development, drone-type or station-type bucket name or id (resolved with the same ids the server bakes into its list — see list_drones context); developments complete through normal research. Donates `amount` (default: the remaining price), so completing a bucket also requires the build time (TimeToBuild seconds) to elapse, which the tool waits out up to `observe_seconds`. Works entirely as an ordinary same-side player — the native drone AI then flies the spawned drone.",
                 InputSchema = Schema(new
                 {
                     type = "object",
                     properties = new
                     {
                         side = new { type = "integer", description = "REQUIRED: side id to invest on (the commander seats on it)." },
-                        bucket = new { type = "string", description = "REQUIRED: drone-type / station-type bucket NAME or id to invest in (e.g. '.Miner', 'Wingman', or a numeric id). Resolved exact-over-unique-substring." },
+                        bucket = new { type = "string", description = "REQUIRED: development / drone-type / station-type bucket NAME or id to invest in (e.g. '.Miner', 'Wingman', or a numeric id). Resolved exact-over-unique-substring." },
                         amount = new { type = "integer", description = "Optional money to donate. Default = the remaining price (to completion). Capped at the outstanding balance and the commander wallet." },
                         observe_seconds = new { type = "number", description = "Optional observation window in real seconds (default 20). The tool waits up to this for the bucket to complete (money full AND build time elapsed) and for the spawned drone to appear on the wire; otherwise returns current progress." },
                     },
@@ -1104,6 +1104,7 @@ internal static class McpTools
                 units = "Distinct active undocked bots idle with a target, sampled each second; botsLastMinute counts each bot once over 60 seconds. Idle means speed < 1 m/s and no movement for > 5 seconds.",
             },
             finale = mgr.FinaleStatus(),
+            research = mgr.ResearchStatus(),
             decisionOverruns = mgr.DecisionOverruns,
             stall = StallWatchdog.JsonSnapshot(ps.Stall),
             removedBots = mgr.RemovedBots(),

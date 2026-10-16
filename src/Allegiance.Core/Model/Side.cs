@@ -507,6 +507,39 @@ public sealed class Side : ISideIgc
         GlobalAttributes = GlobalAttributeSet.FromArray(civilization.GasBaseAttributes);
     }
 
+    private TechTreeBitMask? _bucketTechs, _bucketDevelopments;
+
+    /// <summary>Native AdjustBuckets (sideigc.h:611-675): losing a prerequisite empties
+    /// invested buckets, station obsolescence migrates funding to its successor, and
+    /// already-known tech-only research is completed without applying effects twice.
+    /// Reconcile before advancing time so a destroyed base cannot finish now-illegal research.</summary>
+    private void AdjustBucketsIfTechsChanged()
+    {
+        if (Mission is not { } mission) return;
+        var techs = Techs;
+        if (_bucketTechs == techs && _bucketDevelopments == DevelopmentTechs) return;
+        _bucketTechs = techs; _bucketDevelopments = DevelopmentTechs;
+        foreach (var bucket in Buckets)
+        {
+            if (bucket.Completed || bucket.ItemType == BucketItemType.BitShipType) continue;
+            if (bucket.Development is { } dev && dev.DevelopmentId != Mission.TeamMoneyDevelopmentId
+                && DevelopmentLogic.IsObsolete(dev, DevelopmentTechs))
+            {
+                bucket.SetFunding((long)bucket.TimeToBuild * 1000, bucket.Price, complete: true);
+                continue;
+            }
+            if (bucket.InvestedMoney == 0 || CanBuy(bucket)) continue;
+            if (bucket.StationType is { } station)
+            {
+                var successor = SuccessorUpgrade.StationSuccessor(mission.Core, station, DevelopmentTechs);
+                if (successor.StationTypeId != station.StationTypeId)
+                    Buckets.FirstOrDefault(b => b.StationType?.StationTypeId == successor.StationTypeId)
+                        ?.SetFunding(bucket.InvestedMilliseconds, bucket.InvestedMoney);
+            }
+            bucket.SetEmpty();
+        }
+    }
+
     /// <summary>
     /// Once-per-<see cref="Mission.Update"/> side pass (<c>CsideIGC::Update</c>,
     /// <c>sideigc.h:41</c>): records the time and advances every construction
@@ -519,7 +552,12 @@ public sealed class Side : ISideIgc
     {
         UpdateCount++;
         LastUpdate = now;
+        AdjustBucketsIfTechsChanged();
         foreach (var bucket in Buckets)
+        {
             bucket.Update(now);
+            // A development completion callback can change techs during this same side pass.
+            if (_bucketDevelopments != DevelopmentTechs) AdjustBucketsIfTechsChanged();
+        }
     }
 }

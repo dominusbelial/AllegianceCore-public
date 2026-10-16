@@ -221,6 +221,8 @@ internal sealed partial class BotManager : IDisposable
         // allow-listed) it returns false and the arena path throws a clear error.
         Relocator = CreateNetworkedRelocator();
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
+        _researchThread = new Thread(ResearchLoop) { IsBackground = true, Name = "allegiance-mcp-research" };
+        if (Partition is null || Partition.Index == 0) _researchThread.Start();
         ownership.Transfer();
         telemetryOwnership.Transfer();
     }
@@ -1057,9 +1059,9 @@ internal sealed partial class BotManager : IDisposable
     /// P486 — get (or lazily seat) the cached commander peer for
     /// <paramref name="side"/>: connect, logon, request that side, wait for the
     /// ship assignment, and ready the seat (P485, so a normal-map mission can
-    /// auto-start). Deliberately does NOT buy a loadout — a seated `mcp-` peer
-    /// already carries the P473 grant money in its wallet, which is all invest
-    /// needs, and the default spawned hull is a valid sender. Registered only in
+    /// auto-start). Does not buy a loadout. The research-cmd name avoids the usual
+    /// mcp- test-harness grant prefix; the commander spends its real player wallet.
+    /// Registered only in
     /// the commander cache (not the behavior loop), so it never fights.
     /// </summary>
     private ConnectionSession EnsureCommander(short side)
@@ -1069,20 +1071,21 @@ internal sealed partial class BotManager : IDisposable
             if (_commanders.TryGetValue(side, out var existing) && existing.Connected)
                 return existing;
             DisposePeer(existing);
-            string name = $"mcp-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
+            string name = $"research-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
             using var ownership = new PendingOwnership(DisposePeer);
             var cs = ownership.Own(new ConnectionSession());
             cs.World.CountOnlyProjectiles = true;
             cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
             _stallTelemetry.Connect(cs, name, _host, _port);
             cs.SendLogonRequest(Request(name));
-            if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
+            if (!WaitUntil(() => _loopCts.IsCancellationRequested || cs.Ack is { FValidated: true }, 12000))
                 throw new InvalidOperationException($"commander: side {side} peer '{name}' never got a validated LOGONACK from {_host}:{_port}");
             cs.SendPositionReq(side);
-            if (!WaitUntil(() => cs.World.MyShipId is not null, 15000))
+            if (!WaitUntil(() => _loopCts.IsCancellationRequested || cs.World.MyShipId is not null, 15000))
                 throw new InvalidOperationException($"commander: side {side} peer '{name}' was never seated (no ship assigned)");
+            _loopCts.Token.ThrowIfCancellationRequested();
             cs.SendPlayerReady(true, cs.World.MyShipId!.Value);
-            Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — P473 grant money in wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
+            Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — native player wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
             _commanders[side] = cs;
             ownership.Transfer();
             return cs;
@@ -1142,8 +1145,8 @@ internal sealed partial class BotManager : IDisposable
     }
 
     /// <summary>P486 — invest into a real side bucket. Funds through
-    /// <see cref="ConnectionSession.SendBucketDonate"/> (the P473-granted
-    /// commander's wallet), then observes the real BUCKET_STATUS progress and,
+    /// <see cref="ConnectionSession.SendBucketDonate"/> (the commander's real
+    /// player wallet), then observes the real BUCKET_STATUS progress and,
     /// when the bucket completes within the window (money full AND build time
     /// elapsed), the drone that appears on the wire (a NEW same-side NPC with
     /// the completed bucket's drone hull). Returns observed progress otherwise.
@@ -1166,11 +1169,6 @@ internal sealed partial class BotManager : IDisposable
         var ga = commander.World.GlobalAttributesFor(side);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         var view = ResolveBucket(views, bucketQuery);
-        if (view.ItemType == Allegiance.Core.Model.BucketItemType.BitDevelopment)
-            // Funding a development is a real invest too, but it completes a
-            // research tech, not a drone — P486 is about drone production.
-            throw new ArgumentException(
-                $"invest: bucket '{view.Name}' (id {view.Id}) is a DEVELOPMENT bucket (research), not a drone/station production bucket; this tool invests in drone-type and station-type buckets that spawn drones.");
 
         long already = 0;
         var preFund = commander.World.BucketFundingOf(side, view.Id);
@@ -1181,7 +1179,7 @@ internal sealed partial class BotManager : IDisposable
         int? walletBefore = commander.World.MyMoney;
         if (walletBefore is { } wb && donate > wb)
             throw new InvalidOperationException(
-                $"invest: commander wallet {wb} < requested donation {donate} for bucket '{view.Name}' (price {view.Price}, already invested {already}) — donate less or raise the P473 grant money");
+                $"invest: commander wallet {wb} < requested donation {donate} for bucket '{view.Name}' (price {view.Price}, already invested {already}) — donate less or wait for payday");
 
         // Snapshot the side's ship ids BEFORE the donation so the spawned drone
         // is recognized as genuinely NEW (the side may already have an initial
@@ -1227,6 +1225,12 @@ internal sealed partial class BotManager : IDisposable
         {
             while (Now() < deadline)
             {
+                if (view.ItemType == BucketItemType.BitDevelopment)
+                {
+                    lock (commander.Gate)
+                        completed = commander.World.CompletedDevelopments.Contains(view.DevelopmentId);
+                    if (completed) break;
+                }
                 drone = FindNewDrone(commander, side, beforeIds, view);
                 if (drone is not null) { completed = true; break; }
                 long it; int? mw2;
@@ -1252,9 +1256,11 @@ internal sealed partial class BotManager : IDisposable
     /// hull (view.HullIdDrone when set) but reports any newly-appeared NPC so a
     /// station-type bucket (whose constructor hull the view doesn't carry) is
     /// still captured.</summary>
-    private DroneRow? FindNewDrone(ConnectionSession commander, short side,
+    internal static DroneRow? FindNewDrone(ConnectionSession commander, short side,
         HashSet<short> beforeIds, Allegiance.Core.Model.BucketCatalog.BucketView view)
     {
+        // A concurrent drone purchase is never evidence that research completed.
+        if (view.ItemType == BucketItemType.BitDevelopment) return null;
         List<(short Id, Allegiance.ClientCore.State.ShipEntity s)> news = new();
         lock (commander.Gate)
         {
@@ -5503,6 +5509,7 @@ bool isThreat =
     {
         _loopCts.Cancel();
         if (_loopThread.IsAlive) _loopThread.Join(500);
+        if (_researchThread?.IsAlive == true) _researchThread.Join(1500);
         ActiveBot[] bots;
         lock (_gate) { bots = _bots.ToArray(); _bots.Clear(); }
         foreach (var bot in bots)

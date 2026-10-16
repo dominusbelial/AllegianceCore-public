@@ -4,6 +4,38 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P703 observation (2026-10-15)
+
+The new
+`P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates`
+had one authored 25/3 timeout: one constructor remained in physical approach to
+its assigned rock at the unchanged 300-second deadline. Money and prerequisite
+research had succeeded. The generated 1/2 case passed in that invocation.
+The exact method then passed **3/3 isolated reruns**, both matchup cases each
+time. Under P703's lane rule this is recorded as a load flake; its underlying
+approach/steering cause is not established. No assertions, deadlines, map
+geometry or movement rules were relaxed between the failure and retries.
+
+See [preserved approach samples](reports/P703_assets/constructor-approach-timeout.json),
+[loopback evidence](reports/P703_assets/loopback-proofs.json), and
+[invocation ledger](reports/P703_assets/verification.json) (failed invocation
+232; clean isolated invocations 233, 234 and 292).
+
+The unfiltered Core suite reported **4,581 pass / 2 fail / 0 skip**. Both failures
+passed **3/3 exact-method isolated reruns**:
+
+- `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts`: empty notification collection (invocations 372–374).
+- `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`: no raw-peer `OnPeerJoined` before timeout (invocations 375–377).
+
+These repeat the P702 observations below. No deadlines or receipt assertions
+were relaxed. The same P703 invocation ledger records the full run and retries.
+
+The unfiltered ClientCore run completed **1,073 pass / 0 fail / 0 skip**,
+including both P703 research matchups again. MonoGame completed **2,208 pass /
+0 fail / 3 existing optional Meshy-pack skips**, including the 605-second
+human-flight soak. Lobby completed **19 pass / 0 fail / 0 skip**. No additional
+failures required classification. See the [P703 report](reports/P703_RESEARCH_COMMANDER.md).
+
 ## P702 observation (2026-10-15)
 
 The first unfiltered Core run reported **4,570 pass / 5 fail / 0 skip**.

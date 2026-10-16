@@ -79,6 +79,11 @@ public interface IIgcSite
         double now,
         bool[] pbseensides) { }
 
+    /// <summary>P703 host notification after the port's Sector.CompleteBuild performs native
+    /// BuildStation. Native removes the rock, exports the owned station and quietly terminates
+    /// the builder (FedSrv.CPP:11431-11462,12025; buildingeffectigc.h:315-343).</summary>
+    void StationBuiltEvent(IAsteroidIgc asteroid, IShipIgc builder, IStationIgc station) { }
+
     // igc.h:4789-4790 — the default creates a fresh, unattached shim.
     /// <summary>Creates a per-object shim. C++ default <c>new ThingSite</c> (<c>igc.h:4789</c>).</summary>
     ThingSite CreateThingSite(IModelIgc pModel) => new ThingSite();

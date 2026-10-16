@@ -536,6 +536,19 @@ public sealed partial class ClientWorld
     // is the authoritative debit (P442), so MyMoney and these numbers stay in
     // sync with exactly one authoritative writer each.
     private readonly Dictionary<short, Dictionary<short, BucketFunding>> _bucketFundingBySideId = new();
+    /// <summary>P703 selected plan from side join sync; no client-side plan substitution.</summary>
+    public ResearchBriefing? ResearchBriefing { get; private set; }
+    private readonly HashSet<short> _completedDevelopments = new();
+    /// <summary>Native DEV_COMPLETED history, retained separately from the bounded sound queue.</summary>
+    public IReadOnlySet<short> CompletedDevelopments => _completedDevelopments;
+    private readonly Dictionary<short, ResearchProduction> _researchProduction = new();
+    private readonly HashSet<short> _retiredResearchProduction = new();
+    /// <summary>P703 read-only production identities; pose/lifetime remain native ship messages.</summary>
+    public IReadOnlyDictionary<short, ResearchProduction> ResearchProduction => _researchProduction;
+    /// <summary>Mission-wide native SHIP_DELETE (fsship.cpp:196-223) can arrive before a
+    /// production ship's first pose export. Retain that lifetime fact without creating a phantom ship.</summary>
+    public bool IsResearchProductionAlive(short shipId) => !_retiredResearchProduction.Contains(shipId)
+        && (!_ships.TryGetValue(shipId, out var ship) || !ship.IsDead);
     private static readonly IReadOnlyDictionary<short, BucketFunding> EmptySideFunding =
         new Dictionary<short, BucketFunding>();
 
@@ -1555,6 +1568,10 @@ public sealed partial class ClientWorld
     private double TreasureServerSeconds() => _treasureServerSeconds
         + (NowSeconds() - _treasureLocalSeconds) * TimeScale;
 
+    /// <summary>Most recent authoritative PING sim-clock sample, in seconds. The ship pose
+    /// Time slot is a tick index in this port and must never be interpreted as milliseconds.</summary>
+    public double SimulationTimeSeconds => _treasureClockSeeded ? _treasureServerSeconds : 0;
+
     public void ObserveServerTime(uint serverMs, long localMs)
     {
         _treasureClockSeeded = true;
@@ -1653,6 +1670,10 @@ public sealed partial class ClientWorld
         _developmentTechsBySideId.Clear();
         _globalAttributesBySideId.Clear();
         _bucketFundingBySideId.Clear();
+        ResearchBriefing = null;
+        _completedDevelopments.Clear();
+        _researchProduction.Clear();
+        _retiredResearchProduction.Clear();
         _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();                    // P442 — per-player wallet state
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
@@ -1954,6 +1975,20 @@ public sealed partial class ClientWorld
                 break;
             case StationCapture stationCapture:
                 Apply(stationCapture);
+                break;
+            // Native appmsg.cpp:1692-1715: terminate the consumed/destroyed rock and its effect.
+            case AsteroidDestroyed destroyedAsteroid:
+                _asteroids.Remove(destroyedAsteroid.AsteroidId);
+                _asteroidLive.Remove(destroyedAsteroid.AsteroidId);
+                _buildingEffects.Remove(destroyedAsteroid.AsteroidId);
+                break;
+            case ResearchProduction production:
+                _researchProduction[production.ShipId] = production;
+                _retiredResearchProduction.Remove(production.ShipId);
+                break;
+            case ResearchBriefing briefing:
+                ResearchBriefing = briefing;
+                _completedDevelopments.UnionWith(briefing.CompletedDevelopments);
                 break;
             case DevCompleted devCompleted:
                 Apply(devCompleted);
@@ -2991,8 +3026,11 @@ public sealed partial class ClientWorld
 
     /// <summary>P267 — <c>FM_S_DEV_COMPLETED(8)</c>: a development finished
     /// researching → its completion chime (native <c>appmsg.cpp:3326</c>).</summary>
-    private void Apply(DevCompleted completed) =>
+    private void Apply(DevCompleted completed)
+    {
+        _completedDevelopments.Add(completed.DevId);
         RecordSoundEvent(ClientSoundEventKind.DevCompleted, completed.DevId);
+    }
 
     private void RecordSoundEvent(ClientSoundEventKind kind, short id, short stationTypeId = -1)
     {
@@ -3731,6 +3769,8 @@ public sealed partial class ClientWorld
     /// warps back, or is re-exported to us).</summary>
     private void Apply(ShipDelete m)
     {
+        if (m.Sdr is ShipDelete.SdrKilled or ShipDelete.SdrTerminate)
+            _retiredResearchProduction.Add(m.ShipId);
         if (m.ShipId == MyShipId) ShipWarnings.Reset();
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
         MarkSnapshotDirty();
@@ -3741,7 +3781,7 @@ public sealed partial class ClientWorld
         // P373 — a ship that leaves view resets its first-sighting latch so a
         // later return (undock / warp-back / re-export) cues as a FRESH sighting.
         e.NewContactSounded = false;
-        if (m.Sdr == ShipDelete.SdrKilled)
+        if (m.Sdr is ShipDelete.SdrKilled or ShipDelete.SdrTerminate)
             e.IsDead = true;
         // P585 — a ship that WARPED OUT of the viewer's sector (SDR_LEFTSECTOR,
         // the only departure-with-a-warp reason) crossed an aleph here; signal
@@ -3938,6 +3978,10 @@ public sealed partial class ClientWorld
         _developmentTechsBySideId.Clear();
         _globalAttributesBySideId.Clear();
         _bucketFundingBySideId.Clear();
+        ResearchBriefing = null;
+        _completedDevelopments.Clear();
+        _researchProduction.Clear();
+        _retiredResearchProduction.Clear();
         _initialTechsBySideId.Clear();
         _moneyByShipId.Clear();
         _autoDonateTargetByShipId.Clear();

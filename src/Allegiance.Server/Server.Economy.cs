@@ -815,6 +815,7 @@ public sealed partial class Server
 
         Console.WriteLine($"[constr] station-type bucket '{stationType.Name}' complete on side {side.Id} → spawned constructor ship {ship.Id} (drone type {constructionDroneId}, hull '{ship.HullType.Name}', BuilderStationType '{stationType.Name}', waits-for-build) at home '{hs.Name}'");
 
+        BroadcastResearchProduction(mission, ship);
         BroadcastConstructorNeedRock(mission, side.Id, stationType.ConstructorNeedRockSound, ship.Id);
     }
 
@@ -964,6 +965,7 @@ public sealed partial class Server
 
         var pos = new Vector3(hs.Position[0], hs.Position[1], hs.Position[2]);
         var ship = SpawnNpcShip(mission, sector, side.Id, pos, droneType.DroneTypeId);
+        BroadcastResearchProduction(mission, ship);
 
         // Layer base data = the laid expendable (native CreateStockDrone's
         // GetLaidExpendable(), FedSrv.CPP:11523-11525), recorded on the ship;

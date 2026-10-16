@@ -60,6 +60,7 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
+        _config.Showcase.Validate();
         ResolveBroadcastSnapshot();
         // Reject invalid cadence before any other subsystem registers profiler
         // callbacks: a failed boot must not leave a partially initialized host.
@@ -762,6 +763,14 @@ public sealed partial class Server
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
+        _host.StationBuilt = OnStationBuilt;
+        _host.BucketChanged = (change, bucket) =>
+        {
+            if (change is not (BucketChange.Emptied or BucketChange.MoneyChange) || bucket is not Bucket b) return;
+            foreach (var mission in _missions)
+                foreach (var side in mission.Sides)
+                    if (side.Buckets.Contains(b)) BroadcastBucketStatusSideWide(mission, side.Id, b);
+        };
         _host.BucketCompletedHook = OnBucketCompleted;  // P119: wire the site's BucketCompleted to the completion recorder (detection only)
         _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
@@ -1050,6 +1059,7 @@ public sealed partial class Server
                 mission.ResearchPlans[side.Id] = selection.Plan;
                 Console.WriteLine($"[research-plan] side {side.Id}: {selection.Message}");
             }
+        mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
         mission.AllowDevelopments = g.AllowDevelopments;
         mission.AllowAlliedRip = g.AllowAlliedRip;
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;

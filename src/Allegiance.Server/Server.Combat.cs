@@ -1254,8 +1254,8 @@ public sealed partial class Server
     /// <c>FM_S_KILL_SHIP(105)</c> <see cref="KillShip"/> message to the peers that
     /// can see the victim. This is the live half of the (unit-tested) combat slice:
     /// the projectiles and collision pass already kill the ship in simulation; this
-    /// tells every connected peer whose ship shares the victim's sector that it
-    /// happened. Runs on the sim thread (the site raises it inside the mission
+    /// tells sector peers about combat effects and the whole mission about actual
+    /// deletion (native AnnounceExit, fsship.cpp:196-223). Runs on the sim thread (the site raises it inside the mission
     /// tick, same thread that owns <see cref="_peerShips"/> and broadcasts ship
     /// states), so no extra locking is needed.
     /// </summary>
@@ -1468,38 +1468,34 @@ public sealed partial class Server
 
         Console.WriteLine($"[combat] ship {victim.Id} killed by {(killerId < 0 ? "(none)" : $"ship {killerId}")} " +
                           $"at sim-t {now:R} — KILL_SHIP(105) -> {targets.Length} peer(s)");
-        if (targets.Length == 0) return;
+        // Native AnnounceExit sends true deletion to the mission, even when nobody is
+        // in the victim's sector (fsship.cpp:196-223; FedSrv.CPP:12025). The sector-only
+        // kill/effect audience must not leave an off-sector constructor alive in team state.
+        var deleteTargets = _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, victim.Mission))
+            .Select(kv => kv.Key).ToArray();
+        int deleteReason = amount == 0 ? ShipDelete.SdrTerminate : ShipDelete.SdrKilled;
+        var deletePacket = FedPacket.Pack(new ShipDelete { ShipId = victim.Id, Sdr = deleteReason }.Encode());
+        if (targets.Length > 0)
+        {
+            var msg = KillShip.FromVictim(victim.Id, killerType, killerId);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+            foreach (var t in targets)
+                SendPeer(t, packet);
 
-        var msg = KillShip.FromVictim(victim.Id, killerType, killerId);
-        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
-        foreach (var t in targets)
-            SendPeer(t, packet);
-
-        // P263 — the ship's death blast VFX to the same same-sector audience.
-        // Native picks the category by the victim base hull's fighter capability
-        // on KILL_SHIP (appmsg.cpp:2853-2857: c_habmFighter ? c_etSmallShip :
-        // c_etBigShip) — the exact split the port reproduces here. Scale is the
-        // native 2 * GetRadius() = hull Length (shipRadius = 0.5*Length).
-        int shipType = victim.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
-            ? ExplosionType.SmallShip
-            : ExplosionType.BigShip;
-        SendExplosionEvent(targets, shipType, victim.Sector!.Id, victim.Position, victim.Velocity, victim.HullType.Length);
-
-        // P103 belt-and-suspenders: alongside the KILL_SHIP(105) death notice,
-        // emit the native's separate FM_S_SHIP_DELETE(20) for the same death.
-        // The native client uses SHIP_DELETE to actually remove the client-side
-        // object (appmsg.cpp:470-476: SDR_KILLED → SetCluster(NULL)) and
-        // KILL_SHIP to play the death effect — both are needed, SHIP_DELETE is
-        // genuinely redundant only by KILL_SHIP's own message being separate.
-        // This slice emits only SDR_KILLED(1) — the one reason the death path
-        // can drive without a visibility-culling system (see
-        // SUICIDE_SHIP_DELETE_P103.md). Audience is identical to the KILL_SHIP
-        // above: the same `targets` peers in the victim's sector.
-        var shipDelete = ShipDelete.ForKilledShip(victim.Id);
-        byte[] deletePacket = FedPacket.Pack(new[] { shipDelete.Encode() });
-        foreach (var t in targets)
-            SendPeer(t, deletePacket);
-        Console.WriteLine($"[combat] ship {victim.Id} — SHIP_DELETE(20) SDR_KILLED -> {targets.Length} peer(s)");
+            // P263 — the ship's death blast VFX to the same same-sector audience.
+            // Native picks the category by the victim base hull's fighter capability
+            // on KILL_SHIP (appmsg.cpp:2853-2857: c_habmFighter ? c_etSmallShip :
+            // c_etBigShip) — the exact split the port reproduces here. Scale is the
+            // native 2 * GetRadius() = hull Length (shipRadius = 0.5*Length).
+            int shipType = victim.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+                ? ExplosionType.SmallShip
+                : ExplosionType.BigShip;
+            SendExplosionEvent(targets, shipType, victim.Sector!.Id, victim.Position, victim.Velocity, victim.HullType.Length);
+        }
+        foreach (var target in deleteTargets) SendPeer(target, deletePacket);
+        Console.WriteLine($"[combat] ship {victim.Id} — SHIP_DELETE(20) {(deleteReason == ShipDelete.SdrKilled ? "SDR_KILLED" : "SDR_TERMINATE")} -> {deleteTargets.Length} mission peer(s)");
+        // Finalization is simulation work, independent of whether anyone witnessed this sector.
+        // In particular, a quiet layer consumption must remove the live unit (FedSrv.CPP:13842-13860).
 
         // P105 death-respawn, hooked at the exact seam P103 wired (ShipKilled →
         // this method) and sharing the same trigger. The native function

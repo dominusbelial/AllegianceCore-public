@@ -1012,6 +1012,7 @@ public sealed partial class Server : IDisposable
         short shipId = AllocateShipId();   // same id space as player ships (P316 collision-skip)
         var ship = new Ship(shipId, hull, position, Vector3.Zero, Orientation.Identity)
         {
+            DroneTypeId = droneTypeId ?? -1,
             IsNpc = true,                                   // P148: explicit drone marker (init-only)
             PilotType = pilotType,                          // P160: the drone type's real pilot type (init-only)
         };
