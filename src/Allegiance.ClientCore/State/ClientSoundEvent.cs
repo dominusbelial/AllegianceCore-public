@@ -180,6 +180,25 @@ public enum ClientSoundEventKind
     // <c>jumpSound</c> (wave <c>jumpin</c>, SoundManager.PlayJump) once per
     // warp crossing. This is the same wave native's jumpSound plays.</summary>
     SectorJump,
+
+    // ── P717 (parity wave 17: ordnance deploy & own-ship shield status) ────
+    // The deploy one-shots ride the expendable-deploy wire (native
+    // <c>BaseClient::FireExpendable</c>, clintlib.cpp:3245-3257) gated to the
+    // LOCAL ship's own deploy (<c>pShip == m_ship</c>); the shield-offline
+    // cue is a one-shot on the local ship's own shield fraction collapsing
+    // (native CshieldIGC::ApplyDamage, shieldIGC.cpp:185-186).
+
+    /// <summary><c>deployMineSound</c> — the LOCAL ship deployed a mine
+    /// (clintlib.cpp:3253, <c>if (pShip == m_ship)</c>; wave <c>dropmine</c>,
+    /// sounddef.mdl:368). Detected on the own ship's FM_S_EXPORT(26)/OT_mine
+    /// when the mine's <c>LauncherId</c> is the local ship.</summary>
+    MineDeployed,
+
+    /// <summary><c>salShieldsOfflineSound</c> — the local ship's shield was
+    /// knocked offline (overload damage, shieldIGC.cpp:186; wave
+    /// <c>vo_sal_shieldsoffline</c>, sounddef.mdl:791). Detected on the local
+    /// ship's own streamed <c>ShieldFraction</c> falling from online to ≈0.</summary>
+    ShieldsOffline,
 }
 
 /// <summary>A single observed sound event.</summary>

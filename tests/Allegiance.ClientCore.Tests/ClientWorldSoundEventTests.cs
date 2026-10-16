@@ -443,4 +443,122 @@ public class ClientWorldSoundEventTests
         Assert.Equal((short)2, ce.Party2Id);
         Assert.Equal((short)3, ce.ClusterId);
     }
+
+    // ── P717 — ordnance deploy (mine) & own-ship shield-offline ─────────────
+
+    private static ExportMine ExportMineFor(short id, short launcher, short side = 2, short cluster = 3) =>
+        new()
+        {
+            Mine = new DataMineExport(
+                P0: Vector3.Zero, Time0: 12u, MineId: id, ExportF: true, ClusterId: cluster,
+                MinetypeId: 920, LauncherId: launcher, SideId: side,
+                Fraction: 240, CreateNow: true),
+        };
+
+    [Fact]
+    public void OwnShipDeploysMine_RecordsMineDeployed()
+    {
+        var w = new ClientWorld();
+        SeatMe(w, 774, sector: 1, Vector3.Zero);   // own ship = 774
+        w.TakeSoundEvents();                        // discard seat pass
+
+        w.Apply(ExportMineFor(500, launcher: 774));
+
+        var ev = Assert.Single(w.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.MineDeployed, ev.Kind);
+        Assert.Equal((short)500, ev.Id);
+    }
+
+    [Fact]
+    public void RemoteShipDeploysMine_RecordsNoDeploySound()
+    {
+        var w = new ClientWorld();
+        SeatMe(w, 774, sector: 1, Vector3.Zero);
+        w.TakeSoundEvents();
+
+        w.Apply(ExportMineFor(501, launcher: 999));   // someone else's mine
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    private static ClientWorld ShieldArmedWorld(short me, float shieldFraction)
+    {
+        var w = new ClientWorld();
+        var pose = ServerShipUpdate.FromValues(
+            me, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 1u,
+            Vector3.Zero, Orientation.Identity, Vector3.Zero,
+            turnRates: new[] { 0f, 0f, 0f },
+            hullFrac: 1f, shieldFrac: shieldFraction, ammoFrac: 1f, fuelFrac: 1f,
+            energyFrac: 1f, oreFrac: 0f, power: 1f);
+        w.Apply(new SetCluster { SectorId = 1, Ship = pose, Cookie = 0x1 });
+        w.UpdateOwnStatusAlarms();      // arm
+        w.TakeSoundEvents();            // discard arming-pass emissions
+        return w;
+    }
+
+    [Fact]
+    public void OwnShieldCollapses_RecordsShieldsOffline()
+    {
+        var w = ShieldArmedWorld(774, shieldFraction: 0.9f);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                774, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 2u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 0.9f, shieldFrac: 0f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        var ev = Assert.Single(w.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.ShieldsOffline, ev.Kind);
+        Assert.Equal((short)774, ev.Id);
+    }
+
+    [Fact]
+    public void OwnShieldAlreadyDown_DoesNotRefire()
+    {
+        var w = ShieldArmedWorld(774, shieldFraction: 0f);   // arm already-down
+
+        // stays down: no further offline cue
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                774, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 3u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 0.9f, shieldFrac: 0f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void OwnShieldStaysOnline_NoShieldsOffline()
+    {
+        var w = ShieldArmedWorld(774, shieldFraction: 0.8f);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                774, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 2u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 0.9f, shieldFrac: 0.7f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
 }

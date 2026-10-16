@@ -111,6 +111,7 @@ public sealed class SoundManager : IDisposable
     // the ambient is the scanning-loop default (per-type ambientSound unreachable
     // client-side). See ProbeAmbientSoundCurve remarks.
     private SoundEffect _probeDeploy = null!;     // lrgslideout — generic expendable deploy (deployProbeSound=dropobject stand-in)
+    private SoundEffect _mineDeploy = null!;      // P717 — dropmine (deployMineSound, sounddef.mdl:368)
     private SoundEffect _probeAmbient = null!;    // erbeam — scanning-loop default
     private readonly Dictionary<short, SoundEffectInstance> _probeAmbients = new(); // keyed by ProbeId
     // P267 — hull maneuvering-thruster loop (adjust), the local ship's turn
@@ -225,6 +226,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _noAmmo = null!;          // vo_sal_noammo — salNoAmmoSound (:812)
     private SoundEffect _noFuel = null!;          // vo_sal_nofuel — salNoFuelSound (:811)
     private SoundEffect _noRipcord = null!;       // vo_sal_noripcord — salNoRipcordSound (:348)
+    private SoundEffect _shieldsOffline = null!;  // P717 — vo_sal_shieldsoffline — salShieldsOfflineSound (:791)
     // P714 — objective & status announce one-shots (appmsg.cpp:1238,2965,3149,3156,3169).
     // Waves from sounddef.mdl:771,773,776,779,780.
     private SoundEffect _madeCommander = null!;   // vo_sal_madecommander — commanderSound (:779)
@@ -622,6 +624,7 @@ public sealed class SoundManager : IDisposable
             _rockHit = _content.Load<SoundEffect>("Sounds/hitrock");
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
             _probeDeploy = _content.Load<SoundEffect>("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
+            _mineDeploy = _content.Load<SoundEffect>("Sounds/dropmine");     // P717 — deployMineSound (sounddef.mdl:368)
             _probeAmbient = _content.Load<SoundEffect>("Sounds/erbeam");      // scanning-loop default
             // P267 — hull maneuvering-thruster turn loop (adjust), hull exterior
             // loop (shipout), station exterior ambient loop (shipout), and the tech
@@ -659,6 +662,7 @@ public sealed class SoundManager : IDisposable
             _noAmmo = _content.Load<SoundEffect>("Sounds/vo_sal_noammo");
             _noFuel = _content.Load<SoundEffect>("Sounds/vo_sal_nofuel");
             _noRipcord = _content.Load<SoundEffect>("Sounds/vo_sal_noripcord");
+            _shieldsOffline = _content.Load<SoundEffect>("Sounds/vo_sal_shieldsoffline"); // P717 — salShieldsOfflineSound (:791)
             // P714 — objective & status announce one-shots. Waves from
             // sounddef.mdl:771,773,776,779,780.
             _madeCommander = _content.Load<SoundEffect>("Sounds/vo_sal_madecommander");
@@ -959,6 +963,11 @@ public sealed class SoundManager : IDisposable
     /// <c>salNoRipcordSound</c>, appmsg.cpp:970 / clintlib.h:1175). No-op when
     /// not loaded.</summary>
     public void PlayNoRipcord() => PlayWarnOneShot(_noRipcord);
+
+    /// <summary>P717 — play the shields-offline cue (<c>vo_sal_shieldsoffline</c>,
+    /// native <c>salShieldsOfflineSound</c>, shieldIGC.cpp:186). No-op when not
+    /// loaded.</summary>
+    public void PlayShieldsOffline() => PlayWarnOneShot(_shieldsOffline);
 
     /// <summary>P714 — play the "you became team leader" cue (<c>vo_sal_madecommander</c>,
     /// native <c>commanderSound</c>, appmsg.cpp:2965). No-op when not loaded.</summary>
@@ -1363,6 +1372,16 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) PlayOneShot(_probeDeploy, SoundCategory.WeaponFire, 1f);
     }
 
+    /// <summary>P717 — play the mine-deploy one-shot (<c>dropmine.ogg</c>;
+    /// native <c>deployMineSound</c>, sounddef.mdl:368, played for the local
+    /// ship's own drop at <c>clintlib.cpp:3253</c>). Non-positional cockpit-range
+    /// one-shot (no 3D emitter yet), mirroring <see cref="PlayProbeDeploy"/>.
+    /// No-op when audio is not loaded.</summary>
+    public void PlayMineDeploy()
+    {
+        if (IsLoaded) PlayOneShot(_mineDeploy, SoundCategory.WeaponFire, 1f);
+    }
+
     /// <summary>P260 — begin a probe's continuous scanning ambient loop (a looped
     /// instance keyed by the probe's real <c>ProbeId</c>), seeded at the given
     /// volume. Starts it only if one is not already playing for that probe.
@@ -1707,6 +1726,7 @@ public sealed class SoundManager : IDisposable
             _rockHit?.Dispose();     // P463c
             foreach (var inst in _missileAmbients.Values) inst.Dispose();
             _probeDeploy?.Dispose();
+            _mineDeploy?.Dispose();  // P717
             _probeAmbient?.Dispose();
             foreach (var inst in _probeAmbients.Values) inst.Dispose();
             _turnThruster?.Dispose();
@@ -1722,6 +1742,7 @@ public sealed class SoundManager : IDisposable
             _noAmmo?.Dispose();           // P711
             _noFuel?.Dispose();           // P711
             _noRipcord?.Dispose();        // P711
+            _shieldsOffline?.Dispose();   // P717
             _ripcordLoop?.Dispose();      // P711
             _miningLoop?.Dispose();       // P711
             _newContactEnemy?.Dispose();       // P373
