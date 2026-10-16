@@ -541,7 +541,14 @@ internal static class McpTools
                 useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null,
                 routePath: rbPath, routeIndex: rbIdx, reportFailure: false)));
         }
-        var batch = new SpawnBatch(mgr.Partition?.Select(spawnSlots) ?? spawnSlots);
+        // Native lobby rank balance applies during a started showcase. Take
+        // turns between fleets so a side's whole batch does not fill first.
+        // Keep slot indices (and their routes/arena positions) intact.
+        var balancedSlots = spawnSlots.GroupBy(slot => slot.Side)
+            .SelectMany(group => group.Select((slot, turn) => (slot, turn)))
+            .OrderBy(item => item.turn).ThenBy(item => item.slot.Side == mgr.ProbeSide ? 1 : 0)
+            .Select(item => item.slot).ToList();
+        var batch = new SpawnBatch(mgr.Partition?.Select(balancedSlots) ?? balancedSlots);
         if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = size }, new { side = sideB, requested = size } } }));
         batch.Run(refill, mgr.IsSpawnActive);
         var grants = GrantReports(batch, mgr.Partition is not null);
@@ -764,7 +771,14 @@ internal static class McpTools
                 wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
                 role: slot.Role.ToString(), reportFailure: false)));
         }
-        var batch = new SpawnBatch(mgr.Partition?.Select(spawnSlots) ?? spawnSlots);
+        // Native lobby rank balance applies during a started showcase. Take
+        // turns between fleets so a side's whole batch does not fill first.
+        // Keep slot indices (and their routes/arena positions) intact.
+        var balancedSlots = spawnSlots.GroupBy(slot => slot.Side)
+            .SelectMany(group => group.Select((slot, turn) => (slot, turn)))
+            .OrderBy(item => item.turn).ThenBy(item => item.slot.Side == mgr.ProbeSide ? 1 : 0)
+            .Select(item => item.slot).ToList();
+        var batch = new SpawnBatch(mgr.Partition?.Select(balancedSlots) ?? balancedSlots);
         if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = totalA }, new { side = sideB, requested = totalB } } }));
         batch.Run(refill, mgr.IsSpawnActive);
         var grants = GrantReports(batch, mgr.Partition is not null);

@@ -1097,3 +1097,31 @@ See the [P707 report](reports/P707_WAVES_PARKING.md) and
 [complete invocation ledger](reports/P707_assets/results.json) for every
 command, raw counter, failure message/stack, source fingerprint and artifact
 path. No failed attempt was discarded or assertion relaxed.
+## P693 observation (2026-10-15)
+
+Final unfiltered suites after the team-limit changes: Core **4,561 pass / 0 fail / 0 skip**,
+ClientCore **1,015 pass / 1 fail / 0 skip**, MonoGame **2,195 pass / 0 fail / 3 existing
+private Meshy-pack skips**. The opt-in local 15v15 next-match showcase ran. The
+native-default started-mission 30v30 MCP showcase passed 3/3; 38 affected methods
+passed three qualifying isolated invocations each (174 case executions).
+
+After all three full suites finished, each observed timing/transport failure
+passed **3/3 exact-method isolated reruns**:
+
+| Method | Full-run symptom | Final isolation |
+| --- | --- | --- |
+| `ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume` | Final ClientCore pass: legacy approach clearance -32.7, expected positive; existing `Lane=LiveTiming` load-flake case. | 3/3 pass |
+| `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | First Core pass: B had not received `HEAVY_SHIPS_UPDATE`. | 3/3 pass |
+| `Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join` | First Core pass: `ThreadStateException` in `TcpTransport.Shutdown` while joining an unstarted thread. | 3/3 pass |
+
+These satisfy the brief's load-flake rule. No assertions, deadlines, quarantine
+traits or product behavior were changed for them. This does not establish a fix
+for the existing timing or shutdown races.
+
+The crowded 256-peer fixture capacity conflict, hull-matrix spawn order, and
+lifecycle fixture's assumed side/civilization were concrete defects exposed by
+native defaults and side retries. They were corrected, verified 3/3 individually,
+and are not classified as flakes. Overlapping diagnostic runs caused by surviving
+verification children were excluded from isolated counts and rerun serially.
+See [P693 report](reports/P693_TEAM_LIMITS.md) and [results](reports/P693_RESULTS.json)
+for native evidence, raw counts, timestamps, binary hashes and invocation details.

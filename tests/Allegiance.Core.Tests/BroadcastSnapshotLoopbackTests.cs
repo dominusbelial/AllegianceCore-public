@@ -251,6 +251,9 @@ public sealed class BroadcastSnapshotLoopbackTests
             return (ship, sector);
         };
         var basis = UpdateCadenceTests.Config(2, native: false);
+        // This benchmark deliberately seats 128v128 by default. Native's
+        // ordinary 100-player team default is too small for that workload.
+        foreach (var game in basis.Games) game.MaxPlayersPerTeam = (count + 1) / 2;
         var config = new ServerConfig
         {
             ArtPath = basis.ArtPath, StaticCore = basis.StaticCore, Port = 0,

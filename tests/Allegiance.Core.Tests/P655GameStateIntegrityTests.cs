@@ -49,6 +49,18 @@ public sealed class P655GameStateIntegrityTests
             Server._testSendCapture = (c, pkt) => Output.AddRange(FedPacket.Unpack(pkt).Select(m => (c, m.ToArray())));
             Now(10);
         }
+        public void FillSideZero()
+        {
+            var peers = new List<(ConnectionId Conn, Ship Ship, Sector Sector)>
+                { (Conn, Ship, Sector), (new(2), Mate, Sector), (new(3), Enemy, Sector) };
+            for (short i = 4; i <= 5; i++)
+            {
+                var extra = new Ship((short)(100 + i), Ship.HullType, new Vector3(8000 + i * 100, 5000, 5000), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+                Mission.PlaceShip(extra, Sector);
+                peers.Add((new((uint)i), extra, Sector));
+            }
+            Server.TestSeedPeers(peers);
+        }
         public void Set(string name, object value) => typeof(Srv).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(Server, value);
         public object? Call(string name, params object?[] args)
         {
@@ -333,6 +345,9 @@ public sealed class P655GameStateIntegrityTests
         Assert.Null(w.Call("CheckPositionRequest", w.Mission, (short)1, null));
         w.Set("_config", new ServerConfig { Games = [new GameConfig { MaxPlayersPerTeam = 10, MaxTeamImbalance = 1 }] });
         w.Mission.Stage = MissionStage.Started;
+        // Native rank-zero newcomers may exceed the numeric limit by two.
+        Assert.Null(w.Call("CheckPositionRequest", w.Mission, (short)0, null));
+        w.FillSideZero();
         Assert.Equal(DelPositionReqReason.TeamBalance, w.Call("CheckPositionRequest", w.Mission, (short)0, null));
         Assert.Null(w.Call("CheckPositionRequest", w.Mission, (short)1, null));
         w.Mission.Sides[1].Active = false;
@@ -343,6 +358,7 @@ public sealed class P655GameStateIntegrityTests
     public void H13_Authenticated_harness_bypasses_native_balance_but_not_capacity()
     {
         using var w = new World();
+        w.FillSideZero();
         w.Set("_config", new ServerConfig { LiveSettings = new LiveSettingsConfig { TestHarness = new TestHarnessConfig { Enabled = true, Secret = "bot-secret", CharacterNamePrefix = "seed-" } }, Games = [new GameConfig { MaxPlayersPerTeam = 10, MaxTeamImbalance = 1 }] });
         Assert.Equal(DelPositionReqReason.TeamBalance, w.Call("CheckInitialPositionRequest", w.Conn, "seed-1", w.Mission, (short)0));
         w.Call("AuthenticatePrivileges", w.Conn, new LogonRequest { CDKey = "bot-secret" });
@@ -622,4 +638,71 @@ public sealed class P655GameStateIntegrityTests
         w.Send(new OrderChange { ShipID = mate.Id, CommandId = OrderChange.CidDoNothing });
         Assert.True(mate.StayDocked);
     }
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void P693_Initial_limit_refusal_sends_native_message_logs_once_and_retains_retry(bool full)
+    {
+        using var w = new World();
+        var game = new GameConfig();
+        if (full) game.MaxPlayersPerTeam = 2;
+        w.Set("_config", new ServerConfig { Games = [game] });
+        var peer = new ConnectionId(20);
+        var field = typeof(Srv).GetField("_pendingSideSelect", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var pending = (System.Collections.IDictionary)field.GetValue(w.Server)!;
+        var pendingType = field.FieldType.GenericTypeArguments[1];
+        pending[peer] = Activator.CreateInstance(pendingType, (short)200, new LogonRequest { CharacterName = "P693-pending" }, 10d, 20L)!;
+        var saved = Console.Out;
+        using var log = new StringWriter();
+        bool verbose = ConsoleLog.Verbose;
+        try
+        {
+            ConsoleLog.Verbose = false;
+            Console.SetOut(log);
+            w.Call("CompleteSideSelection", peer, (short)0);
+        }
+        finally { Console.SetOut(saved); ConsoleLog.Verbose = verbose; }
+        var output = Assert.Single(w.Output);
+        Assert.Equal(peer, output.Conn);
+        var refusal = DelPositionReq.Decode(output.Message);
+        Assert.Equal((short)200, refusal.ShipId);
+        Assert.Equal((short)0, refusal.SideId);
+        var reason = full ? DelPositionReqReason.TeamFull : DelPositionReqReason.TeamBalance;
+        Assert.Equal(reason, refusal.Reason);
+        Assert.Single(log.ToString().Split('\n'), line => line.StartsWith("[sideselect] refused ") && line.TrimEnd().EndsWith(": " + reason));
+        Assert.True(pending.Contains(peer));
+        Assert.Null(pendingType.GetProperty("RequestedSide")!.GetValue(pending[peer]));
+        Assert.Equal(3, w.Server.Ships.Count);
+        Assert.Null(w.Call("CheckInitialPositionRequest", peer, "P693-pending", w.Mission, (short)1));
+    }
+
+    [SkippableFact]
+    public void P693_Native_modes_use_rank_sums_numeric_newcomer_allowance_and_no_limit_sentinel()
+    {
+        using var w = new World();
+        var game = new GameConfig();
+        w.Set("_config", new ServerConfig { Games = [game] });
+        Assert.Equal(100, game.MaxPlayersPerTeam);
+        Assert.Equal(0x7ffe, game.MaxTeamImbalance);
+        Assert.Equal(DelPositionReqReason.TeamBalance, w.Call("CheckPositionRequest", w.Mission, (short)0, null));
+        // Fewer players can still have the larger rank sum.
+        w.Server.Ships.Single(l => l.Ship == w.Enemy).PlayerScore.Rank = 8;
+        Assert.Null(w.Call("CheckPositionRequest", w.Mission, (short)0, null));
+        Assert.Equal(DelPositionReqReason.TeamBalance, w.Call("CheckPositionRequest", w.Mission, (short)1, null));
+        game.MaxTeamImbalance = 0x7fff;
+        Assert.Null(w.Call("CheckPositionRequest", w.Mission, (short)1, null));
+        game.MaxTeamImbalance = 1;
+        Assert.Null(w.Call("CheckPositionRequest", w.Mission, (short)0, null));
+        w.FillSideZero();
+        Assert.Equal(DelPositionReqReason.TeamBalance, w.Call("CheckPositionRequest", w.Mission, (short)0, null));
+        game.MaxTeamImbalance = 0x7fff;
+        Assert.Null(w.Call("CheckPositionRequest", w.Mission, (short)0, null));
+        game.MaxPlayersPerTeam = 4;
+        Assert.Equal(DelPositionReqReason.TeamFull, w.Call("CheckPositionRequest", w.Mission, (short)0, null));
+        game.MaxPlayersPerTeam = 100;
+        game.MaxTeamImbalance = 0x7ffe;
+        w.Mission.Stage = MissionStage.NotStarted;
+        Assert.Null(w.Call("CheckPositionRequest", w.Mission, (short)0, null));
+    }
+
 }

@@ -50,8 +50,8 @@ public sealed class ConfigDefaultsJsonTests
             Assert.NotNull(g.Treasure);
             JsonDefaultsGuard.Equal(new Allegiance.Core.Model.TreasureParameters(), g.Treasure, "Game.Treasure");
             Assert.True(g.AllowDevelopments);
-            Assert.Equal(256, g.MaxPlayersPerTeam);
-            Assert.Equal(1, g.MaxTeamImbalance);
+            Assert.Equal(100, g.MaxPlayersPerTeam);
+            Assert.Equal(32766, g.MaxTeamImbalance);
             g.Treasure.Validate();
         }
         finally { File.Delete(path); }
@@ -94,8 +94,8 @@ public sealed class ConfigDefaultsJsonTests
             var mission = Assert.Single(server.Missions);
             Assert.True(g.AllowDevelopments);
             Assert.True(mission.AllowDevelopments);
-            Assert.Equal(256, g.MaxPlayersPerTeam);
-            Assert.Equal(1, g.MaxTeamImbalance);
+            Assert.Equal(100, g.MaxPlayersPerTeam);
+            Assert.Equal(32766, g.MaxTeamImbalance);
             JsonDefaultsGuard.Equal(new Allegiance.Core.Model.TreasureParameters(), mission.TreasureParameters, "boot treasure");
             Assert.Same(g.Treasure, mission.TreasureParameters);
             Assert.Equal(25, c.Lobby!.HeartbeatIntervalSeconds);

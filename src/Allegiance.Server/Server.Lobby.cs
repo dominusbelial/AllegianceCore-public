@@ -2293,7 +2293,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             if (_peerShips.TryGetValue(targetConn, out var live) && ReferenceEquals(live.Ship.Mission, mission))
             {
                 if (CheckPositionRequest(mission, sideId, live.Ship) is { } refusal)
-                    SendPeer(targetConn, FedPacket.Pack([new DelPositionReq { ShipId = live.Ship.Id, SideId = sideId, Reason = refusal }.Encode()]));
+                    RefuseSideSelection(targetConn, live.Ship.Id, sideId, refusal);
                 else TryJoinSide(live.Ship, sideId);
                 seated++;
             }
@@ -2810,34 +2810,25 @@ private void CompleteStartCountdown(Mission mission, double now)
         var mission = _missions[0];
         bool autoSelection = requestedSideId == -1;
 
-        // Validate an explicit side before touching anything; refuse with
-        // DPR_SideGone to the requester only (native FedSrv.CPP:6692-6704) and
-        // keep them pending so they can pick again.
-        if (requestedSideId != -1 && mission.Sides.All(s => s.Id != requestedSideId))
-        {
-            SendPeer(from, FedPacket.Pack(new[]
-            {
-                new DelPositionReq { ShipId = pend.ShipId, SideId = requestedSideId, Reason = DelPositionReqReason.SideGone }.Encode(),
-            }));
-            ConsoleLog.Write($"[sideselect] {from} '{pend.Request.CharacterName}' -> side {requestedSideId} DENIED (DPR_SideGone) to requester only");
-            _pendingSideSelect[from] = pend.WithRequestedSide(null);   // clear so it waits for a valid pick
-            return;
-        }
-
         // Validate both explicit and auto-assigned initial picks, before spawning.
         // Choose the least populated eligible side for auto-pick; no full-side
         // fallback can bypass the cap when the timeout seats a silent peer.
+        DelPositionReqReason autoRefusal = DelPositionReqReason.TeamFull;
         if (requestedSideId == -1)
         {
-            var eligible = mission.Sides.Where(s => CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, s.Id) is null)
-                .OrderBy(s => _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == s.Id)).FirstOrDefault();
+            var candidates = mission.Sides.Select(s => (Side: s,
+                Refusal: CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, s.Id))).ToArray();
+            var eligible = candidates.Where(c => c.Refusal is null)
+                .OrderBy(c => _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == c.Side.Id))
+                .Select(c => c.Side).FirstOrDefault();
             if (eligible is not null) requestedSideId = eligible.Id;
+            else autoRefusal = candidates.Select(c => c.Refusal).FirstOrDefault(r => r is not null && r != DelPositionReqReason.TeamFull)
+                ?? DelPositionReqReason.TeamFull;
         }
-        var selectionRefusal = requestedSideId == -1 ? DelPositionReqReason.TeamFull : CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, requestedSideId);
+        var selectionRefusal = requestedSideId == -1 ? autoRefusal : CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, requestedSideId);
         if (selectionRefusal is { } denied)
         {
-            SendPeer(from, FedPacket.Pack([new DelPositionReq { ShipId = pend.ShipId, SideId = requestedSideId, Reason = denied }.Encode()]));
-            ConsoleLog.Write($"[sideselect] {from} '{pend.Request.CharacterName}' -> side {requestedSideId} DENIED ({denied}); still pending, choose another side or auto-pick");
+            RefuseSideSelection(from, pend.ShipId, requestedSideId, denied, pend.Request.CharacterName);
             _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq);
             return;
         }
