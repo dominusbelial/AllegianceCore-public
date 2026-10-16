@@ -104,6 +104,17 @@ public sealed partial class ClientWorld
     // clintlib/appmsg.cpp:2129-2147 (SET_WINGID).
     private void Apply(SetWingId wing)
     {
-        if (wing.WingId is >= 0 and < SetWingId.WidMax) Upsert(wing.ShipID).WingId = wing.WingId;
+        if (wing.WingId is < 0 or >= SetWingId.WidMax
+            || !_ships.TryGetValue(wing.ShipID, out var ship) || MySideId != ship.SideId) return;
+        // As with flight-part relays, this observer applies the authoritative echo
+        // for self too (native eagerly sets self before sending).
+        ship.WingId = wing.WingId;
+        if (wing.BCommanded && wing.ShipID == (JoinedShipId ?? MyShipId))
+        {
+            string text = $"You have been assigned to wing {SetWingId.WingName(wing.WingId)}";
+            if (_feedbackLines.Count >= MaxFeedbackLines) _feedbackLines.RemoveAt(0);
+            _feedbackLines.Add(new FeedbackLine(text, true, 0));
+            PostSystemLine(text);
+        }
     }
 }

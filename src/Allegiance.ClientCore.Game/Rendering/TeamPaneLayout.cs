@@ -18,13 +18,8 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 ///
 /// <para><b>Native fidelity.</b> Native's <c>teampane.cpp</c> /
 /// <c>teamscreen.cpp</c> list the full roster: pilots, their ships, wings,
-/// status, money and commander actions. Of those, this port has real wire data
-/// for pilots, ship status and money; it has <b>no wing roster</b> on the wire
-/// (<c>SET_WINGID(106)</c> is a documented unconsumed message — see
-/// fedmsg-wiring.csv — so wing assignments never travel to this client), which
-/// is an era/infra constraint marked in the pane and the report, not faked.
-/// Pilot rows, status and money are all real wire data; the self row is
-/// highlighted.</para>
+/// status, money and commander actions. Wing names come from the live
+/// SET_WINGID roster (clintlib/appmsg.cpp:2129-2147; Igc/common.cpp:23-35).
 ///
 /// <para><b>Ship status</b> is derived from the live ship entity: dead/gone →
 /// "<c>DEAD</c>"; docked (<c>StationId != -1</c>, the same docked gate the
@@ -49,7 +44,7 @@ public static class TeamPaneLayout
     /// <summary>The flattened per-pilot ship state the caller extracts from
     /// <c>ClientWorld.Ships</c> (kept MonoGame/ClientCore-free so this layout is
     /// headless-testable).</summary>
-    public readonly record struct ShipBrief(short HullId, short SectorId, short StationId, bool Dead, bool Gone);
+    public readonly record struct ShipBrief(short HullId, short SectorId, short StationId, bool Dead, bool Gone, short? WingId = null);
 
     public enum LineKind { Blank, Title, SideHeader, Pilot, Money, Ballot, Note, Hint }
 
@@ -90,9 +85,11 @@ public static class TeamPaneLayout
                 string rankName = RankNameLookup.Lookup(rankTable, e.Rank);
                 string status = StatusFor(ships, e.CharacterName);
                 string hull = ships.TryGetValue(e.CharacterName, out var sb) && sb.HullId > 0 ? $" HLD{sb.HullId}" : "";
+                string wing = ships.TryGetValue(e.CharacterName, out var member) && member.WingId is { } wid
+                    ? SetWingId.WingName(wid) : "?";
                 string text = $"    {ScoreboardLayout.AsciiSafe(e.CharacterName),-18}  " +
                               $"{ScoreboardLayout.AsciiSafe(rankName),-14}  " +
-                              $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}";
+                              $"{status,-10}{hull}  WING:{wing}  K:{e.Kills}  D:{e.Deaths}";
                 lines.Add(new Line(LineKind.Pilot, text, self));
             }
         }
@@ -104,8 +101,6 @@ public static class TeamPaneLayout
         if (isLeader && !string.IsNullOrWhiteSpace(activeBallot))
             lines.Add(new Line(LineKind.Ballot, $"ACTIVE BALLOT: {ScoreboardLayout.AsciiSafe(activeBallot)}"));
 
-        lines.Add(new Line(LineKind.Note,
-            "Wing assignments unavailable"));
         lines.Add(new Line(LineKind.Hint, controlsHint ?? "Ctrl + T TOGGLE  |  B LEADERBOARD  |  P CHARACTER SHEET"));
 
         return lines;

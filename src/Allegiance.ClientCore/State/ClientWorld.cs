@@ -1711,6 +1711,7 @@ public sealed partial class ClientWorld
         _events.Clear();
         _roster.Clear();
         ResetLobby();
+        ResetInterfaceState();
     }
 
     /// <summary>Upsert the world state from a decoded message. Switch on the
@@ -1726,6 +1727,27 @@ public sealed partial class ClientWorld
                 break;
             case ObjectSpotted spotted:
                 Apply(spotted);
+                break;
+            case ChangeTeamCiv messageChangeTeamCiv:
+                Apply(messageChangeTeamCiv);
+                break;
+            case AsteroidDestroyed messageAsteroidDestroyed:
+                Apply(messageAsteroidDestroyed);
+                break;
+            case ProbesUpdate messageProbesUpdate:
+                Apply(messageProbesUpdate);
+                break;
+            case QuitMission messageQuitMission:
+                Apply(messageQuitMission);
+                break;
+            case QuitSide messageQuitSide:
+                Apply(messageQuitSide);
+                break;
+            case EnterGame messageEnterGame:
+                Apply(messageEnterGame);
+                break;
+            case GameState messageGameState:
+                Apply(messageGameState);
                 break;
             case SetWingId wing:
                 Apply(wing);
@@ -4165,6 +4187,7 @@ public sealed partial class ClientWorld
         _events.Clear();
         _roster.Clear();
         ResetLobby();
+        ResetInterfaceState();
     }
 
     /// <summary>Native SET_START_TIME can be reset for the briefing after the
@@ -4204,6 +4227,7 @@ public sealed partial class ClientWorld
     /// rotation moves it to NotStarted) → the team lobby.</summary>
     private void Apply(GameOver gameOver)
     {
+        InGame = false;
         // P262 — retain the full snapshot (reason + winner + per-side records)
         // for the on-screen result panel. The stage is NOT touched here; see
         // the class remark above (P481).
@@ -4232,7 +4256,13 @@ public sealed partial class ClientWorld
     /// <summary>P281 — the SIDE_ROSTER(211) snapshot; replace-on-arrival (a late
     /// roster simply supersedes the earlier one — sides don't change identity,
     /// only their player counts).</summary>
-    private void Apply(SideRoster roster) => SideRoster = roster;
+    private void Apply(SideRoster roster)
+    {
+        SideRoster = roster;
+        foreach (var side in roster.Sides)
+            _sideCivilizations[side.SideId] = new(side.CivId,
+                _sideCivilizations.TryGetValue(side.SideId, out var previous) && previous.Random);
+    }
 
     /// <summary>P282 — the whole-mission <c>TEAM_READY(46)</c> broadcast:
     /// replace-on-arrival for that side's aggregate ready flag (last write
@@ -4371,12 +4401,15 @@ public sealed partial class ClientWorld
         // Known ship: update its side. Unknown ship: do not mint a phantom
         // entity (see the doc comment) — its EXPORT will carry the side.
         if (_ships.TryGetValue(join.ShipId, out var e))
+        {
             e.SideId = join.SideId;
+            if (e.Player is { } player) player.ISide = join.SideId;
+        }
 
         // The local player's own side, refreshed when the own ship is named —
         // MySideId is otherwise only set from the one-shot own-ship dummy EXPORT
         // (so it goes stale after the local player's own side switch too).
-        if (join.ShipId == MyShipId)
+        if (join.ShipId == (JoinedShipId ?? MyShipId))
             MySideId = join.SideId;
     }
 

@@ -57,6 +57,13 @@ public sealed class SetWingId : IFedMessage
     /// Valid wing ids are <c>[0, WidMax)</c>.</summary>
     public const short WidMax = 10;
 
+    /// <summary>Igc/common.cpp:23-35, shared by assignment feedback and roster.</summary>
+    public static string WingName(short id) => id switch
+    {
+        0 => "command", 1 => "attack", 2 => "defend", 3 => "escort", 4 => "search",
+        5 => "alpha", 6 => "bravo", 7 => "charlie", 8 => "delta", 9 => "echo", _ => "?",
+    };
+
     /// <summary>The id of the tagged ship. Per this port's self-targeting-only
     /// simplification (no team-leader system), the server requires this to be
     /// the <em>sending</em> player's own ship id (<c>FedSrv.CPP:5323</c>) — the

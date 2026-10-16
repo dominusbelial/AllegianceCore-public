@@ -1772,7 +1772,7 @@ public sealed partial class Game1
             var briefs = new Dictionary<string, Rendering.TeamPaneLayout.ShipBrief>();
             foreach (var ent in ships.Values)
                 briefs[ent.CharacterName] = new Rendering.TeamPaneLayout.ShipBrief(
-                    ent.HullId, ent.SectorId, ent.StationId, ent.IsDead, ent.IsGone);
+                    ent.HullId, ent.SectorId, ent.StationId, ent.IsDead, ent.IsGone, ent.WingId);
             var lines = Rendering.TeamPaneLayout.Build(
                 _session.World.ScoreRoster, _session.World.RankTable, briefs,
                 _session.World.IsSideActive,

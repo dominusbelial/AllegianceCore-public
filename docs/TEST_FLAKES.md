@@ -1097,3 +1097,24 @@ See the [P707 report](reports/P707_WAVES_PARKING.md) and
 [complete invocation ledger](reports/P707_assets/results.json) for every
 command, raw counter, failure message/stack, source fingerprint and artifact
 path. No failed attempt was discarded or assertion relaxed.
+
+## P718 — FEDMSG interface wave (2026-10-16)
+
+The two unfiltered Core invocations each reported one existing receipt/join
+failure. After all full-suite activity finished, both exact methods passed
+**3/3 isolated invocations**, qualifying as load flakes under the P718 Codex
+lane rule. No assertion, deadline, quarantine, or transport/loadout product
+behavior was changed for these results.
+
+| Test | Full-run symptom | Post-suite isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | `System.TimeoutException: no OnPeerJoined for raw peer` (Core run 1) | 3/3 pass |
+| `Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | `Assert.Contains` on an empty notification collection (Core run 2) | 3/3 pass |
+
+Both ClientCore runs, all three MonoGame invocations, and both Lobby runs had
+zero failures. The extra MonoGame invocation and overlapping ClientCore/MonoGame
+runs resulted from a coordinator restart error; this exceeded the requested
+two-run MonoGame limit and is explicitly retained as a validation exception.
+All 56 affected methods passed 3/3 alone (249 case passes), and the standalone
+P700 never-parks gate passed 10/10. See the [P718 report](reports/P718_INTERFACE_WAVE.md)
+and [invocation ledger](reports/P718_RESULTS.json) for raw counts and errors.
