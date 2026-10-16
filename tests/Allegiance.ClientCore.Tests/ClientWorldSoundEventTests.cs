@@ -108,4 +108,120 @@ public class ClientWorldSoundEventTests
         Assert.Equal(2, all.Count);
         Assert.Empty(world.TakeSoundEvents());   // second drain is empty
     }
+
+    // ── P710 — wealth announcements (clintlib/appmsg.cpp) ────────────────────
+    [Fact]
+    public void Payday_RecordsPaydaySoundEvent()
+    {
+        var world = new ClientWorld();
+        world.Apply(new Payday { DMoney = 900 });
+        Assert.Equal(ClientSoundEventKind.PaydayReceived, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Theory]
+    [InlineData((byte)Allegiance.Core.TreasureCode.Powerup, ClientSoundEventKind.PickupPowerup)]
+    [InlineData((byte)Allegiance.Core.TreasureCode.Development, ClientSoundEventKind.PickupDevelopment)]
+    [InlineData((byte)Allegiance.Core.TreasureCode.Cash, ClientSoundEventKind.PickupCash)]
+    [InlineData((byte)Allegiance.Core.TreasureCode.Flag, ClientSoundEventKind.PickupDevelopment)] // flag reuses dev cue (appmsg.cpp:303)
+    public void AcquireTreasure_RecordsPerTypePickupSound(byte code, ClientSoundEventKind expected)
+    {
+        var world = new ClientWorld();
+        world.Apply(new AcquireTreasure { TreasureCode = code, TreasureId = 501, Amount = 100 });
+        Assert.Equal(expected, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void AcquirePart_RecordsNoPickupSound()
+    {
+        // c_tcPart has no pickup cue (it triggers a TREASURE_ACK instead, appmsg.cpp:267-276).
+        var world = new ClientWorld();
+        world.Apply(new AcquireTreasure { TreasureCode = (byte)Allegiance.Core.TreasureCode.Part, TreasureId = 1 });
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    // ── P710 — incoming-message notification cues (trekigc.cpp:4536-4560) ───
+    private static ChatMessage Msg(short sender, int chatTarget, short recipient = -1,
+        short commandId = -1, short voiceOver = -1) => new()
+    {
+        SidSender = sender, ChatTarget = chatTarget, OidRecipient = recipient,
+        CommandID = commandId, VoiceOver = voiceOver,
+    };
+
+    [Fact]
+    public void ClassifyRegularChat_IsChatRegular()
+    {
+        // General chat line (Everyone target), non-leader sender, online.
+        Assert.Equal(ClientSoundEventKind.ChatRegular,
+            ClientWorld.ClassifyChatSound(Msg(sender: 711, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Everyone),
+                myShipId: 712, senderIsLeader: false));
+    }
+
+    [Fact]
+    public void ClassifyCommandChat_IsChatCommand()
+    {
+        // A message with a real command id (cid != c_cidNone) → newCommandMsgSound (:4540).
+        Assert.Equal(ClientSoundEventKind.ChatCommand,
+            ClientWorld.ClassifyChatSound(Msg(sender: 713, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Everyone, commandId: 3),
+                myShipId: 720, senderIsLeader: false));
+    }
+
+    [Fact]
+    public void ClassifyPersonalChatToMe_IsChatPersonal()
+    {
+        Assert.Equal(ClientSoundEventKind.ChatPersonal,
+            ClientWorld.ClassifyChatSound(Msg(sender: 715, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Individual, recipient: 730),
+                myShipId: 730, senderIsLeader: false));
+    }
+
+    [Fact]
+    public void ClassifyLeaderPersonalChat_IsChatCommander()
+    {
+        // Individual message from the team leader → commander variant (:4546).
+        Assert.Equal(ClientSoundEventKind.ChatCommander,
+            ClientWorld.ClassifyChatSound(Msg(sender: 733, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Individual, recipient: 731),
+                myShipId: 731, senderIsLeader: true));
+    }
+
+    [Fact]
+    public void ClassifyLeaderGeneralChat_IsChatCommander()
+    {
+        // General chat from the team leader → commander variant (:4555).
+        Assert.Equal(ClientSoundEventKind.ChatCommander,
+            ClientWorld.ClassifyChatSound(Msg(sender: 740, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Everyone),
+                myShipId: 741, senderIsLeader: true));
+    }
+
+    [Fact]
+    public void ClassifyOfflineChat_IsChatOffline()
+    {
+        // Disconnected receiver → the quieter offline variant (:4560).
+        Assert.Equal(ClientSoundEventKind.ChatOffline,
+            ClientWorld.ClassifyChatSound(Msg(sender: 750, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Everyone),
+                myShipId: 751, senderIsLeader: false, online: false));
+    }
+
+    [Fact]
+    public void ClassifyOwnChatEcho_IsSilent()
+    {
+        // Native drops its own echoed chat (appmsg.cpp:2644) — no sound.
+        Assert.Null(ClientWorld.ClassifyChatSound(Msg(sender: 770, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Everyone),
+            myShipId: 770, senderIsLeader: false));
+    }
+
+    [Fact]
+    public void ClassifySonicChat_IsSilent()
+    {
+        // A sonic chat (non-NA voiceOver) is left to the voice-over table, not
+        // a generic cue (SIM-0399, out of this bundle's scope).
+        Assert.Null(ClientWorld.ClassifyChatSound(Msg(sender: 771, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Everyone, voiceOver: 550),
+            myShipId: 772, senderIsLeader: false));
+    }
+
+    [Fact]
+    public void RegularChatWire_RecordsChatRegular()
+    {
+        var world = new ClientWorld();
+        world.Apply(new ChatMessage { SidSender = 801, ChatTarget = (int)Allegiance.Core.Sim.ChatTarget.Everyone, VoiceOver = -1, CommandID = -1 });
+        Assert.Equal(ClientSoundEventKind.ChatRegular, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
 }

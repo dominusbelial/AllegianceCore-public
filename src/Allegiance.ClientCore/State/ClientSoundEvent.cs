@@ -43,6 +43,58 @@ public enum ClientSoundEventKind
 
     /// <summary>POSITIONREQ: salPlayerWaitingSound (appmsg.cpp:2481).</summary>
     PlayerWaiting,
+
+    // ── P710 (parity wave 13: simulation sounds) ─────────────────────────────
+    // Wealth / treasure announcements (clintlib/appmsg.cpp). Every trigger is
+    // the corresponding wire message the server already broadcasts.
+
+    /// <summary>PAYDAY(114): <c>paydaySound</c> (appmsg.cpp:1313; wave
+    /// <c>payday</c>, sounddef.mdl:294).</summary>
+    PaydayReceived,
+
+    /// <summary>ACQUIRE_TREASURE(162): <c>pickUpPowerupSound</c> for a
+    /// <c>c_tcPowerup</c> pickup (appmsg.cpp:282; wave <c>PowerupShield</c>,
+    /// sounddef.mdl:280).</summary>
+    PickupPowerup,
+
+    /// <summary>ACQUIRE_TREASURE(162): <c>pickUpDevelopmentSound</c> for a
+    /// <c>c_tcDevelopment</c> pickup, and — NYI in native — a <c>c_tcFlag</c>
+    /// pickup reuses the same development cue (appmsg.cpp:286,303; wave
+    /// <c>PowerupDevelopment</c>, sounddef.mdl:279).</summary>
+    PickupDevelopment,
+
+    /// <summary>ACQUIRE_TREASURE(162): <c>pickUpCashSound</c> for a
+    /// <c>c_tcCash</c> pickup (appmsg.cpp:291; wave <c>hoover</c>,
+    /// sounddef.mdl:281).</summary>
+    PickupCash,
+
+    // Incoming-message notification cues (WinTrek/trekigc.cpp:4536-4560),
+    // classified on the CHATMESSAGE(23) attributes.
+
+    /// <summary><c>newCommandMsgSound</c> — a message with a real command id
+    /// (trekigc.cpp:4540; wave <c>receivedobjective</c>, sounddef.mdl:300).</summary>
+    ChatCommand,
+
+    /// <summary><c>newChatMsgFromCommanderSound</c> — a personal message from
+    /// the team leader (training-commander case, trekigc.cpp:4546) or a
+    /// leader-sent general message (trekigc.cpp:4555; wave
+    /// <c>receivedcomchat</c>, sounddef.mdl:298).</summary>
+    ChatCommander,
+
+    /// <summary><c>newPersonalMsgSound</c> — an individual message addressed to
+    /// the local pilot (trekigc.cpp:4548; wave <c>receivepersonalchat</c>,
+    /// sounddef.mdl:301).</summary>
+    ChatPersonal,
+
+    /// <summary><c>newChatMsgSound</c> — a regular (non-command, non-personal)
+    /// chat line (trekigc.cpp:4557; wave <c>receivechat</c>, sounddef.mdl:297).</summary>
+    ChatRegular,
+
+    /// <summary><c>newOfflineChatMsgSound</c> — a general chat line received
+    /// while disconnected (trekigc.cpp:4560; wave <c>receivechat</c> at reduced
+    /// gain, sounddef.mdl:299). Never reachable in this always-online port;
+    /// present for native completeness.</summary>
+    ChatOffline,
 }
 
 /// <summary>A single observed sound event.</summary>

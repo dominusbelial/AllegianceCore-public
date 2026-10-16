@@ -197,6 +197,21 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _otherHullHit = null!;                      // ef120 (reused)
     private SoundEffect _collision = null!;                         // P463c — colisionlarge (collisionSound, sounddef.mdl:308)
     private SoundEffect _rockHit = null!;                           // P463c — hitrock (rockHitSound, sounddef.mdl:266)
+    // P710 — wealth / treasure announcement one-shots (clintlib/appmsg.cpp).
+    // Native plays pickUpPowerupSound/pickUpDevelopmentSound/pickUpCashSound on
+    // a treasure pickup (appmsg.cpp:282-303) and paydaySound on each payday
+    // (appmsg.cpp:1313). Real single-default assets from sounddef.mdl:279-281,294.
+    private SoundEffect _payday = null!;              // payday — paydaySound
+    private SoundEffect _pickupPowerup = null!;       // PowerupShield — pickUpPowerupSound
+    private SoundEffect _pickupDevelopment = null!;   // PowerupDevelopment — pickUpDevelopmentSound (+ flag reuses it, NYI flag cue)
+    private SoundEffect _pickupCash = null!;          // hoover — pickUpCashSound
+    // P710 — incoming-message notification cues (trekigc.cpp:4536-4560). Real
+    // waves from sounddef.mdl:297-301; newOfflineChatMsgSound reuses receivechat
+    // at reduced gain (sounddef.mdl:299), so it shares _chatRegular's asset.
+    private SoundEffect _chatCommand = null!;     // receivedobjective — newCommandMsgSound
+    private SoundEffect _chatCommander = null!;   // receivedcomchat — newChatMsgFromCommanderSound
+    private SoundEffect _chatPersonal = null!;    // receivepersonalchat — newPersonalMsgSound
+    private SoundEffect _chatRegular = null!;     // receivechat — newChatMsgSound (+ offline at lower gain)
     // P373 — the one-shot "new contact" (first-sighting) cues, one per
     // enemy/friendly split. Real native mapping confirmed from sounddef.mdl:247-248
     // — note the native VARIABLE names are swapped vs their meaning: the sound
@@ -590,6 +605,20 @@ public sealed class SoundManager : IDisposable
             _nonCriticalMsg = _content.Load<SoundEffect>("Sounds/noncriticalmessage");
             _rescuePlayer = _content.Load<SoundEffect>("Sounds/hoover");
             _jump = _content.Load<SoundEffect>("Sounds/jumpin");
+            // P710 — wealth announcements (payday + treasure pickups). Waves
+            // resolved from sounddef.mdl:279-281,294 (payday, PowerupShield,
+            // PowerupDevelopment, hoover).
+            _payday = _content.Load<SoundEffect>("Sounds/payday");
+            _pickupPowerup = _content.Load<SoundEffect>("Sounds/powerupshield");
+            _pickupDevelopment = _content.Load<SoundEffect>("Sounds/powerupdevelopment");
+            _pickupCash = _content.Load<SoundEffect>("Sounds/hoover");
+            // P710 — incoming-message notification cues. Waves from
+            // sounddef.mdl:297-301 (receivedobjective, receivedcomchat,
+            // receivepersonalchat, receivechat).
+            _chatCommand = _content.Load<SoundEffect>("Sounds/receivedobjective");
+            _chatCommander = _content.Load<SoundEffect>("Sounds/receivedcomchat");
+            _chatPersonal = _content.Load<SoundEffect>("Sounds/receivepersonalchat");
+            _chatRegular = _content.Load<SoundEffect>("Sounds/receivechat");
             // P373 — first-sighting cues (see field docs for the confirmed
             // native enemy/friendly mapping).
             _newContactEnemy = _content.Load<SoundEffect>("Sounds/newtarget");
@@ -778,6 +807,52 @@ public sealed class SoundManager : IDisposable
     {
         PlayWarnOneShot(_jump);
     }
+
+    // ── P710 — wealth announcements (clintlib/appmsg.cpp) ────────────────────
+    /// <summary>Play the payday cue (<c>payday</c>, native <c>paydaySound</c>,
+    /// appmsg.cpp:1313) on each PAYDAY broadcast. No-op when audio is not
+    /// loaded.</summary>
+    public void PlayPayday() => PlayWarnOneShot(_payday);
+
+    /// <summary>Play the powerup-pickup cue (<c>PowerupShield</c>, native
+    /// <c>pickUpPowerupSound</c>, appmsg.cpp:282). No-op when not loaded.</summary>
+    public void PlayPickupPowerup() => PlayWarnOneShot(_pickupPowerup);
+
+    /// <summary>Play the development-pickup cue (<c>PowerupDevelopment</c>,
+    /// native <c>pickUpDevelopmentSound</c>, appmsg.cpp:286 — also reused for a
+    /// flag pickup, :303, whose dedicated flag cue is NYI in native). No-op
+    /// when not loaded.</summary>
+    public void PlayPickupDevelopment() => PlayWarnOneShot(_pickupDevelopment);
+
+    /// <summary>Play the cash-pickup cue (<c>hoover</c>, native
+    /// <c>pickUpCashSound</c>, appmsg.cpp:291). No-op when not loaded.</summary>
+    public void PlayPickupCash() => PlayWarnOneShot(_pickupCash);
+
+    // ── P710 — incoming-message notification cues (trekigc.cpp:4536-4560) ────
+    /// <summary>Play the objective/command cue (<c>receivedobjective</c>, native
+    /// <c>newCommandMsgSound</c>, trekigc.cpp:4540). No-op when not loaded.</summary>
+    public void PlayChatCommand() => PlayWarnOneShot(_chatCommand);
+
+    /// <summary>Play the commander cue (<c>receivedcomchat</c>, native
+    /// <c>newChatMsgFromCommanderSound</c>, trekigc.cpp:4546/4555). No-op when
+    /// not loaded.</summary>
+    public void PlayChatCommander() => PlayWarnOneShot(_chatCommander);
+
+    /// <summary>Play the personal cue (<c>receivepersonalchat</c>, native
+    /// <c>newPersonalMsgSound</c>, trekigc.cpp:4548). No-op when not loaded.</summary>
+    public void PlayChatPersonal() => PlayWarnOneShot(_chatPersonal);
+
+    /// <summary>Play the regular-chat cue (<c>receivechat</c>, native
+    /// <c>newChatMsgSound</c>, trekigc.cpp:4557; the offline variant at :4560
+    /// reuses the same wave at reduced gain, so <paramref name="offline"/>
+    /// drops the gain by 10 dB to match <c>GainSound(-10, …)</c>,
+    /// sounddef.mdl:299). No-op when not loaded.</summary>
+    public void PlayChatRegular(bool offline = false)
+    {
+        if (!IsLoaded) return;
+        PlayOneShot(_chatRegular, SoundCategory.Warning, offline ? 0.318f : 1f); // -10 dB ≈ 0.316 gain
+    }
+
 
     /// <summary>P232/P465 — play the per-weapon single-shot cue (one-shot) for the
     /// given weapon's <c>singleShotSound</c> id, resolved to its wave via

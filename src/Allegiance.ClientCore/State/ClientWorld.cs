@@ -1910,6 +1910,11 @@ public sealed partial class ClientWorld
                 // P293 — a treasure was picked up / expired.
                 Apply(destroyTreasure);
                 break;
+            case AcquireTreasure acquire:
+                // P710 — a treasure was acquired (picked up). Drives the
+                // pickUp*Sound family (appmsg.cpp:282-303).
+                Apply(acquire);
+                break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
                 break;
@@ -3495,10 +3500,96 @@ public sealed partial class ClientWorld
             AddMoney(target, m.DMoney);
         }
         _events.Record(m);   // the pre-existing event-log record is kept
+        // P710 — native plays the payday cue (appmsg.cpp:1313) on each payday.
+        RecordSoundEvent(ClientSoundEventKind.PaydayReceived, Na);
+    }
+
+    /// <summary>P710 — <c>FM_S_ACQUIRE_TREASURE(162)</c>: this client's ship
+    /// picked up a treasure. The pickup drives the per-type cue from native's
+    /// FM_S_ACQUIRE_TREASURE handler (clintlib/appmsg.cpp:262-308): a
+    /// <c>c_tcPowerup</c> pickup plays <c>pickUpPowerupSound</c> (:282), a
+    /// <c>c_tcDevelopment</c> pickup plays <c>pickUpDevelopmentSound</c> (:286),
+    /// a <c>c_tcCash</c> pickup plays <c>pickUpCashSound</c> (:291), and a
+    /// <c>c_tcFlag</c> pickup reuses the development cue (:303 — the dedicated
+    /// flag cue is NYI in native). <c>c_tcPart</c> has no sound here (it
+    /// triggers a TREASURE_ACK instead). The message carries no ship id; it is
+    /// only ever addressed to the acquiring client, so the cue is recorded
+    /// unconditionally.
+    private void Apply(AcquireTreasure m)
+    {
+        ClientSoundEventKind? kind = (Allegiance.Core.TreasureCode)m.TreasureCode switch
+        {
+            Allegiance.Core.TreasureCode.Powerup => ClientSoundEventKind.PickupPowerup,
+            Allegiance.Core.TreasureCode.Development => ClientSoundEventKind.PickupDevelopment,
+            Allegiance.Core.TreasureCode.Cash => ClientSoundEventKind.PickupCash,
+            Allegiance.Core.TreasureCode.Flag => ClientSoundEventKind.PickupDevelopment, // NYI flag cue → reuses development (appmsg.cpp:303)
+            _ => null,
+        };
+        if (kind is { } k)
+            RecordSoundEvent(k, m.TreasureId);
     }
 
     // ── Event log (transient, append-only, bounded) ────────────────────────
-    private void Apply(ChatMessage m) => _events.Record(m);
+    /// <summary>P710 — classify an incoming chat line's announcement cue
+    /// exactly as native's <c>ReceiveChat</c> decides which wave to play
+    /// (trekigc.cpp:4536-4560). The port reproduces the non-sonic destination
+    /// tree: a message carrying a real command id plays <c>newCommandMsgSound</c>
+    /// (:4540); an individual message addressed to the local pilot plays
+    /// <c>newPersonalMsgSound</c> (:4548) — or the commander variant when sent
+    /// by the team leader (:4546); any other line plays <c>newChatMsgSound</c>
+    /// (:4557) — the commander variant when the sender leads the team (:4555) —
+    /// or the quieter <c>newOfflineChatMsgSound</c> when disconnected (:4560).
+    /// Own echoes are dropped before the sound stage (appmsg.cpp:2644), and a
+    /// sonic chat (a non-NA <c>voiceOver</c>) is left to the voice-over table,
+    /// which this renderer port does not hold (SIM-0399, documented in P710).
+    /// <paramref name="senderIsLeader"/> mirrors native's <c>bIsLeader</c>
+    /// (<c>ppi-&gt;IsTeamLeader()</c>); <paramref name="online"/> mirrors
+    /// <c>m_fm.IsConnected()</c> (always true in this client, present so the
+    /// offline branch is faithfully representable).</summary>
+    public static ClientSoundEventKind? ClassifyChatSound(
+        ChatMessage m, short? myShipId, bool senderIsLeader, bool online = true)
+    {
+        if (myShipId is { } me && m.SidSender == me)
+            return null;                              // own echo — dropped (:2644)
+
+        if (m.VoiceOver != Na)
+            return null;                              // sonic chat — VO table out of scope (SIM-0399)
+
+        // Native precedence: command → individual/personal → general.
+        if (m.CommandID != Na)
+            return ClientSoundEventKind.ChatCommand;  // (:4540)
+
+        bool individualToMe =
+            m.ChatTarget == (int)Allegiance.Core.Sim.ChatTarget.Individual
+            && (m.OidRecipient == Na || (myShipId is { } mine && m.OidRecipient == mine));
+        if (individualToMe)
+            return senderIsLeader
+                ? ClientSoundEventKind.ChatCommander  // commander/training PM (:4546)
+                : ClientSoundEventKind.ChatPersonal;  // (:4548)
+
+        if (!online)
+            return ClientSoundEventKind.ChatOffline;  // (:4560)
+
+        return senderIsLeader
+            ? ClientSoundEventKind.ChatCommander      // leader-sent general (:4555)
+            : ClientSoundEventKind.ChatRegular;       // (:4557)
+    }
+
+    private void Apply(ChatMessage m)
+    {
+        _events.Record(m);
+        // P710 — drive the incoming-message announcement cue. The sender is a
+        // team leader when the per-side leader (SET_TEAM_LEADER) is the sender's
+        // own ship (native bIsLeader, trekigc.cpp:4464).
+        short sender = m.SidSender;
+        bool senderIsLeader =
+            sender != Na
+            && _ships.TryGetValue(sender, out var ent)
+            && TeamLeaderShipIdFor(ent.SideId) == sender;
+        var kind = ClassifyChatSound(m, MyShipId, senderIsLeader);
+        if (kind is { } k)
+            RecordSoundEvent(k, sender);
+    }
 
     /// <summary>P626 — <c>FM_S_BALLOT(17)</c>: a new in-flight ballot was
     /// announced (P187). The client latches it as the <see cref="ActiveBallot"/>

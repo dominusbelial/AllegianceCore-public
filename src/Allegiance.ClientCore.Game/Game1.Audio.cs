@@ -432,6 +432,40 @@ public sealed partial class Game1
                     snd.PlayJump();
                     Console.WriteLine($"[monogame] audio: teleport arrived (station {ev.Id})");
                     break;
+                // ── P710 — wealth announcements (clintlib/appmsg.cpp) ──────
+                case ClientSoundEventKind.PaydayReceived:
+                    snd.PlayPayday();
+                    Console.WriteLine("[monogame] audio: payday");
+                    break;
+                case ClientSoundEventKind.PickupPowerup:
+                    snd.PlayPickupPowerup();
+                    Console.WriteLine("[monogame] audio: powerup pickup");
+                    break;
+                case ClientSoundEventKind.PickupDevelopment:
+                    snd.PlayPickupDevelopment();
+                    Console.WriteLine("[monogame] audio: development pickup");
+                    break;
+                case ClientSoundEventKind.PickupCash:
+                    snd.PlayPickupCash();
+                    Console.WriteLine("[monogame] audio: cash pickup");
+                    break;
+                // ── P710 — incoming-message notification cues
+                // (trekigc.cpp:4536-4560) ───────────────────────────────────
+                case ClientSoundEventKind.ChatCommand:
+                    snd.PlayChatCommand();
+                    break;
+                case ClientSoundEventKind.ChatCommander:
+                    snd.PlayChatCommander();
+                    break;
+                case ClientSoundEventKind.ChatPersonal:
+                    snd.PlayChatPersonal();
+                    break;
+                case ClientSoundEventKind.ChatRegular:
+                    snd.PlayChatRegular();
+                    break;
+                case ClientSoundEventKind.ChatOffline:
+                    snd.PlayChatRegular(offline: true);
+                    break;
             }
         }
     }
