@@ -2729,20 +2729,14 @@ public sealed partial class ClientWorld
             : null;
     }
 
-    /// <summary>P362 — <c>FM_S_RELOAD(129)</c> relay: the server broadcasts the
-    /// applied reload entries sector-wide with <c>ShipID</c> filled in on a
-    /// SUCCESSFUL reload (a P361 auto-reload, or the manual RELOAD path). The
-    /// client consumes it solely to count how many successful reloads each ship
-    /// has received — the authoritative success signal for the weapon-status
-    /// tracker (the wire ammo fraction never shows 0 because the server refills
-    /// the pool synchronously in the same tick). Failures are never relayed, so
-    /// a ship that stays at zero is the "Ammo depleted." case. Pure counting:
-    /// the <c>ReloadData</c> entries themselves target negative cargo mounts and
-    /// carry nothing the renderer needs.</summary>
+    /// <summary>Successful reload relay: retain the weapon-status counter and
+    /// apply cargo transfers (native clintlib/appmsg.cpp:1468-1566). Own echoes
+    /// are applied once, matching the port's SWAP_PART receive convention.</summary>
     private void Apply(Reload reload)
     {
-        if (_ships.TryGetValue(reload.ShipID, out var ent))
-            ent.ReloadCount++;
+        if (!_ships.TryGetValue(reload.ShipID, out var ent)) return;
+        ent.ReloadCount++;
+        ApplyReloadInventory(ent, reload);
     }
 
     /// <summary>P639 — <c>FM_S_RANK_INFO(13)</c>: the server's rank-name table

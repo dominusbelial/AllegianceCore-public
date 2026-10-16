@@ -1,0 +1,33 @@
+{
+  "affected": {
+    "invocations": 231,
+    "exit_failures": 0,
+    "counts": {
+      "passed": 633,
+      "failed": 0,
+      "notExecuted": 0,
+      "total": 633
+    }
+  },
+  "showcase": {
+    "invocations": 0,
+    "exit_failures": 0,
+    "counts": {}
+  },
+  "suites": {
+    "invocations": 0,
+    "exit_failures": 0,
+    "counts": {},
+    "by_project": []
+  },
+  "retries": {
+    "invocations": 0,
+    "exit_failures": 0,
+    "counts": {}
+  },
+  "certificate": {
+    "methods": 77,
+    "invocations": 231,
+    "case_passes": 633
+  }
+}

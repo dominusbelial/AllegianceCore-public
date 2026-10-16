@@ -79,11 +79,11 @@ public class SwapPartTests
         return n;
     }
 
-    /// <summary>Pin the wire layout: fixed 12 B (header 4 + shipID/etOld shorts
-    /// @4/@6 + mountOld/mountNew chars @8/@9 + 2 B align pad), fmid 34, and a
+    /// <summary>Pin the wire layout: fixed 10 B (header 4 + shipID/etOld shorts
+    /// @4/@6 + mountOld/mountNew chars @8/@9; no tail padding), fmid 34, and a
     /// lossless round-trip of all four fields.</summary>
     [Fact]
-    public void SwapPart_codec_roundtrips_fixed_12_byte_layout()
+    public void SwapPart_codec_roundtrips_fixed_10_byte_layout()
     {
         var msg = new SwapPart
         {
@@ -94,8 +94,8 @@ public class SwapPartTests
         };
 
         var encoded = msg.Encode();
-        Assert.Equal(12, encoded.Length);
-        Assert.Equal((ushort)12, FedMessageHeader.Read(encoded).CbMsg);
+        Assert.Equal(10, encoded.Length);
+        Assert.Equal((ushort)10, FedMessageHeader.Read(encoded).CbMsg);
         Assert.Equal(SwapPart.Fmid, FedMessageHeader.Read(encoded).Fmid);
 
         var again = SwapPart.Decode(encoded);
@@ -105,8 +105,9 @@ public class SwapPartTests
         Assert.Equal((sbyte)1, again.MountNew);
 
         // Native structural layout (Messages.h:273-278): bytes @4/5 shipID LE,
-        // @6/7 etOld LE, @8 mountOld, @9 mountNew, @10/11 pad.
-        byte[] native = [0x0C, 0x00, 0x22, 0x00, 0xE1, 0x10, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00];
+        // @6/7 etOld LE, @8 mountOld, @9 mountNew; no tail padding.
+        byte[] native = [0x0A, 0x00, 0x22, 0x00, 0xE1, 0x10, 0x01, 0x00, 0x00, 0x01];
+        Assert.Equal(native, encoded);
         var nat = SwapPart.Decode(native);
         Assert.Equal((short)4321, nat.ShipID);
         Assert.Equal(EquipmentType.Weapon, nat.EtOld);

@@ -45,13 +45,14 @@ namespace Allegiance.Core.Wire;
 ///   offset 6: short  etOld        (EquipmentType)
 ///   offset 8: char   mountOld     (Mount)
 ///   offset 9: char   mountNew     (Mount)
-///   offset 10: 1 byte alignment pad (C++ struct align 2 → sizeof 12)
-///   = 12 B fixed, no var items → cbmsg = 12
+///   = 10 B fixed, no var items or tail padding → cbmsg = 10
+/// Native base and all fields align to 2 (Inc/messagecore.h:43,59,77-87;
+/// Inc/Messages.h:273-278); the former port-only 12-byte layout was incorrect.
 /// </code>
 public sealed class SwapPart : IFedMessage
 {
     public const ushort Fmid = 34;
-    public const int FixedSize = 12;   // header + 2 shorts @4/6 + 2 chars @8/9 + 1 pad @10
+    public const int FixedSize = 10;   // header + 2 shorts @4/6 + 2 chars @8/9
 
     /// <summary>The id of the requesting ship. Ignored/uninitialized on the
     /// client→server leg (the server fills it in on the echo,
@@ -85,7 +86,6 @@ public sealed class SwapPart : IFedMessage
         w.WriteI16((short)EtOld);            // offset 6: etOld (EquipmentType short)
         w.WriteByte(unchecked((byte)MountOld));   // offset 8: mountOld (Mount signed char)
         w.WriteByte(unchecked((byte)MountNew));   // offset 9: mountNew (Mount signed char)
-        while (w.Position < FixedSize) w.WriteByte(0);   // align-2 padding (offsets 10-11)
         w.WriteU16At(0, (ushort)w.Position);
         if (w.Position != FixedSize) throw new InvalidOperationException($"SWAP_PART internal layout drift: {w.Position} != {FixedSize}");
         return buf;

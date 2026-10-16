@@ -1,4 +1,5 @@
 using Allegiance.Core;
+using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Microsoft.Xna.Framework;
@@ -9,6 +10,7 @@ namespace Allegiance.ClientCore.MonoGame;
 
 public sealed partial class Game1
 {
+    private readonly EquipmentSwapInput _equipmentSwapInput = new();
     private readonly HashSet<string> _flightPartHeld = new();
     private ExpandedPartData? _inventorySelection;
     private bool _boosterToggled;
@@ -90,8 +92,36 @@ public sealed partial class Game1
         Console.WriteLine($"[p641] {action} requested part={selected.PartId} mount={unchecked((sbyte)selected.MountId)}");
     }
 
+    private void SwapFlightEquipment(string action)
+    {
+        if (!CanChangeFlightParts()) return;
+        short hullId;
+        float fuelFraction;
+        lock (_session.Gate)
+        {
+            var ship = _session.World.Ships[_session.World.MyShipId!.Value];
+            hullId = ship.HullId;
+            fuelFraction = ship.Latest?.FuelFraction ?? 1;
+        }
+        var hull = _shopCatalog?.Hulls.Where(h => h.HullId == hullId).Cast<DataHullTypeIGC?>().FirstOrDefault();
+        if (hull is not { } h) return;
+        var decision = EquipmentSwapInput.Plan(action, h, OwnInventory(), ResolveFlightPart, _selectedCargoMount,
+            fuelFraction * h.MaxFuel,
+            part => Allegiance.Core.Sim.Ship.ClampPartAmount(h, _shopCatalog?.Core, part, short.MaxValue));
+        if (decision is not { } swap)
+        {
+            lock (_session.Gate) _session.World.PostSystemLine("No different compatible cargo part or empty cargo slot.");
+            return;
+        }
+        _session.SendSwapPart(swap.Request.EtOld, swap.Request.MountOld, swap.Request.MountNew);
+        if (swap.Reloads.Count > 0) _session.SendReload(swap.Reloads);
+        _selectedCargoMount = swap.SelectedCargoMount;
+    }
+
     private void UpdateFlightParts(KeyboardState keys, bool composing)
     {
+        var swapAction = _equipmentSwapInput.Step(keys, KeyBindingStore.Instance.Map, composing);
+        if (swapAction is not null) SwapFlightEquipment(swapAction);
         foreach (string action in FlightPartActions)
         {
             bool down = ActionDown(keys, action);
@@ -110,6 +140,7 @@ public sealed partial class Game1
 
     private void PrimeFlightParts(KeyboardState keys)
     {
+        _equipmentSwapInput.Prime(keys, KeyBindingStore.Instance.Map);
         _flightPartHeld.Clear();
         foreach (var action in FlightPartActions) if (ActionDown(keys, action)) _flightPartHeld.Add(action);
         _boosterToggled = false;

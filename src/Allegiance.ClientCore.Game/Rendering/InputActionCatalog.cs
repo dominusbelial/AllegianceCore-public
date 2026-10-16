@@ -140,6 +140,22 @@ public static class InputActionCatalog
         // with port defaults period / Shift+period; their native defaults remain unbound.
         // Generic inventory TKs have no native handlers/defaults (igc.h:234-237).
         // Port bindings operate on the selected inventory entry using SWAP_PART.
+        // P720: native Ctrl+digits conflict with established port actions.
+        // Keep these unbound, with native suggestions; all are available in F6.
+        new("SwapWeapon1", "INVENTORY / CARGO", "Swap Weapon1 with cargo [TK_SwapWeapon1]", U(), C(Keys.D1)),
+        new("SwapWeapon2", "INVENTORY / CARGO", "Swap Weapon2 with cargo [TK_SwapWeapon2]", U(), C(Keys.D2)),
+        new("SwapWeapon3", "INVENTORY / CARGO", "Swap Weapon3 with cargo [TK_SwapWeapon3]", U(), C(Keys.D3)),
+        new("SwapWeapon4", "INVENTORY / CARGO", "Swap Weapon4 with cargo [TK_SwapWeapon4]", U(), C(Keys.D4)),
+        new("SwapTurret1", "INVENTORY / CARGO", "Swap Turret1 with cargo [TK_SwapTurret1]", U(), null),
+        new("SwapTurret2", "INVENTORY / CARGO", "Swap Turret2 with cargo [TK_SwapTurret2]", U(), null),
+        new("SwapTurret3", "INVENTORY / CARGO", "Swap Turret3 with cargo [TK_SwapTurret3]", U(), null),
+        new("SwapTurret4", "INVENTORY / CARGO", "Swap Turret4 with cargo [TK_SwapTurret4]", U(), null),
+        new("SwapMissile", "INVENTORY / CARGO", "Swap Missile with cargo [TK_SwapMissile]", U(), C(Keys.D5)),
+        new("SwapChaff", "INVENTORY / CARGO", "Swap Chaff with cargo [TK_SwapChaff]", U(), C(Keys.D6)),
+        new("SwapShield", "INVENTORY / CARGO", "Swap Shield with cargo [TK_SwapShield]", U(), C(Keys.D7)),
+        new("SwapCloak", "INVENTORY / CARGO", "Swap Cloak with cargo [TK_SwapCloak]", U(), C(Keys.D8)),
+        new("SwapAfterburner", "INVENTORY / CARGO", "Swap Afterburner with cargo [TK_SwapAfterburner]", U(), C(Keys.D9)),
+        new("SwapMine", "INVENTORY / CARGO", "Swap Mine with cargo [TK_SwapMine]", U(), C(Keys.D0)),
         new("MountPart", "INVENTORY / CARGO", "Mount selected cargo into empty equipment [TK_MountPart]", S(Keys.M), null),
         new("UnmountPart", "INVENTORY / CARGO", "Unmount selected equipment into cargo [TK_UnmountPart]", C(Keys.U), null),
         new("ReplacePart", "INVENTORY / CARGO", "Swap selected cargo with compatible equipment [TK_ReplacePart]", S(Keys.U), null),
