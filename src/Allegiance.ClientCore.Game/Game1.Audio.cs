@@ -515,6 +515,13 @@ public sealed partial class Game1
                     snd.PlayStolenFlag();
                     Console.WriteLine("[monogame] audio: our flag stolen");
                     break;
+                case ClientSoundEventKind.SectorJump:
+                    // P716 — the own ship crossed a warp; native's jumpSound
+                    // (trekigc.cpp:3998,4415) is the same wavein as the teleport
+                    // cue, so it rides SoundManager.PlayJump.
+                    snd.PlayJump();
+                    Console.WriteLine($"[monogame] audio: sector jump (ship {ev.Id})");
+                    break;
             }
         }
     }

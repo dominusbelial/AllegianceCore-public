@@ -2189,7 +2189,14 @@ public sealed partial class ClientWorld
         {
             var warp = NearestWarpInSector(set.SectorId, ownPos);
             if (warp is not null)
+            {
                 SignalAlephTransit(warp.Value.WarpId, set.Ship.ShipId, NowSeconds());
+                // P716 — the own ship's warp crossing plays the native jumpSound
+                // (trekigc.cpp:3998,4415; wave jumpin). This is the arrival half
+                // of the transit; the departure half is the same wave, so the cue
+                // fires once per warp.
+                RecordSoundEvent(ClientSoundEventKind.SectorJump, set.Ship.ShipId);
+            }
         }
     }
 

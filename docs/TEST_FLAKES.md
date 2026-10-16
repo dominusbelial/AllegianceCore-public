@@ -4,6 +4,17 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P716 observation (2026-10-16)
+
+Full-suite run 2 reported Core **4,706 pass / 1 fail / 0 skip** with a single
+failure in `MapGenRingLiveProofTests.GeneratedHiLo_PeerFliesThroughWarp_ToTracedNeighbour`
+(a live-network map-gen ring + warp-tracing proof, unrelated to P716's
+client-side sound events). It passed **5/6 isolated runs** (fail, pass, pass,
+pass, pass, pass) on the same binaries — an intermittent live-net load flake
+(exacerbated by concurrent Codex suite runs on this host), not a P716
+regression. P716 touches only client sound-event recording/gating; this test
+exercises server map-gen warp tracing. No code change was made for it.
+
 ## P699c observation (2026-10-16)
 
 The final sequential unfiltered runs reported Core **4,660 pass / 0 fail / 0 skip**,
