@@ -1,0 +1,1279 @@
+[
+  {
+    "a": 1,
+    "b": 2,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 2,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 1,
+    "b": 3,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 1,
+    "b": 4,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 4,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 1,
+    "b": 5,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 5,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 1,
+    "b": 18,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 18,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 1,
+    "b": 25,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 1,
+    "b": 35,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 35,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 1,
+    "b": 101,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 101,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 1,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 1,
+        "Name": "generated"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 2,
+    "b": 3,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 2,
+        "Name": "generated"
+      },
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 2,
+    "b": 4,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 2,
+        "Name": "generated"
+      },
+      {
+        "CivId": 4,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 2,
+    "b": 5,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 2,
+        "Name": "generated"
+      },
+      {
+        "CivId": 5,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 2,
+    "b": 18,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 2,
+        "Name": "generated"
+      },
+      {
+        "CivId": 18,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 2,
+    "b": 25,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 2,
+        "Name": "generated"
+      },
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 2,
+    "b": 35,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 2,
+        "Name": "generated"
+      },
+      {
+        "CivId": 35,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 2,
+    "b": 101,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 2,
+        "Name": "generated"
+      },
+      {
+        "CivId": 101,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 2,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 2,
+        "Name": "generated"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 3,
+    "b": 4,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 4,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 3,
+    "b": 5,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 5,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 3,
+    "b": 18,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 18,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 3,
+    "b": 25,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 3,
+    "b": 35,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 35,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 3,
+    "b": 101,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 101,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 3,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 3,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 4,
+    "b": 5,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 4,
+        "Name": "generated"
+      },
+      {
+        "CivId": 5,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 4,
+    "b": 18,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 4,
+        "Name": "generated"
+      },
+      {
+        "CivId": 18,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 4,
+    "b": 25,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 4,
+        "Name": "generated"
+      },
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 4,
+    "b": 35,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 4,
+        "Name": "generated"
+      },
+      {
+        "CivId": 35,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 4,
+    "b": 101,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 4,
+        "Name": "generated"
+      },
+      {
+        "CivId": 101,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 4,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 4,
+        "Name": "generated"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 5,
+    "b": 18,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 5,
+        "Name": "generated"
+      },
+      {
+        "CivId": 18,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 5,
+    "b": 25,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 5,
+        "Name": "generated"
+      },
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 5,
+    "b": 35,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 5,
+        "Name": "generated"
+      },
+      {
+        "CivId": 35,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 5,
+    "b": 101,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 5,
+        "Name": "generated"
+      },
+      {
+        "CivId": 101,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 5,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 5,
+        "Name": "generated"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 18,
+    "b": 25,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 18,
+        "Name": "generated"
+      },
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 18,
+    "b": 35,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 18,
+        "Name": "generated"
+      },
+      {
+        "CivId": 35,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 18,
+    "b": 101,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 18,
+        "Name": "generated"
+      },
+      {
+        "CivId": 101,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 18,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 18,
+        "Name": "generated"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 25,
+    "b": 35,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 35,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 25,
+    "b": 101,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 101,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 25,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 25,
+        "Name": "plan_a"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 35,
+    "b": 101,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 35,
+        "Name": "generated"
+      },
+      {
+        "CivId": 101,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 35,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 35,
+        "Name": "generated"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  {
+    "a": 101,
+    "b": 201,
+    "result": "valid",
+    "plans": [
+      {
+        "CivId": 101,
+        "Name": "generated"
+      },
+      {
+        "CivId": 201,
+        "Name": "generated"
+      }
+    ],
+    "mapCapabilities": [
+      1,
+      8,
+      16,
+      32,
+      64
+    ],
+    "requiredCapabilities": [
+      8,
+      16,
+      32,
+      64
+    ]
+  }
+]

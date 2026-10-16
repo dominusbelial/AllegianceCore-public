@@ -69,3 +69,25 @@ funding, serial bucket time, each station completion's serial timestamp,
 branches, hull/part counts and links to exact purchase catalogs. These times are
 **not** economy time-to-tier predictions: constructor flight/build effects,
 income, simultaneous funding, combat and mining are not simulated.
+
+## Showcase tech matches (P705)
+
+Set top-level `"showcase": { "techMode": "research" }` to select plans for every
+actual side and activate P703's commanders when MCP connects. The server ships
+these authored plans beside its executable; `researchPlanDirectory` may be
+omitted. `auto` uses a generated fallback for every other civilization. Use
+`--civs 25,3` (one configured two-side game) to change the matchup for a run.
+
+Research mode disables test unlock and harness grants/bypasses. Explicit grant
+or bypass settings that conflict with research fail boot and name the key.
+`incomeMultiplier` remains optional (native pacing at 1); 500 is the local proof
+and proposed rig pacing. `loopResearchPlans` stays false unless requested.
+
+Research mode also fills missing home-sector build-rock capabilities from each
+selected plan, with one reserve per capability. This is showcase map content;
+normal purchases, constructor movement and construction still apply. The same
+resource preparation runs when the mission resets. `techMode: "unlocked"` is
+the default and preserves the existing configuration and map.
+
+See [P705's report](../../docs/reports/P705_SHOWCASE_TECH_MODE.md) for validation,
+local timelines and Claude's rig handoff.

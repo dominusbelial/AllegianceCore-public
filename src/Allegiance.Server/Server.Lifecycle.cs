@@ -60,7 +60,17 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
-        _config.Showcase.Validate();
+        _config.ResolveShowcaseMode();
+        // Plan rejection must precede profiler callbacks and publisher/transport startup.
+        // A failed research boot has no host for those callbacks to inspect.
+        StaticCore? researchCore = null;
+        if (_config.Showcase.TechMode == "research")
+        {
+            ValidatePaths();
+            researchCore = LoadCore();
+            foreach (var game in _config.Games) SelectShowcasePlans(researchCore, game);
+        }
+        Console.WriteLine($"[boot] showcase.techMode = {_config.Showcase.TechMode}; incomeMultiplier={_config.Showcase.IncomeMultiplier}; researchCommander={(_config.Showcase.TechMode == "research" ? "on" : "per-plan")}");
         ResolveBroadcastSnapshot();
         // Reject invalid cadence before any other subsystem registers profiler
         // callbacks: a failed boot must not leave a partially initialized host.
@@ -176,7 +186,7 @@ public sealed partial class Server
         LogGcMode();
 
         ValidatePaths();
-        var core = LoadCore();                       // checklist item 4
+        var core = researchCore ?? LoadCore();       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild
         StubFileLists();                             // checklist item 5 (stub — cores/maps; ranks now real, see below)
         _rankTable = LoadRankTable();                // P130: real rank list from <artPath>/ranks.txt
@@ -984,6 +994,44 @@ public sealed partial class Server
         return missions;
     }
 
+    /// <summary>Resolve every side from its loaded civilization; research mode requires a real cycle.</summary>
+    private Dictionary<short, ResearchPlanCatalog.Selection> SelectShowcasePlans(StaticCore core, GameConfig game)
+    {
+        bool research = _config.Showcase.TechMode == "research";
+        var selected = new Dictionary<short, ResearchPlanCatalog.Selection>();
+        if (!research && game.ResearchPlanDirectory is null) return selected;
+        if (game.Teams < 1 || game.CivIds.Length < game.Teams
+            || research && game.CivIds.Length != game.Teams)
+            throw new InvalidDataException($"game '{game.Name}': research requires one civ ID per side");
+        if (research && game.ResearchPlans.Keys.Any(side => side < 0 || side >= game.Teams))
+            throw new InvalidDataException($"game '{game.Name}': researchPlans contains an unknown side ID");
+        var settings = new ResearchSettings
+        {
+            AllowDevelopments = game.AllowDevelopments, AllowShipyardPath = game.AllowShipyardPath,
+            AllowExpansionPath = game.AllowExpansionPath, AllowTacticalPath = game.AllowTacticalPath,
+            AllowSupremacyPath = game.AllowSupremacyPath, InitialMinersPerTeam = game.InitialMinersPerTeam,
+        };
+        for (short side = 0; side < game.Teams; side++)
+        {
+            int civ = game.CivIds[side];
+            try
+            {
+                if (civ < 0 || civ > short.MaxValue) throw new InvalidDataException("civilization ID is out of range");
+                var selection = ResearchPlanCatalog.Select(core, Path.GetFileNameWithoutExtension(_config.StaticCore),
+                    (short)civ, game.ResearchPlanDirectory ?? Path.Combine(AppContext.BaseDirectory, "showcase-plans"),
+                    game.ResearchPlans.GetValueOrDefault(side, "auto"), settings);
+                if (research && !selection.Plan.Steps.Any(step => step.Action == "develop"))
+                    throw new InvalidDataException("no plan with real developments (this civilization/settings has no research cycle)");
+                selected.Add(side, selection);
+            }
+            catch (Exception ex) when (ex is InvalidDataException or KeyNotFoundException or ArgumentException)
+            {
+                throw new InvalidDataException($"game '{game.Name}' side {side} civ {civ}: no valid research plan: {ex.Message}", ex);
+            }
+        }
+        return selected;
+    }
+
     /// <summary>
     /// P439 — assemble ONE game's mission from its <see cref="GameConfig"/>, the
     /// loaded <paramref name="core"/> and the shared hull-landing-bay
@@ -1043,6 +1091,8 @@ public sealed partial class Server
         for (int t = 0; t < g.Teams; t++)
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
+        var researchPlans = SelectShowcasePlans(core, g);
+        if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(map, researchPlans);
         var mission = Mission.Assemble(core, map, sides, _host, _simNow, new ResearchSettings
         {
             AllowDevelopments = g.AllowDevelopments,
@@ -1050,15 +1100,11 @@ public sealed partial class Server
             AllowTacticalPath = g.AllowTacticalPath, AllowSupremacyPath = g.AllowSupremacyPath,
             InitialMinersPerTeam = g.InitialMinersPerTeam,
         });
-        if (g.ResearchPlanDirectory is not null)
-            foreach (var side in mission.Sides)
-            {
-                var selection = ResearchPlanCatalog.Select(core, Path.GetFileNameWithoutExtension(_config.StaticCore),
-                    side.Civilization.CivilizationId, g.ResearchPlanDirectory,
-                    g.ResearchPlans.GetValueOrDefault(side.Id, "auto"), mission.Research);
-                mission.ResearchPlans[side.Id] = selection.Plan;
-                Console.WriteLine($"[research-plan] side {side.Id}: {selection.Message}");
-            }
+        foreach (var (side, selection) in researchPlans)
+        {
+            mission.ResearchPlans[side] = selection.Plan;
+            Console.WriteLine($"[research-plan] side {side}: {selection.Message}");
+        }
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
         mission.AllowDevelopments = g.AllowDevelopments;
         mission.AllowAlliedRip = g.AllowAlliedRip;

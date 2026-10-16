@@ -1,0 +1,56 @@
+[
+  {
+    "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+    "threeClean": true,
+    "labels": [
+      "isolation-core-1-1",
+      "isolation-core-1-2",
+      "isolation-core-1-3"
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+    "threeClean": true,
+    "labels": [
+      "isolation-core-2-1",
+      "isolation-core-2-2",
+      "isolation-core-2-3"
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_TCP_pipeline_cost_three_configurations",
+    "threeClean": true,
+    "labels": [
+      "isolation-core-3-1",
+      "isolation-core-3-2",
+      "isolation-core-3-3"
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_TCP_interest_tiers_reduce_bytes_and_report_ages",
+    "threeClean": true,
+    "labels": [
+      "isolation-core-4-1",
+      "isolation-core-4-2",
+      "isolation-core-4-3"
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+    "threeClean": true,
+    "labels": [
+      "isolation-core-5-1",
+      "isolation-core-5-2",
+      "isolation-core-5-3"
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.P672ScoreRosterTrafficTests.Sixty_four_loopback_peers_measure_steady_refresh_and_heavy_kill_traffic",
+    "threeClean": true,
+    "labels": [
+      "isolation-core-6-1",
+      "isolation-core-6-2",
+      "isolation-core-6-3"
+    ]
+  }
+]

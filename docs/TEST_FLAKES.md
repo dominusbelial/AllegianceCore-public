@@ -4,6 +4,52 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P705 observation (2026-10-15)
+
+`P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches`
+had one timeout in the 101/1, 5v5 case. Match one completed normally. In match
+two, side 0's paid Refinery constructor (8146, reserved asteroid 18) remained in
+native physical approach/building at the unchanged 300-second condition deadline.
+That side had completed Weedcore 03; the other side had researched and launched
+its upgraded bomber. Wallet funding and the tech-mode configuration were working.
+The approach/steering cause is not established; this is the same symptom family
+as the P703 observation below.
+
+The next two scheduled repetitions passed. Three **additional exact-case isolated
+reruns passed 3/3**, including both full matches each time. No assertions,
+deadlines, driver pacing, map parameters or movement rules changed between the
+failure and these retries. Under P705's lane rule this is a load flake.
+
+See the [timeout snapshot](reports/P705_assets/constructor-approach-timeout.json),
+[partial timeline](reports/P705_assets/101-1-timeout-timeline.json),
+[three isolated results](reports/P705_assets/focused-isolation-summary.json), and
+[invocation ledger](reports/P705_assets/verification.json). The failed invocation
+is `focused-P705-101-1-1`; clean follow-up invocations are
+`isolation-focused-1-1`, `isolation-focused-1-2`, and `isolation-focused-1-3`.
+
+The first P705 diagnostic Core suite also observed
+`Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join`
+throwing `ThreadStateException: Thread has not been started` in
+`TcpTransport.Shutdown` while joining a worker. The exact method passed **3/3
+isolated reruns** (`isolation-core-2-1` through `isolation-core-2-3`), without
+source/assertion/deadline changes. This is recorded as a load flake. See the
+[Core isolation results](reports/P705_assets/core-isolation-summary.json).
+
+Four diagnostic profiler failures were traced to P705's rejected-plan boot path
+registering callbacks before its host existed. That ordering bug was fixed and
+has a direct rejection-then-ForceReport regression; it is **not classified as a
+load flake**. The diagnostic private-path guard failure was an artifact-root Git
+link setup issue; the corrected guard passed 3/3. Both are explained in the
+[P705 report](reports/P705_SHOWCASE_TECH_MODE.md).
+
+The corrected-build Core run completed **4,605 pass / 1 fail / 0 skip**. Its
+`MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction`
+failed waiting for B's mine EXPORT. The exact test then passed **3/3 isolated
+reruns** (`fixed-isolation-mine-1` through `fixed-isolation-mine-3`) with unchanged
+source and receipt deadline. This is a load flake under the P705 lane rule.
+See [isolated results](reports/P705_assets/fixed-core-isolation-summary.json).
+The profiler regression and checkout guard passed in this full run.
+
 ## P703 observation (2026-10-15)
 
 The new

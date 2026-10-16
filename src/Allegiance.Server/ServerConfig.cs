@@ -4,14 +4,18 @@ using Allegiance.Core;
 
 namespace Allegiance.Server;
 
-/// <summary>P703 showcase-only extensions. At incomeMultiplier=1 the periodic economy is native.
+/// <summary>Showcase mode and economy pacing. At incomeMultiplier=1 the periodic economy is native.
 /// Income still enters the team treasury and is distributed to real player wallets (fsmission.cpp:2294-2324).</summary>
 public sealed class ShowcaseConfig
 {
+    /// <summary>Opt-in orchestration; setters preserve absent source-generated JSON defaults.</summary>
+    public string TechMode { get; set; } = "unlocked";
     public double IncomeMultiplier { get; set; } = 1;
     public bool LoopResearchPlans { get; set; }
     public void Validate()
     {
+        if (TechMode is not ("unlocked" or "research"))
+            throw new InvalidDataException("showcase.techMode must be unlocked|research");
         if (!double.IsFinite(IncomeMultiplier) || IncomeMultiplier < 1 || IncomeMultiplier > 10000)
             throw new InvalidDataException("showcase.incomeMultiplier must be finite and between 1 and 10000");
     }
@@ -34,7 +38,7 @@ public sealed class GameConfig
     public bool AllowTacticalPath { get; set; } = true;
     public bool AllowSupremacyPath { get; set; } = true;
     public int InitialMinersPerTeam { get; set; } = 1;
-    /// <summary>Optional runtime plan validation/selection. Directory contains core/civ*-*.json.</summary>
+    /// <summary>Plan directory override (core/civ*-*.json); research mode defaults to bundled showcase-plans.</summary>
     public string? ResearchPlanDirectory { get; set; }
     /// <summary>Selections by side id: auto, generated, or a plan name.</summary>
     public Dictionary<short, string> ResearchPlans { get; set; } = new();
@@ -342,12 +346,19 @@ public sealed class TestHarnessConfig
     /// side's garrison economy can never price the harness out of a hull.</summary>
     public int Money { get; set; }
 
+    private bool _ignoreTechGate = true;
+    [JsonIgnore] internal bool IgnoreTechGateExplicit { get; private set; }
+
     /// <summary>When <c>true</c>, a harness connection's <c>BUY_LOADOUT</c>
     /// skips ONLY the tech gate (the station <c>CanBuy</c> hull/part check). It
     /// still pays the real price through the real debit path — so pricing keeps
     /// being exercised — and still respects the funds gate, the drone-hull
     /// (<c>GroupId&lt;0</c>) gate, and the hardpoint-compatibility gate.</summary>
-    public bool IgnoreTechGate { get; set; } = true;
+    public bool IgnoreTechGate
+    {
+        get => _ignoreTechGate;
+        set { _ignoreTechGate = value; IgnoreTechGateExplicit = true; }
+    }
 }
 
 /// <summary>
@@ -386,10 +397,17 @@ public sealed class TestUnlockConfig
     /// P441/P444/P468/P488 — no tech granted, no wallet money, for anyone.</summary>
     public bool Enabled { get; set; }
 
+    private bool _allTech = true;
+    [JsonIgnore] internal bool AllTechExplicit { get; private set; }
+
     /// <summary>When <c>true</c> (the default), every side is granted the full
     /// required-tech union of the core (all buyable tech bits). When <c>false</c>
     /// and <c>Enabled</c> is true, only the seat-money grant applies (no tech).</summary>
-    public bool AllTech { get; set; } = true;
+    public bool AllTech
+    {
+        get => _allTech;
+        set { _allTech = value; AllTechExplicit = true; }
+    }
 
     /// <summary>The wallet granted to every seated player when enabled, in
     /// credits. Set ABSOLUTELY at seat (overriding/refreshing the P443 starting
@@ -662,11 +680,32 @@ public sealed class ReceiveConfig
 /// <c>--config</c> (default <c>server.json</c>), with scalar fields overridable
 /// on the command line (<c>--port</c>, <c>--artpath</c>, <c>--staticcore</c>,
 /// <c>--updatespersec</c>). Games are file-defined — there is no CLI form for
-/// a nested array.
+/// a nested array except the ordered civ list of one two-side game (<c>--civs</c>).
 /// </summary>
 public sealed class ServerConfig
 {
     public ShowcaseConfig Showcase { get; set; } = new();
+
+    /// <summary>Resolve mode dependencies before binding sockets or changing global runtime state.
+    /// Unlocked preserves existing settings, including P703's independently selected plans.</summary>
+    public void ResolveShowcaseMode()
+    {
+        Showcase.Validate();
+        if (Showcase.TechMode != "research") return;
+        var live = LiveSettings ?? new LiveSettingsConfig();
+        void Conflict(string key) => throw new InvalidDataException($"showcase.techMode=research conflicts with {key}");
+        if (live.TestUnlock is { Enabled: true }) Conflict("liveSettings.testUnlock.enabled=true (wallet/tech grant)");
+        if (live.TestUnlock is { AllTechExplicit: true, AllTech: true }) Conflict("liveSettings.testUnlock.allTech=true");
+        if (live.TestHarness is { Enabled: true }) Conflict("liveSettings.testHarness.enabled=true (purchase grant)");
+        if (live.TestHarness is { IgnoreTechGateExplicit: true, IgnoreTechGate: true }) Conflict("liveSettings.testHarness.ignoreTechGate=true");
+        foreach (var game in Games)
+            if (!game.AllowDevelopments) Conflict($"games[{game.Name}].allowDevelopments=false");
+        LiveSettings = live;
+        live.TestUnlock ??= new();
+        live.TestUnlock.AllTech = false;
+        live.TestHarness ??= new();
+        live.TestHarness.IgnoreTechGate = false;
+    }
     /// <summary>P629 simulation rules, including the stress-test crowding override.</summary>
     public SimConfig Sim { get; set; } = new();
     public ReceiveConfig? Receive { get; set; }
@@ -825,6 +864,16 @@ public static class ServerConfigLoader
                     if (!int.TryParse(value, out var up))
                         throw new InvalidDataException($"--updatespersec must be an integer, got '{value}'");
                     config.UpdatesPerSecond = up; recognized++; break;
+                case "civs":
+                    var ids = value.Split(',');
+                    if (config.Games.Count != 1 || ids.Length != 2
+                        || ids.Any(id => !int.TryParse(id, out var n) || n < 0 || n > short.MaxValue))
+                        throw new InvalidDataException("--civs requires exactly two comma-separated civilization IDs and one configured game");
+                    // Ordered side IDs, not race-specific branches; future side counts can extend validation.
+                    config.Games[0].CivIds = ids.Select(int.Parse).ToArray();
+                    if (config.Games[0].Teams != 2)
+                        throw new InvalidDataException("--civs currently supports two-side games only");
+                    recognized++; break;
                 case "capture":
                 case "capturefile":
                     if (string.IsNullOrWhiteSpace(value))
