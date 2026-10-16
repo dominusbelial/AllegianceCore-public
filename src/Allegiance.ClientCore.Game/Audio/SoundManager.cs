@@ -225,6 +225,13 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _noAmmo = null!;          // vo_sal_noammo — salNoAmmoSound (:812)
     private SoundEffect _noFuel = null!;          // vo_sal_nofuel — salNoFuelSound (:811)
     private SoundEffect _noRipcord = null!;       // vo_sal_noripcord — salNoRipcordSound (:348)
+    // P714 — objective & status announce one-shots (appmsg.cpp:1238,2965,3149,3156,3169).
+    // Waves from sounddef.mdl:771,773,776,779,780.
+    private SoundEffect _madeCommander = null!;   // vo_sal_madecommander — commanderSound (:779)
+    private SoundEffect _madeInvestor = null!;    // vo_sal_madeinvestor — investorSound (:780)
+    private SoundEffect _stolenEnemyFlag = null!; // vo_stolen_enemyflag — enemyFlagLostSound (:773)
+    private SoundEffect _artifact = null!;        // vo_sal_artifact — artifactFoundSound (:776)
+    private SoundEffect _stolenFlag = null!;      // vo_stolen_flag — flagLostSound (:771)
     // P711 — the ripcord-active loop (SIM-0368) and the mining loop (SIM-0370).
     // ripcordOnLoopSound = ImportWave("countdownStart") (sounddef.mdl:347), the
     // same countdown-tick wave native loops while a ripcord countdown runs;
@@ -652,6 +659,13 @@ public sealed class SoundManager : IDisposable
             _noAmmo = _content.Load<SoundEffect>("Sounds/vo_sal_noammo");
             _noFuel = _content.Load<SoundEffect>("Sounds/vo_sal_nofuel");
             _noRipcord = _content.Load<SoundEffect>("Sounds/vo_sal_noripcord");
+            // P714 — objective & status announce one-shots. Waves from
+            // sounddef.mdl:771,773,776,779,780.
+            _madeCommander = _content.Load<SoundEffect>("Sounds/vo_sal_madecommander");
+            _madeInvestor = _content.Load<SoundEffect>("Sounds/vo_sal_madeinvestor");
+            _stolenEnemyFlag = _content.Load<SoundEffect>("Sounds/vo_stolen_enemyflag");
+            _artifact = _content.Load<SoundEffect>("Sounds/vo_sal_artifact");
+            _stolenFlag = _content.Load<SoundEffect>("Sounds/vo_stolen_flag");
             // P711 — ripcord-active + mining loops (two looped instances created
             // here, gated on/off by Game1's per-frame drivers; see
             // UpdateRipcordLoop / UpdateMiningLoop).
@@ -945,6 +959,27 @@ public sealed class SoundManager : IDisposable
     /// <c>salNoRipcordSound</c>, appmsg.cpp:970 / clintlib.h:1175). No-op when
     /// not loaded.</summary>
     public void PlayNoRipcord() => PlayWarnOneShot(_noRipcord);
+
+    /// <summary>P714 — play the "you became team leader" cue (<c>vo_sal_madecommander</c>,
+    /// native <c>commanderSound</c>, appmsg.cpp:2965). No-op when not loaded.</summary>
+    public void PlayMadeCommander() => PlayWarnOneShot(_madeCommander);
+
+    /// <summary>P714 — play the "you gained your first investor" cue
+    /// (<c>vo_sal_madeinvestor</c>, native <c>investorSound</c>, appmsg.cpp:1238).
+    /// No-op when not loaded.</summary>
+    public void PlayMadeInvestor() => PlayWarnOneShot(_madeInvestor);
+
+    /// <summary>P714 — play the enemy-flag-stolen cue (<c>vo_stolen_enemyflag</c>,
+    /// native <c>enemyFlagLostSound</c>, appmsg.cpp:3149). No-op when not loaded.</summary>
+    public void PlayStolenEnemyFlag() => PlayWarnOneShot(_stolenEnemyFlag);
+
+    /// <summary>P714 — play the artifact-found cue (<c>vo_sal_artifact</c>, native
+    /// <c>artifactFoundSound</c>, appmsg.cpp:3156). No-op when not loaded.</summary>
+    public void PlayArtifactFound() => PlayWarnOneShot(_artifact);
+
+    /// <summary>P714 — play the own-flag-stolen cue (<c>vo_stolen_flag</c>, native
+    /// <c>flagLostSound</c>, appmsg.cpp:3169). No-op when not loaded.</summary>
+    public void PlayStolenFlag() => PlayWarnOneShot(_stolenFlag);
 
     /// <summary>P711 — gate the ripcord-active loop (<c>countdownstart</c>,
     /// native <c>ripcordOnLoopSound</c>, trekigc.cpp:1287): a looping one-shot

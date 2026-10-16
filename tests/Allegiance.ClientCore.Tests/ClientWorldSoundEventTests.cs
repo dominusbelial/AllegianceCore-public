@@ -1,4 +1,6 @@
 using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.State;
 
@@ -223,5 +225,140 @@ public class ClientWorldSoundEventTests
         var world = new ClientWorld();
         world.Apply(new ChatMessage { SidSender = 801, ChatTarget = (int)Allegiance.Core.Sim.ChatTarget.Everyone, VoiceOver = -1, CommandID = -1 });
         Assert.Equal(ClientSoundEventKind.ChatRegular, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    // ── P714 — objective & status announce VOs ─────────────────────────────
+    // All 5 ride the established ClientSoundEvent → Game1.Audio → SoundManager
+    // one-shot path, driven by the fed messages the server already broadcasts:
+    // SET_TEAM_LEADER(121), AUTODONATE(116), GAIN_FLAG(156).
+
+    private static Ship MakeShip(short id) =>
+        new(id, TestHull(), new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+
+    private static DataHullTypeIGC TestHull() => new(
+        Price: 0, TimeToBuild: 0, ModelName: "mdl", IconName: "ico", Name: "test",
+        Description: "", GroupId: 0, TtbmRequired: [], TtbmEffects: [],
+        Mass: 550f, Signature: 0f, Speed: 120f,
+        MaxTurnRates: [4.5f, 4.5f, 4.5f], TurnTorques: [5000f, 5000f, 5000f],
+        Thrust: 52500f, SideMultiplier: 4f, BackMultiplier: 4f, ScannerRange: 1000f,
+        MaxFuel: 100f, Ecm: 0f, Length: 30f, MaxEnergy: 0f, RechargeRate: 0f,
+        RipcordSpeed: 0f, RipcordCost: 0f, MaxAmmo: 0, HullId: 7813, SuccessorHullId: -1,
+        MaxWeapons: 0, MaxFixedWeapons: 0, HitPoints: 805f, HardpointOffset: 835,
+        DefenseType: 0, CapacityMagazine: 0, CapacityDispenser: 0, CapacityChaffLauncher: 0,
+        PreferredPartsTypes: [], HabmCapabilities: 0, TextureName: "", PmEquipment: [],
+        InteriorSound: 0, ExteriorSound: 0, MainThrusterInteriorSound: 0,
+        MainThrusterExteriorSound: 0, ManuveringThrusterInteriorSound: 0,
+        ManuveringThrusterExteriorSound: 0, Hardpoints: []);
+
+    /// <summary>Seed <see cref="ClientWorld.MyShipId"/> via the real wire path
+    /// (SET_CLUSTER, the only source of the player's own ship id) so the
+    /// leadership/investor announce cues that key on "our own ship" are testable.</summary>
+    private static ClientWorld WorldWithMeSeated(short me = 7840)
+    {
+        var w = new ClientWorld();
+        w.Apply(new SetCluster
+        {
+            SectorId = 3,
+            Ship = ServerShipUpdate.FromModel(me, MakeShip(me), 1u),
+            Cookie = 0x11,
+        });
+        return w;
+    }
+
+    [Fact]
+    public void BecomingTeamLeader_RecordsCommanderElected()
+    {
+        var world = WorldWithMeSeated(me: 841);
+        world.Apply(new SetTeamLeader { SideId = 2, ShipId = 841 });
+        Assert.Equal(ClientSoundEventKind.CommanderElected, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void AnotherShipBecomesLeader_RecordsNoSound()
+    {
+        var world = WorldWithMeSeated(me: 841);
+        world.Apply(new SetTeamLeader { SideId = 2, ShipId = 941 });
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void FirstDonorBeginsDonatingToMe_RecordsInvestor()
+    {
+        var world = WorldWithMeSeated(me: 843);
+        world.Apply(new AutoDonateUpdate { SidDonateBy = 944, SidDonateTo = 843 });
+        Assert.Equal(ClientSoundEventKind.InvestorReceived, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void SecondDonorDoesNotRefireInvestor()
+    {
+        short me = 6627;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new AutoDonateUpdate { SidDonateBy = 6134, SidDonateTo = me });  // donor A → count 1 → investor fires
+        Assert.Equal(ClientSoundEventKind.InvestorReceived, Assert.Single(world.TakeSoundEvents()).Kind);
+        world.Apply(new AutoDonateUpdate { SidDonateBy = 6683, SidDonateTo = me });  // donor B (distinct) → count 2 → no investor
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void DonatingMyself_NoInvestor()
+    {
+        short me = 6852;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new AutoDonateUpdate { SidDonateBy = me, SidDonateTo = 6291 });  // I donate to someone else
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void StoppingDonation_NoInvestor()
+    {
+        short me = 4479;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new AutoDonateUpdate { SidDonateBy = 4561, SidDonateTo = me });  // donor → count 1 → investor fires
+        Assert.Equal(ClientSoundEventKind.InvestorReceived, Assert.Single(world.TakeSoundEvents()).Kind);
+        world.Apply(new AutoDonateUpdate { SidDonateBy = 3652, SidDonateTo = -1 });  // stop donating (NA) → count 0
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void TeammateStealsEnemyFlag_RecordsEnemyFlagStolen()
+    {
+        var world = new ClientWorld();
+        SetMySide(world, 2);
+        world.Apply(new ExportShip { ShipId = 983, HullId = 1, SideId = 2, CharacterName = "Mate" });
+        world.Apply(new GainFlag { SideidFlag = 3, ShipidRecipient = 983 });   // recipient on our side, enemy flag
+        Assert.Equal(ClientSoundEventKind.EnemyFlagStolen, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void TeammateFindsArtifact_RecordsArtifactFound()
+    {
+        var world = new ClientWorld();
+        SetMySide(world, 2);
+        world.Apply(new ExportShip { ShipId = 988, HullId = 1, SideId = 2, CharacterName = "Mate" });
+        world.Apply(new GainFlag { SideidFlag = -2, ShipidRecipient = 988 });  // lobby/artifact sentinel
+        Assert.Equal(ClientSoundEventKind.ArtifactFound, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void EnemyStealsOurFlag_RecordsOurFlagStolen()
+    {
+        var world = new ClientWorld();
+        SetMySide(world, 2);
+        world.Apply(new ExportShip { ShipId = 974, HullId = 1, SideId = 3, CharacterName = "Raider" });
+        world.Apply(new GainFlag { SideidFlag = 2, ShipidRecipient = 974 });   // our-side flag in enemy hands
+        Assert.Equal(ClientSoundEventKind.OurFlagStolen, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void SecureOrUnclassifiedGainFlag_NoSound()
+    {
+        var world = new ClientWorld();
+        SetMySide(world, 2);
+        // secure / tech-recovery (NA flag origin) → no announce VO
+        world.Apply(new GainFlag { SideidFlag = -1, ShipidRecipient = 933 });
+        // recipient not in our entity table → side unknowable → no classification
+        world.Apply(new GainFlag { SideidFlag = 3, ShipidRecipient = 929 });
+        Assert.Empty(world.TakeSoundEvents());
     }
 }

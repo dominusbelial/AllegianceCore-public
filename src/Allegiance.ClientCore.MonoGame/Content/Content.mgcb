@@ -716,6 +716,36 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_autopilotdisengage.ogg
 
+#begin Sounds/vo_sal_artifact.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_artifact.ogg
+
+#begin Sounds/vo_sal_madecommander.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_madecommander.ogg
+
+#begin Sounds/vo_sal_madeinvestor.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_madeinvestor.ogg
+
+#begin Sounds/vo_stolen_enemyflag.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_stolen_enemyflag.ogg
+
+#begin Sounds/vo_stolen_flag.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_stolen_flag.ogg
+
 #begin Sounds/countdownstart.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

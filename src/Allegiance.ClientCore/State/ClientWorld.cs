@@ -1863,6 +1863,12 @@ public sealed partial class ClientWorld
                 // any one-time gift.
                 Apply(autoDonateUpdate);
                 break;
+            case GainFlag gainFlag:
+                // P714 — FM_S_GAIN_FLAG(156): a flag/artifact changed hands
+                // (whole-mission announce, FedSrv.CPP:13157,13573); the
+                // steal/found/lost announce VOs are classified in Apply.
+                Apply(gainFlag);
+                break;
             case KillShip killShip:
                 Apply(killShip);
                 break;
@@ -3488,9 +3494,26 @@ public sealed partial class ClientWorld
     /// donor, once, whether or not the donor is the local ship.</para></summary>
     private void Apply(AutoDonateUpdate m)
     {
-        // Relationship first (NA = absent = donates to no one).
+        // Relationship first (NA = absent = donates to no one). Remember the
+        // previous target so we can detect a NEW "donate to me" relationship
+        // (native's pshipOld != pshipTo change test, appmsg.cpp:1202-1205).
+        bool hadPrevious = _autoDonateTargetByShipId.TryGetValue(m.SidDonateBy, out short oldTarget);
+        bool relationshipChanged = !hadPrevious || oldTarget != m.SidDonateTo;
+
         if (m.SidDonateTo == Na) _autoDonateTargetByShipId.Remove(m.SidDonateBy);
         else _autoDonateTargetByShipId[m.SidDonateBy] = m.SidDonateTo;
+
+        // P714 — native investorSound (appmsg.cpp:1227-1238): when a teammate
+        // (not ourselves) begins donating to US and, after the change, we have
+        // exactly one donor, native plays the investor VO.
+        if (relationshipChanged && m.SidDonateBy != MyShipId && m.SidDonateTo == MyShipId && MyShipId is { } me)
+        {
+            int donors = 0;
+            foreach (var kv in _autoDonateTargetByShipId)
+                if (kv.Value == me) donors++;
+            if (donors == 1)
+                RecordSoundEvent(ClientSoundEventKind.InvestorReceived, m.SidDonateBy);
+        }
 
         if (m.Amount != 0)
         {
@@ -3507,6 +3530,43 @@ public sealed partial class ClientWorld
                 // (appmsg.cpp:1265-1270).
                 AddMoney(m.SidDonateBy, m.Amount);
             }
+        }
+    }
+
+    /// <summary>
+    /// P714 — <c>FM_S_GAIN_FLAG(156)</c> objective announce VOs, faithful to
+    /// native <c>appmsg.cpp:3137-3170</c>:
+    /// <list type="bullet">
+    /// <item>recipient on OUR side + flag origin != lobby (sentinel -2) →
+    /// <c>enemyFlagLostSound</c> (we stole an enemy flag);</item>
+    /// <item>recipient on OUR side + flag origin == lobby → <c>artifactFoundSound</c>;</item>
+    /// <item>otherwise flag origin == OUR side → <c>flagLostSound</c> (an enemy
+    /// stole our flag).</item>
+    /// </list>
+    /// The classification needs the RECIPIENT ship's side (native <c>pship-&gt;GetSide()</c>);
+    /// when that ship is not in our entity table the cue is skipped (documented
+    /// limitation — the whole-mission announce can name carriers outside our
+    /// visible sector).</summary>
+    private void Apply(GainFlag m)
+    {
+        if (m.SideidFlag == GainFlag.NA) return;   // secure / tech-recovery: no announce VO
+
+        if (!_ships.TryGetValue(m.ShipidRecipient, out var recipient))
+            return;                                 // recipient side unknown → cannot classify
+
+        short mySide = MySideId ?? Na;
+        if (recipient.SideId == mySide)
+        {
+            // A teammate picked up a flag (enemy or neutral-artifact).
+            if (m.SideidFlag != Side.ArtifactSentinelFlag)
+                RecordSoundEvent(ClientSoundEventKind.EnemyFlagStolen, m.ShipidRecipient);
+            else
+                RecordSoundEvent(ClientSoundEventKind.ArtifactFound, m.ShipidRecipient);
+        }
+        else if (m.SideidFlag > 0 && m.SideidFlag == mySide)
+        {
+            // An enemy is carrying OUR side's flag.
+            RecordSoundEvent(ClientSoundEventKind.OurFlagStolen, m.ShipidRecipient);
         }
     }
 
@@ -4253,7 +4313,16 @@ public sealed partial class ClientWorld
     /// side's leader ship id — last announcement wins (current state, not history)
     /// — mirroring the server's <c>Side.LeaderShipId</c>; <see cref=\"IsTeamLeader\"/>
     /// reads it to gate the leader-only bot dock/launch UI.</summary>
-    private void Apply(SetTeamLeader stl) => _leaderShipIdBySideId[stl.SideId] = stl.ShipId;
+    private void Apply(SetTeamLeader stl)
+    {
+        _leaderShipIdBySideId[stl.SideId] = stl.ShipId;
+
+        // P714 — native commanderSound (appmsg.cpp:2965): when the new leader
+        // is OUR OWN ship we became the team leader and native plays the
+        // commander VO (FM_S_SET_TEAM_LEADER → pplayer == MyPlayerInfo).
+        if (MyShipId is { } me && stl.ShipId == me)
+            RecordSoundEvent(ClientSoundEventKind.CommanderElected, stl.ShipId);
+    }
 
     /// <summary>
     /// P438 — <c>FM_S_JOIN_SIDE(125)</c>: the whole-mission, authoritative

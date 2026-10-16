@@ -495,6 +495,26 @@ public sealed partial class Game1
                     snd.PlayNoRipcord();
                     Console.WriteLine("[monogame] audio: ripcord denied (ship {ev.Id})");
                     break;
+                case ClientSoundEventKind.CommanderElected:
+                    snd.PlayMadeCommander();
+                    Console.WriteLine("[monogame] audio: you became team leader");
+                    break;
+                case ClientSoundEventKind.InvestorReceived:
+                    snd.PlayMadeInvestor();
+                    Console.WriteLine("[monogame] audio: first investor");
+                    break;
+                case ClientSoundEventKind.EnemyFlagStolen:
+                    snd.PlayStolenEnemyFlag();
+                    Console.WriteLine("[monogame] audio: enemy flag stolen");
+                    break;
+                case ClientSoundEventKind.ArtifactFound:
+                    snd.PlayArtifactFound();
+                    Console.WriteLine("[monogame] audio: artifact found");
+                    break;
+                case ClientSoundEventKind.OurFlagStolen:
+                    snd.PlayStolenFlag();
+                    Console.WriteLine("[monogame] audio: our flag stolen");
+                    break;
             }
         }
     }

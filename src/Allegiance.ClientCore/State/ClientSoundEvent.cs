@@ -136,6 +136,39 @@ public enum ClientSoundEventKind
     /// anchor check (clintlib.h:1175); wave <c>vo_sal_noripcord</c>,
     /// sounddef.mdl:348.</summary>
     RipcordDenied,
+
+    // ── P714 (parity wave 15: leadership / investment / objective / autonomy
+    // feedback) ────────────────────────────────────────────────────────────
+    // The 5 objective & status announce VOs are wire-driven one-shots on
+    // fed messages the server already broadcasts (SET_TEAM_LEADER, AUTODONATE,
+    // GAIN_FLAG). The 8 autonomy rows (autopilot engage/disengage, rescue/
+    // teleport jump) were already built in earlier waves but sat stale
+    // "missing" in the matrix — this wave verifies and reconciles them.
+
+    /// <summary><c>commanderSound</c> — this player became the team leader
+    /// (FM_S_SET_TEAM_LEADER announcing our own ship; appmsg.cpp:2965; wave
+    /// <c>vo_sal_madecommander</c>, sounddef.mdl:779).</summary>
+    CommanderElected,
+
+    /// <summary><c>investorSound</c> — a teammate began donating income to us
+    /// and the donor count rose to exactly 1 (FM_S_AUTODONATE, appmsg.cpp:1238;
+    /// wave <c>vo_sal_madeinvestor</c>, sounddef.mdl:780).</summary>
+    InvestorReceived,
+
+    /// <summary><c>enemyFlagLostSound</c> — a teammate on our side picked up /
+    /// is carrying an enemy (or neutral-non-lobby) flag (FM_S_GAIN_FLAG,
+    /// appmsg.cpp:3149; wave <c>vo_stolen_enemyflag</c>, sounddef.mdl:773).</summary>
+    EnemyFlagStolen,
+
+    /// <summary><c>artifactFoundSound</c> — a teammate picked up a neutral
+    /// artifact (FM_S_GAIN_FLAG with a lobby flag origin, appmsg.cpp:3156;
+    /// wave <c>vo_sal_artifact</c>, sounddef.mdl:776).</summary>
+    ArtifactFound,
+
+    /// <summary><c>flagLostSound</c> — an enemy picked up / is carrying OUR
+    /// side's flag (FM_S_GAIN_FLAG whose flag origin is our side,
+    /// appmsg.cpp:3169; wave <c>vo_stolen_flag</c>, sounddef.mdl:771).</summary>
+    OurFlagStolen,
 }
 
 /// <summary>A single observed sound event.</summary>
