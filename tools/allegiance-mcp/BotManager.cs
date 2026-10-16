@@ -495,12 +495,16 @@ internal sealed partial class BotManager : IDisposable
             // A combat bot is driven as its own ConnectionSession (mirrors vizfight's
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
-            var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning));
+            Showcase.HullRole? techRole = Enum.TryParse<Showcase.HullRole>(role, true, out var parsedRole) ? parsedRole : null;
+            var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning,
+                techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }));
             DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
                 Cs = cs,
+                TechLoadouts = true,
+                PurchasePacer = _loadoutPurchasePacer,
                 ShipId = shipId,
                 Launched = true,
                 TargetSector = targetSector,
@@ -557,8 +561,17 @@ internal sealed partial class BotManager : IDisposable
         // the loadout carries one (detected from the parts actually requested).
         bot.WingmanBehaviour = wingmanBehaviour;
         bot.MineDispenserPartId = FindMineDispenser(finalParts);
+        if (bot.TechLoadouts)
+        {
+            var selected = new TechLoadoutSelector.Selection(hullId, hullName, finalParts,
+                Math.Max(0, Catalog.RepresentativeCore().HullTypes[hullId].Price)
+                    + finalParts.Sum(p => TechLoadoutSelector.PartPrice(TechLoadoutSelector.Part(Catalog.RepresentativeCore(), p.PartId), p.Amount)), "initial accepted loadout");
+            ApplyTechLoadout(bot, selected);
+            if (grantWarning is null) bot.PreviousLegalLoadout = selected;
+        }
         // P637 — the bot's showcase role (drives its OWN target sector + route).
-        if (role is { Length: > 0 }) bot.Role = role;
+        bot.Role = role is { Length: > 0 } ? role
+            : Showcase.ClassifyHull(Catalog.RepresentativeCore().HullTypes[hullId]).ToString();
 
         // P635 — multi-route wing assignment (route path + wing index).
         if (routePath is { Count: > 0 } rp)
@@ -692,7 +705,8 @@ internal sealed partial class BotManager : IDisposable
     /// requested loadout (refusal throws, partial grant is a warning), so a
     /// combat spawn can never silently fly a refused default ship.
     /// </summary>
-    private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning)
+    private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning,
+        Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null)
     {
         using var ownership = new PendingOwnership(DisposePeer);
         var cs = ownership.Own(new ConnectionSession());
@@ -714,6 +728,21 @@ internal sealed partial class BotManager : IDisposable
         cs.SendPlayerReady(true, shipId);
         // P473 — reset the ack accumulator so the only ack considered is the one
         // answering THIS purchase (not the seat's join-burst default-hull ack).
+        if (techRole is { } requestedRole)
+        {
+            short ownId = shipId, ownSide = actualSide;
+            TechLoadoutSelector.Selection? selected = null;
+            if (!WaitUntil(() =>
+            {
+                lock (cs.Gate)
+                    if (CurrentLoadoutShop(cs, ownSide, ownId) is { } shop)
+                        selected = PickTechLoadout(shop, requestedRole);
+                return selected is not null;
+            }, 15000)) throw new InvalidOperationException($"spawn_bot: '{name}' has no observed legal affordable loadout for role {requestedRole}");
+            hullId = selected!.HullId; parts = selected.Parts;
+            Console.WriteLine($"[loadout] {name} initial: {selected.Reason}");
+            onSelected?.Invoke(selected);
+        }
         var ownLaunched = SpawnLaunch.Observe(cs, shipId);
         cs.ResetBuyLoadoutAcks();
         granted = BuyAndConfirmLaunch(name, hullId, parts, () => cs.Connected && !cs.Lost, ownLaunched,
@@ -2107,6 +2136,8 @@ bool isThreat =
             try { DisposePeer(old); } catch { }   // free the old plain-client peer now that the combat one is real
             bot.Bot = null;
             bot.Cs = cs;
+            bot.TechLoadouts = true;
+            bot.PurchasePacer = _loadoutPurchasePacer;
             bot.ShipId = shipId;
             bot.Side = actualSide;
             bot.Launched = true;
@@ -2629,7 +2660,11 @@ bool isThreat =
             return;
         }
 
+        // The requested role can be locked while this life flies a temporary
+        // fighter/scout. Only a real bomber hull takes the station-attack duty.
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
+            && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(bot), out var flyingHull)
+            && Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
             && (bot.Arena || bot.TargetSector is null || bot.TargetSector == myCluster))
         {
             short? station;
@@ -5665,6 +5700,11 @@ bool isThreat =
         /// see <see cref="Showcase.HullRole"/>). Determines its OWN target sector
         /// (bombers → enemy home) and its route/staging group.</summary>
         public string Role = "fighter";
+        public bool TechLoadouts;
+        public LoadoutPurchasePacer? PurchasePacer;
+        public double PurchaseScheduledAt = double.NegativeInfinity;
+        public bool LoadoutRefused;
+        public TechLoadoutSelector.Selection? PendingTechLoadout, PreviousLegalLoadout;
         public int CompletedPodCycles;
         public FinaleRun? Finale;
         public FinaleOriginal? FinaleOriginal;

@@ -51,9 +51,16 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
                         Assert.True(now - since <= 5, $"Parked >5s: {JsonSerializer.Serialize(bot)}");
                     }
                     else idleSince.Remove(bot.Name);
-                    // Alderan has no stations; self-defence must remain combat.
-                    if (bot.Sector == bot.TargetSector && bot.Role != "Bomber")
-                        Assert.NotEqual("defending", bot.State);
+                    // Alderan has no stations: local ship hits remain combat.
+                    // A fighter may be travelling home on an actual base recall.
+                    if (bot.Sector == bot.TargetSector && bot.Role != "Bomber" && bot.State == "defending")
+                    {
+                        Assert.NotNull(bot.DefenseSector);
+                        Assert.NotEqual(bot.Sector, bot.DefenseSector);
+                        lock (manager.Probe.Gate)
+                            Assert.Contains(manager.Probe.World.Stations.Values,
+                                s => s.SideId == bot.Side && s.ClusterId == bot.DefenseSector);
+                    }
                 }
                 samples++;
                 if (!double.IsNaN(firstCombat) && now - firstCombat >= 45 && reached.Count >= 24) break;

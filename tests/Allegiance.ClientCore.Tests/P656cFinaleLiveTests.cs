@@ -89,8 +89,14 @@ public sealed class P656cFinaleLiveTests(Xunit.Abstractions.ITestOutputHelper ou
             + $"server techs {serverSide.DevelopmentTechs.PopCount}, client techs {rig.Client.World.DevelopmentTechsFor(side)?.PopCount}, "
             + $"target {target.StationTypeId}; selected {chosen?.HullId} {chosen?.HullName}");
         Assert.NotNull(chosen);
-        Assert.Equal((short)69, chosen.HullId);
-        Assert.Equal("Hvy Bomber", chosen.HullName);
+        // P704 also considers a fixed anti-ship aim gun plus station missiles.
+        // This beats the old heavy-bomber-only search on this real target.
+        Assert.Equal((short)23, chosen.HullId);
+        Assert.Equal("Stealth Bomber", chosen.HullName);
+        Assert.Contains(chosen.Parts, p => p.PartId == 601);
+        var previousVolley = ShowcaseFinale.PartDamage(rig.Mission.Core, 76, type) * 2
+            + ShowcaseFinale.PartDamage(rig.Mission.Core, 144, type);
+        Assert.True(chosen.Volley.Score(type) > previousVolley.Score(type));
         Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(rig.Mission.Core.HullTypes[chosen.HullId]));
         Assert.False(rig.Mission.Core.HullTypes[chosen.HullId].HasCapability(DataHullTypeIGC.HabmCarrier));
         return chosen;
@@ -98,7 +104,7 @@ public sealed class P656cFinaleLiveTests(Xunit.Abstractions.ITestOutputHelper ou
 
     [SkippableTheory]
     [InlineData((short)0)] [InlineData((short)1)]
-    public void Rig_allTech_client_selects_heavy_bomber(short side)
+    public void Rig_allTech_client_selects_the_best_legal_bomber(short side)
     {
         Require.Artwork();
         using var rig = new Rig(side);
