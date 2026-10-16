@@ -1,0 +1,74 @@
+{
+  "counters": {
+    "total": "14",
+    "executed": "14",
+    "passed": "1",
+    "failed": "13",
+    "error": "0",
+    "timeout": "0",
+    "aborted": "0",
+    "inconclusive": "0",
+    "passedButRunAborted": "0",
+    "notRunnable": "0",
+    "notExecuted": "0",
+    "disconnected": "0",
+    "warning": "0",
+    "completed": "0",
+    "inProgress": "0",
+    "pending": "0"
+  },
+  "failed": [
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(width: 2560, height: 1440, currentAtBottom: False)",
+      "error": "\n          Assert.Equal() Failure: Values differ\nExpected: 1395\nActual:   1426\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Int32 width, Int32 height, Boolean currentAtBottom) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 54\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(width: 1920, height: 1080, currentName: \"An exceptionally long current sector name\")",
+      "error": "\n          Assert.True() Failure\nExpected: True\nActual:   False\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Int32 width, Int32 height, String currentName) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 88\n   at InvokeStub_MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(width: 2560, height: 1440, currentName: \"Omega\")",
+      "error": "\n          Assert.True() Failure\nExpected: True\nActual:   False\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Int32 width, Int32 height, String currentName) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 88\n   at InvokeStub_MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(width: 2560, height: 1440, currentName: \"An exceptionally long current sector name\")",
+      "error": "\n          Assert.True() Failure\nExpected: True\nActual:   False\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Int32 width, Int32 height, String currentName) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 88\n   at InvokeStub_MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(width: 1280, height: 720, currentAtBottom: True)",
+      "error": "\n          Assert.Equal() Failure: Values differ\nExpected: 675\nActual:   706\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Int32 width, Int32 height, Boolean currentAtBottom) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 54\n   at InvokeStub_MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(width: 1920, height: 1080, currentName: \"Omega\")",
+      "error": "\n          Assert.True() Failure\nExpected: True\nActual:   False\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Int32 width, Int32 height, String currentName) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 88\n   at InvokeStub_MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Footer_uses_full_then_short_caption_then_two_lines_as_measured",
+      "error": "\n          Assert.StartsWith() Failure: String start does not match\nString:         \"MINIMAP  YOU: Omega   [TAB] EXPAND\"\nExpected start: \"YOU:\"\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Footer_uses_full_then_short_caption_then_two_lines_as_measured() in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 105\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(width: 2560, height: 1440, currentAtBottom: True)",
+      "error": "\n          Assert.Equal() Failure: Values differ\nExpected: 1395\nActual:   1426\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Int32 width, Int32 height, Boolean currentAtBottom) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 54\n   at InvokeStub_MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(width: 1920, height: 1080, currentAtBottom: False)",
+      "error": "\n          Assert.Equal() Failure: Values differ\nExpected: 1035\nActual:   1066\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Int32 width, Int32 height, Boolean currentAtBottom) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 54\n   at InvokeStub_MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(width: 1920, height: 1080, currentAtBottom: True)",
+      "error": "\n          Assert.Equal() Failure: Values differ\nExpected: 1035\nActual:   1066\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Int32 width, Int32 height, Boolean currentAtBottom) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 54\n   at InvokeStub_MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(width: 1280, height: 720, currentName: \"An exceptionally long current sector name\")",
+      "error": "\n          Assert.True() Failure\nExpected: True\nActual:   False\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Int32 width, Int32 height, String currentName) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 88\n   at InvokeStub_MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(width: 1280, height: 720, currentAtBottom: False)",
+      "error": "\n          Assert.Equal() Failure: Values differ\nExpected: 675\nActual:   706\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Int32 width, Int32 height, Boolean currentAtBottom) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 54\n   at InvokeStub_MinimapLayoutTests.Sector_labels_stay_in_map_area_clear_of_footer(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        "
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(width: 1280, height: 720, currentName: \"Omega\")",
+      "error": "\n          Assert.True() Failure\nExpected: True\nActual:   False\n             at Allegiance.ClientCore.MonoGame.Tests.MinimapLayoutTests.Measured_footer_and_long_names_fit_inside_borders(Int32 width, Int32 height, String currentName) in <repo>/tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs:line 88\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)\n        "
+    }
+  ]
+}

@@ -233,21 +233,15 @@ public sealed class StarmapRenderer
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
 
-        var (px, py, pw, ph) = MinimapGeometry.CornerPanel(viewport.Width, viewport.Height);
-        const float border = 8f;
-        var layout = StarmapLayout.Fit(sites, px, py, pw, ph, border);
-
-        // Sectors directly connected to the player by a warp — the only ones
-        // labelled in the compact view.
-        var neighbourIds = new HashSet<short>();
-        if (currentSectorId is { } cur)
-        {
-            foreach (var e in edges)
+        var mini = MinimapLayout.Build(sites, edges, currentSectorId,
+            viewport.Width, viewport.Height, text =>
             {
-                if (e.SourceClusterId == cur) neighbourIds.Add(e.DestClusterId);
-                if (e.DestClusterId == cur) neighbourIds.Add(e.SourceClusterId);
-            }
-        }
+                var size = _small.MeasureString(text);
+                return new NumericsVec2(size.X, size.Y);
+            });
+        var panel = mini.Panel;
+        var layout = mini.Map;
+        float px = panel.X, py = panel.Y, pw = panel.Width, ph = panel.Height;
 
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
@@ -278,7 +272,6 @@ public sealed class StarmapRenderer
                     DrawRing(new Vector2(pt.X, pt.Y), 7f, 2f, YouRing);
                     DrawRing(new Vector2(pt.X, pt.Y), 4f, 1.2f, YouRing);
                     FillRect(pt.X - 2.2f, pt.Y - 2.2f, 4.4f, 4.4f, YouFill);
-                    DrawCenteredLabel(site.Name, pt.X, pt.Y - 14f, YouName);
                 }
                 else
                 {
@@ -287,8 +280,6 @@ public sealed class StarmapRenderer
                     DrawOwnership(pt, site.Id, owners, sideColor, mini: true);
                     DrawRing(new Vector2(pt.X, pt.Y), 4f, 1.1f, RingNormal);
                     FillRect(pt.X - 1.4f, pt.Y - 1.4f, 2.8f, 2.8f, DotNormal);
-                    if (neighbourIds.Contains(site.Id))
-                        DrawCenteredLabel(site.Name, pt.X, pt.Y + 8f, NameDim);
                 }
                 if (highlightedClusters?.Contains(site.Id) == true && !flashOn)
                     DrawRing(new Vector2(pt.X, pt.Y), 8f, 2f, HighlightFlash);
@@ -307,27 +298,16 @@ public sealed class StarmapRenderer
                     DrawEnemyMarker(pt, ecount, mini: true);
             }
 
-            // Caption: current sector + the expand hint (self-documenting).
-            string curName = currentSectorId is { } c
-                && layout.TryGetName(c, out var cn) && cn.Length > 0 ? cn : "?";
-            string foot = $"MINIMAP  YOU: {curName}   [TAB] EXPAND";
-            var fsz = _small.MeasureString(foot);
-            _sb.DrawString(_small, foot, new Vector2(px + border, py + ph - fsz.Y - 4f), TitleDim);
+            foreach (var label in mini.SectorLabels)
+                _sb.DrawString(_small, label.Text, new Vector2(label.Rectangle.X, label.Rectangle.Y),
+                    label.IsCurrent ? YouName : NameDim);
+            foreach (var label in mini.FooterLabels)
+                _sb.DrawString(_small, label.Text, new Vector2(label.Rectangle.X, label.Rectangle.Y), TitleDim);
         }
         finally
         {
             _sb.End();
         }
-    }
-
-    /// <summary>Draw a horizontally-centred text label whose vertical top is
-    /// <paramref name="cy"/> — used for the small pane's sparse labels.</summary>
-    private void DrawCenteredLabel(string text, float cx, float cy, Color color)
-    {
-        if (string.IsNullOrEmpty(text))
-            return;
-        var sz = _small.MeasureString(text);
-        _sb.DrawString(_small, text, new Vector2(cx - sz.X / 2f, cy), color);
     }
 
     /// <summary>

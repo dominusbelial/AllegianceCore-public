@@ -65,8 +65,15 @@ public sealed partial class Game1
                     }
                     else
                     {
-                        var (px, py, pw, ph) = MinimapGeometry.CornerPanel(vp.Width, vp.Height);
-                        layout = StarmapLayout.Fit(sites, px, py, pw, ph, 8f);
+                        short? current = _session.World.MyShipId is { } me
+                            && _session.World.Ships.TryGetValue(me, out var own) ? own.SectorId : null;
+                        // P715: clicks must follow the same footer/name reservations
+                        // as DrawMini, including a two-line caption for long names.
+                        layout = MinimapLayout.Build(sites, g.Warps, current, vp.Width, vp.Height, text =>
+                        {
+                            var size = _hudSmall.MeasureString(text);
+                            return new NumericsVec2(size.X, size.Y);
+                        }).Map;
                     }
                 }
             }

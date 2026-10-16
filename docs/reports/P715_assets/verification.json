@@ -1,0 +1,438 @@
+{
+  "source_sha256": {
+    "src/Allegiance.ClientCore.Game/Game1.StarmapClick.cs": "6561f6cd81d7d9ab05cc1e9a5bac5e58faaab1ad2af669caf3ddb54a9f3dadfe",
+    "src/Allegiance.ClientCore.Game/Rendering/MinimapLayout.cs": "3134820102df9f3fb4d98252faf70b1103f0470ed33ed17c36b6822949cfe310",
+    "src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs": "4b6ffa6efc231e75fccb89e714f3b120b3091edfbf35e88b6987a6272baa3de3",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs": "3e6e11af08a412f000f2db8440039d6118e3428eaa7c8b9fff09fb1ef40c9a56",
+    "tools/minimap-proof/Program.cs": "a7ee34baf034ee8b382dd6eb37157c4717ca96a0760fcf7b070c97474a98291e"
+  },
+  "environment": {
+    "ALLEGIANCE_LIVE_P542_PROOF": "1",
+    "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+  },
+  "runs": [
+    {
+      "label": "suite-1-Allegiance.Core.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=suite-1-Allegiance.Core.Tests.trx",
+        "--results-directory",
+        ".verify_p715"
+      ],
+      "started_utc": "2026-10-16T20:09:33.224710+00:00",
+      "elapsed_seconds": 835.928,
+      "exit_code": 1,
+      "counters": {
+        "total": "4725",
+        "executed": "4725",
+        "passed": "4724",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+          "method": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+          "outcome": "Failed",
+          "error": "\n          System.Threading.ThreadStateException : Thread has not been started.\n             at System.Threading.Thread.<Join>g____PInvoke|56_0(ObjectHandleOnStack __thread_native, Int32 __millisecondsTimeout_native)\n   at System.Threading.Thread.<Join>g____PInvoke|56_0(ObjectHandleOnStack __thread_native, Int32 __millisecondsTimeout_native)\n   at System.Threading.Thread.Join(Int32 millisecondsTimeout)\n   at Allegiance.Core.Transport.TcpTransport.Shutdown() in <repo>/src/Allegiance.Core/Transport/TcpTransport.cs:line 533\n   at Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutTestsBase.Silent_connection_does_not_block_a_second_client_join() in <repo>/tests/Allegiance.Core.Tests/Transport/TcpTransportGreetTimeoutTests.cs:line 159\n   at Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutTestsBase.Silent_connection_does_not_block_a_second_client_join() in <repo>/tests/Allegiance.Core.Tests/Transport/TcpTransportGreetTimeoutTests.cs:line 131\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        "
+        }
+      ],
+      "skipped": [],
+      "preserved_trx": "accepted-1-Allegiance.Core.Tests.trx",
+      "original_label": "suite-1-Allegiance.Core.Tests",
+      "accepted_sweep": 1,
+      "skipped_count": 0
+    },
+    {
+      "label": "suite-1-Allegiance.ClientCore.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=suite-1-Allegiance.ClientCore.Tests.trx",
+        "--results-directory",
+        ".verify_p715"
+      ],
+      "started_utc": "2026-10-16T20:23:29.235298+00:00",
+      "elapsed_seconds": 710.931,
+      "exit_code": 0,
+      "counters": {
+        "total": "1117",
+        "executed": "1117",
+        "passed": "1117",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed": [],
+      "skipped": [],
+      "artifact_note": "Original TRX was overwritten by the other verifier; its counters/errors were parsed immediately on completion and are preserved in this ledger.",
+      "original_label": "suite-1-Allegiance.ClientCore.Tests",
+      "accepted_sweep": 1,
+      "skipped_count": 0
+    },
+    {
+      "label": "suite-1-Allegiance.ClientCore.MonoGame.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=suite-1-Allegiance.ClientCore.MonoGame.Tests.trx",
+        "--results-directory",
+        ".verify_p715"
+      ],
+      "started_utc": "2026-10-16T20:35:20.194202+00:00",
+      "elapsed_seconds": 958.361,
+      "exit_code": 0,
+      "counters": {
+        "total": "2259",
+        "executed": "2256",
+        "passed": "2256",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed": [],
+      "skipped": [
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "outcome": "NotExecuted",
+          "error": "\n          The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.\n        "
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "outcome": "NotExecuted",
+          "error": "\n          The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.\n        "
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "outcome": "NotExecuted",
+          "error": "\n          The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.\n        "
+        }
+      ],
+      "preserved_trx": "accepted-1-Allegiance.ClientCore.MonoGame.Tests.trx",
+      "original_label": "suite-1-Allegiance.ClientCore.MonoGame.Tests",
+      "accepted_sweep": 1,
+      "skipped_count": 3
+    },
+    {
+      "label": "suite-1-Allegiance.Lobby.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=suite-1-Allegiance.Lobby.Tests.trx",
+        "--results-directory",
+        ".verify_p715"
+      ],
+      "started_utc": "2026-10-16T20:51:18.580952+00:00",
+      "elapsed_seconds": 0.988,
+      "exit_code": 0,
+      "counters": {
+        "total": "19",
+        "executed": "19",
+        "passed": "19",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed": [],
+      "skipped": [],
+      "preserved_trx": "accepted-1-Allegiance.Lobby.Tests.trx",
+      "original_label": "suite-1-Allegiance.Lobby.Tests",
+      "accepted_sweep": 1,
+      "skipped_count": 0
+    },
+    {
+      "label": "suite-2-Allegiance.Core.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=suite-1-Allegiance.Core.Tests.trx",
+        "--results-directory",
+        ".verify_p715"
+      ],
+      "started_utc": "2026-10-16T20:16:18.966864+00:00",
+      "elapsed_seconds": 836.866,
+      "exit_code": 1,
+      "counters": {
+        "total": "4725",
+        "executed": "4725",
+        "passed": "4723",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "outcome": "Failed",
+          "error": "\n          System.TimeoutException : no OnPeerJoined for raw peer\n             at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.ConnectRawPeer(TcpTransport host, Site site, String name, Boolean tinyReceiveWindow) in <repo>/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 119\n   at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn() in <repo>/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 346\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        "
+        },
+        {
+          "test": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+          "method": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+          "outcome": "Failed",
+          "error": "\n          Assert.Single() Failure: The collection was empty\n             at Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only() in <repo>/tests/Allegiance.Core.Tests/LiveRipcordTests.cs:line 238\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        "
+        }
+      ],
+      "skipped": [],
+      "preserved_trx": "accepted-2-Allegiance.Core.Tests.trx",
+      "original_label": "suite-1-Allegiance.Core.Tests",
+      "accepted_sweep": 2,
+      "skipped_count": 0
+    },
+    {
+      "label": "suite-2-Allegiance.ClientCore.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=suite-1-Allegiance.ClientCore.Tests.trx",
+        "--results-directory",
+        ".verify_p715"
+      ],
+      "started_utc": "2026-10-16T20:30:15.914917+00:00",
+      "elapsed_seconds": 710.772,
+      "exit_code": 0,
+      "counters": {
+        "total": "1117",
+        "executed": "1117",
+        "passed": "1117",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed": [],
+      "skipped": [],
+      "preserved_trx": "accepted-2-Allegiance.ClientCore.Tests.trx",
+      "original_label": "suite-1-Allegiance.ClientCore.Tests",
+      "accepted_sweep": 2,
+      "skipped_count": 0
+    },
+    {
+      "label": "suite-2-Allegiance.ClientCore.MonoGame.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=suite-1-Allegiance.ClientCore.MonoGame.Tests.trx",
+        "--results-directory",
+        ".verify_p715"
+      ],
+      "started_utc": "2026-10-16T20:42:06.721634+00:00",
+      "elapsed_seconds": 959.132,
+      "exit_code": 0,
+      "counters": {
+        "total": "2259",
+        "executed": "2256",
+        "passed": "2256",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed": [],
+      "skipped": [
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "outcome": "NotExecuted",
+          "error": "\n          The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.\n        "
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "outcome": "NotExecuted",
+          "error": "\n          The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.\n        "
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "outcome": "NotExecuted",
+          "error": "\n          The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.\n        "
+        }
+      ],
+      "preserved_trx": "accepted-2-Allegiance.ClientCore.MonoGame.Tests.trx",
+      "original_label": "suite-1-Allegiance.ClientCore.MonoGame.Tests",
+      "accepted_sweep": 2,
+      "skipped_count": 3
+    },
+    {
+      "label": "suite-2-Allegiance.Lobby.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj",
+        "--no-build",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=suite-1-Allegiance.Lobby.Tests.trx",
+        "--results-directory",
+        ".verify_p715"
+      ],
+      "started_utc": "2026-10-16T20:58:05.887477+00:00",
+      "elapsed_seconds": 1.017,
+      "exit_code": 0,
+      "counters": {
+        "total": "19",
+        "executed": "19",
+        "passed": "19",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failed": [],
+      "skipped": [],
+      "preserved_trx": "accepted-2-Allegiance.Lobby.Tests.trx",
+      "original_label": "suite-1-Allegiance.Lobby.Tests",
+      "accepted_sweep": 2,
+      "skipped_count": 0
+    }
+  ],
+  "startup_source_sha256_by_sweep": {
+    "1": {
+      "src/Allegiance.ClientCore.Game/Rendering/MinimapLayout.cs": "3134820102df9f3fb4d98252faf70b1103f0470ed33ed17c36b6822949cfe310",
+      "src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs": "4b6ffa6efc231e75fccb89e714f3b120b3091edfbf35e88b6987a6272baa3de3",
+      "tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs": "7c2a07491987185ffddf9484f865fc1f6a8649ba205e4dbeee353b7488129f32",
+      "tools/minimap-proof/Program.cs": "a7ee34baf034ee8b382dd6eb37157c4717ca96a0760fcf7b070c97474a98291e"
+    },
+    "2": {
+      "src/Allegiance.ClientCore.Game/Game1.StarmapClick.cs": "6561f6cd81d7d9ab05cc1e9a5bac5e58faaab1ad2af669caf3ddb54a9f3dadfe",
+      "src/Allegiance.ClientCore.Game/Rendering/MinimapLayout.cs": "3134820102df9f3fb4d98252faf70b1103f0470ed33ed17c36b6822949cfe310",
+      "src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs": "4b6ffa6efc231e75fccb89e714f3b120b3091edfbf35e88b6987a6272baa3de3",
+      "tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs": "3e6e11af08a412f000f2db8440039d6118e3428eaa7c8b9fff09fb1ef40c9a56",
+      "tools/minimap-proof/Program.cs": "a7ee34baf034ee8b382dd6eb37157c4717ca96a0760fcf7b070c97474a98291e"
+    }
+  },
+  "notes": [
+    "Two sequential assembly sweeps overlapped after tool-session endings failed to stop their verifier descendants. One complete sweep from each is accepted. Both schedulers were stopped at their next scratch-log open before launching a third run.",
+    "All assertions, deadlines, test binaries and quarantine settings are unchanged. Original commands and timestamps are retained; canonical labels distinguish the two executions despite their shared original output names."
+  ],
+  "core_binaries_unchanged_since_before_first_sweep": {
+    "tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll": {
+      "sha256": "b3ae170f554cd57f72569d3009e8521d0143d5988ceeb37991e72e899bf31fba",
+      "mtime_utc": "2026-10-16T20:06:07.228838+00:00"
+    },
+    "tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.dll": {
+      "sha256": "2c1a1a09929db33b1fb03e72790c935231361b8baddba54989a009afbba86e2c",
+      "mtime_utc": "2026-10-16T20:06:01.379726+00:00"
+    }
+  },
+  "isolated_failure_retries": "diagnostic-isolation.json",
+  "summary": {
+    "passed": 16231,
+    "failed": 3,
+    "skipped": 6,
+    "isolated_retries_passed": 9,
+    "classification": "All three full-suite failures passed 3/3 isolated retries; load flakes under the brief rule."
+  }
+}

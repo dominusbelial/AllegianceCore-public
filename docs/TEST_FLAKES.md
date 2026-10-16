@@ -4,6 +4,33 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P715 observation (2026-10-16)
+
+Two complete unfiltered runs per assembly reported Core **4,724 pass / 1 fail**
+and **4,723 pass / 2 fail**, ClientCore **1,117 pass / 0 fail** in each run,
+MonoGame **2,256 pass / 0 fail / 3 existing optional Meshy-pack skips** in each
+run, and Lobby **19/19** in each run. Local P542 and P660 opt-ins were enabled.
+The two sequential sweeps overlapped after their verifier descendants survived
+tool-session endings; both schedulers were stopped before launching another run.
+
+After both sweeps finished, every failed method passed **3/3 fresh exact-method
+isolated invocations**, with unchanged assertions and deadlines:
+
+| Method | Full-run symptom | Isolation |
+| --- | --- | --- |
+| `Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join` | `ThreadStateException: Thread has not been started` during `TcpTransport.Shutdown`. | 3/3 pass |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | `TimeoutException: no OnPeerJoined for raw peer`. | 3/3 pass |
+| `LiveRipcordTests.Re_target_activates_to_requester_only` | Empty requester receipt collection at `Assert.Single`. | 3/3 pass |
+
+These are load flakes under P715's explicit rule and match earlier ledger
+observations. No transport/ripcord code, test assertion, deadline, quarantine
+setting or skip condition changed. The isolated passes do not establish an
+underlying transport/ripcord fix.
+
+See the [P715 report](reports/P715_MINIMAP_FOOTER.md),
+[full-suite ledger](reports/P715_assets/verification.json), and
+[nine isolated passes](reports/P715_assets/diagnostic-isolation.json).
+
 ## P699c observation (2026-10-16)
 
 The final sequential unfiltered runs reported Core **4,660 pass / 0 fail / 0 skip**,
