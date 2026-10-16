@@ -599,6 +599,12 @@ public sealed partial class ClientWorld
     // attempt edges. Null until the first own-ship update is seen.
     private ShipStatusAlarmState? _prevOwnAlarms;
 
+    /// <summary>P717 — SIM-0243: the local ship's own shield ONLINE state at the
+    /// last <see cref="UpdateOwnStatusAlarms"/> sample, for the shields-offline
+    /// edge (a shield that was online and then collapsed to ≈0). Null until the
+    /// first own-ship update is seen.</summary>
+    private bool? _prevOwnShieldOnline;
+
     /// <summary>The mutable per-frame driver for the four low-status alarm
     /// one-shots and the two no-ammo/no-fuel attempt cues (SIM-0361..0366).
     /// Game1 calls this each frame under the gate; it samples the local ship's
@@ -630,6 +636,16 @@ public sealed partial class ClientWorld
         foreach (var kind in ShipStatusAlarms.Classify(prev, next))
             RecordSoundEvent(kind, me);
         _prevOwnAlarms = next;
+
+        // P717 — SIM-0243: the shields-offline VO (salShieldsOfflineSound,
+        // shieldIGC.cpp:186) fires on the LOCAL ship's own shield collapsing
+        // from online to ≈0 (native plays it when overload damage knocks the
+        // shield past the downed threshold). Mirrored as a positive→≈0 edge on
+        // the streamed ShieldFraction, exactly once per collapse.
+        bool shieldOnline = u.ShieldFraction > ShipStatusAlarms.ShieldOfflineEpsilon;
+        if (_prevOwnShieldOnline is { } prevOnline && prevOnline && !shieldOnline)
+            RecordSoundEvent(ClientSoundEventKind.ShieldsOffline, me);
+        _prevOwnShieldOnline = shieldOnline;
     }
 
     /// <summary>
@@ -2802,6 +2818,12 @@ public sealed partial class ClientWorld
             ClusterId = dm.ClusterId,
             Position = dm.P0,
         };
+        // P717 — SIM-0447: the LOCAL ship's own deploy plays the mine-deploy
+        // one-shot (native deployMineSound, clintlib.cpp:3253, gated
+        // `if (pShip == m_ship)`). The server's FM_S_EXPORT(26)/OT_mine carries
+        // the launcher ship id, so the own-deploy edge is `LauncherId == MyShipId`.
+        if (MyShipId is { } me && dm.LauncherId == me)
+            RecordSoundEvent(ClientSoundEventKind.MineDeployed, dm.MineId);
     }
 
     /// <summary>P291 — <c>FM_S_MINE_DESTROYED(84)</c>: the mine detonated or its

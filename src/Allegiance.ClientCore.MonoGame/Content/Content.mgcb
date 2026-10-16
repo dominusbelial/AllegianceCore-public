@@ -44,6 +44,18 @@
 /processorParam:Quality=Best
 /build:Sounds/missilelockonme.ogg
 
+#begin Sounds/dropmine.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dropmine.ogg
+
+#begin Sounds/vo_sal_shieldsoffline.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_shieldsoffline.ogg
+
 #begin Sounds/sshipint.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

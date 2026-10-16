@@ -522,6 +522,16 @@ public sealed partial class Game1
                     snd.PlayJump();
                     Console.WriteLine($"[monogame] audio: sector jump (ship {ev.Id})");
                     break;
+                case ClientSoundEventKind.MineDeployed:
+                    // P717 — the own ship deployed a mine (native deployMineSound,
+                    // clintlib.cpp:3253; wave dropmine, sounddef.mdl:368).
+                    snd.PlayMineDeploy();
+                    break;
+                case ClientSoundEventKind.ShieldsOffline:
+                    // P717 — the own shield was knocked offline (native
+                    // salShieldsOfflineSound, shieldIGC.cpp:186; vo_sal_shieldsoffline).
+                    snd.PlayShieldsOffline();
+                    break;
             }
         }
     }

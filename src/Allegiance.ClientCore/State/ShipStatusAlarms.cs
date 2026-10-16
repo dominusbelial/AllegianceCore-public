@@ -80,6 +80,13 @@ public static class ShipStatusAlarms
     /// (<c>GetFuel() &lt;= 0.0f</c>, trekigc.cpp:878).</summary>
     public const float FuelEmptyEpsilon = 0.002f;
 
+    /// <summary>P717 — shield "online" lower bound for the shields-offline
+    /// edge (SIM-0243): a shield fraction at or below this is treated as
+    /// downed/offline. Matches the native downed-shield notion — a shield
+    /// knocked past <c>c_fcidDownedShield</c> absorbs nothing and its
+    /// <c>salShieldsOfflineSound</c> plays (shieldIGC.cpp:185-186).</summary>
+    public const float ShieldOfflineEpsilon = 0.004f;
+
     /// <summary>
     /// Edge-detect the one-shot status alarms between two consecutive own-ship
     /// snapshots. Returns the alarms whose trigger condition JUST became true
