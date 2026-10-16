@@ -22,7 +22,7 @@ public readonly record struct DataLauncherTypeIGC(
     short SuccessorPartId,
     short LaunchCount,
     short ExpendabletypeId,
-    string InventoryLineMdl)
+    string InventoryLineMdl) : Sim.IPartTypeIgc
 {
     /// <summary>Exact payload size in bytes: <c>sizeof(DataLauncherTypeIGC)</c>.</summary>
     public const int Size = 24;

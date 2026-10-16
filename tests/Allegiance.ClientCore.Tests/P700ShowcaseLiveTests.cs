@@ -48,6 +48,20 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
                     {
                         if (!idleSince.TryGetValue(bot.Name, out double since)) idleSince[bot.Name] = since = now;
                         longest = Math.Max(longest, now - since);
+                        if (now - since >= 1)
+                        {
+                            var ship = server.Ships.FirstOrDefault(s => s.Ship.Id == bot.ShipId)?.Ship;
+                            if (ship is not null)
+                                output.WriteLine($"Idle {now - since:F2}s: {JsonSerializer.Serialize(new
+                                {
+                                    bot.Name, bot.ShipId, bot.Velocity, bot.Target,
+                                    ServerPosition = new[] { ship.Position.X, ship.Position.Y, ship.Position.Z },
+                                    ServerVelocity = new[] { ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z },
+                                    ship.Controls, ship.StateM, ship.StationId, ship.Dead, ship.LastUpdate,
+                                    Parent = ship.ParentShip?.Id, Ripcord = ship.RipcordModel?.ToString(),
+                                    Parts = ship.Parts.ToArray().Select(p => new { p.Type.PartId, p.Type.Name, p.MountId, p.Amount, p.TimeLoaded })
+                                })}");
+                        }
                         Assert.True(now - since <= 5, $"Parked >5s: {JsonSerializer.Serialize(bot)}");
                     }
                     else idleSince.Remove(bot.Name);

@@ -12,6 +12,8 @@ public static class ShipControlState
 {
     /// <summary>Native mineFireIGC (igc.h:831).</summary>
     public const int MineFire = 0x20000;
+    /// <summary>Native chaffFireIGC (Igc/igc.h:832), local high-word input.</summary>
+    public const int ChaffFire = 0x40000;
     public const int CoastButton = 8;          // 2*selectedWeaponTwoIGC  ("vector lock")
     public const int BackwardButton = 16;      // 2*coastButtonIGC   thrust back
     public const int ForwardButton = 32;       // 4*coastButtonIGC   thrust forward

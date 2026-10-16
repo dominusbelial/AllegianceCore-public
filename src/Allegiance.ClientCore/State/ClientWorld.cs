@@ -3633,6 +3633,14 @@ public sealed partial class ClientWorld
         var kind = ClassifyChatSound(m, MyShipId, senderIsLeader);
         if (kind is { } k)
             RecordSoundEvent(k, sender);
+        // Server-hosted equivalents of WinTrek/trekigc.cpp:3019-3067,
+        // PostText's critical/noncritical sound and HUD tip (:3086-3135).
+        if (m.SidSender == -1 && m.ChatTarget == (int)ChatTarget.Individual &&
+            m.OidRecipient == MyShipId && NotificationCue.IsNotification(m.VoiceOver))
+        {
+            _feedbackLines.Add(new FeedbackLine(m.Message, m.VoiceOver == NotificationCue.Critical, NowSeconds()));
+            if (_feedbackLines.Count > MaxFeedbackLines) _feedbackLines.RemoveAt(0);
+        }
     }
 
     /// <summary>P626 — <c>FM_S_BALLOT(17)</c>: a new in-flight ballot was

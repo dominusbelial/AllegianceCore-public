@@ -297,6 +297,51 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public void BucketCompleted(IBucketIgc bucket, double now) =>
         BucketCompletedHook?.Invoke(bucket, now);
+
+    // FedSrv/FedSrv.CPP:11327-11340. Native intentionally sends no wire message
+    // here; these callbacks deposit stock, not a flying ship or mounted part.
+    public void HullTypeCompleted(ISideIgc side, IHullTypeIgc hull)
+    {
+        if (side is Side owner && hull is DataHullTypeIGC type)
+            owner.AddToStockpile(IgcObjectType.HullType, type.HullId);
+    }
+
+    public void PartTypeCompleted(ISideIgc side, IPartTypeIgc part)
+    {
+        if (side is not Side owner) return;
+        if (part is DataLauncherTypeIGC launcher)
+            owner.AddToStockpile(IgcObjectType.PartType, launcher.PartId, launcher.Amount);
+        else if (part is DataPartTypeIGC type)
+        {
+            bool isLauncher = type.Type.EquipmentType is EquipmentType.ChaffLauncher
+                or EquipmentType.Magazine or EquipmentType.Dispenser;
+            int amount = isLauncher && owner.Mission?.Core.Launchers.TryGetValue(type.PartId, out var data) == true
+                ? data.Amount : 1;
+            owner.AddToStockpile(IgcObjectType.PartType, type.PartId, amount);
+        }
+    }
+
+    // Igc producers also serve host observers. Native FedSrv leaves these
+    // notification-only callbacks at their defaults; clintlib.cpp:2859-2880
+    // forwards them to the client event source. Keep state changes before events.
+    public event Action<BucketChange, Bucket>? BucketChanged;
+    public event Action<Side>? BuildingTechChanged;
+    public event Action<Station>? StationTypeChanged;
+
+    public void BucketChangeEvent(BucketChange change, IBucketIgc bucket)
+    {
+        if (bucket is Bucket concrete) BucketChanged?.Invoke(change, concrete);
+    }
+
+    public void SideBuildingTechChange(ISideIgc side)
+    {
+        if (side is Side concrete) BuildingTechChanged?.Invoke(concrete);
+    }
+
+    public void StationTypeChange(IStationIgc station)
+    {
+        if (station is Station concrete) StationTypeChanged?.Invoke(concrete);
+    }
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="ProjectileCreatedEvent"/> the world missions raise when
@@ -563,6 +608,30 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <see cref="MineCreated"/>; joins the same host bridges out of the seam,
     /// everything else keeps the interface default.
     /// </summary>
+    // Igc/igc.h:4870; dispenserigc.cpp:118-121. A concrete host executes
+    // deployment even without a network server attached.
+    public Action<Ship, MountedPart, double>? ExpendableFired;
+    public void FireExpendable(IShipIgc ship, IDispenserIgc dispenser, double timeFired)
+    {
+        if (ship is not Ship s || dispenser is not MountedPart p) return;
+        if (ExpendableFired is { } fire) fire(s, p, timeFired);
+        else s.FireDispenser(p, timeFired);
+    }
+
+    // Igc/probeigc.cpp:151-154,226-230,341-349. The native server leaves
+    // these client notifications at defaults; this host exposes the events
+    // so the authoritative simulation can supply the managed client's feedback.
+    public Action<Probe>? TeleportProbeActivated;
+    public Action<Probe>? TeleportProbeDestroyed;
+    public void ActivateTeleportProbe(IProbeIgc probe)
+    {
+        if (probe is Probe p) TeleportProbeActivated?.Invoke(p);
+    }
+    public void DestroyTeleportProbe(IProbeIgc probe)
+    {
+        if (probe is Probe p) TeleportProbeDestroyed?.Invoke(p);
+    }
+
     public Action<Probe>? ProbeCreated;
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.ProbeCreatedEvent"/>: raise the

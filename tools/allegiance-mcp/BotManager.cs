@@ -2974,8 +2974,15 @@ bool isThreat =
         // prevents firing. Clear the line laterally, and bound even an unblocked
         // zero-speed hold to two seconds. This is a harness liveness policy using
         // native strafe controls (shipIGC.cpp:2590-2591), not a new attack band.
+        // Keep the escape through the first moving echo: immediately releasing
+        // it lets close-band braking turn it into a pulse shorter than the
+        // observer's sample interval. The hold is harness policy; native throttle
+        // matching and directional thrust remain unchanged (Igc/shipIGC.cpp:
+        // 2504-2511,2965-2981).
         if (myVel.LengthSquared() < IdleSpeedMps * IdleSpeedMps
             && (friendlyBlocked || now - bot.LastMoveAt >= CombatStationarySeconds))
+            bot.CombatEscapeUntil = now + CombatEscapeHoldSeconds;
+        if (now < bot.CombatEscapeUntil)
             state |= (bot.ShipId & 1) == 0 ? ShipControlState.LeftButton : ShipControlState.RightButton;
 
         // Fire gate (shipIGC.cpp:2600): allWeapons iff angleToLead ≤ c_fMaxOffAngle
@@ -4810,6 +4817,7 @@ bool isThreat =
     /// <summary>Below this scalar speed (m/s) a bot counts as "not moving".</summary>
     public const double IdleSpeedMps = 1.0;
     internal const double CombatStationarySeconds = 2.0;
+    internal const double CombatEscapeHoldSeconds = 0.5;
     private readonly IdleTargetMetrics _idleTargetMetrics = new();
 
     private void SampleIdleTargets(ActiveBot[] bots, double now)
@@ -5111,8 +5119,18 @@ bool isThreat =
                 if (bot.Samples.Count > MaxSamplesPerBot)
                     bot.Samples.RemoveRange(0, bot.Samples.Count - MaxSamplesPerBot);
             }
-            bot.LastMoveAt = now;   // P637 — last observed movement (idle flag)
         }
+        // P707: cadence records every observer position correction, including
+        // sub-1 m/s drift that CompactVelocity transmits as zero (Igc/igc.h:
+        // 2282-2310). Those corrections must not reset the close-combat escape
+        // timer or hide idle ships. Use the same owning-peer speed as ActiveBots
+        // and SampleIdleTargets; retain position-based sampling for legacy peers.
+        if (TryBotOwnLiveMotion(bot, out _, out var velocity, out _))
+        {
+            if (velocity.LengthSquared() >= IdleSpeedMps * IdleSpeedMps)
+                bot.LastMoveAt = now;
+        }
+        else if (changed) bot.LastMoveAt = now;
         bot.LastPos = pos;
         bot.LastPosAt = now;
         bot.HasPos = true;
@@ -5705,9 +5723,10 @@ bool isThreat =
         public Vector3 LastPos;              // last-observed real position
         public double LastPosAt;             // wall-clock time of the last observed change
         /// <summary>P637 — wall-clock (harness Now()) of the last observed MOVEMENT
-        /// (speed above the idle threshold). Used to flag a bot idle in
+        /// (speed at or above the idle threshold). Used to flag a bot idle in
         /// list_active_bots.</summary>
         public double LastMoveAt = double.NegativeInfinity;
+        public double CombatEscapeUntil = double.NegativeInfinity;
         public readonly object SampleGate = new();
         public List<CadenceSample> Samples = new();
 

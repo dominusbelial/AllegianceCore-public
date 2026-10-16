@@ -271,6 +271,12 @@ public sealed class Sector : IClusterIgc
         _stations.Add(station.Data);
         _stationRuntimes.Add(station);
     }
+
+    internal void SyncStationData(Station station)
+    {
+        int index = _stations.FindIndex(s => s.StationId == station.StationId);
+        if (index >= 0) _stations[index] = station.Data with { SideId = station.SideId };
+    }
     /// <summary>Remove a destroyed station: drop it from the runtime list AND
     /// remove its static record from <see cref="Stations"/> so the docking /
     /// ripcord-anchor / undock seams stop resolving it — the station parallel of
@@ -281,7 +287,9 @@ public sealed class Sector : IClusterIgc
     public bool RemoveStation(Station station)
     {
         _stationRuntimes.Remove(station);
-        return _stations.RemoveAll(s => s.StationId == station.StationId) > 0;
+        bool removed = _stations.RemoveAll(s => s.StationId == station.StationId) > 0;
+        station.Mission?.Sides.FirstOrDefault(s => s.Id == station.SideId)?.NotifyBuildingTechsChanged();
+        return removed;
     }
     /// <summary>Remove a resolved warp from this sector's <see cref="Warps"/>
     /// list — the debug-test-topology warp-isolation parallel of
@@ -374,6 +382,7 @@ public sealed class Sector : IClusterIgc
     public bool Remove(Model model)
     {
         if (!_models.Remove(model)) return false;
+        if (model is Probe probe) probe.OnRemoved();
         _memberVersion++;                       // P324 (M3): invalidate the in-tick candidate cache
         return true;
     }

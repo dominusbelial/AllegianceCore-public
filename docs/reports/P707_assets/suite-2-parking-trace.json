@@ -1,0 +1,2877 @@
+{
+  "run": "suite-2-ClientCore",
+  "shipId": 8107,
+  "note": "Rejected clock-only candidate. Its three fresh isolated reruns yielded two passes and one failure; this was not classified as a load flake. The subsequent deterministic moving-echo regression and held escape address the remaining cancellation. These 100 ms snapshots alone do not establish continuous physical motion between samples.",
+  "samples": [
+    {
+      "observedIdleSeconds": 1.0,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.9921411e-30,
+        9.3504395e-30,
+        -2.3376099e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 193.40000000000973,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.1,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.894047e-30,
+        9.043895e-30,
+        -2.2609737e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 193.60000000000977,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.2,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.7991688e-30,
+        8.747401e-30,
+        -2.1868502e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 193.80000000000982,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.3,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.6849331e-30,
+        8.3904146e-30,
+        -2.0976037e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 194.05000000000987,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.4,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.5969102e-30,
+        8.115344e-30,
+        -2.028836e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 194.25000000000992,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.5,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.5117732e-30,
+        7.8492915e-30,
+        -1.9623229e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 194.45000000000996,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.6,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.4092665e-30,
+        7.5289574e-30,
+        -1.8822394e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 194.70000000001002,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.7,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.3302814e-30,
+        7.282129e-30,
+        -1.8205323e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 194.90000000001007,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.8,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.2538855e-30,
+        7.043392e-30,
+        -1.760848e-30
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 195.1000000000101,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 1.9,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.3942,
+        391.10043,
+        62.376106
+      ],
+      "ServerVelocity": [
+        2.1619032e-30,
+        6.755947e-30,
+        -1.6889868e-30
+      ],
+      "Controls": {
+        "Yaw": 0.007874016,
+        "Pitch": 0.007874016,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 195.35000000001017,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.0,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.361,
+        391.08606,
+        62.385963
+      ],
+      "ServerVelocity": [
+        0.6640563,
+        -0.28753707,
+        0.19710836
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32896,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 195.55000000001021,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.1,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        3.5527137e-15,
+        -1.7763568e-15
+      ],
+      "Controls": {
+        "Yaw": 0.007874016,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 195.75000000001026,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 193.80000000000936
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.21,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 195.9500000000103,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.31,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 196.20000000001036,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.41,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 196.4000000000104,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.51,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 196.60000000001045,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.61,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 196.8500000000105,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.71,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 197.05000000001056,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.81,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 197.2500000000106,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 2.91,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 197.45000000001065,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.01,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 197.7000000000107,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.11,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 197.90000000001075,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.21,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 198.1000000000108,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.31,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 198.30000000001084,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.41,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 198.50000000001089,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.51,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 198.75000000001094,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.61,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0.007874016,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 198.950000000011,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.71,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0.007874016,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 199.15000000001103,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.81,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0.015748031,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 199.35000000001108,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 3.91,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0.015748031,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 199.60000000001114,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.01,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2626,
+        391.04343,
+        62.415203
+      ],
+      "ServerVelocity": [
+        0,
+        0,
+        0
+      ],
+      "Controls": {
+        "Yaw": 0.007874016,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 199.80000000001118,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.11,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.2292,
+        391.02936,
+        62.424934
+      ],
+      "ServerVelocity": [
+        0.66753685,
+        -0.28109652,
+        0.19462593
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32896,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 200.00000000001123,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.21,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        0,
+        -3.5527137e-15,
+        -3.5527137e-15
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 200.20000000001127,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.31,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        -1.8465213e-29,
+        3.1513962e-29,
+        4.9240567e-29
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 200.45000000001133,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.41,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        -1.7859851e-29,
+        3.0480812e-29,
+        4.7626267e-29
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 200.65000000001137,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.51,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        -1.7274335e-29,
+        2.9481534e-29,
+        4.6064892e-29
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 200.85000000001142,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.61,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        -1.6569359e-29,
+        2.8278378e-29,
+        4.418496e-29
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 201.10000000001148,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.71,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        -1.602615e-29,
+        2.7351302e-29,
+        4.2736404e-29
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 201.30000000001152,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.81,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        -1.5500751e-29,
+        2.6454622e-29,
+        4.1335338e-29
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 201.50000000001157,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 4.91,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        -1.4992576e-29,
+        2.5587336e-29,
+        3.9980205e-29
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 201.7000000000116,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    },
+    {
+      "observedIdleSeconds": 5.01,
+      "Name": "mcp-b011-9699",
+      "ShipId": 8107,
+      "Velocity": [
+        0,
+        0,
+        0
+      ],
+      "Target": 8113,
+      "ServerPosition": [
+        -974.1302,
+        390.98767,
+        62.453808
+      ],
+      "ServerVelocity": [
+        -1.438072e-29,
+        2.4543102e-29,
+        3.834859e-29
+      ],
+      "Controls": {
+        "Yaw": 0,
+        "Pitch": 0,
+        "Roll": 0,
+        "Throttle": -1
+      },
+      "StateM": 32768,
+      "StationId": null,
+      "Dead": false,
+      "LastUpdate": 201.95000000001167,
+      "Parent": null,
+      "Ripcord": null,
+      "Parts": [
+        {
+          "PartId": 80,
+          "Name": "Counter 1",
+          "MountId": 0,
+          "Amount": 5,
+          "TimeLoaded": 1.850000000000001
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 142.14999999999762
+        },
+        {
+          "PartId": 33,
+          "Name": "PW Gat Gun 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        },
+        {
+          "PartId": 153,
+          "Name": "MRM Seeker 1",
+          "MountId": 0,
+          "Amount": 0,
+          "TimeLoaded": 197.80000000001027
+        },
+        {
+          "PartId": 21,
+          "Name": "Sm Shield 1",
+          "MountId": 0,
+          "Amount": 1,
+          "TimeLoaded": 0
+        }
+      ]
+    }
+  ]
+}

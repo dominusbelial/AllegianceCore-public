@@ -150,11 +150,25 @@ public sealed class Station : IStationIgc, ISideVisible
     public const short SabmPedestal = 0x400;
 
     /// <summary>The underlying static wire record (identity, geometry, side).</summary>
-    public DataStationIGC Data { get; }
+    public DataStationIGC Data { get; private set; }
 
     /// <summary>The resolved static station <b>type</b> — the capacity data
     /// (max armor/shield, regen rates, defense types) the damage formula reads.</summary>
-    public DataStationTypeIGC Type { get; }
+    public DataStationTypeIGC Type { get; private set; }
+
+    /// <summary>
+    /// Igc/stationIGC.cpp:210-276: replace capacity/geometry, retaining pose and
+    /// damage fractions; recompute building techs before the type notification.
+    /// </summary>
+    public void SetBaseStationType(DataStationTypeIGC type)
+    {
+        Type = type;
+        Data = Data with { StationTypeId = type.StationTypeId };
+        if (Mission is not { } mission) return;
+        mission.Sectors.FirstOrDefault(s => s.Id == ClusterId)?.SyncStationData(this);
+        mission.Sides.FirstOrDefault(s => s.Id == SideId)?.NotifyBuildingTechsChanged();
+        mission.Site.StationTypeChange(this);
+    }
 
     /// <summary>Wrap a static record and its resolved type as the runtime model.</summary>
     public Station(DataStationIGC data, DataStationTypeIGC type)
@@ -578,6 +592,7 @@ public sealed class Station : IStationIgc, ISideVisible
     /// <param name="newSideId">The capturing ship's side id — the station's new owner.</param>
     public void Capture(short newSideId)
     {
+        short oldSideId = SideId;
         // Post-capture damage fudge (fsship.cpp:582): halve the current hull fraction.
         ArmorFraction *= 0.5f;
 
@@ -597,6 +612,13 @@ public sealed class Station : IStationIgc, ISideVisible
 
         // Re-side the station to the capturing side (fsship.cpp:631: SetSide(pside)).
         SideId = newSideId;
+        Data = Data with { SideId = newSideId };
+        if (Mission is { } mission)
+        {
+            mission.Sectors.FirstOrDefault(s => s.Id == ClusterId)?.SyncStationData(this);
+            mission.Sides.FirstOrDefault(s => s.Id == oldSideId)?.NotifyBuildingTechsChanged();
+            mission.Sides.FirstOrDefault(s => s.Id == newSideId)?.NotifyBuildingTechsChanged();
+        }
     }
 
     /// <summary>
