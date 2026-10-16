@@ -24,8 +24,16 @@ public static class AssetSources
     /// (lazily built). Heads that need a different source (Android in P499)
     /// pass their own <see cref="IAssetSource"/> via
     /// <c>Game1.LaunchOptions.AssetSource</c>.</summary>
-    public static DirectoryAssetSource Artwork { get; } =
-        new(ResolveRoot());
+    private static readonly DirectoryAssetSource DirectoryArtwork = new(ResolveRoot());
+
+    /// <summary>Player bundles enforce the reviewed manifest for every desktop
+    /// artwork consumer, including default-source helpers and startup audits.</summary>
+    public static ManifestAssetSource? ArtworkManifest { get; } =
+        File.Exists(Path.Combine(AppContext.BaseDirectory, "artwork-manifest.txt"))
+            ? new ManifestAssetSource(DirectoryArtwork, ManifestAssetSource.ReadPaths(
+                Path.Combine(AppContext.BaseDirectory, "artwork-manifest.txt"))) : null;
+
+    public static IAssetSource Artwork { get; } = (IAssetSource?)ArtworkManifest ?? DirectoryArtwork;
 
     /// <summary>The optional sky-pack root (<c>ALLEGIANCE_SKY_PACK_PATH</c> or the
     /// <c>local.env</c> key of the same name), or null when not configured/present.

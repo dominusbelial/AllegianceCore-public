@@ -6,7 +6,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <summary>
 /// P625 - process-wide owner of the live <see cref="ActionMap"/> and its JSON
 /// persistence (a user keymap file beside the other client settings, i.e. the
-/// client working directory where screenshots also land; overridable via
+/// per-user configuration directory; overridable via
 /// <c>ALLEGIANCE_KEYMAP</c> for tests / isolated runs). Game1 and the rebind +
 /// help renderers all read and mutate the SAME instance so a rebind is
 /// reflected in the help overlay instantly (the P625 requirement).
@@ -14,7 +14,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 public sealed class KeyBindingStore
 {
     /// <summary>Per-user keymap file name (stored next to the other client
-    /// settings / outputs in the working directory).</summary>
+    /// settings in the per-user configuration directory).</summary>
     public const string FileName = "keymap.json";
 
     private static KeyBindingStore? _instance;
@@ -22,13 +22,13 @@ public sealed class KeyBindingStore
 
     public ActionMap Map { get; }
 
-    /// <summary>Absolute path of the keymap file for the given working dir
+    /// <summary>Absolute path of the keymap file in the user config or explicit directory
     /// (honours ALLEGIANCE_KEYMAP for tests/isolation).</summary>
     public static string ResolvePath(string? workingDir = null)
     {
         if (Environment.GetEnvironmentVariable("ALLEGIANCE_KEYMAP") is { Length: > 0 } over)
             return over;
-        string dir = workingDir ?? Directory.GetCurrentDirectory();
+        string dir = workingDir ?? PlayerConfig.DirectoryPath;
         return Path.Combine(dir, FileName);
     }
 

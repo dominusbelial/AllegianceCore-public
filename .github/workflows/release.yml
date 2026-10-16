@@ -1,0 +1,105 @@
+name: player-release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: player-release-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.400'
+      - run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core libfreetype6
+      - run: dotnet tool restore
+      - run: dotnet build AllegianceCore.slnx -m:1 -p:AutoRestoreMGCBTool=false
+      - name: Existing CI test gate
+        run: dotnet test AllegianceCore.slnx --no-build --filter "Requires!=Artwork&Requires!=NativeSource&Lane!=LiveTiming"
+      - name: Packaging unit tests
+        run: python3 -m unittest discover -s packaging -p 'test_*.py'
+
+  package:
+    needs: test
+    # DesktopGL Content is platform-independent. Cross-publish the Windows
+    # apphost/runtime/native assets on Linux; test that binary on Windows below.
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        rid: [linux-x64, win-x64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.400'
+      - run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core libfreetype6
+      - run: dotnet tool restore
+      - run: python3 packaging/package.py --rid ${{ matrix.rid }}
+      - name: Check full-source census against manifest
+        if: matrix.rid == 'linux-x64'
+        run: >-
+          ALLEGIANCE_ARTWORK_PATH="$PWD/dist/sources/artwork"
+          dotnet src/Allegiance.ClientCore.MonoGame/bin/Release/net10.0/${{ matrix.rid }}/Allegiance.ClientCore.MonoGame.dll
+          --asset-census --manifest packaging/artwork-manifest.txt
+          --roots packaging/artwork-roots.txt --asset-manifest dist/census-${{ matrix.rid }}.json
+      - name: Linux extracted bundle smoke
+        if: matrix.rid == 'linux-x64'
+        run: python3 packaging/smoke.py dist/Allegiance-linux-x64.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: player-${{ matrix.rid }}
+          path: |
+            dist/Allegiance-*.tar.gz
+            dist/Allegiance-*.zip
+            dist/Allegiance-*.sha256
+            dist/Allegiance-*.json
+            dist/census-*.json
+          if-no-files-found: error
+
+  windows-smoke:
+    needs: package
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: player-win-x64
+          path: dist
+      - name: Windows extracted bundle smoke (native apphost)
+        run: python packaging/smoke.py dist/Allegiance-win-x64.zip
+
+  publish:
+    needs: [package, windows-smoke]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'dominusbelial/AllegianceCore-public'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: player-*
+          path: dist
+          merge-multiple: true
+      - name: Verify and combine checksums
+        working-directory: dist
+        run: |
+          cat Allegiance-*.sha256 > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+      - name: Publish both archives together after smoke gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG" --verify-tag --title "AllegianceCore $RELEASE_TAG"
+          --notes-file packaging/RELEASE-NOTES.md
+          dist/Allegiance-*.tar.gz dist/Allegiance-*.zip dist/SHA256SUMS.txt dist/Allegiance-*.json

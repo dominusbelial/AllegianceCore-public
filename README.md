@@ -35,6 +35,20 @@ See **[`docs/GUIDE.md`](docs/GUIDE.md)** for the full guide: prerequisites,
 getting the original art, building/running everything, client flags, testing,
 architecture, and troubleshooting.
 
+## Download and play
+
+Download the Linux x64 `.tar.gz` or Windows x64 `.zip` from
+[GitHub Releases](https://github.com/dominusbelial/AllegianceCore-public/releases).
+Extract the whole folder and run `allegiance.sh` (Linux) or `play.bat` (Windows).
+The bundles include .NET, native artwork and sky; no SDK, git or `local.env`
+is needed. See the included `README-PLAYERS.txt` to configure your operator's
+server address and pilot name. F1 shows help; F6 rebinds keys. Verify downloads
+against the release's `SHA256SUMS.txt`. Windows builds are unsigned.
+
+Release bundles become available after the first reviewed release workflow run.
+For local packaging and the release checklist, see
+[`packaging/README.md`](packaging/README.md).
+
 ## Quick start
 
 Prerequisites: the **.NET SDK 10.0.400** (CI pins this exact version) and a
