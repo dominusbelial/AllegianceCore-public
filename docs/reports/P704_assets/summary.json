@@ -1,0 +1,820 @@
+{
+  "affectedMethodCount": 53,
+  "focusedPassedCases": 279,
+  "missingFocusedRepetitions": [],
+  "focused": [
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals-1",
+        "focused-final-Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals-2",
+        "focused-final-Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout-1",
+        "focused-final-Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout-2",
+        "focused-final-Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection-1",
+        "focused-final-Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection-2",
+        "focused-final-Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        7,
+        7,
+        7
+      ],
+      "labels": [
+        "focused-final-Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research-1",
+        "focused-final-Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research-2",
+        "focused-final-Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-Mcp_debug_bot_buys_relaunches_and_fights-1",
+        "focused-final-Mcp_debug_bot_buys_relaunches_and_fights-2",
+        "focused-final-Mcp_debug_bot_buys_relaunches_and_fights-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget-1",
+        "focused-final-ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget-2",
+        "focused-final-ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-ChangedIdentity_WithSameShipId_ResetsArrival-1",
+        "focused-final-ChangedIdentity_WithSameShipId_ResetsArrival-2",
+        "focused-final-ChangedIdentity_WithSameShipId_ResetsArrival-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries-1",
+        "focused-final-DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries-2",
+        "focused-final-DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-1",
+        "focused-final-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-2",
+        "focused-final-MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths-1",
+        "focused-final-NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths-2",
+        "focused-final-NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled-1",
+        "focused-final-P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled-2",
+        "focused-final-P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped-1",
+        "focused-final-P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped-2",
+        "focused-final-P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-P656_DefenseBomberPriorityRunsBeforeEitherP622Mode-1",
+        "focused-final-P656_DefenseBomberPriorityRunsBeforeEitherP622Mode-2",
+        "focused-final-P656_DefenseBomberPriorityRunsBeforeEitherP622Mode-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash-1",
+        "focused-final-P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash-2",
+        "focused-final-P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing-1",
+        "focused-final-P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing-2",
+        "focused-final-P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients-1",
+        "focused-final-P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients-2",
+        "focused-final-P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656_StatusIncludesGatesOutcomeAndNextMissionReset-1",
+        "focused-final-P656_StatusIncludesGatesOutcomeAndNextMissionReset-2",
+        "focused-final-P656_StatusIncludesGatesOutcomeAndNextMissionReset-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes-1",
+        "focused-final-P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes-2",
+        "focused-final-P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_CapitalWithBomberRoleCannotBeReserved",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656b_CapitalWithBomberRoleCannotBeReserved-1",
+        "focused-final-P656b_CapitalWithBomberRoleCannotBeReserved-2",
+        "focused-final-P656b_CapitalWithBomberRoleCannotBeReserved-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch-1",
+        "focused-final-P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch-2",
+        "focused-final-P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh-1",
+        "focused-final-P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh-2",
+        "focused-final-P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        4,
+        4,
+        4
+      ],
+      "labels": [
+        "focused-final-P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection-1",
+        "focused-final-P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection-2",
+        "focused-final-P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing-1",
+        "focused-final-P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing-2",
+        "focused-final-P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted-1",
+        "focused-final-P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted-2",
+        "focused-final-P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice-1",
+        "focused-final-PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice-2",
+        "focused-final-PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SameShipId_NewMissionGenerationStillResetsLife",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-SameShipId_NewMissionGenerationStillResetsLife-1",
+        "focused-final-SameShipId_NewMissionGenerationStillResetsLife-2",
+        "focused-final-SameShipId_NewMissionGenerationStillResetsLife-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientReadyUpUnfreezesNormalMapLiveTests.Harness_ready_up_starts_normal_map_mission_and_opposing_combat_bot_moves",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Harness_ready_up_starts_normal_map_mission_and_opposing_combat_bot_moves-1",
+        "focused-final-Harness_ready_up_starts_normal_map_mission_and_opposing_combat_bot_moves-2",
+        "focused-final-Harness_ready_up_starts_normal_map_mission_and_opposing_combat_bot_moves-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Mcp_arena_against_a_refusing_server_returns_an_explicit_error",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Mcp_arena_against_a_refusing_server_returns_an_explicit_error-1",
+        "focused-final-Mcp_arena_against_a_refusing_server_returns_an_explicit_error-2",
+        "focused-final-Mcp_arena_against_a_refusing_server_returns_an_explicit_error-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Privileged_admin_relocates_an_mcp_harness_bot_it_launched",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Privileged_admin_relocates_an_mcp_harness_bot_it_launched-1",
+        "focused-final-Privileged_admin_relocates_an_mcp_harness_bot_it_launched-2",
+        "focused-final-Privileged_admin_relocates_an_mcp_harness_bot_it_launched-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ComposeShowcaseFleet_Is_Deterministic",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-ComposeShowcaseFleet_Is_Deterministic-1",
+        "focused-final-ComposeShowcaseFleet_Is_Deterministic-2",
+        "focused-final-ComposeShowcaseFleet_Is_Deterministic-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ComposeShowcaseFleet_Produces_Readable_Mixed_Fleet",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-ComposeShowcaseFleet_Produces_Readable_Mixed_Fleet-1",
+        "focused-final-ComposeShowcaseFleet_Produces_Readable_Mixed_Fleet-2",
+        "focused-final-ComposeShowcaseFleet_Produces_Readable_Mixed_Fleet-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ComposeShowcaseFleet_Scales_Exactly",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-ComposeShowcaseFleet_Scales_Exactly-1",
+        "focused-final-ComposeShowcaseFleet_Scales_Exactly-2",
+        "focused-final-ComposeShowcaseFleet_Scales_Exactly-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ResolveFleet_DroneOrLifepod_Hull_Throws",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-ResolveFleet_DroneOrLifepod_Hull_Throws-1",
+        "focused-final-ResolveFleet_DroneOrLifepod_Hull_Throws-2",
+        "focused-final-ResolveFleet_DroneOrLifepod_Hull_Throws-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ResolveFleet_Resolves_Real_Hull_And_Validates",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-ResolveFleet_Resolves_Real_Hull_And_Validates-1",
+        "focused-final-ResolveFleet_Resolves_Real_Hull_And_Validates-2",
+        "focused-final-ResolveFleet_Resolves_Real_Hull_And_Validates-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ResolveFleet_Unknown_Hull_Throws",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-ResolveFleet_Unknown_Hull_Throws-1",
+        "focused-final-ResolveFleet_Unknown_Hull_Throws-2",
+        "focused-final-ResolveFleet_Unknown_Hull_Throws-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ResolveFleet_Zero_Count_Throws",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-ResolveFleet_Zero_Count_Throws-1",
+        "focused-final-ResolveFleet_Zero_Count_Throws-2",
+        "focused-final-ResolveFleet_Zero_Count_Throws-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P629PenaltyLiveTests.Production_bots_reach_target_sector_with_crowding_off",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Production_bots_reach_target_sector_with_crowding_off-1",
+        "focused-final-Production_bots_reach_target_sector_with_crowding_off-2",
+        "focused-final-Production_bots_reach_target_sector_with_crowding_off-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash-1",
+        "focused-final-P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash-2",
+        "focused-final-P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal-1",
+        "focused-final-P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal-2",
+        "focused-final-P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues-1",
+        "focused-final-P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues-2",
+        "focused-final-P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        4,
+        4,
+        4
+      ],
+      "labels": [
+        "focused-final-P656_SideSelectionIsDeterministicIncludingTies-1",
+        "focused-final-P656_SideSelectionIsDeterministicIncludingTies-2",
+        "focused-final-P656_SideSelectionIsDeterministicIncludingTies-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        5,
+        5,
+        5
+      ],
+      "labels": [
+        "focused-final-P656_TriggerRequiresTimeBothSidesAndSustainedCombat-1",
+        "focused-final-P656_TriggerRequiresTimeBothSidesAndSustainedCombat-2",
+        "focused-final-P656_TriggerRequiresTimeBothSidesAndSustainedCombat-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech-1",
+        "focused-final-P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech-2",
+        "focused-final-P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_NoBomberCatalogueDoesNotSubstituteCapital",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656b_NoBomberCatalogueDoesNotSubstituteCapital-1",
+        "focused-final-P656b_NoBomberCatalogueDoesNotSubstituteCapital-2",
+        "focused-final-P656b_NoBomberCatalogueDoesNotSubstituteCapital-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_RealCoreSelectionHonorsHullAndPartTechAvailability",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-P656b_RealCoreSelectionHonorsHullAndPartTechAvailability-1",
+        "focused-final-P656b_RealCoreSelectionHonorsHullAndPartTechAvailability-2",
+        "focused-final-P656b_RealCoreSelectionHonorsHullAndPartTechAvailability-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        9,
+        9,
+        9
+      ],
+      "labels": [
+        "focused-final-P704_RolesIgnoreNamesAndUseCapabilities-1",
+        "focused-final-P704_RolesIgnoreNamesAndUseCapabilities-2",
+        "focused-final-P704_RolesIgnoreNamesAndUseCapabilities-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-Rig_allTech_client_selects_the_best_legal_bomber-1",
+        "focused-final-Rig_allTech_client_selects_the_best_legal_bomber-2",
+        "focused-final-Rig_allTech_client_selects_the_best_legal_bomber-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        2,
+        2,
+        2
+      ],
+      "labels": [
+        "focused-final-Rig_allTech_finale_buy_loadout_is_fully_accepted-1",
+        "focused-final-Rig_allTech_finale_buy_loadout_is_fully_accepted-2",
+        "focused-final-Rig_allTech_finale_buy_loadout_is_fully_accepted-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-1",
+        "focused-final-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-2",
+        "focused-final-Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        4,
+        4,
+        4
+      ],
+      "labels": [
+        "focused-final-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-1",
+        "focused-final-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-2",
+        "focused-final-Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        4,
+        4,
+        4
+      ],
+      "labels": [
+        "focused-final-P682b_second_match_relaunches_mature_and_strike_then_third_match_starts-1",
+        "focused-final-P682b_second_match_relaunches_mature_and_strike_then_third_match_starts-2",
+        "focused-final-P682b_second_match_relaunches_mature_and_strike_then_third_match_starts-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-1",
+        "focused-final-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-2",
+        "focused-final-Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death-3"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "successfulRepetitions": 3,
+      "casesPerRepetition": [
+        1,
+        1,
+        1
+      ],
+      "labels": [
+        "focused-final-Local_showcase_never_parks_with_target_for_five_seconds-1",
+        "focused-final-Local_showcase_never_parks_with_target_for_five_seconds-2",
+        "focused-final-Local_showcase_never_parks_with_target_for_five_seconds-3"
+      ]
+    }
+  ],
+  "suites": [
+    {
+      "label": "full-Core",
+      "counters": {
+        "total": "4575",
+        "executed": "4575",
+        "passed": "4575",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "seconds": 567.208
+    },
+    {
+      "label": "full-ClientCore",
+      "counters": {
+        "total": "1073",
+        "executed": "1073",
+        "passed": "1073",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "seconds": 1944.312
+    },
+    {
+      "label": "full-ClientCore.MonoGame",
+      "counters": {
+        "total": "2211",
+        "executed": "2208",
+        "passed": "2208",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "seconds": 933.028
+    }
+  ]
+}

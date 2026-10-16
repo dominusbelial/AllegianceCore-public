@@ -53,6 +53,9 @@ internal sealed partial class BotManager
         bot.IsPod = bot.PodDocked = bot.PodRestarted = false;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
         bot.PodStationCenter = Vector3.Zero;
+        bot.PurchaseScheduledAt = double.NegativeInfinity;
+        bot.LoadoutRefused = false;
+        bot.PendingTechLoadout = null;
         bot.RelaunchAttempts = 0;
         bot.RelaunchAt = double.NegativeInfinity;
         bot.RelaunchAckHandled = bot.RelaunchExhausted = false;
@@ -106,11 +109,20 @@ internal sealed partial class BotManager
             return;
         }
         if (bot.RelaunchAttempts == 0 && prepareFinale) PrepareFinaleRelaunch(bot, now);
+        if (bot.TechLoadouts)
+        {
+            if (double.IsNegativeInfinity(bot.PurchaseScheduledAt))
+                bot.PurchaseScheduledAt = bot.PurchasePacer?.Reserve(now) ?? now;
+            if (now < bot.PurchaseScheduledAt) return;
+            if (bot.PurchasePacer is { } pacer && !pacer.TrySend(now)) return;
+            if (!RepickRelaunchLoadout(bot, cs)) return;
+        }
         if (bot.FinaleBomberActive) bot.FinaleGrantVerified = false;
         cs.ResetBuyLoadoutAcks();
         bot.RelaunchAttempts++;
         bot.RelaunchAt = now;
         bot.RelaunchAckHandled = false;
+        bot.PurchaseScheduledAt = double.NegativeInfinity;
         (send ?? ((hull, launch, parts) => cs.SendBuyLoadout(hull, launch, parts)))(bot.HullId, true, bot.Parts ?? []);
     }
 
@@ -120,6 +132,11 @@ internal sealed partial class BotManager
         {
             bot.RelaunchAckHandled = true;
             var grant = new LoadoutGrant(ack.HullId, ack.Parts.ToList());
+            bot.LoadoutRefused = !ack.FLaunch;
+            if (bot.TechLoadouts && ack.FBoughtEverything && ack.FLaunch && bot.PendingTechLoadout is { } selected
+                && ack.HullId == selected.HullId && selected.Parts.All(p => ack.Parts.Contains(p)))
+                bot.PreviousLegalLoadout = selected;
+            if (bot.LoadoutRefused) Console.WriteLine($"[loadout] {bot.Name}: purchase refused; revalidate previous loadout at next paced retry");
             try
             {
                 bot.GrantWarning = EvaluateGrant(bot.Name, bot.HullId, bot.Parts ?? [], grant);
@@ -200,7 +217,7 @@ internal sealed partial class BotManager
     // then BUY_LOADOUT(fLaunch) buys and launches (FedSrv/FedSrv.CPP:6189-6190,
     // 6247-6259, 6282-6303). Ready alone never launches or restores hardware.
     // Use the existing purchase/ACK/retry path, without counting a pod cycle or
-    // preparing a finale bomber: this is the next match's original combat loadout.
+    // preparing a finale bomber: select the role against the next match's real shop.
     private static bool LaunchNextMission(ActiveBot bot, ConnectionSession cs, double now)
     {
         if (!bot.MissionLaunchPending) return false;

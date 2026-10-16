@@ -151,19 +151,17 @@ public sealed class P656ShowcaseFinaleTests(Xunit.Abstractions.ITestOutputHelper
     [InlineData("Flagship")] [InlineData("Carrier")] [InlineData("Heavy")]
     [InlineData("Gunship")] [InlineData("Capital")] [InlineData("Destroyer")]
     [InlineData("Cruiser")] [InlineData("Frigate")] [InlineData("Corvette")]
-    public void P656b_HeavyNamesOverrideStationThreatAndBomberName(string name)
+    public void P704_RolesIgnoreNamesAndUseCapabilities(string name)
     {
         Require.Artwork();
-        var hull = Catalog.RepresentativeCore().HullTypes[73] with
-        {
-            Name = name + " Bomber", HabmCapabilities = DataHullTypeIGC.HabmThreatToStation,
-        };
+        var hull = Catalog.RepresentativeCore().HullTypes[73] with { Name = name + " Bomber" };
         Assert.Equal(Showcase.HullRole.Heavy, Showcase.ClassifyHull(hull));
-        Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(hull with { Name = "Strike craft" }));
-        Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(hull with { Name = "Bomber", HabmCapabilities = 0 }));
-        Assert.Equal(Showcase.HullRole.Heavy, Showcase.ClassifyHull(hull with
+        Assert.Equal(Showcase.HullRole.Heavy, Showcase.ClassifyHull(hull with { Name = "Strike craft" }));
+        var bomber = Catalog.RepresentativeCore().HullTypes[25];
+        Assert.Equal(Showcase.HullRole.Bomber, Showcase.ClassifyHull(bomber with { Name = name }));
+        Assert.Equal(Showcase.HullRole.Heavy, Showcase.ClassifyHull(bomber with
         {
-            Name = "Strike craft", HabmCapabilities = DataHullTypeIGC.HabmThreatToStation | DataHullTypeIGC.HabmCarrier,
+            HabmCapabilities = DataHullTypeIGC.HabmThreatToStation | DataHullTypeIGC.HabmCarrier,
         }));
     }
 
@@ -194,10 +192,14 @@ public sealed class P656ShowcaseFinaleTests(Xunit.Abstractions.ITestOutputHelper
         var full = ShowcaseFinale.SelectLoadout(core, target);
         Assert.NotNull(full);
         var bomber = core.HullTypes[full.HullId];
-        // Unlock this hull and its gun, leaving other equipment tech-locked.
+        // Unlock this hull, its fixed aim gun and its station-damaging weapon/launcher.
+        // Other support equipment remains tech-locked.
         var gun = core.PartTypes[full.Parts.First(p => core.PartTypes.TryGetValue(p.PartId, out var type)
             && type.EquipmentType == EquipmentType.Weapon).PartId];
-        var techs = TechTreeBitMask.FromBytes(bomber.TtbmRequired).Or(TechTreeBitMask.FromBytes(gun.TtbmRequired));
+        var damaging = full.Parts.First(p => ShowcaseFinale.PartDamage(core, p.PartId, target).Hull > 0);
+        var damagePart = TechLoadoutSelector.Part(core, damaging.PartId);
+        var techs = TechTreeBitMask.FromBytes(bomber.TtbmRequired).Or(TechTreeBitMask.FromBytes(gun.TtbmRequired))
+            .Or(TechTreeBitMask.FromBytes(damagePart.TtbmRequired));
         Assert.Contains(full.Parts, part =>
         {
             if (!core.PartTypes.TryGetValue(part.PartId, out var type)) core.TryBuildExpendableLauncher(part.PartId, out type);
@@ -476,6 +478,7 @@ public sealed partial class BotFixRegressionTests
         rig.Mature(); var bomber = rig.Bots[0]; var cs = rig.Sessions[0];
         Set(bomber, "PodDocked", true); Call("PrepareFinaleRelaunch", null, bomber, rig.Started + 1801);
         Set(bomber, "PodDocked", false);
+        cs.World.Apply(new ExportShip { ShipId = 1, SideId = 0, HullId = Get<short>(bomber, "HullId") });
         cs.World.Apply(new SetCluster { Ship = Pose(1, 1000), SectorId = 4 });
         cs.World.Apply(new ExportStation { Station = rig.Stations[1] with { Position = [0, 0, 0] } });
         cs.World.Apply(new ExportStation { Station = rig.Stations[1] with { StationId = 102, Position = [900, 0, 0] } });
