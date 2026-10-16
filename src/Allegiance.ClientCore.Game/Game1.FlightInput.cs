@@ -2114,6 +2114,12 @@ public sealed partial class Game1
         // live in-sector stations within audible range this frame (see the method).
         UpdateStationSounds();
 
+        // P711 — the ship low-status alarm edge detection (SIM-0361..0366,
+        // trekigc.cpp:1264-1275) and the ripcord-active + mining loop gates
+        // (SIM-0368/0370, :1287/:1293). Records the one-shot events drained
+        // below and replays the two loop gates against the audio manager.
+        UpdateShipStatusAlarms();
+
         // P267 — the station destroyed/captured one-shots and the tech-completion
         // chime, drained from the wire events the world observed this frame.
         UpdateSoundEvents();
@@ -3042,6 +3048,13 @@ public sealed partial class Game1
         {
             _sound?.PlayCountdownStart();
             Console.WriteLine("[monogame] audio: countdown-start");
+        }
+        // P711 — coarse mission-clock milestone VO (SIM-0300..0303, vo_time_*),
+        // announced at 10/5/1 min and 30 s before the per-second tail.
+        if (cue.Milestone is { } milestone)
+        {
+            _sound?.PlayCountdownMilestone(milestone);
+            Console.WriteLine($"[monogame] audio: countdown milestone {milestone}");
         }
         if (cue.Second is { } second)
         {

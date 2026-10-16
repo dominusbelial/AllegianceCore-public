@@ -2821,3 +2821,75 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_playerwaiting.ogg
+
+#begin Sounds/vo_sal_hullcritical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_hullcritical.ogg
+
+#begin Sounds/outofammo.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/outofammo.ogg
+
+#begin Sounds/fuellow.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/fuellow.ogg
+
+#begin Sounds/vo_sal_lowenergy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_lowenergy.ogg
+
+#begin Sounds/vo_sal_noammo.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_noammo.ogg
+
+#begin Sounds/vo_sal_nofuel.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_nofuel.ogg
+
+#begin Sounds/vo_sal_noripcord.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_noripcord.ogg
+
+#begin Sounds/miningsound.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/miningsound.ogg
+
+#begin Sounds/vo_time_10min.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_time_10min.ogg
+
+#begin Sounds/vo_time_5min.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_time_5min.ogg
+
+#begin Sounds/vo_time_1min.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_time_1min.ogg
+
+#begin Sounds/vo_time_30sec.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_time_30sec.ogg

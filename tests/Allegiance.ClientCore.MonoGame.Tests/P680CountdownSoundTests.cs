@@ -96,4 +96,74 @@ public sealed class P680CountdownSoundTests
             Assert.Contains($"ImportWave(\"{wave}\")", definitions);
         }
     }
+
+    // ── P711 — coarse mission-clock milestones (SIM-0300..0303, WinTrek.cpp:11157-11169) ──
+
+    [Theory]
+    [InlineData(600, "vo_time_10min")]
+    [InlineData(300, "vo_time_5min")]
+    [InlineData(60, "vo_time_1min")]
+    [InlineData(30, "vo_time_30sec")]
+    public void MilestoneAssetFor_ResolvesTheFourNativeCheckpoints(int seconds, string stem)
+    {
+        Assert.Equal(stem, CountdownSound.MilestoneAssetFor(seconds));
+        Assert.Null(CountdownSound.MilestoneAssetFor(599));   // only the exact checkpoints
+        Assert.Null(CountdownSound.MilestoneAssetFor(29));
+    }
+
+    [Fact]
+    public void TimedGame_EmitEachCoarseMilestone_ThenTheTailTicks()
+    {
+        var world = new ClientWorld();
+        // A 700 s timed game started at 100_000: seconds-left = 700 +
+        // (100_000 − now)/1000 + 1, so a given "seconds left" value S occurs at
+        // now = 100_000 + 1000·(701 − S).
+        world.Apply(new MissionDef { Stage = MissionStageMessage.StageStarted,
+            TimeStart = 100_000, GameLengthSeconds = 700 });
+        var sound = new MissionCountdownSound();
+
+        world.ObserveServerTime(100_001, 0);       // 700 s left → nothing yet
+        Assert.Equal(default, sound.Update(world, 0));
+
+        world.ObserveServerTime(200_000, 0);       // 601 s left → still nothing
+        Assert.Equal(default, sound.Update(world, 0));
+        world.ObserveServerTime(201_000, 0);       // 600 s left → 10-min milestone
+        Assert.Equal("vo_time_10min", sound.Update(world, 0).Milestone);
+        // Repeated same-value frames stay silent (once per checkpoint).
+        Assert.Equal(default, sound.Update(world, 1));
+
+        world.ObserveServerTime(500_000, 0);       // 301 s
+        Assert.Equal(default, sound.Update(world, 0));
+        world.ObserveServerTime(501_000, 0);       // 300 s → 5-min milestone
+        Assert.Equal("vo_time_5min", sound.Update(world, 0).Milestone);
+
+        world.ObserveServerTime(740_000, 0);       // 61 s
+        Assert.Equal(default, sound.Update(world, 0));
+        world.ObserveServerTime(741_000, 0);       // 60 s → 1-min milestone
+        Assert.Equal("vo_time_1min", sound.Update(world, 0).Milestone);
+
+        world.ObserveServerTime(770_000, 0);       // 31 s
+        Assert.Equal(default, sound.Update(world, 0));
+        world.ObserveServerTime(771_000, 0);       // 30 s → 30-sec milestone
+        Assert.Equal("vo_time_30sec", sound.Update(world, 0).Milestone);
+
+        // The per-second tail follows at 10..1.
+        world.ObserveServerTime(791_000, 0);       // 10 s → countdown10 tick
+        Assert.Equal(10, sound.Update(world, 0).Second);
+    }
+
+    [Fact]
+    public void MilestoneAndTick_WavesAreBundledForTheRealSoundPlayer()
+    {
+        var root = AppContext.BaseDirectory;
+        while (!Directory.Exists(Path.Combine(root, "src", "Allegiance.ClientCore.MonoGame")))
+            root = Path.GetDirectoryName(root) ?? throw new InvalidOperationException("Repository not found");
+        string content = Path.Combine(root, "src", "Allegiance.ClientCore.MonoGame", "Content");
+        string manifest = File.ReadAllText(Path.Combine(content, "Content.mgcb"));
+        foreach (var stem in new[] { "vo_time_10min", "vo_time_5min", "vo_time_1min", "vo_time_30sec" })
+        {
+            Assert.True(new FileInfo(Path.Combine(content, "Sounds", stem + ".ogg")).Length > 0);
+            Assert.Contains($"/build:Sounds/{stem}.ogg", manifest);
+        }
+    }
 }

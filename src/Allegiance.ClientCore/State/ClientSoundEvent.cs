@@ -95,6 +95,47 @@ public enum ClientSoundEventKind
     /// gain, sounddef.mdl:299). Never reachable in this always-online port;
     /// present for native completeness.</summary>
     ChatOffline,
+
+    // ── P711 (parity wave 14: simulation sounds, second bundle) ─────────────
+    // Ship status / combat feedback cues from the client-sim sound region
+    // (WinTrek/trekigc.cpp:1264-1293) and the ripcord-deny wire path. The four
+    // low alarms and the two "no ammo / no fuel" attempt cues are one-shot
+    // StartSound one-shots edge-triggered on the LOCAL ship's own streamed
+    // fractions; the ripcord/mining cues are loop gates driven by
+    // ClientWorld.RipcordActive / MiningAsteroidId (handled as loops in
+    // SoundManager, not one-shot events — see Game1 per-frame drivers).
+
+    /// <summary><c>hullLowSound</c> — local hull fraction fell from ≥.15 to
+    /// <.15 (trekigc.cpp:1264; wave <c>vo_sal_hullcritical</c>, sounddef.mdl:374).</summary>
+    HullLow,
+
+    /// <summary><c>ammoLowSound</c> — local ammo fraction fell from ≥.15 to
+    /// <.15 (trekigc.cpp:1266; wave <c>outofammo</c>, sounddef.mdl:371).</summary>
+    AmmoLow,
+
+    /// <summary><c>fuelLowSound</c> — local fuel fraction fell from ≥.15 to
+    /// <.15 (trekigc.cpp:1268; wave <c>fuellow</c>, sounddef.mdl:372).</summary>
+    FuelLow,
+
+    /// <summary><c>energyLowSound</c> — local energy fraction fell from ≥.05
+    /// to <.05 (trekigc.cpp:1270; wave <c>vo_sal_lowenergy</c>, sounddef.mdl:373).</summary>
+    EnergyLow,
+
+    /// <summary><c>salNoAmmoSound</c> — the pilot tried to fire an ammo weapon
+    /// with insufficient ammunition, edge false→true (trekigc.cpp:1273; wave
+    /// <c>vo_sal_noammo</c>, sounddef.mdl:812).</summary>
+    NoAmmo,
+
+    /// <summary><c>salNoFuelSound</c> — the pilot tried to use the afterburner
+    /// with no fuel, edge false→true (trekigc.cpp:1275; wave
+    /// <c>vo_sal_nofuel</c>, sounddef.mdl:811).</summary>
+    NoFuel,
+
+    /// <summary><c>salNoRipcordSound</c> — a ripcord was denied, either by the
+    /// server (FM_S_RIPCORD_DENIED, appmsg.cpp:970) or by the local no-legal-
+    /// anchor check (clintlib.h:1175); wave <c>vo_sal_noripcord</c>,
+    /// sounddef.mdl:348.</summary>
+    RipcordDenied,
 }
 
 /// <summary>A single observed sound event.</summary>

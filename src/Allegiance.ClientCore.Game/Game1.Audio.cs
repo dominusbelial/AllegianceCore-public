@@ -466,8 +466,67 @@ public sealed partial class Game1
                 case ClientSoundEventKind.ChatOffline:
                     snd.PlayChatRegular(offline: true);
                     break;
+                // ── P711 — ship low-status / combat feedback one-shots ──────
+                case ClientSoundEventKind.HullLow:
+                    snd.PlayHullLow();
+                    Console.WriteLine("[monogame] audio: hull low");
+                    break;
+                case ClientSoundEventKind.AmmoLow:
+                    snd.PlayAmmoLow();
+                    Console.WriteLine("[monogame] audio: ammo low");
+                    break;
+                case ClientSoundEventKind.FuelLow:
+                    snd.PlayFuelLow();
+                    Console.WriteLine("[monogame] audio: fuel low");
+                    break;
+                case ClientSoundEventKind.EnergyLow:
+                    snd.PlayEnergyLow();
+                    Console.WriteLine("[monogame] audio: energy low");
+                    break;
+                case ClientSoundEventKind.NoAmmo:
+                    snd.PlayNoAmmo();
+                    Console.WriteLine("[monogame] audio: no ammo attempt");
+                    break;
+                case ClientSoundEventKind.NoFuel:
+                    snd.PlayNoFuel();
+                    Console.WriteLine("[monogame] audio: no fuel attempt");
+                    break;
+                case ClientSoundEventKind.RipcordDenied:
+                    snd.PlayNoRipcord();
+                    Console.WriteLine("[monogame] audio: ripcord denied (ship {ev.Id})");
+                    break;
             }
         }
+    }
+
+    /// <summary>
+    /// P711 — the per-frame driver for the ship status alarm EDGE detection
+    /// (SIM-0361..0366, trekigc.cpp:1264-1275) and the two loop gates — the
+    /// ripcord-active loop (SIM-0368, :1287) and the mining loop (SIM-0370,
+    /// :1293). <see cref="ClientWorld.UpdateOwnStatusAlarms"/> runs the pure
+    /// <see cref="ShipStatusAlarms.Classify"/> edge detector under the gate and
+    /// records the one-shot events (drained by <see cref="UpdateSoundEvents"/>);
+    /// the two loop gates are read here from <c>ClientWorld.RipcordActive</c> /
+    /// <c>MiningAsteroidId</c> and replayed against SoundManager. Called once
+    /// per frame with the audio pass. Must run under the gate lock when reading
+    /// world state (same discipline as the other per-frame sound drivers).
+    /// </summary>
+    private void UpdateShipStatusAlarms()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        bool ripcordActive;
+        bool mining;
+        lock (_session.Gate)
+        {
+            world.UpdateOwnStatusAlarms();
+            ripcordActive = world.RipcordActive;
+            mining = world.MiningAsteroidId != -1;
+        }
+
+        snd.UpdateRipcordLoop(ripcordActive);
+        snd.UpdateMiningLoop(mining);
     }
 
     /// <summary>

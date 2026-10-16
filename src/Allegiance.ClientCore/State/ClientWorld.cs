@@ -592,6 +592,46 @@ public sealed partial class ClientWorld
     /// Keeping these separate preserves the launch contract for consumers.</summary>
     public short? MyShipId { get; private set; }
 
+    // ── P711 — ship low-status / combat feedback alarms (trekigc.cpp:1264-1275).
+    // Edge-triggered one-shots computed from the local ship's OWN streamed
+    // ServerShipUpdate: the previous frame's snapshot (below) vs. the current
+    // one yields the downward fraction crossings and the no-ammo/no-fuel
+    // attempt edges. Null until the first own-ship update is seen.
+    private ShipStatusAlarmState? _prevOwnAlarms;
+
+    /// <summary>The mutable per-frame driver for the four low-status alarm
+    /// one-shots and the two no-ammo/no-fuel attempt cues (SIM-0361..0366).
+    /// Game1 calls this each frame under the gate; it samples the local ship's
+    /// most recent <c>ServerShipUpdate</c>, edge-detects the native
+    /// <c>trekigc.cpp:1264-1275</c> conditions, and records the one-shot
+    /// <see cref="ClientSoundEvent"/>s that fired.</summary>
+    public void UpdateOwnStatusAlarms()
+    {
+        if (MyShipId is not { } me) return;
+        if (!_ships.TryGetValue(me, out var own) || own.Latest is not { } u) return;
+
+        // "Trying to fire an ammo weapon without enough ammo" / "trying to use
+        // the afterburner with no fuel" — the native predicates read the
+        // player's firing/boost intent off its own state mask while the
+        // resource is depleted (trekigc.cpp:829-889). The port's ServerShipUpdate
+        // carries the same StateM bits and the same ammo/fuel fractions, so the
+        // faithful edge is: intent bit set while the resource is effectively
+        // exhausted (≈0).
+        bool firing = (u.StateM & Allegiance.Core.Sim.ShipControlState.AllWeapons) != 0
+            || (u.StateM & Allegiance.Core.Sim.ShipControlState.OneWeapon) != 0;
+        bool boosting = (u.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0;
+
+        var next = new ShipStatusAlarmState(
+            u.HullFraction, u.AmmoFraction, u.FuelFraction, u.EnergyFraction,
+            TryingToFireWithoutAmmo: firing && u.AmmoFraction <= ShipStatusAlarms.AmmoEmptyEpsilon,
+            TryingToBoostWithoutFuel: boosting && u.FuelFraction <= ShipStatusAlarms.FuelEmptyEpsilon);
+
+        var prev = _prevOwnAlarms ?? ShipStatusAlarmState.Unarmed;
+        foreach (var kind in ShipStatusAlarms.Classify(prev, next))
+            RecordSoundEvent(kind, me);
+        _prevOwnAlarms = next;
+    }
+
     /// <summary>
     /// P462 — the P462 own-shot-echo de-dup predicate, installed by the MonoGame
     /// client's <c>OwnShotEcho</c>. When non-null, <c>Apply(ProjectileInstance)</c>
@@ -1589,6 +1629,7 @@ public sealed partial class ClientWorld
         ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
+        _prevOwnAlarms = null;   // P711 — fresh session: re-arm the low-status alarm snapshots
         MyAcceptedCommand = null;
         _myQueuedCommand = null;
         JoinedShipId = null;
@@ -2305,15 +2346,18 @@ public sealed partial class ClientWorld
         }
     }
 
-    /// <summary>P414 — <c>FM_S_RIPCORD_DENIED(186)</c>: the server refused our
+    /// <summary>P414/P711 — <c>FM_S_RIPCORD_DENIED(186)</c>: the server refused our
     /// ripcord request because the named sector has no valid anchor. Sent to the
     /// <b>requester alone</b> (never broadcast), so it is always about our own
     /// request. Surfaced as a bare system chat line (the port's convention for
     /// denied/console notices, same as the P230 missile-lock tips) so it is
-    /// never silently dropped.</summary>
+    /// never silently dropped, and voices the native salNoRipcordSound
+    /// (appmsg.cpp:970; SIM-0425) as a one-shot sound event.</summary>
     private void Apply(RipcordDenied m)
     {
         PostSystemLine("Ripcord denied - no ripcord destination in that sector.");
+        if (MyShipId is { } me)
+            RecordSoundEvent(ClientSoundEventKind.RipcordDenied, me);
     }
 
     /// <summary>P414 — <c>FM_S_RIPCORD_ABORTED(187)</c>: a ripcord countdown was
