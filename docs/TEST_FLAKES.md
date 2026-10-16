@@ -4,6 +4,28 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P699c observation (2026-10-16)
+
+The final sequential unfiltered runs reported Core **4,660 pass / 0 fail / 0 skip**,
+ClientCore **1,060 pass / 1 fail / 0 skip**, MonoGame
+**2,234 pass / 0 fail / 3 existing optional Meshy-pack skips**,
+and Lobby **19 pass / 0 fail**. Local P542 and P660 opt-ins were enabled.
+
+`CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors`
+failed its setup `Assert.NotSame` because the shooter and intended elsewhere
+teammate occupied the same sector. The fixture assigns sectors by asynchronous
+spawn order. After all suites, that exact method passed **3/3 isolated runs** on
+the same binaries, satisfying P699c's load-flake rule. No assertion, timeout,
+quarantine setting or seating/transport implementation was changed for it.
+
+See the [suite ledger](reports/P699c_assets/accepted-suites-results.json),
+[isolated retry triplet](reports/P699c_assets/isolate-accepted-suite-failures-results.json),
+and [P699c report](reports/P699_POD_DOCKING.md). Repeated docking staging failures,
+JSON-default regression and repository path-guard failures were deterministic
+and corrected; they are not classified as flakes. The earlier complete passing
+sequence before the human simulation-time correction is superseded by these
+final results.
+
 ## P702 observation (2026-10-15)
 
 The first unfiltered Core run reported **4,570 pass / 5 fail / 0 skip**.

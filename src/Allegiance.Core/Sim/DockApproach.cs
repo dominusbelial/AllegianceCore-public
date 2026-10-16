@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 
 namespace Allegiance.Core.Sim;
 
@@ -11,7 +12,7 @@ namespace Allegiance.Core.Sim;
 /// instead of flying straight at the station centre.
 /// </summary>
 /// <remarks>
-/// <para><b>Source.</b> This is a 1:1 port of <c>Waypoint::GetGotoPosition</c>'s
+/// <para><b>Source.</b> The planner ports <c>Waypoint::GetGotoPosition</c>'s
 /// <c>OT_station</c> / <c>OT_ship</c>(carrier) cases plus <c>Waypoint::DoApproach</c>,
 /// <c>src/Igc/common.cpp:1157-1545</c>, together with the part of
 /// <c>GotoPlan::SetControls</c> (<c>common.cpp:2030-2170</c>) that turns the
@@ -21,9 +22,11 @@ namespace Allegiance.Core.Sim;
 /// <b>centre</b> and relies on luck that the line happens to enter a bay; the
 /// native autopilot instead picks the nearest landing bay, stages OUTSIDE it on
 /// the approach line, faces the entry direction, then rolls and enters. The
-/// server's dock test (<c>Station.InGarage</c>, P550) is already native and is
-/// untouched here — the whole point is to bring the ship INTO that bay so the
-/// existing test succeeds.</para>
+/// server's dock test (<c>Station.InGarage</c>) uses native oriented hull
+/// extremes. Steering uses native angular stopping drift when a
+/// <see cref="TurnState"/> is supplied; the legacy cross-product law remains
+/// available for callers without dynamics. Legacy callers retain the existing cruise law. Dynamics-aware callers use
+/// native wide-angle RCS via MovementButtons.</para>
 /// <para><b>Mask grammar.</b> Every method returns a <see cref="Step"/>
 /// carrying the native <see cref="GotoPositionMask"/> bits it chose
 /// (<c>common.cpp:1140-1149</c>) plus the world-space <see cref="Step.Goal"/>
@@ -67,6 +70,26 @@ public static class DockApproach
         int BayIndex,
         Vector3 Goal,
         Vector3 Facing);
+
+    /// <summary>Inputs to native turnToFace's angular stopping-drift solve
+    /// (Igc/common.cpp:152-254; torque multiplier: shipIGC.h:542-549).</summary>
+    public readonly record struct TurnState(float Mass, float MaxSpeed,
+        float MaxYaw, float MaxPitch, float TorqueYaw, float TorquePitch,
+        float RateYaw, float RatePitch, float Thrust = 0)
+    {
+        public static TurnState FromShip(Ship ship) => new(ship.Mass, ship.EffectiveMaxSpeed(),
+            ship.EffectiveMaxTurnRate(ControlData.AxisYaw), ship.EffectiveMaxTurnRate(ControlData.AxisPitch),
+            ship.EffectiveTurnTorque(ControlData.AxisYaw), ship.EffectiveTurnTorque(ControlData.AxisPitch),
+            ship.TurnRates[ControlData.AxisYaw], ship.TurnRates[ControlData.AxisPitch], ship.EffectiveThrust());
+
+        public static TurnState FromHull(DataHullTypeIGC hull,
+            GlobalAttributeSet attributes, float yaw, float pitch) => new(
+            hull.Mass, hull.Speed * attributes.Get(GlobalAttributeSet.MaxSpeed),
+            hull.MaxTurnRates[ControlData.AxisYaw] * attributes.Get(GlobalAttributeSet.TurnRate),
+            hull.MaxTurnRates[ControlData.AxisPitch] * attributes.Get(GlobalAttributeSet.TurnRate),
+            hull.TurnTorques[ControlData.AxisYaw] * attributes.Get(GlobalAttributeSet.TurnTorque),
+            hull.TurnTorques[ControlData.AxisPitch] * attributes.Get(GlobalAttributeSet.TurnTorque), yaw, pitch, hull.Thrust * attributes.Get(GlobalAttributeSet.Thrust));
+    }
 
     // Helper accessors so callers read flags naturally.
     public static bool Has(this in Step s, uint bit) => (s.Mask & bit) != 0;
@@ -284,8 +307,9 @@ public static class DockApproach
     /// Turn the planner's <see cref="Step"/> into a <see cref="ControlData"/> —
     /// the port of <c>GotoPlan::SetControls</c>'s docking branches
     /// (<c>common.cpp:2030-2170</c>): pivot / kill-throttle / enter(+roll) / seek.
-    /// The <em>face</em> law is the port's established "forward × dir" turn
-    /// (the same cross-product signal <c>SteerToward</c> uses, <c>Ship.cs:5257-5260</c>);
+    /// The <em>face</em> law uses native turnToFace with angular stopping drift
+    /// when dynamics are supplied, retaining the established cross-product
+    /// fallback for callers without hull dynamics;
     /// the <em>roll</em> is native's align-up-with-+Z computation
     /// (<c>common.cpp:2090-2150</c>). Not applicable (a docking-relevant mask
     /// absent) or the finished case returns <see cref="ControlData.Neutral"/>.
@@ -304,18 +328,22 @@ public static class DockApproach
         float distanceRest,
         float turnGain = 2.0f,
         float dt = 0.033f,
-        float maxTurnRateRoll = 2.0f)
+        float maxTurnRateRoll = 2.0f,
+        TurnState? turnState = null)
     {
         // Finished / nothing to do → neutral kill.
         if ((step.Mask & (Mask.Pivot | Mask.KillThrottle | Mask.Enter)) == 0)
         {
-            // Plain seek (mask == 0 with DodgeShips, or Fast power-glide):
-            // face the goal and fly (Fast = full forward).
+            // Native turns while using directional RCS when misaligned
+            // (common.cpp:2231-2235,2309). Callers supplying dynamics must
+            // apply MovementButtons alongside these joystick controls.
             Vector3 path = step.Goal - myPosition;
-            var (yaw, pitch) = Face(myOrientation, path, turnGain);
+            var (yaw, pitch) = Face(myOrientation, path, turnGain, turnState, velocity.Length(), dt);
             bool slowNear = (step.Mask & Mask.Fast) == 0 &&
                             (step.Goal - myPosition).LengthSquared() < distanceRest * distanceRest;
-            float throttle = slowNear ? -1f : 1f;
+            float cosTurnMin = MathF.Cos(MathF.PI / 8f);
+            bool turningAtBay = turnState is not null && CosForward2(myOrientation, path) <= cosTurnMin * cosTurnMin;
+            float throttle = slowNear || turningAtBay ? -1f : 1f;
             return new ControlData(yaw, pitch, 0f, throttle);
         }
 
@@ -323,14 +351,14 @@ public static class DockApproach
         if ((step.Mask & (Mask.Pivot | Mask.KillThrottle)) != 0)
         {
             Vector3 path = (step.Mask & Mask.Pivot) != 0 ? step.Facing : step.Goal - myPosition;
-            var (yaw, pitch) = Face(myOrientation, path, turnGain);
+            var (yaw, pitch) = Face(myOrientation, path, turnGain, turnState, velocity.Length(), dt);
             return new ControlData(yaw, pitch, 0f, -1f);   // native: throttle stays at its kill-init -1
         }
 
         // Enter: face the bay entry, optionally roll to align, full forward throttle.
         if ((step.Mask & Mask.Enter) != 0)
         {
-            var (yaw, pitch) = Face(myOrientation, step.Facing, turnGain);
+            var (yaw, pitch) = Face(myOrientation, step.Facing, turnGain, turnState, velocity.Length(), dt);
             float roll = (step.Mask & Mask.Roll) != 0
                 ? ComputeRoll(myOrientation, yaw, pitch, dt, maxTurnRateRoll)
                 : 0f;
@@ -340,13 +368,70 @@ public static class DockApproach
         return ControlData.Neutral;
     }
 
-    /// <summary>Port's shared face law: forward × directionToTarget in ship-local
-    /// space → (yaw, pitch), the same signal <c>SteerToward</c> emits.</summary>
-    private static (float Yaw, float Pitch) Face(in Orientation o, in Vector3 direction, float turnGain)
+    /// <summary>Native wide-angle seek RCS (common.cpp:2309), using the
+    /// dominant-axis getDirection selection (common.cpp:1575-1636).</summary>
+    public static int MovementButtons(in Step step, in Vector3 position, in Orientation orientation,
+        in Vector3 velocity, in TurnState turn)
+    {
+        if ((step.Mask & (Mask.Pivot | Mask.KillThrottle | Mask.Enter | Mask.Finished)) != 0) return 0;
+        Vector3 path = step.Goal - position;
+        float cos = MathF.Cos(MathF.PI / 8);
+        if (path.LengthSquared() < .1f || CosForward2(orientation, path) > cos * cos) return 0;
+        float k = turn.Mass > 0 && turn.MaxSpeed > 0 ? turn.Thrust / (turn.Mass * turn.MaxSpeed) : 0;
+        Vector3 delta = k > 0 ? path - velocity / k : path;
+        Vector3 local = orientation.TimesInverse(delta);
+        var axes = new (float Magnitude, int State)[]
+        {
+            (MathF.Abs(local.X), local.X >= 0 ? ShipControlState.RightButton : ShipControlState.LeftButton),
+            (MathF.Abs(local.Y), local.Y >= 0 ? ShipControlState.UpButton : ShipControlState.DownButton),
+            (MathF.Abs(local.Z), local.Z <= 0 ? ShipControlState.ForwardButton : ShipControlState.BackwardButton),
+        };
+        Array.Sort(axes, (a, b) => b.Magnitude.CompareTo(a.Magnitude));
+        return axes[0].Magnitude > 2 * axes[1].Magnitude ? axes[0].State
+            : axes[0].Magnitude > 2 * axes[2].Magnitude ? axes[0].State | axes[1].State
+            : axes[0].State | axes[1].State | axes[2].State;
+    }
+
+    /// <summary>Port's shared cross-product face law, with native's rearward
+    /// escape (<c>Igc/common.cpp:168-175</c>) before the turn signal.</summary>
+    private static (float Yaw, float Pitch) Face(in Orientation o, in Vector3 direction, float turnGain, TurnState? state, float speed, float dt)
     {
         float len = direction.Length();
         if (len <= 1e-3f) return (0f, 0f);
         Vector3 dir = direction / len;
+        // Native turnToFace explicitly yaws when the target is almost exactly
+        // behind (common.cpp:168-175). A cross product alone vanishes at 180°,
+        // leaving a stopped pod pivoting forever without a turn command.
+        if (o.GetForward() * dir <= -0.999f) return (1f, 0f);
+        if (state is { } turn)
+        {
+            Vector3 local = o.TimesInverse(dir);
+            float cosine = Math.Clamp(-local.Z, -1f, 1f);
+            float y, p;
+            if (cosine < .98f)
+            {
+                float angle = MathF.Acos(cosine);
+                Vector3 twist = o.TimesInverse(Vector3.CrossProduct(o.GetBackward(), dir).Normalize());
+                y = -twist.Y * angle; p = twist.X * angle;
+            }
+            else
+            {
+                y = MathF.Acos(Math.Clamp(local.X, -1f, 1f)) - MathF.PI / 2;
+                p = MathF.Acos(Math.Clamp(local.Y, -1f, 1f)) - MathF.PI / 2;
+            }
+            float fraction = turn.MaxSpeed > 0 ? speed / turn.MaxSpeed : 0;
+            float tm = .5f + fraction / (fraction + 1);
+            float Axis(float error, float rate, float torque, float maximum)
+            {
+                // GotoPlan defaults to skill .5 (igc.h:5295-5299).
+                float drift = torque > 0 ? MathF.Abs(rate) * .25f * rate * turn.Mass / (tm * torque) : 0;
+                return maximum > 0 && dt > 0 ? (error - drift) / (dt * maximum) : 0;
+            }
+            y = Axis(y, turn.RateYaw, turn.TorqueYaw, turn.MaxYaw);
+            p = Axis(p, turn.RatePitch, turn.TorquePitch, turn.MaxPitch);
+            float length = MathF.Sqrt(y * y + p * p);
+            return length > 1 ? (y / length, p / length) : (y, p);
+        }
         Vector3 body = o.TimesInverse(Vector3.CrossProduct(o.GetForward(), dir));
         float yaw = Math.Clamp(turnGain * body.Y, -1f, 1f);
         float pitch = Math.Clamp(turnGain * -body.X, -1f, 1f);

@@ -18,9 +18,11 @@ namespace Allegiance.ClientCore.Tests;
 [Collection("LiveNetwork")]
 public sealed class P699PodHomeLiveTests(ITestOutputHelper output)
 {
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData(0)]
+    [InlineData(1)]
     [Trait("Requires", "Artwork")]
-    public void Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death()
+    public void Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(short side)
     {
         Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
@@ -29,15 +31,23 @@ public sealed class P699PodHomeLiveTests(ITestOutputHelper output)
             ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc",
             Port = 0, UpdatesPerSecond = 20,
             LiveSettings = new() { TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true } },
-            Games = [new() { Name = "P699", Map = "XXV_simple.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }],
+            Games = [new() { Name = "P699", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }],
         });
         var mission = server.Missions[0];
         mission.Stage = MissionStage.Started;
+        foreach (var sector in mission.Sectors)
+            foreach (var station in sector.StationRuntimes.ToArray())
+            {
+                var civ = mission.Sides.Single(s => s.Id == station.SideId).Civilization;
+                var type = mission.Core.StationTypes[civ.InitialStationTypeId];
+                sector.RemoveStation(station);
+                mission.PlaceStation(new Station(station.Data with { StationTypeId = type.StationTypeId }, type), sector);
+            }
         using var ticker = new Ticker(server);
         using var manager = new BotManager("127.0.0.1", server.BoundPort);
         Assert.True(manager.ServerReady);
         var hull = EconomyLoadoutTestSetup.WeaponHull(mission.Core);
-        var spawn = manager.SpawnBot(hull.HullId, hull.Name, 0, [], "combat");
+        var spawn = manager.SpawnBot(hull.HullId, hull.Name, side, [], "combat");
         var bot = ((System.Collections.IEnumerable)typeof(BotManager).GetField("_bots", BindingFlags.Instance | BindingFlags.NonPublic)!
             .GetValue(manager)!).Cast<object>().Single(b => (short)b.GetType().GetField("ShipId")!.GetValue(b)! == spawn.ShipId);
         var session = (ConnectionSession)bot.GetType().GetField("Cs")!.GetValue(bot)!;
@@ -67,7 +77,7 @@ public sealed class P699PodHomeLiveTests(ITestOutputHelper output)
                 .Invoke(server, [ship, previous, start]);
             ship.LastWarpTime = double.NegativeInfinity;
             ship.ReceiveDamage(0, 1_000_000, mission.LastUpdate, ship.Position, Vector3.Zero, null);
-            Assert.Equal((short)444, ship.HullType.HullId);
+            Assert.Equal(mission.Sides.Single(s => s.Id == side).Civilization.Lifepod, ship.HullType.HullId);
             Assert.True(ship.HullType.HasCapability(DataHullTypeIGC.HabmFighter));
             Assert.NotNull(ship.LifepodTimeToDie);
             ejectedAt = server.SimNow; deadline = ship.LifepodTimeToDie!.Value;

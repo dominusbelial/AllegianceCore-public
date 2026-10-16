@@ -1,0 +1,10 @@
+[
+  [
+    "Core",
+    "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively"
+  ],
+  [
+    "Core",
+    "Allegiance.Core.Tests.P699bPodTelemetryTests.Trip_keeps_authoritative_route_milestones_position_and_terminal_outcome"
+  ]
+]

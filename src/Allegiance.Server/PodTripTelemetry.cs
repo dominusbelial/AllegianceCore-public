@@ -20,10 +20,28 @@ internal sealed class PodTripTelemetry(Action<string> write)
     internal sealed record Result(short Ship, short? Side, string Outcome, short EjectSector, double EjectAt,
         short? HomeSector, short? Station, Visit[] Route, double? HomeAt, double? RadiusAt, double? BayAt, double? ApproachAt,
         double EndAt, short? EndSector, float[] EndPosition, double Seconds, double OxygenAllowance,
-        double WaitedAtBay);
+        double WaitedAtBay)
+    {
+        // Capture the actual runtime geometry inputs, rather than inferring the
+        // station model from the side's civ (file maps can retain authored types).
+        public short PodHull { get; init; }
+        public short PodCapabilities { get; init; }
+        public short? StationType { get; init; }
+        public string? StationModel { get; init; }
+        public float? StationRadius { get; init; }
+        public float[]? StationPosition { get; init; }
+        public float[]? StationForward { get; init; }
+        public float[]? StationUp { get; init; }
+        public float[] EndVelocity { get; set; } = [];
+        public float[] EndForward { get; set; } = [];
+        public float[] EndUp { get; set; } = [];
+        public float[] EndTurnRates { get; set; } = [];
+    }
     private sealed class Trip(Ship ship, double now, Station? home)
     {
         public readonly double Start = now;
+        public readonly short PodHull = ship.HullType.HullId;
+        public readonly short PodCapabilities = ship.HullType.HabmCapabilities;
         public readonly double Allowance = ship.LifepodTimeToDie is { } deadline ? deadline - now : 0;
         public readonly short EjectSector = ship.Sector!.Id;
         public readonly Station? Home = home;
@@ -72,6 +90,8 @@ internal sealed class PodTripTelemetry(Action<string> write)
             t.BayAt ??= now;
     }
 
+    private static float[] Components(Vector3 v) => [v.X, v.Y, v.Z];
+
     internal Result? End(Ship ship, double now, string outcome)
     {
         if (!_active.Remove(ship, out var trip)) return null;
@@ -79,7 +99,17 @@ internal sealed class PodTripTelemetry(Action<string> write)
         var p = ship.Position;
         var result = new Result(ship.Id, ship.SideId, outcome, trip.EjectSector, trip.Start,
             trip.Home?.Data.ClusterId, trip.Home?.StationId, trip.Route.ToArray(), trip.HomeAt, trip.RadiusAt,
-            trip.BayAt, trip.ApproachAt, now, ship.Sector?.Id, [p.X, p.Y, p.Z], now - trip.Start, trip.Allowance, trip.Wait);
+            trip.BayAt, trip.ApproachAt, now, ship.Sector?.Id, [p.X, p.Y, p.Z], now - trip.Start, trip.Allowance, trip.Wait)
+        {
+            PodHull = trip.PodHull, PodCapabilities = trip.PodCapabilities,
+            StationType = trip.Home?.Type.StationTypeId, StationModel = trip.Home?.Type.ModelName,
+            StationRadius = trip.Home?.Radius,
+            StationPosition = trip.Home is { } home ? Components(home.Center) : null,
+            StationForward = trip.Home is { } forwardHome ? Components(forwardHome.Orientation.GetForward()) : null,
+            StationUp = trip.Home is { } upHome ? Components(upHome.Orientation.GetUp()) : null,
+            EndVelocity = Components(ship.Velocity), EndForward = Components(ship.Orientation.GetForward()),
+            EndUp = Components(ship.Orientation.GetUp()), EndTurnRates = ship.TurnRates.ToArray(),
+        };
         _window.Add(result);
         write("[pod-trip] " + JsonSerializer.Serialize(result, PodTripJsonContext.Default.Result));
         Completed?.Invoke(result);

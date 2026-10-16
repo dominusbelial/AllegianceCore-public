@@ -1,0 +1,10 @@
+[
+  [
+    "Core",
+    "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively"
+  ],
+  [
+    "Core",
+    "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath"
+  ]
+]

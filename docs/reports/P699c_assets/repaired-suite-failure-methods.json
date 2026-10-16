@@ -1,0 +1,14 @@
+[
+  [
+    "Core",
+    "Allegiance.Core.Tests.LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire"
+  ],
+  [
+    "Core",
+    "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic"
+  ],
+  [
+    "Core",
+    "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals"
+  ]
+]

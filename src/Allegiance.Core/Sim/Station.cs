@@ -337,50 +337,65 @@ public sealed class Station : IStationIgc, ISideVisible
 
     /// <summary>
     /// Port of <c>CstationIGC::InGarage(IshipIGC* pship, const Vector&amp; position)</c>
-    /// (<c>src/Igc/stationIGC.cpp:385-436</c>) — the geometric "is this ship in
+    /// (<c>src/Igc/stationIGC.cpp:385-448</c>) — the geometric "is this ship in
     /// my landing bay" test the native dock dispatch runs on a station
-    /// (<c>shipIGC.cpp:843,853</c>). Structurally identical to the carrier's
-    /// <see cref="Ship.InGarage(Ship, float, HullLandingBayGeometry)"/> — this
-    /// port deliberately REUSES that geometric predicate (the same
-    /// slot-plane/GetMinExtreme half-space test) rather than the station's
-    /// crude 200-unit dock-sphere; the only differences from the carrier form
-    /// are native-faithful: the test takes a <em>fixed</em> world
+    /// (<c>shipIGC.cpp:843,853</c>). Tests each bay's half-spaces against every
+    /// oriented convex sub-hull via <see cref="Collision.Collider.GetMinExtreme"/>.
+    /// The test takes a <em>fixed</em> world
     /// <paramref name="position"/> (the station is static, so there is no
-    /// carrier velocity term, <c>stationIGC.cpp:404</c>), the bay geometry
+    /// carrier velocity term, <c>stationIGC.cpp:412</c>), the bay geometry
     /// comes from the station <em>type's</em> own model
     /// (<see cref="Collision.StationLandingBayCache"/> /
     /// <see cref="Collision.HullLandingBay.ReconstructStation"/>,
     /// <c>stationtypeigc.cpp:77-101</c>), and <see cref="Orientation"/> is the
     /// station's. A bay with no land slots is <c>false</c> — the native
-    /// <c>landSlots-1 &lt; 0</c> no-bay case (<c>stationIGC.cpp:388-390</c>).
-    /// The lander's extreme point is the <c>0.5 × HullType.Length</c> sphere,
-    /// the same documented simplification <see cref="Ship.InGarage"/> makes.
+    /// <c>landSlots-1 &lt; 0</c> no-bay case (<c>stationIGC.cpp:389-391</c>).
+    /// The lander's extreme point uses the <c>0.5 × HullType.Length</c> sphere as
+    /// fallback for a missing model; resolved models use native oriented hull extremes.
     /// </summary>
     public bool InGarage(Ship lander, Vector3 position, HullLandingBayGeometry bay)
     {
         if (bay.LandSlots.Count == 0) return false;         // native: landSlots-1 < 0 → bInside stays false
 
-        var dp = position - Center;                          // stationIGC.cpp:404 (station static → no velocity term)
-        var landerRadius = 0.5f * lander.HullType.Length;    // documented sphere simplification
-        var orientationStation = Orientation;                // stationIGC.cpp:410
+        var dp = position - Center;                          // stationIGC.cpp:412 (station static → no velocity term)
+        // Resolve the CURRENT hull: a cached Model.Hull may predate an ejection
+        // or purchase. Native replaces the hit test in SetBaseHullType
+        // (Igc/shipIGC.cpp:1410-1419).
+        var hull = lander.Sector?.CollisionHulls is { } cache
+            ? cache.Resolve(lander.HullType.ModelName) : lander.Hull;
+        var body = new Collider(lander, Vector3.Zero, Vector3.Zero, lander.Orientation,
+            hull, 0.5f * lander.HullType.Length, isStatic: false);
+        // CvhReader retains file coordinates. Native flips vertex X at load
+        // (_Utility/HitTest.cpp:735-737); reflect that local axis before rotating
+        // into ship space. Copy so the ship's actual attitude is untouched.
+        var hitOrientation = lander.Orientation.Copy();
+        if (hull is not null) hitOrientation.SetRight(-hitOrientation.GetRight());
+        // stationIGC.cpp:397-407: all convex sub-hulls, or one primitive.
+        int kMin = body.TrueShape > 0 ? 0 : body.TrueShape;
+        int kMax = body.TrueShape > 0 ? body.TrueShape : body.TrueShape + 1;
+        var orientationStation = Orientation;                // stationIGC.cpp:409
 
         int slots = lander.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
             ? bay.LandSlots.Count : bay.CapLandSlots;
-        for (var i = slots - 1; i >= 0; i--)   // stationIGC.cpp:390,413 (slot loop, descending)
+        for (var i = slots - 1; i >= 0; i--)   // stationIGC.cpp:389-391,413 (slot loop, descending)
         {
             var slot = bay.LandSlots[i];
             var j = slot.Planes.Count - 1;
             do                                               // stationIGC.cpp:415 (plane loop, descending)
             {
                 var plane = slot.Planes[j];
-                var direction = plane.Direction * orientationStation;   // stationIGC.cpp:417
-                var point = plane.Position * orientationStation;        // stationIGC.cpp:418
-                var pMin = dp - direction * landerRadius;               // sphere GetMinExtreme, stationIGC.cpp:423
-                if ((pMin - point) * direction < 0.0f)                  // stationIGC.cpp:424
-                    break;
+                var direction = plane.Direction * orientationStation;   // stationIGC.cpp:419
+                var point = plane.Position * orientationStation;        // stationIGC.cpp:420
+                int k = kMin;
+                for (; k < kMax; k++)
+                {
+                    var pMin = body.GetMinExtreme(k, dp, hitOrientation, direction);
+                    if ((pMin - point) * direction < 0.0f) break;   // stationIGC.cpp:425-430
+                }
+                if (k < kMax) break;
             } while (j-- > 0);
 
-            if (j == -1)                                     // all planes passed → bInside=true (stationIGC.cpp:434-438)
+            if (j == -1)                                     // all planes passed → bInside=true (stationIGC.cpp:436-439)
                 return true;
         }
 

@@ -1,0 +1,107 @@
+[
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792120521.8630836,
+    "finished": 1792120523.5045314,
+    "seconds": 1.64,
+    "log": "/tmp/p699c-validation/isolate-completed-core-failures-000-isolate-1.log",
+    "trx": "isolate-completed-core-failures-000-isolate-1.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "error": "Result {}.EndVelocity: expected System.Single[], got null"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792120523.5046978,
+    "finished": 1792120525.1839418,
+    "seconds": 1.68,
+    "log": "/tmp/p699c-validation/isolate-completed-core-failures-001-isolate-2.log",
+    "trx": "isolate-completed-core-failures-001-isolate-2.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "error": "Result {}.EndVelocity: expected System.Single[], got null"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+    "exit": 1,
+    "process_exit": 1,
+    "started": 1792120525.1841679,
+    "finished": 1792120526.9822743,
+    "seconds": 1.8,
+    "log": "/tmp/p699c-validation/isolate-completed-core-failures-002-isolate-3.log",
+    "trx": "isolate-completed-core-failures-002-isolate-3.trx.gz",
+    "passed": 0,
+    "failed": [
+      {
+        "name": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "outcome": "Failed",
+        "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+        "error": "Result {}.EndVelocity: expected System.Single[], got null"
+      }
+    ],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792120526.982515,
+    "finished": 1792120545.3273566,
+    "seconds": 18.34,
+    "log": "/tmp/p699c-validation/isolate-completed-core-failures-003-isolate-1.log",
+    "trx": "isolate-completed-core-failures-003-isolate-1.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792120545.327879,
+    "finished": 1792120562.5498006,
+    "seconds": 17.22,
+    "log": "/tmp/p699c-validation/isolate-completed-core-failures-004-isolate-2.log",
+    "trx": "isolate-completed-core-failures-004-isolate-2.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792120562.5502083,
+    "finished": 1792120578.2810576,
+    "seconds": 15.73,
+    "log": "/tmp/p699c-validation/isolate-completed-core-failures-005-isolate-3.log",
+    "trx": "isolate-completed-core-failures-005-isolate-3.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  }
+]

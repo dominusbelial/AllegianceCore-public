@@ -3344,9 +3344,10 @@ bool isThreat =
     /// to the plain centre fly — native no-bay power glide) when the station is
     /// not dockable / its bay geometry isn't resolvable.
     /// </summary>
-    private static bool TryDockApproachControl(ConnectionSession cs, ActiveBot bot, short stationId, out ControlData ctrl)
+    private static bool TryDockApproachControl(ConnectionSession cs, ActiveBot bot, short stationId, out ControlData ctrl, out int movement)
     {
         ctrl = ControlData.Neutral;
+        movement = 0;
         var core = Catalog.RepresentativeCore();
         if (!core.HullTypes.TryGetValue(ActualHullId(bot), out var hull)) return false;
 
@@ -3384,11 +3385,17 @@ bool isThreat =
 
         if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return false;
         Vector3 vel = Vector3.Zero;
+        float rateYaw = 0, ratePitch = 0;
         GlobalAttributeSet attributes;
         lock (cs.Gate)
         {
             if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.Latest is { } mu)
+            {
                 vel = mu.Velocity;
+                var rates = mu.TurnRates;
+                rateYaw = rates[ControlData.AxisYaw];
+                ratePitch = rates[ControlData.AxisPitch];
+            }
             attributes = cs.World.GlobalAttributesFor(bot.Side);
         }
 
@@ -3415,10 +3422,15 @@ bool isThreat =
         float totalRadius = HullRadius(ActualHullId(bot)) + stype.Radius + 10f;
         var step = DockApproach.DockStation(
             pos, vel, orient, center, bays, nLand, distanceRest, positionRest,
-            totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false,
+            totalRadius, rateYaw, ratePitch, experimental: false,
             bayPreference: hull.HasCapability(DataHullTypeIGC.HabmLifepod) ? bot.ShipId : 0);
 
+        // This controls-only client follows authoritative snapshots, rather than
+        // integrating its own pose. Retain its stable cross-product turn law;
+        // native entry-rate gating and directional RCS still use live dynamics.
         ctrl = DockApproach.Steer(step, pos, orient, vel, distanceRest);
+        movement = DockApproach.MovementButtons(step, pos, orient, vel,
+            DockApproach.TurnState.FromHull(hull, attributes, rateYaw, ratePitch));
         return true;
     }
 
@@ -3656,9 +3668,9 @@ bool isThreat =
             // instead of flying at the centre and hoping the line hits a bay (the
             // outer-ring grind Domingo reported). Falls back to the old centre fly
             // (native no-bay power glide) when the station isn't dockable here.
-            if (TryDockApproachControl(cs, bot, bot.PodStationId, out var dockCtrl))
+            if (TryDockApproachControl(cs, bot, bot.PodStationId, out var dockCtrl, out var dockMovement))
             {
-                cs.CommandControls(dockCtrl, 0);
+                cs.CommandControls(dockCtrl, dockMovement);
                 return;
             }
             // Native no-bay power glide (Igc/common.cpp:1517-1524): fly THROUGH

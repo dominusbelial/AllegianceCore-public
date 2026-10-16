@@ -1,0 +1,44 @@
+[
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792118188.6814425,
+    "finished": 1792118190.113896,
+    "seconds": 1.43,
+    "log": "/tmp/p699c-validation/isolate-privatepaths-after-000-isolate-1.log",
+    "trx": "isolate-privatepaths-after-000-isolate-1.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792118190.11403,
+    "finished": 1792118191.5528884,
+    "seconds": 1.44,
+    "log": "/tmp/p699c-validation/isolate-privatepaths-after-001-isolate-2.log",
+    "trx": "isolate-privatepaths-after-001-isolate-2.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "project": "Core",
+    "filter": "Allegiance.Core.Tests.PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath",
+    "exit": 0,
+    "process_exit": 0,
+    "started": 1792118191.5530684,
+    "finished": 1792118193.0124824,
+    "seconds": 1.46,
+    "log": "/tmp/p699c-validation/isolate-privatepaths-after-002-isolate-3.log",
+    "trx": "isolate-privatepaths-after-002-isolate-3.trx.gz",
+    "passed": 1,
+    "failed": [],
+    "skipped": []
+  }
+]

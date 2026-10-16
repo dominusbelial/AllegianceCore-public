@@ -1776,10 +1776,9 @@ public sealed partial class Game1
             DisengageAutopilot("manual input");
 
         // Send controls: while autopilot drives, its steering REPLACES the
-        // manual command and the movement buttons stay neutral (stateM=0) — it
-        // only uses the analog throttle axis (AutopilotSteering.Throttle), so
-        // it does NOT go through FlightInput's keyboard idle-throttle (-1)
-        // convention. If the target can no longer be resolved (died/vanished)
+        // manual command; station docking also supplies native directional
+        // thrusters while turning. These controls bypass FlightInput's
+        // keyboard idle-throttle convention. If the target can no longer be resolved (died/vanished)
         // disengage and fall back to the manual command.
         //
         // P464 — while seated as a turret gunner, NO flight SHIP_UPDATE is
@@ -1807,10 +1806,11 @@ public sealed partial class Game1
             // re-seed the aim orientation and re-arm the turret send cadence.
             _turretSeeded = false;
             _turretCadence.Reset();
+            _autopilotDeltaSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
             {
                 sentControls = apControls;
-                sentStateM = 0;
+                sentStateM = _autopilotMovementButtons;
                 sentFireM = 0;   // autopilot drives with neutral fire
             }
             else
@@ -2220,6 +2220,9 @@ public sealed partial class Game1
         return LeaderBotCommandResolver.Resolve(world, selId);
     }
 
+    private int _autopilotMovementButtons;
+    private float _autopilotDeltaSeconds = .033f;
+
     /// <summary>Compute the autopilot's per-frame steering toward the selected
     /// target (re-read every frame, so a moving target is followed), or return
     /// false if there is no resolvable target / own pose. Also disengages once
@@ -2235,6 +2238,7 @@ public sealed partial class Game1
     /// engaged.</summary>
     private bool TryGetAutopilotControls(out ControlData controls)
     {
+        _autopilotMovementButtons = 0;
         controls = ControlData.Neutral;
         if (_autoTarget is not { } tgt) return false;
 
@@ -2514,16 +2518,26 @@ public sealed partial class Game1
             float shipRadius = 0.5f * hull.Length;
             float totalRadius = shipRadius + stype.Radius + 10f;
 
-            // Client has no per-axis turn-rate telemetry here → pass 0; the
-            // enter gate then reduces to the alignment check (safe: once the nose
-            // lines up with the bay entry it accelerates in), a documented
-            // client-side simplification of native's rate gate (common.cpp:1301).
+            // Native waits for angular motion to settle before entering
+            // (Igc/common.cpp:1301). Prediction supplies the current local rates;
+            // otherwise use the same rates carried by the latest server update.
+            var rates = _ownShipPrediction && _ownSim.HaveHull
+                ? _ownSim.TurnRates : mine.Latest?.TurnRates;
             var step = DockApproach.DockStation(
                 pos, vel, orient, center, bays, nLand, distanceRest, positionRest,
-                totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false,
+                totalRadius, rates?[ControlData.AxisYaw] ?? 0f, rates?[ControlData.AxisPitch] ?? 0f, experimental: false,
                 bayPreference: hull.HasCapability(DataHullTypeIGC.HabmLifepod) ? mine.ShipId : 0);
 
-            controls = DockApproach.Steer(step, pos, orient, vel, distanceRest);
+            // Match StepOwnShipSimulation: native angular control uses sim
+            // seconds, including the server's time-dilation factor.
+            float simDt = (_autopilotDeltaSeconds > 0 ? _autopilotDeltaSeconds : .033f)
+                * (float)_session.World.TimeScale;
+            controls = DockApproach.Steer(step, pos, orient, vel, distanceRest,
+                dt: simDt, turnState: DockApproach.TurnState.FromHull(hull, attributes,
+                    rates?[ControlData.AxisYaw] ?? 0f, rates?[ControlData.AxisPitch] ?? 0f));
+            _autopilotMovementButtons = DockApproach.MovementButtons(step, pos, orient, vel,
+                DockApproach.TurnState.FromHull(hull, attributes,
+                    rates?[ControlData.AxisYaw] ?? 0f, rates?[ControlData.AxisPitch] ?? 0f));
             return true;
         }
     }

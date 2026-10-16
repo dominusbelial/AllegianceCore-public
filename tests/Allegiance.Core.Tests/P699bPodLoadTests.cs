@@ -1,4 +1,5 @@
 using System.Reflection;
+using Allegiance.ClientCore.Flight;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
@@ -28,6 +29,16 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                 CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }]
         });
         var mission = server.Missions[0]; mission.Stage = MissionStage.Started;
+        // File maps retain their authored station types regardless of selected civs.
+        // Use each side's actual initial garrison, as generated maps and the rig do.
+        foreach (var sector in mission.Sectors)
+            foreach (var station in sector.StationRuntimes.ToArray())
+            {
+                var civ = mission.Sides.Single(s => s.Id == station.SideId).Civilization;
+                var type = mission.Core.StationTypes[civ.InitialStationTypeId];
+                sector.RemoveStation(station);
+                mission.PlaceStation(new Station(station.Data with { StationTypeId = type.StationTypeId }, type), sector);
+            }
         var start = mission.Sectors.Single(s => s.Id == 1052);
         var warps = mission.Warps.ToDictionary(w => w.Warp.WarpId, w => w.Warp);
         var hull = mission.Core.HullTypes.Values.First(h => !h.HasCapability(DataHullTypeIGC.HabmLifepod)
@@ -91,8 +102,10 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                         : DockApproach.StoppingDistance(speed, ship.EffectiveThrust(), ship.Mass, ship.EffectiveMaxSpeed(), ship.HullType.BackMultiplier);
                     var step = DockApproach.DockStation(ship.Position, ship.Velocity, ship.Orientation, home.Center,
                         bays, bays.Length, rest, speed > .1f ? ship.Position + ship.Velocity * (rest / speed) : ship.Position,
-                        home.Radius + ship.HullType.Length / 2 + 10, 0, 0, false, baseline ? 0 : ship.Id);
-                    ship.Controls = DockApproach.Steer(step, ship.Position, ship.Orientation, ship.Velocity, rest);
+                        home.Radius + ship.HullType.Length / 2 + 10, ship.TurnRates[ControlData.AxisYaw],
+                        ship.TurnRates[ControlData.AxisPitch], false, baseline ? 0 : ship.Id);
+                    ship.Controls = DockApproach.Steer(step, ship.Position, ship.Orientation, ship.Velocity, rest, dt: .05f, turnState: DockApproach.TurnState.FromShip(ship));
+                    ship.StateM = DockApproach.MovementButtons(step, ship.Position, ship.Orientation, ship.Velocity, DockApproach.TurnState.FromShip(ship));
                     if (step.IsEnter()) bayUsage[step.BayIndex] = bayUsage.GetValueOrDefault(step.BayIndex) + 1;
                 }
                 else
@@ -108,8 +121,10 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                     else mouth = PodReturnNavigation.NextWarp(warps, ship.Sector.Id, home.Data.ClusterId, ship.Position, home.Center);
                     Assert.NotNull(mouth);
                     var w = mouth!.Value;
-                    var step = DockApproach.PowerGlide(new(w.Position[0], w.Position[1], w.Position[2]));
-                    ship.Controls = DockApproach.Steer(step, ship.Position, ship.Orientation, ship.Velocity, 0);
+                    // Use the real MCP transit controller: docking's native
+                    // turn/brake gate must not brake a pod inside an aleph.
+                    ship.Controls = AutopilotSteering.Pursue(ship.Position, ship.Orientation,
+                        new(w.Position[0], w.Position[1], w.Position[2]));
                 }
             }
             // Continuous physical launch traffic through production launch frames.
@@ -127,8 +142,8 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                 if (ship.Sector == start) { start.Remove(ship); continue; } // outbound traffic has reached the battle
                 if (PodReturnNavigation.NextWarp(warps, ship.Sector!.Id, start.Id, ship.Position) is { } mouth)
                 {
-                    var w = DockApproach.PowerGlide(new(mouth.Position[0], mouth.Position[1], mouth.Position[2]));
-                    ship.Controls = DockApproach.Steer(w, ship.Position, ship.Orientation, ship.Velocity, 0);
+                    ship.Controls = AutopilotSteering.Pursue(ship.Position, ship.Orientation,
+                        new(mouth.Position[0], mouth.Position[1], mouth.Position[2]));
                 }
             }
             server.TickSim();

@@ -180,3 +180,85 @@ The three skips are the unchanged unavailable private Meshy-pack cases. No full-
 Reproduction and auditing use [validate.py](P699b_assets/validate.py), [summarize.py](P699b_assets/summarize.py), and [verify.py](P699b_assets/verify.py). The two builds and the recorded validation runner used `NUGET_HTTP_CACHE_PATH=/tmp/p699b-nuget`; raw logs/TRX remain under `/tmp/p699b-validation/`. All product changes and the report remain in the working tree, with no commits or pushes.
 
 The first fixture rebuild encountered `CS2012` / read-only access to the existing generated MonoGame test object DLL. Backing up and regenerating that test project's object DLL/PDB allowed the clean rebuild; no production source, assertion, timeout, quarantine trait or oxygen allowance was changed for that build issue.
+
+## P699c — all-civilization station docking and native hull clearance
+
+Working tree on `codex/p699c`, based on `cf5821f6`. No commits or pushes.
+
+Implemented native oriented-hull garage clearance and the missing docking translation while turning. Validation now exercises actual Ga'Taraan and Iron Coalition stations, rather than assuming selected civ IDs replaced authored map stations.
+
+### Findings and scope
+
+PCore001 civilization **3, Ga'Taraan**, starts with station type **44**, **Garrison**, model **`ss401`**, radius **400**. Its pod is hull **113**, **`wc_gtpod`**, length **5**, capabilities **`0x00A4`** (Fighter and Lifepod included). The garrison has **two ordinary garages**, five planes each, **zero capital garages**, and two launch slots. Model radius **2.191922** gives scale **182.48825**. The existing loader correctly recognizes `garage1A..E` and `garage2A..E`; no missing-frame workaround is needed. Iron Coalition's initial garrison is **115/ss27**, radius **423.5**, scale **14.310236**, also two ordinary garages. [corpus.json](P699c_assets/corpus.json) dumps raw frames, reconstructed planes, launch slots and scaling for **all 143 station records**, plus all ten civ/pod identities. [inputs.json](P699c_assets/inputs.json) hashes the core, map, CVHs and native sources.
+
+The authored `m2xspiderw.igc` and `XXV_simple.igc` maps place **type 15/ss24a on both sides** at this base. Selecting civ IDs does not replace those stations in this port. Native replaces stations with the new civilization's initial type when the civilization changes (`~/Development/Allegiance/src/Igc/sideigc.h:76-102`). The revised load and TCP fixtures explicitly install initial types **115 and 44**, preserving authored IDs, positions and orientations. This prevents another validation against the wrong models.
+
+The supplied clash57 trace confirms **199** side-1 oxygen deaths with radius and approach milestones, no bay milestone, median bay wait **42.05 seconds**. Side 0 has **22** radius-reaching oxygen deaths without a bay milestone. [clash57-analysis.json](P699c_assets/clash57-analysis.json) records its hash and counts. The trace lacks actual station/model and hull identity, attitude, velocity and turn rates. The exact **original zero-dock rig run has not been reproduced or proven fixed locally**. Early actual-garrison load and TCP runs passed before the corrections; these are diagnostic passes, not a failing reproduction of clash57. Subsequent local loads did reproduce sustained staging failures on both `ss27` and `ss401`, described below. Rig/221/200v200 work was left to Claude as requested.
+
+### Native rules and implementation
+
+Native paths in this table are relative to `~/Development/Allegiance/src/`.
+
+| Rule | Native file:line | Change or verified behavior |
+| --- | --- | --- |
+| Station frame scale is station radius / original model radius | `Igc/stationtypeigc.cpp:46` | Existing reconstruction is correct, including `ss401`'s large scale. |
+| Capital garages precede ordinary garages; ordinary names use combined slot indices | `Igc/stationtypeigc.cpp:71-144` | Existing slot loader retained; no invented bays or aliases. |
+| Frame positions flip X; frame directions flip Y/Z | `_Utility/HitTest.cpp:796-801` | Existing frame transform verified. |
+| Fighters require Land and may use all slots; other hulls require CapLand and the capital prefix | `Igc/shipIGC.cpp:727-729`, `Igc/stationIGC.cpp:389-391`, `Igc/common.cpp:1513-1515` | Capability and class gates retained; all ten native pods are fighters. |
+| Every plane must contain every oriented convex sub-hull's minimum extreme | `Igc/stationIGC.cpp:397-439`, `_Utility/HitTest.cpp:865-885` | **Station.InGarage now uses real oriented hull extremes instead of a bounding sphere.** |
+| Native CVH load flips vertex X and scales by desired radius / model radius | `_Utility/HitTest.cpp:735-737,568-572` | Reflect the parsed hull's local X axis and use length/2 as desired radius. |
+| Hull changes reload the model and length/2 radius | `Igc/shipIGC.cpp:1410-1419` | Resolve the current hull model from the sector cache, avoiding stale fighter geometry after ejection. |
+| Exactly rearward targets command full yaw and zero pitch | `Igc/common.cpp:168-175` | Shared steering handles the zero-cross-product case. |
+| turnToFace anticipates angular stopping drift and normalizes coupled yaw/pitch | `Igc/common.cpp:152-254`; torque multiplier `Igc/shipIGC.h:542-549`; default skill .5 `Igc/igc.h:5295-5299` | NPC and predicted-human docking steering use the native solve with current turn rates, effective hull stats and control interval. |
+| Enter requires alignment and squared yaw/pitch rate below .01² | `Igc/common.cpp:1291-1318` | MCP and human clients pass received/predicted rates instead of zero; NPCs already supplied real rates. |
+| Forward seek throttle is enabled only below pi/8; wider turns use velocity-compensated directional thrusters | `Igc/common.cpp:2231-2235,2309`; axis selection `Igc/common.cpp:1575-1636` | Shared MovementButtons implements native getDirection(path − velocity/k). MCP, human prediction/wire output and NPCs apply it alongside steering. |
+
+Missing lander geometry retains the sphere fallback (`_Utility/HitTest.cpp:844-860,881-882`). Contact radius, oxygen allowance, approach tolerances, slot occupancy and carrier docking geometry were not relaxed. The pure steering API retains its older cross-product fallback for callers without dynamics; NPCs and the predicted human client supply dynamics to this turn solve. The controls-only MCP client retains its established cross-product turning against authoritative snapshots, while using real-rate entry gating and native velocity-compensated movement bits. Clients retain the existing intrinsic hull-mass approximation for attached equipment; NPCs and physical corpus tests use actual ship mass. Native wide-angle RCS is applied across the station approach, without the experimental distance-envelope workaround used during diagnosis.
+
+A stopped rearward ship produced no yaw in all four old control-mask cases; [baseline-rearward.trx.gz](P699c_assets/baseline-rearward.trx.gz) records the failures. The old spherical garage predicate also rejected approaches for Belter fighter **510 at 46/ss402** and Phoenix fighter **190 at 302/ss301**; [after-corpus.trx.gz](P699c_assets/after-corpus.trx.gz) retains those failures. Oriented hull extremes admit them.
+
+A completed intermediate Core run exposed an Iron Coalition staging orbit; a four-roll replay of its logged neighborhood failed two rolls with the old seek controller. Merely cutting forward throttle while turning was insufficient: later actual-civ loads left Ga'Taraan pods stopped just outside contact, including ship **20189**, station **44/ss401**, final position **(-1429.2306,-1806.206,-8.120126)**, with essentially zero velocity and 20.4 seconds near staging before oxygen expiry. [diagnostic-native-default-skill-smoke.trx.gz](P699c_assets/diagnostic-native-default-skill-smoke.trx.gz) records that failure. The shared native directional-thruster branch supplies the missing translation while turning. [diagnostic-native-rcs-smoke.trx.gz](P699c_assets/diagnostic-native-rcs-smoke.trx.gz) records the subsequent passing corpus/load smoke. The final focused results below supersede these development attempts. Repeated staging failures were fixed, not classified as load flakes.
+
+NPC control integration recomputes movement bits each frame and preserves docking RCS through idle combat cleanup. A regression checks both persistence during docking and clearing after an order change. The load driver uses production AutopilotSteering.Pursue for warp/traffic legs; station steering is reserved for station approaches. The test project references ClientCore for this real flight law rather than approximating warp transit with station PowerGlide.
+
+The controls-only MCP path initially applied the native per-frame angular solve to asynchronous authoritative snapshots. Both actual-civ TCP cases then expired on all three isolated invocations; [diagnostic ledger](P699c_assets/diagnostic-mcp-angular-results.json) retains the failures. This client does not integrate its own pose or know the server simulation tick duration (`ServerShipUpdate.Time` carries tick indices in this port). It now retains its established turn law, while the real angular-rate entry gate and native RCS translation remain active. [The subsequent two-side loopback smoke](P699c_assets/diagnostic-mcp-snapshot-rcs-pass.trx.gz) passed with the original simulation oxygen deadline and wall timeout. No timeout was increased to accommodate the change.
+
+For the destination selected at ejection, trip telemetry now captures actual pod hull/capabilities, station type/model/radius/position/forward/up, and terminal velocity/forward/up/turn rates. Existing terminal-outcome tests check these fields. The new non-null array properties use ordinary setters: the full JSON-default guard caught source-generated deserialization overwriting init-only array defaults, which was corrected and included in final isolated validation.
+
+Human live tests use the standard prediction mode. The human native turn horizon uses simulation seconds, matching `StepOwnShipSimulation`'s wall-frame interval multiplied by server time scale. The accelerated human regression now covers normal time and 50% dilation, keeping the original 100-second wall bound and 300-second simulation oxygen allowance. Both cases passed the [timing smoke](P699c_assets/diagnostic-human-sim-time-smoke.trx.gz). The earlier complete passing suite sequence is retained in `before-human-sim-time/` as superseded evidence; final results below are rebuilt and rerun after this correction.
+
+### Coverage and flights
+
+The corpus regression enumerates **all ten civilizations** and **all 143 station types**. For the **117 native fighter-dockable types / 183 slots**, each of ten actual pods and eighteen initially buyable armed fighter-class hulls flies both an oblique cruising start and a stopped rearward start. Each flight uses real CVH geometry and a translated, rotated station, and must enter its **specified** bay within contact range and **300 seconds**. That is **10,248 physically integrated approaches per invocation**. Separate regressions check reflected asymmetric hulls, attitude, every sub-hull, stale model resolution, rearward yaw, angular braking, the pi/8 throttle gate, directional-thruster selection and velocity compensation, entry-rate gating, and four-roll neighborhoods of recorded IC and Ga staging failures.
+
+Both load cohorts use rig civs **[25,3]**, actual garrisons **115/ss27 and 44/ss401**, and actual ejected pods **444 and 113**. Each run launches 200 physical pods in four staggered waves with two return mouths, collision/crowding, launch traffic and the native oxygen deadline. Rescue-capable traffic remains a separate cohort, and rescue/oxygen restart cannot count as geometric docking. These are simultaneous physical pods, not 200 socket clients. The TCP return test separately runs both sides on offset `m2xspiderw` homes with actual civ garrisons, two warp transits and twelve production relaunches per case.
+
+| Actual-civ load cohort, three runs | Physical bay docks | Ship rescues | Oxygen / other deaths |
+| --- | ---: | ---: | ---: |
+| Direct docking, 600 pods | 600 | 0 | 0 / 0 |
+| Rescue-capable traffic, 600 pods | 501 | 99 | 0 / 0 |
+
+The direct cohort docks **100/100 per side in every run**. Across both cohorts, side 0: **594 docks + 6 rescues**; side 1: **507 docks + 93 rescues**. [Per-side counts](P699c_assets/pod-counts.json) and [1,200 authoritative trip records](P699c_assets/load-podtrips.jsonl.gz) confirm `ss27`/444 and `ss401`/113 identities.
+
+All six MCP TCP returns finish in **218.85–231.00 simulation seconds**, each with twelve relaunches and no true-death restart. All six accelerated human flights dock (three at normal time and three at 50% time dilation), and the independent real-time human triplet docks after **4911 / 4911 / 4911 ticks**, with **zero pose rejections and zero SHIP_RESETs** in every run. See [flight summaries](P699c_assets/flight-results.json).
+
+The random-heading and artificial-delay experiments are retained as diagnostics. Delays did cause bilateral failures; they are not evidence that arbitrary routes or control delays fit native oxygen endurance. The local regression scope and the unresolved exact rig reproduction are stated above.
+
+### Verification
+
+The final solution build passed with **zero warnings/errors**. **67 exact methods × three isolated processes = 201 passing invocations / 315 passing data-case executions**. This includes the two guard methods. The corpus triplet integrates **30,744** physical bay approaches. Full unfiltered suites then ran sequentially on those binaries, with local P542 and P660 opt-ins enabled.
+
+| Suite | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| Core | 4,660 | 0 | 0 |
+| ClientCore | 1,060 | 1 | 0 |
+| ClientCore.MonoGame | 2,234 | 0 | 3 |
+| Lobby | 19 | 0 | 0 |
+
+Each final-suite failure passed **three exact-method isolated retries**, satisfying the requested load-flake rule; they are listed in [TEST_FLAKES.md](../TEST_FLAKES.md). No assertion, timeout or quarantine setting was relaxed.
+
+[Build](P699c_assets/accepted-build.log), [isolated ledger](P699c_assets/accepted-focused-results.json), [guard triplets](P699c_assets/isolate-accepted-extra-results.json), [suite ledger](P699c_assets/accepted-suites-results.json), and [audited summary](P699c_assets/validation-summary.json) retain exact outcomes and portable compressed TRXs. The audit checks source and binary hashes, all input hashes, three passing invocations per method, complete non-aborted suite runs, sequencing and TRX hashes.
+
+The existing private-home-path guard failed deterministically in two proof harnesses. Both now resolve artwork through ExternalPaths, and both proof tools build with zero warnings/errors. [Before](P699c_assets/isolate-privatepaths-before-results.json) and [after](P699c_assets/isolate-privatepaths-after-results.json) triplets preserve that diagnosis. This and the corrected JSON-array defaults are deterministic fixes, not flakes.
+
+Earlier interrupted/aborted runs and runs before subsequent steering corrections are retained as development evidence and excluded from final totals. One initial Core attempt aborted with a transport reader InvalidOperationException after a path-guard failure; it was not counted as a completed suite. Only the final `accepted-*` ledgers and their compressed TRXs establish current validation. [README](P699c_assets/README.md) identifies those artifacts and the repeatable audit command.

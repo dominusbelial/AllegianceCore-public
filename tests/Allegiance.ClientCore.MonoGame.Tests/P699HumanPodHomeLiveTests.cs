@@ -33,16 +33,22 @@ public sealed class P699HumanPodHomeLiveTests(ITestOutputHelper output)
         return game;
     }
 
-    internal static ControlData AutopilotControls(Game1 game)
+    internal static ControlData AutopilotControls(Game1 game, float dt = .05f)
     {
+        Set(game, "_autopilotDeltaSeconds", dt);
         var args = new object[] { ControlData.Neutral };
         Assert.True((bool)typeof(Game1).GetMethod("TryGetAutopilotControls", Private)!.Invoke(game, args)!);
         return (ControlData)args[0];
     }
 
-    [SkippableFact]
+    internal static int AutopilotMovement(Game1 game) =>
+        (int)typeof(Game1).GetField("_autopilotMovementButtons", Private)!.GetValue(game)!;
+
+    [SkippableTheory]
+    [InlineData(1.0)]
+    [InlineData(0.5)]
     [Trait("Requires", "Artwork")]
-    public void Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn()
+    public void Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn(double timeScale)
     {
         Require.Artwork();
         var art = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
@@ -75,6 +81,8 @@ public sealed class P699HumanPodHomeLiveTests(ITestOutputHelper output)
             Assert.Fail("client did not receive the expected wire transition");
         }
         Drain(() => session.World.MyShipId is { } id && session.World.Ships.TryGetValue(id, out var own) && own.Latest is not null);
+        typeof(Srv).GetMethod("SetTimeScale", Private)!.Invoke(server, [timeScale]);
+        Drain(() => Math.Abs(session.World.TimeScale - timeScale) < .001);
         ship.ReceiveDamage(0, 1_000_000, mission.LastUpdate, ship.Position, Vector3.Zero, null);
         Drain(() => session.World.Ships[ship.Id].HullId == 444);
         double deadline = ship.LifepodTimeToDie!.Value, began = server.SimNow;
@@ -131,11 +139,11 @@ public sealed class P699HumanPodHomeLiveTests(ITestOutputHelper output)
             }
             var controls = AutopilotControls(game);
             // Match Game1's update order: predict the frame, then publish it.
-            sim.Step(.05f, controls, 0);
+            sim.Step(.05f * (float)timeScale, controls, AutopilotMovement(game));
             uint stamp = (uint)(server.SimNow * 1000);
             if (sendCadence.Update(server.SimNow))
                 session.SendShipPose(stamp, cookie, ClientShipUpdate.FromPose(stamp, sim.Position, sim.Velocity,
-                    sim.Orientation, 0, controls, sim.TurnRates, sim.Power));
+                    sim.Orientation, AutopilotMovement(game), controls, sim.TurnRates, sim.Power));
             Thread.Sleep(2); server.TickSim();
         }
         Drain(() => session.World.Ships[ship.Id].StationId >= 0);
@@ -149,7 +157,7 @@ public sealed class P699HumanPodHomeLiveTests(ITestOutputHelper output)
             output.WriteLine($"POSE accepted={accepted} rejected={rejected}");
             Assert.True(accepted > 100, "the server must accept native poses throughout the flight");
         }
-        output.WriteLine($"HUMAN route={string.Join(" -> ", sectors)} elapsed={server.SimNow - began:F2} oxygen={deadline - began:F2} station={ship.StationId}");
+        output.WriteLine($"HUMAN route={string.Join(" -> ", sectors)} elapsed={server.SimNow - began:F2} oxygen={deadline - began:F2} scale={timeScale:F2} station={ship.StationId}");
         Assert.Equal(home.StationId, ship.StationId);
         Assert.True(server.SimNow < deadline, "oxygen respawn is not successful flight");
         Assert.True(sectors.Count >= 3, "at least two physical warp transits required");

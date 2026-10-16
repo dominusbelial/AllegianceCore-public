@@ -1,0 +1,2550 @@
+[
+  {
+    "file": "/home/domingo/Development/Artwork/PCore001.igc",
+    "sha256": "f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/m2xspiderw.igc",
+    "sha256": "2e0011f7f23e3a05d6e2e323c80aba8b2eacfaee92aa64c796f631dda740111c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss401.cvh",
+    "sha256": "797766bc8a88df6065d54e6d8d804bf721512a044359ed57088d3a339856bf8e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtpod.cvh",
+    "sha256": "22c8a815a861d0fa023557c126e67f30ae04a5725fda692f66c9ec38bccd77c9"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/stationtypeigc.cpp",
+    "sha256": "176f961c09261adde1a3da6c7b94b487e6eedede8b27972fc2c66aa8524c60b3"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/stationIGC.cpp",
+    "sha256": "44da2296ce77df42e34a7af1e152ef7217a1ae6ecdc8beb4c3073efbeeaa1784"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/common.cpp",
+    "sha256": "853757a6c9f981d56f1d6c0c3544035c58e77bfdbf25b8bd1764adb10d69b955"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/shipIGC.cpp",
+    "sha256": "2f5d1cd1dde51bafdf6d1a71e5ff375bd44c1f633f8a167f202620dce7cb12d3"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/_Utility/HitTest.cpp",
+    "sha256": "25fabadfa00421d61e31a56e529d06547489755df383f1c0b2174d682773525c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs01.cvh",
+    "sha256": "1174fd84c7700e133ab94eb95ecbadc335cd7e9434100af3628287079116be8f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs02.cvh",
+    "sha256": "153edbd3d919d486f5f987535e71adc641bba73bed50aa2a9ea3fdb0e76147b2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs03.cvh",
+    "sha256": "153edbd3d919d486f5f987535e71adc641bba73bed50aa2a9ea3fdb0e76147b2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs04.cvh",
+    "sha256": "1221ffbafa41297edccc354a114bff231aa0658c6c8db0c0840c59f4c2870402"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs05.cvh",
+    "sha256": "c2d2f92b1317bf48492462662494ff33663d1b000f2615752197c732feb34de2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs08.cvh",
+    "sha256": "cad9fc878594b541f576ef6ad7244b1c7c70eb83577a98c09f32dbef6594f034"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs14.cvh",
+    "sha256": "fe06aa10ade3d8d3cf5a90b4e77584778f6950152a4336f6217fe399b6682783"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs19.cvh",
+    "sha256": "a7d75436549be0797d444cbac9d85e0445c3fc93dd55091abec194b4fe67626a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs29.cvh",
+    "sha256": "35c23bf508d33c3a159504210878d354ae5730f23495c2498a95117ef1ddccb9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs30.cvh",
+    "sha256": "589ec12187d43f0f0977ea286bcbbf933b825b1c870a5f1528d7e0e2bd7ad9ce"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs34.cvh",
+    "sha256": "d28254bac38c13a2febd47608f141f0c2e017c6ec837c99ac563ee517866a4bd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs36.cvh",
+    "sha256": "1f53089eb3cd398ea43cd2a06f764904955f3a62f9bacc30c91ff2fbd6834960"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs38.cvh",
+    "sha256": "7e15b5f6612c2a95c7428048f9018d998b6a19c73ddd78ca254808c7333e858f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs39.cvh",
+    "sha256": "dd851f9a6632cc32f649483bc68121b8f5d22da21bdf6bd81ee687c52c46e199"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs40.cvh",
+    "sha256": "ffe22270f5efb2c1115351f43c7124ccc4cb9f7a227d99711a444b1f0015b2f8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs41.cvh",
+    "sha256": "e7d8dc679fb5eb3755d01218da56fc64a8fc170e29f1422c491f572b02cb1a5e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs42.cvh",
+    "sha256": "62e970f9cad1ba16748fe8e2d76f21d02d7966eae69f5b63d6c6c5aa08a24d1c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs46.cvh",
+    "sha256": "0f57702505a7f9adc964a5f4008e0906f5a2b5873a16977e5d5475a7f175ef11"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs48.cvh",
+    "sha256": "e2b63f22d7941e042c2514fe5760ca4f153839ae2be46e07aa89c80c6fa6e3f7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs56.cvh",
+    "sha256": "3cae02e66ac2c82d57683579b4f56a59a484ff112910364fd165709afbfdc6a4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs57.cvh",
+    "sha256": "45d2d6b5192803e24c435260789d9ff98403a3e3f9aa3e271f08da21c6075481"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs63.cvh",
+    "sha256": "18de30a63abc7736d4a005d072b474a600147983f9134684d25ddd99210fd413"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/acs64.cvh",
+    "sha256": "de1867c86fa4b8cdd2b8c4b54fa9e42c282caa2eae726e85ea530a69fdc6f912"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/aleph_sphere.cvh",
+    "sha256": "b3f06169d49f109e524cf9698886a5f342f6f4f3afbedeebbabeb5b633cb8092"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_gc_fig.cvh",
+    "sha256": "49bc31442edbcc07be9fdc0523c1c56ebcc461a7f7e99b2e64feb00342fe3a7d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_gc_int.cvh",
+    "sha256": "a75c46ade3e5d27485b0cd46f300e8cd4033d9086ef94eed7cfc9eaf1de911f4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_gc_pat.cvh",
+    "sha256": "4f3025a3d8a92c9fb05b67edbcc589efa67a84de95e8942de05b96e166f51e12"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_gt_corv.cvh",
+    "sha256": "5131ac67575e417b68b1b0ef9faa4c977851a7049fce2c76fb13a6885786418f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_gt_fig.cvh",
+    "sha256": "e61eb3e818a4c3a9ad5461a092abc032f068f271aeedd60397b4dbde7f6c078e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_gt_must.cvh",
+    "sha256": "ebd2513eaf75488758cf45fe55a3469b07b7c16d7bc262a904886f77848d543f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_gt_sct.cvh",
+    "sha256": "718fd0faf8d8ee175388450fbb8bc4e36b6010be43568d8e278a51244e6e6860"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_gt_sf.cvh",
+    "sha256": "71c121947d20623a2a4ed033b966f65489943b7fdfe5a39cc586c54494e7e3d8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/apm_rx_sct.cvh",
+    "sha256": "b0b555c8b3041ddae80dae77f2b0e09d1f9c903f53de9e193afe890f6911aaa3"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/artifact.cvh",
+    "sha256": "7d01b13d54f930e882b3331cb62ded07f26d9fbbc166ce3455840f69530cd768"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/belt_omni.cvh",
+    "sha256": "ef8b84186f019fe2651fc34720383a766f83008904f3cd976826ae63d5e21037"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/belters_flagplat.cvh",
+    "sha256": "e8c9585a000da5be9a757315e2b2192b5893aadf43c3c448218322cf3879facd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd03.cvh",
+    "sha256": "9036557369c618eb8e8e8f045f3d038225760953333e258c07ed1e0806515744"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd05.cvh",
+    "sha256": "bd1248717292eecd9447ba1c61d40d65db28302c4df9efea29c4db0d856dc551"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd50.cvh",
+    "sha256": "8daaa045902573f0b10ce00866ae0520ad9267c6c92f12390e3aad466aff3188"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd51.cvh",
+    "sha256": "c7f371d78e5327dae35e2e745b13b5fd7fa33d7cd351a1fb95bf947830bf9cfd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd52.cvh",
+    "sha256": "77f7cc46d021b67316515527b1d6309be8a0084a71029c9e42ff270ccc1234a5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd53.cvh",
+    "sha256": "77f7cc46d021b67316515527b1d6309be8a0084a71029c9e42ff270ccc1234a5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd54.cvh",
+    "sha256": "f495f6adfb36faae23294391a335053e5630efb6158ccb5446e46330fd1a245c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd55.cvh",
+    "sha256": "f302611533ee6e850f0b8f2467d03de81815c72d914eabb1a25f70d7eb4818bd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd56.cvh",
+    "sha256": "77f7cc46d021b67316515527b1d6309be8a0084a71029c9e42ff270ccc1234a5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bgrnd57.cvh",
+    "sha256": "338e89aeb9b5f375379245e99bb583eacb812b0376a908c31b05799466f546bb"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/biosplat.cvh",
+    "sha256": "b218add4cbdf7bad5658e7844da1b80cce448202371f64bf8c77015a1e5a0973"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom01a.cvh",
+    "sha256": "a53ea723373b242d7466a8f65e4dca36c8169d3b7bdcfce2ced77745c86f781e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom01b.cvh",
+    "sha256": "fa81dbfde64ddec6e8328d619fe1abe1fb715a1f6d34f324b2a6816250c80299"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom03.cvh",
+    "sha256": "8b673e3c86a64daeb92b51106e0305b5be70d91629fd59d997d2304e0723ed27"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom04.cvh",
+    "sha256": "1353c615856340ae28fb1fa3d28366b1550d7d8666d3996585ed5674517e2538"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom05.cvh",
+    "sha256": "bb01f20d5c01314ec5bfc982435e9c7b1d7e056a46e3d087860907c9f3158a8c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom05b.cvh",
+    "sha256": "f0b03244e34398933ebfc038cdd2f6ce248749270441bd4598e42a1f3a060849"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom07.cvh",
+    "sha256": "fbe4b87e02328e22cb621534acfd20d0c6c0423fcc1d8d4427bfba44942bfd9d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom07b.cvh",
+    "sha256": "66f32f8c08854ffcab8879a0a3a5146380a688b2ab1edb87dfec5d340186155a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom20.cvh",
+    "sha256": "78d0fd25dab1baeee003a6a25c5377a9652587f815fa3607103052c99bee2a63"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom30.cvh",
+    "sha256": "254ce2b1acb99d42c7a92f4481295d239f652be5b7cdf9e14964bc7b3a8ef39f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bom400.cvh",
+    "sha256": "a4771eca14fcf682ba78a6a783433f92d3dc331db80c59b2904950526c84cbc6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bpbom07b.cvh",
+    "sha256": "cb301d483d508629ce2a9cc4a395536ab096d3029420cf8658ca8a77e4cea08e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bpfig07.cvh",
+    "sha256": "5ea5977f2c816392b184ebb081135386167f71c51b0daf7d220a68405e0ec6c6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bpfig12.cvh",
+    "sha256": "31aa9cfc3352049bd89eda9e01620d6528b0a8ebed53e31819575a623da96ff3"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/bpfig22.cvh",
+    "sha256": "dc306384aad4f888693071fc89431c1110e7d11b5149a9087c62aa87039fbf99"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap01.cvh",
+    "sha256": "69b7cc0fd7089511a7f48a6931664627f671e80a0158f330fc3b0bd0c2e9c897"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap02a.cvh",
+    "sha256": "05cd2f43b1559a5dcd3affa36720a7c922985c18f890399ae722cded3c0dc59f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap03.cvh",
+    "sha256": "7573b7ebc95b05bd131169d6f2b99eaa333d95c6ebc01596aac59438f1c0f151"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap04.cvh",
+    "sha256": "1001b0c9f6cd3c2cb496d394c79b8b526f5ee3fe3cc472103ae9945f13272442"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap05.cvh",
+    "sha256": "71a3cfb9ba695f163a798ef9754135d48442f4f5a76bb2119b89ccb16ba83333"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap06a.cvh",
+    "sha256": "e90a3efa5e030338585f61fcec4eebcee3a1d8c1f1996b023a689456484d3112"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap07.cvh",
+    "sha256": "2383456815748c34539e3953d58f712663c0e637f7a3b8ec29f797d2a362da79"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap08.cvh",
+    "sha256": "2cf30de5a87524b48467a332ccb23cafb5c34e7b3566525d6a2afa4f634326e1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap09.cvh",
+    "sha256": "3997128b612ff038ca66dfb8899cf1768ada069225b433fc2efc7838969e6b2b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap100.cvh",
+    "sha256": "5e91fb8422a4c48720d196a1bd22300d9b43c50e706dba3f446726bf32b050b7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap101.cvh",
+    "sha256": "9176df52312a0728004e57f7c129c7987190cee2b25e17c083ecaaba353afe8d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap102.cvh",
+    "sha256": "3c9a0cb68f982001b880d40081cb5a52237d3a8b94d3a1c16fad8aea936103ed"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap103.cvh",
+    "sha256": "91acb73a745cd6c61c6f0f54daf64977896fd421f74f8a2e6338d3b44b512dbf"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap20.cvh",
+    "sha256": "3e128e28d69cd22705ada285e4d1acf31f82d60779c48b57cb46960172806c4e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap21.cvh",
+    "sha256": "77be59fc7779723b4107fa76c37cdfa7060b5f4b0df70e7d4dc5550cb51bd32a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap300.cvh",
+    "sha256": "3119642edc91616e9cfd04d6d98db17dd0a69aa5b71f3d502826f4d0dee97a71"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap301.cvh",
+    "sha256": "8e49d9b7d224a67b88b38a8f7dfaee52876e49485742770555e0c17ea41c4167"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap302.cvh",
+    "sha256": "ee8f8a1d22cf1f9347e3e03242b3b72bad7cd8a46be62f284d885d2d5712ab2d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap303.cvh",
+    "sha256": "8d75d578437f6eb16bb09dd01717c23ea31e1e36ef523f2b66f21c234cffed14"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap400.cvh",
+    "sha256": "15401b01254c39571edfbd3267b19a4ab30fd5ba047b9022ac8df556e496ac2a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap401.cvh",
+    "sha256": "e8a80b6333b479d0a043e5fc094b91d4f520b85d6a650045f15ebef8d3f067f4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap402.cvh",
+    "sha256": "e95378eb962aed90ecb35e22a2de7a79e80fa2444b3314b76b67f5a5bf8f9b8d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap403.cvh",
+    "sha256": "e954980f9dbc9a8866dfed981cb426e93d580ab5c85bb0cf7c2420b80df1b4a4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap404.cvh",
+    "sha256": "146170d69544a915758622133394591c0710e06e4ff71de0208a4286a4c43935"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap405.cvh",
+    "sha256": "de7d37666c9c4a391b76850b9191bdd5967eac1afd0fe8a25c0165f2fd51182a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap406.cvh",
+    "sha256": "b4c3396184827ef6db582738ea93f8eea4b5739e56fe2544d9642736ff9c616b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap407.cvh",
+    "sha256": "46d79cd02f50589cc4d1ddac24fd099c1fca3eeb6c653a7241540d3a64a9d936"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap415.cvh",
+    "sha256": "d5a4fde7da57d4dea4630ec6a088cae9b6e000515b330179a35486af7aef5c87"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap500.cvh",
+    "sha256": "6ac4dad68fd5d37331945fdad88c1e862b3b045db08674ca0c0c597fa5cff0b5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap501.cvh",
+    "sha256": "38153e519cca779fa8001bb0a979eae382db01959c3ea8002aaa2b58de87f571"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap502.cvh",
+    "sha256": "086cca76721fba52ac4f282d29937238ae499affa7d4d37c46eb912bdd5f345c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap503.cvh",
+    "sha256": "28b71aff073dde91a3e21c2250171907b51c6cc50074d439595edefd38dcdfb9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap504.cvh",
+    "sha256": "6bdd1d08bf7e6a0003dbf5e1602401ba1fda53ca5841413a21dd89b46447fee5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap600.cvh",
+    "sha256": "18770d71968e9ef457e8f33ec18f0d5a3bd15532b7cad37055ef17462475657f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap601.cvh",
+    "sha256": "79de370392c7f2a3e79a3e0498ecc1cdc7106a191f891300ad5593df1346f049"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap602.cvh",
+    "sha256": "e9bf906e3010c4b55cf448a2e07f05fef2278d23c0546c75c4db2093756e8631"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cap603.cvh",
+    "sha256": "ee06c666be0dadbd4cfd060f85e5cfd360dab521cd7530afa509f0f5fe16e55f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cc_fagishfig.cvh",
+    "sha256": "5349d666f3555426d2b1f492a366d08a7d33ad15f26c217151efcc997fbc7c5f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cc_faristexp.cvh",
+    "sha256": "fd62bcf69115ace05c214adfb6961337abd9886bcf3470205b525f4b6b6ed8a4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ccstxpat.cvh",
+    "sha256": "b6afef8ee06f41481d4cabca1cca9ca7a5980825621cecf96221efa35c552ef7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/crus2.cvh",
+    "sha256": "03ebab2975b43205071a315a3fcb402f3d005eeeca18c6eda9570e80b8d1f12a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dbase.cvh",
+    "sha256": "67abeec152b89397533834214a01d8f8d2c86eba5324e5518f144ca82f2952e0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dcrus.cvh",
+    "sha256": "6fa4b409c2d8cd1a5c37abba859e6e9cc80bc36a73598826b4813d58b89d47d2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/debris.cvh",
+    "sha256": "d419c223f3a0aaabdbcfb0405e8e0197299e5263c56be9b0f4a33f1e9f82da85"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dgarr.cvh",
+    "sha256": "69ed2123a616dc690f075bfdcfdcd452e94ed97a86a5502b8a1d6406d81f9db7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dgexp.cvh",
+    "sha256": "26e7159f7d14dc470b5170febdf9d40c77f993fdd7c9249e9f118bd984c18122"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dgsup.cvh",
+    "sha256": "6f4879aa0e6fd5ea871403e30e67695802287e0a5df22df4e3f4f7f0f4c00743"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dminr.cvh",
+    "sha256": "e055c98d85bee66ad9dbd5cac7874035581f5ab1da709c95738653ff9de60daa"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fadrshbmb.cvh",
+    "sha256": "87b3ee7a9696fd44bd4502880fb8fd5db6137633007644f3a5a901d9db5d54ba"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fadrshcon.cvh",
+    "sha256": "a454d4aca1e68b9f042eefde3b288b538ea2a48eca87872645eec7095855daf8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fadrshfig.cvh",
+    "sha256": "ba9652bae79433cba866545889b5490bce03fcb49b852b6d2ac2004a0d7d1a12"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fadrshint.cvh",
+    "sha256": "fa7e2ab9cc09959f74f01c72e85e6cf66c70cb37086ee9587a6303b9b3bbfe7c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fadrshsct.cvh",
+    "sha256": "000d9d0c94bbc4d2c582589712809f297ccd643762bca61d611916b7c3b6023c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fadrshstl.cvh",
+    "sha256": "86ecd0f7844ff0b009b63d1a2324115824c25571dc2f5fc43ecbe084692cd273"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fagiptpdes.cvh",
+    "sha256": "c5cc77836e5e3019860bad2759b37b23b8515bdea677a44ff739ef983d4eafd5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fagishfigx.cvh",
+    "sha256": "6271e19d19f83859671f8a3ffd1aebd58c6120ffa0cb83035976c128be66b80f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphbsexp.cvh",
+    "sha256": "3584a80a2e5f75ec507b37a226f92efb6d1bcdb6a237d97add4cb9860732f328"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphbsgar.cvh",
+    "sha256": "cb349eecada35b08855e3ff65385e9a04ab2c916caffa2e1e67906261fcb0c52"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphbsop.cvh",
+    "sha256": "2864b5eefc081757eccbff8d597c0914a74f24dacc022709ada6970cbd577499"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphbssup.cvh",
+    "sha256": "33a21faff8be04ffcbd7fbf6a57c0b340bc9a5be1a09ea47943feb711546fb9f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphbstac.cvh",
+    "sha256": "86073081910081df9d850016aa426ae6eabd36011e11b0948ca0b4907eeb15f6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphbstp.cvh",
+    "sha256": "8ef228561ab926443af071c7cf4ac6ff02fc6017441fd983c098e6fe002d9ff1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphbstrn.cvh",
+    "sha256": "efe8e24cc2df38c921812d052c9c80d74bb28a706de311cd23b62464a3fe9b43"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshbmb.cvh",
+    "sha256": "9c8147135f8b2899fc9f9b6c09addb99a0e061cbd09418449159b399926e0e14"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshbmbs.cvh",
+    "sha256": "390c8dc112b8860e254cf0ae5e90ad212ef22f884bb78b53dd5b4737790c5d9f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshbmbw.cvh",
+    "sha256": "2e70a0b20ed2148cda565f8d0e9b85e826575b979891b94d2b64f089afe7bb33"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshcar.cvh",
+    "sha256": "87c1fb8766e79ad2485d5708311bd96455a00ceff15c713f7b308be75dac49e7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshcon.cvh",
+    "sha256": "c5f1c818826cdf5bd56eee3c18566aae97daacf25ba8e5c1036f23f3c4a664ff"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshcrs.cvh",
+    "sha256": "dfd6f9739d12481fc438801c8b6c827a54e060f3b18d4fa4af77c85b6cabbc9f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshdst.cvh",
+    "sha256": "d9765eebc2b8403196a3dd991e66ecf31f2f1b8ebba88adc2a3966cb3d9c24d1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshfig.cvh",
+    "sha256": "b4b1fdbcbd6d08163c6f3cf19166b4eaab61e68286996e4ec0dbc2e0767f9d23"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshfrg.cvh",
+    "sha256": "8227eae47c7442f67a856addbfe8c106ce3cfa84def6aa912b804a0131a218bf"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshint.cvh",
+    "sha256": "94cae5c36303a266a821a9b4e685ef75bcb391567cee4010d8f85d20f00bd9fd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshmnr.cvh",
+    "sha256": "2ca40fb91f3c85a0a14972b032f55249dcf49a0634216194c79caaf6def6145e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshpod.cvh",
+    "sha256": "fbeaa0a1ce71ea462155936cd9be222d9f79b5d172a54a16e1ba28778b4e1722"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshrpb.cvh",
+    "sha256": "fecfb7a272f6a16be5ab51f9cb299f5ab4c485c7c59f9c445b606b168cd8fd9f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshsct.cvh",
+    "sha256": "34d60bc5210b005864664b8341b769efc2f4ca424f56a6a0798e5221a4b315dc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshstl.cvh",
+    "sha256": "3c74cddef00bf2c347839009edb0ad435034d8c135a3097f96db426814be27ee"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshtwr.cvh",
+    "sha256": "a348c013ad1776548c35b995bd3ff18954450ab37b78e0253aa2631ddf0034ee"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphshvng.cvh",
+    "sha256": "71390ca52c93cd6fe29af0bd96353bdb90d932f3d2a9dfd7826ed0f5c528dd87"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_faphsttrn.cvh",
+    "sha256": "a06e5c807eb4a84cbca70a61f67c4f6a7e9cf6b9cd18ad3c3a6114660a8427a7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fateprplf.cvh",
+    "sha256": "d0e14e776b2ff627db327586048389fcf976d86e37b329d27aa1edc999286f98"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fateshbmb.cvh",
+    "sha256": "5c2c6e8cbd876f93085bea69690dbf2540b37e40d376698287f2d4cc662f12f1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fateshsct.cvh",
+    "sha256": "9860c860e5db55e90cb102a065b59850d9a1672988ddf83f7bf9d3f6419e691b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_fateshstl.cvh",
+    "sha256": "a03882c32784608fcaac96e17ed4953fb9ac06f12e28393ed3e3c3996f10a7bc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptaftcrs.cvh",
+    "sha256": "e2b63f22d7941e042c2514fe5760ca4f153839ae2be46e07aa89c80c6fa6e3f7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptafthpr.cvh",
+    "sha256": "e2b63f22d7941e042c2514fe5760ca4f153839ae2be46e07aa89c80c6fa6e3f7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptafthvy.cvh",
+    "sha256": "e2b63f22d7941e042c2514fe5760ca4f153839ae2be46e07aa89c80c6fa6e3f7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptaftion.cvh",
+    "sha256": "e2b63f22d7941e042c2514fe5760ca4f153839ae2be46e07aa89c80c6fa6e3f7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptaftlgt.cvh",
+    "sha256": "e2b63f22d7941e042c2514fe5760ca4f153839ae2be46e07aa89c80c6fa6e3f7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptaftrev.cvh",
+    "sha256": "e2b63f22d7941e042c2514fe5760ca4f153839ae2be46e07aa89c80c6fa6e3f7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptlasbls.cvh",
+    "sha256": "de0a1976e7d3cc237a96626d7209853cf886eda05a0bcc23c9fb0726eee93668"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptlasbls1.cvh",
+    "sha256": "768bb5220a078d550c2938f8bb548ed76441e6024e895ed538052e0eec984760"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptlasbls2.cvh",
+    "sha256": "768bb5220a078d550c2938f8bb548ed76441e6024e895ed538052e0eec984760"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptlascan1.cvh",
+    "sha256": "6b36538b5699478ceba11fcc21ea406180a44ba2df885297a1e29fa7ad50346b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptlascan2.cvh",
+    "sha256": "63faf2f582ff3e1305308b28537dd7486bfc95a54245daff7062922b9b370fc5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptlngtom.cvh",
+    "sha256": "870659684c63a92f4de8d4fe73c7c255b1baf780ed2ec4e79dbe59466a2dfbe3"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptminemp.cvh",
+    "sha256": "e7d8dc679fb5eb3755d01218da56fc64a8fc170e29f1422c491f572b02cb1a5e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptminpak.cvh",
+    "sha256": "e7d8dc679fb5eb3755d01218da56fc64a8fc170e29f1422c491f572b02cb1a5e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptminprx.cvh",
+    "sha256": "e7d8dc679fb5eb3755d01218da56fc64a8fc170e29f1422c491f572b02cb1a5e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptmisdm2.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dn_ptmissk2.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dregcar.cvh",
+    "sha256": "1935d345ae79222e1f61dd53f4f6c207cdce8a3afc807222d8266843eba578c8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dreghpod.cvh",
+    "sha256": "7d01b13d54f930e882b3331cb62ded07f26d9fbbc166ce3455840f69530cd768"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dregtt.cvh",
+    "sha256": "6ac4dad68fd5d37331945fdad88c1e862b3b045db08674ca0c0c597fa5cff0b5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/drgas.cvh",
+    "sha256": "8aebfc830f9081d8c1c0d58ad1c6b318181aeb54aca6e3a75bde629884b05f56"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/drgcrr.cvh",
+    "sha256": "38153e519cca779fa8001bb0a979eae382db01959c3ea8002aaa2b58de87f571"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/drgmf.cvh",
+    "sha256": "a7a23620459b7c75022d07eb47d88384b8b77546c3e81f975a4946928f65da03"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/drgmnr.cvh",
+    "sha256": "3c9a0cb68f982001b880d40081cb5a52237d3a8b94d3a1c16fad8aea936103ed"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/drgop.cvh",
+    "sha256": "5597901731abc89d854e8e9a0ea205acf2a034bb9114be37cd9c6f1ca680c5aa"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/drgrock.cvh",
+    "sha256": "9036557369c618eb8e8e8f045f3d038225760953333e258c07ed1e0806515744"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/drgsy.cvh",
+    "sha256": "15cc28cf63ebcc303adbaad049827010cf3fa4acc9c873698903830a1c0674e7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/drgtow.cvh",
+    "sha256": "051d9f4abb1b8aa22b8ede347dab30320f56cc67143cafbe18bc9e9bbc29f64c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dtac.cvh",
+    "sha256": "c44d0ae80f208bcd6d889ca8fa4eb22ea30605e2a58f185ef65d749896c4d57c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/earth1.cvh",
+    "sha256": "68c299397fb898ca8ce2262a0e6df09e0237b9c5045acce56dbc6ad40443ad7e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/earth2.cvh",
+    "sha256": "64a7ed91914ea5f7b8a512634fc72d0a69bd1a60cb3bc3448e7324f5078952a8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/earth3.cvh",
+    "sha256": "2a4fbec3b2937f152e37d6d1f4483fafa29512cf278440c24911fd2235d362ca"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohbsexp.cvh",
+    "sha256": "6fbcb016b698447d1c8de1dcf317a8569b4c6f7c8f8235cb3e2d54514aeadae3"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohbsexp2.cvh",
+    "sha256": "2c500aaba5d80256df720b5344c752135646e8d37f6484ce0b30c1dbb72f772f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohbsgar.cvh",
+    "sha256": "83767bc71fddfc82c9d7850430a8291969d2846a6ae1bacf3197131f6a04e505"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohbsop.cvh",
+    "sha256": "652aa4c3d22413cff3b942b365d724c09b7676c2c35c246a21a94ece206d12f8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohbssup.cvh",
+    "sha256": "a63bbd71e7053b450eb9567619dff8833c13191f1f69ddbba28c50a2b2c8dfe9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohbssy.cvh",
+    "sha256": "e95361295b4968a49e93220678a5f9f6717cf22a3277018286706ef219d86d2a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohbstac.cvh",
+    "sha256": "100fcc04ee3ca8f46ecfd8cd507ad3eb05b330717f2c3e8dacb2c5ecd5dd8c22"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohbstp.cvh",
+    "sha256": "598b5f1db4a5c9f1b90eef20eb136611357c32f8b299c1897867087fae6c191b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshafig.cvh",
+    "sha256": "9b7395e450103a28d68db168501f4be340128991555e43e403ab834f95ea4fd0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshass.cvh",
+    "sha256": "28cc2503cfef2786cfbb5ed19fd626dd727fdb12cc527961dca0c1b0f727fdc8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshbmb.cvh",
+    "sha256": "90589c95d9cee4ffc0d93e0f815383ac9ec72e3bac6b715d38f2b77397643602"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshbshp.cvh",
+    "sha256": "360efb0d8a8a9db3c07bf8f188d61c9246071304b9b036ed37f86db678f01992"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshcar.cvh",
+    "sha256": "f1a65efb34720392895d0cdf2a22ff57825b8b61c6afb089dedb686ccd76d250"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshcon.cvh",
+    "sha256": "30d2d78b4747d8316f983a44170c10718690d4000fcf51776789aa1499bb0020"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshcrs.cvh",
+    "sha256": "56729d583d4f82283df0d2580f3dc5ad3c9ab5673942cb6c231e2ff982d7c94d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshcrv.cvh",
+    "sha256": "5f5b9fac5bc640f4cfb0be65fffb8ab795930cfb683d7ea9d29580058d45a128"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshdev.cvh",
+    "sha256": "879d3677b6ff640ee58ba28a8c33f2a03c669342beb8d0335608e26680d1df2a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshfig.cvh",
+    "sha256": "98c063e4892814ea918aa774eba50b2aed05ca1be93788b90ed44ec46b88a5c5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshfig2.cvh",
+    "sha256": "f27f98909643ccc1c4de731ef7f0f4a8b798f1e4920853cb2ab0b50a4685d5a2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshhint.cvh",
+    "sha256": "740334240a1ac12a972717e00ed2bed0ad62ff7296c7b5791f385ecf97a75b83"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshint.cvh",
+    "sha256": "6cf667b7b02f8478143f6610ecb87041881541b71995131e0a7e5fb2ee9a5d3c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshint2.cvh",
+    "sha256": "14781045a5f51b146ea5fba151084d85bc1d9fe6cd4a9b5bd54805d00ffb20d2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshmnr.cvh",
+    "sha256": "b727ee18663dd0e1d689d70e6c88d617547893f2d25a4a19f8a0fa8f616d8906"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshpod.cvh",
+    "sha256": "67ac42acbd6f4f3601c6df9f0b79e740cc8c99b90e1d9ee1836d06cdd040c075"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshscta.cvh",
+    "sha256": "480ad02b18cde6774889ec15fe72911dd9014ee970560f78fe225403d8e3606a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshsctb.cvh",
+    "sha256": "725a0634f13b55717532e5f1bc3ddb19413a24140afa1c12321c74b112820939"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshsctc.cvh",
+    "sha256": "c71de9670e1b0773ced8ad86e7b505bdac4f80d4e90cb74f0e79edd79a735531"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshstl.cvh",
+    "sha256": "ca1c7a1f3dc8f880b26f7625c8154dcdae25c9fd0419a6d6acb92b91d1c2a033"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/faohshtwr.cvh",
+    "sha256": "3c14713125c041b485098a1121bd77461d5f03d33cd720b9d3c54d3cbb1ed430"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig01.cvh",
+    "sha256": "e13b6c9599f6cf4f02512d916cfee825e5f3c3f9fd455ae370c1d21be63988dc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig02.cvh",
+    "sha256": "7b8c2d2acc4c207dd2dbf781b59038550f90e439d704adf94f0abfef29018e75"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig02ops1.cvh",
+    "sha256": "ed4f4cc5ea302446c66822cb7e49c992fd6f11e6655b477299d7b798d02b423b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig03.cvh",
+    "sha256": "528f6c0196c20f09b77c73487516c07ec3b67364bda25b0c66d550725c79e8fb"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig03ops1.cvh",
+    "sha256": "528f6c0196c20f09b77c73487516c07ec3b67364bda25b0c66d550725c79e8fb"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig04.cvh",
+    "sha256": "6a0cc7ebcb219eceabfb43312cf46f776446c31662f58ddce28c794b9c1d422c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig05.cvh",
+    "sha256": "58c72c5d11be48e6cf1a90d45fd2822a6aa80c43dcfa8fe70faa421bc23ed484"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig05ops1.cvh",
+    "sha256": "ebb44f6f6c3465582afe6ad4bb27884b16dd472499292bab92dae678ff63f56b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig07.cvh",
+    "sha256": "a56c2c3bf67bff69fed90e671ddac268000109854ec2d9ddb1d28753db49ad62"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig07ops1.cvh",
+    "sha256": "50dbf26717e67010a01977ee0220de2586b5e8fa1ecd611ef952d776d86f9bf6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig08.cvh",
+    "sha256": "4c59d5b4737e7a101d6cc2cfb8fb4cdf6298f9c3d6666f674356edc1ca4b3dc6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig09.cvh",
+    "sha256": "21fdeec9f08306b32ce238c76816bff2ec5955e9c337c259b98b431771df6853"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig11.cvh",
+    "sha256": "4582f118fc15f89eca359fe10e13a849691d243fb6d0b5787b863ecfeebce6a2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig11ops1.cvh",
+    "sha256": "2672e958152577d197726ec342e99db15b6c37e99efa8814e2bcb92b3e2973f7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig12.cvh",
+    "sha256": "18f14dc06a3afa43189ee7692a687fcba515c1825411cd5bf8fd0eb354455d08"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig13.cvh",
+    "sha256": "c16349cc21c9cd29e6195e04fda1db17722c77866d407d267dd9e42f0cdfc70b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig15.cvh",
+    "sha256": "11a4839849ff290adcb1db4669c0b986abc87c2a6af7e27c535b6f77fa933b62"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig15b.cvh",
+    "sha256": "eaaa348abf3b2af1bb53da57348793bd3ef2eaeca5902f0861e6fd1b3da918b2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig16.cvh",
+    "sha256": "c1062d1b6795c6614484b0f8dbc18730ff1c3fc8d2d7e0a261f9f91bc02f09f9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig17.cvh",
+    "sha256": "f224a3216501a3293ab8d70e9ee64cc7cc10b39efbf76424e4808040d8363e1e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig20.cvh",
+    "sha256": "a8c6f59119f39900bec00695eb394c1292df33769ea63152e59c3f82cf3aee61"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig21.cvh",
+    "sha256": "04ad6c7184aded84b1b8b76366e7a743dc0caf6fee71b20b86d158bbdfe65204"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig22.cvh",
+    "sha256": "7dbc4c1305904d8e02d8890ec7b3f15663bbc7cb56360883eaa3e80690266047"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig23.cvh",
+    "sha256": "c3b48d7775356347e35b0403cb73b1206a5cd48f69c3a4887396eee044c33ddf"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig24.cvh",
+    "sha256": "186d1b327ba4867de97e1a5069ab57712d36ae0a0f43d8d0d94dcd0676ec1896"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig25.cvh",
+    "sha256": "4535b20b3e339259d84a79b7511a8d0b609c7c64dd48f1599423d231ef86695c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig30.cvh",
+    "sha256": "1c764cdc3be05ce9d53a26486b4ac88ae3b00a86b06689f770f609de2d6205cc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig31.cvh",
+    "sha256": "98f4757e40de68361158ab23d4399e688c6478532746fd4c3c02026453014fee"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig32.cvh",
+    "sha256": "afac346bd83d0377b899269acb8f9ecfaa58a97c4e5850d6df1fd574fd5380b8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig33.cvh",
+    "sha256": "fccc5adfe0802dbdda12d7a41e4b155c4dd7604264b73e8b7c3d86a1b0487aa9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig34.cvh",
+    "sha256": "970549c0088e3f299c1dfc644997232afd7762c31925c98d8879e4082aae198e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig400.cvh",
+    "sha256": "a582679fe9b1df0ba18a745fef3f77d15922812c3b6d191ea2115bef72644fd7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig401.cvh",
+    "sha256": "fc512b3fbe86a9ddf4614c4a844e93f86bd8c6e1279998d050b17ed96d0f686c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig402.cvh",
+    "sha256": "661e1c5760bfbf32c6821e30ca1a4c00b83639ddd1fdf18d96bb87cf0e277354"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig403.cvh",
+    "sha256": "afea0f71e00b6e9883b79dee3c249eb213464787d8adda5ec6ce92b7bea797f2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig404.cvh",
+    "sha256": "1a9cb5e0792294f86cf7c5c93f76579fb2d244faa2b3fdfffd4cefc8538dc00a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig405.cvh",
+    "sha256": "a582679fe9b1df0ba18a745fef3f77d15922812c3b6d191ea2115bef72644fd7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig406.cvh",
+    "sha256": "4a8bb0859e16b36b12a7e5c5419bb65dd9eab092995464a817e85d50c1fb6e9b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig500.cvh",
+    "sha256": "0a6ffcd59b7f05ea9ce64cc8cba8a8e9e8f172afcfd53f11ec692854dd1df5ea"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig501.cvh",
+    "sha256": "2b2a8fba52b71674ccf0d58b2480673a2607a298f326e12f6123abb9d2f67c26"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig502.cvh",
+    "sha256": "414938b68a9161f404d3f31e26c9fed7d70a8a7aae1f98079d126c2c7e5b5a42"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig503.cvh",
+    "sha256": "f3e6d3df04eae96a4fe5ff5e447e241bc668830f3ba3d09c5b7091db0603ab34"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig505.cvh",
+    "sha256": "025674cb1efde0ef19b023de78ca70509a90c15e7d7c344bb6ad7f76575b23c0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fig99.cvh",
+    "sha256": "f4fa21396aab50ea310626aa0caf95340b423125d6b4904b18afd4fb1d923fb7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/flag.cvh",
+    "sha256": "12b674d522b8183191af42fdd4fbb2e4c5f57879e09ff3ccf9fa413f53f03c80"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/giga_flagplat.cvh",
+    "sha256": "41ccc727a90307b34998dcc505c5b654bc31de4338005baf22086f0a21deb808"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/heavyexp.cvh",
+    "sha256": "b36942ad2120c309f5c67c464f522bd9af087a510568c54205e53abb40d3e649"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/helm.cvh",
+    "sha256": "b5b7dec3aa0bbeb0be94095866611ac8c8be2210ecf715fd5d5da4cb0f35f0c0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ic_flagplat.cvh",
+    "sha256": "ac792a47ef2d175659103ae73a1ef2d98824f03b63dd2cc4179000c4b28052dd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/icfig.cvh",
+    "sha256": "27eff83eb072c7982676fe5a034fcb0797326cf7181da66956278f333c847485"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/int01.cvh",
+    "sha256": "cf054a6aa8b584315a7ceadb5a52ccfc532f844da9a60e96921c1c1bd1c1b8f6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis01.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis02.cvh",
+    "sha256": "739ae64a9005d99bc6b7371c43fd2dea0c16b2284395274e7b43f7469da01cdb"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis03.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis05.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis06.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis07.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis08.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis09.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis10.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis11.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis12.cvh",
+    "sha256": "c6b879b9d451febecfad12f5462f9d104f3fd095ebdddb6613e9f562fca9bd92"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis13.cvh",
+    "sha256": "4bab359d9330b51a858717da02f2eb53c5e38534e391df96766d4b6c80c68dda"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis14.cvh",
+    "sha256": "4bab359d9330b51a858717da02f2eb53c5e38534e391df96766d4b6c80c68dda"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis15.cvh",
+    "sha256": "fe6866982f433c2641aa73cd7c3705b86b61962dfa0f7a20607aa8f33dbdb977"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis400.cvh",
+    "sha256": "7b3f72c6c48455a3204281e893fef7d53a693c001d73bc4c1d91783677d46e55"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis401.cvh",
+    "sha256": "9818b40a71841bf07124d8b31358d81cdfe426e035183315b92f6a4a2a5038e5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis402.cvh",
+    "sha256": "9818b40a71841bf07124d8b31358d81cdfe426e035183315b92f6a4a2a5038e5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis403.cvh",
+    "sha256": "9818b40a71841bf07124d8b31358d81cdfe426e035183315b92f6a4a2a5038e5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis404.cvh",
+    "sha256": "4d6c52b95eea2eb204199163c7db9e8d528f9f38b250acb7da51cc6622e01034"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis405.cvh",
+    "sha256": "fdab85f4c9eb504807da62125fee0137aea9b0cf68001a629e2b28d237e4bd18"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/mis406.cvh",
+    "sha256": "ee59a50391dbb7d74f5abd6400ba83cc18f749622e5c169d39c6be4927e8b1e4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/moon.cvh",
+    "sha256": "549fccdb5b9f7872644e5311e98ae7f59992dcda6911903dff2b963465ecb79c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/muzzle.cvh",
+    "sha256": "3bfe7bfec158add5b876ba2d836972d8f5ad01108a2bec4e772aed643fd4640e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/nbgrnd03.cvh",
+    "sha256": "3e549d66122bec99e975eb7c126bd641441cdbdbe72b9d88dfdb0f9063aa031f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/nbgrnd05.cvh",
+    "sha256": "cf0624844797edd417b5abdd83736c2758b253b8f028292bb79a0683e06c3b72"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_ass.cvh",
+    "sha256": "746a5c24f369c800e3fd24ce76156ec244b4d07eec391b9d596ed70c47315b80"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_bmb.cvh",
+    "sha256": "167fdd1291723754fa9e0aa3e4682c3d0db9ed0949caaf580a61832e2a7d4a82"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_car.cvh",
+    "sha256": "48825824ff51e8aa7aaffec0bc24fc66c873f422e3400d0346d8d0333161b4b8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_con.cvh",
+    "sha256": "57e0d82ae0bcc2d9f554154b0f9a6a5c347d8b1946d7c9ea81b31073df39cc8a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_crs.cvh",
+    "sha256": "42403d29d8ccf26df1825719cfae646cf8b679181bce665df7feb30543e775b5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_dst.cvh",
+    "sha256": "c77a001a9d02aa04b63c48c7d11a248e78a70bf8f600bd8144c36c0e9328db4b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_exp.cvh",
+    "sha256": "3bbe641785ba89a065255fbf7fb2bb21527ae78ad14dd095cc2344f24b301de1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_fig.cvh",
+    "sha256": "605e5d216da989763e1546f4a82c05eb318dc84a36580d9590097466626063b9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_frg.cvh",
+    "sha256": "df72b3541f70d6089e65250d9ddbcc26e5ad832adaf6593e0a65e1807d42ccdc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_gar.cvh",
+    "sha256": "c2482d64cc0f9320970ed5222067a222500baee0513bce70d2611d69e508bf68"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_int.cvh",
+    "sha256": "dc6b2a8c0afc6b4d1a709c85ca52af16c3f6eec5fc9559bd2dbcca082052f17c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_mnr.cvh",
+    "sha256": "03df5cf77215e501fb72374d202ebfa900422c5637b2cec7eb2a0bec8d46a06c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_op.cvh",
+    "sha256": "05fe68e219a768a38c493bf34403ce9ac2e00d47db9fde717ac8d4d589f88b52"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_pod.cvh",
+    "sha256": "c962883a36ce59a25997a3982f102b8dfe7e7e6eabc9cc90e812d3237dcc5279"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_ref.cvh",
+    "sha256": "29e12e377ac9294833a8a7c46bd53b677b68b9d25ab0fd08bb5d784cf5d99b26"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_sct.cvh",
+    "sha256": "8da16ec39e229e614da13cd1837b8f6033e30d6c48bb1a98f6b8f23485d60f48"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_sf.cvh",
+    "sha256": "d8c5fe1404604a22b1621a2b6a3722921a955d85f5557afeeff339548fd24436"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_sup.cvh",
+    "sha256": "3bbe641785ba89a065255fbf7fb2bb21527ae78ad14dd095cc2344f24b301de1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_sy.cvh",
+    "sha256": "b73aa83d8d42e9c6b6569b2d6e5c1206530cbadc44ac50fe585188e56f3c17fe"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_tac.cvh",
+    "sha256": "3bbe641785ba89a065255fbf7fb2bb21527ae78ad14dd095cc2344f24b301de1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_tp.cvh",
+    "sha256": "b05b2084623d5117853b790ead87e7a4821a8bdd53e3c50859e3873247b440e5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/p1_twr.cvh",
+    "sha256": "1f37b9eba3728e755b6a777c585435a5026731a899f55fa6a11d2302b932ba4e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/proxexpl.cvh",
+    "sha256": "b36942ad2120c309f5c67c464f522bd9af087a510568c54205e53abb40d3e649"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/pulse10.cvh",
+    "sha256": "c6382f55d2871224f1fba1030ebec2bedf0a43cac1c0d3f99437be982a916f79"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizbbr.cvh",
+    "sha256": "302f2442ed5103158820163d7306126aaca9e4cbee4b9badcebc74bef00784d1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizbbrv2.cvh",
+    "sha256": "23e84cb804efc900d73a2c624e313f6266e287d2ccdb1f95e7fdf1962e4abcdd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizbbrv3.cvh",
+    "sha256": "b77967fa96305e18150a2760cbc6bfd4405285bc4ad9e6b5e54cc2702dd22c26"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizcon.cvh",
+    "sha256": "06c49eb8373e90dc9bd9704621b08579a4ebcafd6578345623b728eeccd0bd96"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizconv2.cvh",
+    "sha256": "20c7c87a74f88ca9ee446fd6f173e43278364c9f90745325fe3ce800e375a573"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizconv3.cvh",
+    "sha256": "625b18f84ec1f943c9e6f6b2320f34c4e2dcfc74128fb3d9690d65deba608bba"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizfig.cvh",
+    "sha256": "39c8201c3cd9660b3bc7e4ef8badb9f5ff172f972d6b093384a71192f6dc32ca"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizfigv2.cvh",
+    "sha256": "9fdf7a40d3aef9e95c83771b2670b690c860feca05f4eebe463110804d833434"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizhtt.cvh",
+    "sha256": "b2de43fb920102a7678a8ab74091044efc3072727716de544583b8cae1f7d272"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizint.cvh",
+    "sha256": "1cb57edfb2887bf60385e3a4a45dbbd77a3d740936f3981b502b3adc2bd2b407"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizintv2.cvh",
+    "sha256": "401da31b63fab254a0a330aedad5c59a13da09e172e38c620828cf72be7972e8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizintv3.cvh",
+    "sha256": "c1ca1d52723ce302421f1bf947c674b72b4aacbe402a1735ef48b0b0a971dc58"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizmnrv3.cvh",
+    "sha256": "fddb00dcc53467b81c5c2255ea8f02ad873c37a3758841776789ee8af64ee98b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizpod.cvh",
+    "sha256": "fad2a457b69529346dc313a29e3be5049fb352a101e1dc2d0c5898f856994758"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizsb.cvh",
+    "sha256": "2a87c2cd5cea75c1a0aacf3ea1d5a6e8be691e1f5188c8c2972e4686b0ccbc36"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizscout.cvh",
+    "sha256": "55766273efb1f7aa18ae9c4b9659d77c05ab5f28a9d82e016087af21c2ee836f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizscoutv2.cvh",
+    "sha256": "5da611594c958b4bb3fe4d2fbcfee411a492672fc23dbd4cf723faeeb15a4fc0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizsf.cvh",
+    "sha256": "1256e9515b36933e6b00fe1681ad5ac2150f37cf7ed378ebafdfdbf1cfd4ec86"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/quizsfv2.cvh",
+    "sha256": "70f42cc3133d451d18fa7334264d38edbe15c779e4882aa2ba9c173a5303deb0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/raincar.cvh",
+    "sha256": "ca57f3b203980fd3ed0f739d087817369a5bee625849e9cda86db020d40270e1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/raincarr.cvh",
+    "sha256": "3a7d8aeb08e212d353dc03f4cc9d3a2a88f3036492b6c41b7d7ca2395467894f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/raincon3.cvh",
+    "sha256": "515662b1041493f801e1ebbee8fdf02d8eb4d9b378e1310fe066abe4d1c19f67"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainfig.cvh",
+    "sha256": "79ce5902da44bbc86b8b937e55d83c0dbecc189d90b41da0a10bab1342243d0b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainfigv2.cvh",
+    "sha256": "36c3a9adf69021b15a4d6860219cda32ee368450f0078bce99f3c7a1cda8e939"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainint.cvh",
+    "sha256": "86bedb7788395f14aa89d04baf37e0928540ad90aaaf9a3a60978e50b9f160e9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainint3.cvh",
+    "sha256": "41177e7f6f4261f8a3269fbd4b5d0b4f8ea514d408283a354fd2ceeb512a2c79"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainintv2.cvh",
+    "sha256": "45436cda585301f13232205b13eecc72ca01df98e4fe9b002ff6d01e5554420c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainmnr.cvh",
+    "sha256": "c6e1abbb956293580febdffb4e254b91d3310fdd5338799e48dad20f41e24087"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainmnr3.cvh",
+    "sha256": "0787058601ed9958cd309facd63a0b699b89daa0de2818c6fa6e2203b507846e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainmnrv2.cvh",
+    "sha256": "9bb3b35dd9252ef7c154c6a19f72ec4926dc7f74e307319a3a099290ef01ca0e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainop.cvh",
+    "sha256": "3606ea134900aaf2e1c794bf0f997fa62dee924586c1c602e5640251e43db3b9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainpali.cvh",
+    "sha256": "f5594253627937c980e7a2ae8f283dc043b3c2cb137914d99fabcf63ddb6dd47"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainscout.cvh",
+    "sha256": "f9a00a5f3cfc9eeee3cbb745bec59aafa3e3e13834afcd661cdccd629b7ab6e1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainscoutv2.cvh",
+    "sha256": "9bda805a1cab2af785cc6cf0a730af7d4d4306d6061fad1a12498f3afee98dd6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainsf.cvh",
+    "sha256": "dec0bc862ba69d55f54fd64c1837357a79a05d3ed926b3cfb3ef4f3cd8462bfa"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rainsfv2.cvh",
+    "sha256": "b19ee69438dff4b54bc160fdfd5171bf2d3c4fc60a41d37dbc2657b44f52e202"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ramabomb.cvh",
+    "sha256": "1dc88925e80576d5b7b37c426f05c8d4e25f09289707f32e7982d8ce9c4ff862"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ramascout.cvh",
+    "sha256": "a443e1ccde8b6ad3246ea68ff1eaaa565d8a2f31942f6968cd6cbc90ffb1eb04"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/reavermk1.cvh",
+    "sha256": "95a6ed438a2a1fc96291a5a990222840eb79a687a8193727757f343db9c68637"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rescuedrone.cvh",
+    "sha256": "f6a959a34070fb7b299081ee85990fdf70428c4345d77ab561b18e65c7df3af5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rix_flagplat.cvh",
+    "sha256": "4a7e7fc1440c59bcc0c13d833ef1ddc69830aeedf82b5d9f1bc185c017cb0e44"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/rrocket.cvh",
+    "sha256": "310516762e1bae1808ece50c712699705dbd8ae45daba7d9ffc797423789c273"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/saturn.cvh",
+    "sha256": "6162b87cd317e261857b5639cc868e24029cfedba8bb82cb49c41a9fae177585"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/solarinv.cvh",
+    "sha256": "ce4a075d7f1aa63a83f873622675b7eb16e6505f093f0e5afc7a393a60fed6fe"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss01.cvh",
+    "sha256": "bb7994474e2293fc0dbc14f31fa929afae206e29f7a0d349abefd3d6effdc190"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss02.cvh",
+    "sha256": "c95ab17af673becad99f85da0c45105e0bf70dd04b99e9ce9c5778a2f5a3dca3"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss04.cvh",
+    "sha256": "b5b7dec3aa0bbeb0be94095866611ac8c8be2210ecf715fd5d5da4cb0f35f0c0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss05.cvh",
+    "sha256": "bb51440d9f3eac946b4522bdfefcc20b48fad7a9db43f57810ffe794e7256251"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss06.cvh",
+    "sha256": "c1dee842e89830290ac4c68e5448e8f0bfba2053b9cfa397e74945d816d80e80"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss08.cvh",
+    "sha256": "09edb4034197ce21600a14e16df2751a604d03e38b54a4b2e417261ac0ee7b5b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss100.cvh",
+    "sha256": "6761e70117a80a56770e39093f1a1e17593ef1ccab0e7def6d6961ba15bf67fd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss101.cvh",
+    "sha256": "69ed2123a616dc690f075bfdcfdcd452e94ed97a86a5502b8a1d6406d81f9db7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss102.cvh",
+    "sha256": "aa13b0488e8ef23de4a5c3e6480c5f1f673a67ef92062c3b569efb6133e33f3a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss103.cvh",
+    "sha256": "a0a7922e381d2e83da788ff08b3d0ff47c8636d3ed056b2a25da79fa546ff71d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss104.cvh",
+    "sha256": "53623b6b843994235d1d246734d0b91b78785eed805b6e2a90e9f1023bfee411"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss105.cvh",
+    "sha256": "6f4879aa0e6fd5ea871403e30e67695802287e0a5df22df4e3f4f7f0f4c00743"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss106.cvh",
+    "sha256": "bfb9a8b980810b240323efb9d185e88cb39ed31dc4080ee9935d177501ee7a3e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss107.cvh",
+    "sha256": "29e1ba4aba6b934aace12bd1a58e808ae203e5c34670b8c55a6a83beea4f6c9c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss18.cvh",
+    "sha256": "dc649aea569e1ee3ba8f12ef914399138ee302bcb75d1f4180a04bd9579f4599"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss19a.cvh",
+    "sha256": "67abeec152b89397533834214a01d8f8d2c86eba5324e5518f144ca82f2952e0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss20.cvh",
+    "sha256": "44c55f42c8f679bc4500a0324b17e8f9abb4800f570ae0200bc244e5efdbf34f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss21a.cvh",
+    "sha256": "4d52d7357cd4900ce7c9d4e6a644650bdbe922a21ac47ffbaec90040cbefcda6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss22.cvh",
+    "sha256": "4a0b24951e3f1e8cfb85866372c241c3c24c902fc56554255759eb373f951434"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss23.cvh",
+    "sha256": "0c2dcc34a7869ee257de3082318109b415cf475195c288b1cde7d8e545da5c3c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss24a.cvh",
+    "sha256": "26e7159f7d14dc470b5170febdf9d40c77f993fdd7c9249e9f118bd984c18122"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss27.cvh",
+    "sha256": "803f450070308e7e430fa7817990c21c25a2e128d9b0a3dc91927c906de1443c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss28.cvh",
+    "sha256": "b25cbafb787c337836efdb189e12d1242053fae5b116a0fd77968ff7a48f2e59"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss300.cvh",
+    "sha256": "9a045bc931f0ff1255a499581cd9b93d38a9c129a559c2158a73daee3cce2464"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss301.cvh",
+    "sha256": "f90d7ba0094d44f92f04cfdb7777ab226addb9a31e802f156ac1958d3aefbe31"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss302.cvh",
+    "sha256": "15cc28cf63ebcc303adbaad049827010cf3fa4acc9c873698903830a1c0674e7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss303.cvh",
+    "sha256": "ac1e264257a71c302ed36b227035ead1b527cebdb455500d86e3dd24bba2a0d6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss304.cvh",
+    "sha256": "b28dfe2057dd92a96c4742415ac99010375684e4e8c1bb61505c36aca474bc42"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss305.cvh",
+    "sha256": "1b13c9de0295d40f6868b7f59cd757c449e20b1ed0da4abd392df959e3acd77a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss306.cvh",
+    "sha256": "2a2c7b9df656d07d2860889c77b4e7aa485dad335babc37098ac491a049189d7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss307.cvh",
+    "sha256": "beccd97aa684c519928fe3c790867276470e43e346a0f3e475225f7a04012ba1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss400.cvh",
+    "sha256": "7f9548a3e7328155afbd5118be2feedc520dae6da5d22b1250dd6743662de415"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss402.cvh",
+    "sha256": "c42281495a0d04caceb4a7bbcc2a18301803b99d5078ce528b7b9583d2d1762d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss403.cvh",
+    "sha256": "79af0ba2f3c0fbc6770dd9e1fd51c5a82825da9abef97490b50b21099c8aa39f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss404.cvh",
+    "sha256": "664a7e2cefc4abc68be6857edbbaab9ab384e3d4e2cace008c12d5682e59369e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss405.cvh",
+    "sha256": "b5bd32ba74609fa4eb5f3585192a0726924c423b6e7ab02b470519f0bda1b131"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss406.cvh",
+    "sha256": "6a04b184bfdab69d2ff6086b61335c64bd92a0e9c2645539f5e693e5b039801b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss407.cvh",
+    "sha256": "c162d77bc4588dced2b7d15912e034253a944136dedcf07dc2b3612da7075552"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss408.cvh",
+    "sha256": "5969b4a427d09f6a6effb505dd904a53cf3bb21790849c671b93df48b4f1cefb"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss410.cvh",
+    "sha256": "a55c0cedba119f94c218cfbb19d05ad0d95dae3cbd2e9bbdf4a8c8f4aa62abcf"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss411.cvh",
+    "sha256": "797766bc8a88df6065d54e6d8d804bf721512a044359ed57088d3a339856bf8e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss412.cvh",
+    "sha256": "c42281495a0d04caceb4a7bbcc2a18301803b99d5078ce528b7b9583d2d1762d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss413.cvh",
+    "sha256": "79af0ba2f3c0fbc6770dd9e1fd51c5a82825da9abef97490b50b21099c8aa39f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss416.cvh",
+    "sha256": "e37aa3c3d8f62fc0c071543548c271fcb2fc8d50eb7d937d185de1240225ca9f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss417.cvh",
+    "sha256": "c162d77bc4588dced2b7d15912e034253a944136dedcf07dc2b3612da7075552"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss500.cvh",
+    "sha256": "d2429c6e6ebd6917b3dcf64dcd097a115408170d93b970e31602ca6cbdb18a64"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss501.cvh",
+    "sha256": "0e75e471c2221a554e3e5b0538b4a2fb8dcbb70ea3730ed3e0d53cfad1680c39"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss502.cvh",
+    "sha256": "f9fb21e3f476b93425002b5d6e5a79d12c637a56e29da59127aef236c27181d4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss504.cvh",
+    "sha256": "ab4710e3a037963d29ec991119af3a33e824fe37ea0ac6af76fb40221ff5bb8b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss505.cvh",
+    "sha256": "8aabc3ad4be28bae96235275aa76b2259f6c7c728ef9d9c36af713a37d647207"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss506.cvh",
+    "sha256": "e5f3f3a6173a9648317e609a8d6445b50fbd5342ad9dc885714f702e0b57110d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss507.cvh",
+    "sha256": "4d92c4249f572f9ef49991630c86f422ea8222da033c960b831cdc06e3aab1c0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss508.cvh",
+    "sha256": "5581a1bb6fb8d406006d47620ad3759657a8e782f699dc60bec5500af67aff6e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss509.cvh",
+    "sha256": "3fa7d44024398243e2b22d57178b90d96c15902ceff7c3da5621beb4bc47e791"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss510.cvh",
+    "sha256": "d5c130794bc260f04b73665219647eaa5fb5b6f98b0d4e1f93f1b4b50c6e1a47"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss90.cvh",
+    "sha256": "1576f6900d913faccf4ffea9cbbe95b40a259c8b724e3358be4c9a1798fdacb2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss92.cvh",
+    "sha256": "12d360aa750c7cf13471669686175abf50318c9b7379a1d337f9976e50097f22"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss93.cvh",
+    "sha256": "030ee132c0a6bb1e36c316ac896384cd6a12e3268e032ace293d4ce443d08f68"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss94.cvh",
+    "sha256": "a2ee79bbca7579f22e7c50331a77425e87c3dc992870ca56114a5ba2a8237f58"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss95.cvh",
+    "sha256": "c3f4d0b8fd6bc598b9f12b0cc13d0f98bbda24783a98aa6051eff1e1c0dd667e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss96.cvh",
+    "sha256": "e604a97e3f7879ed19a81055066f2f489461481597f2f42ed763586e7e65d36e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss97.cvh",
+    "sha256": "c44d0ae80f208bcd6d889ca8fa4eb22ea30605e2a58f185ef65d749896c4d57c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss98.cvh",
+    "sha256": "8c51e99f9b4d9344b6c9ebee3721b17a2690bf422fdc65580781b403cc38f181"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ss99.cvh",
+    "sha256": "65b3c4b17009387c0ee41ff4c48474182e5377860fda04becc1525f5d597ab86"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/striker.cvh",
+    "sha256": "222d8c11365fc27f67677da3e3c4455707d2d436ab24d7e6223ee0afae76f332"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_bmb.cvh",
+    "sha256": "a02ac3c20f7d1882cf8769b9296372323086455bba9d0ccbdc02a6e7a3aad277"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_con.cvh",
+    "sha256": "f46cd77413124e9fed8301a0d14422184bdf89993ab11a4ddf1f78de02e0bc17"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_carr.cvh",
+    "sha256": "a543027b5b8e4f14dd9e607ecf48f636e469c5b431e7d33eba8cd8f275a1a775"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_exp.cvh",
+    "sha256": "f6a4601a0acae621ba0be48913b53b3b2a39e60db573183a871a97de82101450"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_exp2.cvh",
+    "sha256": "5b965eb2097815ec4c1889db958371a0aaee0b665343e4647f1850dc206430b9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_gar.cvh",
+    "sha256": "b6a505a9a768c7c1916e62f7c20366e81e9f1af9c9d18f08daa87ab242802ddc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_garr.cvh",
+    "sha256": "42150e163c4b2b9ac61d571bd80f74b0aadc73c4e6a5cf1d07a9c0f960ca058d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_op.cvh",
+    "sha256": "b417f9b11b9b02399b214c1a631cc25a71fdd30a9a03d7a5ff93619849ddf74f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_op2.cvh",
+    "sha256": "0796d480d7b13dcbf1103baa0b6944203fdccac5f5bc5fb78ac06ea34c3d6a18"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_op3.cvh",
+    "sha256": "e9d0c9c85c040e4e7a8b16433e512403055e2369ad8bf404794287ce6a5d10d7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_st.cvh",
+    "sha256": "98ac6ed5789c7804203bdb4e092392faff721058d1c1f90e4f0a0d0423ad082a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_sup.cvh",
+    "sha256": "fff4f02ae3e4b34bd63dc0620917619f51451f8b144733ad6bec8cb95a0a71cd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_sy.cvh",
+    "sha256": "9759d66d21e8daf3b1820a44136fa3de13834ae08d567f445b9c26d4ddd756b9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_tac.cvh",
+    "sha256": "6b26f6356a79bf56b3b8a6adc5fd44a317210d9da79119f5b4242d8192d4f213"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_tp.cvh",
+    "sha256": "39d84984a16e3b73c406c034e6051a7f61c4e379501a2d0d9167468c54fbc0ee"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drac_tpv2.cvh",
+    "sha256": "e60f6b0d6c2a2bff442763155ca32b8fdcdd565029bf2cf7cc24259b9c497bb4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drd.cvh",
+    "sha256": "3700228f3b668107ea0bab500a3b93f0315567036f340e780e466850b333022a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drd2.cvh",
+    "sha256": "2a455b5f203cc2530a26fe092aff066ee193e499f4888012855c0c7e918de0e8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drd3.cvh",
+    "sha256": "f227f5f3ed2bdcb7782f954ba55779e492e8f7a54a1ab3711eb0118ad1738e09"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_drd4.cvh",
+    "sha256": "c2b97144df4fffcc694e7d380cca03c17fd6d49a0a521b478c9bb28713374af5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_fig.cvh",
+    "sha256": "768c45b1870109f99335dffb76ba9aec23d3b6c94ad9e8389ffe44732bf7dbfc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_gsp.cvh",
+    "sha256": "fa0b5fdce62ba0fb9d7c44ae4b7f0505169274593c28cacc245b4b50caba3f7d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_htt.cvh",
+    "sha256": "0b1735b0c32dd4aecbe397269486855b40748c3dcbe9992c29702ef209803f3f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_int.cvh",
+    "sha256": "9716908e53800f8df69736318910f7667808ee8f0c7bc4680d1b71b8ab0f11b5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_ltregint.cvh",
+    "sha256": "9716908e53800f8df69736318910f7667808ee8f0c7bc4680d1b71b8ab0f11b5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_mnr.cvh",
+    "sha256": "3b91d68a805891750cf94e2b30b8bbd172790467cdd033a2aeb83c7305493974"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_pod.cvh",
+    "sha256": "701ddfc2f2ac2b9b7032b19449b66e68399838299204c8782e838759250c7dc4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_sct.cvh",
+    "sha256": "ea5f5b6d1776be6b40faf4a1a9e8fbadd4900fe555594301436ec318488b1f5a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_sf.cvh",
+    "sha256": "75bc921ff44b6ce484da9f575532036c93ebe2c6f7666851e184e1336424854c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ta_warden.cvh",
+    "sha256": "c05e8e3ae80b61fd60ef0fc4b01652132122ea04fc999282c9b6789fb36fb395"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tacrock.cvh",
+    "sha256": "c7f371d78e5327dae35e2e745b13b5fd7fa33d7cd351a1fb95bf947830bf9cfd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tecbom.cvh",
+    "sha256": "31fe47402093035309f0f0c4282ef7ff692a38316ab1e5d701b92745024c5ffb"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tecdev.cvh",
+    "sha256": "ef848e98c190dcc25102dba4db9e4c821f0c79ffd838d8769f864f22114bd012"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tecint.cvh",
+    "sha256": "74cf77e20776b96e67fc15f043017add8e9b11be55f8d30e313c61891a9cd665"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tecsct.cvh",
+    "sha256": "a3168dcd27b14cd3644be774ec002b453c0755f7a367aa340e31b03e682f9f85"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tecsy.cvh",
+    "sha256": "aac7e8dbd56783d3b10fa8e655b129d075b0abfa5993288890bd178a412295e8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tectp.cvh",
+    "sha256": "2a2c7b9df656d07d2860889c77b4e7aa485dad335babc37098ac491a049189d7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfbomber.cvh",
+    "sha256": "17ade63eabfc197a6a3a8902cc966a561adb52016f21011e3286c51639f5d92a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfcon.cvh",
+    "sha256": "8c0c41c3e25024d018fe384f614355cc2cd7258a03ecec520d1960f1004bc624"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfdron.cvh",
+    "sha256": "636b06f21cac807d69ae3be0d403f3102b05547a288f6d58f37bf421aed4feee"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfexp.cvh",
+    "sha256": "2d0956210bb5e290f7459900b0fd6d91ba7d431543c79decccc740f0bd7ca4ce"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tffig.cvh",
+    "sha256": "7829e3d6e7a05c4f7eaed331fee59bd4dc9788ae4b141e4577a2eff73141e7cc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfflagship.cvh",
+    "sha256": "5000efa4248d683276d6bfcc0a419ad95d821cc66eb56d4fbf266eb07470b839"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfgrr.cvh",
+    "sha256": "c47ae99616f2aedef2a32a36b38c8157c4dc798e1992c07dcedfe4e2043a96b0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfint.cvh",
+    "sha256": "ff4bb55871603bdf9e013564b746b708bc1ba4e6ca2dc545c157d5f16c38285f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfmnr.cvh",
+    "sha256": "fc3ab747ff71a3ad21e886ce1bed22142107fc0ff4e3010fe1793285ed169735"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfpod.cvh",
+    "sha256": "2f4f6e817a51de100db6383cb6c923f50a90a59c514d51a03efc112f4dc2a343"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfref.cvh",
+    "sha256": "6b4ebc63a4d345252069542790bbd4b5859de955c8b2e376de3a2ca2c0b0bd11"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfsb2.cvh",
+    "sha256": "a52532e74409cd55376682ca81794f172213e16e3b7216895f4cc4f288e4a6de"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfscout.cvh",
+    "sha256": "e78da50853a4391c38aa83fa4ea5b9ee72a3eb4212b9506d20baa35f1727e0bf"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfsf.cvh",
+    "sha256": "cab1b2153da4206121df8944cdfaa6c4b70907a6ef0a3c2bf4698bebcbf98ea4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfsup.cvh",
+    "sha256": "8830fa80209a931cd8b39dee5f59ac8496b17d1f1a980cc53d89bc9a598c1d2b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tftc.cvh",
+    "sha256": "9031a5914c003e32666bbb532dcf0a1563d801b219641c51576d7dbbffc96017"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tftel.cvh",
+    "sha256": "6069bb6ba36ac905db1edbcbd1c92d360c9d7352f5153e165c1180d1628994af"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tftransport.cvh",
+    "sha256": "3e7da6fd90ac3bd7d19244efe05dd99ec6bc2bef08f0a00bb2972c64d6b71f80"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/tfxop.cvh",
+    "sha256": "e1d57a0ee4dba6c2c8533c1b9286fafebc68f842562e5045cb9b161657eedc1f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl01.cvh",
+    "sha256": "4cad4c6a0116f232c1098e0390cbfcfcbbcb417f8150c0679db2af62356b4b0d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl01b.cvh",
+    "sha256": "4d796d4238ff2133355106d6c1b98527c53dbb62e4d85f211dbad9472229dd80"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl02.cvh",
+    "sha256": "9d7f82d7eca4150e0c333e1a6f7f1018cd0e754ec7133c0c7d4791830e107996"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl03.cvh",
+    "sha256": "9d7f82d7eca4150e0c333e1a6f7f1018cd0e754ec7133c0c7d4791830e107996"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl04.cvh",
+    "sha256": "7e619934799ca4c2fed8a9af248279dd85c82e3466dc03caea511fed5d40ade5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl05.cvh",
+    "sha256": "a5de3115ad6a8a9d572ecbc41644baafb6cb7f7d2e5f9a0508484fa897b17270"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl06.cvh",
+    "sha256": "a1a1f65a9ca462c39c51ec31a6b83cb7822055b4d802cf795c56b2495f823dea"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl07.cvh",
+    "sha256": "6d6d42aed6fd18dff095e6967158b644bcee7258d943f6d622a61116d40b9deb"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl10.cvh",
+    "sha256": "d419c223f3a0aaabdbcfb0405e8e0197299e5263c56be9b0f4a33f1e9f82da85"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl100.cvh",
+    "sha256": "bfac204e355953f9aa6e062aff3dabc3eed6202d3d49e510cf1bf266eb10bf53"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl101.cvh",
+    "sha256": "d81297472fb6d4e54735ba4b32799c8619b09968402d6c4ac658fcfbdd88131b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl102.cvh",
+    "sha256": "25ba36c1362a801287fed1abc1674f308f5badeaeb55344eb5ed6862298a2340"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl103.cvh",
+    "sha256": "604efcb8fb805c4434e854ab0bcd9ae82537facd85bc4223abed61afa488ea26"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl104.cvh",
+    "sha256": "b869bb2e6030f11a016863545c277a2d8ee329a650d760d380387c95a27665eb"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl105.cvh",
+    "sha256": "5292149d169c47a9b19328faa9f098de4da69e0030678bc918a73c439f6aacf3"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl11.cvh",
+    "sha256": "375cdba11cd10964c25773e240460ec104855ff9ddbbce7923d315635969cc63"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl14a.cvh",
+    "sha256": "e04c7adb21619baee7764780950eb73edd3ec59b21efb25a42ecf8b0fa44cf3d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl17a.cvh",
+    "sha256": "e06801f95b32330e6fc615173fac44fd15f9f22bbe65c6d71fb6be0db38a3a28"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl18a.cvh",
+    "sha256": "f67a4f45011935c1caf23e7103971cffd70ad1b923c60d3f4f6424d9f33f2b6e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl19.cvh",
+    "sha256": "bf347875129c80c187f80d9fe00d8a4a464d262b6d5049ffee00cf892b7e9c13"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl20.cvh",
+    "sha256": "5597901731abc89d854e8e9a0ea205acf2a034bb9114be37cd9c6f1ca680c5aa"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl200.cvh",
+    "sha256": "ff44703d639ce8d8dff4adc40102991eae1279047605755a7b827a852415fd99"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl201.cvh",
+    "sha256": "2ca851449ad14dede7b92661bfc015f461903c307dfcd2a0ebc98b46a686ec42"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl202.cvh",
+    "sha256": "5f6952cd394d3b634e8932321235a84f80a8040f0c6b3377fd077fd423b9333b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl203.cvh",
+    "sha256": "55398497394069438b30232c4ea783e9d51453fbecadc1d8ff886e7bf47cdb80"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl204.cvh",
+    "sha256": "6cca55744fa555ad6d0684380a363ad5bc81b742b0531a9e13b2aa703e0e3e50"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl205.cvh",
+    "sha256": "051d9f4abb1b8aa22b8ede347dab30320f56cc67143cafbe18bc9e9bbc29f64c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl22.cvh",
+    "sha256": "8dbbf9efd5e9fe608d874c2937808c713aaa68786a35bf4c97ef11bb69d373ab"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl23.cvh",
+    "sha256": "38c64faf2a61b1c8d90779a44f428063ed2ee517bccd00da793998f14fb763f4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl23f.cvh",
+    "sha256": "38c64faf2a61b1c8d90779a44f428063ed2ee517bccd00da793998f14fb763f4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl24.cvh",
+    "sha256": "e055c98d85bee66ad9dbd5cac7874035581f5ab1da709c95738653ff9de60daa"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl25.cvh",
+    "sha256": "d6e741d4b75076bf32fece4b1f4e52715f7a2dc4837c44f75c07f828ddce2fe0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl27a.cvh",
+    "sha256": "1cfb14c9c5db65fce3cf7d62147b445f93925a4aec46d544fb2233a1258e1388"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl27b.cvh",
+    "sha256": "70bdf3542b890d2e0dc75e786b90b64253664123f4e22c5e0f090c860290c875"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl28a.cvh",
+    "sha256": "46dc0b8a10e9b450547434cde64d7eafd398fd933ced2e8d4a1b080cb6331c40"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl400.cvh",
+    "sha256": "d7a4978ac80f07e48ea2c267de4e3ca174fa0b3f85f0b4900724b3de17ffc996"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl401.cvh",
+    "sha256": "7b7083812f0647db43afa9114f252e8e16fa0d69e78da68b61b4fbb56b534b36"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl402.cvh",
+    "sha256": "d7a2f239565435cba2fa814c23a20968ba7323e40e5767d0080ae63f73147478"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl403.cvh",
+    "sha256": "66fb3db49777fc961eb6a377170827064a39806c9ae780e66181aad20f864da7"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl500.cvh",
+    "sha256": "d91b08ab60ccbb1d8f6e42540443e3d48ae938d3122cf0cb03874a1b14d1db5d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl501.cvh",
+    "sha256": "4fb1e13f8f5ab25a15395c5166ab78f46418258d7a9230034984469cfd834b2a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl502.cvh",
+    "sha256": "c2466002f32cad68d2fa5f69b3d2b444154ec5c7ff6933f898601eefffcf56fc"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl503.cvh",
+    "sha256": "3348320a06e0ecde4c2591fd40114cc7bb21f57fdbc9de353a314ffd9bf65a39"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl505.cvh",
+    "sha256": "14fc924d0a9ba6bb1bc2d9e2f6a142b1149222b15cf317d56b23f1ef969ce86a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl666.cvh",
+    "sha256": "7528bae178103c3a13ed7184bf7f89dd907418cb2002130dcfbfbfef031eb39e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl74.cvh",
+    "sha256": "79a3a3c37f25d4bde6b414718eab82d5384477e69ab226681b191b1ef519be75"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl90.cvh",
+    "sha256": "728029934e6de60e4338b08bff2ec477154422c16bfaf85df9b0b47e7b769426"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl91.cvh",
+    "sha256": "6d3d6ea2f2ca7b4f5677ed53516c718ab1d99e379e7511cb073b8ebd2cc875a4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl92a.cvh",
+    "sha256": "41bdc57d76c18a9e45731370cdd52cea4792b86971142fa82a3285c963b92a55"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl93b.cvh",
+    "sha256": "a007958ab1854dc22c60393e5089c64c2963eb4d1ffbd16f05d24c8afb398325"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl94.cvh",
+    "sha256": "d527a2bf8e527ad9b6839300e636f172b4a0d1e8afe0fa4ca401c6ceae02ac1b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl95.cvh",
+    "sha256": "0b6b2c4c1d25c4bd148400f18c956f1c1fea5e98d1fa37168890f7daaf8f8f0e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/utl99.cvh",
+    "sha256": "b858104ef9367392cd1ac71a39ec151cda383809491e72630bdf187e1d713eda"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_beomni.cvh",
+    "sha256": "5f8357b19f58bab2b2d6d77fb3e308cb9292712aec6bf84700d37db4fc854a6b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_bifig.cvh",
+    "sha256": "9af07473bce4946ed8aa1771fd7d5202a5c68f5c8890725ca0764227c7312442"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gcbmbx.cvh",
+    "sha256": "1db8186aafe32a9c20345d13045fdffa3944e36f0c70982a2cb0185979eaf348"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gcfig.cvh",
+    "sha256": "b6f01bb3565ebda6e5a0f7983452feeea97241f8fe8bcc3823af6c422d2d475b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gcfigx.cvh",
+    "sha256": "b6f01bb3565ebda6e5a0f7983452feeea97241f8fe8bcc3823af6c422d2d475b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gchttx.cvh",
+    "sha256": "069ae8b02a072231c6ca6ededfa5708cf19270c0ce76f865598ef4a4ffbead6c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gchvy.cvh",
+    "sha256": "f7b4d3810ad6cf504127f8a8d89448938851d1fdb7e47900977ea0792dec585e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gchvyx.cvh",
+    "sha256": "f7b4d3810ad6cf504127f8a8d89448938851d1fdb7e47900977ea0792dec585e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gcint.cvh",
+    "sha256": "f7b4d3810ad6cf504127f8a8d89448938851d1fdb7e47900977ea0792dec585e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gcpatx.cvh",
+    "sha256": "ba5ba7ed374a351b9228f6be286783bbad4ba5780467e63dd7ca6998c5a23870"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtadv.cvh",
+    "sha256": "895b6a19ad1242b4e49e5f0819eef3c10d330cdb4bd9d8f8d28894acd46b0c6b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtcon.cvh",
+    "sha256": "737f0191cc793262c905f4ef96dac50ce093d921817e2b8df06c61ba1f848106"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtfig.cvh",
+    "sha256": "ad184df4c2321289162c0010787711e459f0b9f58154f2d8c4d3c6a931bb63ab"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gthvy.cvh",
+    "sha256": "646a12888aa61b5b17d096e70f09d4a368748fcd6de7d083a847576993e53370"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtint.cvh",
+    "sha256": "094186a7c280f60124b27ad76ea8d53b7b098df820c1cae245fbbee0c680d50e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtmnr.cvh",
+    "sha256": "cb037722ec883a85f59ca5629c5db7bd080c48d4dad8e0ef007fc47c10798f01"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtpali.cvh",
+    "sha256": "abd970c142738baf1849a7ac7567ceb47e43ce0813eb5eae602e61bd76e9fea5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtpt.cvh",
+    "sha256": "3a371e23a79e4418e6a11a06e0218e13de90083b4b47af6a50446dad189daf7f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtsct.cvh",
+    "sha256": "22fccb7920f8eb9b1629bfbf6475557a3c134cf3d95db6135a075907b64ac005"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtsf.cvh",
+    "sha256": "db17424f5e52c87a9a1e256f6c7deb447e2d306c0b2ac535754cf44aefd5b6cd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtstang.cvh",
+    "sha256": "187d6df986dae48c72d91f43644786b89187cd34ea4246c09034a6a9a1855941"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gtsup.cvh",
+    "sha256": "d3ed7b25129b343eca92d9195483f68d8cab8ee33f7a3fd0c99f0d80e6ac5b0f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_gttac.cvh",
+    "sha256": "16c057eb94d29739985f24f6539b76d48d12257c780aad60063205cbebc57118"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_icadv.cvh",
+    "sha256": "fb3501a70a70ee5ad3cb3f16a6ea7ba6b1539377d793ed0e94b7d13b440dc0a9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_icbmb.cvh",
+    "sha256": "df02676a1f0eef1d5ce4a1814736d010d180a94fbe92212fc626d0dc0db47150"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_icfig.cvh",
+    "sha256": "539d1fd6b5b8bbdb38e69d463622b016eba0bca38eea3b42378f4e29f236449f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_ichvy.cvh",
+    "sha256": "5c87f30c1eb6c0e5be3cb1c79f076ec2174a8270ae21bac59940b11be822181f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_icint.cvh",
+    "sha256": "16922b1b59035b17e5da0376a0013d9e1694f8b17e5904275f003c6579f873b4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wc_icsf.cvh",
+    "sha256": "0c79c9fc429faa73b25b1400d63f34ce8c84639d70173ef9bf245ca6c9d48857"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_ass.cvh",
+    "sha256": "9b1d3075db99a7ad67c45194478d38045dd0b652865baf52326b8eaa161d41c6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bmb.cvh",
+    "sha256": "38895d136693c4d207121bc1f1dc69f9a9256f0491a3b8e04e3ec65391d605d8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bsexp.cvh",
+    "sha256": "075071093327bc62f9cad864f8e9d8bf93ebb6f5444d039fe4cfe6114e640f12"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bsgar.cvh",
+    "sha256": "3689dfe0535afd029aca120a6098be4cae771da2e24d84046adc37a02c7c754c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bsop.cvh",
+    "sha256": "0ac095895309eb22d34b66266598c11839c4655c3d0bc36c5acdeba9b2282f35"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bsref.cvh",
+    "sha256": "0e67383e49779d61366f6916aa5ce3d43a82f40ae83403e698d462ae67b07912"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bsres.cvh",
+    "sha256": "1827d4a5efdb26566baaceb901ef66e9b20bcafe709d80aed29de7a6767cb39e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bsspec.cvh",
+    "sha256": "06e1ac49434114d00169e5be84a89c579e609d695ebf47c375e7872bff4c3e4d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bssup.cvh",
+    "sha256": "075071093327bc62f9cad864f8e9d8bf93ebb6f5444d039fe4cfe6114e640f12"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bssy.cvh",
+    "sha256": "1c05f7b64309f3cc081c167d65f35d046531f90e6aff5289466e2ef9d70c46e3"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bstac.cvh",
+    "sha256": "075071093327bc62f9cad864f8e9d8bf93ebb6f5444d039fe4cfe6114e640f12"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bstele.cvh",
+    "sha256": "ad50166416e5325f76e5191351c29d0064a5767d7f43207b954559000a24729a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_bstp.cvh",
+    "sha256": "93a9e1c3354279af2ac70d00581280c30154e61a0c5cb553e0dbe088f23d6348"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_car.cvh",
+    "sha256": "b505887f64d1cee6aacd31722f92cf41bf376ff77a1d6910c6a3cd78faa7e7d6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_con.cvh",
+    "sha256": "c0e1aa343ddd6a506b348755e853ae238c746dedb519397c76da0ac5d2b793e8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_crs.cvh",
+    "sha256": "3313175be5fde6a8702b315678cbf841266743353528cfc4aff71ddeefd325df"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_crv.cvh",
+    "sha256": "8e26e665c8114ef34aa467971380a9faf16a586b6fbb43ddf2e6ccee3931ea3f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_dev.cvh",
+    "sha256": "78fba8a9f02f68ef108af0c65f42288575be067b3c8d2b5b5bbc7663b6748e0d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_fig.cvh",
+    "sha256": "9e0ce4b6ec824c49a146f2595aaa854c38041b7b0bff4ce0d2adf98f487bdb93"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_frg.cvh",
+    "sha256": "43f30d8e51da8358bd695cb838abcc754628869baea87c54032cc8afd998b68c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_gcfig.cvh",
+    "sha256": "f13133144d86ee126d923eecc414940dad39ec403419b650aedc186eb7ea544a"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_hat.cvh",
+    "sha256": "d7b932e9c56ce12bf6032dc78da310d10bdf33d017d1a1609b80a2f327d3aa06"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_hell.cvh",
+    "sha256": "966c18afcd427cca0cde543f77c02581ccf36d1cf7de7a30908b469b8ed92cc4"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_htt.cvh",
+    "sha256": "88955c148d851a12e0721981f83d5a422ac1e27ddf2d0f124b15dc082bb90ddf"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_hunt.cvh",
+    "sha256": "9818b40a71841bf07124d8b31358d81cdfe426e035183315b92f6a4a2a5038e5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_int.cvh",
+    "sha256": "f85017e332916d05115c63bb8c75fb07ed5b35c39938f92e355a20c1fe3b4ef1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_long.cvh",
+    "sha256": "1553811c097704228ab12bac261f1478a1f04653080c01938d389f7447bba53c"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_mnr.cvh",
+    "sha256": "eaf2f90d1f046e1aaf599257151e9d023778fe24b7afbb817036eeb4a4dfdde9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_mtp.cvh",
+    "sha256": "d32684d43ee205bb74294d18afd6a1608ab3f5a00921e41e150959528c7c1234"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_nan.cvh",
+    "sha256": "3bab53e5dafc21188aacde6ba35bbf5db0ce7f3429a632181ca8e16b026d5cf6"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_nova.cvh",
+    "sha256": "0f99a54f610cae115945ca7b09d7b2807fb1aed0532f4fe689a9bb4f19b278ea"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_nuke.cvh",
+    "sha256": "592bf3a4ab2d1a3b0c20f66f7ad11a9665cd7148f54175834a8ef35c51ab8db2"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_phfig.cvh",
+    "sha256": "bd9818ade38c128de51b9c2957e88e509c7fa9abc688d884abd85d4378460dd1"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_phint.cvh",
+    "sha256": "2f8dcbd1c96df02090c66a2f52db8a266f7e96be07707c7f1b0c995f36fafb14"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_phsct.cvh",
+    "sha256": "fd748ae1e00d89c8d09bcacb381a4410e645e1b814f2c3b2041b7943ed4bb17d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_phsf.cvh",
+    "sha256": "0241105ea25554d2db4801ce779a3c85eaabc2c8a81d0303ac34fdf2ff1970ee"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_pod.cvh",
+    "sha256": "a5670ebfe88ba7c6bcfd40691d07f75b06c247d4f15d7b9a0bd0e452cda7a9c5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_pred.cvh",
+    "sha256": "046560284b4d7eb2da7bb3ba3487402684d84f91fd393df2cb10a5f37ecd9991"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_quad.cvh",
+    "sha256": "eca76645d4b1dd1d40e45c7d0d081e3c413d6469ecfde2e90f80bccf1810316d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_recon.cvh",
+    "sha256": "41b567466806cbe9f444c3b7025c177debf46768b7c6d62314a0e7db0d32dd6f"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_res.cvh",
+    "sha256": "80084bc0091ad04ddd040ce3d0e20e28b2dda04289016a6be39f17e0df65eb87"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_sct.cvh",
+    "sha256": "1cd05949e5d93dbff13a580d99d35c2e7b8c213bb632fa7b7d2e8dafadbb0266"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_sf.cvh",
+    "sha256": "dd5717b7ddf2b438f410ba39b8cab9eb99b22457c06223e30512d732e180c1a3"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_target.cvh",
+    "sha256": "1e656afea42a482615aab5ec56cfb3979f8bda9801b86122600fd1ef8b38c9dd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/weed_twr.cvh",
+    "sha256": "7dde88fe1f6e4dd87e3757c7621644e8bf1fd8a7c959bbff60bcc42e7d329333"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep01.cvh",
+    "sha256": "0bfa2cd244dedecca8c9dda5e06e5e2d42a7c00c5258a42b8b4599f3418eed52"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep02.cvh",
+    "sha256": "c2bcedfe55f7a0689161748e39758227b70a29cc9892764a154bf13b0a14fdac"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep03.cvh",
+    "sha256": "03cccc00855345afc11d838fdd89991661e7d58b93f23a4230656b6e19dfbe8d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep04.cvh",
+    "sha256": "7a61abcb393862f062d41feecb7aaccce3e5dd3072a3848e4fcb65563cb7e2d9"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep05.cvh",
+    "sha256": "b85066d9cd8c8f573b02ca54aeef29506b0e33e701cc5b8c59babacadd30be96"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep06.cvh",
+    "sha256": "11302ba0f7f7f0a349911f7df8b0d323d9b3588d3984b2555e55e6c33122c6af"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep07.cvh",
+    "sha256": "0d400f8d56bc97fc7211fd68b6ff2418aaf08d11ec043fc41cfad5df78779754"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep08.cvh",
+    "sha256": "d1f9d5efb388e117845b7d9cb17fab0f639836d6dd93b4bc1c7b8d318d9154b0"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep09.cvh",
+    "sha256": "804848560f6f1da247fe535d610e6dc707ce6dc3dd7b3298a47b843494c36280"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep10.cvh",
+    "sha256": "492e890c4cbd9672d48eef5707df4697e4eaa39de43936f685f8118fdbc946ec"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep11.cvh",
+    "sha256": "48a8258d972474161ee466a551b6872896584446c3040e4130753aaf0833362e"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep12.cvh",
+    "sha256": "26135cff5ad4354e9ddb50bace4ef419cc1a8672f49e71bda6095a821eb6540b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep13.cvh",
+    "sha256": "23450e4a025b66c33a4cb1f151b6ac2b79b61c7a8a12015a0909cd171c4ad997"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep16.cvh",
+    "sha256": "ecfcf66bb6801656b5d3f5fcdda3a28cff3b6eb0f657dd39c6b85f5dbbf9d7e8"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep17.cvh",
+    "sha256": "8282e27909b08a92b2ecfd561d8b5e7186dd93ca5a37ac4130a314291dad9418"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep18.cvh",
+    "sha256": "d1e9c95f3b5e5c2299b150ce326f3943a8546db60f87230c0e6c983690bd9ecf"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep19.cvh",
+    "sha256": "00f77a28db18a8885e206387ecaf82c9f836b66a280242fad1776bc653e87494"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep400.cvh",
+    "sha256": "0d2ef348b2f4682b96402096a056c14a96e76d0e46d3eedaa931af5d1bedd850"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep401.cvh",
+    "sha256": "5645e4da9f689cb7e9af91885a84994cfb82c5cac930c25f2b83de3f18178cdd"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep402.cvh",
+    "sha256": "c422e878d1af688d97a89ef6e85c208c112bb9fe637f5d00ee9e8478cf8e0522"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep403.cvh",
+    "sha256": "476142af05083ccadcbc63b94c85feec65fd0725262da57702f15243b0dcdec5"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep405.cvh",
+    "sha256": "db0864093e884776f6c2100cd448eba2a6051ce95bf19562c2e4dd9e3200278b"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep90.cvh",
+    "sha256": "24a7480639f68e289661642797bb97158792491c838d4fa64753034856d29275"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep91.cvh",
+    "sha256": "2ea52efc0c9c151baa72cdebfcb3c00dc49762dc3e0486ab22501db0aab4007d"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/wep92.cvh",
+    "sha256": "6f1cffe75aaee184945ca86d55264dcdca71e8e930e0d9b4853e70d4132d2df7"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/igc.h",
+    "sha256": "9e151addcbed45df98ff78fc9352aca8a796f69a5cfbb947425d52e9ab649a66"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/shipIGC.h",
+    "sha256": "78a7b0e7b445a95b6949fb6c299e61987ddf5981cdcc67e62bbdd9bfe44ba782"
+  },
+  {
+    "file": "/home/domingo/Development/Allegiance/src/Igc/sideigc.h",
+    "sha256": "b66d996ab79ad7fbc53c53c3528377e1dedcf1b1bc10c3284497f31c9e64628b"
+  }
+]
