@@ -89,6 +89,7 @@ internal sealed class InboundMessage
         PlayerReady.Fmid => PlayerReady.Decode(Bytes),
         Suicide.Fmid => Suicide.Decode(Bytes),
         Logoff.Fmid => Logoff.Decode(Bytes),
+        QuitMission.Fmid => QuitMission.Decode(Bytes),
         ViewClusterRequest.Fmid => ViewClusterRequest.Decode(Bytes),
         BoardShip.Fmid => BoardShip.Decode(Bytes),
         PromoteRequest.Fmid => PromoteRequest.Decode(Bytes),

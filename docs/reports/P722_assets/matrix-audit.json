@@ -1,0 +1,12 @@
+{
+  "status_changes": 14,
+  "done": 10,
+  "na": 4,
+  "open_in_scope": [],
+  "sim_sha256": "01d04c4698787de2780d0d25aa75cb57be19ce8a198e4130aea0e2484c713bc1",
+  "sim_equals_base": true,
+  "touched_csv_cr_counts": {
+    "docs/parity/parity-matrix.csv": 0,
+    "docs/parity/fedmsg-wiring.csv": 0
+  }
+}

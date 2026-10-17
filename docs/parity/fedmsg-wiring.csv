@@ -74,7 +74,7 @@ PROBES_UPDATE,92,S,Server.Broadcast,Bot only (harness),Real client does NOT cons
 ORDER_CHANGE,93,CS,"ServerHost, Server.Docking",Bot only (harness),Client sends ORDER_CHANGE (SendOrderChange); relay echo NOT consumed by real client,appmsg.cpp:1822,done
 LEAVE_SHIP,94,S,"Server.Docking, Server.ShipCommands",ConnectionSession (real client),own ship detaches; '<name> has left your ship.' / lifepod (appmsg.cpp:1914),appmsg.cpp:1914,done
 JOINED_MISSION,95,S,Server.Lobby,neither (codec only),Real client does NOT consume (candidate: JOINED_MISSION),appmsg.cpp:2150,partial
-LOADOUT_CHANGE,96,S,"ServerHost, Server.Lifecycle","ClientWorld.Apply(LoadoutChange) - same-side loadout/hull + relaunch revive (P648)",Consumed: hull/parts/passengers + clears IsDead on relaunch (P648),appmsg.cpp:1991,fixed
+LOADOUT_CHANGE,96,S,"ServerHost, Server.Lifecycle",ClientWorld.Apply(LoadoutChange) - same-side loadout/hull + relaunch revive (P648),Consumed: hull/parts/passengers + clears IsDead on relaunch (P648),appmsg.cpp:1991,fixed
 ACTIVE_TURRET_UPDATE,99,C,"(C) server handler: Server.Broadcast, Server.Dispatch",client→server (sender),Client sends ACTIVE_TURRET_UPDATE (SendActiveTurret),appmsg.cpp:2087,done
 INACTIVE_TURRET_UPDATE,100,C,(C) server handler: Server.Dispatch,client→server (sender),Client sends INACTIVE_TURRET_UPDATE (SendInactiveTurret),appmsg.cpp:2110,done
 TELEPORT_ACK,102,S,Server.Docking,ConnectionSession (real client),accepted->jump sound (appmsg.cpp:1901); denied->'Teleport failed' line,appmsg.cpp:1856,done
@@ -96,9 +96,9 @@ MUTE,117,C,—,client→server (sender),na — MUTE deliberately not built,—,n
 SET_TEAM_LEADER,121,CS,"Server.Lobby, Server.Economy",ConnectionSession (real client),SetTeamLeader per-side leader tracked (P366),appmsg.cpp:2930,done
 SET_TEAM_INVESTOR,122,CS,—,neither (codec only),na — SET_TEAM_INVESTOR deliberately not built,—,na
 SET_MISSION_OWNER,123,CS,Server.Lobby,ConnectionSession (real client),SetMissionOwner broadcast stored (P281),appmsg.cpp:2971,done
-QUIT_MISSION,124,CS,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: QUIT_MISSION),appmsg.cpp:2501,partial
+QUIT_MISSION,124,CS,"Server.Lifecycle, Server.Lobby, Server.Moderation",ConnectionSession -> ClientWorld (P722),Remove departed pilot and return own mission departure to browser (P722); Steam moderation unavailable,appmsg.cpp:2501,partial
 JOIN_SIDE,125,S,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),JoinSide side refresh / enemy classification (P438),appmsg.cpp:2909,done
-QUIT_SIDE,126,CS,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: QUIT_SIDE),appmsg.cpp:2993,partial
+QUIT_SIDE,126,CS,"Server.Lifecycle, Server.Lobby",ConnectionSession -> ClientWorld (P722),Clear departed side; JOIN_SIDE refreshes new side (P722); standalone defection-side boot unavailable,appmsg.cpp:2993,partial
 ENTER_GAME,128,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: ENTER_GAME),appmsg.cpp:3040,partial
 RELOAD,129,CS,"ServerHost, Server.Lifecycle",ConnectionSession (real client),Reload state counted (P362); client sends RELOAD (P626),appmsg.cpp:1458,done
 THREAT,131,S,—,neither (codec only),na — THREAT deliberately not built,—,na

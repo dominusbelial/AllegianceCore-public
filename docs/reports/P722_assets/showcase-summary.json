@@ -1,0 +1,102 @@
+[
+  {
+    "run": "showcase-01",
+    "exit": 0,
+    "metric": "P700 local 15v15: 96.7s, samples=965, reached=25/30, longest speed<1 with target=2.708s, shots=4954, hits=2485, kills=15",
+    "reached": 25.0,
+    "longest_pause": 2.708,
+    "shots": 4954.0,
+    "hits": 2485.0,
+    "kills": 15.0
+  },
+  {
+    "run": "showcase-02",
+    "exit": 0,
+    "metric": "P700 local 15v15: 94.8s, samples=947, reached=25/30, longest speed<1 with target=2.005s, shots=4505, hits=2349, kills=14",
+    "reached": 25.0,
+    "longest_pause": 2.005,
+    "shots": 4505.0,
+    "hits": 2349.0,
+    "kills": 14.0
+  },
+  {
+    "run": "showcase-03",
+    "exit": 0,
+    "metric": "P700 local 15v15: 98.7s, samples=986, reached=25/30, longest speed<1 with target=2.005s, shots=5046, hits=2494, kills=16",
+    "reached": 25.0,
+    "longest_pause": 2.005,
+    "shots": 5046.0,
+    "hits": 2494.0,
+    "kills": 16.0
+  },
+  {
+    "run": "showcase-04",
+    "exit": 0,
+    "metric": "P700 local 15v15: 96.1s, samples=960, reached=24/30, longest speed<1 with target=2.017s, shots=4403, hits=2326, kills=14",
+    "reached": 24.0,
+    "longest_pause": 2.017,
+    "shots": 4403.0,
+    "hits": 2326.0,
+    "kills": 14.0
+  },
+  {
+    "run": "showcase-05",
+    "exit": 0,
+    "metric": "P700 local 15v15: 97.7s, samples=976, reached=25/30, longest speed<1 with target=2.305s, shots=4769, hits=3056, kills=13",
+    "reached": 25.0,
+    "longest_pause": 2.305,
+    "shots": 4769.0,
+    "hits": 3056.0,
+    "kills": 13.0
+  },
+  {
+    "run": "showcase-06",
+    "exit": 0,
+    "metric": "P700 local 15v15: 95.1s, samples=950, reached=25/30, longest speed<1 with target=2.006s, shots=4692, hits=2319, kills=13",
+    "reached": 25.0,
+    "longest_pause": 2.006,
+    "shots": 4692.0,
+    "hits": 2319.0,
+    "kills": 13.0
+  },
+  {
+    "run": "showcase-07",
+    "exit": 0,
+    "metric": "P700 local 15v15: 96.2s, samples=961, reached=25/30, longest speed<1 with target=2.010s, shots=5021, hits=2791, kills=15",
+    "reached": 25.0,
+    "longest_pause": 2.01,
+    "shots": 5021.0,
+    "hits": 2791.0,
+    "kills": 15.0
+  },
+  {
+    "run": "showcase-08",
+    "exit": 0,
+    "metric": "P700 local 15v15: 96.5s, samples=964, reached=25/30, longest speed<1 with target=1.908s, shots=4786, hits=2384, kills=13",
+    "reached": 25.0,
+    "longest_pause": 1.908,
+    "shots": 4786.0,
+    "hits": 2384.0,
+    "kills": 13.0
+  },
+  {
+    "run": "showcase-09",
+    "exit": 0,
+    "metric": "P700 local 15v15: 95.5s, samples=954, reached=25/30, longest speed<1 with target=3.710s, shots=4785, hits=2737, kills=13",
+    "reached": 25.0,
+    "longest_pause": 3.71,
+    "shots": 4785.0,
+    "hits": 2737.0,
+    "kills": 13.0
+  },
+  {
+    "run": "showcase-10",
+    "exit": 0,
+    "metric": "P700 local 15v15: 96.3s, samples=962, reached=25/30, longest speed<1 with target=2.006s, shots=5312, hits=2872, kills=13",
+    "reached": 25.0,
+    "longest_pause": 2.006,
+    "shots": 5312.0,
+    "hits": 2872.0,
+    "kills": 13.0
+  }
+]

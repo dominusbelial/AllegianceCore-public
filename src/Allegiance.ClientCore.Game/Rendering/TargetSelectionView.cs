@@ -16,8 +16,9 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <param name="Center">The selected target's projected on-screen centre, viewport px.</param>
 /// <param name="Engaged">True when the player autopilot is engaged toward this
 /// target; false when merely selected (<c>T</c> picked it, <c>G</c> not engaged).</param>
-/// <param name="CharacterName">The target ship pilot's name; null for a non-ship
-/// target (station/asteroid/warp have no pilot to show).</param>
+/// <param name="CharacterName">The selected ship's pilot name or station name;
+/// null when the selected object has no name readout. The legacy property name
+/// is retained for callers.</param>
 /// <param name="HullFraction">The target ship's live hull fraction 0..1; null for
 /// a non-ship target.</param>
 /// <param name="ShieldFraction">The target ship's live shield fraction 0..1; null

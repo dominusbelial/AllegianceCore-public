@@ -1,0 +1,26 @@
+{
+  "base": "3fbca12644088475c14a3c59930245ecdd73db76",
+  "files": {
+    "src/Allegiance.ClientCore.Game/Game1.Camera.cs": "fdd7ce493b9c842692c596ddc8d401604b91f866095d9cf01be2d03d05d89798",
+    "src/Allegiance.ClientCore.Game/Game1.FlightInput.cs": "cc15fd83c151b10de3c36631287c9ea27bcfd8be236a274c3dad9aad5df54934",
+    "src/Allegiance.ClientCore.Game/Game1.Rendering.cs": "faca0060574c25fab9ad264a9b85915bdfa3f597e981c40b232dd852defb3e9e",
+    "src/Allegiance.ClientCore.Game/Game1.Session.cs": "e8fd5bec34aca2354ae01b92c420ee4e48a5beca80cd0d5eb9cefc61470ee041",
+    "src/Allegiance.ClientCore.Game/Rendering/ModerationModel.cs": "1aa9fb0a4c0b7c62de27793283369f8211f2d5e31760b233cd08de5efbe5abcb",
+    "src/Allegiance.ClientCore.Game/Rendering/SelectionPaneModel.cs": "516e0d3b9642afeb80a0fe4878a20967db1fe59ed46a404ae3e3006ecb244de5",
+    "src/Allegiance.ClientCore.Game/Rendering/TargetSelectionView.cs": "5930c22915ac09d5a006b09331d76b48cb62e6b60b22a11cbf185dfd250ea216",
+    "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs": "f40c5c572d7f85d5dcf5eeb1178f4a158456c2f77a072e40e8b799c6c1926443",
+    "src/Allegiance.ClientCore/Session/ConnectionSession.cs": "d67c8aa34d57f55aa3b48a46d006b6eb994a0496eaa4320cabfbaff965b7820e",
+    "src/Allegiance.ClientCore/State/ClientWorld.cs": "6d3da2f4edba053707fc14abb4b881ee27cdc052f32f5e9dc0e8278e5f33d031",
+    "src/Allegiance.Core/Data/DataMissileTypeIGC.cs": "43e9cbc4a680429f9cd6b37c8ac0ce5444251463d9cd355829fdc03773e3e16c",
+    "src/Allegiance.Core/Model/Sector.cs": "257a1c85433057407cc287fbe2e908be873dd17a16f58b459065865aae6c46ed",
+    "src/Allegiance.Core/Wire/QuitMission.cs": "08e14f22c32459757645df89f18d51952561fc7af20de40595e8032e4e7f13f8",
+    "src/Allegiance.Core/Wire/QuitSideReason.cs": "75f36b68d99a824f6af9fdb9e36e98939ffd498647d7d40e111135b3234f6bf6",
+    "src/Allegiance.Server/InboundPacket.cs": "436df5e13977705342fb5beba3b78b5e57fe11109df9dca38676b29378ac086e",
+    "src/Allegiance.Server/Server.Dispatch.cs": "1c3f5037e3f8189e93bcb1d2fd8e9bfe3ad8706fdf0c46a5c955663f7555bff6",
+    "src/Allegiance.Server/Server.Lifecycle.cs": "b74110d77e5e78a2a100dd1fd76018125fd691c7ba627ee1533e360fd5482ab0",
+    "src/Allegiance.Server/Server.Moderation.cs": "e379dbcd98831a77b0020789c2a9beafa231aead403404248b53551107c01ca7",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/P722InterfaceModelTests.cs": "92a68bed1f92fe32e78bb0ec7f26152e6988df6f6b79d08d17a13f686e0adfcc",
+    "tests/Allegiance.ClientCore.Tests/FedMsgDispatchCoverageTests.cs": "aebb0e09254b2ff68ef81415ad2c9f26f7ad996cff9bd10001761c6181e8b407",
+    "tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs": "64debfbfdcc4116c8ae667e010d88c2e40cab8fbd918f651dac07931024aa246"
+  }
+}

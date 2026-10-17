@@ -49,7 +49,7 @@ public static class TeamPaneLayout
     /// <summary>The flattened per-pilot ship state the caller extracts from
     /// <c>ClientWorld.Ships</c> (kept MonoGame/ClientCore-free so this layout is
     /// headless-testable).</summary>
-    public readonly record struct ShipBrief(short HullId, short SectorId, short StationId, bool Dead, bool Gone);
+    public readonly record struct ShipBrief(short HullId, short SectorId, short StationId, bool Dead, bool Gone, short ShipId = -1);
 
     public enum LineKind { Blank, Title, SideHeader, Pilot, Money, Ballot, Note, Hint }
 
@@ -89,10 +89,12 @@ public static class TeamPaneLayout
                 bool self = selfName != null && string.Equals(e.CharacterName, selfName, StringComparison.Ordinal);
                 string rankName = RankNameLookup.Lookup(rankTable, e.Rank);
                 string status = StatusFor(ships, e.CharacterName);
-                string hull = ships.TryGetValue(e.CharacterName, out var sb) && sb.HullId > 0 ? $" HLD{sb.HullId}" : "";
+                bool hasShip = ships.TryGetValue(e.CharacterName, out var sb);
+                string hull = hasShip && sb.HullId > 0 ? $" HLD{sb.HullId}" : "";
+                string id = hasShip && sb.ShipId >= 0 ? $" ID:{sb.ShipId}" : "";
                 string text = $"    {ScoreboardLayout.AsciiSafe(e.CharacterName),-18}  " +
                               $"{ScoreboardLayout.AsciiSafe(rankName),-14}  " +
-                              $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}";
+                              $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}{id}";
                 lines.Add(new Line(LineKind.Pilot, text, self));
             }
         }

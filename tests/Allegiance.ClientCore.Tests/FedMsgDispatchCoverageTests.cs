@@ -20,7 +20,7 @@ namespace Allegiance.ClientCore.Tests;
 /// and is not silently falling into an "unknown fmid" sink. This test does that:
 ///
 ///  1. It encodes every server-sent message the real client is supposed to
-///     consume (the <see cref="ExpectedConsumedServerSent"/> registry — all 84
+///     consume (the <see cref="ExpectedConsumedServerSent"/> registry — all 86
 ///     native S/CS messages the client dispatches, plus the 17 port-added
 ///     server-sent messages), feeds the real bytes through the real dispatch
 ///     (no sockets — <see cref="ITransportSite.OnReceive"/> is invoked
@@ -68,7 +68,7 @@ public class FedMsgDispatchCoverageTests
         (94, "LeaveShip"), (96, "LoadoutChange"), (102, "TeleportAck"), (105, "KillShip"),
         (108, "ChatBuoy"), (109, "CreateChaff"), (110, "MissileSpoofed"), (111, "EndSpoofing"),
         (114, "Payday"), (115, "SetMoney"),
-        (116, "AutoDonateUpdate"), (121, "SetTeamLeader"), (123, "SetMissionOwner"), (125, "JoinSide"),
+        (116, "AutoDonateUpdate"), (121, "SetTeamLeader"), (123, "SetMissionOwner"), (125, "JoinSide"), (124, "QuitMission"), (126, "QuitSide"),
         (129, "Reload"), (166, "EnterLifepod"), (175, "LightShipsUpdate"), (176, "HeavyShipsUpdate"),
         (177, "ViewClusterReply"), (178, "BoardNack"), (189, "Promote"), (199, "HighlightCluster"), (197, "ChangeAlliances"), (179, "AsteroidsUpdate"),
         (181, "BuildingEffectDestroyed"), (183, "ShipReset"), (185, "RipcordActivate"), (186, "RipcordDenied"),
@@ -100,8 +100,6 @@ public class FedMsgDispatchCoverageTests
         (87, "FIRE_EXPENDABLE", "FE broadcast; expendable deploy effect via CREATE_CHAFF(109)+chaff entities"),
         (89, "TREASURE_SETS", "treasure-sets broadcast; DROP_TREASURE sets not modelled"),
         (92, "PROBES_UPDATE", "per-cluster probe list sync; probe sensor model partial (P98-P100)"),
-        (124, "QUIT_MISSION", "quit-mission broadcast; game-over/leave path local"),
-        (126, "QUIT_SIDE", "side-quit broadcast; side-select roster via SIDE_ROSTER(211)"),
         (128, "ENTER_GAME", "enter-game announce; spawn handled via SET_CLUSTER(7)"),
         (155, "GAME_STATE", "game-state (starting/over) sync; staged via MISSION_STAGE(37)/GAME_OVER(62)"),
         (156, "GAIN_FLAG", "flag gain broadcast; conquest flag mechanic not implemented"),
@@ -279,12 +277,12 @@ public class FedMsgDispatchCoverageTests
         // Registry entries must be unique; otherwise a duplicate can mask stale counts.
         Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
         Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
-        Assert.Equal(84, consumed.Count(f => supportedNativeServerSent.Contains(f)));
+        Assert.Equal(86, consumed.Count(f => supportedNativeServerSent.Contains(f)));
         Assert.Equal(17, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(101, ExpectedConsumedServerSent.Length);
-        Assert.Equal(18, KnownUnconsumedServerSent.Length);
+        Assert.Equal(103, ExpectedConsumedServerSent.Length);
+        Assert.Equal(16, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

@@ -592,6 +592,20 @@ public sealed partial class ClientWorld
     /// Keeping these separate preserves the launch contract for consumers.</summary>
     public short? MyShipId { get; private set; }
 
+    /// <summary>appmsg.cpp:2501-2528: the own mission departure returns to browsing.</summary>
+    public QuitMission? OwnMissionDeparture { get; private set; }
+
+    private readonly HashSet<short> _mutedPilots = new();
+    public bool IsPilotMuted(short shipId) => _mutedPilots.Contains(shipId);
+
+    /// <summary>WinTrek.cpp:3731-3734; trekigc.cpp:4492. Local chat preference,
+    /// never FM_CS_MUTE(117), which has no native sender/consumer.</summary>
+    public void SetPilotMuted(short shipId, bool muted)
+    {
+        if (shipId < 0 || shipId == MyShipId) return;
+        if (muted) _mutedPilots.Add(shipId); else _mutedPilots.Remove(shipId);
+    }
+
     // ── P711 — ship low-status / combat feedback alarms (trekigc.cpp:1264-1275).
     // Edge-triggered one-shots computed from the local ship's OWN streamed
     // ServerShipUpdate: the previous frame's snapshot (below) vs. the current
@@ -1645,6 +1659,8 @@ public sealed partial class ClientWorld
         ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
+        OwnMissionDeparture = null;
+        _mutedPilots.Clear();
         _prevOwnAlarms = null;   // P711 — fresh session: re-arm the low-status alarm snapshots
         MyAcceptedCommand = null;
         _myQueuedCommand = null;
@@ -1833,6 +1849,21 @@ public sealed partial class ClientWorld
                 break;
             case ChatMessage chatMessage:
                 Apply(chatMessage);
+                break;
+            case QuitMission quitMission:
+                MarkSnapshotDirty();
+                if (quitMission.ShipId == (JoinedShipId ?? MyShipId))
+                {
+                    OwnMissionDeparture = quitMission;
+                    MySideId = null;
+                }
+                _ships.Remove(quitMission.ShipId);
+                _mutedPilots.Remove(quitMission.ShipId);
+                break;
+            case QuitSide quitSide:
+                MarkSnapshotDirty();
+                if (_ships.TryGetValue(quitSide.ShipId, out var leaver)) leaver.SideId = -2;
+                if (quitSide.ShipId == (JoinedShipId ?? MyShipId)) MySideId = null;
                 break;
             case Ballot ballot:
                 // P626 — a new in-flight ballot was announced (P187); latch it
@@ -3710,6 +3741,7 @@ public sealed partial class ClientWorld
 
     private void Apply(ChatMessage m)
     {
+        if (IsPilotMuted(m.SidSender)) return;
         _events.Record(m);
         // P710 — drive the incoming-message announcement cue. The sender is a
         // team leader when the per-side leader (SET_TEAM_LEADER) is the sender's
@@ -3747,7 +3779,10 @@ public sealed partial class ClientWorld
             ChatTarget = (int)ChatTarget.Everyone,
         });
     }
-    private void Apply(ChatBuoy m) => _events.Record(m);
+    private void Apply(ChatBuoy m)
+    {
+        if (!IsPilotMuted(m.Cd.SidSender)) _events.Record(m);
+    }
     private void Apply(KillShip m)
     {
         _events.Record(m);
