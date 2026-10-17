@@ -109,7 +109,7 @@ public sealed partial class ClientWorld
         // Unlike native's optimistic self assignment, the port also accepts the
         // uncommanded self echo: SendWingId waits for server confirmation.
         ship.WingId = wing.WingId;
-        if (wing.BCommanded && wing.ShipID == MyShipId)
+        if (wing.BCommanded && wing.ShipID == (MyShipId ?? JoinedShipId))
         {
             string text = $"You have been assigned to wing {WingNames.For(wing.WingId)}";
             if (_feedbackLines.Count >= MaxFeedbackLines) _feedbackLines.RemoveAt(0);

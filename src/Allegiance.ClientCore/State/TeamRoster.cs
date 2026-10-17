@@ -39,5 +39,7 @@ public sealed class TeamRoster
 
     /// <summary>P321 — drop the whole roster (called from ClientWorld.Reset on a
     /// fresh Connect so no stale ready-states survive into a new session).</summary>
+    internal void Remove(short shipId) => _readyByShipId.Remove(shipId);
+
     internal void Clear() => _readyByShipId.Clear();
 }

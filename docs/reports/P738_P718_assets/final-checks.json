@@ -1,0 +1,14 @@
+{
+  "actual_conflicted_files_resolved": 13,
+  "matrix_rows_in_marked_blocks": 31,
+  "matrix_rows_different_between_parents": 24,
+  "remaining_conflict_marker_files": [],
+  "LF_matrices_and_fedmsg_wiring": true,
+  "all_tested_source_fingerprints_unchanged": true,
+  "invocations": 503,
+  "raw_log_and_trx_pairs_verified_in_archive": 503,
+  "git_commands_run": false,
+  "report": "docs/reports/P718_INTERFACE_WAVE.md:145",
+  "report_sha256": "562c8818ca6407e53e98680528db2aa9472cab3206f5fcc0fae075888c142d72",
+  "flake_record_sha256": "ede3cbfa617a240fd91f6ba66d48fd2e9e285236dd921bb6357cdab5e56e710e"
+}

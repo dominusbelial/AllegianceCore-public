@@ -1,0 +1,19 @@
+{
+  "command": [
+    "dotnet",
+    "build",
+    "AllegianceCore.slnx",
+    "-c",
+    "Release",
+    "-m:8",
+    "--nologo",
+    "-v:minimal"
+  ],
+  "exit_code": 0,
+  "warnings": 0,
+  "errors": 0,
+  "seconds": 8.21,
+  "completed_utc": "2026-10-17T20:35:48.874037+00:00",
+  "log": "build.log",
+  "initial_build_log": "build-initial.log"
+}

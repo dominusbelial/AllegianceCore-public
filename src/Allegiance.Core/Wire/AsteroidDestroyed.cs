@@ -16,7 +16,7 @@ namespace Allegiance.Core.Wire;
 ///   offset 4: short  clusterID   (SectorID, igc.h:487)
 ///   offset 6: short  asteroidID  (AsteroidID, igc.h:492)
 ///   offset 8: byte   explodeF    (bool, 1 byte)
-///   = 9 B fixed, no var items → cbmsg = 9
+///   = 10 B fixed (one trailing alignment byte), no var items → cbmsg = 10
 /// </code>
 /// Simple fixed-size message, no var-item — the direct-fire damage path an
 /// asteroid undergoes exactly like <see cref="ProbeDestroyed"/> but with the
@@ -30,9 +30,9 @@ public sealed class AsteroidDestroyed : IFedMessage
     public const ushort Fmid = 86;
 
     /// <summary>Wire width of the whole message: header(4) + clusterID(2) +
-    /// asteroidID(2) + explodeF(1). No alignment gaps — the bool trails the two
-    /// 2-byte IDs back-to-back at offset 8.</summary>
-    public const int FixedSize = 9;
+    /// asteroidID(2) + explodeF(1) + trailing pad(1). Native default struct
+    /// alignment is 2 (messagecore.h:767-774); packed ProbeState is separate.</summary>
+    public const int FixedSize = 10;
 
     public short ClusterId;      // the sector the asteroid was in
     public short AsteroidId;     // the destroyed asteroid
@@ -49,6 +49,7 @@ public sealed class AsteroidDestroyed : IFedMessage
         w.WriteI16(ClusterId);
         w.WriteI16(AsteroidId);
         w.WriteByte(ExplodeF ? (byte)1 : (byte)0);
+        w.WriteByte(0); // native sizeof(FMD_S_ASTEROID_DESTROYED), align 2
         w.WriteU16At(0, (ushort)w.Position);
         if (w.Position != FixedSize) throw new InvalidOperationException($"ASTEROID_DESTROYED internal layout drift: {w.Position} != {FixedSize}");
         return buf;

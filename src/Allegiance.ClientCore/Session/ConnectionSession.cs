@@ -1135,6 +1135,33 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case ObjectSpotted.Fmid:
                         _world.Apply(ObjectSpotted.Decode(m));
                         break;
+                    case ChangeTeamCiv.Fmid:
+                        _world.Apply(ChangeTeamCiv.Decode(m));
+                        break;
+                    case ProbesUpdate.Fmid:
+                        _world.Apply(ProbesUpdate.Decode(m));
+                        break;
+                    case QuitSide.Fmid:
+                        _world.Apply(QuitSide.Decode(m));
+                        break;
+                    case EnterGame.Fmid:
+                        _world.Apply(EnterGame.Decode(m));
+                        break;
+                    case GameState.Fmid:
+                        _world.Apply(GameState.Decode(m));
+                        break;
+                    case QuitMission.Fmid:
+                        var departure = QuitMission.Decode(m);
+                        bool ownDeparture = departure.ShipId == (_world.JoinedShipId ?? _world.MyShipId);
+                        _world.Apply(departure);
+                        if (ownDeparture)
+                        {
+                            // clintlib.cpp:3805-3848 disconnects on own mission departure.
+                            Shutdown();
+                            RaiseLost();
+                            return; // later messages in this burst belong to the departed mission
+                        }
+                        break;
                     case SetWingId.Fmid:
                         _world.Apply(SetWingId.Decode(m));
                         break;

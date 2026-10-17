@@ -31,6 +31,9 @@ public sealed class ProbeEntity
     /// <summary>The probe's ObjectID (<c>ProbeId</c> = short, the key).</summary>
     public short ProbeId;
 
+    /// <summary>Native BytePercentage health, appmsg.cpp:584-606.</summary>
+    public float Fraction { get; internal set; } = 1f;
+
     /// <summary>The side that owns this probe (<c>DataProbeExport.SideId</c>) —
     /// used to gate the ambient loop to probes owned by the player's own side.</summary>
     public short SideId;

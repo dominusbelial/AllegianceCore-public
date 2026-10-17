@@ -1,0 +1,28 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Allegiance.Lobby -> /home/domingo/allegiance-integ-b2/src/Allegiance.Lobby/bin/Release/net10.0/Allegiance.Lobby.dll
+  Allegiance.Lobby.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.Lobby.Tests/bin/Release/net10.0/Allegiance.Lobby.Tests.dll
+  Allegiance.Core -> /home/domingo/allegiance-integ-b2/src/Allegiance.Core/bin/Release/net10.0/Allegiance.Core.dll
+  igcdump -> /home/domingo/allegiance-integ-b2/tools/igcdump/bin/Release/net10.0/igcdump.dll
+  p605synth -> /home/domingo/allegiance-integ-b2/tools/p605synth/bin/Release/net10.0/p605synth.dll
+  collision-perf-proof -> /home/domingo/allegiance-integ-b2/tools/collision-perf-proof/bin/Release/net10.0/collision-perf-proof.dll
+  tech-tree -> /home/domingo/allegiance-integ-b2/tools/tech-tree/bin/Release/net10.0/tech-tree.dll
+  fedmsgdump -> /home/domingo/allegiance-integ-b2/tools/fedmsgdump/bin/Release/net10.0/fedmsgdump.dll
+  corpusvalidate -> /home/domingo/allegiance-integ-b2/tools/corpusvalidate/bin/Release/net10.0/corpusvalidate.dll
+  missiondump -> /home/domingo/allegiance-integ-b2/tools/missiondump/bin/Release/net10.0/missiondump.dll
+  Allegiance.Bot -> /home/domingo/allegiance-integ-b2/src/Allegiance.Bot/bin/Release/net10.0/Allegiance.Bot.dll
+/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Session/ConnectionSession.cs(1141,21): error CS0152: The switch statement contains multiple cases with the label value '86' [/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Allegiance.ClientCore.csproj]
+/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/State/ClientWorld.cs(2070,18): error CS8120: The switch case is unreachable. It has already been handled by a previous case or it is impossible to match. [/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Allegiance.ClientCore.csproj]
+  Allegiance.Server -> /home/domingo/allegiance-integ-b2/src/Allegiance.Server/bin/Release/net10.0/Allegiance.Server.dll
+  receive-proof -> /home/domingo/allegiance-integ-b2/tools/receive-proof/bin/Release/net10.0/receive-proof.dll
+  chatdemo -> /home/domingo/allegiance-integ-b2/tools/chatdemo/bin/Release/net10.0/chatdemo.dll
+  livecombat -> /home/domingo/allegiance-integ-b2/tools/livecombat/bin/Release/net10.0/livecombat.dll
+
+Build FAILED.
+
+/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Session/ConnectionSession.cs(1141,21): error CS0152: The switch statement contains multiple cases with the label value '86' [/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Allegiance.ClientCore.csproj]
+/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/State/ClientWorld.cs(2070,18): error CS8120: The switch case is unreachable. It has already been handled by a previous case or it is impossible to match. [/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Allegiance.ClientCore.csproj]
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:07.47

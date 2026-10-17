@@ -1,0 +1,1174 @@
+[
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "38 MISSIONDEF"
+    ],
+    "ours": [
+      "fedmsg",
+      "38 MISSIONDEF",
+      "Inc/Messages.h:294-318; FedSrv/fsmission.cpp:3943-3974",
+      "done",
+      "src/Allegiance.Core/Wire/MissionDef.cs:73; src/Allegiance.Server/Server.Lobby.cs:3035; tests/Allegiance.Core.Tests/Wire/P713LobbyWireTests.cs:8; P713 native_intent=design: leader short-array codec and explicit empty-role sentinels before roster/role join snapshots; prevents native role handler dereference of unknown old leader",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "38 MISSIONDEF",
+      "Inc/Messages.h:294",
+      "done",
+      "Wire/MissionDef.cs",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "38 MISSIONDEF",
+      "Inc/Messages.h:294-318; FedSrv/fsmission.cpp:3943-3974",
+      "done",
+      "src/Allegiance.Core/Wire/MissionDef.cs:73; src/Allegiance.Server/Server.Lobby.cs:3035; tests/Allegiance.Core.Tests/Wire/P713LobbyWireTests.cs:8; P713 native_intent=design: leader short-array codec and explicit empty-role sentinels before roster/role join snapshots; prevents native role handler dereference of unknown old leader",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "51 CHANGE_TEAM_CIV"
+    ],
+    "ours": [
+      "fedmsg",
+      "51 CHANGE_TEAM_CIV",
+      "Inc/Messages.h:407",
+      "partial",
+      "Wire/ChangeTeamCiv.cs (server handled; client consumer not found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "51 CHANGE_TEAM_CIV",
+      "Inc/Messages.h:407-411; clintlib/appmsg.cpp:2530-2539",
+      "done",
+      "P718: design; Civilization and random-faction state; immutable side-roster update. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Civilization_echo_updates_roster_and_random_choice_without_losing_side_metadata); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "51 CHANGE_TEAM_CIV",
+      "Inc/Messages.h:407-411; clintlib/appmsg.cpp:2530-2539",
+      "done",
+      "P718: design; Civilization and random-faction state; immutable side-roster update. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Civilization_echo_updates_roster_and_random_choice_without_losing_side_metadata); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "decision": "incoming completed FEDMSG row"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "86 ASTEROID_DESTROYED"
+    ],
+    "ours": [
+      "fedmsg",
+      "86 ASTEROID_DESTROYED",
+      "Inc/Messages.h:613",
+      "partial",
+      "Wire/AsteroidDestroyed.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "86 ASTEROID_DESTROYED",
+      "Inc/Messages.h:613-617; Inc/messagecore.h:77-86,767-774; clintlib/appmsg.cpp:1692-1718",
+      "done",
+      "P718: design; Native align-2 10-byte codec; rock/health deletion; explosion vs preserved conversion effect. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Asteroid_termination_removes_health_and_preserves_conversion_effect_only); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "86 ASTEROID_DESTROYED",
+      "Inc/Messages.h:613-617; Inc/messagecore.h:77-86,767-774; clintlib/appmsg.cpp:1692-1718",
+      "done",
+      "P718: design; Native align-2 10-byte codec; rock/health deletion; explosion vs preserved conversion effect. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Asteroid_termination_removes_health_and_preserves_conversion_effect_only); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "decision": "incoming completed FEDMSG row"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "87 FIRE_EXPENDABLE"
+    ],
+    "ours": [
+      "fedmsg",
+      "87 FIRE_EXPENDABLE",
+      "Inc/Messages.h:619",
+      "partial",
+      "Wire/FireExpendable.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "87 FIRE_EXPENDABLE",
+      "Inc/Messages.h:619",
+      "partial",
+      "Wire/FireExpendable.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "87 FIRE_EXPENDABLE",
+      "Inc/Messages.h:619",
+      "partial",
+      "Wire/FireExpendable.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "89 TREASURE_SETS"
+    ],
+    "ours": [
+      "fedmsg",
+      "89 TREASURE_SETS",
+      "Inc/Messages.h:624",
+      "partial",
+      "Wire/TreasureSets.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "89 TREASURE_SETS",
+      "Inc/Messages.h:624",
+      "partial",
+      "Wire/TreasureSets.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "89 TREASURE_SETS",
+      "Inc/Messages.h:624",
+      "partial",
+      "Wire/TreasureSets.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "90 SHIP_STATUS"
+    ],
+    "ours": [
+      "fedmsg",
+      "90 SHIP_STATUS",
+      "Inc/Messages.h:630",
+      "done",
+      "src/Allegiance.ClientCore/Session/ConnectionSession.cs:786; src/Allegiance.ClientCore/State/ClientWorld.cs:2150",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "90 SHIP_STATUS",
+      "Inc/Messages.h:630",
+      "done",
+      "src/Allegiance.ClientCore/Session/ConnectionSession.cs:786; src/Allegiance.ClientCore/State/ClientWorld.cs:2150",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "90 SHIP_STATUS",
+      "Inc/Messages.h:630",
+      "done",
+      "src/Allegiance.ClientCore/Session/ConnectionSession.cs:786; src/Allegiance.ClientCore/State/ClientWorld.cs:2150",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "92 PROBES_UPDATE"
+    ],
+    "ours": [
+      "fedmsg",
+      "92 PROBES_UPDATE",
+      "Inc/Messages.h:644",
+      "partial",
+      "Wire/ProbesUpdate.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "92 PROBES_UPDATE",
+      "Inc/Messages.h:636-646; clintlib/appmsg.cpp:584-606",
+      "done",
+      "P718: design; In-game/current-flight-cluster probe health; reverse packed-entry application; ignore absent probes. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Probe_updates_require_enter_game_and_current_flight_sector_and_iterate_backwards); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "92 PROBES_UPDATE",
+      "Inc/Messages.h:636-646; clintlib/appmsg.cpp:584-606",
+      "done",
+      "P718: design; In-game/current-flight-cluster probe health; reverse packed-entry application; ignore absent probes. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Probe_updates_require_enter_game_and_current_flight_sector_and_iterate_backwards); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "decision": "incoming completed FEDMSG row"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "106 SET_WINGID"
+    ],
+    "ours": [
+      "fedmsg",
+      "106 SET_WINGID",
+      "Inc/Messages.h:705; clintlib/appmsg.cpp:2129-2147; FedSrv/FedSrv.CPP:5312-5344; FedSrv/fsmission.cpp:697-709",
+      "done",
+      "src/Allegiance.Server/Server.ShipCommands.cs:861; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:92; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:22; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: commander teammate assignment with corrected commanded bit; known-side update; critical own-assignment notice; live roster wing names and late-join wing snapshots; self echoes remain server authoritative",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "106 SET_WINGID",
+      "Inc/Messages.h:705-709; clintlib/appmsg.cpp:2129-2147; Igc/common.cpp:23-35",
+      "done",
+      "P718: design; Same-team known-member wing; commanded-self critical assignment notice; live team-pane wing name (fills remaining P675 gap). src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Wing_echo_notifies_only_commanded_self_and_does_not_create_unknown_or_enemy_roster_members); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "106 SET_WINGID",
+      "Inc/Messages.h:705; clintlib/appmsg.cpp:2129-2147; FedSrv/FedSrv.CPP:5312-5344; FedSrv/fsmission.cpp:697-709; Inc/Messages.h:705-709; clintlib/appmsg.cpp:2129-2147; Igc/common.cpp:23-35",
+      "done",
+      "src/Allegiance.Server/Server.ShipCommands.cs:861; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:92; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:22; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: commander teammate assignment with corrected commanded bit; known-side update; critical own-assignment notice; live roster wing names and late-join wing snapshots; self echoes remain server authoritative; P718: design; Same-team known-member wing; commanded-self critical assignment notice; live team-pane wing name (fills remaining P675 gap). src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Wing_echo_notifies_only_commanded_self_and_does_not_create_unknown_or_enemy_roster_members); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "decision": "union completed wing evidence"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "124 QUIT_MISSION"
+    ],
+    "ours": [
+      "fedmsg",
+      "124 QUIT_MISSION",
+      "Inc/Messages.h:812",
+      "partial",
+      "Wire/QuitMission.cs (server handled; client consumer not found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "124 QUIT_MISSION",
+      "Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848",
+      "done",
+      "P718: design; Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Remote_quit_mission_removes_player_requests_and_ready_without_touching_other_players; Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "124 QUIT_MISSION",
+      "Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848",
+      "done",
+      "P718: design; Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Remote_quit_mission_removes_player_requests_and_ready_without_touching_other_players; Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "decision": "incoming completed FEDMSG row"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "125 JOIN_SIDE"
+    ],
+    "ours": [
+      "fedmsg",
+      "125 JOIN_SIDE",
+      "Inc/Messages.h:820",
+      "done",
+      "Wire/JoinSide.cs",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "125 JOIN_SIDE",
+      "Inc/Messages.h:820",
+      "done",
+      "Wire/JoinSide.cs",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "125 JOIN_SIDE",
+      "Inc/Messages.h:820",
+      "done",
+      "Wire/JoinSide.cs",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "126 QUIT_SIDE"
+    ],
+    "ours": [
+      "fedmsg",
+      "126 QUIT_SIDE",
+      "Inc/Messages.h:825",
+      "partial",
+      "Wire/QuitSide.cs (server handled; client consumer not found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "126 QUIT_SIDE",
+      "Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831",
+      "done",
+      "P718: design; SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Quit_side_clears_team_privileges_and_money_preserves_ready_and_join_reseats_identity; Own_quit_side_clears_sector_contents_but_keeps_mission_players_and_can_reenter); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "126 QUIT_SIDE",
+      "Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831",
+      "done",
+      "P718: design; SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Quit_side_clears_team_privileges_and_money_preserves_ready_and_join_reseats_identity; Own_quit_side_clears_sector_contents_but_keeps_mission_players_and_can_reenter); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "decision": "incoming completed FEDMSG row"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "128 ENTER_GAME"
+    ],
+    "ours": [
+      "fedmsg",
+      "128 ENTER_GAME",
+      "Inc/Messages.h:831",
+      "partial",
+      "Wire/EnterGame.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "128 ENTER_GAME",
+      "Inc/Messages.h:831-835; clintlib/appmsg.cpp:3040-3045; clintlib/clintlib.cpp:3851-3857",
+      "done",
+      "P718: design; Sync-complete InGame barrier independent of mission stage and live equipment; game-over/reset/next-mission clears. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "128 ENTER_GAME",
+      "Inc/Messages.h:831-835; clintlib/appmsg.cpp:3040-3045; clintlib/clintlib.cpp:3851-3857",
+      "done",
+      "P718: design; Sync-complete InGame barrier independent of mission stage and live equipment; game-over/reset/next-mission clears. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "decision": "incoming completed FEDMSG row"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "129 RELOAD"
+    ],
+    "ours": [
+      "fedmsg",
+      "129 RELOAD",
+      "Inc/Messages.h:843",
+      "done",
+      "Wire/Reload.cs",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "129 RELOAD",
+      "Inc/Messages.h:843",
+      "done",
+      "Wire/Reload.cs",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "129 RELOAD",
+      "Inc/Messages.h:843",
+      "done",
+      "Wire/Reload.cs",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "131 THREAT"
+    ],
+    "ours": [
+      "fedmsg",
+      "131 THREAT",
+      "Inc/Messages.h:848",
+      "na",
+      "dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "131 THREAT",
+      "Inc/Messages.h:848",
+      "na",
+      "dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs)",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "131 THREAT",
+      "Inc/Messages.h:848",
+      "na",
+      "dead/not-applicable registry (src/Allegiance.Core/Wire/NotSupportedFedMsgs.cs)",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "fedmsg",
+      "155 GAME_STATE"
+    ],
+    "ours": [
+      "fedmsg",
+      "155 GAME_STATE",
+      "Inc/Messages.h:854",
+      "partial",
+      "Wire/GameState.cs (server emits; no client handler found)",
+      "4"
+    ],
+    "theirs": [
+      "fedmsg",
+      "155 GAME_STATE",
+      "Inc/Messages.h:854-860; clintlib/appmsg.cpp:2392-2407",
+      "done",
+      "P718: design; Replace all six sides conquest/territory/flag/artifact counters in native array order. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "resolved": [
+      "fedmsg",
+      "155 GAME_STATE",
+      "Inc/Messages.h:854-860; clintlib/appmsg.cpp:2392-2407",
+      "done",
+      "P718: design; Replace all six sides conquest/territory/flag/artifact counters in native array order. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "4"
+    ],
+    "decision": "incoming completed FEDMSG row"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "screens",
+      "Game-starting (countdown) screen"
+    ],
+    "ours": [
+      "screens",
+      "Game-starting (countdown) screen",
+      "clintlib/appmsg.cpp:2314-2346; WinTrek/WinTrek.cpp:8129-8137",
+      "done",
+      "src/Allegiance.ClientCore.Game/Game1.Panes.cs:1047; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:83; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckLayoutTests.cs:94; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: hold through countdown with commander/readiness state intact; release only at Started",
+      "4"
+    ],
+    "theirs": [
+      "screens",
+      "Game-starting (countdown) screen",
+      "WinTrek/gamestartingscreen.cpp",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + ReadyCheckOverlayRenderer (P188/P180)",
+      "4"
+    ],
+    "resolved": [
+      "screens",
+      "Game-starting (countdown) screen",
+      "clintlib/appmsg.cpp:2314-2346; WinTrek/WinTrek.cpp:8129-8137",
+      "done",
+      "src/Allegiance.ClientCore.Game/Game1.Panes.cs:1047; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:83; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckLayoutTests.cs:94; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: hold through countdown with commander/readiness state intact; release only at Started",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "screens",
+      "Selection pane"
+    ],
+    "ours": [
+      "screens",
+      "Selection pane",
+      "WinTrek/selpane.cpp:17-52; WinTrek/selpane.cpp:71-100",
+      "na",
+      "P713 native_intent=era constraint: native ValuePane/RowPane framework scaffolding; empty SelectionPane.OnSelChange only returns true and SelectModelPane wraps an externally supplied child; no standalone selection-screen behavior to port. Inventory correction only; actual targeting remains in Game1.Targeting and RadarBracketRenderer",
+      "3"
+    ],
+    "theirs": [
+      "screens",
+      "Selection pane",
+      "WinTrek/selpane.cpp",
+      "partial",
+      "targeting/selection via RadarBracketRenderer + Game1.Targeting",
+      "3"
+    ],
+    "resolved": [
+      "screens",
+      "Selection pane",
+      "WinTrek/selpane.cpp:17-52; WinTrek/selpane.cpp:71-100",
+      "na",
+      "P713 native_intent=era constraint: native ValuePane/RowPane framework scaffolding; empty SelectionPane.OnSelChange only returns true and SelectModelPane wraps an externally supplied child; no standalone selection-screen behavior to port. Inventory correction only; actual targeting remains in Game1.Targeting and RadarBracketRenderer",
+      "3"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "screens",
+      "Team pane / screen"
+    ],
+    "ours": [
+      "screens",
+      "Team pane / screen",
+      "WinTrek/teampane.cpp:627-638; WinTrek/teamscreen.cpp:452-505",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:49; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1766; tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs:18; P713 native_intent=design: real commander/AFK/wing fields; synchronized roster gathering; manual wing-picker UI remains unavailable",
+      "4"
+    ],
+    "theirs": [
+      "screens",
+      "Team pane / screen",
+      "WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:37; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1693; wing assignment/control remains unavailable",
+      "4"
+    ],
+    "resolved": [
+      "screens",
+      "Team pane / screen",
+      "WinTrek/teampane.cpp:627-638; WinTrek/teamscreen.cpp:452-505",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:49; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1766; tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs:18; P713 native_intent=design: real commander/AFK/wing fields; synchronized roster gathering; manual wing-picker UI remains unavailable",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "screens",
+      "Side-select screen"
+    ],
+    "ours": [
+      "screens",
+      "Side-select screen",
+      "WinTrek/teamscreen.cpp:2962-2982",
+      "done",
+      "src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs:55; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: preserve eliminated-side picker until authoritative active-side join",
+      "4"
+    ],
+    "theirs": [
+      "screens",
+      "Side-select screen",
+      "WinTrek team lobby side select",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs (P281)",
+      "4"
+    ],
+    "resolved": [
+      "screens",
+      "Side-select screen",
+      "WinTrek/teamscreen.cpp:2962-2982",
+      "done",
+      "src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs:55; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: preserve eliminated-side picker until authoritative active-side join",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "screens",
+      "Server list / lobby browser"
+    ],
+    "ours": [
+      "screens",
+      "Server list / lobby browser",
+      "native lobby",
+      "done",
+      "src/Allegiance.Lobby + ServerListing.cs (P174-P177)",
+      "4"
+    ],
+    "theirs": [
+      "screens",
+      "Server list / lobby browser",
+      "native lobby",
+      "done",
+      "src/Allegiance.Lobby + ServerListing.cs (P174-P177)",
+      "4"
+    ],
+    "resolved": [
+      "screens",
+      "Server list / lobby browser",
+      "native lobby",
+      "done",
+      "src/Allegiance.Lobby + ServerListing.cs (P174-P177)",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "screens",
+      "Ready-check (pre-flight)"
+    ],
+    "ours": [
+      "screens",
+      "Ready-check (pre-flight)",
+      "WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:64; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: display and input use same team-commander authority and forced-state echo",
+      "4"
+    ],
+    "theirs": [
+      "screens",
+      "Ready-check (pre-flight)",
+      "native ready",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs (P282)",
+      "4"
+    ],
+    "resolved": [
+      "screens",
+      "Ready-check (pre-flight)",
+      "WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:64; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: display and input use same team-commander authority and forced-state echo",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "lobby",
+      "Join game"
+    ],
+    "ours": [
+      "lobby",
+      "Join game",
+      "FedSrv/fsmission.cpp:3936-3974",
+      "done",
+      "src/Allegiance.Server/Server.Lobby.cs:3544; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: join snapshot restores current commanders/owner and non-default ready/force/active state; first commander no longer misses its election",
+      "5"
+    ],
+    "theirs": [
+      "lobby",
+      "Join game",
+      "join",
+      "done",
+      "src/Allegiance.ClientCore.Game/Game1.Session.cs (join flow)",
+      "5"
+    ],
+    "resolved": [
+      "lobby",
+      "Join game",
+      "FedSrv/fsmission.cpp:3936-3974",
+      "done",
+      "src/Allegiance.Server/Server.Lobby.cs:3544; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: join snapshot restores current commanders/owner and non-default ready/force/active state; first commander no longer misses its election",
+      "5"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "lobby",
+      "Side select (choose team)"
+    ],
+    "ours": [
+      "lobby",
+      "Side select (choose team)",
+      "WinTrek/teamscreen.cpp:2962-2982",
+      "done",
+      "src/Allegiance.ClientCore/State/LobbyScreenState.cs:10; src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: eliminated ship cannot bypass active-team admission",
+      "5"
+    ],
+    "theirs": [
+      "lobby",
+      "Side select (choose team)",
+      "side select",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs + P281",
+      "5"
+    ],
+    "resolved": [
+      "lobby",
+      "Side select (choose team)",
+      "WinTrek/teamscreen.cpp:2962-2982",
+      "done",
+      "src/Allegiance.ClientCore/State/LobbyScreenState.cs:10; src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: eliminated ship cannot bypass active-team admission",
+      "5"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "lobby",
+      "Ready / force-ready check"
+    ],
+    "ours": [
+      "lobby",
+      "Ready / force-ready check",
+      "WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793",
+      "done",
+      "src/Allegiance.ClientCore/State/LobbyScreenState.cs:18; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: every team commander toggles force both ways and clears own AFK",
+      "5"
+    ],
+    "theirs": [
+      "lobby",
+      "Ready / force-ready check",
+      "ready",
+      "done",
+      "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs + P282/P180",
+      "5"
+    ],
+    "resolved": [
+      "lobby",
+      "Ready / force-ready check",
+      "WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793",
+      "done",
+      "src/Allegiance.ClientCore/State/LobbyScreenState.cs:18; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: every team commander toggles force both ways and clears own AFK",
+      "5"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/parity-matrix.csv",
+    "key": [
+      "lobby",
+      "Team lobby / team pane"
+    ],
+    "ours": [
+      "lobby",
+      "Team lobby / team pane",
+      "WinTrek/teamscreen.cpp:452-505; FedSrv/fsmission.cpp:3943-3974",
+      "done",
+      "src/Allegiance.Server/Server.Lobby.cs:3544; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs:72; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckRosterTests.cs:84; P713 native_intent=design: current leadership/readiness on join and side-scoped roster after side changes",
+      "4"
+    ],
+    "theirs": [
+      "lobby",
+      "Team lobby / team pane",
+      "team lobby",
+      "done",
+      "src/Allegiance.ClientCore.Game/Panes + TEAM_LOBBY_P180",
+      "4"
+    ],
+    "resolved": [
+      "lobby",
+      "Team lobby / team pane",
+      "WinTrek/teamscreen.cpp:452-505; FedSrv/fsmission.cpp:3943-3974",
+      "done",
+      "src/Allegiance.Server/Server.Lobby.cs:3544; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs:72; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckRosterTests.cs:84; P713 native_intent=design: current leadership/readiness on join and side-scoped roster after side changes",
+      "4"
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/sim-rules-matrix.csv",
+    "key": [
+      "SIM-0243",
+      "sounds"
+    ],
+    "ours": [
+      "SIM-0243",
+      "sounds",
+      "PlayNotificationSound@Igc/shieldIGC.cpp:186 salShieldsOfflineSound",
+      "Igc/shieldIGC.cpp:186",
+      "",
+      "Shield positive damage crosses downed threshold",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.cs:UpdateOwnStatusAlarms ShieldsOffline edge; src/Allegiance.ClientCore/State/ShipStatusAlarms.cs:ShieldOfflineEpsilon; SoundManager.cs:PlayShieldsOffline (vo_sal_shieldsoffline)",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P717: local own ship's ShieldFraction collapsing from online (>ShieldOfflineEpsilon) to ~0 -> ClientSoundEventKind.ShieldsOffline -> SoundManager.PlayShieldsOffline (wave vo_sal_shieldsoffline, sounddef.mdl:791), once per collapse. Mirrors native CshieldIGC::ApplyDamage overload -> salShieldsOfflineSound (shieldIGC.cpp:185-186). Tests: ClientWorldSoundEventTests.OwnShieldCollapses_RecordsShieldsOffline / OwnShieldAlreadyDown_DoesNotRefire / OwnShieldStaysOnline_NoShieldsOffline; asset test P717DeploySoundTests. Failing-first: ShieldsOffline member absent pre-P717."
+    ],
+    "theirs": [
+      "SIM-0243",
+      "sounds",
+      "PlayNotificationSound@Igc/shieldIGC.cpp:186 salShieldsOfflineSound",
+      "Igc/shieldIGC.cpp:186",
+      "",
+      "Shield positive damage crosses downed threshold",
+      "missing",
+      "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs:532; src/Allegiance.ClientCore.Game/Game1.Audio.cs:174; src/Allegiance.ClientCore.Game/Game1.Feedback.cs:51",
+      "",
+      "2",
+      "design",
+      "inferred",
+      "",
+      "",
+      "",
+      "No matching condition-to-cue path found in executable client/server audio callers; absence inferred, not established by symbol absence alone; native context (not full predicate): else { leakage = (absorbed - usefulShieldFraction) * maxStrength / dtm; assert (leakage >= 0.0f); m_pMission->GetIgcSite()->PlaySoundEffect(m_typeData->deactivateSound, m_ship); m_pMission->GetIgcSite()->PlayNotificationSound(salShieldsOfflineSound, m_ship);; asset inventory: salShieldsOfflineSound->vo_sal_shieldsoffline (src/Allegiance.ClientCore.MonoGame/Content/sounddef.mdl:791; ogg_present=false; mgcb_build=false)"
+    ],
+    "resolved": [
+      "SIM-0243",
+      "sounds",
+      "PlayNotificationSound@Igc/shieldIGC.cpp:186 salShieldsOfflineSound",
+      "Igc/shieldIGC.cpp:186",
+      "",
+      "Shield positive damage crosses downed threshold",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.cs:UpdateOwnStatusAlarms ShieldsOffline edge; src/Allegiance.ClientCore/State/ShipStatusAlarms.cs:ShieldOfflineEpsilon; SoundManager.cs:PlayShieldsOffline (vo_sal_shieldsoffline)",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P717: local own ship's ShieldFraction collapsing from online (>ShieldOfflineEpsilon) to ~0 -> ClientSoundEventKind.ShieldsOffline -> SoundManager.PlayShieldsOffline (wave vo_sal_shieldsoffline, sounddef.mdl:791), once per collapse. Mirrors native CshieldIGC::ApplyDamage overload -> salShieldsOfflineSound (shieldIGC.cpp:185-186). Tests: ClientWorldSoundEventTests.OwnShieldCollapses_RecordsShieldsOffline / OwnShieldAlreadyDown_DoesNotRefire / OwnShieldStaysOnline_NoShieldsOffline; asset test P717DeploySoundTests. Failing-first: ShieldsOffline member absent pre-P717."
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/sim-rules-matrix.csv",
+    "key": [
+      "SIM-0388",
+      "sounds"
+    ],
+    "ours": [
+      "SIM-0388",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:2859 dockedSound",
+      "WinTrek/trekigc.cpp:2859",
+      "",
+      "Own ship newly docks in Started game and switches to hangar",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.cs:3404 (Apply(DockedNotify) Docked edge); SoundManager.PlayDocked (landed); Game1.Audio.cs Docked",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P719: own-ship dock edge (StationId -1->real) on DOCKED_NOTIFY -> ClientSoundEventKind.Docked -> PlayDocked (landed.ogg, sounddef.mdl:316). Tests: ClientWorldSoundEventTests.DockingOwnShip_RecordsDockedAndWelcomeHome / RepeatingDockNotice_DoesNotRefireDockedCue."
+    ],
+    "theirs": [
+      "SIM-0388",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:2859 dockedSound",
+      "WinTrek/trekigc.cpp:2859",
+      "",
+      "Own ship newly docks in Started game and switches to hangar",
+      "missing",
+      "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs:532; src/Allegiance.ClientCore.Game/Game1.Audio.cs:174; src/Allegiance.ClientCore.Game/Game1.Feedback.cs:51",
+      "",
+      "2",
+      "design",
+      "inferred",
+      "",
+      "",
+      "",
+      "No matching condition-to-cue path found in executable client/server audio callers; absence inferred, not established by symbol absence alone; native context (not full predicate): } if (GetWindow()->GetCameraMode() != TrekWindow::cmExternalOverride && (pstationNew->GetSide() == trekClient.GetSide())) { { GetWindow()->SetViewMode(trekClient.GetShip()->IsGhost() ? TrekWindow::vmCommand : TrekWindow::vmHangar); PlaySoundEffect(dockedSound);; asset inventory: dockedSound->landed (src/Allegiance.ClientCore.MonoGame/Content/sounddef.mdl:316; ogg_present=false; mgcb_build=false)"
+    ],
+    "resolved": [
+      "SIM-0388",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:2859 dockedSound",
+      "WinTrek/trekigc.cpp:2859",
+      "",
+      "Own ship newly docks in Started game and switches to hangar",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.cs:3404 (Apply(DockedNotify) Docked edge); SoundManager.PlayDocked (landed); Game1.Audio.cs Docked",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P719: own-ship dock edge (StationId -1->real) on DOCKED_NOTIFY -> ClientSoundEventKind.Docked -> PlayDocked (landed.ogg, sounddef.mdl:316). Tests: ClientWorldSoundEventTests.DockingOwnShip_RecordsDockedAndWelcomeHome / RepeatingDockNotice_DoesNotRefireDockedCue."
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/sim-rules-matrix.csv",
+    "key": [
+      "SIM-0389",
+      "sounds"
+    ],
+    "ours": [
+      "SIM-0389",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:2860 salWelcomeHomeSound",
+      "WinTrek/trekigc.cpp:2860",
+      "",
+      "Own ship newly docks alongside dockedSound",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.cs:3404 (Apply(DockedNotify) WelcomeHome edge); SoundManager.PlayWelcomeHome (vo_sal_welcomehome); Game1.Audio.cs WelcomeHome",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P719: same own-ship dock edge -> ClientSoundEventKind.WelcomeHome -> PlayWelcomeHome (vo_sal_welcomehome.ogg, sounddef.mdl:801). Tests: ClientWorldSoundEventTests.DockingOwnShip_RecordsDockedAndWelcomeHome."
+    ],
+    "theirs": [
+      "SIM-0389",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:2860 salWelcomeHomeSound",
+      "WinTrek/trekigc.cpp:2860",
+      "",
+      "Own ship newly docks alongside dockedSound",
+      "missing",
+      "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs:532; src/Allegiance.ClientCore.Game/Game1.Audio.cs:174; src/Allegiance.ClientCore.Game/Game1.Feedback.cs:51",
+      "",
+      "2",
+      "design",
+      "inferred",
+      "",
+      "",
+      "",
+      "No matching condition-to-cue path found in executable client/server audio callers; absence inferred, not established by symbol absence alone; native context (not full predicate): if (GetWindow()->GetCameraMode() != TrekWindow::cmExternalOverride && (pstationNew->GetSide() == trekClient.GetSide())) { { GetWindow()->SetViewMode(trekClient.GetShip()->IsGhost() ? TrekWindow::vmCommand : TrekWindow::vmHangar); PlaySoundEffect(dockedSound); PlaySoundEffect(salWelcomeHomeSound);; asset inventory: salWelcomeHomeSound->vo_sal_welcomehome (src/Allegiance.ClientCore.MonoGame/Content/sounddef.mdl:801; ogg_present=false; mgcb_build=false)"
+    ],
+    "resolved": [
+      "SIM-0389",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:2860 salWelcomeHomeSound",
+      "WinTrek/trekigc.cpp:2860",
+      "",
+      "Own ship newly docks alongside dockedSound",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.cs:3404 (Apply(DockedNotify) WelcomeHome edge); SoundManager.PlayWelcomeHome (vo_sal_welcomehome); Game1.Audio.cs WelcomeHome",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P719: same own-ship dock edge -> ClientSoundEventKind.WelcomeHome -> PlayWelcomeHome (vo_sal_welcomehome.ogg, sounddef.mdl:801). Tests: ClientWorldSoundEventTests.DockingOwnShip_RecordsDockedAndWelcomeHome."
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/sim-rules-matrix.csv",
+    "key": [
+      "SIM-0399",
+      "sounds"
+    ],
+    "ours": [
+      "SIM-0399",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:4536 idSonicChat",
+      "WinTrek/trekigc.cpp:4536",
+      "",
+      "Native PlaySoundEffect at this separately inventoried call site: idSonicChat",
+      "implemented",
+      "src/Allegiance.Core/Audio/NativeVoiceCatalog.cs; src/Allegiance.ClientCore/State/ClientWorld.cs (Apply ChatMessage/ChatBuoy); src/Allegiance.ClientCore.Game/Game1.Audio.cs (ChatVoiceOver); src/Allegiance.ClientCore.Game/Audio/SoundManager.cs (PlayVoice)",
+      "",
+      "2",
+      "design",
+      "P732VoiceOverTests; P732VoiceCatalogTests; LiveQuickChatOrderWireTests; LiveQuickChatToDroneCommandTests",
+      "",
+      "",
+      "",
+      "P732: native sonic index/null-text and direct SoundID selection precede plain chat cues; shared MutexVO/MutexSal queues preserve timeout/priority/duplicate rules and -13 dB default VO gain. 509 real waves bundled; vo_ma_noimeanit and vo_ma_woopie are unavailable (n/a assets listed in Content/voice-over-missing.txt). Unknown IDs stay silent. Sender echo voices a sonic macro once instead of the native immediate local play. See docs/reports/P732_VOICE_OVER.md."
+    ],
+    "theirs": [
+      "SIM-0399",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:4536 idSonicChat",
+      "WinTrek/trekigc.cpp:4536",
+      "",
+      "Native PlaySoundEffect at this separately inventoried call site: idSonicChat",
+      "missing",
+      "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs:532; src/Allegiance.ClientCore.Game/Game1.Audio.cs:174; src/Allegiance.ClientCore.Game/Game1.Feedback.cs:51",
+      "",
+      "2",
+      "design",
+      "inferred",
+      "",
+      "",
+      "",
+      "No matching condition-to-cue path found in executable client/server audio callers; absence inferred, not established by symbol absence alone; native context (not full predicate): || GetWindow()->GetLobbyChatTarget() == ctRecipient) { if (bIsSonicChat && idSonicChat != NA) { GetWindow()->PlaySonicChat(idSonicChat, 0); } else if (idSonicChat != NA) { PlaySoundEffect(idSonicChat);"
+    ],
+    "resolved": [
+      "SIM-0399",
+      "sounds",
+      "PlaySoundEffect@WinTrek/trekigc.cpp:4536 idSonicChat",
+      "WinTrek/trekigc.cpp:4536",
+      "",
+      "Native PlaySoundEffect at this separately inventoried call site: idSonicChat",
+      "implemented",
+      "src/Allegiance.Core/Audio/NativeVoiceCatalog.cs; src/Allegiance.ClientCore/State/ClientWorld.cs (Apply ChatMessage/ChatBuoy); src/Allegiance.ClientCore.Game/Game1.Audio.cs (ChatVoiceOver); src/Allegiance.ClientCore.Game/Audio/SoundManager.cs (PlayVoice)",
+      "",
+      "2",
+      "design",
+      "P732VoiceOverTests; P732VoiceCatalogTests; LiveQuickChatOrderWireTests; LiveQuickChatToDroneCommandTests",
+      "",
+      "",
+      "",
+      "P732: native sonic index/null-text and direct SoundID selection precede plain chat cues; shared MutexVO/MutexSal queues preserve timeout/priority/duplicate rules and -13 dB default VO gain. 509 real waves bundled; vo_ma_noimeanit and vo_ma_woopie are unavailable (n/a assets listed in Content/voice-over-missing.txt). Unknown IDs stay silent. Sender echo voices a sonic macro once instead of the native immediate local play. See docs/reports/P732_VOICE_OVER.md."
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/sim-rules-matrix.csv",
+    "key": [
+      "SIM-0432",
+      "sounds"
+    ],
+    "ours": [
+      "SIM-0432",
+      "sounds",
+      "PlaySoundEffect@clintlib/appmsg.cpp:2071 boardSound",
+      "clintlib/appmsg.cpp:2071",
+      "",
+      "BOARD_SHIP completes",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.cs:3501 (Apply(LoadoutChange) passenger ParentId==MyShipId edge); SoundManager.PlayBoarded (vo_sal_playerboarded); Game1.Audio.cs Boarded",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P719: a passenger re-seated onto the LOCAL ship (native boardSound, appmsg.cpp:2071) -> ClientSoundEventKind.Boarded -> PlayBoarded (vo_sal_playerboarded.ogg, sounddef.mdl:782). Tests: ClientWorldSoundEventTests.PassengerBoardsLocalShip_RecordsBoarded / PassengerAlreadyBoarded_DoesNotRefireBoarded."
+    ],
+    "theirs": [
+      "SIM-0432",
+      "sounds",
+      "PlaySoundEffect@clintlib/appmsg.cpp:2071 boardSound",
+      "clintlib/appmsg.cpp:2071",
+      "",
+      "BOARD_SHIP completes",
+      "missing",
+      "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs:532; src/Allegiance.ClientCore.Game/Game1.Audio.cs:174; src/Allegiance.ClientCore.Game/Game1.Feedback.cs:51",
+      "",
+      "2",
+      "design",
+      "inferred",
+      "",
+      "",
+      "",
+      "No matching condition-to-cue path found in executable client/server audio callers; absence inferred, not established by symbol absence alone; native context (not full predicate): if (pship == m_ship && m_ship->GetCluster() == NULL) { if (ppd->turretID != NA) PostText(true, \"%s has boarded your ship as a turret.\", pshipChild->GetName()); else PostText(true, \"%s has boarded your ship as an observer.\", pshipChild->GetName()); PlaySoundEffect(boardSound);; asset inventory: boardSound->vo_sal_playerboarded (src/Allegiance.ClientCore.MonoGame/Content/sounddef.mdl:782; ogg_present=false; mgcb_build=false)"
+    ],
+    "resolved": [
+      "SIM-0432",
+      "sounds",
+      "PlaySoundEffect@clintlib/appmsg.cpp:2071 boardSound",
+      "clintlib/appmsg.cpp:2071",
+      "",
+      "BOARD_SHIP completes",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.cs:3501 (Apply(LoadoutChange) passenger ParentId==MyShipId edge); SoundManager.PlayBoarded (vo_sal_playerboarded); Game1.Audio.cs Boarded",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P719: a passenger re-seated onto the LOCAL ship (native boardSound, appmsg.cpp:2071) -> ClientSoundEventKind.Boarded -> PlayBoarded (vo_sal_playerboarded.ogg, sounddef.mdl:782). Tests: ClientWorldSoundEventTests.PassengerBoardsLocalShip_RecordsBoarded / PassengerAlreadyBoarded_DoesNotRefireBoarded."
+    ],
+    "decision": "master"
+  },
+  {
+    "file": "docs/parity/sim-rules-matrix.csv",
+    "key": [
+      "SIM-0433",
+      "sounds"
+    ],
+    "ours": [
+      "SIM-0433",
+      "sounds",
+      "PlaySoundEffect@clintlib/appmsg.cpp:2481 salPlayerWaitingSound",
+      "clintlib/appmsg.cpp:2481",
+      "",
+      "Pending side position request received",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:43 (Apply(PositionReqBroadcast) PlayerWaiting); Game1.Audio.cs:425 -> PlayVoice(vo_sal_playerwaiting)",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P719 reconciliation: POSITIONREQ already records PlayerWaiting (salPlayerWaitingSound, appmsg.cpp:2481); matrix was stale missing. Trigger test added: ClientWorldSoundEventTests.PositionRequestToOurSide_RecordsPlayerWaiting."
+    ],
+    "theirs": [
+      "SIM-0433",
+      "sounds",
+      "PlaySoundEffect@clintlib/appmsg.cpp:2481 salPlayerWaitingSound",
+      "clintlib/appmsg.cpp:2481",
+      "",
+      "Pending side position request received",
+      "missing",
+      "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs:532; src/Allegiance.ClientCore.Game/Game1.Audio.cs:174; src/Allegiance.ClientCore.Game/Game1.Feedback.cs:51",
+      "",
+      "2",
+      "design",
+      "inferred",
+      "",
+      "",
+      "",
+      "No matching condition-to-cue path found in executable client/server audio callers; absence inferred, not established by symbol absence alone; native context (not full predicate): PlayerInfo* ppi = FindPlayer(pfmPosReq->shipID); m_pMissionInfo->AddRequest(pfmPosReq->iSide, pfmPosReq->shipID); m_pClientEventSource->OnAddRequest(m_pMissionInfo, pfmPosReq->iSide, ppi); if (MyPlayerInfo()->IsTeamLeader() && (pfmPosReq->iSide == GetSideID())) PostText(true, \"%s wishes to join your team\", ppi->CharacterName()); PlaySoundEffect(salPlayerWaitingSound);; asset inventory: salPlayerWaitingSound->vo_sal_playerwaiting (src/Allegiance.ClientCore.MonoGame/Content/sounddef.mdl:824; ogg_present=false; mgcb_build=false)"
+    ],
+    "resolved": [
+      "SIM-0433",
+      "sounds",
+      "PlaySoundEffect@clintlib/appmsg.cpp:2481 salPlayerWaitingSound",
+      "clintlib/appmsg.cpp:2481",
+      "",
+      "Pending side position request received",
+      "implemented",
+      "src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:43 (Apply(PositionReqBroadcast) PlayerWaiting); Game1.Audio.cs:425 -> PlayVoice(vo_sal_playerwaiting)",
+      "",
+      "2",
+      "design",
+      "tested",
+      "",
+      "",
+      "",
+      "P719 reconciliation: POSITIONREQ already records PlayerWaiting (salPlayerWaitingSound, appmsg.cpp:2481); matrix was stale missing. Trigger test added: ClientWorldSoundEventTests.PositionRequestToOurSide_RecordsPlayerWaiting."
+    ],
+    "decision": "master"
+  }
+]

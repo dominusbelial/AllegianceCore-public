@@ -1,0 +1,84 @@
+{
+  "merge_target": "codex/p718",
+  "conflicted_files": 13,
+  "resolutions": [
+    {
+      "file": "src/Allegiance.ClientCore.Game/Game1.Rendering.cs",
+      "blocks": 1,
+      "resolution": "Keep entire roster-gathering gate lock, commander/AFK metadata, teammate-only wing data, compact layout and controls hints."
+    },
+    {
+      "file": "src/Allegiance.ClientCore.Game/Game1.Audio.cs",
+      "blocks": 1,
+      "resolution": "Keep all master P717/P719 playback cases, with current P732 voice handling."
+    },
+    {
+      "file": "src/Allegiance.Core/Wire/SetWingId.cs",
+      "blocks": 1,
+      "resolution": "Keep current commander authorization documentation; use existing shared WingNames table instead of adding another."
+    },
+    {
+      "file": "src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs",
+      "blocks": 1,
+      "resolution": "Keep known same-side bounded authoritative wing updates; notify commanded self using launch or joined identity."
+    },
+    {
+      "file": "src/Allegiance.ClientCore/State/ClientSoundEvent.cs",
+      "blocks": 1,
+      "resolution": "Keep all master P717/P719 event kinds."
+    },
+    {
+      "file": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs",
+      "blocks": 3,
+      "resolution": "Keep commander/ready/wing fields; show incoming unknown-wing marker; use shared WingNames."
+    },
+    {
+      "file": "tests/Allegiance.ClientCore.Tests/ClientWorldSoundEventTests.cs",
+      "blocks": 1,
+      "resolution": "Keep all 202 lines of additional master sound regressions."
+    },
+    {
+      "file": "tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs",
+      "blocks": 1,
+      "resolution": "Keep master same-side PlayerInfo/JoinSide fixture for current identity contract."
+    },
+    {
+      "file": "tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs",
+      "blocks": 2,
+      "resolution": "Union commander/AFK tests, unknown-wing assertion and three named-wing cases with named WingId argument."
+    },
+    {
+      "file": "docs/TEST_FLAKES.md",
+      "blocks": 1,
+      "resolution": "Union master chain entries and incoming P718 entry."
+    },
+    {
+      "file": "docs/reports/P716_PARITY_WAVE16.md",
+      "blocks": 3,
+      "resolution": "Keep master report verbatim after removing markers."
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "blocks": 10,
+      "resolution": "Resolve by row: seven newly done FEDMSG rows; union P713/P718 SET_WINGID evidence; preserve master P713 screen/lobby evidence and selection-pane exclusion."
+    },
+    {
+      "file": "docs/parity/sim-rules-matrix.csv",
+      "blocks": 4,
+      "resolution": "Keep completed master P717/P719/P732 sounds rows; no simulation regression."
+    }
+  ],
+  "automatic_merge_repairs": [
+    "ConnectionSession.cs: deduplicate AsteroidDestroyed dispatch (86).",
+    "ClientWorld.cs: deduplicate AsteroidDestroyed switch; use gated P718 handler with sector validation and explode/conversion distinction.",
+    "P703ResearchCommanderTests.cs: feed ENTER_GAME before live asteroid destruction.",
+    "P718InterfaceMessageTests.cs: add prelaunch commanded-self wing-notice regression."
+  ],
+  "excluded_suite_tests": {
+    "reason": "Both invoke git ls-files; user prohibits git commands. No live or loopback exclusions.",
+    "methods": [
+      "MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+      "PrivatePathGuardTests.NoTrackedFileUnderSourceDirsContainsAnAbsoluteHomePath"
+    ]
+  }
+}

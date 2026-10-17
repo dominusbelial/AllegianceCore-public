@@ -1,0 +1,170 @@
+{
+  "task": "P738 merge codex/p718 onto current master",
+  "completed_utc": "2026-10-17T22:06:33.443156+00:00",
+  "focused_methods": 163,
+  "focused_invocations": 489,
+  "full_suite_exclusions": [
+    "MeshyGuardTests",
+    "PrivatePathGuardTests (both invoke git)"
+  ],
+  "failure_classifications": [
+    {
+      "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates",
+      "case": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+      "selector": "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 25,",
+      "classification": "load flake",
+      "post_suite_isolation": "3/3 passed"
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "case": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "selector": "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "classification": "load flake",
+      "post_suite_isolation": "3/3 passed"
+    }
+  ],
+  "phases": {
+    "focused": {
+      "invocations": 489,
+      "exit_failures": 1,
+      "seconds": 1281.922,
+      "passed": 701,
+      "failed": 1,
+      "skipped": 0
+    },
+    "showcase": {
+      "invocations": 5,
+      "exit_failures": 0,
+      "seconds": 483.876,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "suite": {
+      "invocations": 3,
+      "exit_failures": 1,
+      "seconds": 3332.536,
+      "passed": 8362,
+      "failed": 1,
+      "skipped": 3
+    },
+    "post-isolate": {
+      "invocations": 6,
+      "exit_failures": 0,
+      "seconds": 262.315,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "focused_by_assembly": {
+    "Core": {
+      "methods": 8,
+      "invocations": 24,
+      "passed": 39,
+      "failed": 0,
+      "skipped": 0
+    },
+    "ClientCore": {
+      "methods": 112,
+      "invocations": 336,
+      "passed": 452,
+      "failed": 1,
+      "skipped": 0
+    },
+    "ClientCore.MonoGame": {
+      "methods": 43,
+      "invocations": 129,
+      "passed": 210,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "suites": [
+    {
+      "label": "suite-Core",
+      "exit_code": 1,
+      "seconds": 763.884,
+      "counters": {
+        "total": "4782",
+        "executed": "4782",
+        "passed": "4781",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "message": "\n      \n        \n          System.TimeoutException : no OnPeerJoined for raw peer\n             at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.ConnectRawPeer(TcpTransport host, Site site, String name, Boolean tinyReceiveWindow) in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 119\n   at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 346\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+        }
+      ],
+      "skips": []
+    },
+    {
+      "label": "suite-ClientCore",
+      "exit_code": 0,
+      "seconds": 1615.095,
+      "counters": {
+        "total": "1225",
+        "executed": "1225",
+        "passed": "1225",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "skips": []
+    },
+    {
+      "label": "suite-ClientCore.MonoGame",
+      "exit_code": 0,
+      "seconds": 953.557,
+      "counters": {
+        "total": "2359",
+        "executed": "2356",
+        "passed": "2356",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "skips": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+      ]
+    }
+  ]
+}

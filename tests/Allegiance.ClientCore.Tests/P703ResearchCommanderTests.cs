@@ -228,6 +228,7 @@ public sealed class P703ResearchCommanderTests
         Assert.True(cs.World.CompletedDevelopments.Count >= 100); // Independent of 64-event sound ring.
         var rock = new DataAsteroidIGC(1, [0,0,0], [0,1,0], [1,0,0], [0,0,0,1], 0,0,1, 10,0,60,"rock","","",0,"test",0);
         Feed(new ExportAsteroid { Asteroid = rock });
+        Feed(new EnterGame()); // Native live-object messages follow the sync-complete barrier.
         Feed(new AsteroidDestroyed { AsteroidId = 10 });
         Assert.Empty(cs.World.Asteroids);
         var bytes = briefing.Encode();

@@ -1446,3 +1446,52 @@ See the [P738 appendix](reports/P732_VOICE_OVER.md#p738-merge-onto-master),
 [invocation ledger](reports/P738_P732_assets/verification.json),
 [case outcomes](reports/P738_P732_assets/case-results.json), and
 [raw logs/TRX](reports/P738_P732_assets/validation-logs.tar.gz).
+
+
+## P718 — FEDMSG interface wave (2026-10-16)
+
+The two unfiltered Core invocations each reported one existing receipt/join
+failure. After all full-suite activity finished, both exact methods passed
+**3/3 isolated invocations**, qualifying as load flakes under the P718 Codex
+lane rule. No assertion, deadline, quarantine, or transport/loadout product
+behavior was changed for these results.
+
+| Test | Full-run symptom | Post-suite isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | `System.TimeoutException: no OnPeerJoined for raw peer` (Core run 1) | 3/3 pass |
+| `Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | `Assert.Contains` on an empty notification collection (Core run 2) | 3/3 pass |
+
+Both ClientCore runs, all three MonoGame invocations, and both Lobby runs had
+zero failures. The extra MonoGame invocation and overlapping ClientCore/MonoGame
+runs resulted from a coordinator restart error; this exceeded the requested
+two-run MonoGame limit and is explicitly retained as a validation exception.
+All 56 affected methods passed 3/3 alone (249 case passes), and the standalone
+P700 never-parks gate passed 10/10. See the [P718 report](reports/P718_INTERFACE_WAVE.md)
+and [invocation ledger](reports/P718_RESULTS.json) for raw counts and errors.
+
+
+## P738 / P718 merge observation (2026-10-17)
+
+The P718 merge validation retained two timing failures. After the three broad
+assembly passes ended, each failing method/case passed **3/3 fresh isolated
+invocations**, meeting the brief's load-flake rule. No assertion, deadline,
+quarantine trait or product behavior was changed to obtain these results.
+
+| Method / case | Raw observation | Post-suite isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | Core broad pass: `TimeoutException: no OnPeerJoined for raw peer`, helper line 119 / caller line 346. | 3/3 exact-method passes: 1.386, 1.372, 1.421 seconds. |
+| `Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)` | Third focused method invocation: only one side complete at the unchanged 300-second deadline; side 0's Supremacy constructor was still travelling/building. The first two focused method invocations passed both cases; the third passed the generated case and failed the authored case. The broad ClientCore pass subsequently passed all 1,225 cases. | 3/3 fresh exact authored-case passes: 76.946, 77.015, 104.175 seconds. |
+
+These symptoms were also observed in the preceding P738/P732 validation.
+The classifications follow the required isolated-pass criterion and do not
+establish the underlying causes. Raw results are preserved: focused coverage
+701 passed / 1 failed / 0 skipped; Core 4,781 passed / 1 failed / 0 skipped;
+ClientCore 1,225 passed / 0 failed / 0 skipped; MonoGame 2,356 passed / 0 failed /
+3 existing optional private Meshy-pack skips. The five standalone never-parks
+showcases all passed. The two Core guards that invoke git were excluded to
+honor the user's explicit no-git instruction; no live/loopback test was filtered.
+
+See the [merge appendix](reports/P718_INTERFACE_WAVE.md#p738-merge-onto-master),
+[exact invocation ledger](reports/P738_P718_assets/verification.json),
+[case outcomes](reports/P738_P718_assets/case-results.json), and
+[raw logs/TRX archive](reports/P738_P718_assets/validation-logs.tar.gz).

@@ -123,9 +123,9 @@ public class TeamPaneLayoutTests
     }
 
     /// <summary>⭐ Money and the active ballot appear in the footer only when data
-    /// exists; wing membership is shown when known.</summary>
+    /// exists; unknown wings remain explicit on pilot rows.</summary>
     [Fact]
-    public void Build_footer_shows_money_ballot_and_wing_note()
+    public void Build_footer_shows_money_ballot_and_unknown_wing()
     {
         var lines = TeamPaneLayout.Build(
             new[] { E("Amy", 0) }, Ranks,
@@ -135,6 +135,21 @@ public class TeamPaneLayoutTests
         Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Money && l.Text == "MY MONEY: 3210");
         Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Ballot && l.Text.Contains("Move miners to G7"));
         Assert.DoesNotContain(lines, l => l.Text.Contains("unavailable"));
+        Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Pilot && l.Text.Contains("WING:?"));
+    }
+
+    [Theory]
+    [InlineData((short)0, "command")]
+    [InlineData((short)3, "escort")]
+    [InlineData((short)9, "echo")]
+    public void Build_shows_authoritative_wing_name(short wing, string name)
+    {
+        var ships = new Dictionary<string, TeamPaneLayout.ShipBrief>
+            { ["Amy"] = new(301, 1, -1, false, false, WingId: wing) };
+        var lines = TeamPaneLayout.Build([E("Amy", 0)], Ranks, ships, null, null, null, false, "Amy");
+        var pilot = Assert.Single(lines, l => l.Kind == TeamPaneLayout.LineKind.Pilot);
+        Assert.Contains("WING:" + name, pilot.Text);
+        Assert.True(pilot.Highlight);
     }
 
     /// <summary>Ballot is omitted when not a team leader.</summary>

@@ -43,7 +43,7 @@ PLAYER_READY,45,CS,"Server.Lobby, Server.Dispatch",ConnectionSession (real clien
 TEAM_READY,46,S,"Server.Lobby, Server.Dispatch",ConnectionSession (real client),TeamReady per-side aggregate applied,appmsg.cpp:2572,done
 FORCE_TEAM_READY,47,CS,Server.Dispatch,ConnectionSession (real client),ForceReady forward applied (P282),appmsg.cpp:2594,done
 DOCKED,48,C,"(C) server handler: ServerHost, Server.Lifecycle",client→server (sender),Client sends DOCKED announce (SendDocked),appmsg.cpp:1092,done
-CHANGE_TEAM_CIV,51,CS,Server.Dispatch,Bot only (harness),Real client does NOT consume (candidate: CHANGE_TEAM_CIV),appmsg.cpp:2530,partial
+CHANGE_TEAM_CIV,51,CS,Server.Dispatch,ConnectionSession (real client),P718: Civilization and random-faction state; immutable side-roster update,Inc/Messages.h:407-411; clintlib/appmsg.cpp:2530-2539,done
 AUTO_ACCEPT,52,CS,"Server.Lobby, Server.Dispatch",ConnectionSession (real client),P678: Per-side authoritative auto-accept state and lobby display; live on/off relay and pending-request acceptance sweep. src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs:48; tests/Allegiance.ClientCore.Tests/P678LobbyMessageTests.cs:27,clintlib/appmsg.cpp:2602-2609,done
 STATIONS_UPDATE,57,S,Server.Broadcast,ConnectionSession (real client),StationsUpdate live hull/shield fractions stored (P423),appmsg.cpp:558,done
 STATION_CAPTURE,58,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),StationCapture event + re-side station (P267),appmsg.cpp:637,done
@@ -66,22 +66,22 @@ FIRE_EXPENDABLE,82,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",
 MISSILE_DESTROYED,83,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),MissileDestroyed entity removed (P234),appmsg.cpp:1790,done
 MINE_DESTROYED,84,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),MineDestroyed entity removed (P291),appmsg.cpp:1808,done
 PROBE_DESTROYED,85,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),ProbeDestroyed entity removed (P260),appmsg.cpp:1761,done
-ASTEROID_DESTROYED,86,S,"Server.Lifecycle, Server.Combat",Bot only (harness),Real client does NOT consume (candidate: ASTEROID_DESTROYED),appmsg.cpp:1692,partial
+ASTEROID_DESTROYED,86,S,"Server.Lifecycle, Server.Combat",ConnectionSession (real client),P718: Native align-2 10-byte codec; rock/health deletion; explosion vs preserved conversion effect,"Inc/Messages.h:613-617; Inc/messagecore.h:77-86,767-774; clintlib/appmsg.cpp:1692-1718",done
 FIRE_EXPENDABLE,87,S,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Real client does NOT consume (candidate: FIRE_EXPENDABLE FE broadcast; chaff effect via CREATE_CHAFF),appmsg.cpp:1617,partial
 TREASURE_SETS,89,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: TREASURE_SETS),—,partial
 SHIP_STATUS,90,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),ShipStatus roster applied (P320); false-positive partial now done,appmsg.cpp:2713,done
-PROBES_UPDATE,92,S,Server.Broadcast,Bot only (harness),Real client does NOT consume (candidate: PROBES_UPDATE),appmsg.cpp:584,partial
+PROBES_UPDATE,92,S,Server.Broadcast,ConnectionSession (real client),P718: In-game/current-flight-cluster probe health; reverse packed-entry application; ignore absent probes,Inc/Messages.h:636-646; clintlib/appmsg.cpp:584-606,done
 ORDER_CHANGE,93,CS,"ServerHost, Server.Docking",Bot only (harness),Client sends ORDER_CHANGE (SendOrderChange); relay echo NOT consumed by real client,appmsg.cpp:1822,done
 LEAVE_SHIP,94,S,"Server.Docking, Server.ShipCommands",ConnectionSession (real client),own ship detaches; '<name> has left your ship.' / lifepod (appmsg.cpp:1914),appmsg.cpp:1914,done
 JOINED_MISSION,95,S,Server.Lobby,neither (codec only),Real client does NOT consume (candidate: JOINED_MISSION),appmsg.cpp:2150,partial
-LOADOUT_CHANGE,96,S,"ServerHost, Server.Lifecycle","ClientWorld.Apply(LoadoutChange) - same-side loadout/hull + relaunch revive (P648)",Consumed: hull/parts/passengers + clears IsDead on relaunch (P648),appmsg.cpp:1991,fixed
+LOADOUT_CHANGE,96,S,"ServerHost, Server.Lifecycle",ClientWorld.Apply(LoadoutChange) - same-side loadout/hull + relaunch revive (P648),Consumed: hull/parts/passengers + clears IsDead on relaunch (P648),appmsg.cpp:1991,fixed
 ACTIVE_TURRET_UPDATE,99,C,"(C) server handler: Server.Broadcast, Server.Dispatch",client→server (sender),Client sends ACTIVE_TURRET_UPDATE (SendActiveTurret),appmsg.cpp:2087,done
 INACTIVE_TURRET_UPDATE,100,C,(C) server handler: Server.Dispatch,client→server (sender),Client sends INACTIVE_TURRET_UPDATE (SendInactiveTurret),appmsg.cpp:2110,done
 TELEPORT_ACK,102,S,Server.Docking,ConnectionSession (real client),accepted->jump sound (appmsg.cpp:1901); denied->'Teleport failed' line,appmsg.cpp:1856,done
 BOARD_SHIP,103,C,"(C) server handler: Server.Docking, Server.Dispatch",client→server (sender),Client sends BOARD_SHIP (SendBoardShip),—,done
 VIEW_CLUSTER,104,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Client sends VIEW_CLUSTER (SendViewClusterRequest),appmsg.cpp:443,done
 KILL_SHIP,105,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),KillShip death processed (P105/P370),appmsg.cpp:2747,done
-SET_WINGID,106,CS,"Server.Dispatch, Server.ShipCommands",Bot only (harness),Real client does NOT consume (candidate: SET_WINGID),appmsg.cpp:2129,partial
+SET_WINGID,106,CS,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),P718: Same-team known-member wing; commanded-self critical assignment notice; live team-pane wing name (fills remaining P675 gap),Inc/Messages.h:705-709; clintlib/appmsg.cpp:2129-2147; Igc/common.cpp:23-35,done
 ICQ_CHAT_ACK,107,S,—,neither (codec only),na — ICQ_CHAT_ACK deliberately not built,—,na
 CHATBUOY,108,CS,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),ChatBuoy order applied (CHATBUOY_RELAY P67),appmsg.cpp:2660,done
 CREATE_CHAFF,109,S,Server.ShipCommands,ConnectionSession (real client),CreateChaff transient entity to render (P292),appmsg.cpp:1642,done
@@ -96,13 +96,13 @@ MUTE,117,C,—,client→server (sender),na — MUTE deliberately not built,—,n
 SET_TEAM_LEADER,121,CS,"Server.Lobby, Server.Economy",ConnectionSession (real client),SetTeamLeader per-side leader tracked (P366),appmsg.cpp:2930,done
 SET_TEAM_INVESTOR,122,CS,—,neither (codec only),na — SET_TEAM_INVESTOR deliberately not built,—,na
 SET_MISSION_OWNER,123,CS,Server.Lobby,ConnectionSession (real client),SetMissionOwner broadcast stored (P281),appmsg.cpp:2971,done
-QUIT_MISSION,124,CS,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: QUIT_MISSION),appmsg.cpp:2501,partial
+QUIT_MISSION,124,CS,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),"P718: Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event","Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848",done
 JOIN_SIDE,125,S,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),JoinSide side refresh / enemy classification (P438),appmsg.cpp:2909,done
-QUIT_SIDE,126,CS,"Server.Lifecycle, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: QUIT_SIDE),appmsg.cpp:2993,partial
-ENTER_GAME,128,S,Server.Lobby,Bot only (harness),Real client does NOT consume (candidate: ENTER_GAME),appmsg.cpp:3040,partial
+QUIT_SIDE,126,CS,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),P718: SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry,"Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831",done
+ENTER_GAME,128,S,Server.Lobby,ConnectionSession (real client),P718: Sync-complete InGame barrier independent of mission stage and live equipment; game-over/reset/next-mission clears,Inc/Messages.h:831-835; clintlib/appmsg.cpp:3040-3045; clintlib/clintlib.cpp:3851-3857,done
 RELOAD,129,CS,"ServerHost, Server.Lifecycle",ConnectionSession (real client),Reload state counted (P362); client sends RELOAD (P626),appmsg.cpp:1458,done
 THREAT,131,S,—,neither (codec only),na — THREAT deliberately not built,—,na
-GAME_STATE,155,S,"Server.Combat, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: GAME_STATE),appmsg.cpp:2392,partial
+GAME_STATE,155,S,"Server.Combat, Server.Lobby",ConnectionSession (real client),P718: Replace all six sides conquest/territory/flag/artifact counters in native array order,Inc/Messages.h:854-860; clintlib/appmsg.cpp:2392-2407,done
 GAIN_FLAG,156,S,"Server.Combat, Server.Lobby",Bot only (harness),Real client does NOT consume (candidate: GAIN_FLAG conquest),appmsg.cpp:3113,partial
 START_GAME,157,C,"(C) server handler: Server.Lobby, Server.Dispatch",client→server (sender),Real client does NOT send START_GAME (owner via bot/harness),—,done
 ACQUIRE_TREASURE,162,S,Server.Docking,Bot only (harness),Real client does NOT consume (candidate: ACQUIRE_TREASURE),appmsg.cpp:262,partial

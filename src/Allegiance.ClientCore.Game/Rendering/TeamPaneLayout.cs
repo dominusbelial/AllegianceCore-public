@@ -91,7 +91,7 @@ public static class TeamPaneLayout
                 // state, independent of a pilot's current ship location.
                 string role = sb.IsLeader ? " [COMMANDER]" : "";
                 if (sb.Ready == false) role += " [AFK]";
-                if (sb.WingId is { } wing) role += $" WING:{WingNames.For(wing)}";
+                role += $" WING:{(sb.WingId is { } wing ? WingNames.For(wing) : "?")}";
                 string text = $"    {ScoreboardLayout.AsciiSafe(e.CharacterName),-18}  " +
                               $"{ScoreboardLayout.AsciiSafe(rankName),-14}  " +
                               $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}{role}";
