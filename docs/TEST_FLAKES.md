@@ -857,6 +857,7 @@ timing-sensitive at the margins.
 | `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback` | load-flake | positional relaunch-fallback drift during wire round-trip |
 | `LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | 1/10 | live-wire ripcord-energy receipt |
 | `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | load-flake | live-wire ripcord abort receipt |
+| `MiscKeyBindingLiveTests.Live_own_ship_is_real_and_center_ranking_selects_a_real_ship` | load-flake | live autopilot center-rank target sampling returned warps instead of a settled ship target under full-suite load (P721 run 1); passes 3/3 in isolation |
 | `LiveRipcordTests.Re_target_activates_to_requester_only` | 2/3 under load | live-wire ripcord re-target receipt (P667 run 2; same ripcord-wire family) |
 | `StationUnderAttackAlertLiveTests.Sub_30_percent_fraction_produces_critical_alert_once_throttle_reopens` | 2/3 under load (cold-start) | live-wire station under-attack alert throttle receipt (P667 run 2; same family as the `Defending_side…` entry) |
 | `LiveWinConditionTests.Board_refused_once_mission_over` | 1/10 | live-wire board-handshake control leg |

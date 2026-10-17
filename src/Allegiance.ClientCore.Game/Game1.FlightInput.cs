@@ -1981,13 +1981,25 @@ public sealed partial class Game1
                     // drawn in the internal cockpit view), matching P358/P297.
                     UpdateMotionTrail(me, ownPos, ownOri, _myRenderRadius, mine.SideId,
                         _cameraMode != CameraMode.Cockpit);
+                    // P721 — resolve the local hull class (fighter vs capital) and
+                    // the sidethrust gate (native PlaySidethrust() = backward|left|
+                    // right buttons held, trekigc.cpp:953-956) for the per-hull loop
+                    // beds and the new sidethrust loop (SIM-0372..0383).
+                    bool capitalHull = _hullById.TryGetValue(mine.HullId, out var ownHull)
+                        && !ownHull.HasCapability(DataHullTypeIGC.HabmFighter);
+                    bool sidethrustActive = (mineUp.StateM & (
+                        Allegiance.Core.Sim.ShipControlState.BackwardButton
+                        | Allegiance.Core.Sim.ShipControlState.LeftButton
+                        | Allegiance.Core.Sim.ShipControlState.RightButton)) != 0;
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
                         cockpitMode: _cameraMode == CameraMode.Cockpit,
                         afterburnerActive: (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
                         deltaSeconds: (float)gameTime.ElapsedGameTime.TotalSeconds,
-                        missileLocked: world.MissileLock.IsFullLock);   // P230 — lock beep at full lock
+                        missileLocked: world.MissileLock.IsFullLock,   // P230 — lock beep at full lock
+                        capitalHull: capitalHull,
+                        sidethrustActive: sidethrustActive);
 
                     // P267 — the hull's maneuvering-thruster (turn) loop, driven
                     // from the local ship's real commanded turn axes (the same
@@ -1995,7 +2007,8 @@ public sealed partial class Game1
                     // loop audible in the chase/exterior view.
                     _sound?.UpdateTurnThruster(
                         Audio.TurnThrusterSound.LevelFor(
-                            mineUp.Controls.Yaw, mineUp.Controls.Pitch, mineUp.Controls.Roll));
+                            mineUp.Controls.Yaw, mineUp.Controls.Pitch, mineUp.Controls.Roll),
+                        capitalHull: capitalHull);
                     _sound?.UpdateShipExterior(_cameraMode != CameraMode.Cockpit);
                 }
             }
