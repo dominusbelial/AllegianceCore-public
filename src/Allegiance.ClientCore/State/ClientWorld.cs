@@ -2124,6 +2124,17 @@ public sealed partial class ClientWorld
                 // P438 — whole-mission side-join broadcast.
                 Apply(joinSide);
                 break;
+            case QuitMission quitMission:
+                // P736 — SIM-0454..0468: a player left the mission entirely
+                // (server broadcasts on a LinkDead disconnect). Reproduces the
+                // client-side presence salutation VOs.
+                Apply(quitMission);
+                break;
+            case QuitSide quitSide:
+                // P736 — SIM-0461/0468: a player left a side while staying in
+                // the mission (server broadcasts on the SwitchingSides quit half).
+                Apply(quitSide);
+                break;
             case ShipWarningUpdate warning:
                 if (warning.ShipId == MyShipId) ShipWarnings.Apply(warning.Mask);
                 break;
@@ -4486,6 +4497,98 @@ public sealed partial class ClientWorld
         // (so it goes stale after the local player's own side switch too).
         if (join.ShipId == MyShipId)
             MySideId = join.SideId;
+
+        // P736 — SIM-0464/0465: the presence salutation when a HUMAN player
+        // joins a side (native BaseClient::AddPlayerToSide,
+        // clintlib.cpp:4140-4172). Same gates as native: a human player, the
+        // mission started, connected (always true here), and not our own ship.
+        // A same-side joiner voices salRecruitsArrivedSound (:4155); an
+        // enemy-side (non-allied) joiner voices salEnemyJoinersSound (:4162),
+        // gated additionally on us holding a real side. An allied-but-different
+        // side join is text-only in native (sal id 0, :4151) — no sound, so
+        // none is recorded here.
+        if (join.ShipId != (MyShipId ?? JoinedShipId)
+            && _mission?.Stage == MissionStageMessage.StageStarted
+            && _ships.TryGetValue(join.ShipId, out var jp)
+            && jp.Player is { PilotType: PlayerInfo.PilotTypePlayer }
+            && MySideId is { } jMy)
+        {
+            if (join.SideId == jMy)
+                RecordSoundEvent(ClientSoundEventKind.SalRecruitsArrived, join.ShipId);
+            else if (!AreAllied(jMy, join.SideId) && jMy != Side.ArtifactSentinelFlag)
+                RecordSoundEvent(ClientSoundEventKind.SalEnemyJoiners, join.ShipId);
+        }
+    }
+
+    /// <summary>
+    /// P736 — <c>FM_S_QUIT_MISSION(124)</c>: a player left the mission entirely
+    /// (the port server broadcasts it on the LinkDead disconnect path,
+    /// Server.Lifecycle.cs BroadcastQuitMission). Voices the client-side
+    /// presence salutation exactly as native's <c>RemovePlayerFromSide</c>
+    /// (clintlib.cpp:3867-4009) does — see <see cref="ApplySideLeave"/>.
+    /// </summary>
+    private void Apply(QuitMission m) => ApplySideLeave(m.ShipId, m.Reason);
+
+    /// <summary>
+    /// P736 — <c>FM_S_QUIT_SIDE(126)</c>: a player left a side while staying in
+    /// the mission (the port server broadcasts it on the SwitchingSides quit
+    /// half, Server.Lobby.cs BroadcastQuitSide). Same presence salutation path
+    /// as QUIT_MISSION.
+    /// </summary>
+    private void Apply(QuitSide m) => ApplySideLeave(m.ShipId, m.Reason);
+
+    /// <summary>
+    /// P736 — SIM-0461/0462/0463/0468: the shared presence-salutation decision
+    /// for a player leaving a side (native <c>BaseClient::RemovePlayerFromSide</c>,
+    /// clintlib.cpp:3867-4009). Mirrors native's gates and branches:
+    /// <list type="bullet">
+    /// <item><b>Gates</b>: a human player, the mission started, connected
+    /// (always true here), and not our own ship (:3924-3926).</item>
+    /// <item><b>Same-side leaver</b> (the leaver's side == our side, :3928): the
+    /// reason picks the cue — LinkDead → <c>salMIASound</c> (:3999, SIM-0463),
+    /// SwitchingSides → <c>salChangeSidesSound</c> (:3975, SIM-0461), any other
+    /// same-side quit reason → <c>salQuitSound</c> (SIM-0462).</item>
+    /// <item><b>Other-side leaver</b> (:4004-4009): allied → <c>salQuitSound</c>,
+    /// enemy (non-allied) → <c>salEnemyLeavesSound</c> (SIM-0468 — the dynamic
+    /// leave voice).</item>
+    /// </list>
+    /// The port server only ever emits LinkDead and SwitchingSides reasons
+    /// (QuitSideReason names its only two reachable values); the boot/kick/quit
+    /// reasons are documented in the matrix as needing server broadcasts, not
+    /// silently skipped.
+    /// </summary>
+    private void ApplySideLeave(short shipId, QuitSideReason reason)
+    {
+        if (_mission?.Stage != MissionStageMessage.StageStarted) return;
+        if (shipId == (MyShipId ?? JoinedShipId)) return;              // our own leave — OnQuitSide, no VO
+        if (!_ships.TryGetValue(shipId, out var e)) return;            // unknown ship: nothing to classify
+        if (e.Player is not { PilotType: PlayerInfo.PilotTypePlayer }) return; // not human (:3924)
+        if (MySideId is not { } mySide) return;
+
+        short sideOld = e.SideId;   // the side the leaver was on before leaving
+
+        if (sideOld == mySide)
+        {
+            switch (reason)
+            {
+                case QuitSideReason.LinkDead:
+                    RecordSoundEvent(ClientSoundEventKind.SalMia, shipId);        // SIM-0463
+                    break;
+                case QuitSideReason.SwitchingSides:
+                    RecordSoundEvent(ClientSoundEventKind.SalChangeSides, shipId);// SIM-0461
+                    break;
+                default:
+                    RecordSoundEvent(ClientSoundEventKind.SalQuit, shipId);       // SIM-0462
+                    break;
+            }
+        }
+        else
+        {
+            // Other-side leaver: allied → salQuitSound, enemy → salEnemyLeavesSound
+            // (clintlib.cpp:4006-4009 — SIM-0468).
+            bool allied = AreAllied(mySide, sideOld);
+            RecordSoundEvent(allied ? ClientSoundEventKind.SalQuit : ClientSoundEventKind.SalEnemyLeaves, shipId);
+        }
     }
 
     /// <summary>

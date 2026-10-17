@@ -1340,6 +1340,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // its one-shot EXPORT stayed classified by its old side.
                         _world.Apply(JoinSide.Decode(m));
                         break;
+                    case QuitMission.Fmid:
+                        // P736 — a player left the mission entirely (server
+                        // broadcasts on the LinkDead disconnect path); the world
+                        // voices the client-side presence salutation.
+                        _world.Apply(QuitMission.Decode(m));
+                        break;
+                    case QuitSide.Fmid:
+                        // P736 — a player left a side while staying in the
+                        // mission (SwitchingSides quit half); presence salutation.
+                        _world.Apply(QuitSide.Decode(m));
+                        break;
                     case ClusterWarningUpdate.Fmid:
                         // P374 — a side's per-sector threat state changed; the
                         // world stores the level + queues the sound/status cues.

@@ -259,6 +259,18 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _mount = null!;           // mount — mountSound (:286)
     private SoundEffect _unmount = null!;         // unmount — unmountSound (:288)
     private SoundEffect _cargoFull = null!;       // vo_sal_cargofull — salCargoFullSound (:810)
+    // P736 — presence / side-change salutation one-shots (parity wave 23).
+    // Waves from sounddef.mdl:825-831 (vo_sal_recruitsarrived / vo_sal_mia /
+    // vo_sal_quit / vo_sal_traitor / vo_sal_enemyjoiners / vo_sal_enemyleaves).
+    // Native maps salQuitSound to the vo_sal_mia wave (sounddef.mdl:827-828);
+    // this port uses the dedicated vo_sal_quit wave so the same-side "X has
+    // quit" cue is distinguishable from the MIA cue the player hears.
+    private SoundEffect _salQuit = null!;
+    private SoundEffect _salChangeSides = null!;
+    private SoundEffect _salMia = null!;
+    private SoundEffect _salEnemyLeaves = null!;
+    private SoundEffect _salRecruitsArrived = null!;
+    private SoundEffect _salEnemyJoiners = null!;
     private SoundEffect _drop = null!;            // drop — dropSound (:290)
     private SoundEffect _reloading = null!;       // vo_sal_reloading — salReloadingSound (:819)
     // P723 — in-flight command/targeting one-shots. Real waves from
@@ -724,6 +736,17 @@ public sealed class SoundManager : IDisposable
             _mount = _content.Load<SoundEffect>("Sounds/mount");
             _unmount = _content.Load<SoundEffect>("Sounds/unmount");
             _cargoFull = _content.Load<SoundEffect>("Sounds/vo_sal_cargofull");
+            // P736 — presence / side-change salutation one-shots. Waves
+            // sounddef.mdl:825-831 (recruitsarrived / mia / quit / traitor /
+            // enemyjoiners / enemyleaves). salQuitSound is vo_sal_mia in native
+            // (sounddef.mdl:827-828); this port plays vo_sal_quit for the plain
+            // quit so the two cues are distinguishable.
+            _salRecruitsArrived = _content.Load<SoundEffect>("Sounds/vo_sal_recruitsarrived");
+            _salMia = _content.Load<SoundEffect>("Sounds/vo_sal_mia");
+            _salQuit = _content.Load<SoundEffect>("Sounds/vo_sal_quit");
+            _salChangeSides = _content.Load<SoundEffect>("Sounds/vo_sal_traitor");
+            _salEnemyJoiners = _content.Load<SoundEffect>("Sounds/vo_sal_enemyjoiners");
+            _salEnemyLeaves = _content.Load<SoundEffect>("Sounds/vo_sal_enemyleaves");
             _drop = _content.Load<SoundEffect>("Sounds/drop");
             _reloading = _content.Load<SoundEffect>("Sounds/vo_sal_reloading");
             _newTarget = _content.Load<SoundEffect>("Sounds/newtargetneutral");
@@ -1141,6 +1164,39 @@ public sealed class SoundManager : IDisposable
     /// <summary>P719 — play the cargo-full VO (<c>vo_sal_cargofull</c>, native
     /// <c>salCargoFullSound</c>, WinTrek.cpp:9114). No-op when not loaded.</summary>
     public void PlayCargoFull() => PlayWarnOneShot(_cargoFull);
+
+    // ── P736 — presence / side-change salutation one-shots (parity wave 23) ──
+    // Six client-side cues mirroring native's RemovePlayerFromSide /
+    // AddPlayerToSide presence salutations (clintlib.cpp:3867-4172). All are
+    // one-shots on the same ClientSoundEvent path, played through the voice-
+    // budgeted warn-one-shot lane (MutexSal grouping).
+
+    /// <summary>P736 — play the same-side quit salutation (<c>vo_sal_quit</c>;
+    /// native <c>salQuitSound</c>, clintlib.cpp:3952-3991).</summary>
+    public void PlaySalQuit() => PlayWarnOneShot(_salQuit);
+
+    /// <summary>P736 — play the side-change salutation (<c>vo_sal_traitor</c>;
+    /// native <c>salChangeSidesSound</c>, clintlib.cpp:3975, sounddef.mdl:829).</summary>
+    public void PlaySalChangeSides() => PlayWarnOneShot(_salChangeSides);
+
+    /// <summary>P736 — play the MIA salutation (<c>vo_sal_mia</c>; native
+    /// <c>salMIASound</c>, clintlib.cpp:3999, sounddef.mdl:826).</summary>
+    public void PlaySalMia() => PlayWarnOneShot(_salMia);
+
+    /// <summary>P736 — play the enemy-leaves salutation (<c>vo_sal_enemyleaves</c>;
+    /// native <c>salEnemyLeavesSound</c>, clintlib.cpp:4006-4009,
+    /// sounddef.mdl:831).</summary>
+    public void PlaySalEnemyLeaves() => PlayWarnOneShot(_salEnemyLeaves);
+
+    /// <summary>P736 — play the recruits-arrived salutation
+    /// (<c>vo_sal_recruitsarrived</c>; native <c>salRecruitsArrivedSound</c>,
+    /// clintlib.cpp:4155, sounddef.mdl:825).</summary>
+    public void PlaySalRecruitsArrived() => PlayWarnOneShot(_salRecruitsArrived);
+
+    /// <summary>P736 — play the enemy-joiners salutation
+    /// (<c>vo_sal_enemyjoiners</c>; native <c>salEnemyJoinersSound</c>,
+    /// clintlib.cpp:4162, sounddef.mdl:830).</summary>
+    public void PlaySalEnemyJoiners() => PlayWarnOneShot(_salEnemyJoiners);
 
     /// <summary>P719 — play the drop cue (<c>drop</c>, native <c>dropSound</c>,
     /// WinTrek.cpp:9719). No-op when not loaded.</summary>
@@ -1950,6 +2006,13 @@ public sealed class SoundManager : IDisposable
             _mount?.Dispose();                 // P719
             _unmount?.Dispose();               // P719
             _cargoFull?.Dispose();             // P719
+            // P736 — presence / side-change salutations.
+            _salQuit?.Dispose();
+            _salChangeSides?.Dispose();
+            _salMia?.Dispose();
+            _salEnemyLeaves?.Dispose();
+            _salRecruitsArrived?.Dispose();
+            _salEnemyJoiners?.Dispose();
             _drop?.Dispose();                  // P719
             _reloading?.Dispose();             // P719
             foreach (var sfx in _voices.Values) sfx.Dispose();

@@ -558,6 +558,31 @@ public sealed partial class Game1
                     snd.PlayBoarded();
                     Console.WriteLine($"[monogame] audio: player boarded your ship (ship {ev.Id})");
                     break;
+                // ── P736 — presence / side-change salutations ───────────────
+                case ClientSoundEventKind.SalQuit:
+                    snd.PlaySalQuit();
+                    Console.WriteLine($"[monogame] audio: teammate quit (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalChangeSides:
+                    snd.PlaySalChangeSides();
+                    Console.WriteLine($"[monogame] audio: teammate switching sides (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalMia:
+                    snd.PlaySalMia();
+                    Console.WriteLine($"[monogame] audio: teammate MIA (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalEnemyLeaves:
+                    snd.PlaySalEnemyLeaves();
+                    Console.WriteLine($"[monogame] audio: enemy leaves (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalRecruitsArrived:
+                    snd.PlaySalRecruitsArrived();
+                    Console.WriteLine($"[monogame] audio: recruit joined your team (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalEnemyJoiners:
+                    snd.PlaySalEnemyJoiners();
+                    Console.WriteLine($"[monogame] audio: enemy joined (ship {ev.Id})");
+                    break;
             }
         }
     }

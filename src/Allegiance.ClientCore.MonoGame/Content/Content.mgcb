@@ -3043,3 +3043,39 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_shipcantripcord.ogg
+
+#begin Sounds/vo_sal_recruitsarrived.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_recruitsarrived.ogg
+
+#begin Sounds/vo_sal_mia.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_mia.ogg
+
+#begin Sounds/vo_sal_quit.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_quit.ogg
+
+#begin Sounds/vo_sal_traitor.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_traitor.ogg
+
+#begin Sounds/vo_sal_enemyjoiners.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_enemyjoiners.ogg
+
+#begin Sounds/vo_sal_enemyleaves.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_enemyleaves.ogg

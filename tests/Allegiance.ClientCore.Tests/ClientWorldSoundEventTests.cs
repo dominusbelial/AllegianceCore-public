@@ -740,4 +740,159 @@ public class ClientWorldSoundEventTests
 
         Assert.Equal(ClientSoundEventKind.PlayerWaiting, Assert.Single(world.TakeSoundEvents()).Kind);
     }
+
+    // ── P736 (parity wave 23): presence / side-change salutations ──────────
+    // Native voices these from the CLIENT's RemovePlayerFromSide /
+    // AddPlayerToSide (clintlib.cpp:3867-4009, 4140-4172) when it processes the
+    // server's player-quit/player-join side events. The port reproduces them on
+    // the JOIN_SIDE(125) / QUIT_MISSION(124) / QUIT_SIDE(126) broadcasts the
+    // server already sends. Failing-first: the SalQuit/SalChangeSides/SalMia/
+    // SalEnemyLeaves/SalRecruitsArrived/SalEnemyJoiners kinds did not exist
+    // before P736 (compile errors on the pre-change tree).
+
+    /// <summary>Seat the local player on a side and advance the mission to
+    /// STAGE_STARTED (native gates every presence salutation on
+    /// STAGE_STARTED, clintlib.cpp:3924, 4141).</summary>
+    private static ClientWorld StartedWorld(short mySide)
+    {
+        var w = new ClientWorld();
+        SetMySide(w, mySide);
+        w.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarted });
+        return w;
+    }
+
+    /// <summary>Seed a known HUMAN player ship on a side (PlayerInfo with
+    /// PilotType=player — native's IsHuman() gate, clintlib.cpp:3924).</summary>
+    private static void SeedHumanShip(ClientWorld w, short shipId, short side)
+    {
+        w.Apply(new ExportShip { ShipId = shipId, SideId = side });
+        w.Apply(new PlayerInfo { ShipId = shipId, ISide = side, CharacterName = $"p{shipId}", PilotType = PlayerInfo.PilotTypePlayer });
+    }
+
+    [Fact]
+    public void HumanJoinsOurSide_RecordsSalRecruitsArrived()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 511, side: 999);   // sitting in the team lobby pre-join
+
+        world.Apply(new JoinSide { ShipId = 511, SideId = 2 });   // joins OUR side
+
+        var ev = Assert.Single(world.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.SalRecruitsArrived, ev.Kind);
+        Assert.Equal((short)511, ev.Id);
+    }
+
+    [Fact]
+    public void HumanJoinsEnemySide_RecordsSalEnemyJoiners()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 512, side: 999);
+
+        world.Apply(new JoinSide { ShipId = 512, SideId = 7 });   // enemy side
+
+        Assert.Equal(ClientSoundEventKind.SalEnemyJoiners, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void HumanJoinsAlliedDifferentSide_RecordsNothing()
+    {
+        // Native: an allied-but-different side join is TEXT ONLY (sal id 0,
+        // clintlib.cpp:4151) — no sound cue.
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 513, side: 999);
+        world.Apply(new ChangeAlliances { Allies = [0, 0, 1, 1, -1, -1] });   // sides 2 and 3 allied
+        SetMySide(world, 2);
+
+        world.Apply(new JoinSide { ShipId = 513, SideId = 3 });   // allied side
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void DroneJoinsSide_RecordsNothing()
+    {
+        // Native's IsHuman() gate (clintlib.cpp:4141): a non-human joiner
+        // (drone/constructor) voices no presence salutation.
+        var world = StartedWorld(mySide: 2);
+        world.Apply(new ExportShip { ShipId = 519, SideId = 998 });
+        world.Apply(new PlayerInfo { ShipId = 519, ISide = 997, CharacterName = "miner", PilotType = 4 });   // c_ptMiner
+
+        world.Apply(new JoinSide { ShipId = 519, SideId = 994 });
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void MissionNotStarted_JoinRecordsNothing()
+    {
+        var world = new ClientWorld();
+        SetMySide(world, 2);                                   // stage defaults to NotStarted
+        SeedHumanShip(world, 516, side: 995);
+
+        world.Apply(new JoinSide { ShipId = 516, SideId = 996 });
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void SameSideHumanGoesLinkDead_RecordsSalMia()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 601, side: 2);   // a teammate
+
+        world.Apply(new QuitMission { ShipId = 601, Reason = QuitSideReason.LinkDead });
+
+        Assert.Equal(ClientSoundEventKind.SalMia, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void SameSideHumanSwitchesSides_RecordsSalChangeSides()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 602, side: 2);
+
+        world.Apply(new QuitSide { ShipId = 602, Reason = QuitSideReason.SwitchingSides });
+
+        Assert.Equal(ClientSoundEventKind.SalChangeSides, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void EnemySideHumanLeaves_RecordsSalEnemyLeaves()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 703, side: 7);   // enemy
+
+        world.Apply(new QuitMission { ShipId = 703, Reason = QuitSideReason.LinkDead });
+
+        Assert.Equal(ClientSoundEventKind.SalEnemyLeaves, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void AlliedSideHumanLeaves_RecordsSalQuit()
+    {
+        // Native other-side branch (clintlib.cpp:4006-4009): an ALLIED (not our
+        // own) side leaver voices salQuitSound; only a non-allied one gets
+        // salEnemyLeavesSound.
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 704, side: 3);
+        world.Apply(new ChangeAlliances { Allies = [0, 0, 1, 1, -1, -1] });   // sides 2 and 3 allied
+        SetMySide(world, 2);
+
+        world.Apply(new QuitMission { ShipId = 704, Reason = QuitSideReason.LinkDead });
+
+        Assert.Equal(ClientSoundEventKind.SalQuit, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void OwnShipQuitMission_RecordsNothing()
+    {
+        // Native: our OWN leave goes through OnQuitSide, not the presence
+        // salutation (clintlib.cpp:3940-3941).
+        var world = StartedWorld(mySide: 2);
+        SeatMe(world, 885, sector: 3, Vector3.Zero);
+
+        world.Apply(new QuitMission { ShipId = 885, Reason = QuitSideReason.LinkDead });
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
 }

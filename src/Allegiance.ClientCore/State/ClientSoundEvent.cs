@@ -241,6 +241,49 @@ public enum ClientSoundEventKind
     /// sounddef.mdl:782). Detected on a ship whose ParentId becomes the local
     /// ship's id.</summary>
     Boarded,
+
+    // ── P736 (parity wave 23: presence / side-change salutations) ──────────
+    // Native fires the presence salutation VOs from the CLIENT's
+    // RemovePlayerFromSide / AddPlayerToSide (clintlib/clintlib.cpp) when the
+    // client processes the server's player-quit and player-join side events.
+    // The port's server already broadcasts the underlying wire for the reachable
+    // cases (JOIN_SIDE on every side join; QUIT_MISSION on a LinkDead disconnect;
+    // QUIT_SIDE on the quit-half of a same-mission side switch), so these are
+    // reproduced as client one-shots on those messages, gated exactly as native
+    // gates them (human player, mission started, connected, side relationship).
+
+    /// <summary><c>salQuitSound</c> — a same-side player quit the mission
+    /// (RemovePlayerFromSide, clintlib.cpp:3952-3991 for the boot/quit reasons;
+    /// wave <c>vo_sal_quit</c>, sounddef.mdl:828). Note native maps salQuitSound
+    /// to the <c>vo_sal_mia</c> wave (sounddef.mdl:827-828); the port uses the
+    /// dedicated <c>vo_sal_quit</c> wave when the quitting player's reason is a
+    /// plain quit rather than MIA.</summary>
+    SalQuit,
+
+    /// <summary><c>salChangeSidesSound</c> — a same-side player is switching
+    /// sides (QUIT_SIDE with QSR_SwitchingSides, clintlib.cpp:3975; wave
+    /// <c>vo_sal_traitor</c>, sounddef.mdl:829).</summary>
+    SalChangeSides,
+
+    /// <summary><c>salMIASound</c> — a same-side player went MIA (a LinkDead
+    /// disconnect, QUIT_MISSION default/LinkDead case, clintlib.cpp:3999; wave
+    /// <c>vo_sal_mia</c>, sounddef.mdl:826).</summary>
+    SalMia,
+
+    /// <summary><c>salEnemyLeavesSound</c> — a player on an enemy (non-allied)
+    /// side left the mission (RemovePlayerFromSide other-side branch,
+    /// clintlib.cpp:4006-4009; wave <c>vo_sal_enemyleaves</c>, sounddef.mdl:831).</summary>
+    SalEnemyLeaves,
+
+    /// <summary><c>salRecruitsArrivedSound</c> — a human player joined OUR side
+    /// (AddPlayerToSide, clintlib.cpp:4155; wave <c>vo_sal_recruitsarrived</c>,
+    /// sounddef.mdl:825).</summary>
+    SalRecruitsArrived,
+
+    /// <summary><c>salEnemyJoinersSound</c> — a human player joined an enemy
+    /// side (AddPlayerToSide, clintlib.cpp:4162; wave <c>vo_sal_enemyjoiners</c>,
+    /// sounddef.mdl:830).</summary>
+    SalEnemyJoiners,
 }
 
 /// <summary>A single observed sound event.</summary>
