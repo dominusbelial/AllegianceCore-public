@@ -1,0 +1,95 @@
+{
+  "adapter": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "method": "P643/P687 GlFrameTimer; 20 warmup + 80 sampled frames; 40 native hulls; readback outside queries",
+  "results": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "hd": false,
+      "fsrAndBloom": false,
+      "sceneSamples": 80,
+      "sceneMedianMs": 2.382165,
+      "sceneP95Ms": 2.958039,
+      "postMedianMs": 3.131958,
+      "residentBytes": 313174692
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "hd": true,
+      "fsrAndBloom": false,
+      "sceneSamples": 80,
+      "sceneMedianMs": 2.841801,
+      "sceneP95Ms": 4.010381,
+      "postMedianMs": 3.425113,
+      "residentBytes": 313174692
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "hd": false,
+      "fsrAndBloom": true,
+      "sceneSamples": 80,
+      "sceneMedianMs": 2.06051,
+      "sceneP95Ms": 2.616926,
+      "postMedianMs": 15.018369,
+      "residentBytes": 313174692
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "hd": true,
+      "fsrAndBloom": true,
+      "sceneSamples": 80,
+      "sceneMedianMs": 2.453472,
+      "sceneP95Ms": 2.939798,
+      "postMedianMs": 14.60755,
+      "residentBytes": 313174692
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "hd": false,
+      "fsrAndBloom": false,
+      "sceneSamples": 80,
+      "sceneMedianMs": 2.342436,
+      "sceneP95Ms": 2.890311,
+      "postMedianMs": 3.226575,
+      "residentBytes": 313174692
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "hd": true,
+      "fsrAndBloom": false,
+      "sceneSamples": 80,
+      "sceneMedianMs": 3.483609,
+      "sceneP95Ms": 4.580704,
+      "postMedianMs": 4.033501,
+      "residentBytes": 313174692
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "hd": false,
+      "fsrAndBloom": true,
+      "sceneSamples": 80,
+      "sceneMedianMs": 2.423492,
+      "sceneP95Ms": 3.081215,
+      "postMedianMs": 19.974943,
+      "residentBytes": 313174692
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "hd": true,
+      "fsrAndBloom": true,
+      "sceneSamples": 80,
+      "sceneMedianMs": 2.847919,
+      "sceneP95Ms": 3.394699,
+      "postMedianMs": 20.308969,
+      "residentBytes": 313174692
+    }
+  ],
+  "note": "X11 software GL. Private rejected pilot rendered only through an isolated review manifest; original manifest unchanged. No generated maps or pilot screenshots stored in the public tree."
+}

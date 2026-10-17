@@ -84,7 +84,7 @@ bool inspectStations = false;
 string? inspectStation = null;
 float? inspectLightTime = null;
 float inspectPitch = 22f;
-bool inspectNativeOnly = false;
+bool inspectNativeOnly = false, inspectHd = false;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -397,6 +397,10 @@ for (int i = 0; i < args.Length; i++)
         // P565 — the offline hull inspector (no server connect).
         inspectRequested = true;
     }
+    else if (a == "--inspect-hd")
+    {
+        inspectRequested = true; inspectHd = true;
+    }
     else if (a == "--inspect-native-only")
     {
         inspectNativeOnly = true;
@@ -557,6 +561,7 @@ var opts = new Game1.LaunchOptions
     InspectLightTime = inspectLightTime,
     InspectPitch = inspectPitch,
     InspectNativeOnly = inspectNativeOnly,
+    InspectHd = inspectHd,
     InspectCatalogue = inspectCatalogue,
     // P572 — live-proof automation plan (null when no --auto-* flag was given).
     AutoProof = autoPlan.AnyActive ? autoPlan : null,

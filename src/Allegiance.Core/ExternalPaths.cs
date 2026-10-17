@@ -16,6 +16,8 @@ public enum ExternalResourceKind
     /// https://github.com/dominusbelial/AllegianceCore-sky. Optional: when absent the
     /// client simply skips those sky layers.</summary>
     SkyPack,
+    /// <summary>Optional private HD texture add-on (HD-1 schema-1 manifest).</summary>
+    HdPack,
 }
 
 /// <summary>
@@ -38,6 +40,7 @@ public static class ExternalPaths
 {
     public const string ArtworkEnvVar = "ALLEGIANCE_ARTWORK_PATH";
     public const string NativeSourceEnvVar = "ALLEGIANCE_NATIVE_SRC_PATH";
+    public const string HdPackEnvVar = "ALLEGIANCE_HD_PACK_PATH";
     public const string SkyPackEnvVar = "ALLEGIANCE_SKY_PACK_PATH";
 
     /// <summary>Gitignored per-machine override file at the repo root
@@ -53,6 +56,7 @@ public static class ExternalPaths
     {
         ExternalResourceKind.Artwork => ArtworkEnvVar,
         ExternalResourceKind.SkyPack => SkyPackEnvVar,
+        ExternalResourceKind.HdPack => HdPackEnvVar,
         _ => NativeSourceEnvVar,
     };
 
@@ -95,7 +99,7 @@ public static class ExternalPaths
     /// it. Shared by <see cref="Require"/> (thrown) and the test skip helper
     /// (passed as the skip reason).</summary>
     public static string DescribeMissing(ExternalResourceKind kind) =>
-        $"Allegiance {(kind switch { ExternalResourceKind.Artwork => "artwork corpus", ExternalResourceKind.SkyPack => "sky pack", _ => "native source" })} was not found. " +
+        $"Allegiance {(kind switch { ExternalResourceKind.Artwork => "artwork corpus", ExternalResourceKind.SkyPack => "sky pack", ExternalResourceKind.HdPack => "HD texture pack", _ => "native source" })} was not found. " +
         $"Set the {EnvVar(kind)} environment variable — or, for a local checkout, add " +
         $"'{EnvVar(kind)}=&lt;path&gt;' to the gitignored {LocalConfigFile} at the repo root " +
         $"(see {LocalConfigFile}.example) — to the directory containing it. " +

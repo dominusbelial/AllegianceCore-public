@@ -13,6 +13,7 @@ public sealed class UpscalingSettings
     public FsrPreset Preset { get; set; } = FsrPreset.Quality;
     /// <summary>0 = no sharpening, 1 = strongest RCAS lobe.</summary>
     public float Sharpness { get; set; } = 0.5f;
+    public bool HdTextures { get; set; } = true;
     public bool DynamicResolution { get; set; }
     public float TargetFrameMs { get; set; } = 16.667f;
     public static float Scale(FsrPreset preset) => preset switch

@@ -656,7 +656,7 @@ public sealed partial class Game1
                                 if (lev > 0)
                                     drawGeo = _nativeShipRenderer.LodLevel(nref.ModelStem!, lev - 1) ?? ngeo0;
                             }
-                            _nativeShipRenderer.Draw(drawGeo, ntex0, worldMat, view, proj, modelOp, nref.NativeScale, _sectorLighting);
+                            _nativeShipRenderer.Draw(drawGeo, ntex0, worldMat, view, proj, modelOp, nref.NativeScale, _sectorLighting, nref.ModelStem, nref.TextureStem);
                             _lodDrawCalls++;
                         }
                         else
@@ -3537,7 +3537,7 @@ public sealed partial class Game1
                     var nproj = Matrix.CreatePerspectiveFieldOfView(
                         Rendering.DockedHullPreviewFraming.FovRadians,
                         GraphicsDevice.Viewport.AspectRatio, 0.1f, 40f);
-                    _nativeShipRenderer.Draw(ngeo, ntex, nworld, nview, nproj, 1f, nref.NativeScale, null);
+                    _nativeShipRenderer.Draw(ngeo, ntex, nworld, nview, nproj, 1f, nref.NativeScale, null, nref.ModelStem, nref.TextureStem);
                     return;
                 }
             }

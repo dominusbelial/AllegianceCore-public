@@ -336,6 +336,8 @@ public sealed partial class Game1
         public float InspectPitch = 22f;
         /// <summary>Capture the native model alone, centred in the orbit camera.</summary>
         public bool InspectNativeOnly;
+        /// <summary>Open native vs HD material comparison on the same hull.</summary>
+        public bool InspectHd;
 
         /// <summary>P565 — when set in inspect mode, drive the catalogue browser to this
         /// replacement-model id on the current hull (<c>--inspect-catalogue &lt;id&gt;</c>):

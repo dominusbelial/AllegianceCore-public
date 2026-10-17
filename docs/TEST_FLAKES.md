@@ -4,6 +4,44 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## HD-2 observation (2026-10-17)
+
+The single HD-2 Core run reported **4,781 pass / 2 fail / 0 skip**. One failure was
+`Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`.
+The symptom was `TimeoutException: no OnPeerJoined for raw peer`.
+The exact method passed **3/3 fresh individual invocations** on the same
+transport implementation ([isolation ledger](reports/HD2_assets/transport-isolated.json)).
+This meets the HD-2 light-gate load-flake rule and matches the earlier pool-churn
+observations below. No transport code, timeout, assertion or quarantine trait
+was changed. The isolated passes do not establish a fix for the underlying
+join/churn behavior.
+
+The single ClientCore run reported **1,178 pass / 2 fail / 0 skip**. Its
+`P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches`
+case `civA=101, civB=1, size=5` timed out waiting for both sides to launch an upgraded hull (simulation time 18,390.7). It passed **3/3 exact-data-case isolated
+invocations** after its full-run failure
+([ledger](reports/HD2_assets/p705-isolated.json)). Each invocation ran one data
+case and completed both matches. This matches the earlier P712 observation;
+no research, loadout, bot or timeout code changed.
+
+The `P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates`
+case `civA=25, civB=3, generated=False` observed one completed side instead of the expected two. It passed **3/3 exact-data-case
+invocations** after its full-run failure
+([ledger](reports/HD2_assets/p703-isolated.json)). Each invocation selected one
+case. It also meets the light-gate load-flake rule; no research implementation
+or deadline was changed.
+
+The other initially observed failure,
+`P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff`,
+is **not a flake**: its stale `SendChat`/`1342` observation failed 3/3 alone.
+The existing P725 implementation uses `DroneChatEvent` and the C# port's `341`
+cue. The fixture now observes that event/cue while retaining its original
+29.99 / 30 / 30.1 second schedule, complaint counts, text and ore assertions;
+it passed 3/3 after correction. Production audio and simulation code are
+unchanged. See the [HD-2 report](reports/HD2_PBR_CLIENT.md),
+[baseline triplet](reports/HD2_assets/voice-baseline.json) and
+[corrected triplet](reports/HD2_assets/voice-fixed.json).
+
 ## P716 observation (2026-10-16)
 
 Full-suite run 2 reported Core **4,706 pass / 1 fail / 0 skip** with a single

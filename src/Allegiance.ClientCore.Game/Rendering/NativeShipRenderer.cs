@@ -56,13 +56,17 @@ public sealed class NativeShipRenderer : IDisposable
     private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
     private readonly BasicEffect _effect;
+    private readonly HdMaterialRenderer _hd;
+    public bool HdTexturesEnabled { get; set; } = true;
+    public long HdResidentBytes => _hd.ResidentBytes;
     private readonly RasterizerState _cullCcw;
 
-    public NativeShipRenderer(GraphicsDevice gd, Assets.IAssetSource assets)
+    public NativeShipRenderer(GraphicsDevice gd, Assets.IAssetSource assets, HdPack? hdPack = null, ShaderAssetCache? shaders = null)
     {
         _gd = gd;
         _assets = assets;
         _effect = new BasicEffect(gd);
+        _hd = new HdMaterialRenderer(gd, assets.OpenRead, hdPack, shaders: shaders);
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
 
@@ -262,7 +266,8 @@ public sealed class NativeShipRenderer : IDisposable
     /// translucent, back faces still culled so it never self-occludes into holes).
     /// </summary>
     public void Draw(NativeShipGeometry geo, Texture2D? texture, Matrix world,
-        Matrix view, Matrix projection, float opacity, float nativeScale, SectorLighting? lighting)
+        Matrix view, Matrix projection, float opacity, float nativeScale, SectorLighting? lighting,
+        string? modelStem = null, string? textureStem = null, bool? hdOverride = null)
     {
         bool translucent = opacity < 0.999f;
         var gd = _gd;
@@ -281,6 +286,14 @@ public sealed class NativeShipRenderer : IDisposable
         gd.SamplerStates[0] = SamplerState.LinearClamp;
 
         var local = NoseFlip * Matrix.CreateScale(nativeScale) * world;
+
+        if ((hdOverride ?? HdTexturesEnabled) && modelStem is not null &&
+            _hd.TryDraw(modelStem, textureStem, () => geo.PbrVertices(_gd), geo.Indices,
+                geo.TriangleCount, local, view, projection, opacity, lighting))
+        {
+            if (translucent) gd.BlendState = BlendState.Opaque;
+            return;
+        }
 
         _effect.World = local;
         _effect.View = view;
@@ -339,6 +352,17 @@ public sealed class NativeShipRenderer : IDisposable
         public required VertexBuffer Vertices { get; init; }
         public required IndexBuffer Indices { get; init; }
         public required int TriangleCount { get; init; }
+        private VertexBuffer? _pbrVertices;
+        private IReadOnlyList<MdlMesh> _source = [];
+        public VertexBuffer PbrVertices(GraphicsDevice gd)
+        {
+            if (_pbrVertices is not null) return _pbrVertices;
+            Merge(_source, out var verts, out var indices);
+            var pbr = PbrVertex.Build(verts, indices);
+            _pbrVertices = new VertexBuffer(gd, typeof(PbrVertex), pbr.Length, BufferUsage.WriteOnly);
+            _pbrVertices.SetData(pbr);
+            return _pbrVertices;
+        }
 
         /// <summary>Merged-bounding-sphere radius of the raw native mesh — native
         /// <c>m_radiusMesh</c>, the denominator of <c>m_scale</c>.</summary>
@@ -346,13 +370,31 @@ public sealed class NativeShipRenderer : IDisposable
 
         public static NativeShipGeometry Build(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes)
         {
+            Merge(meshes, out var verts, out var indices);
+            var vbuf = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), verts.Length, BufferUsage.WriteOnly);
+            vbuf.SetData(verts);
+            var ibuf = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, indices.Length, BufferUsage.WriteOnly);
+            ibuf.SetData(indices);
+            return new NativeShipGeometry
+            {
+                _source = meshes,
+                Vertices = vbuf,
+                Indices = ibuf,
+                TriangleCount = indices.Length / 3,
+                MeshRadius = NativeShipResolver.MergedRadius(meshes),
+            };
+        }
+
+        private static void Merge(IReadOnlyList<MdlMesh> meshes,
+            out VertexPositionNormalTexture[] verts, out uint[] indices)
+        {
             int vertexTotal = 0, indexTotal = 0;
             foreach (var m in meshes) { vertexTotal += m.VertexCount; indexTotal += m.Indices.Length; }
             if (vertexTotal == 0 || indexTotal == 0)
                 throw new InvalidDataException("native ship model has no geometry");
 
-            var verts = new VertexPositionNormalTexture[vertexTotal];
-            var indices = new uint[indexTotal];
+            verts = new VertexPositionNormalTexture[vertexTotal];
+            indices = new uint[indexTotal];
             int vc = 0, ic = 0;
             foreach (var m in meshes)
             {
@@ -370,21 +412,11 @@ public sealed class NativeShipRenderer : IDisposable
                 for (int i = 0; i < renderIdx.Length; i++)
                     indices[ic++] = (uint)(renderIdx[i] + vb);
             }
-            var vbuf = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), verts.Length, BufferUsage.WriteOnly);
-            vbuf.SetData(verts);
-            var ibuf = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, indices.Length, BufferUsage.WriteOnly);
-            ibuf.SetData(indices);
-            return new NativeShipGeometry
-            {
-                Vertices = vbuf,
-                Indices = ibuf,
-                TriangleCount = indices.Length / 3,
-                MeshRadius = NativeShipResolver.MergedRadius(meshes),
-            };
         }
 
         public void Dispose()
         {
+            _pbrVertices?.Dispose();
             Vertices.Dispose();
             Indices.Dispose();
         }
@@ -396,6 +428,7 @@ public sealed class NativeShipRenderer : IDisposable
         foreach (var list in _lodLevels.Values)
             foreach (var g in list) g?.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
+        _hd.Dispose();
         _effect.Dispose();
         _cullCcw.Dispose();
     }

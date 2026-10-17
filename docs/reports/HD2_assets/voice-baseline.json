@@ -1,0 +1,95 @@
+[
+  {
+    "label": "voice-baseline-1",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+    "exitCode": 1,
+    "seconds": 1.42,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "0",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [
+      {
+        "name": "Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+        "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: 2\nActual:   0\n             at Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff() in /home/domingo/allegiance-codex-hd2/tests/Allegiance.Core.Tests/P652EconomyDroneAiTests.cs:line 581\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+      }
+    ]
+  },
+  {
+    "label": "voice-baseline-2",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+    "exitCode": 1,
+    "seconds": 1.421,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "0",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [
+      {
+        "name": "Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+        "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: 2\nActual:   0\n             at Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff() in /home/domingo/allegiance-codex-hd2/tests/Allegiance.Core.Tests/P652EconomyDroneAiTests.cs:line 581\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+      }
+    ]
+  },
+  {
+    "label": "voice-baseline-3",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+    "exitCode": 1,
+    "seconds": 1.409,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "0",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [
+      {
+        "name": "Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+        "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: 2\nActual:   0\n             at Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff() in /home/domingo/allegiance-codex-hd2/tests/Allegiance.Core.Tests/P652EconomyDroneAiTests.cs:line 581\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+      }
+    ]
+  }
+]
