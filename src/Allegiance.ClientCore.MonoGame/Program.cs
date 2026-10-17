@@ -2,6 +2,18 @@ using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.MonoGame.LiveProof;
 
+// P644: handled before MonoGame initializes SDL, GL, audio, or networking.
+if (args.Contains("--check-assets") || args.Contains("--asset-census"))
+    return PlayerBundleCheck.Run(args);
+PlayerConfig? savedPlayer = null;
+if (args.Length == 0)
+{
+    var player = savedPlayer = PlayerConfig.Load();
+    args = string.IsNullOrWhiteSpace(player.Server)
+        ? new[] { "--lobby", player.Lobby }
+        : new[] { player.Server, player.Port.ToString(System.Globalization.CultureInfo.InvariantCulture), player.Pilot };
+}
+
 // Entry point.
 //
 //   No positional args  → LOBBY (default): open the server browser against the
@@ -450,7 +462,7 @@ for (int i = 0; i < args.Length; i++)
 
 string host = "127.0.0.1";
 ushort port = 2326;
-string playerName = "monogame";
+string playerName = savedPlayer?.Pilot ?? "monogame";
 
 // P306 — headless capture launch: `--capture host port name durationSec outdir [maxfps] [camera]`.
 // Sets DirectHost/Port/PlayerName so the existing direct-connect path runs, and
@@ -497,8 +509,10 @@ bool haveDirect = positional.Count >= 2;
 // P498 — optional asset-manifest recording: wrap the desktop artwork source in
 // a recorder and have Game1 read through it, then dump the opened-file list on
 // exit. Defaults to null (no recording), preserving today's behaviour.
+ManifestAssetSource? manifestGuard = AssetSources.ArtworkManifest;
+IAssetSource playerAssets = AssetSources.Game;
 RecordingAssetSource? recorder = assetManifestPath is not null
-    ? new RecordingAssetSource(AssetSources.Game)
+    ? new RecordingAssetSource(playerAssets)
     : null;
 
 var opts = new Game1.LaunchOptions
@@ -564,7 +578,7 @@ var opts = new Game1.LaunchOptions
     WindowHeight = windowHeight,
     // P498 — when --asset-manifest is given, the game reads artwork through the
     // recorder so the opened-file manifest is captured.
-    AssetSource = recorder,
+    AssetSource = (IAssetSource?)recorder ?? playerAssets,
 };
 
 if (capture is not null)
@@ -603,4 +617,9 @@ if (recorder is not null)
     };
 }
 game.Run();
+if (manifestGuard is { Violations.Count: > 0 })
+{
+    Console.Error.WriteLine("Unlisted artwork opened: " + string.Join(", ", manifestGuard.Violations));
+    return 2;
+}
 return 0;

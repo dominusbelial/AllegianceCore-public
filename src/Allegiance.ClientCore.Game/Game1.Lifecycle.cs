@@ -159,7 +159,7 @@ public sealed partial class Game1
                 else
                 {
                     _shipCatalogue = publicCat;
-                    Console.WriteLine($"[client] ship catalogue: {_shipCatalogue.Count} public entries (no Meshy pack)");
+                    Console.WriteLine($"[client] ship catalogue: {_shipCatalogue.Count} public entries");
                 }
             }
             catch (Exception ex)
@@ -856,7 +856,7 @@ public sealed partial class Game1
         // P304 — background music beds. Loaded after the render content like the
         // SFX manager, and equally graceful: no audio device leaves it inert
         // (silent) rather than blocking the visuals. Tracks are real-asset-first,
-        // placeholder-generated-fallback (see Audio.Music remarks).
+        // missing-bed silence (see Audio.Music remarks).
         _music = new Audio.Music(Content);
         _music.Load();
     }

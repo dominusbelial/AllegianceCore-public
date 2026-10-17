@@ -576,11 +576,20 @@ public sealed class P652EconomyDroneAiTests
         var a = Drone(m, 1); var b = Drone(m, 2, side: 1);
         a.MiningAsteroidTarget = b.MiningAsteroidTarget = rock;
         m.Sectors[0].Update(29.99);
-        Assert.DoesNotContain(site.Calls, c => c.StartsWith("SendChat("));
+        Assert.DoesNotContain(site.Calls, c => c.StartsWith("DroneChatEvent("));
         m.Sectors[0].Update(30);
-        Assert.Equal(2, site.Calls.Count(c => c.StartsWith("SendChat(") && c.Contains("1342") && c.Contains("Miner requesting unoccupied")));
+        // P725 forwards native droneTooCrowdedSound through the typed host seam.
+        // Native: ~/Development/Allegiance/src/Igc/shipIGC.cpp:2199 and
+        // ~/Development/Allegiance/src/Igc/sounds.h:395 (SoundID 341).
+        var chatter = site.Calls.Where(c => c.StartsWith("DroneChatEvent(")).ToArray();
+        Assert.Equal(2, chatter.Length);
+        Assert.All(chatter, call =>
+        {
+            Assert.Contains(",341,", call.Replace(" ", ""));
+            Assert.Contains("Miner requesting unoccupied", call);
+        });
         m.Sectors[0].Update(30.1);
-        Assert.Equal(2, site.Calls.Count(c => c.StartsWith("SendChat(")));
+        Assert.Equal(2, site.Calls.Count(c => c.StartsWith("DroneChatEvent(")));
         Assert.Equal(0f, a.Ore); Assert.Equal(0f, b.Ore);
     }
 

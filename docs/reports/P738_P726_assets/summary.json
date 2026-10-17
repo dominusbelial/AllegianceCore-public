@@ -1,0 +1,47 @@
+{
+  "focused_methods": 95,
+  "focused_processes": 285,
+  "focused_case_passes": 363,
+  "packaging_passes": 24,
+  "showcase_passes": 5,
+  "highest_low_speed_with_target_seconds": 2.104,
+  "broad_suites": [
+    {
+      "label": "suite-Core",
+      "passed": 4780,
+      "failed": 2,
+      "skipped": 0,
+      "seconds": 772.635
+    },
+    {
+      "label": "suite-ClientCore",
+      "passed": 1177,
+      "failed": 2,
+      "skipped": 1,
+      "seconds": 1668.265
+    },
+    {
+      "label": "suite-ClientCore.MonoGame",
+      "passed": 2344,
+      "failed": 0,
+      "skipped": 3,
+      "seconds": 953.817
+    },
+    {
+      "label": "suite-Core-final",
+      "passed": 4781,
+      "failed": 1,
+      "skipped": 0,
+      "seconds": 742.317
+    }
+  ],
+  "failure_qualifications": {
+    "corrected_stale_assertions": 1,
+    "load_flake_cases": 5
+  },
+  "excluded_git_invoking_guards": [
+    "Allegiance.Core.Tests.MeshyGuardTests",
+    "Allegiance.Core.Tests.PrivatePathGuardTests"
+  ],
+  "build": "Release whole solution: 0 warnings / 0 errors before and after fixture correction"
+}

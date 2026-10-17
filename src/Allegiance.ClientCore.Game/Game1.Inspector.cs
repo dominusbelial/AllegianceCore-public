@@ -1147,7 +1147,9 @@ public sealed partial class Game1
         // so the inspector's meshy slots fall back to native (logged once).
         if (!_meshyPackAvailable)
         {
-            if (meshy) LogMeshyUnavailableOnce();
+            // The default inspector offers both sources. Only an explicit
+            // Meshy-only selection or --ships meshy needs the developer notice.
+            if (meshy && (!native || !_shipsNative)) LogMeshyUnavailableOnce();
             meshy = false;
             native = true;
         }

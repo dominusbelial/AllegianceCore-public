@@ -1321,3 +1321,63 @@ and are not classified as flakes. Overlapping diagnostic runs caused by survivin
 verification children were excluded from isolated counts and rerun serially.
 See [P693 report](reports/P693_TEAM_LIMITS.md) and [results](reports/P693_RESULTS.json)
 for native evidence, raw counts, timestamps, binary hashes and invocation details.
+
+## 2026-10-17 — P726 player-bundle verification
+
+Exactly two unfiltered sequential sweeps produced 16,274 passes / 2 failures /
+8 skips (six optional private Meshy-pack cases and two P660 opt-in guards; the
+P660 proof passed 3/3 separately with its opt-in enabled). Both full ClientCore
+never-parks cases and all ten fresh standalone never-parks runs passed.
+
+After all sweeps and standalone showcase runs finished, each failed method passed
+**3/3 fresh exact-method isolated invocations**, satisfying the brief's load-flake
+rule:
+
+| Method | Full-sweep symptom | Isolation |
+| --- | --- | --- |
+| `Allegiance.ClientCore.MonoGame.Tests.RadarTargetHighlightLiveTests.LiveOffScreenEnemy_IsTheFlaggedRadarTargetHighlight` | First MonoGame sweep: null position update at line 138 after waiting for identity. Second sweep passed. | 3/3 pass |
+| `Allegiance.Core.Tests.AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide` | Second Core sweep: `SeatThree` found no same-side observer at line 369; failure occurred in setup. First sweep passed. | 3/3 pass |
+
+Raw failures, exact commands, isolated outcomes and source fingerprints are in the
+[P726 report](reports/P726_PLAYER_BUNDLES_2.md) and
+[validation ledger](reports/P726_assets/validation.json). Assertions, deadlines,
+quarantine traits and transport/gameplay code were not changed for these observations.
+
+## P738 / P726 merge observation (2026-10-17)
+
+The merge gate retained these raw broad-suite results: initial Core **4780 pass /
+2 fail / 0 skip**, ClientCore **1177 pass / 2 fail / 1 existing P660 opt-in skip**,
+MonoGame **2344 pass / 0 fail / 3 optional private-pack skips**, and post-fix Core
+**4781 pass / 1 fail / 0 skip**. The standalone never-parks gate passed **5/5**.
+Core excluded two guard tests that invoke git, as this lane explicitly forbids
+git commands. LiveTiming and real loopback cases were included.
+
+Every remaining failing case passed three fresh isolated processes with its
+assertions and deadlines unchanged:
+
+| Case | Symptom | Isolation |
+| --- | --- | --- |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | Initial Core: no `OnPeerJoined` for raw peer. | 3/3 exact-method passes |
+| `P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP` (authenticated) | ClientCore: bot never confirmed launch after two buy/launch attempts. | 3/3 exact-method passes, both parameter cases in each process |
+| `P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches` (4/35, 3v3) | ClientCore: first-match research/upgrade condition expired at sim 28230. | 3/3 case passes across isolated method processes |
+| Same P705 method (25/3, 10v10) | First isolated invocation: side 1's Teleport constructor remained travelling/building while side 0 had upgraded. | Next two isolated method invocations plus one standalone exact-case invocation: 3/3 after failure |
+| `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | Post-fix Core: empty notification collection. | 3/3 exact-method passes |
+
+These meet the brief's load-flake rule; they do not establish fixes for the
+underlying receipt, launch or navigation causes. The P705 method's raw isolated
+case totals were **3 pass / 1 fail**, **4 pass / 0 fail**, **4 pass / 0 fail**,
+followed by **1 pass / 0 fail** for the standalone 25/3 case. Its existing optional
+diagnostic snapshots were enabled; no pacing, map, deadline or assertion changed.
+
+The P652 miner-lockout test's old `SendChat`/1342 contract was obsolete after
+P725. It failed **3/3 before correction** and passed **3/3 after updating its
+assertion** to `DroneChatEvent`/341, preserving backoff, cooldown and zero-ore
+checks. It also passed the post-fix Core sweep. This was a corrected deterministic
+test defect, not a flake. Native evidence:
+`~/Development/Allegiance/src/Igc/shipIGC.cpp:2199` and
+`~/Development/Allegiance/src/Igc/sounds.h:395`.
+
+See the [P738 appendix](reports/P726_PLAYER_BUNDLES_2.md#p738-merge-onto-master),
+[invocation ledger](reports/P738_P726_assets/verification.json),
+[case qualification](reports/P738_P726_assets/case-results.json), and
+[raw TRX/logs and snapshots](reports/P738_P726_assets/validation-logs.tar.gz).

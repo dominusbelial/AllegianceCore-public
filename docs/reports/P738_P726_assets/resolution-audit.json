@@ -1,0 +1,54 @@
+{
+  "master_report_preserved_byte_for_byte": true,
+  "mgcb_build_entries": 510,
+  "fixed_soundmanager_assets": 70,
+  "event_kinds_and_dispatch_cases": 36,
+  "duplicate_builds": [],
+  "parity_endings": "LF",
+  "resolution_sha256": {
+    "docs/TEST_FLAKES.md": "85e5fb2bdce9e7952345c678ecdb6a86df713219a7642a7fc7caebc7aa79b215",
+    "docs/reports/P717_PARITY_WAVE17.md": "748427f82e9002be16048f49c68b6713c1e4c122a7366bfa3517d11b060fada1",
+    "src/Allegiance.ClientCore.Game/Game1.Audio.cs": "5af99a9cf7b7849c88c67016ab49d53ea941c8f984f0b3f1806823295000b45d",
+    "src/Allegiance.ClientCore.MonoGame/Content/Content.mgcb": "0f857d2d8278650f5b3f58d9f7d758be9debcdceed6b8671c192e16621e23b9c",
+    "src/Allegiance.ClientCore/State/ClientSoundEvent.cs": "84c7f17ac0756a53153fbe676cfa8fa44a95d57327ce49e168bbf4537d54003a",
+    "tests/Allegiance.ClientCore.Tests/ClientWorldSoundEventTests.cs": "844ee8489d2950a73fd6e5f71f4f2ea067bca6dd09f7594ecd73b0a35c52b626"
+  },
+  "parent_union_exact_for_mgcb_events_handlers_tests": true,
+  "compiled_bundle_content_validation": "passed",
+  "required_compiled_assets": 74,
+  "additional_integration_fix": {
+    "tests/Allegiance.Core.Tests/P652EconomyDroneAiTests.cs": "69af606de2cc38dc4a0dfef4dd5a38a1fac94f46283b746bb5a818dd4557a3e6"
+  },
+  "remaining_conflict_markers": [],
+  "initial_index_conflict_paths": {
+    "docs/TEST_FLAKES.md": [
+      1,
+      2,
+      3
+    ],
+    "docs/reports/P717_PARITY_WAVE17.md": [
+      2,
+      3
+    ],
+    "src/Allegiance.ClientCore.Game/Game1.Audio.cs": [
+      1,
+      2,
+      3
+    ],
+    "src/Allegiance.ClientCore.MonoGame/Content/Content.mgcb": [
+      1,
+      2,
+      3
+    ],
+    "src/Allegiance.ClientCore/State/ClientSoundEvent.cs": [
+      1,
+      2,
+      3
+    ],
+    "tests/Allegiance.ClientCore.Tests/ClientWorldSoundEventTests.cs": [
+      1,
+      2,
+      3
+    ]
+  }
+}

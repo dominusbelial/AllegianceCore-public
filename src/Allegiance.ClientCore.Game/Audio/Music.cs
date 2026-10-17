@@ -19,15 +19,11 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// <c>stationmusic</c> loop (<c>artwork.h:284-285</c>) selected by whether the
 /// local ship is docked (<c>ShipEntity.StationId != -1</c>), not a dynamic
 /// adaptive score. Both beds loop (<c>IsLooped = true</c>), one at a time.</para>
-/// <para><b>Track loading is real-asset-first, placeholder-fallback.</b>
-/// <see cref="Load"/> tries <c>Content.Load&lt;SoundEffect&gt;</c> for the two
-/// real asset paths (<see cref="FlightAsset"/> / <see cref="StationAsset"/>);
-/// only if an asset is missing does it fall back to the generated
-/// <see cref="PlaceholderMusicFactory"/> tone. So when the planned ComfyUI
-/// generation pass produces real <c>.ogg</c> tracks, dropping them at those
-/// two paths (and registering them in Content.mgcb) makes them load with
-/// <b>zero code change</b> — the placeholder is swapped by replacing the asset,
-/// not by editing this class.</para>
+/// <para><b>Missing beds stay silent.</b> Native names are defined in
+/// ~/Development/Allegiance/src/WinTrek/artwork.h:284-285. The pinned artwork
+/// has no flightmusic/stationmusic beds; native's optional score entries are
+/// empty (~/Development/Allegiance/src/Igc/sounds.h:117-133). Never synthesize
+/// replacement tones. Content supplied later can still load at these paths.</para>
 /// <para><b>Graceful degradation.</b> Like <see cref="SoundManager"/>, music
 /// is cosmetic: a host with no OpenAL/audio device (or a load failure) leaves
 /// the manager inert and silent rather than throwing into the game's load
@@ -36,14 +32,10 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// </remarks>
 public sealed class Music : IDisposable
 {
-    /// <summary>Real in-flight music asset path — <c>SNDF_FLIGHTMUSIC</c>=
-    /// "flightmusic" (artwork.h:284). Drop the real generated <c>.ogg</c> here
-    /// (register in Content.mgcb) and it replaces the placeholder with no code
-    /// change.</summary>
+    /// <summary>Native flight bed name (WinTrek/artwork.h:284).</summary>
     public const string FlightAsset = "Sounds/flightmusic";
 
-    /// <summary>Real docked/station music asset path — <c>SNDF_STATIONMUSIC</c>=
-    /// "stationmusic" (artwork.h:285). Same drop-in story as <see cref="FlightAsset"/>.</summary>
+    /// <summary>Native station bed name (WinTrek/artwork.h:285).</summary>
     public const string StationAsset = "Sounds/stationmusic";
 
     private readonly MusicPlanner _planner = new();
@@ -81,26 +73,12 @@ public sealed class Music : IDisposable
 
     public Music(ContentManager content) => _content = content;
 
-    /// <summary>
-    /// Load both beds: real assets if present, generated placeholders
-    /// otherwise (see <see cref="PlaceholderMusicFactory"/>). Does not start
-    /// anything — the toggle defaults off, so playback begins only once the
-    /// player enables music and the planner selects a bed.
-    /// </summary>
+    /// <summary>Load real beds when supplied. Missing beds remain silent.
+    /// Playback begins only after the player enables music.</summary>
     public void Load()
     {
-        try
-        {
-            _flight = Loop(Track(FlightAsset, PlaceholderMusicFactory.Flight));
-            _station = Loop(Track(StationAsset, PlaceholderMusicFactory.Station));
-            Console.WriteLine("[monogame] music: loaded flight + station beds " +
-                "(placeholder-generated tones — drop real .ogg at " +
-                $"'{FlightAsset}'/'{StationAsset}' to replace)");
-        }
-        catch (Exception ex)
-        {
-            WarnOnce($"music failed to load, disabling: {ex.Message}");
-        }
+        _flight = Track(FlightAsset);
+        _station = Track(StationAsset);
     }
 
     /// <summary>Drive the music mix for the current frame from the live dock
@@ -111,7 +89,6 @@ public sealed class Music : IDisposable
     /// (<c>ShipEntity.StationId != -1</c>).</param>
     public void Update(bool isDocked)
     {
-        if (_flight is null || _station is null) return;
         foreach (var cmd in _planner.Plan(isDocked))
             Apply(cmd);
     }
@@ -167,15 +144,14 @@ public sealed class Music : IDisposable
         }
     }
 
-    /// <summary>Resolve one bed's <see cref="SoundEffect"/>: the real content
-    /// asset if it exists, otherwise the generated placeholder PCM. The
-    /// catch-and-fallback is what makes real track drop-ins code-free.</summary>
-    private SoundEffect Track(string asset, Func<byte[]> placeholder)
+    private SoundEffectInstance? Track(string asset)
     {
-        try { return _content.Load<SoundEffect>(asset); }
-        catch (Exception)
+        try { return Loop(_content.Load<SoundEffect>(asset)); }
+        catch (ContentLoadException) { return null; }
+        catch (Exception ex)
         {
-            return new SoundEffect(placeholder(), PlaceholderMusicFactory.SampleRate, AudioChannels.Mono);
+            WarnOnce($"music failed to load, disabling: {ex.Message}");
+            return null;
         }
     }
 

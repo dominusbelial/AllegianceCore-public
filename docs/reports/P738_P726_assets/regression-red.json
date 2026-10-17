@@ -1,0 +1,47 @@
+[
+  {
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/bin/Release/net10.0/Allegiance.Core.Tests.dll",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+      "--logger",
+      "trx;LogFileName=regression-red-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P726_assets"
+    ],
+    "exit_code": 1
+  },
+  {
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/bin/Release/net10.0/Allegiance.Core.Tests.dll",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+      "--logger",
+      "trx;LogFileName=regression-red-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P726_assets"
+    ],
+    "exit_code": 1
+  },
+  {
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/bin/Release/net10.0/Allegiance.Core.Tests.dll",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+      "--logger",
+      "trx;LogFileName=regression-red-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P726_assets"
+    ],
+    "exit_code": 1
+  }
+]

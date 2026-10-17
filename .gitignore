@@ -27,3 +27,6 @@ src/Allegiance.ClientCore.Android/Assets/Content/
 # Python bytecode caches (tools/space-objects, etc.)
 __pycache__/
 *.pyc
+
+# P644 generated player archives and source cache
+dist/

@@ -29,7 +29,7 @@ public enum ExternalResourceKind
 ///     (<c>ALLEGIANCE_ARTWORK_PATH</c> / <c>ALLEGIANCE_NATIVE_SRC_PATH</c>),</item>
 ///   <item>the gitignored <c>local.env</c> at the repo root (keys use the same
 ///     env-var names),</item>
-///   <item>otherwise <em>not found</em> — no guessing of user home paths.
+///   <item>executable-relative <c>artwork/</c> or <c>sky/</c> when present; otherwise not found.
 ///     Callers use <see cref="Require"/> to fail with a clear, actionable
 ///     message, or <see cref="IsAvailable"/> to skip gracefully.</item>
 /// </list>
@@ -60,13 +60,27 @@ public static class ExternalPaths
     /// string when it is neither configured nor present on disk.</summary>
     public static string Resolve(ExternalResourceKind kind)
     {
-        var ev = Environment.GetEnvironmentVariable(EnvVar(kind));
+        return Resolve(kind, AppContext.BaseDirectory, Environment.CurrentDirectory,
+            Environment.GetEnvironmentVariable);
+    }
+
+    /// <summary>Explicit context for tools/tests; defaults never depend on the working directory.</summary>
+    public static string Resolve(ExternalResourceKind kind, string baseDirectory,
+        string currentDirectory, Func<string, string?> environment)
+    {
+        var ev = environment(EnvVar(kind));
         if (!string.IsNullOrWhiteSpace(ev)) return ev.Trim();
-
-        var local = ReadLocalConfig(EnvVar(kind));
+        var local = ReadLocalConfig(EnvVar(kind), baseDirectory, currentDirectory);
         if (local is not null) return local;
-
-        return "";
+        string? folder = kind switch
+        {
+            ExternalResourceKind.Artwork => "artwork",
+            ExternalResourceKind.SkyPack => "sky",
+            _ => null,
+        };
+        if (folder is null) return "";
+        string bundled = Path.GetFullPath(Path.Combine(baseDirectory, folder));
+        return Directory.Exists(bundled) ? bundled : "";
     }
 
     /// <summary>True when <paramref name="kind"/> resolves to a directory that
@@ -107,7 +121,12 @@ public static class ExternalPaths
     /// <see cref="MeshyPack"/>) share the same per-machine config file.</summary>
     public static string? ReadLocalConfig(string key)
     {
-        var root = FindRepoRoot();
+        return ReadLocalConfig(key, AppContext.BaseDirectory, Environment.CurrentDirectory);
+    }
+
+    private static string? ReadLocalConfig(string key, string baseDirectory, string currentDirectory)
+    {
+        var root = FindRepoRoot(baseDirectory, currentDirectory);
         if (root is null) return null;
         var cfg = Path.Combine(root, LocalConfigFile);
         if (!File.Exists(cfg)) return null;
@@ -126,9 +145,9 @@ public static class ExternalPaths
         return null;
     }
 
-    private static string? FindRepoRoot()
+    private static string? FindRepoRoot(string baseDirectory, string currentDirectory)
     {
-        foreach (var start in new[] { AppContext.BaseDirectory, Environment.CurrentDirectory })
+        foreach (var start in new[] { baseDirectory, currentDirectory })
         {
             var dir = new DirectoryInfo(start);
             while (dir is not null)

@@ -1,0 +1,180 @@
+[
+  {
+    "case": "Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts",
+    "classification": "load flake under the brief rule",
+    "results": [
+      {
+        "label": "suite-Core",
+        "outcome": "Passed"
+      },
+      {
+        "label": "suite-Core-final",
+        "outcome": "Failed"
+      },
+      {
+        "label": "final-core-isolation-0-1",
+        "outcome": "Passed"
+      },
+      {
+        "label": "final-core-isolation-0-2",
+        "outcome": "Passed"
+      },
+      {
+        "label": "final-core-isolation-0-3",
+        "outcome": "Passed"
+      }
+    ],
+    "three_isolated_passes_after_last_failure": [
+      "final-core-isolation-0-1",
+      "final-core-isolation-0-2",
+      "final-core-isolation-0-3"
+    ]
+  },
+  {
+    "case": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "classification": "load flake under the brief rule",
+    "results": [
+      {
+        "label": "suite-Core",
+        "outcome": "Failed"
+      },
+      {
+        "label": "isolation-0-1",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-0-2",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-0-3",
+        "outcome": "Passed"
+      },
+      {
+        "label": "suite-Core-final",
+        "outcome": "Passed"
+      }
+    ],
+    "three_isolated_passes_after_last_failure": [
+      "isolation-0-1",
+      "isolation-0-2",
+      "isolation-0-3"
+    ]
+  },
+  {
+    "case": "Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+    "classification": "corrected stale assertion",
+    "results": [
+      {
+        "label": "suite-Core",
+        "outcome": "Failed"
+      },
+      {
+        "label": "isolation-1-1",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-1-2",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-1-3",
+        "outcome": "Passed"
+      },
+      {
+        "label": "suite-Core-final",
+        "outcome": "Passed"
+      }
+    ],
+    "three_isolated_passes_after_last_failure": [
+      "isolation-1-1",
+      "isolation-1-2",
+      "isolation-1-3"
+    ]
+  },
+  {
+    "case": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)",
+    "classification": "load flake under the brief rule",
+    "results": [
+      {
+        "label": "suite-ClientCore",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-2-1",
+        "outcome": "Failed"
+      },
+      {
+        "label": "isolation-2-2",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-2-3",
+        "outcome": "Passed"
+      },
+      {
+        "label": "P705-25-3-followup",
+        "outcome": "Passed"
+      }
+    ],
+    "three_isolated_passes_after_last_failure": [
+      "isolation-2-2",
+      "isolation-2-3",
+      "P705-25-3-followup"
+    ]
+  },
+  {
+    "case": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 4, civB: 35, size: 3)",
+    "classification": "load flake under the brief rule",
+    "results": [
+      {
+        "label": "suite-ClientCore",
+        "outcome": "Failed"
+      },
+      {
+        "label": "isolation-2-1",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-2-2",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-2-3",
+        "outcome": "Passed"
+      }
+    ],
+    "three_isolated_passes_after_last_failure": [
+      "isolation-2-1",
+      "isolation-2-2",
+      "isolation-2-3"
+    ]
+  },
+  {
+    "case": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: True)",
+    "classification": "load flake under the brief rule",
+    "results": [
+      {
+        "label": "suite-ClientCore",
+        "outcome": "Failed"
+      },
+      {
+        "label": "isolation-3-1",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-3-2",
+        "outcome": "Passed"
+      },
+      {
+        "label": "isolation-3-3",
+        "outcome": "Passed"
+      }
+    ],
+    "three_isolated_passes_after_last_failure": [
+      "isolation-3-1",
+      "isolation-3-2",
+      "isolation-3-3"
+    ]
+  }
+]

@@ -1,0 +1,584 @@
+  Determining projects to restore...
+  Restored /home/domingo/allegiance-integ-b2/tools/collision-perf-proof/collision-perf-proof.csproj (in 63 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/fedmsgdump/fedmsgdump.csproj (in 64 ms).
+  Restored /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Allegiance.ClientCore.csproj (in 64 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/tech-tree/tech-tree.csproj (in 63 ms).
+  Restored /home/domingo/allegiance-integ-b2/src/Allegiance.Core/Allegiance.Core.csproj (in 60 ms).
+  Restored /home/domingo/allegiance-integ-b2/src/Allegiance.Lobby/Allegiance.Lobby.csproj (in 59 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/chatdemo/chatdemo.csproj (in 63 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/livecombat/livecombat.csproj (in 63 ms).
+  Restored /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.Explorer/Allegiance.ClientCore.Explorer.csproj (in 64 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/igcdump/igcdump.csproj (in 63 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/missiondump/missiondump.csproj (in 64 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/p605synth/p605synth.csproj (in 63 ms).
+  Restored /home/domingo/allegiance-integ-b2/src/Allegiance.Bot/Allegiance.Bot.csproj (in 63 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/corpusvalidate/corpusvalidate.csproj (in 63 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/receive-proof/receive-proof.csproj (in 23 ms).
+  Restored /home/domingo/allegiance-integ-b2/src/Allegiance.Server/Allegiance.Server.csproj (in 102 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/fsr-proof/fsr-proof.csproj (in 31 ms).
+  Restored /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj (in 101 ms).
+  Restored /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj (in 101 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/roster-capture/roster-capture.csproj (in 31 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/p629-proof/p629-proof.csproj (in 31 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/hullswap-proof/hullswap-proof.csproj (in 102 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/soft-frame-proof/soft-frame-proof.csproj (in 101 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/shieldflare-proof/shieldflare-proof.csproj (in 102 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/warp-visual-proof/warp-visual-proof.csproj (in 31 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/allegiance-mcp/allegiance-mcp.csproj (in 103 ms).
+  Restored /home/domingo/allegiance-integ-b2/tools/hullhit-proof/hullhit-proof.csproj (in 101 ms).
+  Restored /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj (in 35 ms).
+  Restored /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj (in 35 ms).
+  Restored /home/domingo/allegiance-integ-b2/tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj (in 132 ms).
+  Restored /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj (in 133 ms).
+  Tool 'dotnet-mgcb' (version '3.8.5.1') was restored. Available commands: mgcb
+  
+  Restore was successful.
+  Allegiance.Lobby -> /home/domingo/allegiance-integ-b2/src/Allegiance.Lobby/bin/Release/net10.0/Allegiance.Lobby.dll
+  Allegiance.Core -> /home/domingo/allegiance-integ-b2/src/Allegiance.Core/bin/Release/net10.0/Allegiance.Core.dll
+  Allegiance.Lobby.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.Lobby.Tests/bin/Release/net10.0/Allegiance.Lobby.Tests.dll
+  collision-perf-proof -> /home/domingo/allegiance-integ-b2/tools/collision-perf-proof/bin/Release/net10.0/collision-perf-proof.dll
+  p605synth -> /home/domingo/allegiance-integ-b2/tools/p605synth/bin/Release/net10.0/p605synth.dll
+  igcdump -> /home/domingo/allegiance-integ-b2/tools/igcdump/bin/Release/net10.0/igcdump.dll
+  tech-tree -> /home/domingo/allegiance-integ-b2/tools/tech-tree/bin/Release/net10.0/tech-tree.dll
+  missiondump -> /home/domingo/allegiance-integ-b2/tools/missiondump/bin/Release/net10.0/missiondump.dll
+  fedmsgdump -> /home/domingo/allegiance-integ-b2/tools/fedmsgdump/bin/Release/net10.0/fedmsgdump.dll
+  corpusvalidate -> /home/domingo/allegiance-integ-b2/tools/corpusvalidate/bin/Release/net10.0/corpusvalidate.dll
+  Allegiance.Bot -> /home/domingo/allegiance-integ-b2/src/Allegiance.Bot/bin/Release/net10.0/Allegiance.Bot.dll
+  Allegiance.ClientCore -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/bin/Release/net10.0/Allegiance.ClientCore.dll
+  Allegiance.ClientCore.Game -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.Game/bin/Release/net10.0/Allegiance.ClientCore.Game.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/HUD.spritefont
+  	Building Font /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/HUDLarge.spritefont
+  	Building Font /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/accelsmall.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/accelcapital.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/lshipint.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/missilelock.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/missilelockonme.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dropmine.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_shieldsoffline.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/sshipint.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/pulselaser.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/basecannon.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/cannon1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/cannon2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_ptlascan1shoot.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_ptlascan2shoot.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_ptvulcan1shoot.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_ptvulcan2shoot.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/ef42.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/faohhammer1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/faohhammer2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/faohhammer3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/faohomega1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/faohomega2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/gauss.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hvycannon.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/machinegun1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/machinegun2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/machinegun3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/minigun1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/minigun2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/minigun3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmaac1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmaac2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmaac3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmagat1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmagat2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmagat3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmamini1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmamini2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmamini3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmarifle1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmarifle2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/plasmarifle3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/repairweapon.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/sbcannon.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/sniperlaser1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/sniperlaser2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/striker.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/turretcannon1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/turretcannon2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/turretcannon3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/turretgun1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/turretgun2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/turretgun3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/erbeam.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/adjust.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/shipout.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_garrison.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_garrison.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemygarrison.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemygarrison.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_researchcomplete.ogg
+  Allegiance.Server -> /home/domingo/allegiance-integ-b2/src/Allegiance.Server/bin/Release/net10.0/Allegiance.Server.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_ripcordaborted.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_garrison.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_outpost.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_shipyard.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_teleport.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_refinery.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_expansion.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_supremecy.ogg
+  livecombat -> /home/domingo/allegiance-integ-b2/tools/livecombat/bin/Release/net10.0/livecombat.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_tactical.ogg
+  receive-proof -> /home/domingo/allegiance-integ-b2/tools/receive-proof/bin/Release/net10.0/receive-proof.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_palisade.ogg
+  chatdemo -> /home/domingo/allegiance-integ-b2/tools/chatdemo/bin/Release/net10.0/chatdemo.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_research.ogg
+  Allegiance.ClientCore.Explorer -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.Explorer/bin/Release/net10.0/Allegiance.ClientCore.Explorer.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_mine.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_vo_attack_transeiver.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_critical_station.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_detect_miner.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_detect_builder.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_carrieratrisk.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_bombersighted.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_carrierdetected.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_capitalsighted.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_teleportsighted.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_transportsighted.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_stationrisk.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_sectorsecured.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_sectorlost.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/lrgslideout.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/mmissile.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/explosionshockwave.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/ef24.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/ef120.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hitmearmor1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hitmearmor2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hitmearmor3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hitmeshield1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hitmeshield2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hitmeshield3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/alephloop.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_4.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_5.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_6.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_7.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_21.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_22.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_23.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_24.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_25.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_26.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/bioambient_27.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/iafter.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_autopilotengage.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/criticalmessage.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/noncriticalmessage.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hoover.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/jumpin.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_autopilotdisengage.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_artifact.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_madecommander.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_madeinvestor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_stolen_enemyflag.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_stolen_flag.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdownstart.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown1.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown4.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown5.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown6.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown7.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown8.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown9.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/countdown10.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_gameover.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_alephmineddroned.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_asseskicked.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_attackminefield.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_attacknanite.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_attackprobe.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_attackrescue.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_attackspecial.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_bugout.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_campaleph.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_campbase.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_campteleport.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_cantpodded.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_capturingbase.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_cloaked.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_defendersclose.ogg
+  allegiance-mcp -> /home/domingo/allegiance-integ-b2/tools/allegiance-mcp/bin/Release/net10.0/allegiance-mcp.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_defendspecial.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_deployrescue.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_dogmeat.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_dontdefend.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_dontkillpods.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_dontthinkso.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_evenup.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_findass.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_findcash.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_findconst.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_findscout.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_gametime.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_harshlanguage.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_hello.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_howfar.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_iqs.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_isalephmined.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_leavemark.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_letsgo.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_mutiny.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_naniteslaunch.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_nanitesrip.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_needdefense.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_needmines.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_neednanonconst.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_needoffense.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_needrescue.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_needtpscout.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_noImeanit.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_notenough.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_notime.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_notseen.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_nowyouseeme.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_offturret.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_pickteams.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_pickuppods.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_pickuptech.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_podded.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_pushop.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_ready.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_ripped.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_rush.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_scoutahead.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_settingssuck.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_spotted.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_stayoutofmiddle.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_stopgrin.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_stopspam.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_theyexp.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_theysup.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_theytac.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_wakeup.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_ma_wonttolerate.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_aaaaoooo.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_acknowledged.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_affirmative.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_aintnothin.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_alephmined.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_almosthadyou.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_argh.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attack.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackbase.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackbomber.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackcapital.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackconstuctor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackdefender.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackfighter.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackinterceptor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackminer.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackripcord.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackscout.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attackstealth.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attacktarget.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attacktower.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_attacktransport.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_awesome.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_basecaptured.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_baseunderattack.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_bomberwaiting.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_bye.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_cantholdem.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_capshipwaiting.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_changedsettings.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_changethemap.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_checkwing.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_comebackandfight.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_comeondown.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_complete.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_constructorlaunching.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_cool.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_coupleminutes.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_coverme.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_dang.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_deathbecomesyou.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defend.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendbase.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendbomber.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendcapital.ogg
+  Allegiance.ClientCore.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendconstuctor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defenddefender.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendfighter.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendinterceptor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendminer.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendripcord.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendscout.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendstealth.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendtower.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_defendtransport.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_deploymines.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_deployprobes.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_didyoucopy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_doah.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_donatecredits.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_donateinvestor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_enemyhasflag.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_escortbuilder.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_escortminer.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_everyoneready.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_fiesty.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findalephs.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findcarbonacous.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findenemy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findfreakinbase.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findhelium.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findminer.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findprobes.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findsilicon.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_finduranium.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_follow.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_formate.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_formonmywing.ogg
+  Allegiance.Core.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/bin/Release/net10.0/Allegiance.Core.Tests.dll
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundaleph.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundenemybase.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundenemyconstruct.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundenemyminer.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundenemyships.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundhelium.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_getoffme.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_gimmesomething.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_gogogo.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_gotcha.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_gototeamonly.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_gunnerready.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_havecapitols.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_haveshipyard.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_headback.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_heeheehee.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_hellyeah.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_hi.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_holdup.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_holdurehorses.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_howdthatfeel.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_howwasthat.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_imbusy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_imclueless.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_imissed.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_imonit.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_inbound.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_inboundenemybomb.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_inboundenemycap.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_inboundenemyfight.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_inboundenemytrans.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_iquit.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_isourbaseclear.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_itslate.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_joiningturret.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_justasec.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_kinguniverse.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_laylow.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_likelambs.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_makeme.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_meetatjump.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_minerhunt.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_minersaredead.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_minershammered.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_misc17.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_misc2.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_misc20.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_misc21.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_misc25.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_misc27.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_misc3.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_misc9.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needammo.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needbase.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needbetterfighters.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needbetterwep.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needbomber.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needcapital.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needconstructor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needcruiser.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needdefender.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needfighter.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needfightersupport.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needfuel.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needhelp.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needinterceptor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needminer.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needmoney.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needobjective.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needpickup.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needrepairs.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needrescue.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needripcord.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needscout.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needstealth.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needtower.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needtransport.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_needturret.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_negative.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_niceweather.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_nicework.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_nomoney.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_nooo.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_objectivecomplete.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_ohyeah.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_onmyway.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_ooohsorry.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_ooooaaaa.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_oops.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_outofammohmmm.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_payloaddelivered.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_pheww.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_pitstop.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_readchat.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_reallife.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_regroup.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_rematch.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_repairstation.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_retreat.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_ripcordhome.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_ripcording.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_ripcordlastresort.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_roger.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_savingup.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_scoutaleph.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_scuseme.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_shallwebegin.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_shieldsaredown.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_shoot.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_shootcommander.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_shootingfish.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_slapinvestor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_startthegame.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_stayontarget.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_staytogether.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_steadytiger.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_surelyjoking.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_sweet.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_takingittothem.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_targetneeded.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_thanks.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_thankslift.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_thathurt.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_traitor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_transportoutbound.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_turretsattack.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_udiedwithdignity.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_uhavenohonor.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_ullbesorry.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_urgoodbut.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_wait4signal.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_wantapiece.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_watchfire.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_what.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_whatnow.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_whocommander.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_yeeehaa.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_yes.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_yourecrazy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_yourmad.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_yowie.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/newtarget.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/newtargetenemy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/colisionlarge.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/hitrock.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/accept.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/receivedobjective.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/boundsalert.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_boundryexceeded.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_sectorcrowded.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_vo_capture_enemytranseiver.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_vo_capture_transeiver.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_vo_destroy_enemytranseiver.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_vo_destroy_transeiver.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/ef03.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemyexpansion.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemymine.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemyoutpost.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemypalisade.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemyresearch.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemyshipyard.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemysupremecy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_enemytactical.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_expansion.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_mine.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_outpost.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_palisade.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_research.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_shipyard.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_supremecy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_capture_tactical.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemyexpansion.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemymine.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemyoutpost.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemypalisade.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemyrefinery.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemyresearch.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemyshipyard.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemysupremecy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemytactical.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_enemyteleport.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_expansion.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_mine.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_outpost.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_palisade.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_refinery.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_research.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_shipyard.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_supremecy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_tactical.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_teleport.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/unmount.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_playerwaiting.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_hullcritical.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/outofammo.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/fuellow.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_lowenergy.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_noammo.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_nofuel.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_noripcord.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/miningsound.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_time_10min.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_time_5min.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_time_1min.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_time_30sec.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/landed.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_welcomehome.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_playerboarded.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_cargofull.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_reloading.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/mount.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/drop.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/groupweapons.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/ungroupweapons.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_miner.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_minefield.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_tower.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/newtargetneutral.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vector.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_shipcantripcord.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/payday.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/powerupdevelopment.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/powerupshield.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/receivechat.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/receivedcomchat.ogg
+  /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/Content/Sounds/receivepersonalchat.ogg
+  fsr-proof -> /home/domingo/allegiance-integ-b2/tools/fsr-proof/bin/Debug/net10.0/fsr-proof.dll
+  Allegiance.ClientCore.MonoGame -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.dll
+  p629-proof -> /home/domingo/allegiance-integ-b2/tools/p629-proof/bin/Release/net10.0/p629-proof.dll
+  hullhit-proof -> /home/domingo/allegiance-integ-b2/tools/hullhit-proof/bin/Release/net10.0/hullhit-proof.dll
+  hullswap-proof -> /home/domingo/allegiance-integ-b2/tools/hullswap-proof/bin/Release/net10.0/hullswap-proof.dll
+  shieldflare-proof -> /home/domingo/allegiance-integ-b2/tools/shieldflare-proof/bin/Release/net10.0/shieldflare-proof.dll
+  soft-frame-proof -> /home/domingo/allegiance-integ-b2/tools/soft-frame-proof/bin/Release/net10.0/soft-frame-proof.dll
+  warp-visual-proof -> /home/domingo/allegiance-integ-b2/tools/warp-visual-proof/bin/Release/net10.0/warp-visual-proof.dll
+  roster-capture -> /home/domingo/allegiance-integ-b2/tools/roster-capture/bin/Release/net10.0/roster-capture.dll
+  Allegiance.ClientCore.MonoGame.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:17.39

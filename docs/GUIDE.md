@@ -48,7 +48,11 @@ Resolution order (see `docs/P597_PRIVATE_PATHS_AND_CLEAN_CLONE.md`):
    ```
    `local.env` is read by `scripts/run-tests.sh` (the test runner) and by the
    products.
-3. **Not found** — product code fails with a clear, actionable message; the
+3. **Executable-relative defaults** — an installed client uses `artwork/` and
+   `sky/` beside its executable, after environment / `local.env` overrides.
+   These defaults never use the current working directory. Native source has
+   no bundled default.
+4. **Not found** — product code fails with a clear, actionable message; the
    corpus-backed tests **skip** (with a reason) instead of silently falling
    back to an owner's machine path.
 
@@ -470,3 +474,25 @@ per-task reports under `docs/reports/`.
 - `docs/formats.md`, `docs/model.md`, `docs/simulation.md`, `docs/wire.md`,
   `docs/FEDMSG.md`, `docs/BOT.md`, `docs/LIVE_PROOF.md`,
   `docs/TEST_FLAKES.md`, and `docs/reports/` for per-task detail.
+
+
+## Player packaging and releases
+
+Players can use the self-contained Linux x64 / Windows x64 archives from
+[Releases](https://github.com/dominusbelial/AllegianceCore-public/releases).
+Extract the whole archive, run `allegiance.sh` or `play.bat`, and edit
+`player.json` under the per-user `AllegianceCore` configuration directory
+(`$XDG_CONFIG_HOME` or `~/.config` on Linux; `%APPDATA%` on Windows). The same
+directory holds `keymap.json`. An empty Server uses the in-client lobby;
+configure Lobby or Server/Port and Pilot with the address from your operator.
+Explicit client arguments override player.json. Linux still requires a working
+OpenGL desktop and system audio libraries; see `README-PLAYERS.txt`.
+
+Maintainers: `python3 packaging/package.py --rid linux-x64` (or `win-x64`)
+fetches pinned art/sky and publishes the client with its runtime. Local checkout
+and offline NuGet overrides, manifest regeneration, census/self-check commands,
+archive size gates and Claude's tag → CI → verify checklist are documented in
+[`packaging/README.md`](../packaging/README.md). The release workflow builds
+both archives and checks an extracted Linux and Windows bundle before uploading
+a release. Manual `workflow_dispatch` only builds artifacts. Codex leaves the
+working tree for Claude's review and never tags, pushes or publishes.

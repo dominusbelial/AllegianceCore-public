@@ -1,0 +1,15 @@
+{
+  "label": "build-final",
+  "command": [
+    "dotnet",
+    "build",
+    "AllegianceCore.slnx",
+    "-c",
+    "Release",
+    "-m:8",
+    "-v:minimal",
+    "-p:NuGetAudit=false"
+  ],
+  "exit_code": 0,
+  "seconds": 3.832
+}

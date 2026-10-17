@@ -1,0 +1,20 @@
+[
+  {
+    "label": "isolation-2-1",
+    "option": "ALLEGIANCE_P705_PROOF_DIRECTORY",
+    "value": "/home/domingo/allegiance-integ-b2/docs/reports/P738_P726_assets/research-isolation-2-1",
+    "kind": "existing diagnostic file snapshots only"
+  },
+  {
+    "label": "isolation-2-2",
+    "option": "ALLEGIANCE_P705_PROOF_DIRECTORY",
+    "value": "/home/domingo/allegiance-integ-b2/docs/reports/P738_P726_assets/research-isolation-2-2",
+    "kind": "existing diagnostic file snapshots only"
+  },
+  {
+    "label": "isolation-2-3",
+    "option": "ALLEGIANCE_P705_PROOF_DIRECTORY",
+    "value": "/home/domingo/allegiance-integ-b2/docs/reports/P738_P726_assets/research-isolation-2-3",
+    "kind": "existing diagnostic file snapshots only"
+  }
+]

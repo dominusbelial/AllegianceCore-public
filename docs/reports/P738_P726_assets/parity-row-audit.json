@@ -1,0 +1,412 @@
+{
+  "parity-matrix.csv": {
+    "rows": 438,
+    "matches_master_rows": true,
+    "incoming_difference_count": 11,
+    "differing_rows": [
+      {
+        "row_id": "fedmsg:38 MISSIONDEF",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "fedmsg:106 SET_WINGID",
+        "ours": "done",
+        "theirs": "partial",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "screens:Game-starting (countdown) screen",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "screens:Selection pane",
+        "ours": "na",
+        "theirs": "partial",
+        "retained": "na",
+        "source": "ours"
+      },
+      {
+        "row_id": "screens:Team pane / screen",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "screens:Side-select screen",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "screens:Ready-check (pre-flight)",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "lobby:Join game",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "lobby:Side select (choose team)",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "lobby:Ready / force-ready check",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      },
+      {
+        "row_id": "lobby:Team lobby / team pane",
+        "ours": "done",
+        "theirs": "done",
+        "retained": "done",
+        "source": "ours"
+      }
+    ],
+    "LF": true,
+    "sha256": "adf1a7d02ad0f717123c4f406336c977eff91e90dd633432f3d47d1e831fceae",
+    "incoming_only_changed_rows": [],
+    "both_sides_identically_changed_rows": [],
+    "both_sides_differently_changed_rows": []
+  },
+  "sim-rules-matrix.csv": {
+    "rows": 473,
+    "matches_master_rows": true,
+    "incoming_difference_count": 43,
+    "differing_rows": [
+      {
+        "row_id": "SIM-0249",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0250",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0251",
+        "ours": "partial",
+        "theirs": "missing",
+        "retained": "partial",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0252",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0253",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0254",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0256",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0257",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0279",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0280",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0281",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0282",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0283",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0284",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0286",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0287",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0288",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0289",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0290",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0291",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0296",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0349",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0371",
+        "ours": "n/a",
+        "theirs": "missing",
+        "retained": "n/a",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0372",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0373",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0374",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0375",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0376",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0377",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0378",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0379",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0380",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0381",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0382",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0383",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0384",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0385",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0386",
+        "ours": "implemented",
+        "theirs": "partial",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0388",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0389",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0430",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0432",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      },
+      {
+        "row_id": "SIM-0433",
+        "ours": "implemented",
+        "theirs": "missing",
+        "retained": "implemented",
+        "source": "ours"
+      }
+    ],
+    "LF": true,
+    "sha256": "0fe90523f449e332d36fe9bf6fdf3c40ef4862351a39776b4049628ab2fff18a",
+    "incoming_only_changed_rows": [],
+    "both_sides_identically_changed_rows": [
+      "SIM-0448",
+      "SIM-0446",
+      "SIM-0447",
+      "SIM-0442",
+      "SIM-0243",
+      "SIM-0235",
+      "SIM-0439"
+    ],
+    "both_sides_differently_changed_rows": []
+  }
+}

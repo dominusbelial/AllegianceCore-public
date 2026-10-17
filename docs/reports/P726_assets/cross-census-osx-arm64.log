@@ -1,0 +1,4 @@
+macOS assets checked using the Linux entry assembly; no native macOS execution
+Sky pack verified: /tmp/cross-census-2xdfdvqh/Allegiance-osx-arm64/AllegianceCore.app/Contents/Resources/sky
+Asset census OK: 447 hulls, 143 stations, 2773 artwork files; root=/tmp/cross-census-2xdfdvqh/Allegiance-osx-arm64/AllegianceCore.app/Contents/Resources/artwork
+osx-arm64: Linux-host managed census complete; native platform smoke still required
