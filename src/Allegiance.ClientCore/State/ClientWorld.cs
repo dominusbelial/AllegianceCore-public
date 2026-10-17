@@ -3405,7 +3405,16 @@ public sealed partial class ClientWorld
     {
         if (MyShipId is not { } id) return;   // not assigned a ship yet — nothing to dock
         var e = Upsert(id);
+        bool wasDocked = e.StationId >= 0;
         e.StationId = notify.StationId;
+        // P719 — SIM-0388/0389: the LOCAL ship docked (entering the hangar),
+        // native plays dockedSound + salWelcomeHomeSound (trekigc.cpp:2859-2860).
+        // Edge-triggered on StationId going from none to a real station.
+        if (!wasDocked && notify.StationId >= 0)
+        {
+            RecordSoundEvent(ClientSoundEventKind.Docked, id);
+            RecordSoundEvent(ClientSoundEventKind.WelcomeHome, id);
+        }
     }
 
     /// <summary>FM_S_BUY_LOADOUT_ACK(5) — the granted loadout. The message has
@@ -3491,7 +3500,15 @@ public sealed partial class ClientWorld
         foreach (var pd in m.Passengers)
         {
             if (pd.ShipId != id && _ships.TryGetValue(pd.ShipId, out var child))
+            {
+                // P719 — SIM-0432: a player boarded the LOCAL ship (native
+                // boardSound, appmsg.cpp:2071: `pship == m_ship && m_ship->GetCluster()
+                // == NULL`). Edge-triggered when a passenger's parent becomes
+                // the local ship and it wasn't already parented to it.
+                if (id == MyShipId && child.ParentId != id)
+                    RecordSoundEvent(ClientSoundEventKind.Boarded, pd.ShipId);
                 child.ParentId = id;
+            }
         }
 
         // P648 — the relaunch revive, gated on the ship having actually been

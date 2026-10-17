@@ -56,6 +56,10 @@ public sealed partial class Game1
             && ResolveFlightPart(p.PartId)?.EquipmentType == EquipmentType.Weapon);
         (_groupFire, _selectedMount) = FlightInput.ToggleWeapon(
             _groupFire, _selectedMount, mount, FixedMountCount(), occupied);
+        // P719 — SIM-0280/0281: native plays ungroupWeaponsSound when the pilot
+        // switches to single-fire (WinTrek.cpp:9047) and groupWeaponsSound when
+        // it returns to group fire (:9053).
+        _sound?.PlayGroupFire(_groupFire);
         Console.WriteLine($"[p641] weapon {mount + 1}: {(_groupFire ? "GROUP" : "SINGLE")}, selected={_selectedMount + 1}");
     }
 
@@ -71,6 +75,9 @@ public sealed partial class Game1
         if (action == FlightPartAction.Drop)
         {
             if (ResolveFlightPart(selected.PartId) is not { } part) return;
+            // P719 — SIM-0291: native plays dropSound on dropping a part
+            // (WinTrek.cpp:9719).
+            _sound?.PlayDropPart();
             _session.SendDropPart(part.EquipmentType, selected.MountId);
         }
         else
@@ -82,9 +89,18 @@ public sealed partial class Game1
             var swap = InFlightPartRules.Plan(action, selected, inventory, h, ResolveFlightPart, _selectedMount);
             if (swap is null)
             {
+                // P719 — SIM-0284: native plays salCargoFullSound when a mount
+                // is refused because cargo is full (WinTrek.cpp:9114). The
+                // "no compatible slot" refusal maps to the same user-facing
+                // condition (the planned swap had no room).
+                _sound?.PlayCargoFull();
                 lock (_session.Gate) _session.World.PostSystemLine("No compatible slot: mount needs empty equipment, replace needs occupied equipment, unmount needs free cargo.");
                 return;
             }
+            // P719 — SIM-0282/0283: native plays mountSound on a successful
+            // mount and unmountSound on a successful unmount (WinTrek.cpp:9098,
+            // 9102). Played optimistically on the accepted in-flight command.
+            _sound?.PlayWarnPartSound(action);
             _session.SendSwapPart(swap.EtOld, swap.MountOld, swap.MountNew);
         }
         Console.WriteLine($"[p641] {action} requested part={selected.PartId} mount={unchecked((sbyte)selected.MountId)}");

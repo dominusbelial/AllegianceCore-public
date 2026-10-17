@@ -199,6 +199,31 @@ public enum ClientSoundEventKind
     /// <c>vo_sal_shieldsoffline</c>, sounddef.mdl:791). Detected on the local
     /// ship's own streamed <c>ShieldFraction</c> falling from online to ≈0.</summary>
     ShieldsOffline,
+
+    // ── P719 (parity wave 18: station/economy + weapons/ordnance loadout) ──
+    // One-shot announce/feedback cues in the station/economy and loadout areas
+    // (sim-rules-matrix sounds area). Wire/state-driven where the client
+    // observes the trigger; Game1-command-driven for the in-flight loadout /
+    // group-fire actions native plays from WinTrek.cpp. All are one-shots on
+    // the established ClientSoundEvent → Game1.Audio → SoundManager path.
+
+    /// <summary><c>dockedSound</c> — the local ship docked at a station
+    /// (trekigc.cpp:2859, <c>PlaySoundEffect(dockedSound)</c> on entering the
+    /// hangar; wave <c>landed</c>, sounddef.mdl:316). Edge-triggered on the
+    /// local ship's own StationId going from none to a real station.</summary>
+    Docked,
+
+    /// <summary><c>salWelcomeHomeSound</c> — the local ship docked at a
+    /// friendly station (trekigc.cpp:2860, alongside <c>dockedSound</c>; wave
+    /// <c>vo_sal_welcomehome</c>, sounddef.mdl:801). Same dock edge.</summary>
+    WelcomeHome,
+
+    /// <summary><c>boardSound</c> — a player boarded the LOCAL ship as a turret
+    /// or observer (appmsg.cpp:2071, <c>if (pship == m_ship &&
+    /// m_ship->GetCluster() == NULL)</c>; wave <c>vo_sal_playerboarded</c>,
+    /// sounddef.mdl:782). Detected on a ship whose ParentId becomes the local
+    /// ship's id.</summary>
+    Boarded,
 }
 
 /// <summary>A single observed sound event.</summary>

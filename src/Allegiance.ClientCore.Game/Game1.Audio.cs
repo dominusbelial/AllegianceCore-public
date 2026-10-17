@@ -532,6 +532,19 @@ public sealed partial class Game1
                     // salShieldsOfflineSound, shieldIGC.cpp:186; vo_sal_shieldsoffline).
                     snd.PlayShieldsOffline();
                     break;
+                // ── P719 — station/economy + loadout one-shots ─────────────
+                case ClientSoundEventKind.Docked:
+                    snd.PlayDocked();
+                    Console.WriteLine("[monogame] audio: docked");
+                    break;
+                case ClientSoundEventKind.WelcomeHome:
+                    snd.PlayWelcomeHome();
+                    Console.WriteLine("[monogame] audio: welcome home");
+                    break;
+                case ClientSoundEventKind.Boarded:
+                    snd.PlayBoarded();
+                    Console.WriteLine($"[monogame] audio: player boarded your ship (ship {ev.Id})");
+                    break;
             }
         }
     }

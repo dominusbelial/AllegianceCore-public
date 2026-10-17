@@ -234,6 +234,18 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _stolenEnemyFlag = null!; // vo_stolen_enemyflag — enemyFlagLostSound (:773)
     private SoundEffect _artifact = null!;        // vo_sal_artifact — artifactFoundSound (:776)
     private SoundEffect _stolenFlag = null!;      // vo_stolen_flag — flagLostSound (:771)
+    // P719 — station/economy + loadout one-shots (parity wave 18). Waves from
+    // sounddef.mdl:286,288,290,316,801,802,782,810,819 and groupweapons/ungroupweapons.
+    private SoundEffect _docked = null!;          // landed — dockedSound (:316)
+    private SoundEffect _welcomeHome = null!;     // vo_sal_welcomehome — salWelcomeHomeSound (:801)
+    private SoundEffect _boarded = null!;         // vo_sal_playerboarded — boardSound (:782)
+    private SoundEffect _groupWeapons = null!;    // groupweapons — groupWeaponsSound (:376)
+    private SoundEffect _ungroupWeapons = null!;  // ungroupweapons — ungroupWeaponsSound (:377)
+    private SoundEffect _mount = null!;           // mount — mountSound (:286)
+    private SoundEffect _unmount = null!;         // unmount — unmountSound (:288)
+    private SoundEffect _cargoFull = null!;       // vo_sal_cargofull — salCargoFullSound (:810)
+    private SoundEffect _drop = null!;            // drop — dropSound (:290)
+    private SoundEffect _reloading = null!;       // vo_sal_reloading — salReloadingSound (:819)
     // P711 — the ripcord-active loop (SIM-0368) and the mining loop (SIM-0370).
     // ripcordOnLoopSound = ImportWave("countdownStart") (sounddef.mdl:347), the
     // same countdown-tick wave native loops while a ripcord countdown runs;
@@ -670,6 +682,17 @@ public sealed class SoundManager : IDisposable
             _stolenEnemyFlag = _content.Load<SoundEffect>("Sounds/vo_stolen_enemyflag");
             _artifact = _content.Load<SoundEffect>("Sounds/vo_sal_artifact");
             _stolenFlag = _content.Load<SoundEffect>("Sounds/vo_stolen_flag");
+            // P719 — station/economy + loadout one-shots (parity wave 18).
+            _docked = _content.Load<SoundEffect>("Sounds/landed");
+            _welcomeHome = _content.Load<SoundEffect>("Sounds/vo_sal_welcomehome");
+            _boarded = _content.Load<SoundEffect>("Sounds/vo_sal_playerboarded");
+            _groupWeapons = _content.Load<SoundEffect>("Sounds/groupweapons");
+            _ungroupWeapons = _content.Load<SoundEffect>("Sounds/ungroupweapons");
+            _mount = _content.Load<SoundEffect>("Sounds/mount");
+            _unmount = _content.Load<SoundEffect>("Sounds/unmount");
+            _cargoFull = _content.Load<SoundEffect>("Sounds/vo_sal_cargofull");
+            _drop = _content.Load<SoundEffect>("Sounds/drop");
+            _reloading = _content.Load<SoundEffect>("Sounds/vo_sal_reloading");
             // P711 — ripcord-active + mining loops (two looped instances created
             // here, gated on/off by Game1's per-frame drivers; see
             // UpdateRipcordLoop / UpdateMiningLoop).
@@ -989,6 +1012,63 @@ public sealed class SoundManager : IDisposable
     /// <summary>P714 — play the own-flag-stolen cue (<c>vo_stolen_flag</c>, native
     /// <c>flagLostSound</c>, appmsg.cpp:3169). No-op when not loaded.</summary>
     public void PlayStolenFlag() => PlayWarnOneShot(_stolenFlag);
+
+    /// <summary>P719 — play the docked cue (<c>landed</c>, native
+    /// <c>dockedSound</c>, trekigc.cpp:2859). No-op when not loaded.</summary>
+    public void PlayDocked() => PlayWarnOneShot(_docked);
+
+    /// <summary>P719 — play the welcome-home VO (<c>vo_sal_welcomehome</c>,
+    /// native <c>salWelcomeHomeSound</c>, trekigc.cpp:2860). No-op when not
+    /// loaded.</summary>
+    public void PlayWelcomeHome() => PlayWarnOneShot(_welcomeHome);
+
+    /// <summary>P719 — play the boarded cue (<c>vo_sal_playerboarded</c>, native
+    /// <c>boardSound</c>, appmsg.cpp:2071). No-op when not loaded.</summary>
+    public void PlayBoarded() => PlayWarnOneShot(_boarded);
+
+    /// <summary>P719 — play the group-weapons cue (<c>groupweapons</c>, native
+    /// <c>groupWeaponsSound</c>, WinTrek.cpp:9053,9529). No-op when not loaded.</summary>
+    public void PlayGroupWeapons() => PlayWarnOneShot(_groupWeapons);
+
+    /// <summary>P719 — play the ungroup-weapons cue (<c>ungroupweapons</c>, native
+    /// <c>ungroupWeaponsSound</c>, WinTrek.cpp:9047,9531). No-op when not loaded.</summary>
+    public void PlayUngroupWeapons() => PlayWarnOneShot(_ungroupWeapons);
+
+    /// <summary>P719 — play the group/ungroup-weapons cue for the group-fire
+    /// toggle (<c>groupweapons</c> when <paramref name="grouped"/>, else
+    /// <c>ungroupweapons</c>; native <c>groupWeaponsSound</c>/
+    /// <c>ungroupWeaponsSound</c>, WinTrek.cpp:9053,9047,9529,9531). No-op when
+    /// not loaded.</summary>
+    public void PlayGroupFire(bool grouped) =>
+        PlayWarnOneShot(grouped ? _groupWeapons : _ungroupWeapons);
+
+    /// <summary>P719 — play the mount cue (<c>mount</c>, native <c>mountSound</c>,
+    /// WinTrek.cpp:9098). No-op when not loaded.</summary>
+    public void PlayMountPart() => PlayWarnOneShot(_mount);
+
+    /// <summary>P719 — play the unmount cue (<c>unmount</c>, native
+    /// <c>unmountSound</c>, WinTrek.cpp:9102). No-op when not loaded.</summary>
+    public void PlayUnmountPart() => PlayWarnOneShot(_unmount);
+
+    /// <summary>P719 — dispatch a mount/unmount one-shot from an in-flight part
+    /// action (native mountSound / unmountSound, WinTrek.cpp:9098,9102).</summary>
+    public void PlayWarnPartSound(Allegiance.Core.FlightPartAction action)
+    {
+        if (action == Allegiance.Core.FlightPartAction.Unmount) PlayUnmountPart();
+        else PlayMountPart();
+    }
+
+    /// <summary>P719 — play the cargo-full VO (<c>vo_sal_cargofull</c>, native
+    /// <c>salCargoFullSound</c>, WinTrek.cpp:9114). No-op when not loaded.</summary>
+    public void PlayCargoFull() => PlayWarnOneShot(_cargoFull);
+
+    /// <summary>P719 — play the drop cue (<c>drop</c>, native <c>dropSound</c>,
+    /// WinTrek.cpp:9719). No-op when not loaded.</summary>
+    public void PlayDropPart() => PlayWarnOneShot(_drop);
+
+    /// <summary>P719 — play the reload VO (<c>vo_sal_reloading</c>, native
+    /// <c>salReloadingSound</c>, WinTrek.cpp:9693). No-op when not loaded.</summary>
+    public void PlayReloading() => PlayWarnOneShot(_reloading);
 
     /// <summary>P711 — gate the ripcord-active loop (<c>countdownstart</c>,
     /// native <c>ripcordOnLoopSound</c>, trekigc.cpp:1287): a looping one-shot
@@ -1747,6 +1827,16 @@ public sealed class SoundManager : IDisposable
             _miningLoop?.Dispose();       // P711
             _newContactEnemy?.Dispose();       // P373
             _newContactFriendly?.Dispose();    // P373
+            _docked?.Dispose();                // P719
+            _welcomeHome?.Dispose();           // P719
+            _boarded?.Dispose();               // P719
+            _groupWeapons?.Dispose();          // P719
+            _ungroupWeapons?.Dispose();        // P719
+            _mount?.Dispose();                 // P719
+            _unmount?.Dispose();               // P719
+            _cargoFull?.Dispose();             // P719
+            _drop?.Dispose();                  // P719
+            _reloading?.Dispose();             // P719
             foreach (var sfx in _voices.Values) sfx.Dispose();
             // P614 — dispose any still-tracked one-shot instances not owned by
             // a dictionary above (loops are all covered by their dicts).

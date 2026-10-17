@@ -1201,6 +1201,9 @@ public sealed partial class Game1
         if (!composing && gFire && !_gfireKeyWasDown)
         {
             _groupFire = !_groupFire;
+            // P719 — SIM-0288/0289: native plays groupWeaponsSound /
+            // ungroupWeaponsSound on TK_ToggleGroupFire (WinTrek.cpp:9529,9531).
+            _sound?.PlayGroupFire(_groupFire);
             Console.WriteLine(_groupFire
                 ? "[monogame] weapons: GROUP FIRE (all)"
                 : $"[monogame] weapons: SINGLE (mount {_selectedMount})");

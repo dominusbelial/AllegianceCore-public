@@ -561,4 +561,88 @@ public class ClientWorldSoundEventTests
 
         Assert.Empty(w.TakeSoundEvents());
     }
+
+    // ── P719 (parity wave 18): station/economy + loadout command one-shots ──
+
+    [Fact]
+    public void DockingOwnShip_RecordsDockedAndWelcomeHome()
+    {
+        var world = WorldWithMeSeated(me: 881);
+        world.Apply(new DockedNotify { StationId = 900 });
+
+        var evs = world.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.Docked);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.WelcomeHome);
+    }
+
+    [Fact]
+    public void RepeatingDockNotice_DoesNotRefireDockedCue()
+    {
+        var world = WorldWithMeSeated(me: 881);
+        world.Apply(new DockedNotify { StationId = 901 });
+        Assert.NotEmpty(world.TakeSoundEvents());
+
+        // A second docked-notify for the same station must not re-fire.
+        world.Apply(new DockedNotify { StationId = 903 });
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void PassengerBoardsLocalShip_RecordsBoarded()
+    {
+        var world = WorldWithMeSeated(me: 884);
+        // A teammate ship already in the entity table.
+        world.Apply(new ExportShip { ShipId = 950, SideId = 2 });
+        // The local ship's LOADOUT_CHANGE re-seats the passenger onto it.
+        world.Apply(new Allegiance.Core.Wire.LoadoutChange
+        {
+            SidShip = 884,
+            HullId = 888,
+            Parts = [],
+            Passengers = [new PassengerData(950, 0)],
+        });
+
+        Assert.Equal(ClientSoundEventKind.Boarded, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void PassengerAlreadyBoarded_DoesNotRefireBoarded()
+    {
+        var world = WorldWithMeSeated(me: 886);
+        world.Apply(new ExportShip { ShipId = 962, SideId = 2 });
+        world.Apply(new Allegiance.Core.Wire.LoadoutChange
+        {
+            SidShip = 887,   // a DIFFERENT ship's loadout change, not ours
+            HullId = 899,
+            Parts = [],
+            Passengers = [new PassengerData(962, 0)],
+        });
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    // SIM-0430 / SIM-0433 reconciliation: the newCommand / player-waiting
+    // producers already exist on HIGHLIGHT_CLUSTER / POSITIONREQ — asserted here
+    // so the matrix's stale `missing` rows are covered by trigger-level tests.
+
+    [Fact]
+    public void HighlightCluster_RecordsSectorHighlighted()
+    {
+        var world = new ClientWorld();
+        world.Apply(new ExportCluster { Cluster = new(1, [0, 0, 1], 0xffffffff, 0, 0, 7, 0, 0, "Sol", "", "", 0, 0, 0, true, false) });
+        world.Apply(new HighlightCluster { ClusterId = 7, Highlight = true });
+
+        Assert.Equal(ClientSoundEventKind.SectorHighlighted, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void PositionRequestToOurSide_RecordsPlayerWaiting()
+    {
+        var world = new ClientWorld();
+        SetMySide(world, 2);
+        world.Apply(new ExportShip { ShipId = 930, SideId = 2 });
+        world.Apply(new PositionReqBroadcast { ShipId = 937, SideId = 2 });
+
+        Assert.Equal(ClientSoundEventKind.PlayerWaiting, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
 }

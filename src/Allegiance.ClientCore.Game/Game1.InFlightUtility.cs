@@ -108,6 +108,9 @@ public sealed partial class Game1
             return;
         }
         _session.SendReload(entries);
+        // P719 — SIM-0290: native plays salReloadingSound when a reload begins
+        // (WinTrek.cpp:9693; vo_sal_reloading).
+        _sound?.PlayReloading();
         Console.WriteLine($"[monogame] reload: {entries.Count} cargo entry/entries -> RELOAD(129)");
     }
 

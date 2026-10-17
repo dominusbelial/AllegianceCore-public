@@ -2935,3 +2935,57 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_time_30sec.ogg
+
+#begin Sounds/landed.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/landed.ogg
+
+#begin Sounds/vo_sal_welcomehome.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_welcomehome.ogg
+
+#begin Sounds/vo_sal_playerboarded.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_playerboarded.ogg
+
+#begin Sounds/vo_sal_cargofull.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_cargofull.ogg
+
+#begin Sounds/vo_sal_reloading.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloading.ogg
+
+#begin Sounds/mount.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/mount.ogg
+
+#begin Sounds/drop.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/drop.ogg
+
+#begin Sounds/groupweapons.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/groupweapons.ogg
+
+#begin Sounds/ungroupweapons.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ungroupweapons.ogg
