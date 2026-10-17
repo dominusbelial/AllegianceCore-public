@@ -1150,7 +1150,7 @@ public sealed partial class Game1 : Game
     private string? _connectHost;
     private ushort _connectPort;
     private bool _returnToLobbyOnFailure;   // join-from-lobby failed → revert, don't exit
-
+    private bool _returnToIntroOnFailure;   // P731 — join-from-intro failed → return to the intro, don't exit
     // Server-browser (lobby) state.
     private readonly HttpClient _http;
     private readonly List<ServerListing> _servers = new();
@@ -1524,6 +1524,14 @@ public sealed partial class Game1 : Game
             _connectHost = opts.DirectHost;
             _connectPort = opts.DirectPort;
             _state = ClientState.Connecting;   // kicked off in Initialize
+        }
+        else if (opts.Intro)
+        {
+            // P731 — no command-line game-start arguments: open the intro
+            // screen (native's introscreen.cpp) where the player chooses
+            // single player or multiplayer.
+            _state = ClientState.Intro;
+            InitIntro();
         }
         else
         {

@@ -581,7 +581,12 @@ else if (haveDirect)
 }
 else
 {
-    Console.WriteLine($"[monogame] lobby mode: browsing {lobbyUrl}/api/servers (pass [host] [port] [name] to skip the lobby)");
+    // P731 — no game-starting arguments: open the intro screen (native's
+    // introscreen.cpp) where the player chooses single or multiplayer. This is
+    // what the P644/P726 desktop shortcut runs. Command-line args ([host]
+    // [port] [name], capture, inspect) still bypass the intro entirely.
+    opts.Intro = true;
+    Console.WriteLine("[monogame] intro mode: no positional args (choose Single Player or Multiplayer at start)");
 }
 
 using var game = new Game1(opts);

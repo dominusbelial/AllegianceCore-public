@@ -483,8 +483,8 @@ public sealed partial class Game1
         if (_state != ClientState.Flying)
         {
             if (_state == ClientState.Lobby) UpdateLobby(ks);
-            // Connecting is a transient pause while the wire handshake runs;
-            // BeginConnect (in Initialize) flips us to SideSelect on success.
+            // P731 — the intro screen (no command-line args).
+            else if (_state == ClientState.Intro) UpdateIntro(ks);
             else if (_state == ClientState.SideSelect) UpdateSideSelect(ks);
             // P282 — pre-flight ready screen once seated, before the mission starts.
             else if (_state == ClientState.ReadyCheck)

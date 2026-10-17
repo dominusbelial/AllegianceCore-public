@@ -26,5 +26,12 @@
     "timeDilationDeadband": 0.010,
     "timeDilationMaxChangePerSecond": 0.040,
     "timeDilationControlIntervalSeconds": 0.5
+  },
+  "discovery": {
+    "comment": "P731 — the UDP 'Find Server' responder. Enabled by default on the game port + 1 (6074 for a 6073 game — the client's well-known probe port). Set discovery.enabled=false to stop advertising. An admin who moves the game port should pin discovery.port to 6074 (or tell players the port) so clients can still find the server. rateLimitPerSecond guards against reflection-amplification storms. The responder answers LAN broadcast/multicast AND unicast (Tailscale/VPN/subnet) queries with name/map/players/version/game port only — no secrets.",
+    "enabled": true,
+    "port": 6074,
+    "rateLimitPerSecond": 20,
+    "multicastGroup": "239.255.7.31"
   }
 }

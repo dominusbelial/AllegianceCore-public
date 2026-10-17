@@ -331,6 +331,10 @@ public sealed partial class Game1
         {
             DrawLobby();
         }
+        else if (_state == ClientState.Intro)
+        {
+            DrawIntro();   // P731 — the intro screen
+        }
         else if (_state == ClientState.Connecting)
         {
             DrawConnecting();

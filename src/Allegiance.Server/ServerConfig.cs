@@ -791,6 +791,53 @@ public sealed class ServerConfig
     /// <see cref="TransportConfig"/>.
     /// </summary>
     public TransportConfig? Transport { get; set; }
+
+    /// <summary>
+    /// P731 — the UDP discovery responder. Null/absent (the default) = enabled
+    /// on the game port + 1 with the default rate limit, i.e. today's installs
+    /// gain LAN/"Find Server" discoverability with no config change. See
+    /// <see cref="DiscoveryConfig"/> for the fields and the exact resolution
+    /// rules.
+    /// </summary>
+    public DiscoveryConfig? Discovery { get; set; }
+}
+
+/// <summary>
+/// P731 — the UDP discovery responder's settings. Absent section (or a null
+/// property) falls back to: <see cref="Enabled"/> true, port = game port + 1,
+/// and the default per-second request rate limit. Follows the P686 guarded-
+/// JSON-defaults convention: an absent field keeps its declared default and is
+/// validated by <see cref="Validate"/> exactly like the other sections.
+/// </summary>
+public sealed class DiscoveryConfig
+{
+    /// <summary>Whether the responder binds at all. False silences discovery
+    /// entirely (no socket, no replies) — the documented opt-out for server
+    /// hosts that must not advertise. Default true.</summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>The UDP port to bind. Null (the default) = the game port + 1
+    /// (e.g. 6074 for a 6073 game), resolved by the responder at boot so it
+    /// always tracks the configured game port. An explicit value pins it.</summary>
+    public int? Port { get; set; }
+
+    /// <summary>Max request datagrams answered per wall-clock second. Protects
+    /// the responder from being a reflection amplifier for a spoofed broadcast
+    /// storm; replies are tiny and stateless. Default 20.</summary>
+    public int RateLimitPerSecond { get; set; } = 20;
+
+    /// <summary>IPv4 multicast group the responder joins so multicast "Find
+    /// Server" queries reach it. Empty/null = do not join multicast (broadcast
+    /// + unicast only). Default <c>239.255.7.31</c>.</summary>
+    public string MulticastGroup { get; set; } = "239.255.7.31";
+
+    public void Validate()
+    {
+        if (Port is { } p && (p < 1 || p > 65535))
+            throw new InvalidDataException("discovery.port must be between 1 and 65535");
+        if (RateLimitPerSecond < 0 || RateLimitPerSecond > 100000)
+            throw new InvalidDataException("discovery.rateLimitPerSecond must be between 0 and 100000");
+    }
 }
 
 /// <summary>Static helpers for reading <see cref="ServerConfig"/> from JSON.</summary>
