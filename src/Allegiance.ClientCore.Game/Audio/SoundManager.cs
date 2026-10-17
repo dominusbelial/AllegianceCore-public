@@ -271,6 +271,14 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _salEnemyLeaves = null!;
     private SoundEffect _salRecruitsArrived = null!;
     private SoundEffect _salEnemyJoiners = null!;
+    // P737 — own-ship reload one-shots: the five type-specific sal VOs
+    // (vo_sal_reloading{ammo,fuel,missiles,chaff,dispenser}; sounddef.mdl:814-818)
+    // plus the generic startReloadSound (SFX "mount", sounddef.mdl:289).
+    private SoundEffect _salReloadingAmmo = null!;
+    private SoundEffect _salReloadingFuel = null!;
+    private SoundEffect _salReloadingMissiles = null!;
+    private SoundEffect _salReloadingChaff = null!;
+    private SoundEffect _salReloadingDispenser = null!;
     private SoundEffect _drop = null!;            // drop — dropSound (:290)
     private SoundEffect _reloading = null!;       // vo_sal_reloading — salReloadingSound (:819)
     // P723 — in-flight command/targeting one-shots. Real waves from
@@ -747,6 +755,15 @@ public sealed class SoundManager : IDisposable
             _salChangeSides = _content.Load<SoundEffect>("Sounds/vo_sal_traitor");
             _salEnemyJoiners = _content.Load<SoundEffect>("Sounds/vo_sal_enemyjoiners");
             _salEnemyLeaves = _content.Load<SoundEffect>("Sounds/vo_sal_enemyleaves");
+            // P737 — own-ship reload type-specific VOs (vo_sal_reloading{ammo,
+            // fuel,missiles,chaff,dispenser}; sounddef.mdl:814-818). The generic
+            // startReloadSound reuses the already-loaded "mount" wave (_mount,
+            // sounddef.mdl:289).
+            _salReloadingAmmo = _content.Load<SoundEffect>("Sounds/vo_sal_reloadingammo");
+            _salReloadingFuel = _content.Load<SoundEffect>("Sounds/vo_sal_reloadingfuel");
+            _salReloadingMissiles = _content.Load<SoundEffect>("Sounds/vo_sal_reloadingmissiles");
+            _salReloadingChaff = _content.Load<SoundEffect>("Sounds/vo_sal_reloadingchaff");
+            _salReloadingDispenser = _content.Load<SoundEffect>("Sounds/vo_sal_reloadingdispenser");
             _drop = _content.Load<SoundEffect>("Sounds/drop");
             _reloading = _content.Load<SoundEffect>("Sounds/vo_sal_reloading");
             _newTarget = _content.Load<SoundEffect>("Sounds/newtargetneutral");
@@ -1197,6 +1214,43 @@ public sealed class SoundManager : IDisposable
     /// (<c>vo_sal_enemyjoiners</c>; native <c>salEnemyJoinersSound</c>,
     /// clintlib.cpp:4162, sounddef.mdl:830).</summary>
     public void PlaySalEnemyJoiners() => PlayWarnOneShot(_salEnemyJoiners);
+
+    // ── P737 — own-ship reload one-shots (SIM-0263..0266, 0443/0444/0449/
+    // 0450/0451). Native plays the type-specific sal + the generic
+    // startReloadSound (SFX "mount") on every successful reload; the port
+    // observes the own-ship RELOAD(129) relay (see ClientWorld). The five
+    // sal VOs are own-ship announces on the Warning path like every other
+    // sal; startReloadSound reuses the already-loaded "mount" wave as an
+    // action SFX.
+
+    /// <summary>P737 — reloading ammo (<c>vo_sal_reloadingammo</c>;
+    /// salReloadingAmmoSound, shipIGC.h:617, sounddef.mdl:818).</summary>
+    public void PlaySalReloadingAmmo() => PlayWarnOneShot(_salReloadingAmmo);
+
+    /// <summary>P737 — reloading fuel (<c>vo_sal_reloadingfuel</c>;
+    /// salReloadingFuelSound, shipIGC.h:647, sounddef.mdl:814).</summary>
+    public void PlaySalReloadingFuel() => PlayWarnOneShot(_salReloadingFuel);
+
+    /// <summary>P737 — reloading missiles (<c>vo_sal_reloadingmissiles</c>;
+    /// salReloadingMissilesSound, clintlib.cpp:3221, sounddef.mdl:816).</summary>
+    public void PlaySalReloadingMissiles() => PlayWarnOneShot(_salReloadingMissiles);
+
+    /// <summary>P737 — reloading chaff (<c>vo_sal_reloadingchaff</c>;
+    /// salReloadingChaffSound, clintlib.cpp:3400, sounddef.mdl:815).</summary>
+    public void PlaySalReloadingChaff() => PlayWarnOneShot(_salReloadingChaff);
+
+    /// <summary>P737 — reloading dispenser (<c>vo_sal_reloadingdispenser</c>;
+    /// salReloadingDispenserSound, clintlib.cpp:3403, sounddef.mdl:817).</summary>
+    public void PlaySalReloadingDispenser() => PlayWarnOneShot(_salReloadingDispenser);
+
+    /// <summary>P737 — the generic reload-start SFX (<c>mount</c>; native
+    /// startReloadSound, clintlib.cpp:3219,3404 / shipIGC.h:617,647,
+    /// sounddef.mdl:289), played on every successful reload of any
+    /// pool/launcher. Reuses the already-loaded <c>_mount</c> wave.</summary>
+    public void PlayStartReload()
+    {
+        if (IsLoaded) PlayOneShot(_mount, SoundCategory.WeaponFire, 1f);
+    }
 
     /// <summary>P719 — play the drop cue (<c>drop</c>, native <c>dropSound</c>,
     /// WinTrek.cpp:9719). No-op when not loaded.</summary>
@@ -2013,6 +2067,11 @@ public sealed class SoundManager : IDisposable
             _salEnemyLeaves?.Dispose();
             _salRecruitsArrived?.Dispose();
             _salEnemyJoiners?.Dispose();
+            _salReloadingAmmo?.Dispose();        // P737
+            _salReloadingFuel?.Dispose();        // P737
+            _salReloadingMissiles?.Dispose();    // P737
+            _salReloadingChaff?.Dispose();       // P737
+            _salReloadingDispenser?.Dispose();   // P737
             _drop?.Dispose();                  // P719
             _reloading?.Dispose();             // P719
             foreach (var sfx in _voices.Values) sfx.Dispose();

@@ -583,6 +583,31 @@ public sealed partial class Game1
                     snd.PlaySalEnemyJoiners();
                     Console.WriteLine($"[monogame] audio: enemy joined (ship {ev.Id})");
                     break;
+                // ── P737 — own-ship reload / loadout feedback ───────────────
+                case ClientSoundEventKind.SalReloadingAmmo:
+                    snd.PlaySalReloadingAmmo();
+                    Console.WriteLine("[monogame] audio: reloading ammo");
+                    break;
+                case ClientSoundEventKind.SalReloadingFuel:
+                    snd.PlaySalReloadingFuel();
+                    Console.WriteLine("[monogame] audio: reloading fuel");
+                    break;
+                case ClientSoundEventKind.SalReloadingMissiles:
+                    snd.PlaySalReloadingMissiles();
+                    Console.WriteLine("[monogame] audio: reloading missiles");
+                    break;
+                case ClientSoundEventKind.SalReloadingChaff:
+                    snd.PlaySalReloadingChaff();
+                    Console.WriteLine("[monogame] audio: reloading chaff");
+                    break;
+                case ClientSoundEventKind.SalReloadingDispenser:
+                    snd.PlaySalReloadingDispenser();
+                    Console.WriteLine("[monogame] audio: reloading dispenser");
+                    break;
+                case ClientSoundEventKind.StartReload:
+                    snd.PlayStartReload();
+                    Console.WriteLine("[monogame] audio: reload started");
+                    break;
             }
         }
     }

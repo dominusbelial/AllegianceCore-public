@@ -2822,6 +2822,65 @@ public sealed partial class ClientWorld
     {
         if (_ships.TryGetValue(reload.ShipID, out var ent))
             ent.ReloadCount++;
+        RecordReloadFeedback(reload);
+    }
+
+    /// <summary>
+    /// P737 — SIM-0263..0266, SIM-0443/0444/0449/0450/0451: the own-ship reload
+    /// one-shots. Native plays a type-specific <c>salReloading*Sound</c> plus the
+    /// generic <c>startReloadSound</c> when a fire empties a pool and a spare
+    /// pack auto-reloads from cargo (<c>FireMissile</c> clintlib.cpp:3216-3225;
+    /// <c>FireExpendable</c> clintlib.cpp:3394-3417; <c>SetAmmo</c>/<c>SetFuel</c>
+    /// shipIGC.h:605-650). This pure-renderer client observes a SUCCESSFUL reload
+    /// as the own ship's FM_S_RELOAD(129) relay (the server broadcasts the
+    /// applied cargo→pool transfers sector-wide on success; failures are never
+    /// relayed). Each relay entry names the consumed cargo slot (negative mount);
+    /// the slot's part type is classified exactly like the server's
+    /// <c>Ship.TryApplyReloadEntry</c> to pick the type-specific cue. Gated to the
+    /// local ship, native's <c>pShip == m_ship</c> (clintlib.cpp:3217,3397).
+    /// </summary>
+    private void RecordReloadFeedback(Reload reload)
+    {
+        if (MyShipId is not { } me || reload.ShipID != me) return;
+        if (!_ships.TryGetValue(me, out var own) || own.Cargo is not { } cargo) return;
+
+        foreach (var e in reload.Entries)
+        {
+            // e.Mount is a negative cargo-bay mount (-1..-5); a cargo entry
+            // carries the same signed mount as a high-bit byte (ExpandedPartData).
+            ExpandedPartData? found = null;
+            foreach (var c in cargo)
+                if ((sbyte)c.MountId == e.Mount) { found = c; break; }
+            if (found is not { } cp) continue;
+
+            if (PartTypeResolver(cp.PartId) is { } type)
+            {
+                switch (type.Type)
+                {
+                    case DataPartTypeIGC.Pack p when p.PackType == 0:   // c_packAmmo (igc.h:549)
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingAmmo, me);
+                        break;
+                    case DataPartTypeIGC.Pack p when p.PackType == 1:   // c_packFuel (igc.h:550)
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingFuel, me);
+                        break;
+                    case DataPartTypeIGC.MissileLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingMissiles, me);
+                        break;
+                    case DataPartTypeIGC.ChaffLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingChaff, me);
+                        break;
+                    case DataPartTypeIGC.MineLauncher:
+                    case DataPartTypeIGC.ProbeLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingDispenser, me);
+                        break;
+                }
+            }
+
+            // The generic "reloading..." cue plays on EVERY successful reload of
+            // any pool/launcher (native startReloadSound, clintlib.cpp:3219,3404;
+            // shipIGC.h:617,647).
+            RecordSoundEvent(ClientSoundEventKind.StartReload, me);
+        }
     }
 
     /// <summary>P639 — <c>FM_S_RANK_INFO(13)</c>: the server's rank-name table

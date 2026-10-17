@@ -284,6 +284,50 @@ public enum ClientSoundEventKind
     /// side (AddPlayerToSide, clintlib.cpp:4162; wave <c>vo_sal_enemyjoiners</c>,
     /// sounddef.mdl:830).</summary>
     SalEnemyJoiners,
+
+    // ── P737 (parity wave 24: own-ship reload & loadout feedback) ─────────
+    // Native fires the reload one-shots from the fire/expendable auto-reload
+    // regions when a fire empties a pool and a spare pack is drained from cargo
+    // (FireMissile clintlib.cpp:3216-3225; FireExpendable clintlib.cpp:3394-3417;
+    // SetAmmo/SetFuel shipIGC.h:605-650). This pure-renderer client observes a
+    // SUCCESSFUL reload as the own ship's FM_S_RELOAD(129) relay — the port's
+    // server broadcasts the applied cargo→pool transfers sector-wide on success
+    // (Server.Combat.BroadcastAutoReload; failures are never relayed). Each
+    // relay entry names the consumed cargo slot, which the client classifies by
+    // its part type (mirroring Ship.TryApplyReloadEntry) to pick the
+    // type-specific cue; every successful reload also plays the generic
+    // startReloadSound. All gated to the local ship (native plays these only
+    // for <c>pShip == m_ship</c>).
+
+    /// <summary><c>salReloadingAmmoSound</c> — the local ship's ammo pool was
+    /// auto-refilled from a spare ammo pack (shipIGC.h:616; wave
+    /// <c>vo_sal_reloadingammo</c>, sounddef.mdl:818).</summary>
+    SalReloadingAmmo,
+
+    /// <summary><c>salReloadingFuelSound</c> — the local ship's fuel pool was
+    /// auto-refilled from a spare fuel pack (shipIGC.h:646; wave
+    /// <c>vo_sal_reloadingfuel</c>, sounddef.mdl:814).</summary>
+    SalReloadingFuel,
+
+    /// <summary><c>salReloadingMissilesSound</c> — the local ship's missile
+    /// launcher was reloaded from a spare missile pack (clintlib.cpp:3221; wave
+    /// <c>vo_sal_reloadingmissiles</c>, sounddef.mdl:816).</summary>
+    SalReloadingMissiles,
+
+    /// <summary><c>salReloadingChaffSound</c> — the local ship's chaff launcher
+    /// was reloaded from a spare chaff pack (clintlib.cpp:3400; wave
+    /// <c>vo_sal_reloadingchaff</c>, sounddef.mdl:815).</summary>
+    SalReloadingChaff,
+
+    /// <summary><c>salReloadingDispenserSound</c> — the local ship's mine/probe
+    /// dispenser was reloaded from a spare pack (clintlib.cpp:3403 default; wave
+    /// <c>vo_sal_reloadingdispenser</c>, sounddef.mdl:817).</summary>
+    SalReloadingDispenser,
+
+    /// <summary><c>startReloadSound</c> — the generic "reloading..." cue played
+    /// on EVERY successful reload of any pool/launcher (clintlib.cpp:3219,3404;
+    /// shipIGC.h:617,647; wave <c>mount</c>, sounddef.mdl:289).</summary>
+    StartReload,
 }
 
 /// <summary>A single observed sound event.</summary>

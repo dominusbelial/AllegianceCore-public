@@ -2984,6 +2984,36 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_reloading.ogg
 
+#begin Sounds/vo_sal_reloadingammo.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingammo.ogg
+
+#begin Sounds/vo_sal_reloadingchaff.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingchaff.ogg
+
+#begin Sounds/vo_sal_reloadingdispenser.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingdispenser.ogg
+
+#begin Sounds/vo_sal_reloadingfuel.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingfuel.ogg
+
+#begin Sounds/vo_sal_reloadingmissiles.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingmissiles.ogg
+
 #begin Sounds/mount.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

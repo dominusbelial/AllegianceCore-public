@@ -895,4 +895,136 @@ public class ClientWorldSoundEventTests
 
         Assert.Empty(world.TakeSoundEvents());
     }
+
+    // ── P737 (parity wave 24): own-ship reload one-shots ─────────────────
+    // Native plays a type-specific sal + the generic startReloadSound when a
+    // fire empties a pool and a spare pack auto-reloads (clintlib.cpp:3216-3417,
+    // shipIGC.h:605-650). The port observes the own-ship RELOAD(129) relay and
+    // classifies each consumed cargo slot's part type (Ship.TryApplyReloadEntry).
+
+    private static DataPartTypeIGC ReloadPart(short id, DataPartTypeIGC.Subtype t) => new(
+        Price: 0, TimeToBuild: 0, ModelName: "m", IconName: "i", Name: "p",
+        Description: "", GroupId: 0, TtbmRequired: [], TtbmEffects: [],
+        Mass: 1f, Signature: 0f, PartId: id, SuccessorPartId: -1, PartMask: 0,
+        InventoryLineMdl: "", Type: t);
+
+    /// <summary>Seed a world whose own ship carries the given cargo slots
+    /// (mount, part) and whose PartTypeResolver answers from the map.</summary>
+    private static ClientWorld ReloadWorld(short me,
+        IEnumerable<(sbyte mount, short partId, DataPartTypeIGC type)> cargo)
+    {
+        var w = WorldWithMeSeated(me);
+        var map = new Dictionary<short, DataPartTypeIGC>();
+        var parts = new List<ExpandedPartData>();
+        foreach (var (mount, partId, type) in cargo)
+        {
+            map[partId] = type;
+            parts.Add(new ExpandedPartData(PartId: partId, Amount: 1,
+                MountId: unchecked((byte)mount), FractionMounted: 0));
+        }
+        w.PartTypeResolver = pid => map.TryGetValue(pid, out var t) ? t : null;
+        w.Apply(new BuyLoadoutAck { HullId = 7813, FBoughtEverything = true, Parts = parts });
+        return w;
+    }
+
+    [Fact]
+    public void OwnAmmoReload_RecordsSalReloadingAmmoAndStartReload()
+    {
+        // Ammo pack (c_packAmmo = 0) at cargo slot 0 (mount -1): native
+        // shipIGC.h:617 plays salReloadingAmmoSound + startReloadSound.
+        var w = ReloadWorld(me: 911,
+            [(mount: -1, partId: 910, type: ReloadPart(910, new DataPartTypeIGC.Pack(PackType: 0, Amount: 100)))]);
+        w.Apply(new Reload { ShipID = 911, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingAmmo);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+        Assert.All(evs, e => Assert.Equal((short)911, e.Id));
+    }
+
+    [Fact]
+    public void OwnFuelReload_RecordsSalReloadingFuel()
+    {
+        // Fuel pack (c_packFuel = 1): shipIGC.h:647 salReloadingFuelSound.
+        var w = ReloadWorld(me: 912,
+            [(mount: -1, partId: 920, type: ReloadPart(920, new DataPartTypeIGC.Pack(PackType: 1, Amount: 100)))]);
+        w.Apply(new Reload { ShipID = 912, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingFuel);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+    }
+
+    [Fact]
+    public void OwnMissileReload_RecordsSalReloadingMissiles()
+    {
+        // Missile pack (EquipmentType.Magazine): clintlib.cpp:3221.
+        var w = ReloadWorld(me: 913,
+            [(mount: -1, partId: 930, type: ReloadPart(930, new DataPartTypeIGC.MissileLauncher(5)))]);
+        w.Apply(new Reload { ShipID = 913, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingMissiles);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+    }
+
+    [Fact]
+    public void OwnChaffReload_RecordsSalReloadingChaff()
+    {
+        var w = ReloadWorld(me: 914,
+            [(mount: -1, partId: 931, type: ReloadPart(931, new DataPartTypeIGC.ChaffLauncher(6)))]);
+        w.Apply(new Reload { ShipID = 914, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingChaff);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+    }
+
+    [Fact]
+    public void OwnDispenserReload_RecordsSalReloadingDispenser()
+    {
+        // Mine pack (EquipmentType.Dispenser): clintlib.cpp:3403 default.
+        var w = ReloadWorld(me: 915,
+            [(mount: -1, partId: 932, type: ReloadPart(932, new DataPartTypeIGC.MineLauncher(7)))]);
+        w.Apply(new Reload { ShipID = 915, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingDispenser);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+    }
+
+    [Fact]
+    public void OtherShipReload_RecordsNothing()
+    {
+        // Native gates all reload one-shots to the local ship (pShip == m_ship).
+        var w = ReloadWorld(me: 916,
+            [(mount: -1, partId: 933, type: ReloadPart(933, new DataPartTypeIGC.Pack(PackType: 0, Amount: 100)))]);
+        w.Apply(new Reload { ShipID = 917, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void NonReloadableCargoType_StillRecordsGenericStartReload()
+    {
+        // A weapon (not a pack/launcher) reloads nothing type-specific in
+        // native's Reload, but the generic startReloadSound is always played on
+        // a successful reload entry.
+        var w = ReloadWorld(me: 918,
+            [(mount: -1, partId: 934, type: ReloadPart(934, new DataPartTypeIGC.Weapon(0,0,0,0,1,1,0,0,0)))]);
+        w.Apply(new Reload { ShipID = 918, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        Assert.Equal(ClientSoundEventKind.StartReload, Assert.Single(w.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void ReloadOfAbsentCargoSlot_RecordsNothing()
+    {
+        // No cargo item at the relayed slot: nothing was classified.
+        var w = ReloadWorld(me: 919,
+            [(mount: -1, partId: 935, type: ReloadPart(935, new DataPartTypeIGC.Pack(PackType: 0, Amount: 100)))]);
+        w.Apply(new Reload { ShipID = 919, Entries = [new ReloadData((short)-1, (sbyte)-5)] });
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
 }
