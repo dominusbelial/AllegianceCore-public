@@ -1,0 +1,256 @@
+{
+  "focus": {
+    "invocations": 273,
+    "passed": 537,
+    "failed": 0,
+    "skipped": 0
+  },
+  "methods": 91,
+  "exact_triplets": true,
+  "parking": {
+    "invocations": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0
+  },
+  "parking_clean": true,
+  "suites": {
+    "invocations": 8,
+    "passed": 16520,
+    "failed": 0,
+    "skipped": 6
+  },
+  "suite_invocations": [
+    {
+      "name": "suite-1-Core",
+      "counters": {
+        "total": "4807",
+        "executed": "4807",
+        "passed": "4807",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "observed_skipped": 0,
+      "failures": [],
+      "skipped_tests": []
+    },
+    {
+      "name": "suite-1-ClientCore",
+      "counters": {
+        "total": "1174",
+        "executed": "1174",
+        "passed": "1174",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "observed_skipped": 0,
+      "failures": [],
+      "skipped_tests": []
+    },
+    {
+      "name": "suite-1-ClientCore.MonoGame",
+      "counters": {
+        "total": "2263",
+        "executed": "2260",
+        "passed": "2260",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "observed_skipped": 3,
+      "failures": [],
+      "skipped_tests": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+      ]
+    },
+    {
+      "name": "suite-1-Lobby",
+      "counters": {
+        "total": "19",
+        "executed": "19",
+        "passed": "19",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "observed_skipped": 0,
+      "failures": [],
+      "skipped_tests": []
+    },
+    {
+      "name": "suite-2-Core",
+      "counters": {
+        "total": "4807",
+        "executed": "4807",
+        "passed": "4807",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "observed_skipped": 0,
+      "failures": [],
+      "skipped_tests": []
+    },
+    {
+      "name": "suite-2-ClientCore",
+      "counters": {
+        "total": "1174",
+        "executed": "1174",
+        "passed": "1174",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "observed_skipped": 0,
+      "failures": [],
+      "skipped_tests": []
+    },
+    {
+      "name": "suite-2-ClientCore.MonoGame",
+      "counters": {
+        "total": "2263",
+        "executed": "2260",
+        "passed": "2260",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "observed_skipped": 3,
+      "failures": [],
+      "skipped_tests": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+      ]
+    },
+    {
+      "name": "suite-2-Lobby",
+      "counters": {
+        "total": "19",
+        "executed": "19",
+        "passed": "19",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "observed_skipped": 0,
+      "failures": [],
+      "skipped_tests": []
+    }
+  ],
+  "exactly_two_full_sweeps": true,
+  "recoveries": [],
+  "showcase": {
+    "techMode": "unlocked",
+    "civs": [
+      25,
+      3
+    ],
+    "stageOverCount": 2,
+    "simFailures": 0,
+    "artifact": "showcase-ring-final.json"
+  },
+  "all_selections_nonempty": true,
+  "source_hashes_match": true,
+  "merge_metadata_unchanged": true,
+  "conflict_markers_absent": true,
+  "isolated_classifications": [
+    {
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer",
+      "runs": 3,
+      "passed_three": true
+    },
+    {
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "runs": 3,
+      "passed_three": true
+    }
+  ],
+  "clean": true
+}

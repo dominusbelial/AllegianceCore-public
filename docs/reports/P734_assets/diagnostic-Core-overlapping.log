@@ -1,0 +1,40 @@
+Test run for /home/domingo/allegiance-codex-p734/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:19.05]     Allegiance.Core.Tests.P699cStationCorpusTests.Npc_docking_thrusters_survive_idle_combat_and_clear_on_next_order [FAIL]
+  Failed Allegiance.Core.Tests.P699cStationCorpusTests.Npc_docking_thrusters_survive_idle_combat_and_clear_on_next_order [13 ms]
+  Error Message:
+   Assert.NotEqual() Failure: Values are equal
+Expected: Not 0
+Actual:       0
+  Stack Trace:
+     at Allegiance.Core.Tests.P699cStationCorpusTests.Npc_docking_thrusters_survive_idle_combat_and_clear_on_next_order() in /home/domingo/allegiance-codex-p734/tests/Allegiance.Core.Tests/P699cStationCorpusTests.cs:line 32
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /home/domingo/allegiance-codex-p734/docs/reports/P734_assets/suite-1-Core.trx
+
+Failed!  - Failed:     1, Passed:  4806, Skipped:     0, Total:  4807, Duration: 16 m 43 s - Allegiance.Core.Tests.dll (net10.0)
+orkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn [5 s]
+  Error Message:
+   System.TimeoutException : no OnPeerJoined for raw peer
+  Stack Trace:
+     at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.ConnectRawPeer(TcpTransport host, Site site, String name, Boolean tinyReceiveWindow) in /home/domingo/allegiance-codex-p734/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 119
+   at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn() in /home/domingo/allegiance-codex-p734/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 346
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:13:59.20]     Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer [FAIL]
+  Failed Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer [50 ms]
+  Error Message:
+   System.InvalidOperationException : Sequence contains no matching element
+  Stack Trace:
+     at System.Linq.ThrowHelper.ThrowNoMatchException()
+   at System.Linq.Enumerable.First[TSource](IEnumerable`1 source, Func`2 predicate)
+   at Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer() in /home/domingo/allegiance-codex-p734/tests/Allegiance.Core.Tests/GameOverPlayersWireTests.cs:line 227
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /home/domingo/allegiance-codex-p734/docs/reports/P734_assets/suite-1-Core.trx
+
+Failed!  - Failed:     3, Passed:  4804, Skipped:     0, Total:  4807, Duration: 16 m 43 s - Allegiance.Core.Tests.dll (net10.0)

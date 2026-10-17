@@ -1,0 +1,20 @@
+{
+  "base": "5556eb0f459095fe18e6fcf3b919c1786331c877",
+  "dotnet": "10.0.400",
+  "source": {
+    "src/Allegiance.Core/Sim/Ship.cs": "a4e5362126020d3dd0c024d048123b6d83d9d21373a216bbf860f1b951502038",
+    "src/Allegiance.Core/Sim/Ship.NpcUpdates.cs": "133364a74533f867388ced6128b2015e8ef62230dabbddd3675f5d8b29523ca0",
+    "src/Allegiance.Core/Sim/ShipControlState.cs": "462746e9def143fba28ea6c1ea9433f78a079d247446e8f4f43af247808bade2",
+    "src/Allegiance.Server/Server.ShipCommands.cs": "6fcb3c83dbd96a4c607e3460524dd0ccff959a82394ed2cb61bac0992168cddb",
+    "tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs": "f1ec714f455e876fb77a414c6a3a2494f4aa387b464be6f139f9a1c9435cd327",
+    "tests/Allegiance.Core.Tests/P676SimRulesTests.cs": "46b1860b0b773e2e2ca53fca65a5bad0fb504355765fa770b6147b31514e7e3f",
+    "tests/Allegiance.Core.Tests/NpcWingmanRangeMaintenanceLiveTests.cs": "90495473ed68b5e528c4781343721491f6cfbb2f216ec4f32c6e0088e70cdbcf"
+  },
+  "native": {
+    "Igc/shipIGC.cpp": "2f5d1cd1dde51bafdf6d1a71e5ff375bd44c1f633f8a167f202620dce7cb12d3",
+    "Igc/shipIGC.h": "78a7b0e7b445a95b6949fb6c299e61987ddf5981cdcc67e62bbdd9bfe44ba782",
+    "Igc/common.cpp": "853757a6c9f981d56f1d6c0c3544035c58e77bfdbf25b8bd1764adb10d69b955",
+    "Igc/igc.h": "9e151addcbed45df98ff78fc9352aca8a796f69a5cfbb947425d52e9ab649a66",
+    "Igc/sounds.h": "ab25367b3f1fe8e9ad69314986885c5d5498e39e8c4b0bc12190507435b5a00b"
+  }
+}

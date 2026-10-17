@@ -1,0 +1,23 @@
+Test run for /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.03]     Allegiance.Core.Tests.P676SimRulesTests.Allied_neighbor_does_not_starve_default_or_defend_enemy_acquisition [FAIL]
+  Failed Allegiance.Core.Tests.P676SimRulesTests.Allied_neighbor_does_not_starve_default_or_defend_enemy_acquisition [15 ms]
+  Error Message:
+   Assert.Same() Failure: Values are not the same instance
+Expected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedTarget = null, Ammo = 1000, ··· }
+Actual:   null
+  Stack Trace:
+     at Allegiance.Core.Tests.P676SimRulesTests.Allied_neighbor_does_not_starve_default_or_defend_enemy_acquisition() in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/P676SimRulesTests.cs:line 246
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.45]     Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed [FAIL]
+  Failed Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed [125 ms]
+  Error Message:
+   target closing too fast must back off (Throttle −1): got 1.000 at fixed sep 233.4 — the fixed standoff-hold would not issue a distinct back-off here
+  Stack Trace:
+     at Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed() in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/NpcWingmanRangeMaintenanceLiveTests.cs:line 312
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /home/domingo/allegiance-codex-p708/docs/reports/P708_assets/development-affected.trx
+
+Failed!  - Failed:     2, Passed:   144, Skipped:     0, Total:   146, Duration: 3 s - Allegiance.Core.Tests.dll (net10.0)

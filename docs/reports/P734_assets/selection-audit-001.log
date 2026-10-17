@@ -1,0 +1,5 @@
+Test run for /home/domingo/allegiance-codex-p734/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+No test matches the given testcase filter `FullyQualifiedName=Allegiance.ClientCore.Tests.P707ParkingTests.P707_SubthresholdDriftDoesNotResetMovementClockOrHideIdle` in /home/domingo/allegiance-codex-p734/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll
+Results File: /home/domingo/allegiance-codex-p734/docs/reports/P734_assets/focus-079-1.trx
+

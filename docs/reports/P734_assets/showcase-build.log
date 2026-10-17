@@ -1,0 +1,15 @@
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:10.38
+ports/P734_assets/showcase/obj/Debug/net10.0/Allegiance.ClientCore.Tests.dll' for writing -- Read-only file system : '/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase/obj/Debug/net10.0/Allegiance.ClientCore.Tests.dll' [/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase/showcase.csproj]
+
+Build FAILED.
+
+CSC : error CS2012: Cannot open '/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase/obj/Debug/net10.0/Allegiance.ClientCore.Tests.dll' for writing -- Read-only file system : '/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase/obj/Debug/net10.0/Allegiance.ClientCore.Tests.dll' [/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase/showcase.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:03.32

@@ -1,0 +1,11 @@
+[
+  {
+    "name": "incomplete-suite-1-ClientCore.MonoGame",
+    "project": "ClientCore.MonoGame",
+    "filter": null,
+    "exit": 0,
+    "seconds": 189.749,
+    "reason": "Wrapper exited without a completed TRX or final summary; not counted as a completed sweep.",
+    "console": "suite-1-ClientCore.MonoGame.log"
+  }
+]

@@ -1,0 +1,5 @@
+Test run for /home/domingo/allegiance-codex-p734/tests/Allegiance.Lobby.Tests/bin/Debug/net10.0/Allegiance.Lobby.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+Results File: /home/domingo/allegiance-codex-p734/docs/reports/P734_assets/suite-1-Lobby.trx
+
+Passed!  - Failed:     0, Passed:    19, Skipped:     0, Total:    19, Duration: 219 ms - Allegiance.Lobby.Tests.dll (net10.0)

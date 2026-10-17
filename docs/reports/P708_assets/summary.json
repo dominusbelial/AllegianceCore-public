@@ -1,0 +1,304 @@
+{
+  "invocations": 484,
+  "failed_invocations": [
+    {
+      "name": "parking-final-02",
+      "project": "ClientCore",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "exit": 1,
+      "seconds": 91.194,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "message": "Parked >5s: {\"Name\":\"mcp-b010-7262\",\"ShipId\":8106,\"Side\":0,\"Hull\":\"Hvy Interceptor\",\"Sector\":1052,\"Behavior\":\"combat\",\"Position\":[706.6237182617188,528.9952392578125,-8.635096549987793],\"Target\":8116,\"OrderedTarget\":null,\"Engagers\":3,\"WorldReady\":true,\"WorldReadyDelaySec\":0.042879699999999965,\"WorldNotReadyAttempts\":0,\"RouteIndex\":0,\"RouteName\":\"R0:1050\\u21921059\\u21921052\",\"Role\":\"Interceptor\",\"State\":\"active\",\"DefenseSector\":null,\"TargetSector\":1052,\"StagingSector\":1059,\"StagePhase\":2,\"Velocity\":[0,0,0],\"Speed\":0,\"Idle\":false}"
+        }
+      ],
+      "evidence": "parking-final-02.trx.gz",
+      "observed_skipped": 0,
+      "skipped_tests": []
+    },
+    {
+      "name": "parking-final-03",
+      "project": "ClientCore",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "exit": 1,
+      "seconds": 97.569,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "message": "Parked >5s: {\"Name\":\"mcp-b008-8155\",\"ShipId\":8104,\"Side\":0,\"Hull\":\"Hvy Interceptor\",\"Sector\":1052,\"Behavior\":\"combat\",\"Position\":[-2474.58447265625,596.646240234375,-43.355228424072266],\"Target\":8121,\"OrderedTarget\":null,\"Engagers\":1,\"WorldReady\":true,\"WorldReadyDelaySec\":0.03675510000000004,\"WorldNotReadyAttempts\":0,\"RouteIndex\":1,\"RouteName\":\"R1:1050\\u21921060\\u21921052\",\"Role\":\"Interceptor\",\"State\":\"active\",\"DefenseSector\":null,\"TargetSector\":1052,\"StagingSector\":1060,\"StagePhase\":2,\"Velocity\":[0,0,0],\"Speed\":0,\"Idle\":false}"
+        }
+      ],
+      "evidence": "parking-final-03.trx.gz",
+      "observed_skipped": 0,
+      "skipped_tests": []
+    },
+    {
+      "name": "parking-final-10",
+      "project": "ClientCore",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "exit": 1,
+      "seconds": 92.816,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "message": "Parked >5s: {\"Name\":\"mcp-b013-8072\",\"ShipId\":8109,\"Side\":0,\"Hull\":\"Adv Scout\",\"Sector\":1052,\"Behavior\":\"combat\",\"Position\":[-1668.928466796875,1054.12841796875,-118.44993591308594],\"Target\":8118,\"OrderedTarget\":null,\"Engagers\":3,\"WorldReady\":true,\"WorldReadyDelaySec\":0.04118909999999998,\"WorldNotReadyAttempts\":0,\"RouteIndex\":0,\"RouteName\":\"R0:1050\\u21921059\\u21921052\",\"Role\":\"Scout\",\"State\":\"active\",\"DefenseSector\":null,\"TargetSector\":1052,\"StagingSector\":1059,\"StagePhase\":2,\"Velocity\":[0,0,0],\"Speed\":0,\"Idle\":false}"
+        }
+      ],
+      "evidence": "parking-final-10.trx.gz",
+      "observed_skipped": 0,
+      "skipped_tests": []
+    },
+    {
+      "name": "suite-Core-final",
+      "project": "Core",
+      "filter": null,
+      "exit": 1,
+      "seconds": 794.435,
+      "counters": {
+        "total": "4729",
+        "executed": "4729",
+        "passed": "4727",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   1"
+        },
+        {
+          "method": "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+          "message": "B must receive the mine's EXPORT once its scanner net spots it"
+        }
+      ],
+      "evidence": "suite-Core-final.trx.gz",
+      "observed_skipped": 0,
+      "skipped_tests": []
+    }
+  ],
+  "groups": {
+    "focused_preliminary": {
+      "runs": 222,
+      "passes": 222,
+      "passed_cases": 384,
+      "skipped_cases": 0
+    },
+    "focused_final": {
+      "runs": 225,
+      "passes": 225,
+      "passed_cases": 390,
+      "skipped_cases": 0
+    },
+    "parking_preliminary": {
+      "runs": 10,
+      "passes": 10,
+      "passed_cases": 10,
+      "skipped_cases": 0
+    },
+    "parking_final": {
+      "runs": 10,
+      "passes": 7,
+      "passed_cases": 7,
+      "skipped_cases": 0
+    },
+    "parking_retries": {
+      "runs": 3,
+      "passes": 3,
+      "passed_cases": 3,
+      "skipped_cases": 0
+    },
+    "entry_baseline": {
+      "runs": 3,
+      "passes": 3,
+      "passed_cases": 3,
+      "skipped_cases": 0
+    },
+    "suites": {
+      "runs": 4,
+      "passes": 3,
+      "passed_cases": 12763,
+      "skipped_cases": 3
+    },
+    "repair_final": {
+      "runs": 12,
+      "passes": 12,
+      "passed_cases": 30,
+      "skipped_cases": 0
+    },
+    "combined_affected": {
+      "runs": 237,
+      "passes": 237,
+      "passed_cases": 420,
+      "skipped_cases": 0
+    }
+  },
+  "parking": [
+    {
+      "run": "parking-01",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 94.4s, samples=943, reached=25/30, longest speed<1 with target=4.107s, shots=4626, hits=2677, kills=15"
+    },
+    {
+      "run": "parking-02",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 95.8s, samples=957, reached=25/30, longest speed<1 with target=4.107s, shots=4516, hits=2644, kills=13"
+    },
+    {
+      "run": "parking-03",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 95.3s, samples=952, reached=25/30, longest speed<1 with target=4.107s, shots=4854, hits=2409, kills=13"
+    },
+    {
+      "run": "parking-04",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 96.3s, samples=962, reached=25/30, longest speed<1 with target=3.305s, shots=3988, hits=2393, kills=14"
+    },
+    {
+      "run": "parking-05",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 94.7s, samples=946, reached=25/30, longest speed<1 with target=4.409s, shots=4189, hits=2377, kills=14"
+    },
+    {
+      "run": "parking-06",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 96.9s, samples=968, reached=25/30, longest speed<1 with target=4.108s, shots=4398, hits=3107, kills=20"
+    },
+    {
+      "run": "parking-07",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 94.6s, samples=945, reached=25/30, longest speed<1 with target=4.114s, shots=4442, hits=2509, kills=14"
+    },
+    {
+      "run": "parking-08",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 95.7s, samples=956, reached=25/30, longest speed<1 with target=3.305s, shots=4642, hits=2876, kills=12"
+    },
+    {
+      "run": "parking-09",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 95.7s, samples=956, reached=25/30, longest speed<1 with target=4.208s, shots=4625, hits=2739, kills=16"
+    },
+    {
+      "run": "parking-10",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 94.5s, samples=944, reached=25/30, longest speed<1 with target=4.908s, shots=4657, hits=2565, kills=12"
+    },
+    {
+      "run": "parking-final-01",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 94.8s, samples=947, reached=25/30, longest speed<1 with target=3.306s, shots=4178, hits=2317, kills=14"
+    },
+    {
+      "run": "parking-final-04",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 97.4s, samples=973, reached=25/30, longest speed<1 with target=3.607s, shots=4794, hits=2651, kills=15"
+    },
+    {
+      "run": "parking-final-05",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 96.5s, samples=964, reached=25/30, longest speed<1 with target=3.907s, shots=5052, hits=2807, kills=16"
+    },
+    {
+      "run": "parking-final-06",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 96.8s, samples=967, reached=25/30, longest speed<1 with target=3.907s, shots=5040, hits=3049, kills=14"
+    },
+    {
+      "run": "parking-final-07",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 95.3s, samples=952, reached=25/30, longest speed<1 with target=3.505s, shots=4542, hits=2515, kills=12"
+    },
+    {
+      "run": "parking-final-08",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 94.6s, samples=945, reached=25/30, longest speed<1 with target=4.909s, shots=4954, hits=2925, kills=12"
+    },
+    {
+      "run": "parking-final-09",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 94.3s, samples=942, reached=25/30, longest speed<1 with target=4.208s, shots=4678, hits=2844, kills=15"
+    },
+    {
+      "run": "parking-retry-1",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 95.5s, samples=954, reached=25/30, longest speed<1 with target=2.005s, shots=4861, hits=2734, kills=13"
+    },
+    {
+      "run": "parking-retry-2",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 94.5s, samples=944, reached=25/30, longest speed<1 with target=3.305s, shots=4551, hits=2495, kills=15"
+    },
+    {
+      "run": "parking-retry-3",
+      "outcome": 0,
+      "metrics": "P700 local 15v15: 96.0s, samples=959, reached=25/30, longest speed<1 with target=3.407s, shots=4232, hits=2794, kills=14"
+    }
+  ],
+  "verified_source_hashes_unchanged": true
+}

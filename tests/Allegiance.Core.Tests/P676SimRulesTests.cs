@@ -80,7 +80,11 @@ public sealed class P676SimRulesTests
     {
         Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s, power);
         var target = Place(m, 101, x: 500 * MathF.Sin(angle), z: -500 * MathF.Cos(angle)); target.SetFraction(health);
-        s.SetRepairOrder(target); Call(s, "UpdateWingmanRepair", 0.1, 0.05f);
+        s.SetRepairOrder(target);
+        int previousAttack = ShipControlState.MissileFire | ShipControlState.AfterburnerButton | ShipControlState.CoastButton;
+        s.StateM |= previousAttack; // attack inputs from the previous plot
+        Call(s, "UpdateWingmanRepair", 0.1, 0.05f);
+        Assert.Equal(0, s.StateM & previousAttack);
         Assert.Equal(fire, (s.StateM & ShipControlState.AllWeapons) != 0);
         Assert.True(s.HasRepairOrder); Assert.Null(s.AttackTarget);
         s.StationId = 31000;
@@ -239,6 +243,7 @@ public sealed class P676SimRulesTests
         Require.Artwork(); var m = Domain(sideCount: 3); var s = Place(m); Gun(s);
         Place(m, 101, 1, z: -50);
         var enemy = Place(m, 102, 2, z: -500);
+        enemy.SideVisibility.SetSideVisibility(0, true); // defend now uses native CanSee
         m.Sides[0].AllyGroup = 7; m.Sides[1].AllyGroup = 7;
         Call(s, "DecideWingmanDefaultOrder"); Assert.Same(enemy, s.AttackTarget);
         s.AttackTarget = null;

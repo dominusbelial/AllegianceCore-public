@@ -1868,7 +1868,7 @@ public sealed partial class Server
             case OrderChange.CidAttack:
                 if (model is Ship enemy)
                 {
-                    drone.AttackTarget = enemy;                     // P162 wingman attack
+                    drone.SetWingmanAttackOrder(enemy);                     // P162 wingman attack
                     ConsoleLog.Write($"[drone] ship {sender.Id}: ordered NPC {drone.Id} (wingman) to ATTACK ship {enemy.Id} (side {enemy.SideId})");
                     return true;
                 }

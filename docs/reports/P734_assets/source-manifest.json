@@ -1,0 +1,17 @@
+{
+  "src/Allegiance.Core/Sim/Ship.cs": "e87491fca3ca91639859347afb2ac86125d32c22f1b8c06603a1fa2e7ee85137",
+  "src/Allegiance.Core/Sim/Ship.NpcUpdates.cs": "f57c5a58dbd87626f5bdc654ca061a90bf171f34364064cef52fc65b5e081115",
+  "src/Allegiance.Core/Sim/ShipControlState.cs": "462746e9def143fba28ea6c1ea9433f78a079d247446e8f4f43af247808bade2",
+  "src/Allegiance.Server/Server.ShipCommands.cs": "74b4273447ebdb63434bae2999921a45ce605832316841067e0d56cc119e1e95",
+  "tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs": "fa32ccec9252d58d427762ef85e7134c55b37be1cf490425fc353ced268cd7aa",
+  "tests/Allegiance.Core.Tests/NpcWingmanRangeMaintenanceLiveTests.cs": "90495473ed68b5e528c4781343721491f6cfbb2f216ec4f32c6e0088e70cdbcf",
+  "tests/Allegiance.Core.Tests/P676SimRulesTests.cs": "9631803a1852f6366b2b4c2ff7721e884288abbcaf61f7203355ad5591ddaee2",
+  "tools/allegiance-mcp/BotManager.cs": "e9e982f8741fc3f9ccbbe98db5b8cd541316425fad82f68d72e14cd06541cf73",
+  "src/Allegiance.Server/Server.Showcase.cs": "32cc22259116ac42269787bc8c44018a44e918f6719e606e7af9363b06745ad9",
+  "docs/parity/sim-rules-matrix.csv": "5b4305e2e90956641a58c2b074244c9a770c65332cec6b8f51596ca647ee9a6c",
+  "tests/Allegiance.Core.Tests/P699cStationCorpusTests.cs": "3d1e6b734b0f5bd8417f05fbaed17feb56910a336c6a39a0856946f5fb22c6f7",
+  "docs/reports/P734_assets/showcase/Program.cs": "184f4300f1fe74c00461a20b30caff99abac0f9939e9be38429f8bbcfffcd330",
+  "docs/reports/P734_assets/showcase/showcase.csproj": "a6501b99c00d71b2618196fdea7c0a1da3eefeb70ccab05e96ec8a70012ad8ac",
+  "docs/reports/P734_assets/showcase-ring/Program.cs": "4ad83b509658966c43b61b32caf5605e0fc7df8d4b3592bdb4bfffae2e5d8ec9",
+  "docs/reports/P734_assets/showcase-ring/showcase.csproj": "a6501b99c00d71b2618196fdea7c0a1da3eefeb70ccab05e96ec8a70012ad8ac"
+}

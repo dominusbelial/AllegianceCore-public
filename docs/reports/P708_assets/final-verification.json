@@ -1,0 +1,144 @@
+{
+  "affected_methods": 79,
+  "affected_invocations": 237,
+  "affected_cases": 420,
+  "parking_gate": {
+    "passes": 7,
+    "failures": 3,
+    "clean": false,
+    "version_manifest": "source-manifest-before-repair-release.json"
+  },
+  "entry_revision_parking": {
+    "passes": 3,
+    "failures": 0,
+    "manifest": "baseline-manifest.json"
+  },
+  "final_build_parking_recovery": {
+    "passes": 3,
+    "failures": 0
+  },
+  "suite_load_classifications": [
+    {
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+      "isolated_passes": 3,
+      "classification": "load flake under brief rule",
+      "evidence": [
+        "suite-retry-000-1.trx.gz",
+        "suite-retry-000-2.trx.gz",
+        "suite-retry-000-3.trx.gz"
+      ]
+    },
+    {
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+      "isolated_passes": 3,
+      "classification": "load flake under brief rule",
+      "evidence": [
+        "suite-retry-001-1.trx.gz",
+        "suite-retry-001-2.trx.gz",
+        "suite-retry-001-3.trx.gz"
+      ]
+    }
+  ],
+  "suites": {
+    "suite-Core": {
+      "exit": 0,
+      "counters": {
+        "total": "4729",
+        "executed": "4729",
+        "passed": "4729",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped_tests": [],
+      "evidence": "suite-Core.trx.gz"
+    },
+    "suite-ClientCore": {
+      "exit": 0,
+      "counters": {
+        "total": "1073",
+        "executed": "1073",
+        "passed": "1073",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped_tests": [],
+      "evidence": "suite-ClientCore.trx.gz"
+    },
+    "suite-ClientCore.MonoGame": {
+      "exit": 0,
+      "counters": {
+        "total": "2237",
+        "executed": "2234",
+        "passed": "2234",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped_tests": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+      ],
+      "evidence": "suite-ClientCore.MonoGame.trx.gz"
+    },
+    "suite-Core-final": {
+      "exit": 1,
+      "counters": {
+        "total": "4729",
+        "executed": "4729",
+        "passed": "4727",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skipped_tests": [],
+      "evidence": "suite-Core-final.trx.gz"
+    }
+  },
+  "source_unchanged_since_final_build": true,
+  "git_head_unchanged": true
+}
