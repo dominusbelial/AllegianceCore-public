@@ -1,0 +1,49 @@
+{
+  "configuration": "Debug",
+  "passed": 10,
+  "failed": 0,
+  "skipped": 0,
+  "base_comparison_required": false,
+  "runs": [
+    {
+      "run": "showcase-1",
+      "seconds": 98.382
+    },
+    {
+      "run": "showcase-2",
+      "seconds": 96.075
+    },
+    {
+      "run": "showcase-3",
+      "seconds": 100.583
+    },
+    {
+      "run": "showcase-4",
+      "seconds": 95.921
+    },
+    {
+      "run": "showcase-5",
+      "seconds": 96.036
+    },
+    {
+      "run": "showcase-6",
+      "seconds": 96.164
+    },
+    {
+      "run": "showcase-7",
+      "seconds": 96.959
+    },
+    {
+      "run": "showcase-8",
+      "seconds": 98.413
+    },
+    {
+      "run": "showcase-9",
+      "seconds": 96.106
+    },
+    {
+      "run": "showcase-10",
+      "seconds": 96.473
+    }
+  ]
+}

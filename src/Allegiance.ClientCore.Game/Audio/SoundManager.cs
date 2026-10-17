@@ -2,6 +2,8 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using System.Linq;
 using Allegiance.ClientCore.State;
+using Allegiance.Core.Audio;
+using System.Diagnostics;
 
 namespace Allegiance.ClientCore.MonoGame.Audio;
 
@@ -52,6 +54,75 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 public sealed class SoundManager : IDisposable
 {
     private readonly ContentManager _content;
+    private readonly SerializedVoiceQueue _serializedVoices = new();
+    private readonly Dictionary<string, SoundEffectInstance> _serializedActive = new();
+    private readonly Dictionary<SoundEffect, NativeVoiceCue> _serializedTemplates = new();
+    private readonly long _soundClockStart = Stopwatch.GetTimestamp();
+    private double SoundNow => Stopwatch.GetElapsedTime(_soundClockStart).TotalSeconds;
+
+    // Register existing SAL/VO callers too, so wire voices share native mutexes
+    // with ship-status and station announcements from earlier sound waves.
+    private SoundEffect LoadSound(string asset)
+    {
+        var sound = _content.Load<SoundEffect>(asset);
+        string stem = asset[(asset.LastIndexOf('/') + 1)..];
+        var cue = NativeVoiceCatalog.Definitions.Values.FirstOrDefault(c => c.Stem == stem && c.Mutex.Length > 0);
+        if (cue is not null) _serializedTemplates.TryAdd(sound, cue);
+        return sound;
+    }
+
+    public void PlayVoice(NativeVoiceCue cue)
+    {
+        if (!IsLoaded || !cue.Available) return;
+        if (cue.Mutex.Length == 0)
+        {
+            var sound = LoadVoice(cue.Stem);
+            if (sound is not null) StartOneShot(sound, SoundCategory.Warning, cue.Gain);
+        }
+        else if (_serializedVoices.Enqueue(cue, SoundNow) is { } next)
+            StartSerializedVoice(next);
+    }
+
+    private void StartSerializedVoice(NativeVoiceCue cue)
+    {
+        // Failed loads/devices must release the mutex and allow the next line.
+        while (true)
+        {
+            var sound = LoadVoice(cue.Stem);
+            var instance = sound is null ? null : StartOneShot(sound, SoundCategory.Warning, cue.Gain);
+            if (instance is not null)
+            {
+                _serializedActive[cue.Mutex] = instance;
+                return;
+            }
+            var next = _serializedVoices.Complete(cue.Mutex, SoundNow);
+            if (next is null) return;
+            cue = next;
+        }
+    }
+
+    /// <summary>Advance audio in every UI state, including lobby and docked
+    /// screens where the ship's engine mixer is not updated.</summary>
+    public void UpdateAudioFrame(float deltaSeconds)
+    {
+        if (!IsLoaded) return;
+        UpdateSerializedVoices();
+        ApplyVoiceBudget(deltaSeconds);
+    }
+
+    private void UpdateSerializedVoices()
+    {
+        foreach (var (mutex, instance) in _serializedActive.ToArray())
+        {
+            bool playing;
+            try { playing = instance.State != SoundState.Stopped; }
+            catch { playing = false; }
+            if (playing) continue;
+            _serializedActive.Remove(mutex);
+            if (_serializedVoices.Complete(mutex, SoundNow) is { } next)
+                StartSerializedVoice(next);
+        }
+    }
 
     private SoundEffectInstance? _engine;     // accelsmall — main-thruster loop
     private SoundEffectInstance? _cockpitHum; // sshipint — cockpit interior hum
@@ -401,15 +472,26 @@ public sealed class SoundManager : IDisposable
     /// is stopped and released (native discards/steals, ds3dengine.cpp:460-466).</summary>
     private void PlayOneShot(SoundEffect sfx, SoundCategory cat, float volume)
     {
+        if (_serializedTemplates.TryGetValue(sfx, out var cue))
+            PlayVoice(cue with { GainDb = cue.GainDb + 20 * Math.Log10(Math.Max(volume, float.Epsilon)) });
+        else
+            StartOneShot(sfx, cat, volume);
+    }
+
+    private SoundEffectInstance? StartOneShot(SoundEffect sfx, SoundCategory cat, float volume)
+    {
+        SoundEffectInstance? inst = null;
         try
         {
-            var inst = sfx.CreateInstance();
+            inst = sfx.CreateInstance();
             inst.Volume = Math.Clamp(volume * CategoryVolume(cat) * _masterVolume, 0f, 1f);
             inst.Play();
             Track(inst, cat, isLoop: false, essential: false,
                 loudness: volume, audible: volume > 0f, started: true);
+            return inst;
         }
-        catch { /* degraded device — stay silent (Safe-equivalent) */ }
+        catch { if (inst is not null) Safe(inst.Dispose); }
+        return null;
     }
 
     /// <summary>Play an own-ship / voice-announcement one-shot through the
@@ -578,98 +660,98 @@ public sealed class SoundManager : IDisposable
             _missileTone = Loop("Sounds/missilelock");   // P230 — lock-acquired beep (missileToneSound = ImportWave("missilelock"), sounddef.mdl:365; sound id missileTone, sounds.h:135)
             _missileWarning = Loop("Sounds/missilelockonme"); // P264 — incoming-missile warning loop (missileLockSound = LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364)
             _boundsWarning = Loop($"Sounds/{ShipWarningState.LoopSound}");
-            _boundsVoice = _content.Load<SoundEffect>($"Sounds/{ShipWarningState.BoundsVoice}");
-            _crowdingVoice = _content.Load<SoundEffect>($"Sounds/{ShipWarningState.CrowdingVoice}");
-            _ambienceVariants = AmbienceStems.Select(s => _content.Load<SoundEffect>($"Sounds/{s}")).ToArray();
-            _apEngage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotengage");
-            _apDisengage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotdisengage");
-            _countdownStart = _content.Load<SoundEffect>("Sounds/countdownstart");
+            _boundsVoice = LoadSound($"Sounds/{ShipWarningState.BoundsVoice}");
+            _crowdingVoice = LoadSound($"Sounds/{ShipWarningState.CrowdingVoice}");
+            _ambienceVariants = AmbienceStems.Select(s => LoadSound($"Sounds/{s}")).ToArray();
+            _apEngage = LoadSound("Sounds/vo_sal_autopilotengage");
+            _apDisengage = LoadSound("Sounds/vo_sal_autopilotdisengage");
+            _countdownStart = LoadSound("Sounds/countdownstart");
             for (int n = 1; n <= CountdownSound.MaxTickSecond; n++)
-                _countdownTicks[n] = _content.Load<SoundEffect>($"Sounds/countdown{n}");
+                _countdownTicks[n] = LoadSound($"Sounds/countdown{n}");
             // P711 — coarse mission-clock milestone VO (SIM-0300..0303).
-            _countdownMilestones[600] = _content.Load<SoundEffect>("Sounds/vo_time_10min");
-            _countdownMilestones[300] = _content.Load<SoundEffect>("Sounds/vo_time_5min");
-            _countdownMilestones[60] = _content.Load<SoundEffect>("Sounds/vo_time_1min");
-            _countdownMilestones[30] = _content.Load<SoundEffect>("Sounds/vo_time_30sec");
-            _gameOver = _content.Load<SoundEffect>("Sounds/vo_ma_gameover");
-            _fireSound = _content.Load<SoundEffect>("Sounds/pulselaser");   // P232 — weapon single-shot (pulselaserShotSound, sounddef.mdl)
-            _projectileAmbient = _content.Load<SoundEffect>("Sounds/erbeam");// P232 — projectile in-flight loop (er_beam, sounddef.mdl)
-            _warpAmbient = _content.Load<SoundEffect>("Sounds/alephloop");  // P237 — warp ambient loop (alephSound, sounddef.mdl:385)
+            _countdownMilestones[600] = LoadSound("Sounds/vo_time_10min");
+            _countdownMilestones[300] = LoadSound("Sounds/vo_time_5min");
+            _countdownMilestones[60] = LoadSound("Sounds/vo_time_1min");
+            _countdownMilestones[30] = LoadSound("Sounds/vo_time_30sec");
+            _gameOver = LoadSound("Sounds/vo_ma_gameover");
+            _fireSound = LoadSound("Sounds/pulselaser");   // P232 — weapon single-shot (pulselaserShotSound, sounddef.mdl)
+            _projectileAmbient = LoadSound("Sounds/erbeam");// P232 — projectile in-flight loop (er_beam, sounddef.mdl)
+            _warpAmbient = LoadSound("Sounds/alephloop");  // P237 — warp ambient loop (alephSound, sounddef.mdl:385)
             // P236 — missile cues. Real single-default assets (per-type ids are
             // unreachable client-side, see MissileAmbientSoundCurve remarks).
-            _missileLaunch = _content.Load<SoundEffect>("Sounds/lrgslideout"); // HornetMissileLaunch, sounddef.mdl:1302
-            _missileAmbient = _content.Load<SoundEffect>("Sounds/mmissile");   // HornetMissileFlight, sounddef.mdl:1303
-            _explosions[ExplosionSoundTier.Large] = _content.Load<SoundEffect>("Sounds/explosionshockwave"); // largeExplosionSound, sounddef.mdl:268
-            _explosions[ExplosionSoundTier.Medium] = _content.Load<SoundEffect>("Sounds/ef24");               // mediumExplosionSound, sounddef.mdl:269
-            _explosions[ExplosionSoundTier.Small] = _content.Load<SoundEffect>("Sounds/ef120");               // smallExplosionSound, sounddef.mdl:270
+            _missileLaunch = LoadSound("Sounds/lrgslideout"); // HornetMissileLaunch, sounddef.mdl:1302
+            _missileAmbient = LoadSound("Sounds/mmissile");   // HornetMissileFlight, sounddef.mdl:1303
+            _explosions[ExplosionSoundTier.Large] = LoadSound("Sounds/explosionshockwave"); // largeExplosionSound, sounddef.mdl:268
+            _explosions[ExplosionSoundTier.Medium] = LoadSound("Sounds/ef24");               // mediumExplosionSound, sounddef.mdl:269
+            _explosions[ExplosionSoundTier.Small] = LoadSound("Sounds/ef120");               // smallExplosionSound, sounddef.mdl:270
             // P463 — the four hit-sound cues (see the field docs): the two
             // random 1-3 pools (HitMeShield1-3 / HitMeArmor1-3) and the reused
             // ef120 for otherHull (the small explosion already loaded above).
             _shieldHit = new[]
             {
-                _content.Load<SoundEffect>("Sounds/hitmeshield1"),
-                _content.Load<SoundEffect>("Sounds/hitmeshield2"),
-                _content.Load<SoundEffect>("Sounds/hitmeshield3"),
+                LoadSound("Sounds/hitmeshield1"),
+                LoadSound("Sounds/hitmeshield2"),
+                LoadSound("Sounds/hitmeshield3"),
             };
             _hullHit = new[]
             {
-                _content.Load<SoundEffect>("Sounds/hitmearmor1"),
-                _content.Load<SoundEffect>("Sounds/hitmearmor2"),
-                _content.Load<SoundEffect>("Sounds/hitmearmor3"),
+                LoadSound("Sounds/hitmearmor1"),
+                LoadSound("Sounds/hitmearmor2"),
+                LoadSound("Sounds/hitmearmor3"),
             };
             _otherHullHit = _explosions[ExplosionSoundTier.Small];   // reuse — same asset, one Content.Load
             // P463c — collision + rock-hit one-shots (collisionSound=colisionlarge,
             // rockHitSound=hitrock; sounddef.mdl:308,266). Single assets each.
-            _collision = _content.Load<SoundEffect>("Sounds/colisionlarge");
-            _rockHit = _content.Load<SoundEffect>("Sounds/hitrock");
+            _collision = LoadSound("Sounds/colisionlarge");
+            _rockHit = LoadSound("Sounds/hitrock");
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
-            _probeDeploy = _content.Load<SoundEffect>("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
-            _mineDeploy = _content.Load<SoundEffect>("Sounds/dropmine");     // P717 — deployMineSound (sounddef.mdl:368)
-            _probeAmbient = _content.Load<SoundEffect>("Sounds/erbeam");      // scanning-loop default
+            _probeDeploy = LoadSound("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
+            _mineDeploy = LoadSound("Sounds/dropmine");     // P717 — deployMineSound (sounddef.mdl:368)
+            _probeAmbient = LoadSound("Sounds/erbeam");      // scanning-loop default
             // P267 — hull maneuvering-thruster turn loop (adjust), hull exterior
             // loop (shipout), station exterior ambient loop (shipout), and the tech
             // completion chime (vo_sal_researchcomplete). See the field docs.
             _turnThruster = Loop("Sounds/adjust");
             _shipExterior = Loop("Sounds/shipout");
-            _stationAmbient = _content.Load<SoundEffect>("Sounds/shipout");
-            _devComplete = _content.Load<SoundEffect>("Sounds/vo_sal_researchcomplete");
-            _ripcordAborted = _content.Load<SoundEffect>("Sounds/vo_sal_ripcordaborted"); // P414
+            _stationAmbient = LoadSound("Sounds/shipout");
+            _devComplete = LoadSound("Sounds/vo_sal_researchcomplete");
+            _ripcordAborted = LoadSound("Sounds/vo_sal_ripcordaborted"); // P414
             // P578 — eject/death/rescue feedback cues (sounddef.mdl).
-            _criticalMsg = _content.Load<SoundEffect>("Sounds/criticalmessage");
-            _nonCriticalMsg = _content.Load<SoundEffect>("Sounds/noncriticalmessage");
-            _rescuePlayer = _content.Load<SoundEffect>("Sounds/hoover");
-            _jump = _content.Load<SoundEffect>("Sounds/jumpin");
+            _criticalMsg = LoadSound("Sounds/criticalmessage");
+            _nonCriticalMsg = LoadSound("Sounds/noncriticalmessage");
+            _rescuePlayer = LoadSound("Sounds/hoover");
+            _jump = LoadSound("Sounds/jumpin");
             // P710 — wealth announcements (payday + treasure pickups). Waves
             // resolved from sounddef.mdl:279-281,294 (payday, PowerupShield,
             // PowerupDevelopment, hoover).
-            _payday = _content.Load<SoundEffect>("Sounds/payday");
-            _pickupPowerup = _content.Load<SoundEffect>("Sounds/powerupshield");
-            _pickupDevelopment = _content.Load<SoundEffect>("Sounds/powerupdevelopment");
-            _pickupCash = _content.Load<SoundEffect>("Sounds/hoover");
+            _payday = LoadSound("Sounds/payday");
+            _pickupPowerup = LoadSound("Sounds/powerupshield");
+            _pickupDevelopment = LoadSound("Sounds/powerupdevelopment");
+            _pickupCash = LoadSound("Sounds/hoover");
             // P710 — incoming-message notification cues. Waves from
             // sounddef.mdl:297-301 (receivedobjective, receivedcomchat,
             // receivepersonalchat, receivechat).
-            _chatCommand = _content.Load<SoundEffect>("Sounds/receivedobjective");
-            _chatCommander = _content.Load<SoundEffect>("Sounds/receivedcomchat");
-            _chatPersonal = _content.Load<SoundEffect>("Sounds/receivepersonalchat");
-            _chatRegular = _content.Load<SoundEffect>("Sounds/receivechat");
+            _chatCommand = LoadSound("Sounds/receivedobjective");
+            _chatCommander = LoadSound("Sounds/receivedcomchat");
+            _chatPersonal = LoadSound("Sounds/receivepersonalchat");
+            _chatRegular = LoadSound("Sounds/receivechat");
             // P711 — ship low-status / combat feedback one-shots. Waves from
             // sounddef.mdl:371-374, 811-812, 348.
-            _hullLow = _content.Load<SoundEffect>("Sounds/vo_sal_hullcritical");
-            _ammoLow = _content.Load<SoundEffect>("Sounds/outofammo");
-            _fuelLow = _content.Load<SoundEffect>("Sounds/fuellow");
-            _energyLow = _content.Load<SoundEffect>("Sounds/vo_sal_lowenergy");
-            _noAmmo = _content.Load<SoundEffect>("Sounds/vo_sal_noammo");
-            _noFuel = _content.Load<SoundEffect>("Sounds/vo_sal_nofuel");
-            _noRipcord = _content.Load<SoundEffect>("Sounds/vo_sal_noripcord");
-            _shieldsOffline = _content.Load<SoundEffect>("Sounds/vo_sal_shieldsoffline"); // P717 — salShieldsOfflineSound (:791)
+            _hullLow = LoadSound("Sounds/vo_sal_hullcritical");
+            _ammoLow = LoadSound("Sounds/outofammo");
+            _fuelLow = LoadSound("Sounds/fuellow");
+            _energyLow = LoadSound("Sounds/vo_sal_lowenergy");
+            _noAmmo = LoadSound("Sounds/vo_sal_noammo");
+            _noFuel = LoadSound("Sounds/vo_sal_nofuel");
+            _noRipcord = LoadSound("Sounds/vo_sal_noripcord");
+            _shieldsOffline = LoadSound("Sounds/vo_sal_shieldsoffline"); // P717 — salShieldsOfflineSound (:791)
             // P714 — objective & status announce one-shots. Waves from
             // sounddef.mdl:771,773,776,779,780.
-            _madeCommander = _content.Load<SoundEffect>("Sounds/vo_sal_madecommander");
-            _madeInvestor = _content.Load<SoundEffect>("Sounds/vo_sal_madeinvestor");
-            _stolenEnemyFlag = _content.Load<SoundEffect>("Sounds/vo_stolen_enemyflag");
-            _artifact = _content.Load<SoundEffect>("Sounds/vo_sal_artifact");
-            _stolenFlag = _content.Load<SoundEffect>("Sounds/vo_stolen_flag");
+            _madeCommander = LoadSound("Sounds/vo_sal_madecommander");
+            _madeInvestor = LoadSound("Sounds/vo_sal_madeinvestor");
+            _stolenEnemyFlag = LoadSound("Sounds/vo_stolen_enemyflag");
+            _artifact = LoadSound("Sounds/vo_sal_artifact");
+            _stolenFlag = LoadSound("Sounds/vo_stolen_flag");
             // P711 — ripcord-active + mining loops (two looped instances created
             // here, gated on/off by Game1's per-frame drivers; see
             // UpdateRipcordLoop / UpdateMiningLoop).
@@ -677,15 +759,15 @@ public sealed class SoundManager : IDisposable
             _miningLoop = Loop("Sounds/miningsound");
             // P373 — first-sighting cues (see field docs for the confirmed
             // native enemy/friendly mapping).
-            _newContactEnemy = _content.Load<SoundEffect>("Sounds/newtarget");
-            _newContactFriendly = _content.Load<SoundEffect>("Sounds/newtargetenemy");
+            _newContactEnemy = LoadSound("Sounds/newtarget");
+            _newContactFriendly = LoadSound("Sounds/newtargetenemy");
             // P374 — sector-threat alert cues. The eight detection/threatened
             // VO stems from native's c_vAlertSounds (sounddef.mdl:758-766) plus
             // the sector-secured/lost control cues (768-769).
             foreach (var stem in ClusterAlertStems)
-                _clusterAlertSounds[stem] = _content.Load<SoundEffect>($"Sounds/{stem}");
-            _sectorSecured = _content.Load<SoundEffect>($"Sounds/{Allegiance.Core.ClusterWarnings.SecuredSoundStem}");
-            _sectorLost = _content.Load<SoundEffect>($"Sounds/{Allegiance.Core.ClusterWarnings.LostSoundStem}");
+                _clusterAlertSounds[stem] = LoadSound($"Sounds/{stem}");
+            _sectorSecured = LoadSound($"Sounds/{Allegiance.Core.ClusterWarnings.SecuredSoundStem}");
+            _sectorLost = LoadSound($"Sounds/{Allegiance.Core.ClusterWarnings.LostSoundStem}");
             IsLoaded = true;
             Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact/sector-threat cues");
         }
@@ -721,11 +803,6 @@ public sealed class SoundManager : IDisposable
     public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds, bool missileLocked = false)
     {
         if (!IsLoaded) return;
-
-        // P614 — settle the voice budget for this frame (rank, admit, mute/
-        // drop) before the bed volumes below are finalised. Runs first so the
-        // budget's decisions reflect the loudest live world sounds.
-        ApplyVoiceBudget(deltaSeconds);
 
         UpdateAmbience(deltaSeconds);
 
@@ -779,7 +856,7 @@ public sealed class SoundManager : IDisposable
         if (!_commandMessageAttempted)
         {
             _commandMessageAttempted = true;
-            try { _commandMessage = _content.Load<SoundEffect>("Sounds/receivedobjective"); }
+            try { _commandMessage = LoadSound("Sounds/receivedobjective"); }
             catch (ContentLoadException) { }
         }
         if (_commandMessage is { } sound) PlayWarnOneShot(sound);
@@ -820,8 +897,14 @@ public sealed class SoundManager : IDisposable
     /// matching asset it already holds. No-op when audio is not loaded.</summary>
     public void PlayCountdownSecond(int second, float gain = 1f)
     {
-        if (IsLoaded && _countdownTicks.TryGetValue(second, out var sfx))
-            PlayOneShot(sfx, SoundCategory.Warning, gain);
+        if (!IsLoaded || !_countdownTicks.ContainsKey(second)) return;
+        // Same wave, different native templates: ripcord has -7 dB extra,
+        // priority 10 and a .3-second timeout (sounddef.mdl:332-362).
+        string name = (gain == RipcordCountdownSound.Gain ? "ripcord" : "countdown") + second + "Sound";
+        var cue = NativeVoiceCatalog.Definitions[name];
+        if (gain != 1f && gain != RipcordCountdownSound.Gain)
+            cue = cue with { GainDb = cue.GainDb + 20 * Math.Log10(Math.Max(gain, float.Epsilon)) };
+        PlayVoice(cue);
     }
 
     /// <summary>P711 — play the coarse mission-clock milestone VO
@@ -1090,7 +1173,7 @@ public sealed class SoundManager : IDisposable
         if (_weaponShots.TryGetValue(stem, out var sfx)) return sfx;
         try
         {
-            var loaded = _content.Load<SoundEffect>($"Sounds/{stem}");
+            var loaded = LoadSound($"Sounds/{stem}");
             _weaponShots[stem] = loaded;
             return loaded;
         }
@@ -1593,25 +1676,32 @@ public sealed class SoundManager : IDisposable
     /// </summary>
     public void PlayVoice(string assetStem)
     {
+        var cue = NativeVoiceCatalog.Definitions.Values.FirstOrDefault(c => c.Stem == assetStem);
+        if (cue is not null)
+            PlayVoice(cue);
+        else if (IsLoaded && LoadVoice(assetStem) is { } sound)
+            PlayWarnOneShot(sound);
+    }
+
+    private SoundEffect? LoadVoice(string assetStem)
+    {
         if (!IsLoaded || string.IsNullOrEmpty(assetStem))
-            return;
+            return null;
         if (_voiceFailures.Contains(assetStem))
-            return;
+            return null;
         if (_voices.TryGetValue(assetStem, out var sfx))
-        {
-            PlayWarnOneShot(sfx);
-            return;
-        }
+            return sfx;
         try
         {
-            var loaded = _content.Load<SoundEffect>($"Sounds/{assetStem}");
+            var loaded = LoadSound($"Sounds/{assetStem}");
             _voices[assetStem] = loaded;
-            PlayWarnOneShot(loaded);
+            return loaded;
         }
         catch (Exception ex)
         {
             WarnOnce($"quick-chat voice asset unavailable ({assetStem}): {ex.Message}");
             _voiceFailures.Add(assetStem);
+            return null;
         }
     }
 
@@ -1650,7 +1740,7 @@ public sealed class SoundManager : IDisposable
 
     private SoundEffectInstance Loop(string asset)
     {
-        var sfx = _content.Load<SoundEffect>(asset);
+        var sfx = LoadSound(asset);
         var inst = sfx.CreateInstance();
         inst.IsLooped = true;
         return inst;
@@ -1685,6 +1775,8 @@ public sealed class SoundManager : IDisposable
 
     public void Dispose()
     {
+        _serializedVoices.Clear();
+        _serializedActive.Clear();
         if (_disposed) return;
         _disposed = true;
         try

@@ -10,6 +10,9 @@ namespace Allegiance.ClientCore.State;
 /// </summary>
 public enum ClientSoundEventKind
 {
+    /// <summary>CHATMESSAGE voice takes precedence over plain chat cues
+    /// (trekigc.cpp:4530-4540). Id is voiceOver, Voice is its native template.</summary>
+    ChatVoiceOver,
     /// <summary>An own/friendly station was destroyed (STATION_DESTROYED, 59).</summary>
     StationDestroyed,
 
@@ -207,4 +210,5 @@ public enum ClientSoundEventKind
 /// development id for a dev completion.</param>
 /// <param name="StationTypeId">Station type at receipt time, before destruction
 /// removes the station or subsequent exports replace it. Other events use NA.</param>
-public readonly record struct ClientSoundEvent(ClientSoundEventKind Kind, short Id, short StationTypeId = -1);
+public readonly record struct ClientSoundEvent(ClientSoundEventKind Kind, short Id, short StationTypeId = -1,
+    Allegiance.Core.Audio.NativeVoiceCue? Voice = null);

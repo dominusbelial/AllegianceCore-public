@@ -859,8 +859,8 @@ public sealed partial class Server
     /// <c>SendChat(pship, CHAT_TEAM, pside, sound, text)</c>
     /// (<c>FedSrv.CPP:11538-11548</c>, <c>FedSrv.CPP:11369-11370</c>). The
     /// <paramref name="voice"/> is the native SoundID passed through verbatim
-    /// as the wire <c>VoiceOver</c>; the port has no sound-id catalog to
-    /// resolve it against, so the numeric id is sent unchanged (the same
+    /// as the wire <c>VoiceOver</c>; the client resolves the native catalog
+    /// while the numeric id is sent unchanged (the same
     /// convention P451/P458 use for core-sourced and constant sound ids).
     /// </summary>
     private void BroadcastTeamChat(Mission mission, short sideId, short voice, string text)
@@ -888,24 +888,24 @@ public sealed partial class Server
     /// P459 — the native SoundIDs for the drone where-to-go pleas. These are
     /// <b>compile-time enum constants</b> in native (<c>DEFSOUND(...)</c> entries
     /// in <c>src/Igc/sounds.h</c> expanded by the <c>enum { ... }</c> in
-    /// <c>igc.h:455-456</c>, giving sequential SoundID values from 0), not core
+    /// <c>igc.h:455-456</c>, giving sequential SoundID values from 1001), not core
     /// data fields — hence the explicit literals, indexed from that enum:
     /// <list type="bullet">
-    /// <item><c>droneWhereToSound = 327</c> — \"No Helium in Scan range\"
+    /// <item><c>droneWhereToSound = 1328</c> — \"No Helium in Scan range\"
     /// (sounds.h:381): the miner plea \"New miner requesting He3 asteroid.\"
     /// (FedSrv.CPP:11548, shipIGC.cpp:2315).</item>
-    /// <item><c>droneWhereToLayMinefieldSound = 330</c> (sounds.h:384) — \"New
+    /// <item><c>droneWhereToLayMinefieldSound = 1331</c> (sounds.h:384) — \"New
     /// minefield requesting location.\" (FedSrv.CPP:11540).</item>
-    /// <item><c>droneWhereToLayTowerSound = 331</c> (sounds.h:385) — \"New tower
+    /// <item><c>droneWhereToLayTowerSound = 1332</c> (sounds.h:385) — \"New tower
     /// requesting location.\" (FedSrv.CPP:11543).</item>
     /// </list>
     /// (Indices recomputed by counting every <c>DEFSOUND</c>/<c>DEFEMPTYSOUND</c>
     /// entry in file order; the port sends them verbatim, see
     /// <see cref="BroadcastTeamChat"/>.)
     /// </summary>
-    private const short DroneWhereToSound = 327;
-    private const short DroneWhereToLayMinefieldSound = 330;
-    private const short DroneWhereToLayTowerSound = 331;
+    private const short DroneWhereToSound = 1328;
+    private const short DroneWhereToLayMinefieldSound = 1331;
+    private const short DroneWhereToLayTowerSound = 1332;
 
     /// <summary>
     /// P459 — run the native <c>FedSrvSiteBase::DroneTypeCompleted</c> flow

@@ -1208,7 +1208,7 @@ public sealed partial class Game1 : Game
     // leaf sends a real CHATMESSAGE with the command's voiceOver index; the
     // receive path plays the matching voice for incoming quick-chats (which
     // includes the sender's own server relay echo — see
-    // ProcessIncomingQuickChatVoices).
+    // ClientWorld sound events).
     private QuickChatDatabase? _quickChatDb;
     private QuickChatMenuRenderer _quickChatRenderer = null!;
     private bool _qcMenuOpen;
@@ -1216,7 +1216,6 @@ public sealed partial class Game1 : Game
     private List<QuickChatMenu> _qcMenuPath = new();
     private readonly HashSet<Keys> _qcKeysPrev = new();  // last-frame nav keys (rising-edge detection)
     private bool _qcRWasDown;                            // edge-detect the R open toggle
-    private ChatMessage? _lastVoiceProcessed;            // receive-side voice watermark
 
     // Rising-edge detectors so a held key neither re-fires nor (Escape) both
     // cancels chat and then quits the game across consecutive frames.

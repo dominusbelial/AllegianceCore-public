@@ -3116,9 +3116,10 @@ public sealed partial class ClientWorld
         RecordSoundEvent(ClientSoundEventKind.DevCompleted, completed.DevId);
     }
 
-    private void RecordSoundEvent(ClientSoundEventKind kind, short id, short stationTypeId = -1)
+    private void RecordSoundEvent(ClientSoundEventKind kind, short id, short stationTypeId = -1,
+        Allegiance.Core.Audio.NativeVoiceCue? voice = null)
     {
-        _soundEvents.Add(new ClientSoundEvent(kind, id, stationTypeId));
+        _soundEvents.Add(new ClientSoundEvent(kind, id, stationTypeId, voice));
         if (_soundEvents.Count > MaxSoundEvents) _soundEvents.RemoveAt(0);
     }
 
@@ -3711,8 +3712,7 @@ public sealed partial class ClientWorld
     /// (:4557) — the commander variant when the sender leads the team (:4555) —
     /// or the quieter <c>newOfflineChatMsgSound</c> when disconnected (:4560).
     /// Own echoes are dropped before the sound stage (appmsg.cpp:2644), and a
-    /// sonic chat (a non-NA <c>voiceOver</c>) is left to the voice-over table,
-    /// which this renderer port does not hold (SIM-0399, documented in P710).
+    /// sonic chat or direct SoundID takes precedence over the plain chat cue.
     /// <paramref name="senderIsLeader"/> mirrors native's <c>bIsLeader</c>
     /// (<c>ppi-&gt;IsTeamLeader()</c>); <paramref name="online"/> mirrors
     /// <c>m_fm.IsConnected()</c> (always true in this client, present so the
@@ -3720,11 +3720,15 @@ public sealed partial class ClientWorld
     public static ClientSoundEventKind? ClassifyChatSound(
         ChatMessage m, short? myShipId, bool senderIsLeader, bool online = true)
     {
-        if (myShipId is { } me && m.SidSender == me)
+        // Native voices outgoing sonic chat locally, then ignores its wire
+        // echo (appmsg.cpp:2644). The port voices that single server echo.
+        bool sonic = Allegiance.Core.Audio.NativeVoiceCatalog.SonicChats.TryGetValue(m.VoiceOver, out var entry)
+            && (m.MessageIsAbsent || m.Message == entry.Caption);
+        if (myShipId is { } me && m.SidSender == me && !sonic)
             return null;                              // own echo — dropped (:2644)
 
         if (m.VoiceOver != Na)
-            return null;                              // sonic chat — VO table out of scope (SIM-0399)
+            return ClientSoundEventKind.ChatVoiceOver; // (:4530-4536); unknown IDs stay silent
 
         // Native precedence: command → individual/personal → general.
         if (m.CommandID != Na)
@@ -3748,6 +3752,9 @@ public sealed partial class ClientWorld
 
     private void Apply(ChatMessage m)
     {
+        var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(m.VoiceOver, m.Message, m.MessageIsAbsent);
+        if (m.MessageIsAbsent && m.VoiceOver != Na)
+            m.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(m.VoiceOver);
         _events.Record(m);
         // P710 — drive the incoming-message announcement cue. The sender is a
         // team leader when the per-side leader (SET_TEAM_LEADER) is the sender's
@@ -3758,14 +3765,14 @@ public sealed partial class ClientWorld
             && _ships.TryGetValue(sender, out var ent)
             && TeamLeaderShipIdFor(ent.SideId) == sender;
         var kind = ClassifyChatSound(m, MyShipId, senderIsLeader);
-        if (kind is { } k)
-            RecordSoundEvent(k, sender);
+        if (kind is { } k && (k != ClientSoundEventKind.ChatVoiceOver || voice is not null))
+            RecordSoundEvent(k, k == ClientSoundEventKind.ChatVoiceOver ? m.VoiceOver : sender, voice: voice);
         // Server-hosted equivalents of WinTrek/trekigc.cpp:3019-3067,
         // PostText's critical/noncritical sound and HUD tip (:3086-3135).
         if (m.SidSender == -1 && m.ChatTarget == (int)ChatTarget.Individual &&
             m.OidRecipient == MyShipId && NotificationCue.IsNotification(m.VoiceOver))
         {
-            _feedbackLines.Add(new FeedbackLine(m.Message, m.VoiceOver == NotificationCue.Critical, NowSeconds()));
+            _feedbackLines.Add(new FeedbackLine(m.Message, m.VoiceOver == NotificationCue.Critical, NowSeconds(), SoundAlreadyQueued: true));
             if (_feedbackLines.Count > MaxFeedbackLines) _feedbackLines.RemoveAt(0);
         }
     }
@@ -3785,7 +3792,18 @@ public sealed partial class ClientWorld
             ChatTarget = (int)ChatTarget.Everyone,
         });
     }
-    private void Apply(ChatBuoy m) => _events.Record(m);
+    private void Apply(ChatBuoy m)
+    {
+        // Both messages share ChatData (Messages.h:204-223,716-722).
+        var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(m.Cd.VoiceOver, m.Message, m.MessageIsAbsent);
+        if (m.MessageIsAbsent && m.Cd.VoiceOver != Na)
+            m.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(m.Cd.VoiceOver);
+        _events.Record(m);
+        var chat = new ChatMessage { Message = m.Message, Cd = m.Cd, MessageIsAbsent = m.MessageIsAbsent };
+        var kind = ClassifyChatSound(chat, MyShipId, senderIsLeader: false);
+        if (kind == ClientSoundEventKind.ChatVoiceOver && voice is not null)
+            RecordSoundEvent(kind.Value, m.Cd.VoiceOver, voice: voice);
+    }
     private void Apply(KillShip m)
     {
         _events.Record(m);

@@ -17,8 +17,9 @@ namespace Allegiance.ClientCore.MonoGame.QuickChat;
 /// (<c>SendChatInternal(NULL, idSonicChat, …)</c>, console.cpp:1593) and the
 /// receiver derives the display text from the index via
 /// <c>GetSonicChatText(idSonicChat, 0)</c> (trekigc.cpp:4514). This port's
-/// wire needs real text, so it sends the <see cref="Caption"/> as the message
-/// — identical displayed text, same round-trip guarantee.</para>
+/// wire preserves that null-text distinction; the receiver derives
+/// <see cref="Caption"/> from the same native index table. The P217
+/// caption+index format remains accepted for older port clients.</para>
 /// </remarks>
 public sealed class QuickChatEntry
 {

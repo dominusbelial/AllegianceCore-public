@@ -1,0 +1,22 @@
+{
+  "purpose": "Read-only managed stack samples confirm the first ClientCore suite is advancing between existing live tests. No test was stopped or altered.",
+  "samples": [
+    {
+      "sample": "p732-live-stack.txt",
+      "captured_at_epoch": 1792217675.8346,
+      "test_frames": [
+        "Allegiance.ClientCore.Tests!Allegiance.ClientCore.Tests.P699PodHomeLiveTests+Ticker+<>c__DisplayClass4_0.<.ctor>b__0()",
+        "Allegiance.ClientCore.Tests!Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(int16)"
+      ]
+    },
+    {
+      "sample": "p732-live-stack-2.txt",
+      "captured_at_epoch": 1792217761.9272587,
+      "test_frames": [
+        "Allegiance.ClientCore.Tests!Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Connect(class Allegiance.Server.Server,class System.String,unsigned int64)",
+        "Allegiance.ClientCore.Tests!Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Pump(class Allegiance.Server.Server,class System.Func`1<bool>,int32)",
+        "Allegiance.ClientCore.Tests!Allegiance.ClientCore.Tests.P691BucketProgressLiveTests.Integer_progress_and_empty_use_the_native_side_or_prosperity_audience(bool)"
+      ]
+    }
+  ]
+}

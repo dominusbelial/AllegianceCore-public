@@ -52,6 +52,8 @@ public sealed class ChatBuoy : IFedMessage, IChatRoutingTarget
 
     /// <summary>The chat text (CB_ZTS, as in <see cref="ChatMessage.Message"/>).</summary>
     public string Message = "";
+    /// <summary>Null native text selects a sonic index, as in CHATMESSAGE.</summary>
+    public bool MessageIsAbsent;
 
     /// <summary>The shared <see cref="ChatData cd"/> block (Messages.h:716-722).</summary>
     public ChatData Cd;
@@ -66,7 +68,7 @@ public sealed class ChatBuoy : IFedMessage, IChatRoutingTarget
 
     public byte[] Encode()
     {
-        int blobLen = ZtsBlob.BlobSize(Message);
+        int blobLen = MessageIsAbsent ? 0 : ZtsBlob.BlobSize(Message);
         var buf = new byte[FixedSize + blobLen];
         WireWriter w = new(buf);
 
@@ -83,7 +85,7 @@ public sealed class ChatBuoy : IFedMessage, IChatRoutingTarget
             throw new InvalidOperationException($"CHATBUOY internal layout drift: {w.Position} != {FixedSize}");
 
         // blob: CB_ZTS, at the fixed-region end (ib = offset from byte 0)
-        var (ib, cb) = ZtsBlob.Write(ref w, Message);
+        var (ib, cb) = MessageIsAbsent ? ((ushort)FixedSize, (ushort)0) : ZtsBlob.Write(ref w, Message);
         w.WriteU16At(slotIb, ib);
         w.WriteU16At(slotCb, cb);
         w.WriteU16At(0, (ushort)w.Position);   // cbmsg = total length
@@ -103,6 +105,7 @@ public sealed class ChatBuoy : IFedMessage, IChatRoutingTarget
         return new ChatBuoy
         {
             Message = it.IsPresent ? ZtsBlob.Read(buf, it) : "",
+            MessageIsAbsent = !it.IsPresent,
             Cd = ChatData.Decode(buf.Slice(8)),
             Db = DataBuoyIGC.Decode(buf.Slice(24)),
         };

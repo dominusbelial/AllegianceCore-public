@@ -100,7 +100,7 @@ public class LiveChatBuoyWireTests
         {
             Message = "BM HOLD STATION",
             Cd = new ChatData { SidSender = senderId, ChatTarget = (int)ChatTarget.Individual, OidRecipient = teammateId,
-                                VoiceOver = 0, CommandID = 0, BObjectModel = false },   // matches SendChatBuoy's defaults below
+                                VoiceOver = -1, CommandID = 0, BObjectModel = false },   // matches SendChatBuoy's defaults below
             Db = TestBuoy,
         };
         foreach (var b in bots) b.ResetChatBuoyReceived();

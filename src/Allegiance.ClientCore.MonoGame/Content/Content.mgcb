@@ -2935,3 +2935,717 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_time_30sec.ogg
+
+#begin Sounds/dn_vo_attack_transeiverbuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_vo_attack_transeiverbuilder.ogg
+
+#begin Sounds/dn_vo_builder_transeiver.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_vo_builder_transeiver.ogg
+
+#begin Sounds/oink1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/oink1.ogg
+
+#begin Sounds/oink2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/oink2.ogg
+
+#begin Sounds/oink3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/oink3.ogg
+
+#begin Sounds/oink4.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/oink4.ogg
+
+#begin Sounds/oink5.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/oink5.ogg
+
+#begin Sounds/vo_attack_expansionbuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_expansionbuilder.ogg
+
+#begin Sounds/vo_attack_garrisonbuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_garrisonbuilder.ogg
+
+#begin Sounds/vo_attack_minebuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_minebuilder.ogg
+
+#begin Sounds/vo_attack_miner.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_miner.ogg
+
+#begin Sounds/vo_attack_outpostbuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_outpostbuilder.ogg
+
+#begin Sounds/vo_attack_palisadebuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_palisadebuilder.ogg
+
+#begin Sounds/vo_attack_refinerybuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_refinerybuilder.ogg
+
+#begin Sounds/vo_attack_researchbuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_researchbuilder.ogg
+
+#begin Sounds/vo_attack_shipyardbuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_shipyardbuilder.ogg
+
+#begin Sounds/vo_attack_supremecybuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_supremecybuilder.ogg
+
+#begin Sounds/vo_attack_tacticalbuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_tacticalbuilder.ogg
+
+#begin Sounds/vo_attack_teleportbuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_teleportbuilder.ogg
+
+#begin Sounds/vo_builder_aintgonnawork.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_aintgonnawork.ogg
+
+#begin Sounds/vo_builder_expansion.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_expansion.ogg
+
+#begin Sounds/vo_builder_garrison.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_garrison.ogg
+
+#begin Sounds/vo_builder_mine.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_mine.ogg
+
+#begin Sounds/vo_builder_nobuild.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_nobuild.ogg
+
+#begin Sounds/vo_builder_outpost.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_outpost.ogg
+
+#begin Sounds/vo_builder_palisade.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_palisade.ogg
+
+#begin Sounds/vo_builder_refinery.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_refinery.ogg
+
+#begin Sounds/vo_builder_research.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_research.ogg
+
+#begin Sounds/vo_builder_shipyard.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_shipyard.ogg
+
+#begin Sounds/vo_builder_supremecy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_supremecy.ogg
+
+#begin Sounds/vo_builder_tactical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_tactical.ogg
+
+#begin Sounds/vo_builder_teleport.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_teleport.ogg
+
+#begin Sounds/vo_builder_teleportenemy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_teleportenemy.ogg
+
+#begin Sounds/vo_builder_teleportprobe.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_builder_teleportprobe.ogg
+
+#begin Sounds/vo_cover_builder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_cover_builder.ogg
+
+#begin Sounds/vo_destroy_carrier.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_carrier.ogg
+
+#begin Sounds/vo_destroy_minebuilder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_minebuilder.ogg
+
+#begin Sounds/vo_destroy_miner.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_miner.ogg
+
+#begin Sounds/vo_miner_cantdothat.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_miner_cantdothat.ogg
+
+#begin Sounds/vo_miner_dontgetpaid.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_miner_dontgetpaid.ogg
+
+#begin Sounds/vo_miner_enemyonscope.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_miner_enemyonscope.ogg
+
+#begin Sounds/vo_miner_intransit.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_miner_intransit.ogg
+
+#begin Sounds/vo_miner_mining.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_miner_mining.ogg
+
+#begin Sounds/vo_miner_report4duty.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_miner_report4duty.ogg
+
+#begin Sounds/vo_miner_underattack.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_miner_underattack.ogg
+
+#begin Sounds/vo_miner_yougotit.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_miner_yougotit.ogg
+
+#begin Sounds/vo_player_findiron.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_findiron.ogg
+
+#begin Sounds/vo_player_findlava.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_findlava.ogg
+
+#begin Sounds/vo_player_foundcarbonacous.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_foundcarbonacous.ogg
+
+#begin Sounds/vo_player_foundiron.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_foundiron.ogg
+
+#begin Sounds/vo_player_foundlava.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_foundlava.ogg
+
+#begin Sounds/vo_player_haveanartifact.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_haveanartifact.ogg
+
+#begin Sounds/vo_player_ispdrop.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_ispdrop.ogg
+
+#begin Sounds/vo_player_pursuingelectron.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_pursuingelectron.ogg
+
+#begin Sounds/vo_player_pursuingenergy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_pursuingenergy.ogg
+
+#begin Sounds/vo_player_pursuingordinance.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_pursuingordinance.ogg
+
+#begin Sounds/vo_player_stationrepair.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_player_stationrepair.ogg
+
+#begin Sounds/vo_request_buildercarbon.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_buildercarbon.ogg
+
+#begin Sounds/vo_request_buildergeneric.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_buildergeneric.ogg
+
+#begin Sounds/vo_request_builderhelium.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_builderhelium.ogg
+
+#begin Sounds/vo_request_buildersilicon.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_buildersilicon.ogg
+
+#begin Sounds/vo_request_builderuranium.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_builderuranium.ogg
+
+#begin Sounds/vo_request_minefield.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_minefield.ogg
+
+#begin Sounds/vo_request_miner.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_miner.ogg
+
+#begin Sounds/vo_request_special.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_special.ogg
+
+#begin Sounds/vo_request_tower.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_tower.ogg
+
+#begin Sounds/vo_sal_booted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_booted.ogg
+
+#begin Sounds/vo_sal_cargofull.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_cargofull.ogg
+
+#begin Sounds/vo_sal_carrierattack.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_carrierattack.ogg
+
+#begin Sounds/vo_sal_chaffdepleted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_chaffdepleted.ogg
+
+#begin Sounds/vo_sal_clearedwall.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_clearedwall.ogg
+
+#begin Sounds/vo_sal_cloakdisengage.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_cloakdisengage.ogg
+
+#begin Sounds/vo_sal_cloakengage.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_cloakengage.ogg
+
+#begin Sounds/vo_sal_commencescan.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_commencescan.ogg
+
+#begin Sounds/vo_sal_completeddev.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_completeddev.ogg
+
+#begin Sounds/vo_sal_completeddramatic.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_completeddramatic.ogg
+
+#begin Sounds/vo_sal_completedfabrication.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_completedfabrication.ogg
+
+#begin Sounds/vo_sal_completedmod.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_completedmod.ogg
+
+#begin Sounds/vo_sal_completedradical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_completedradical.ogg
+
+#begin Sounds/vo_sal_contactsinrange.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_contactsinrange.ogg
+
+#begin Sounds/vo_sal_coremeltdown.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_coremeltdown.ogg
+
+#begin Sounds/vo_sal_crimsonsighted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_crimsonsighted.ogg
+
+#begin Sounds/vo_sal_dispenserempty.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_dispenserempty.ogg
+
+#begin Sounds/vo_sal_enemyjoiners.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_enemyjoiners.ogg
+
+#begin Sounds/vo_sal_enemyleaves.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_enemyleaves.ogg
+
+#begin Sounds/vo_sal_enemytroops.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_enemytroops.ogg
+
+#begin Sounds/vo_sal_enteredwall.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_enteredwall.ogg
+
+#begin Sounds/vo_sal_ironsighted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_ironsighted.ogg
+
+#begin Sounds/vo_sal_mia.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_mia.ogg
+
+#begin Sounds/vo_sal_minercritical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_minercritical.ogg
+
+#begin Sounds/vo_sal_minerpartial.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_minerpartial.ogg
+
+#begin Sounds/vo_sal_missilesdepleted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_missilesdepleted.ogg
+
+#begin Sounds/vo_sal_missiletech.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_missiletech.ogg
+
+#begin Sounds/vo_sal_mustbeatstation.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_mustbeatstation.ogg
+
+#begin Sounds/vo_sal_newequip.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_newequip.ogg
+
+#begin Sounds/vo_sal_noturrets.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_noturrets.ogg
+
+#begin Sounds/vo_sal_playerboarded.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_playerboarded.ogg
+
+#begin Sounds/vo_sal_recruitsarrived.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_recruitsarrived.ogg
+
+#begin Sounds/vo_sal_redalert.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_redalert.ogg
+
+#begin Sounds/vo_sal_reloading.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloading.ogg
+
+#begin Sounds/vo_sal_reloadingammo.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingammo.ogg
+
+#begin Sounds/vo_sal_reloadingchaff.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingchaff.ogg
+
+#begin Sounds/vo_sal_reloadingdispenser.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingdispenser.ogg
+
+#begin Sounds/vo_sal_reloadingfuel.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingfuel.ogg
+
+#begin Sounds/vo_sal_reloadingmissiles.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingmissiles.ogg
+
+#begin Sounds/vo_sal_rixsighted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_rixsighted.ogg
+
+#begin Sounds/vo_sal_shieldsdown.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_shieldsdown.ogg
+
+#begin Sounds/vo_sal_shipcantripcord.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_shipcantripcord.ogg
+
+#begin Sounds/vo_sal_shipisrepaired.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_shipisrepaired.ogg
+
+#begin Sounds/vo_sal_shiptech.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_shiptech.ogg
+
+#begin Sounds/vo_sal_stationupgrade.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_stationupgrade.ogg
+
+#begin Sounds/vo_sal_traitor.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_traitor.ogg
+
+#begin Sounds/vo_sal_watchfire.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_watchfire.ogg
+
+#begin Sounds/vo_sal_welcomehome.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_welcomehome.ogg
+
+#begin Sounds/vo_sal_weptech.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_weptech.ogg
+
+#begin Sounds/vo_secured_artifact.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_secured_artifact.ogg
+
+#begin Sounds/vo_secured_enemyflag.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_secured_enemyflag.ogg
+
+#begin Sounds/vo_secured_flag.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_secured_flag.ogg
+
+#begin Sounds/vo_time_15sec.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_time_15sec.ogg

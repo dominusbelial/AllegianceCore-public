@@ -211,11 +211,9 @@ public class ClientWorldSoundEventTests
     }
 
     [Fact]
-    public void ClassifySonicChat_IsSilent()
+    public void ClassifySonicChat_SelectsVoiceOverBeforePlainChat()
     {
-        // A sonic chat (non-NA voiceOver) is left to the voice-over table, not
-        // a generic cue (SIM-0399, out of this bundle's scope).
-        Assert.Null(ClientWorld.ClassifyChatSound(Msg(sender: 771, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Everyone, voiceOver: 550),
+        Assert.Equal(ClientSoundEventKind.ChatVoiceOver, ClientWorld.ClassifyChatSound(Msg(sender: 771, chatTarget: (int)Allegiance.Core.Sim.ChatTarget.Everyone, voiceOver: 550),
             myShipId: 772, senderIsLeader: false));
     }
 

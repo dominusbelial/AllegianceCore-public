@@ -1309,3 +1309,28 @@ and are not classified as flakes. Overlapping diagnostic runs caused by survivin
 verification children were excluded from isolated counts and rerun serially.
 See [P693 report](reports/P693_TEAM_LIMITS.md) and [results](reports/P693_RESULTS.json)
 for native evidence, raw counts, timestamps, binary hashes and invocation details.
+
+
+## P732 observation (2026-10-17)
+
+Exactly two final full-suite passes ran with real live/loopback tests and the
+local P660 showcase opt-in enabled. Each main pass recorded Lobby **19/0/0**,
+MonoGame **2,299/0/3**, ClientCore **1,187/0/0**, and Core **4,752/1/0**
+(passed/failed/skipped); both scripts exited 1. The three MonoGame skips per
+pass are the existing private Meshy-pack checks.
+
+After both suites completed, every reported failing method passed **3/3 fresh
+exact-method isolated Debug reruns**, satisfying P732's explicit load-flake rule:
+
+| Test (under `Allegiance.Core.Tests`) | Full-suite symptom | Final isolation |
+| --- | --- | --- |
+| `Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events` | Run 1: expected 0 allocated bytes; observed 7,768. | 3/3 pass |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | Run 2: `TimeoutException: no OnPeerJoined for raw peer`. | 3/3 pass |
+| `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback` | Run 2 quarantine: failed the batch, passed the runner's isolated retry. The existing runner suppresses the original assertion output. | 3/3 pass |
+
+No assertions, deadlines, quarantine traits or product behavior were changed for
+these observations. Isolated passes do not establish the underlying causes or
+fixes. See the [P732 report](reports/P732_VOICE_OVER.md),
+[full invocation ledger](reports/P732_assets/verification.json), and
+[post-suite isolation ledger](reports/P732_assets/post-failure-isolation.json)
+for raw counts, commands, main-lane failure stacks and per-attempt transcripts.

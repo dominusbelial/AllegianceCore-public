@@ -98,13 +98,16 @@ public sealed class LiveQuickChatOrderWireTests
 
         // ── A issues "attack my target" (cidAttack) with C as target, to Team ──
         sender.ResetLeadershipSignals(); teammate.ResetLeadershipSignals(); target.ResetLeadershipSignals();
-        sender.SendChat("attack my target", ChatTarget.Team,
+        sender.SendChat("", ChatTarget.Team, voiceOver: 10, absentMessage: true,
             commandId: OrderChange.CidAttack, oidTarget: targetId, otTarget: (short)IgcObjectType.Ship);
 
         PumpUntil(server, () => teammate.QueuedCommandUpdates.Any(u => u.HasPending && u.CommandId == OrderChange.CidAttack && u.TargetId == targetId), 2000);
         Assert.Contains(teammate.QueuedCommandUpdates,
             u => u.HasPending && u.CommandId == OrderChange.CidAttack
               && u.TargetType == IgcObjectType.Ship && u.TargetId == targetId);
+        PumpUntil(server, () => teammate.Chats.Any(c => c.VoiceOver == 10), 2000);
+        var sonic = Assert.Single(teammate.Chats, c => c.VoiceOver == 10);
+        Assert.True(sonic.MessageIsAbsent);
         // The sender and the enemy-side player receive no queued order.
         Assert.DoesNotContain(sender.QueuedCommandUpdates, u => u.HasPending);
         Assert.DoesNotContain(target.QueuedCommandUpdates, u => u.HasPending);
