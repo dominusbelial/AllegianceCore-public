@@ -200,6 +200,23 @@ public enum ClientSoundEventKind
     /// ship's own streamed <c>ShieldFraction</c> falling from online to ≈0.</summary>
     ShieldsOffline,
 
+    // ── P735 (parity wave 22: own-ship state notification one-shots) ───────
+
+    /// <summary><c>cloak engage</c> — the local ship's cloak became active
+    /// (native CloakActive state bit false→true, Igc/shipIGC.cpp:1608; wave
+    /// <c>vo_sal_cloakengage</c>, sounddef.mdl:807). A local one-shot on the
+    /// own ship's streamed <c>StateM</c> CloakActive bit, exactly once per
+    /// engagement.</summary>
+    CloakEngaged,
+
+    /// <summary><c>pickUpPartSound</c> — the local ship picked up a part
+    /// (native server-side shipIGC.h:1307; wave <c>hoover</c>, sounddef.mdl:278).
+    /// Native plays this at the acquiring ship via the server-side
+    /// <c>PlayNotificationSound</c> (not the client ACQUIRE_TREASURE handler,
+    /// appmsg.cpp:266-275, which is silent for <c>c_tcPart</c>); the port
+    /// reproduces the player-facing cue on the same <c>c_tcPart</c> pickup.</summary>
+    PickupPart,
+
     // ── P719 (parity wave 18: station/economy + weapons/ordnance loadout) ──
     // One-shot announce/feedback cues in the station/economy and loadout areas
     // (sim-rules-matrix sounds area). Wire/state-driven where the client

@@ -133,12 +133,16 @@ public class ClientWorldSoundEventTests
     }
 
     [Fact]
-    public void AcquirePart_RecordsNoPickupSound()
+    public void AcquirePart_RecordsPickupPartSound()
     {
-        // c_tcPart has no pickup cue (it triggers a TREASURE_ACK instead, appmsg.cpp:267-276).
+        // P735 — SIM-0268: a c_tcPart pickup plays the pickUpPartSound cue
+        // (native plays it server-side at the ship, shipIGC.h:1307; the client
+        // ACQUIRE_TREASURE handler itself is silent, appmsg.cpp:267-276).
         var world = new ClientWorld();
-        world.Apply(new AcquireTreasure { TreasureCode = (byte)Allegiance.Core.TreasureCode.Part, TreasureId = 1 });
-        Assert.Empty(world.TakeSoundEvents());
+        world.Apply(new AcquireTreasure { TreasureCode = (byte)Allegiance.Core.TreasureCode.Part, TreasureId = 601, Amount = 1 });
+        var ev = Assert.Single(world.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.PickupPart, ev.Kind);
+        Assert.Equal(601, ev.Id);
     }
 
     // ── P710 — incoming-message notification cues (trekigc.cpp:4536-4560) ───
@@ -554,6 +558,97 @@ public class ClientWorldSoundEventTests
                 Vector3.Zero, Orientation.Identity, Vector3.Zero,
                 turnRates: new[] { 0f, 0f, 0f },
                 hullFrac: 0.9f, shieldFrac: 0.7f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    // ── P735 (parity wave 22): own-ship state notification one-shots ────────
+
+    /// <summary>Arm <see cref="ClientWorld.UpdateOwnStatusAlarms"/> with the
+    /// local ship wearing the given cloak stateM bit (CloakActive = 0x800,
+    /// ShipControlState.CloakActive), then discard the arming pass.</summary>
+    private static ClientWorld CloakArmedWorld(short me, int stateM)
+    {
+        var w = new ClientWorld();
+        var pose = ServerShipUpdate.FromValues(
+            me, stateM: stateM, new ControlData(0f, 0f, 0f, 0f), time: 1u,
+            Vector3.Zero, Orientation.Identity, Vector3.Zero,
+            turnRates: new[] { 0f, 0f, 0f },
+            hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+            energyFrac: 1f, oreFrac: 0f, power: 1f);
+        w.Apply(new SetCluster { SectorId = 1, Ship = pose, Cookie = 0x1 });
+        w.UpdateOwnStatusAlarms();   // arm
+        w.TakeSoundEvents();         // discard arming-pass emissions
+        return w;
+    }
+
+    [Fact]
+    public void OwnCloakEngages_RecordsCloakEngaged()
+    {
+        // SIM-0248 — the local ship's CloakActive bit going false→true plays
+        // the cloak-engage cue (native shipIGC.cpp:1608; vo_sal_cloakengage).
+        var w = CloakArmedWorld(775, stateM: 0);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                775, stateM: Allegiance.Core.Sim.ShipControlState.CloakActive,
+                new ControlData(0f, 0f, 0f, 0f), time: 2u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        var ev = Assert.Single(w.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.CloakEngaged, ev.Kind);
+        Assert.Equal((short)775, ev.Id);
+    }
+
+    [Fact]
+    public void OwnCloakAlreadyActive_DoesNotRefire()
+    {
+        // Arming already cloaked: staying cloaked must not re-fire the cue.
+        var w = CloakArmedWorld(775, stateM: Allegiance.Core.Sim.ShipControlState.CloakActive);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                775, stateM: Allegiance.Core.Sim.ShipControlState.CloakActive,
+                new ControlData(0f, 0f, 0f, 0f), time: 3u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void OwnCloakUncloaks_NoEvent()
+    {
+        // Cloak turning back off is not a cue (native only sounds the engage).
+        var w = CloakArmedWorld(775, stateM: Allegiance.Core.Sim.ShipControlState.CloakActive);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                775, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 4u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
                 energyFrac: 1f, oreFrac: 0f, power: 1f),
             Cookie = 0x2,
         });

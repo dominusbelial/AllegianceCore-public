@@ -618,6 +618,12 @@ public sealed partial class ClientWorld
     /// first own-ship update is seen.</summary>
     private bool? _prevOwnShieldOnline;
 
+    /// <summary>P735 — SIM-0248: the local ship's own CloakActive stateM bit at
+    /// the last <see cref="UpdateOwnStatusAlarms"/> sample, for the cloak-engage
+    /// edge (a cloak that was off and then turned on). Null until the first
+    /// own-ship update is seen.</summary>
+    private bool? _prevOwnCloaked;
+
     /// <summary>The mutable per-frame driver for the four low-status alarm
     /// one-shots and the two no-ammo/no-fuel attempt cues (SIM-0361..0366).
     /// Game1 calls this each frame under the gate; it samples the local ship's
@@ -659,6 +665,17 @@ public sealed partial class ClientWorld
         if (_prevOwnShieldOnline is { } prevOnline && prevOnline && !shieldOnline)
             RecordSoundEvent(ClientSoundEventKind.ShieldsOffline, me);
         _prevOwnShieldOnline = shieldOnline;
+
+        // P735 — SIM-0248: the cloak-engage VO (salCloakEngageSound,
+        // shipIGC.cpp:1608) fires when the ship's CloakActive state bit goes
+        // false→true. Native plays it server-side on the cloak state change
+        // (PlayNotificationSound(salCloakEngageSound, this)); the port mirrors
+        // it as a client one-shot on the LOCAL ship's own streamed StateM bit,
+        // exactly once per engagement.
+        bool cloaked = (u.StateM & Allegiance.Core.Sim.ShipControlState.CloakActive) != 0;
+        if (_prevOwnCloaked is { } prevCloaked && !prevCloaked && cloaked)
+            RecordSoundEvent(ClientSoundEventKind.CloakEngaged, me);
+        _prevOwnCloaked = cloaked;
     }
 
     /// <summary>
@@ -3699,10 +3716,12 @@ public sealed partial class ClientWorld
     /// <c>c_tcDevelopment</c> pickup plays <c>pickUpDevelopmentSound</c> (:286),
     /// a <c>c_tcCash</c> pickup plays <c>pickUpCashSound</c> (:291), and a
     /// <c>c_tcFlag</c> pickup reuses the development cue (:303 — the dedicated
-    /// flag cue is NYI in native). <c>c_tcPart</c> has no sound here (it
-    /// triggers a TREASURE_ACK instead). The message carries no ship id; it is
-    /// only ever addressed to the acquiring client, so the cue is recorded
-    /// unconditionally.
+    /// flag cue is NYI in native). A <c>c_tcPart</c> pickup plays
+    /// <c>pickUpPartSound</c> (P735 — SIM-0268; the player-facing cue native
+    /// plays server-side at the ship, shipIGC.h:1307, while the client handler
+    /// is silent and only sends a TREASURE_ACK). The message carries no ship
+    /// id; it is only ever addressed to the acquiring client, so the cue is
+    /// recorded unconditionally.
     private void Apply(AcquireTreasure m)
     {
         ClientSoundEventKind? kind = (Allegiance.Core.TreasureCode)m.TreasureCode switch
@@ -3711,6 +3730,12 @@ public sealed partial class ClientWorld
             Allegiance.Core.TreasureCode.Development => ClientSoundEventKind.PickupDevelopment,
             Allegiance.Core.TreasureCode.Cash => ClientSoundEventKind.PickupCash,
             Allegiance.Core.TreasureCode.Flag => ClientSoundEventKind.PickupDevelopment, // NYI flag cue → reuses development (appmsg.cpp:303)
+            // P735 — SIM-0268: a c_tcPart pickup. Native's client ACQUIRE_TREASURE
+            // handler is silent for parts (appmsg.cpp:266-275 — it only sends a
+            // TREASURE_ACK); the player-facing pickUpPartSound is played
+            // server-side at the ship (shipIGC.h:1307). The port reproduces that
+            // cue on the same local pickup.
+            Allegiance.Core.TreasureCode.Part => ClientSoundEventKind.PickupPart,
             _ => null,
         };
         if (kind is { } k)

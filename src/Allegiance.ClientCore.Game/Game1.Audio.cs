@@ -449,6 +449,12 @@ public sealed partial class Game1
                     snd.PlayPickupCash();
                     Console.WriteLine("[monogame] audio: cash pickup");
                     break;
+                case ClientSoundEventKind.PickupPart:
+                    // P735 — SIM-0268: part pickup (native pickUpPartSound,
+                    // shipIGC.h:1307; wave hoover, sounddef.mdl:278).
+                    snd.PlayPickupPart();
+                    Console.WriteLine("[monogame] audio: part pickup");
+                    break;
                 // ── P710 — incoming-message notification cues
                 // (trekigc.cpp:4536-4560) ───────────────────────────────────
                 case ClientSoundEventKind.ChatCommand:
@@ -531,6 +537,13 @@ public sealed partial class Game1
                     // P717 — the own shield was knocked offline (native
                     // salShieldsOfflineSound, shieldIGC.cpp:186; vo_sal_shieldsoffline).
                     snd.PlayShieldsOffline();
+                    break;
+                case ClientSoundEventKind.CloakEngaged:
+                    // P735 — the own ship's cloak engaged (native
+                    // salCloakEngageSound, shipIGC.cpp:1608; vo_sal_cloakengage,
+                    // sounddef.mdl:807).
+                    snd.PlayCloakEngage();
+                    Console.WriteLine($"[monogame] audio: cloak engage (ship {ev.Id})");
                     break;
                 // ── P719 — station/economy + loadout one-shots ─────────────
                 case ClientSoundEventKind.Docked:

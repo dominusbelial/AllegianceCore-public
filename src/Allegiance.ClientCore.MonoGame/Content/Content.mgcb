@@ -2972,6 +2972,12 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_cargofull.ogg
 
+#begin Sounds/vo_sal_cloakengage.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_cloakengage.ogg
+
 #begin Sounds/vo_sal_reloading.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

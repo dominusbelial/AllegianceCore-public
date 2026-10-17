@@ -223,6 +223,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _pickupPowerup = null!;       // PowerupShield — pickUpPowerupSound
     private SoundEffect _pickupDevelopment = null!;   // PowerupDevelopment — pickUpDevelopmentSound (+ flag reuses it, NYI flag cue)
     private SoundEffect _pickupCash = null!;          // hoover — pickUpCashSound
+    private SoundEffect _pickupPart = null!;          // P735 — hoover — pickUpPartSound (shipIGC.h:1307, sounddef.mdl:278)
     // P710 — incoming-message notification cues (trekigc.cpp:4536-4560). Real
     // waves from sounddef.mdl:297-301; newOfflineChatMsgSound reuses receivechat
     // at reduced gain (sounddef.mdl:299), so it shares _chatRegular's asset.
@@ -240,6 +241,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _noFuel = null!;          // vo_sal_nofuel — salNoFuelSound (:811)
     private SoundEffect _noRipcord = null!;       // vo_sal_noripcord — salNoRipcordSound (:348)
     private SoundEffect _shieldsOffline = null!;  // P717 — vo_sal_shieldsoffline — salShieldsOfflineSound (:791)
+    private SoundEffect _cloakEngage = null!;     // P735 — vo_sal_cloakengage — salCloakEngageSound (:807)
     // P714 — objective & status announce one-shots (appmsg.cpp:1238,2965,3149,3156,3169).
     // Waves from sounddef.mdl:771,773,776,779,780.
     private SoundEffect _madeCommander = null!;   // vo_sal_madecommander — commanderSound (:779)
@@ -687,6 +689,7 @@ public sealed class SoundManager : IDisposable
             _pickupPowerup = _content.Load<SoundEffect>("Sounds/powerupshield");
             _pickupDevelopment = _content.Load<SoundEffect>("Sounds/powerupdevelopment");
             _pickupCash = _content.Load<SoundEffect>("Sounds/hoover");
+            _pickupPart = _content.Load<SoundEffect>("Sounds/hoover"); // P735 — pickUpPartSound (shipIGC.h:1307)
             // P710 — incoming-message notification cues. Waves from
             // sounddef.mdl:297-301 (receivedobjective, receivedcomchat,
             // receivepersonalchat, receivechat).
@@ -704,6 +707,7 @@ public sealed class SoundManager : IDisposable
             _noFuel = _content.Load<SoundEffect>("Sounds/vo_sal_nofuel");
             _noRipcord = _content.Load<SoundEffect>("Sounds/vo_sal_noripcord");
             _shieldsOffline = _content.Load<SoundEffect>("Sounds/vo_sal_shieldsoffline"); // P717 — salShieldsOfflineSound (:791)
+            _cloakEngage = _content.Load<SoundEffect>("Sounds/vo_sal_cloakengage"); // P735 — salCloakEngageSound (:807)
             // P714 — objective & status announce one-shots. Waves from
             // sounddef.mdl:771,773,776,779,780.
             _madeCommander = _content.Load<SoundEffect>("Sounds/vo_sal_madecommander");
@@ -994,6 +998,11 @@ public sealed class SoundManager : IDisposable
     /// <c>pickUpCashSound</c>, appmsg.cpp:291). No-op when not loaded.</summary>
     public void PlayPickupCash() => PlayWarnOneShot(_pickupCash);
 
+    /// <summary>P735 — play the part-pickup cue (<c>hoover</c>, native
+    /// <c>pickUpPartSound</c>, shipIGC.h:1307, sounddef.mdl:278). No-op when
+    /// not loaded.</summary>
+    public void PlayPickupPart() => PlayWarnOneShot(_pickupPart);
+
     // ── P710 — incoming-message notification cues (trekigc.cpp:4536-4560) ────
     /// <summary>Play the objective/command cue (<c>receivedobjective</c>, native
     /// <c>newCommandMsgSound</c>, trekigc.cpp:4540). No-op when not loaded.</summary>
@@ -1057,6 +1066,11 @@ public sealed class SoundManager : IDisposable
     /// native <c>salShieldsOfflineSound</c>, shieldIGC.cpp:186). No-op when not
     /// loaded.</summary>
     public void PlayShieldsOffline() => PlayWarnOneShot(_shieldsOffline);
+
+    /// <summary>P735 — play the cloak-engage cue (<c>vo_sal_cloakengage</c>,
+    /// native <c>salCloakEngageSound</c>, shipIGC.cpp:1608). No-op when not
+    /// loaded.</summary>
+    public void PlayCloakEngage() => PlayWarnOneShot(_cloakEngage);
 
     /// <summary>P714 — play the "you became team leader" cue (<c>vo_sal_madecommander</c>,
     /// native <c>commanderSound</c>, appmsg.cpp:2965). No-op when not loaded.</summary>
@@ -1923,6 +1937,7 @@ public sealed class SoundManager : IDisposable
             _noFuel?.Dispose();           // P711
             _noRipcord?.Dispose();        // P711
             _shieldsOffline?.Dispose();   // P717
+            _cloakEngage?.Dispose();      // P735
             _ripcordLoop?.Dispose();      // P711
             _miningLoop?.Dispose();       // P711
             _newContactEnemy?.Dispose();       // P373
