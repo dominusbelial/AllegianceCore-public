@@ -14,6 +14,41 @@ pass, pass, pass) on the same binaries — an intermittent live-net load flake
 (exacerbated by concurrent Codex suite runs on this host), not a P716
 regression. P716 touches only client sound-event recording/gating; this test
 exercises server map-gen warp tracing. No code change was made for it.
+## P713 observation (2026-10-16)
+
+Exactly two unfiltered sequential sweeps recorded **16,212 passes / 4 failures /
+6 existing optional Meshy-pack skips**. The second sweep was clean: Core
+**4,726/0/0**, ClientCore **1,119/0/0**, MonoGame **2,244/0/3**, Lobby **19/0/0**
+(pass/fail/skip). The final interface cohort passed **115 methods × 3 individual
+runs / 384 case passes**, and the final-build never-parks showcase passed **10/10**.
+
+After both sweeps, each first-pass Core failure below passed **3/3 fresh
+exact-method isolated invocations**, meeting P713's explicit load/timing-flake
+rule. No assertion, deadline, quarantine setting or product implementation was
+changed for these observations. The isolated passes do not establish a cause or
+fix for the underlying receipt/shutdown behavior.
+
+| Method | First-pass symptom | Post-suite isolation |
+| --- | --- | --- |
+| `Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals` | ThreadPerPeer cleanup threw `ThreadStateException` at `TcpTransport.Shutdown:533` | 3/3 invocations; both modes passed each time (6 cases) |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Expected loadout-change receipt collection was empty | 3/3 |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | No matching game-over roster element at `First` | 3/3 |
+
+The fourth first-pass failure is **not a flake**. The leader-command fixture put
+its supposed non-leader first on the other team, where native elects it as that
+team's commander (`FedSrv/fsmission.cpp:601-613`). Correct join-role delivery
+exposed this invalid assumption; the original method failed **3/3 alone**. The
+fixture now uses a balanced third peer and an actual same-side ordinary member,
+retains the default imbalance rule and original deadlines, and requires the
+member to know both its commander and the same NPC before testing the negative
+command result. It passed **3/3 after correction**, passed the second full sweep,
+and passed **3/3 again after both sweeps**. Production source was unchanged by
+this fixture correction.
+
+See the [P713 report](reports/P713_INTERFACE_WAVE.md),
+[validation summary](reports/P713_assets/validation-summary.json),
+[invocation ledger](reports/P713_assets/verification.json), and
+[selected affected cohort](reports/P713_assets/affected-certificate.json).
 
 ## P699c observation (2026-10-16)
 

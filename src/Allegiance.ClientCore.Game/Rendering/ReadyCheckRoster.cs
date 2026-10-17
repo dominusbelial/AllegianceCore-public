@@ -30,8 +30,8 @@ public static class ReadyCheckRoster
     public static (string SideName, IReadOnlyList<ReadyCheckLayout.PlayerRow> Players, bool? AggregateReady)
         Gather(ClientWorld world, object gate, bool ownReady)
     {
-        short mySide = world.MySideId ?? -1;
-        short me = world.MyShipId ?? -1;
+        short mySide;
+        short me;
 
         // Snapshot every world read under the session's Gate lock (the network
         // thread mutates world.Ships / Roster / SideRoster concurrently with the
@@ -45,6 +45,8 @@ public static class ReadyCheckRoster
         bool? agg;
         lock (gate)
         {
+            mySide = world.MySideId ?? -1;
+            me = world.MyShipId ?? -1;
             sideName = "SIDE " + mySide;
             if (world.SideRoster is { } sr)
             {
@@ -67,9 +69,11 @@ public static class ReadyCheckRoster
         // explicitly below.
         foreach (var (sid, sid2, name) in ships)
         {
+            // A known enemy's old ready relay must not reappear as an unnamed
+            // teammate after a side change (teamscreen.cpp:413-425).
+            seen.Add(sid);
             if (sid == me) continue;
             if (sid2 != mySide) continue;   // same-side only (teammate EXPORTs set SideId)
-            seen.Add(sid);
             bool ready = roster.TryGetValue(sid, out var r) && r;
             players.Add(new ReadyCheckLayout.PlayerRow(string.IsNullOrEmpty(name) ? "sid" + sid : name, ready, false));
         }

@@ -1,0 +1,102 @@
+[
+  {
+    "label": "showcase-04",
+    "battle_seconds": 97.9,
+    "samples": 978,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.806,
+    "shots": 5013,
+    "hits": 2783,
+    "kills": 17
+  },
+  {
+    "label": "showcase-05",
+    "battle_seconds": 96.3,
+    "samples": 962,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.008,
+    "shots": 5214,
+    "hits": 3086,
+    "kills": 17
+  },
+  {
+    "label": "showcase-06",
+    "battle_seconds": 95.8,
+    "samples": 957,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.006,
+    "shots": 4274,
+    "hits": 2420,
+    "kills": 11
+  },
+  {
+    "label": "showcase-07",
+    "battle_seconds": 96.8,
+    "samples": 967,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.008,
+    "shots": 4653,
+    "hits": 2828,
+    "kills": 14
+  },
+  {
+    "label": "showcase-08",
+    "battle_seconds": 94.8,
+    "samples": 947,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.006,
+    "shots": 4669,
+    "hits": 2250,
+    "kills": 12
+  },
+  {
+    "label": "showcase-09",
+    "battle_seconds": 94.4,
+    "samples": 943,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.006,
+    "shots": 4669,
+    "hits": 2112,
+    "kills": 14
+  },
+  {
+    "label": "showcase-10",
+    "battle_seconds": 96.8,
+    "samples": 967,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.004,
+    "shots": 4906,
+    "hits": 2837,
+    "kills": 15
+  },
+  {
+    "label": "accepted-showcase-08",
+    "battle_seconds": 96.3,
+    "samples": 962,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.003,
+    "shots": 4601,
+    "hits": 2075,
+    "kills": 13
+  },
+  {
+    "label": "accepted-showcase-09",
+    "battle_seconds": 96.1,
+    "samples": 960,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.204,
+    "shots": 4478,
+    "hits": 2507,
+    "kills": 13
+  },
+  {
+    "label": "accepted-showcase-10",
+    "battle_seconds": 96.7,
+    "samples": 966,
+    "reached": 25,
+    "longest_low_speed_with_target_seconds": 2.006,
+    "shots": 5068,
+    "hits": 2819,
+    "kills": 14
+  }
+]

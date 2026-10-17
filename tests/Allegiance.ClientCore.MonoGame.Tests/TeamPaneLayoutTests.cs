@@ -14,6 +14,25 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// </summary>
 public class TeamPaneLayoutTests
 {
+    [Fact]
+    public void Commander_and_afk_markers_follow_roster_state_independently_of_location()
+    {
+        var ships = new Dictionary<string, TeamPaneLayout.ShipBrief>
+        {
+            ["Amy"] = new(301, 1, -1, false, false, IsLeader: true, Ready: false, WingId: 3),
+            ["Bob"] = new(301, 1, 9, false, false, Ready: true),
+        };
+        var lines = TeamPaneLayout.Build([E("Amy", 0), E("Bob", 0)], Ranks, ships, null, null, null, false, "Amy");
+        var commander = lines.Single(l => l.Kind == TeamPaneLayout.LineKind.Pilot && l.Highlight);
+        Assert.Contains("[COMMANDER] [AFK]", commander.Text);
+        Assert.Contains("SEC 1", commander.Text);
+        Assert.Contains("WING:escort", commander.Text);
+        var pilot = lines.Single(l => l.Kind == TeamPaneLayout.LineKind.Pilot && !l.Highlight);
+        Assert.Contains("DOCKED", pilot.Text);
+        Assert.DoesNotContain("[COMMANDER]", pilot.Text);
+        Assert.DoesNotContain("[AFK]", pilot.Text);
+    }
+
     private static ScoreRosterEntry E(string name, short side, short kills = 0, short deaths = 0, short rank = 0) =>
         new(name, side, kills, deaths, rank, 0f, 0f);
 
@@ -104,7 +123,7 @@ public class TeamPaneLayoutTests
     }
 
     /// <summary>⭐ Money and the active ballot appear in the footer only when data
-    /// exists; the wing note marks the SET_WINGID(106) infra constraint.</summary>
+    /// exists; wing membership is shown when known.</summary>
     [Fact]
     public void Build_footer_shows_money_ballot_and_wing_note()
     {
@@ -115,7 +134,7 @@ public class TeamPaneLayoutTests
 
         Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Money && l.Text == "MY MONEY: 3210");
         Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Ballot && l.Text.Contains("Move miners to G7"));
-        Assert.Contains(lines, l => l.Kind == TeamPaneLayout.LineKind.Note && l.Text.Contains("Wing assignments unavailable"));
+        Assert.DoesNotContain(lines, l => l.Text.Contains("unavailable"));
     }
 
     /// <summary>Ballot is omitted when not a team leader.</summary>

@@ -3028,7 +3028,8 @@ private void CompleteStartCountdown(Mission mission, double now)
                 SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
                 VerIgcCore = _missions[0].Core.Version,
                 DwCookie = 0,
-                ISideMissionOwner = 0,
+                ISideMissionOwner = -1,
+                RgShipIdLeaders = [-1, -1, -1, -1, -1, -1],
                 Stage = 0,
             }.Encode(),
             new JoinedMission
@@ -3100,6 +3101,8 @@ private void CompleteStartCountdown(Mission mission, double now)
                 DwCookie = 0,
                 NTems = (short)mdSides.Count,
                 RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
+                ISideMissionOwner = -1,
+                RgShipIdLeaders = [-1, -1, -1, -1, -1, -1],
             }.Encode(),
         }));
         Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
@@ -3531,6 +3534,53 @@ private void CompleteStartCountdown(Mission mission, double now)
             }.Encode(),
         }));
         SendInitialDockState(from, live.Ship);
+
+        // P713: the first player is elected before _peerShips registration,
+        // so its own election broadcasts cannot reach it. Late joiners also
+        // missed all earlier ready/leadership changes. Native sends the current
+        // mission definition and player roster (fsmission.cpp:3943-3974), whose
+        // rgShipIDLeaders/rgfReady/rgfForceReady arrays carry this state. Use the
+        // port's existing state messages for the equivalent per-join snapshot.
+        if (live.Ship.Mission is { } lobbyMission)
+        {
+            var lobbyState = new List<byte[]>();
+            // Native SendLobbyMissionInfo sends every player's PLAYERINFO
+            // before role-change handlers can dereference them (appmsg.cpp:
+            // 2934-2944,2976-2986). No hull or tactical position is disclosed.
+            foreach (var (peer, player) in _peerShips)
+                if (player.Ship.Mission == lobbyMission && player.Ship.Id != shipId)
+                    lobbyState.Add(new PlayerInfo { ShipId = player.Ship.Id,
+                        ISide = player.Ship.SideId ?? -2, Money = 0,
+                        CharacterName = _peerNames.TryGetValue(peer, out var name) ? name : "",
+                        PilotType = PlayerInfo.PilotTypePlayer }.Encode());
+            foreach (var side in lobbyMission.Sides)
+            {
+                if (side.LeaderShipId is { } leader)
+                    lobbyState.Add(new SetTeamLeader { SideId = side.Id, ShipId = leader }.Encode());
+                // Fresh-session defaults are unready/unforced/active; only
+                // non-default state needs an additional snapshot message.
+                if (side.Ready)
+                    lobbyState.Add(new TeamReady { SideId = side.Id, FReady = true }.Encode());
+                if (side.ForceReady)
+                    lobbyState.Add(new ForceTeamReady { SideId = side.Id, FForceReady = true }.Encode());
+                if (!side.Active)
+                    lobbyState.Add(new SideInactive { SideId = side.Id, BActive = false }.Encode());
+                if (side.Id == lobbyMission.MissionOwnerSideId && side.LeaderShipId is { } owner)
+                    lobbyState.Add(new SetMissionOwner { SideId = side.Id, ShipId = owner }.Encode());
+            }
+            foreach (var (peer, teammate) in _peerShips)
+                if (teammate.Ship.Mission == lobbyMission && teammate.Ship.SideId == live.Ship.SideId)
+                {
+                    // fsmission.cpp:697-709: a joiner learns teammates' existing
+                    // wings. Default command-wing zero is already implicit.
+                    if (teammate.Ship.Id != shipId && teammate.Ship.WingId != 0)
+                        lobbyState.Add(new SetWingId { ShipID = teammate.Ship.Id,
+                            WingId = teammate.Ship.WingId, BCommanded = true }.Encode());
+                    if (_playerReady.TryGetValue(peer, out var ready) && ready)
+                        lobbyState.Add(new PlayerReady { ShipId = teammate.Ship.Id, FReady = true }.Encode());
+                }
+            if (lobbyState.Count > 0) SendPeer(from, FedPacket.Pack(lobbyState));
+        }
 
         // FM_S_MISSION_STAGE(37): the message this whole join burst
         // was missing (P37, 2026-08-31). The native client's entire

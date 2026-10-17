@@ -104,6 +104,17 @@ public sealed partial class ClientWorld
     // clintlib/appmsg.cpp:2129-2147 (SET_WINGID).
     private void Apply(SetWingId wing)
     {
-        if (wing.WingId is >= 0 and < SetWingId.WidMax) Upsert(wing.ShipID).WingId = wing.WingId;
+        if (wing.WingId is < 0 or >= SetWingId.WidMax ||
+            !_ships.TryGetValue(wing.ShipID, out var ship) || ship.SideId != MySideId) return;
+        // Unlike native's optimistic self assignment, the port also accepts the
+        // uncommanded self echo: SendWingId waits for server confirmation.
+        ship.WingId = wing.WingId;
+        if (wing.BCommanded && wing.ShipID == MyShipId)
+        {
+            string text = $"You have been assigned to wing {WingNames.For(wing.WingId)}";
+            if (_feedbackLines.Count >= MaxFeedbackLines) _feedbackLines.RemoveAt(0);
+            _feedbackLines.Add(new FeedbackLine(text, true, 0));
+            PostSystemLine(text);
+        }
     }
 }

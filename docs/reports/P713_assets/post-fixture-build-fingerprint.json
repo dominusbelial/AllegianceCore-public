@@ -1,0 +1,8 @@
+{
+  "start_unix": 1792177049.3099532,
+  "completed_unix": 1792177053.0522566,
+  "exit": 0,
+  "original_certified_sources_unchanged": true,
+  "fixture": "tests/Allegiance.ClientCore.Tests/LeaderSameSideBotClientLiveTests.cs",
+  "fixture_sha256": "649a9785b39c9e6b89b3f0bd7314db7d9e360f6cfcee76a68bf6921061eaca95"
+}

@@ -301,13 +301,15 @@ public class LiveTeamLeadershipTests
         Assert.True(server.TryJoinSide(ShipOf(server, a0Id), mA0));
         Flush(server);
 
-        // Mission B's peer saw absolutely nothing: its OWN auto-join broadcasts
-        // (JOIN_SIDE / SET_TEAM_LEADER / SET_MISSION_OWNER) go out before the
-        // peer is registered in _peerShips, and mission A's broadcasts are
-        // mission-scoped — so nothing reaches it.
+        // P713 join sync now includes B's OWN initial leader/owner. Mission A's
+        // later changes must never appear in B's receipts.
         Assert.Empty(b0.JoinSides);
-        Assert.Empty(b0.SetTeamLeaders);
-        Assert.Empty(b0.SetMissionOwners);
+        var bLeader = Assert.Single(b0.SetTeamLeaders);
+        Assert.Equal(b0Id, bLeader.ShipId);
+        Assert.Equal(mB0, bLeader.SideId);
+        var bOwner = Assert.Single(b0.SetMissionOwners);
+        Assert.Equal(b0Id, bOwner.ShipId);
+        Assert.Equal(mB0, bOwner.SideId);
         Assert.Empty(b0.QuitMissions);
         // …yet mission B's OWN first auto-assigned player (b0) legitimately
         // elected itself owner of mission B (P548 routes auto-assign through
