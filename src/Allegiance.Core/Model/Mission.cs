@@ -459,6 +459,8 @@ public sealed partial class Mission
     public string ResearchEpoch { get; } = Guid.NewGuid().ToString("N");
     /// <summary>P703 explicit showcase extension; scales periodic native income only, before
     /// DoPayday distributes it to player wallets. Starting money and mining are unchanged.</summary>
+    /// <summary>Port-only showcase research accelerator. Native bucket and construction timers use 1.</summary>
+    public double ShowcaseResearchTimeScale { get; set; } = 1;
     public double ShowcaseIncomeMultiplier { get; set; } = 1;
 
     public ResearchSettings Research { get; private set; } = new();

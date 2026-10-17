@@ -569,6 +569,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Arm the port-only, epoch-scoped research showcase finale deadline.</summary>
+    public void SendShowcaseFinale(Guid epoch, short winner) =>
+        Send(FedPacket.Pack([new ShowcaseFinaleRequest { Epoch = epoch, Winner = winner }.Encode()]));
+
     /// <summary>Join the target wing (WinTrek.cpp:10659-10662).</summary>
     public void SendWingId(short shipId, short wingId)
     {

@@ -180,14 +180,27 @@ internal static class TechLoadoutSelector
             $"role={role}; techBits={c.Techs.PopCount}; {rule}; stable ID ties; legal nonobsolete human hull {h.HullId} '{h.Name}'; cost={price}; "
             + string.Join(", ", parts.Select(p => $"{Part(c.Core, p.PartId).EquipmentType}@{p.MountId}={p.PartId} '{Part(c.Core, p.PartId).Name}' x{p.Amount}")), strike);
     }
-    private static ShowcaseFinale.StrikeLoadout? SelectBomber(Context context, DataStationTypeIGC target)
+    // Same exhaustive station-damage ranking and native purchase gates as the bomber selector.
+    // Research finales may use another human combat hull while bomber tech is unavailable.
+    internal static Selection? SelectAvailableStrike(StaticCore core, short civId, TechTreeBitMask techs,
+        short dockTypeId, DataStationTypeIGC target, long budget)
+    {
+        if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
+        var context = Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget);
+        var strike = SelectBomber(context, target, anyCombatHull: true);
+        if (strike is null) return null;
+        var selected = Describe(context, Showcase.HullRole.Bomber, strike.HullId, strike.Parts, strike);
+        return selected with { Reason = "research finale: no legal affordable bomber; best available station-damage loadout; " + selected.Reason };
+    }
+
+    private static ShowcaseFinale.StrikeLoadout? SelectBomber(Context context, DataStationTypeIGC target, bool anyCombatHull = false)
     {
         var core = context.Core;
         var techs = context.Techs;
         var stationLocal = context.Local;
         var options = new List<ShowcaseFinale.StrikeLoadout>();
         foreach (var hull in core.HullTypes.Values.Where(h => Showcase.IsPlayerBuyable(core, h)
-                     && Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber
+                     && (anyCombatHull || Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber)
                      && context.Hulls.Contains(h.HullId)
                      && !SuccessorUpgrade.HullIsObsolete(core, h, stationLocal, techs)).OrderBy(h => h.HullId))
         {

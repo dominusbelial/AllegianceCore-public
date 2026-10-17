@@ -83,6 +83,13 @@ public sealed partial class Server
                 continue;
             }
 
+            if (fmid == ShowcaseFinaleRequest.Fmid)
+            {
+                try { ArmResearchFinale(from, command.Read<ShowcaseFinaleRequest>()); }
+                catch (ArgumentException e) { Console.WriteLine($"[wire] bad SHOWCASE_FINALE from {from}: {e.Message}"); }
+                continue;
+            }
+
             if (fmid == LogonRequest.Fmid)
             {
                 LogonRequest req;

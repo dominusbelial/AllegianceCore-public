@@ -1,0 +1,102 @@
+[
+  {
+    "run": 1,
+    "wallSeconds": 93.3,
+    "samples": 932,
+    "reached": 24,
+    "longestLowSpeedWithTargetSeconds": 2.006,
+    "shots": 3127,
+    "hits": 1547,
+    "kills": 11
+  },
+  {
+    "run": 2,
+    "wallSeconds": 95.4,
+    "samples": 953,
+    "reached": 24,
+    "longestLowSpeedWithTargetSeconds": 2.006,
+    "shots": 3624,
+    "hits": 1252,
+    "kills": 11
+  },
+  {
+    "run": 3,
+    "wallSeconds": 92.9,
+    "samples": 928,
+    "reached": 24,
+    "longestLowSpeedWithTargetSeconds": 1.909,
+    "shots": 3530,
+    "hits": 1326,
+    "kills": 13
+  },
+  {
+    "run": 4,
+    "wallSeconds": 97.6,
+    "samples": 975,
+    "reached": 25,
+    "longestLowSpeedWithTargetSeconds": 2.013,
+    "shots": 4047,
+    "hits": 1190,
+    "kills": 11
+  },
+  {
+    "run": 5,
+    "wallSeconds": 95.5,
+    "samples": 954,
+    "reached": 25,
+    "longestLowSpeedWithTargetSeconds": 1.914,
+    "shots": 3388,
+    "hits": 1395,
+    "kills": 12
+  },
+  {
+    "run": 6,
+    "wallSeconds": 93.7,
+    "samples": 936,
+    "reached": 24,
+    "longestLowSpeedWithTargetSeconds": 2.016,
+    "shots": 3252,
+    "hits": 1330,
+    "kills": 14
+  },
+  {
+    "run": 7,
+    "wallSeconds": 93.8,
+    "samples": 937,
+    "reached": 24,
+    "longestLowSpeedWithTargetSeconds": 2.114,
+    "shots": 3883,
+    "hits": 1648,
+    "kills": 16
+  },
+  {
+    "run": 8,
+    "wallSeconds": 93.4,
+    "samples": 933,
+    "reached": 24,
+    "longestLowSpeedWithTargetSeconds": 2.007,
+    "shots": 3962,
+    "hits": 1588,
+    "kills": 15
+  },
+  {
+    "run": 9,
+    "wallSeconds": 93.7,
+    "samples": 936,
+    "reached": 24,
+    "longestLowSpeedWithTargetSeconds": 2.004,
+    "shots": 3761,
+    "hits": 1519,
+    "kills": 11
+  },
+  {
+    "run": 10,
+    "wallSeconds": 95.2,
+    "samples": 951,
+    "reached": 25,
+    "longestLowSpeedWithTargetSeconds": 1.904,
+    "shots": 3659,
+    "hits": 1654,
+    "kills": 16
+  }
+]

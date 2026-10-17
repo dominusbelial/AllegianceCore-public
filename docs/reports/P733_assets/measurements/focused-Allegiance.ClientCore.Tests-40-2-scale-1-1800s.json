@@ -1,0 +1,74 @@
+[
+  {
+    "Side": 0,
+    "Plan": "plan_a",
+    "Step": 16,
+    "TotalSteps": 157,
+    "Action": "develop",
+    "Name": "SRM Seismic",
+    "Status": "building bucket",
+    "ProgressPercent": 9.643046709129512,
+    "StepProgressPercent": 13.958333333333334,
+    "Money": 665200,
+    "EtaSeconds": 103.25,
+    "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+    "CompletedTechs": [
+      "Retro Booster",
+      "Enh Constructor",
+      "Enh Constructor",
+      "Enh Miner",
+      "Enh Miner",
+      "ER Nanite 2",
+      "MRM Seeker 2",
+      "Med Shield 2",
+      "Lt Booster 1",
+      "Counter 2",
+      "Weedcore 03",
+      "MRM Quickfire 2"
+    ],
+    "Stations": [
+      "Garrison",
+      "Teleport (Hvy)"
+    ],
+    "Constructor": null,
+    "ReservedRock": null,
+    "Cycles": 0
+  },
+  {
+    "Side": 1,
+    "Plan": "plan_a",
+    "Step": 16,
+    "TotalSteps": 181,
+    "Action": "drone",
+    "Name": ".Carrier",
+    "Status": "building bucket",
+    "ProgressPercent": 8.642955801104973,
+    "StepProgressPercent": 64.375,
+    "Money": 773236,
+    "EtaSeconds": 42.75,
+    "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+    "CompletedTechs": [
+      "Retro Booster",
+      "Enh Constructor",
+      "Enh Constructor",
+      "Enh Miner",
+      "Enh Miner",
+      "ER Nanite 2",
+      "MRM Seeker 2",
+      "SRM Seismic",
+      "Med Shield 2",
+      "Lt Booster 1",
+      "Hvy Sig Cloak 1",
+      "Counter 2",
+      "Weedcore 03",
+      "EW Seismic Cannon"
+    ],
+    "Stations": [
+      "Garrison",
+      "Teleport"
+    ],
+    "Constructor": null,
+    "ReservedRock": null,
+    "Cycles": 0
+  }
+]

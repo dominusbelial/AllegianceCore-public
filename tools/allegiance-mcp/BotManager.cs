@@ -2693,10 +2693,13 @@ bool isThreat =
         }
 
         // The requested role can be locked while this life flies a temporary
-        // fighter/scout. Only a real bomber hull takes the station-attack duty.
+        // fighter/scout. Research finales can additionally assign a verified legal
+        // station-damaging strike loadout on another player hull.
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
             && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(bot), out var flyingHull)
-            && Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
+            && (Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
+                || (bot.FinaleBomberActive && bot.FinaleGrantVerified && ResearchFinale(bot)
+                    && bot.PreviousLegalLoadout?.Strike is { } strike && strike.HullId == flyingHull.HullId))
             && (bot.Arena || bot.TargetSector is null || bot.TargetSector == myCluster))
         {
             short? station;

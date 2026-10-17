@@ -2938,6 +2938,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             {
                 Epoch = researchMission.ResearchEpoch, SideId = side.Id, Plan = plan,
                 Settings = researchMission.Research, IncomeMultiplier = _config.Showcase.IncomeMultiplier,
+                TechMode = _config.Showcase.TechMode, ResearchTimeScale = researchMission.ShowcaseResearchTimeScale,
                 Loop = _config.Showcase.LoopResearchPlans,
                 CompletedDevelopments = side.Buckets.Where(b => b.Completed && b.Development.HasValue)
                     .Select(b => b.Development!.Value.DevelopmentId).ToList(),

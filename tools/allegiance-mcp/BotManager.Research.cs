@@ -62,7 +62,7 @@ internal sealed partial class BotManager
                                 {
                                     commander?.ReleaseReservations();
                                     commander = new(side, briefing.Epoch, new ResearchTree(core, briefing.Plan.CivId, briefing.Settings),
-                                        briefing.Plan, initial.Value, _researchRocks, briefing.Loop);
+                                        briefing.Plan, initial.Value, _researchRocks, briefing.Loop, briefing.ResearchTimeScale);
                                     _research[side] = commander;
                                 }
                                 foreach (var action in commander.Tick(ResearchSnapshot(peer, side)))

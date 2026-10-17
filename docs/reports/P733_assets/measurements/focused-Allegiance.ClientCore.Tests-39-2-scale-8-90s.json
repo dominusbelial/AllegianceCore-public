@@ -1,0 +1,56 @@
+[
+  {
+    "Side": 0,
+    "Plan": "plan_a",
+    "Step": 8,
+    "TotalSteps": 157,
+    "Action": "develop",
+    "Name": "Counter 2",
+    "Status": "building bucket",
+    "ProgressPercent": 4.575079617834395,
+    "StepProgressPercent": 18.2875,
+    "Money": 35328,
+    "EtaSeconds": 12.256875,
+    "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+    "CompletedTechs": [
+      "Retro Booster",
+      "MRM Seeker 2",
+      "Med Shield 2",
+      "Lt Booster 1",
+      "Weedcore 03"
+    ],
+    "Stations": [
+      "Garrison"
+    ],
+    "Constructor": null,
+    "ReservedRock": null,
+    "Cycles": 0
+  },
+  {
+    "Side": 1,
+    "Plan": "plan_a",
+    "Step": 8,
+    "TotalSteps": 181,
+    "Action": "develop",
+    "Name": "Counter 2",
+    "Status": "building bucket",
+    "ProgressPercent": 3.968439226519337,
+    "StepProgressPercent": 18.2875,
+    "Money": 45021,
+    "EtaSeconds": 12.256875,
+    "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+    "CompletedTechs": [
+      "Retro Booster",
+      "MRM Seeker 2",
+      "Med Shield 2",
+      "Lt Booster 1",
+      "Weedcore 03"
+    ],
+    "Stations": [
+      "Garrison"
+    ],
+    "Constructor": null,
+    "ReservedRock": null,
+    "Cycles": 0
+  }
+]

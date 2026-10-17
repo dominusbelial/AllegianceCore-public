@@ -130,6 +130,17 @@ internal sealed partial class BotManager
         var selected = TechLoadoutSelector.Select(core, civ, Showcase.HullRole.Bomber,
             techs, shop.Value.StationTypeId, target)?.Strike;
         if (selected is not null) return selected;
+        if (ResearchFinale(bot))
+        {
+            long budget = long.MaxValue;
+            if (bot.Cs is { } peer) lock (peer.Gate) budget = peer.World.MyMoney ?? 0;
+            var fallback = TechLoadoutSelector.SelectAvailableStrike(core, civ, techs, shop.Value.StationTypeId, target, budget);
+            if (fallback is not null)
+            {
+                Console.WriteLine($"[finale] side {bot.Side}, {bot.Name}: {fallback.Reason}");
+                return fallback.Strike;
+            }
+        }
         var bombers = core.HullTypes.Values.Where(h => Showcase.IsPlayerBuyable(core, h)
             && Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber).ToArray();
         var buyable = bombers.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, shop.Value.TtbmLocal, techs)).ToArray();
@@ -145,7 +156,8 @@ internal sealed partial class BotManager
             Console.WriteLine($"[finale] side {bot.Side}, {bot.Name}: no buyable bomber strike loadout: {reason}; "
                 + $"developmentTechs={(knownTech ? developmentBits.ToString() : "unknown (no CREATE_BUCKETS/SIDE_TECH_CHANGE)")}, "
                 + $"sideTechBits={techs.PopCount}, shopType={shop?.StationTypeId}, dock={dock}, "
-                + $"ownedStations(id:type)=[{stationTypes}], targetType={target.StationTypeId}; keeping existing bomber loadout");
+                + $"ownedStations(id:type)=[{stationTypes}], targetType={target.StationTypeId}; "
+                + (ResearchFinale(bot) ? "research finale uses available combat loadout and bounded server deadline" : "keeping existing bomber loadout"));
             return null;
         }
     }
@@ -286,16 +298,30 @@ internal sealed partial class BotManager
             if (sides.Length == 0) continue;
             run.Sides = sides;
             run.TriggeredAt = now;
+            // Arm the server's simulation-time bound once at the actual maturity trigger.
+            // This remains effective if no legal starting weapon can damage a station.
+            var researchPeer = bots.FirstOrDefault(b => sides.Contains(b.Side) && ResearchFinale(b));
+            if (researchPeer?.Cs is { } peer)
+                lock (peer.Gate)
+                    if (Guid.TryParseExact(peer.World.ResearchBriefing?.Epoch, "N", out var epoch))
+                        peer.SendShowcaseFinale(epoch, researchPeer.Side);
             foreach (short side in sides)
             {
-                var bombers = bots.Where(b => b.Side == side && IsFinaleBomber(b))
-                    .OrderBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
+                var bombers = bots.Where(b => b.Side == side && (IsFinaleBomber(b) || ResearchFinale(b)))
+                    .OrderByDescending(b => ResearchFinale(b) && b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
+                    .ThenBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
                 foreach (var bot in bombers) bot.FinaleBomberReserved = true;
                 var plan = run.Plans[side];
                 plan.BomberBudget = bombers.Length;
                 plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(bots.Count(b => b.Side == side && IsFinaleFighter(b)));
             }
         }
+    }
+
+    private static bool ResearchFinale(ActiveBot bot)
+    {
+        if (bot.Cs is not { } cs) return false;
+        lock (cs.Gate) return cs.World.ResearchBriefing?.TechMode == "research";
     }
 
     private static bool IsFinaleBomber(ActiveBot bot) =>

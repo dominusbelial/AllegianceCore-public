@@ -60,6 +60,7 @@ internal sealed class InboundMessage
     // All authority and economy/loadout/hostile-input rules remain in its handlers.
     private object? Decode() => Fmid switch
     {
+        ShowcaseFinaleRequest.Fmid => ShowcaseFinaleRequest.Decode(Bytes),
         Ping.Fmid => Ping.Decode(Bytes),
         LogonRequest.Fmid => LogonRequest.Decode(Bytes),
         ShipUpdate.Fmid => ShipUpdate.Decode(Bytes),
