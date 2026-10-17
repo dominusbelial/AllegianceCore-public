@@ -34,13 +34,14 @@ sealed class ProofOptions
     public string ContentRoot = "";
     public string OutDir = "";
     public bool FooterRegression;
+    public bool LabelRegression;
     public int Width = 1280, Height = 800;
     public string Tag = "after";
 
     public static ProofOptions Parse(string[] args)
     {
         string art = "", content = "", outDir = "";
-        bool footer = false;
+        bool footer = false, label = false;
         int width = 1280, height = 800;
         string tag = "after";
         int i = 0;
@@ -49,6 +50,7 @@ sealed class ProofOptions
             switch (args[i])
             {
                 case "--footer-regression": footer = true; break;
+                case "--label-regression": label = true; break;
                 case "--window":
                     var size = args[++i].Split('x');
                     width = int.Parse(size[0]); height = int.Parse(size[1]);
@@ -64,7 +66,8 @@ sealed class ProofOptions
         string repo = RepoRoot();
         return new ProofOptions
         {
-            FooterRegression = footer, Width = width, Height = height, Tag = tag,
+            FooterRegression = footer, LabelRegression = label,
+            Width = width, Height = height, Tag = tag,
             ArtRoot = art.Length > 0 ? art : Path.Combine(repo, "docs", "artwork"),
             ContentRoot = content.Length > 0 ? content : Path.Combine(repo, "src", "Allegiance.ClientCore.MonoGame", "Content", "bin", "DesktopGL", "Content"),
             OutDir = outDir.Length > 0 ? outDir : Path.Combine(repo, ".verify_p360"),
@@ -119,7 +122,7 @@ sealed class ProofRunner : Game
         _font = Content.Load<SpriteFont>("HUD");
         _starmap = new StarmapRenderer(_sb, _white, _font);
         _infoPane = new SectorInfoPaneRenderer(_sb, _white, _font);
-        if (!_o.FooterRegression)
+        if (!_o.FooterRegression && !_o.LabelRegression)
         {
             try { RunProof(GraphicsDevice); }
             catch (Exception ex) { Failed = true; Console.WriteLine($"[proof] FATAL: {ex}"); }
@@ -131,15 +134,16 @@ sealed class ProofRunner : Game
     // using the same DrawMini and compiled HUD font as the flight client.
     protected override void Draw(GameTime gameTime)
     {
-        if (!_o.FooterRegression || _captured) return;
+        if ((!_o.FooterRegression && !_o.LabelRegression) || _captured) return;
         try
         {
-            StarmapLayout.ClusterSite[] sites =
-            [
-                new(1, "Omega", 0, 0), new(2, "Bug Nebula", -125, 100),
-                new(3, "Tellus", 125, 100), new(4, "Alpha", 0, -100),
-            ];
-            ClusterInfo.WarpEdge[] edges = [new(1, 2), new(3, 1), new(1, 4)];
+            var sites = _o.LabelRegression ? LabelFixture() : FooterFixture();
+            ClusterInfo.WarpEdge[] edges = _o.LabelRegression
+                ? LabelFixtureEdges()
+                :
+                [
+                    new(1, 2), new(3, 1), new(1, 4),
+                ];
             GraphicsDevice.Clear(new Color(0.015f, 0.019f, 0.025f));
             _starmap.DrawMini(sites, edges, 1, null, true, GraphicsDevice.Viewport);
             if (++_frames < 5) return; // Let SDL process the initial window resize before readback.
@@ -149,7 +153,8 @@ sealed class ProofRunner : Game
                 var size = _font.MeasureString(text);
                 return new System.Numerics.Vector2(size.X, size.Y);
             });
-            string stem = Path.Combine(_o.OutDir, $"{_o.Tag}_{Width}x{Height}");
+            string stem = Path.Combine(_o.OutDir,
+                $"{( _o.LabelRegression ? "p715b_" : "")}{_o.Tag}_{Width}x{Height}");
             if (_o.Tag != "before") File.WriteAllText(stem + ".json", System.Text.Json.JsonSerializer.Serialize(mini,
                 new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
             Console.WriteLine($"[P715] viewport={GraphicsDevice.Viewport}; backbuffer={GraphicsDevice.PresentationParameters.BackBufferWidth}x{GraphicsDevice.PresentationParameters.BackBufferHeight}");
@@ -177,11 +182,49 @@ sealed class ProofRunner : Game
                     || mini.FooterLabels.Any(l => l.Rectangle.Width > panel.Width - 2 * MinimapLayout.Border
                         || l.Rectangle.Y < mini.FooterArea.Y || l.Rectangle.Bottom > panel.Bottom))
                     throw new InvalidOperationException("Measured HUD-font text exceeds its reserved region");
+                if (_o.LabelRegression)
+                {
+                    for (int i = 0; i < mini.SectorLabels.Count; i++)
+                    for (int j = i + 1; j < mini.SectorLabels.Count; j++)
+                        if (RectHit(mini.SectorLabels[i].Rectangle, mini.SectorLabels[j].Rectangle))
+                            throw new InvalidOperationException(
+                                $"Label overlap in capture: {mini.SectorLabels[i].Text} <> {mini.SectorLabels[j].Text}");
+                }
             }
         }
         catch (Exception ex) { Failed = true; Console.WriteLine($"[P715] FATAL: {ex}"); }
         Exit();
     }
+
+    // P715b dense fixture: current sector surrounded by a 6-sector hexagon
+    // (m2xspiderw/Alderan style), with one neighbour directly above the current
+    // sector to exercise the stacked-label collision.
+    private static StarmapLayout.ClusterSite[] LabelFixture()
+    {
+        const float r = 120f;
+        return
+        [
+            new(1, "Omega", 0, 0),
+            new(2, "North", 0, -r),
+            new(3, "Ne", r * 0.866f, -r * 0.5f),
+            new(4, "Se", r * 0.866f, r * 0.5f),
+            new(5, "South", 0, r),
+            new(6, "Sw", -r * 0.866f, r * 0.5f),
+            new(7, "Nw", -r * 0.866f, -r * 0.5f),
+        ];
+    }
+
+    private static ClusterInfo.WarpEdge[] LabelFixtureEdges() =>
+        [new(1, 2), new(1, 3), new(1, 4), new(1, 5), new(1, 6), new(1, 7)];
+
+    private static StarmapLayout.ClusterSite[] FooterFixture() =>
+    [
+        new(1, "Omega", 0, 0), new(2, "Bug Nebula", -125, 100),
+        new(3, "Tellus", 125, 100), new(4, "Alpha", 0, -100),
+    ];
+
+    private static bool RectHit(MinimapLayout.Bounds a, MinimapLayout.Bounds b) =>
+        a.X < b.Right && a.Right > b.X && a.Y < b.Bottom && a.Bottom > b.Y;
 
     // ── server / client wiring (mirrors targetinfo-proof / warp-visual-proof) ──
 

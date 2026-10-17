@@ -92,3 +92,93 @@ No assertions, deadlines, quarantine traits, skip conditions or transport/ripcor
 The Core binaries date from before the first sweep and stayed unchanged through the UI build. The final Game and MonoGame test binaries were built before either complete MonoGame run; final source hashes and the preserved startup fingerprints are included in the verification ledgers. `git diff --check` passed.
 
 Changes are left in the working tree. No commit or push was made.
+
+---
+
+# P715b — minimap labels no longer collide
+
+Branch `p715b`; base `master` (`8246dd9d` Merge P715). This closes the gap P715 left open: P715's fixture placed a neighbour directly **above** the current sector (the `docs/reports/P715_assets/after_2560x1440_pane.png` bottom-right panel), and with the P715 rule "current name above its dot, neighbour name below its dot" the neighbour's below-dot label overlapped the current sector's above-dot label whenever the neighbour sat directly above. P715b replaces that fixed rule with deterministic collision avoidance.
+
+## The fix (`MinimapLayout.Build`)
+
+Each labelled sector (current + direct warp neighbours) is placed in a fixed priority order — **current sector first, then neighbours by ascending id** — so the result is stable frame to frame (no jitter). For each label four slots are tried in a fixed order: above / below / left / right of its dot (current prefers **above**, neighbours prefer **below**, preserving the P715 look whenever nothing blocks it). A slot is accepted only if it fits inside the map area (never the footer band), overlaps no already-placed higher-priority label, and does not cover any other sector's dot/ring. If **no** slot is free, the label's own dot wins: the current sector always falls back to a clamped above-dot placement, and the lowest-priority **neighbour is dropped rather than overlapped**.
+
+This exactly implements the brief: "choose above / below (or left / right) … so it intersects no other label, no dot/ring and not the footer band. The current sector's label has priority. If nothing fits, drop the lowest-priority neighbour label rather than overlap. Deterministic placement."
+
+## Native review and port boundary
+
+| Behaviour | Native cite | Class | What the port does |
+| --- | --- | --- | --- |
+| Selected-sector caption above the pane | `WinTrek/sectormap.cpp:411-422` (caption at `(xBorder+20, yTop-13)`, appends ` Sector`) | design | Kept: the current sector's name stays **above** its dot. |
+| Per-dot neighbour names on the closed mini-map | none — native draws **no** per-dot sector names; it only renders the selected-sector caption (`:416-422`) and hover warning text (`:517-534`). The full-map view draws cluster icons without names. | port UI feature (P360/P715 convention) | Above/below/left/right choice is a port UI convention; there is no native rule to transplant, so the port defines a sensible, tested one. |
+| Dot/icon layout | `sectormap.cpp:753-833` (authored coords, 10% fudge, aspect fit), `:1310-1317` (map point) | design | Unchanged — `StarmapLayout.Fit` still owns dot geometry; labels adapt around fixed dots. |
+
+The P715 report's existing rows already establish that measured footer reservation, sparse dot labels and text shortening are **port UI fixes**, not pixel-for-pixel native placement; P715b continues that.
+
+**Spot-check of the P715 reading:** P715 asserted neighbour labels sit below their dots. That is correct only in the *uncrowded* case. In a dense cluster the dots land so close together that two below-labels necessarily overlap, so the port now treats "below" as a **preference** (first candidate) rather than an absolute rule, and the test suite's rigid "neighbour below dot" assertions were relaxed to the true invariants (containment, current-above, no overlap, no dot cover). Native gives no counter-evidence (it draws no per-dot names).
+
+## Modern alternative considered
+
+Native has no label-collision handling at all (it simply never draws per-dot names). The modern approach — a deterministic greedy pass in descending priority with above/below/left/right anchoring, falling back to dropping low-priority labels — is the standard compact-chart labelling technique (used by tile/chart libraries). A full "leader-line / simulated annealing / flood-fill" label placers would be overkill for a 7-label minimap and would risk frame instability. Chosen: the greedy deterministic placer above.
+
+## Tests (failing-first)
+
+Extended `tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs` with three new theory methods across 720p/1080p/1440p:
+
+- `Neighbour_directly_above_current_sector_never_overlaps` — the reported collision.
+- `Neighbour_directly_below_current_sector_never_overlaps` — the below sibling.
+- `Dense_hexagon_cluster_never_overlaps_labels` — the m2xspiderw/Alderan-style 6-sector hexagon around the current sector (all six are direct neighbours, so seven labels compete).
+
+Each asserts: current label always present, **no pair of label rectangles intersects**, and every label stays in the map area off the footer. The P715 test `Sector_labels_stay_in_map_area_clear_of_footer` was extended to assert no label-label overlap and no dot cover (its old rigid "neighbour always below dot" positional asserts are superseded by the adaptive placement; the current-above, containment and footer guarantees are kept).
+
+Against the **original (unfixed) code** all nine new cases failed with exact overlapping rectangles (e.g. at 1280×720 `Omega overlaps Alpha: y[549.5,572.5] / y[545.6,568.6]`). After the fix: **23/23 pass** (14 existing + 9 new).
+
+## Visual proof — real window backbuffer, 2560×1440 class
+
+`tools/minimap-proof` gained `--label-regression` (a dense hexagon + a neighbour directly above the current sector), capturing the same `DrawMini` + compiled `HUD.xnb` on a real window backbuffer, writing a `p715b_`-prefixed PNG, lossless pane close-up and measured JSON per resolution. The after mode also **asserts** (from the same HUD font it drew with) that no label rectangle intersects, failing the run otherwise.
+
+| Viewport | Before | After | Measured |
+| --- | --- | --- | --- |
+| 1280×720 | [pane](P715_assets/p715b_before_1280x720_pane.png), [frame](P715_assets/p715b_before_1280x720.png) | [pane](P715_assets/p715b_after_1280x720_pane.png), [frame](P715_assets/p715b_after_1280x720.png), [json](P715_assets/p715b_after_1280x720.json) | 7 labels, 0 overlaps |
+| 1920×1080 | [pane](P715_assets/p715b_before_1920x1080_pane.png), [frame](P715_assets/p715b_before_1920x1080.png) | [pane](P715_assets/p715b_after_1920x1080_pane.png), [frame](P715_assets/p715b_after_1920x1080.png), [json](P715_assets/p715b_after_1920x1080.json) | 7 labels, 0 overlaps |
+| 2560×1440 | [pane](P715_assets/p715b_before_2560x1440_pane.png), [frame](P715_assets/p715b_before_2560x1440.png) | [pane](P715_assets/p715b_after_2560x1440_pane.png), [frame](P715_assets/p715b_after_2560x1440.png), [json](P715_assets/p715b_after_2560x1440.json) | 7 labels, 0 overlaps |
+
+Before, the neighbour directly above the current sector overlaps it (measured overlap at 720p ≈ 19 px vertically). After, all seven labels are separated (at 720p: Omega y[551,573], the sector above at y[506.8,528.8] — a 22 px clear gap; side neighbours x-separated). All three after runs exited 0 (no overlap asserted).
+
+Reproduce:
+
+```bash
+dotnet build tools/minimap-proof/minimap-proof.csproj
+for size in 1280x720 1920x1080 2560x1440; do
+  dotnet run --no-build --project tools/minimap-proof -- \
+    --label-regression --window "$size" --tag after \
+    --content "$PWD/src/Allegiance.ClientCore.MonoGame/Content/bin/DesktopGL/Content" \
+    --out "$PWD/docs/reports/P715_assets"
+done
+```
+
+## Verification
+
+- Whole solution `dotnet build AllegianceCore.slnx -m:8` — **0 warnings / 0 errors**.
+- `tools/minimap-proof` — **0 warnings / 0 errors**.
+- Layout regressions: the full `MinimapLayoutTests` class **23/23 pass** (final code).
+- Full suites: two complete runs via `scripts/run-tests.sh` (main lane + quarantine lane), exactly two runs per assembly:
+
+| Run | Assembly (main lane) | Passed | Failed | Skipped |
+| --- | --- | ---: | ---: | ---: |
+| 1 | Allegiance.Lobby.Tests | 19 | 0 | 0 |
+| 1 | Allegiance.ClientCore.MonoGame.Tests | 2,269 | 0 | 3 |
+| 1 | Allegiance.ClientCore.Tests | 1,140 | 0 | 1 |
+| 1 | Allegiance.Core.Tests | 4,710 | 1 | 0 |
+| 2 | Allegiance.Lobby.Tests | 19 | 0 | 0 |
+| 2 | Allegiance.ClientCore.MonoGame.Tests | 2,269 | 0 | 3 |
+| 2 | Allegiance.ClientCore.Tests | 1,140 | 0 | 1 |
+| 2 | Allegiance.Core.Tests | 4,711 | 0 | 0 |
+
+Both required assemblies (ClientCore, MonoGame) were clean in both runs. Run 1's single Core failure
+`MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour` (`never crossed: sectors=[0]`)
+is a live-network map-gen warp-timing flake: it passed **3/3 isolated runs** (~200 ms each) and is not in
+code this change touches. It is recorded in [TEST_FLAKES.md](../TEST_FLAKES.md) (same family as the existing
+P716 `GeneratedHiLo...ToTracedNeighbour` entry). All quarantine passes were green in both runs; run 2 was
+fully clean.
+- `git diff --check` clean; committed on the `master`-based `p715b` branch, not pushed (below).
