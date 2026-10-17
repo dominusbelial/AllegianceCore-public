@@ -1,0 +1,142 @@
+{
+  "Panel": {
+    "X": 933.2,
+    "Y": 490,
+    "Width": 332.8,
+    "Height": 216.00002,
+    "Right": 1266,
+    "Bottom": 706
+  },
+  "MapArea": {
+    "X": 933.2,
+    "Y": 490,
+    "Width": 332.8,
+    "Height": 182.00002,
+    "Right": 1266,
+    "Bottom": 672
+  },
+  "FooterArea": {
+    "X": 933.2,
+    "Y": 672,
+    "Width": 332.8,
+    "Height": 34,
+    "Right": 1266,
+    "Bottom": 706
+  },
+  "Map": {
+    "MinX": -430.36975,
+    "MaxX": 430.36975,
+    "MinY": -144,
+    "MaxY": 144,
+    "Count": 7,
+    "Ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "SectorLabels": [
+    {
+      "Text": "Omega",
+      "Rectangle": {
+        "X": 1072.1,
+        "Y": 551,
+        "Width": 55,
+        "Height": 22,
+        "Right": 1127.1,
+        "Bottom": 573
+      },
+      "IsCurrent": true
+    },
+    {
+      "Text": "North",
+      "Rectangle": {
+        "X": 1072.1,
+        "Y": 506.8333,
+        "Width": 55,
+        "Height": 22,
+        "Right": 1127.1,
+        "Bottom": 528.8333
+      },
+      "IsCurrent": false
+    },
+    {
+      "Text": "Ne",
+      "Rectangle": {
+        "X": 1126.8484,
+        "Y": 528.9167,
+        "Width": 22,
+        "Height": 22,
+        "Right": 1148.8484,
+        "Bottom": 550.9167
+      },
+      "IsCurrent": false
+    },
+    {
+      "Text": "Se",
+      "Rectangle": {
+        "X": 1126.8484,
+        "Y": 611.0834,
+        "Width": 22,
+        "Height": 22,
+        "Right": 1148.8484,
+        "Bottom": 633.0834
+      },
+      "IsCurrent": false
+    },
+    {
+      "Text": "South",
+      "Rectangle": {
+        "X": 1072.1,
+        "Y": 633.1667,
+        "Width": 55,
+        "Height": 22,
+        "Right": 1127.1,
+        "Bottom": 655.1667
+      },
+      "IsCurrent": false
+    },
+    {
+      "Text": "Sw",
+      "Rectangle": {
+        "X": 1049.8517,
+        "Y": 611.0834,
+        "Width": 23,
+        "Height": 22,
+        "Right": 1072.8517,
+        "Bottom": 633.0834
+      },
+      "IsCurrent": false
+    },
+    {
+      "Text": "Nw",
+      "Rectangle": {
+        "X": 1049.8517,
+        "Y": 528.9167,
+        "Width": 23,
+        "Height": 22,
+        "Right": 1072.8517,
+        "Bottom": 550.9167
+      },
+      "IsCurrent": false
+    }
+  ],
+  "FooterLabels": [
+    {
+      "Text": "YOU: Omega   [TAB] EXPAND",
+      "Rectangle": {
+        "X": 941.2,
+        "Y": 680,
+        "Width": 275,
+        "Height": 22,
+        "Right": 1216.2,
+        "Bottom": 702
+      },
+      "IsCurrent": false
+    }
+  ]
+}

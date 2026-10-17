@@ -78,13 +78,24 @@ public sealed class MinimapLayout
         }
         // Reserve name-height headroom above and below the fitted dot field.
         // The explicit clamp also protects long labels at the horizontal edges.
-        var namedSites = sites.Where(s => s.Id == currentSectorId || neighbours.Contains(s.Id))
-            .Where(s => !string.IsNullOrEmpty(s.Name)).ToArray();
+        //
+        // P715b — labels are placed with deterministic collision avoidance.
+        // Deterministic ORDER: the current sector first (it has priority), then
+        // neighbours by ascending id, so placement is stable frame to frame.
+        var namedSites = sites
+            .Where(s => s.Id == currentSectorId || neighbours.Contains(s.Id))
+            .Where(s => !string.IsNullOrEmpty(s.Name))
+            .OrderByDescending(s => s.Id == currentSectorId)
+            .ThenBy(s => s.Id)
+            .ToArray();
         float labelHeight = namedSites.Select(s => measure(s.Name).Y).DefaultIfEmpty(0f).Max();
         float nameReserve = MathF.Min(labelHeight + 8f,
             MathF.Max(0f, (mapArea.Height - 2f * Border - 1f) / 2f));
         var map = StarmapLayout.Fit(sites, px, py + nameReserve,
             pw, mapArea.Height - 2f * nameReserve, Border);
+
+        // Higher-priority label rectangles already accepted, in placement order.
+        var placed = new List<Bounds>();
         var labels = new List<Label>();
         foreach (var site in namedSites)
         {
@@ -92,16 +103,101 @@ public sealed class MinimapLayout
             if (!map.TryGetPoint(site.Id, out var point)) continue;
             string text = FitText(site.Name, textWidth, measure);
             var size = measure(text);
-            float x = Math.Clamp(point.X - size.X / 2f, px + Border, px + pw - Border - size.X);
-            float y = Math.Clamp(isCurrent ? point.Y - 8f - size.Y : point.Y + 8f,
-                mapArea.Y + Border, MathF.Max(mapArea.Y + Border, mapArea.Bottom - Border - size.Y));
-            labels.Add(new(text, new(x, y, size.X, size.Y), isCurrent));
+            if (PickLabelSlot(point, size, site.Id, isCurrent, mapArea, placed, sites, map) is { } rect)
+            {
+                labels.Add(new(text, rect, isCurrent));
+                placed.Add(rect);
+            }
         }
         return new()
         {
             Panel = new(px, py, pw, ph), MapArea = mapArea, FooterArea = footerArea,
             Map = map, SectorLabels = labels, FooterLabels = footerLabels,
         };
+    }
+
+    /// <summary>
+    /// P715b — choose a collision-free slot for one sector label, or return
+    /// null to drop the label. Candidates are above / below / left / right of
+    /// the dot, tried in a fixed priority (the current sector prefers above,
+    /// neighbours prefer below) so placement is deterministic. A candidate is
+    /// accepted only if it fits inside the map area (never the footer band),
+    /// overlaps no already-placed higher-priority label, and covers no other
+    /// site's dot/ring. The current sector's label always wins: if nothing fits
+    /// it falls back to the traditional above-dot placement, clamped in.
+    /// Low-priority neighbours are dropped rather than overlapping.
+    /// </summary>
+    private static Bounds? PickLabelSlot(
+        System.Numerics.Vector2 point, System.Numerics.Vector2 size, short ownId, bool isCurrent,
+        Bounds mapArea, IReadOnlyList<Bounds> placed,
+        IReadOnlyList<StarmapLayout.ClusterSite> sites, StarmapLayout map)
+    {
+        const float gap = 8f;          // distance from the dot to the label edge
+        const float dotClearance = 7f; // keep-clear half-extent around a dot/ring
+        float cx = point.X, cy = point.Y, w = size.X, h = size.Y;
+
+        // [above, below, left, right]
+        Bounds[] cand =
+        [
+            new(cx - w / 2f, cy - gap - h, w, h),
+            new(cx - w / 2f, cy + gap, w, h),
+            new(cx - gap - w, cy - h / 2f, w, h),
+            new(cx + gap, cy - h / 2f, w, h),
+        ];
+        // Preferred slot first: current above, neighbours below; the others are
+        // only tried when the preferred side is blocked.
+        int[] order = isCurrent ? [0, 1, 2, 3] : [1, 0, 2, 3];
+
+        foreach (int i in order)
+        {
+            // Clamp both axes into the map area (never the footer band), then
+            // reject only genuine overlaps — mirrors P715's "clamp up off the
+            // footer" behaviour while adding collision avoidance.
+            var rect = ClampVert(ClampHoriz(cand[i], mapArea), mapArea);
+            if (placed.Any(p => Intersects(rect, p))) continue;
+            if (CoversADot(rect, ownId, sites, map, dotClearance)) continue;
+            return rect;
+        }
+
+        if (isCurrent)
+        {
+            var fb = ClampHoriz(cand[0], mapArea);
+            return ClampVert(fb, mapArea); // current always shows, clamped in
+        }
+        return null; // drop the lowest-priority neighbour rather than overlap
+    }
+
+    private static Bounds ClampHoriz(Bounds r, Bounds mapArea)
+    {
+        float left = mapArea.X + Border;
+        float right = mapArea.Right - Border - r.Width;
+        float x = right >= left ? Math.Clamp(r.X, left, right) : left;
+        return new(x, r.Y, r.Width, r.Height);
+    }
+
+    private static Bounds ClampVert(Bounds r, Bounds mapArea)
+    {
+        float top = mapArea.Y + Border;
+        float bottom = mapArea.Bottom - Border - r.Height;
+        float y = bottom >= top ? Math.Clamp(r.Y, top, bottom) : top;
+        return new(r.X, y, r.Width, r.Height);
+    }
+
+    private static bool Intersects(Bounds a, Bounds b) =>
+        a.X < b.Right && a.Right > b.X && a.Y < b.Bottom && a.Bottom > b.Y;
+
+    /// <summary>True when the label rectangle overlaps another site's dot/ring.</summary>
+    private static bool CoversADot(Bounds rect, short ownId,
+        IReadOnlyList<StarmapLayout.ClusterSite> sites, StarmapLayout map, float c)
+    {
+        foreach (var s in sites)
+        {
+            if (s.Id == ownId) continue;
+            if (!map.TryGetPoint(s.Id, out var p)) continue;
+            if (Intersects(rect, new Bounds(p.X - c, p.Y - c, 2f * c, 2f * c)))
+                return true;
+        }
+        return false;
     }
 
     // ASCII dots are supported by the HUD sprite font. Measure every candidate

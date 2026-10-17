@@ -14,6 +14,17 @@ pass, pass, pass) on the same binaries — an intermittent live-net load flake
 (exacerbated by concurrent Codex suite runs on this host), not a P716
 regression. P716 touches only client sound-event recording/gating; this test
 exercises server map-gen warp tracing. No code change was made for it.
+## P715b observation (2026-10-16)
+
+Full-suite run 1 reported Core **4,710 pass / 1 fail / 0 skip** with a single
+failure in `MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour`
+(assert message `never crossed: sectors=[0]` — a live-network map-gen warp
+proof whose peer did not cross the warp within the deadline, under heavy
+concurrent Codex suite load on this host). It passed **3/3 isolated runs**
+(~200 ms each) on the same binaries, so it is the same live-net load flake
+family as the P716 `GeneratedHiLo...ToTracedNeighbour` entry below. P715b
+touches only client minimap label placement (`MinimapLayout`); this test
+exercises server map-gen warp tracing. No code change was made for it.
 ## P713 observation (2026-10-16)
 
 Exactly two unfiltered sequential sweeps recorded **16,212 passes / 4 failures /
