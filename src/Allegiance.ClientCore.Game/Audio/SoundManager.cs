@@ -53,9 +53,22 @@ public sealed class SoundManager : IDisposable
 {
     private readonly ContentManager _content;
 
-    private SoundEffectInstance? _engine;     // accelsmall — main-thruster loop
-    private SoundEffectInstance? _cockpitHum; // sshipint — cockpit interior hum
+    // P721 — the own-ship thruster/interior/sidethrust loop beds, resolved by
+    // hull class (native TrekClient::UpdateSounds interior/exterior block,
+    // trekigc.cpp:1307-1355; sounddef.mdl:1012-1024, 1342-1347). Small ships use
+    // accelsmall main-thruster / sshipint interior / adjust turn / accelsmall
+    // sidethrust; capital ships use accelcapital thrust / lshipint interior /
+    // accelsmall turn / accelcapital sidethrust. Interior and exterior rows share
+    // the same underlying assets (native plays one loop instance and mutes the
+    // other volume bus by camera view — see the Update/UpdateTurnThruster docs).
+    private SoundEffectInstance? _engine;            // accelsmall — small main-thruster loop (SIM-0373/0379)
+    private SoundEffectInstance? _engineCapital;     // accelcapital — capital main-thruster loop (SIM-0373/0379)
+    private SoundEffectInstance? _cockpitHum;        // sshipint — small interior hum (SIM-0372)
+    private SoundEffectInstance? _cockpitHumCapital; // lshipint — capital interior hum (SIM-0372)
     private SoundEffectInstance? _afterburner; // iafter — afterburner loop (interior only; no 3D emitter for other ships yet)
+    private SoundEffectInstance? _turnThrusterCapital; // accelsmall — capital turn bed (SIM-0374/0380)
+    private SoundEffectInstance? _sideThrustSmall;     // accelsmall — fighter sidethrust loop (SIM-0376/0382)
+    private SoundEffectInstance? _sideThrustCapital;   // accelcapital — capital sidethrust loop (SIM-0377/0383)
     private SoundEffectInstance? _missileTone; // missilelock — P230 lock-acquired looping beep
     // P264 — the incoming-missile warning loop (missileLockSound =
     // LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364), played
@@ -557,6 +570,12 @@ public sealed class SoundManager : IDisposable
     // sounddef.mdl:364); a touch louder than the own-lock beep since it warns of
     // imminent harm, but still a bed cue, not a sting.
     private const float MissileWarningVolume = 0.6f;
+    // P721 — sidethrust-loop bed volume (SIM-0376/0377/0382/0383). Native plays
+    // the sidethrust loop at GainSound(-25, ThreeDSound(100,...)) interior and
+    // GainSound(SFXGain, ThreeDSound(100,...)) exterior (sounddef.mdl:1344-1347),
+    // gated by the internal/external volume bus per camera view; the port uses
+    // one shared loop at a fixed moderate bed volume for both views.
+    private const float SideThrustVolume = 0.7f;
 
     // P217 — quick-chat voice lines, loaded lazily on first play and cached
     // thereafter (only the handful actually voiced in a session are ever
@@ -584,9 +603,11 @@ public sealed class SoundManager : IDisposable
     {
         try
         {
-            _engine = Loop("Sounds/accelsmall");
-            _cockpitHum = Loop("Sounds/sshipint");
-            _afterburner = Loop("Sounds/iafter");
+            _engine = Loop($"Sounds/{ShipLoopBeds.FighterMainThruster}");
+            _engineCapital = Loop($"Sounds/{ShipLoopBeds.CapitalMainThruster}");       // P721 — capital main-thruster bed
+            _cockpitHum = Loop($"Sounds/{ShipLoopBeds.FighterInterior}");
+            _cockpitHumCapital = Loop($"Sounds/{ShipLoopBeds.CapitalInterior}");       // P721 — capital interior bed
+            _afterburner = Loop($"Sounds/{ShipLoopBeds.Afterburner}");
             _missileTone = Loop("Sounds/missilelock");   // P230 — lock-acquired beep (missileToneSound = ImportWave("missilelock"), sounddef.mdl:365; sound id missileTone, sounds.h:135)
             _missileWarning = Loop("Sounds/missilelockonme"); // P264 — incoming-missile warning loop (missileLockSound = LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364)
             _boundsWarning = Loop($"Sounds/{ShipWarningState.LoopSound}");
@@ -641,7 +662,10 @@ public sealed class SoundManager : IDisposable
             // P267 — hull maneuvering-thruster turn loop (adjust), hull exterior
             // loop (shipout), station exterior ambient loop (shipout), and the tech
             // completion chime (vo_sal_researchcomplete). See the field docs.
-            _turnThruster = Loop("Sounds/adjust");
+            _turnThruster = Loop($"Sounds/{ShipLoopBeds.FighterTurn}");
+            _turnThrusterCapital = Loop($"Sounds/{ShipLoopBeds.CapitalTurn}"); // P721 — capital turn bed (sounddef.mdl:1023)
+            _sideThrustSmall = Loop($"Sounds/{ShipLoopBeds.FighterSideThrust}"); // P721 — fighter sidethrust loop (SIM-0376/0382)
+            _sideThrustCapital = Loop($"Sounds/{ShipLoopBeds.CapitalSideThrust}"); // P721 — capital sidethrust loop (SIM-0377/0383)
             _shipExterior = Loop("Sounds/shipout");
             _stationAmbient = _content.Load<SoundEffect>("Sounds/shipout");
             _devComplete = _content.Load<SoundEffect>("Sounds/vo_sal_researchcomplete");
@@ -741,7 +765,14 @@ public sealed class SoundManager : IDisposable
     /// (native <c>PlaySoundIf(m_pMissileToneSound, missileToneSound, ..., bIsPlayersShip
     /// &amp;&amp; HasMissileLock())</c>, <c>trekigc.cpp:1288-1290</c>, where
     /// <c>HasMissileLock() == (GetLock() == 1.0f)</c>, <c>trekigc.cpp:876-883</c>).</param>
-    public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds, bool missileLocked = false)
+    /// <param name="capitalHull">True when the local ship is a capital (non-fighter)
+    /// hull — resolves the main-thruster and interior beds to the capital assets
+    /// (<c>accelcapital</c>/<c>lshipint</c>; native's per-hull-type
+    /// GetMainThrusterInteriorSound/GetInteriorSound, trekigc.cpp:1312-1314).</param>
+    /// <param name="sidethrustActive">True when a lateral/backward thrust button is
+    /// held (native <c>PlaySidethrust()</c> = backward|left|right, trekigc.cpp:953-956) —
+    /// the sidethrust loop bed (SIM-0376/0377/0382/0383) plays while strafing/braking.</param>
+    public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds, bool missileLocked = false, bool capitalHull = false, bool sidethrustActive = false)
     {
         if (!IsLoaded) return;
 
@@ -752,28 +783,55 @@ public sealed class SoundManager : IDisposable
 
         UpdateAmbience(deltaSeconds);
 
-        if (_engine is { } engine)
+        // P721 — the main-thruster and interior beds are resolved by hull class
+        // (small accelsmall/sshipint vs capital accelcapital/lshipint), mirroring
+        // native's per-hull-type GetMainThrusterInteriorSound/GetInteriorSound
+        // (trekigc.cpp:1312-1314).
+        var engine = capitalHull ? _engineCapital : _engine;
+        if (engine is { } eng)
         {
             var (vol, pitch) = EngineSoundCurve.Mix(throttle, speed, EngineSoundCurve.MaxSpeedDefault);
             // Cockpit/chase distinction (optional, cheap): a slightly fuller
             // tone from the cockpit (you hear the hull around you), a touch
             // duller in chase. Not required by scope, but nice.
             float cockPitBoost = cockpitMode ? 0.08f : 0f;
-            SetLoopVolume(engine, Math.Clamp(vol + cockPitBoost, 0f, 1f) * _masterVolume);
-            Safe(() => engine.Pitch = pitch);
-            EnsurePlaying(engine);
+            SetLoopVolume(eng, Math.Clamp(vol + cockPitBoost, 0f, 1f) * _masterVolume);
+            Safe(() => eng.Pitch = pitch);
+            EnsurePlaying(eng);
         }
 
-        if (_cockpitHum is { } hum)
+        var hum = capitalHull ? _cockpitHumCapital : _cockpitHum;
+        if (hum is { } h)
         {
-            if (cockpitMode) EnsurePlaying(hum);
-            else if (hum.State == SoundState.Playing) Safe(hum.Stop);
+            if (cockpitMode) EnsurePlaying(h);
+            else if (h.State == SoundState.Playing) Safe(h.Stop);
         }
 
         if (_afterburner is { } afterburner)
         {
             if (afterburnerActive) EnsurePlaying(afterburner);
             else if (afterburner.State == SoundState.Playing) Safe(afterburner.Stop);
+        }
+
+        // P721 — the sidethrust loop bed (SIM-0376/0377/0382/0383): plays while a
+        // lateral/backward thrust button is held (native PlaySidethrust(),
+        // trekigc.cpp:953-956), asset resolved by hull class (accelsmall fighter /
+        // accelcapital capital, sounddef.mdl:1342-1347). Native reuses ONE loop
+        // instance for the interior and exterior rows, muting the other volume
+        // bus by camera view; the port plays the single shared bed at a fixed
+        // moderate volume for both views.
+        var side = capitalHull ? _sideThrustCapital : _sideThrustSmall;
+        if (side is { } s)
+        {
+            if (sidethrustActive)
+            {
+                SetLoopVolume(s, SideThrustVolume * _masterVolume);
+                EnsurePlaying(s);
+            }
+            else if (s.State == SoundState.Playing)
+            {
+                Safe(s.Stop);
+            }
         }
 
         // P230 — the missile-lock beep: a continuous loop while at FULL lock,
@@ -1504,23 +1562,29 @@ public sealed class SoundManager : IDisposable
     }
 
     /// <summary>P267 — drive the local ship's maneuvering-thruster turn loop
-    /// (<c>adjust</c>) from its current turn level (0..1, see
+    /// from its current turn level (0..1, see
     /// <see cref="TurnThrusterSound"/>). Audible only while turning
     /// (<see cref="TurnThrusterSound.IsAudible"/>), with pitch rising with the
     /// level (native <c>SetPitch(0.50f + m_fTurnSoundLevel/3)</c>,
-    /// trekigc.cpp:1167-1169). No-op when audio is not loaded.</summary>
-    public void UpdateTurnThruster(float turnLevel)
+    /// trekigc.cpp:1167-1169). P721 — the bed asset is resolved by hull class:
+    /// a fighter uses <c>adjust</c> (smallShipTurn sounddef.mdl:1016-1017),
+    /// a capital uses <c>accelsmall</c> (capitalShipTurn sounddef.mdl:1023-1024),
+    /// matching native's per-hull GetManuveringThrusterInteriorSound
+    /// (trekigc.cpp:1317, 1341). No-op when audio is not loaded.</summary>
+    public void UpdateTurnThruster(float turnLevel, bool capitalHull = false)
     {
-        if (!IsLoaded || _turnThruster is not { } t) return;
+        if (!IsLoaded) return;
+        var t = capitalHull ? _turnThrusterCapital : _turnThruster;
+        if (t is not { } th) return;
         if (TurnThrusterSound.IsAudible(turnLevel))
         {
-            SetLoopVolume(t, 0.8f * _masterVolume);
-            Safe(() => t.Pitch = TurnThrusterSound.PitchFor(turnLevel));
-            if (t.State != SoundState.Playing) Safe(t.Play);
+            SetLoopVolume(th, 0.8f * _masterVolume);
+            Safe(() => th.Pitch = TurnThrusterSound.PitchFor(turnLevel));
+            if (th.State != SoundState.Playing) Safe(th.Play);
         }
-        else if (t.State == SoundState.Playing)
+        else if (th.State == SoundState.Playing)
         {
-            Safe(t.Stop);
+            Safe(th.Stop);
         }
     }
 
@@ -1770,7 +1834,9 @@ public sealed class SoundManager : IDisposable
         try
         {
             _engine?.Dispose();
+            _engineCapital?.Dispose();           // P721
             _cockpitHum?.Dispose();
+            _cockpitHumCapital?.Dispose();       // P721
             _ambienceSlot.Clear();
             _afterburner?.Dispose();
             _missileTone?.Dispose();
@@ -1810,6 +1876,9 @@ public sealed class SoundManager : IDisposable
             _probeAmbient?.Dispose();
             foreach (var inst in _probeAmbients.Values) inst.Dispose();
             _turnThruster?.Dispose();
+            _turnThrusterCapital?.Dispose();     // P721
+            _sideThrustSmall?.Dispose();         // P721
+            _sideThrustCapital?.Dispose();       // P721
             _shipExterior?.Dispose();
             _stationAmbient?.Dispose();
             foreach (var inst in _stationAmbients.Values) inst.Dispose();

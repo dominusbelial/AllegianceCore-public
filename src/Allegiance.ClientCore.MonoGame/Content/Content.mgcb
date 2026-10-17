@@ -32,6 +32,18 @@
 /processorParam:Quality=Best
 /build:Sounds/accelsmall.ogg
 
+#begin Sounds/accelcapital.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/accelcapital.ogg
+
+#begin Sounds/lshipint.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/lshipint.ogg
+
 #begin Sounds/missilelock.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
