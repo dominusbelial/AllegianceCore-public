@@ -1,0 +1,1250 @@
+[
+  {
+    "key": [
+      "commands",
+      "TK_SwapWeapon1"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon1",
+      "native_cite": "WinTrek/WinTrek.cpp:9535",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings; weapon swap via [ / ] only",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon1",
+      "native_cite": "WinTrek/WinTrek.cpp:9535",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings; weapon swap via [ / ] only",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon1",
+      "native_cite": "WinTrek/WinTrek.cpp:9535",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapWeapon1 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon1",
+      "native_cite": "WinTrek/WinTrek.cpp:9535",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapWeapon1 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapWeapon2"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon2",
+      "native_cite": "WinTrek/WinTrek.cpp:9541",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon2",
+      "native_cite": "WinTrek/WinTrek.cpp:9541",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon2",
+      "native_cite": "WinTrek/WinTrek.cpp:9541",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapWeapon2 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon2",
+      "native_cite": "WinTrek/WinTrek.cpp:9541",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapWeapon2 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapWeapon3"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon3",
+      "native_cite": "WinTrek/WinTrek.cpp:9547",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon3",
+      "native_cite": "WinTrek/WinTrek.cpp:9547",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon3",
+      "native_cite": "WinTrek/WinTrek.cpp:9547",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapWeapon3 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon3",
+      "native_cite": "WinTrek/WinTrek.cpp:9547",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapWeapon3 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapWeapon4"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon4",
+      "native_cite": "WinTrek/WinTrek.cpp:9553",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon4",
+      "native_cite": "WinTrek/WinTrek.cpp:9553",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon4",
+      "native_cite": "WinTrek/WinTrek.cpp:9553",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapWeapon4 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapWeapon4",
+      "native_cite": "WinTrek/WinTrek.cpp:9553",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapWeapon4 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapTurret1"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret1",
+      "native_cite": "WinTrek/WinTrek.cpp:9559",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret1",
+      "native_cite": "WinTrek/WinTrek.cpp:9559",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret1",
+      "native_cite": "WinTrek/WinTrek.cpp:9559",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapTurret1 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret1",
+      "native_cite": "WinTrek/WinTrek.cpp:9559",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapTurret1 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapTurret2"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret2",
+      "native_cite": "WinTrek/WinTrek.cpp:9565",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret2",
+      "native_cite": "WinTrek/WinTrek.cpp:9565",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret2",
+      "native_cite": "WinTrek/WinTrek.cpp:9565",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapTurret2 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret2",
+      "native_cite": "WinTrek/WinTrek.cpp:9565",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapTurret2 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapTurret3"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret3",
+      "native_cite": "WinTrek/WinTrek.cpp:9571",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret3",
+      "native_cite": "WinTrek/WinTrek.cpp:9571",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret3",
+      "native_cite": "WinTrek/WinTrek.cpp:9571",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapTurret3 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret3",
+      "native_cite": "WinTrek/WinTrek.cpp:9571",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapTurret3 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapTurret4"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret4",
+      "native_cite": "WinTrek/WinTrek.cpp:9577",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret4",
+      "native_cite": "WinTrek/WinTrek.cpp:9577",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret4",
+      "native_cite": "WinTrek/WinTrek.cpp:9577",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapTurret4 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapTurret4",
+      "native_cite": "WinTrek/WinTrek.cpp:9577",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapTurret4 uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapMissile"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapMissile",
+      "native_cite": "WinTrek/WinTrek.cpp:9604",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapMissile",
+      "native_cite": "WinTrek/WinTrek.cpp:9604",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapMissile",
+      "native_cite": "WinTrek/WinTrek.cpp:9604",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapMissile uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapMissile",
+      "native_cite": "WinTrek/WinTrek.cpp:9604",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapMissile uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapChaff"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapChaff",
+      "native_cite": "WinTrek/WinTrek.cpp:9610",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapChaff",
+      "native_cite": "WinTrek/WinTrek.cpp:9610",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapChaff",
+      "native_cite": "WinTrek/WinTrek.cpp:9610",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapChaff uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); duplicate chaff stacks grouped as native OT_dispenser (Igc/dispenserigc.h:34-37; Igc/dispenserigc.cpp:45-47), regression P720EquipmentSwapTests.cs:93; unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapChaff",
+      "native_cite": "WinTrek/WinTrek.cpp:9610",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapChaff uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); duplicate chaff stacks grouped as native OT_dispenser (Igc/dispenserigc.h:34-37; Igc/dispenserigc.cpp:45-47), regression P720EquipmentSwapTests.cs:93; unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapShield"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapShield",
+      "native_cite": "WinTrek/WinTrek.cpp:9616",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapShield",
+      "native_cite": "WinTrek/WinTrek.cpp:9616",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapShield",
+      "native_cite": "WinTrek/WinTrek.cpp:9616",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapShield uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapShield",
+      "native_cite": "WinTrek/WinTrek.cpp:9616",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapShield uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapCloak"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapCloak",
+      "native_cite": "WinTrek/WinTrek.cpp:9622",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapCloak",
+      "native_cite": "WinTrek/WinTrek.cpp:9622",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapCloak",
+      "native_cite": "WinTrek/WinTrek.cpp:9622",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapCloak uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapCloak",
+      "native_cite": "WinTrek/WinTrek.cpp:9622",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapCloak uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapAfterburner"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapAfterburner",
+      "native_cite": "WinTrek/WinTrek.cpp:9628",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapAfterburner",
+      "native_cite": "WinTrek/WinTrek.cpp:9628",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapAfterburner",
+      "native_cite": "WinTrek/WinTrek.cpp:9628",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapAfterburner uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapAfterburner",
+      "native_cite": "WinTrek/WinTrek.cpp:9628",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapAfterburner uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "commands",
+      "TK_SwapMine"
+    ],
+    "decision": "incoming only",
+    "base": {
+      "area": "commands",
+      "native_item": "TK_SwapMine",
+      "native_cite": "WinTrek/WinTrek.cpp:9634",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "ours": {
+      "area": "commands",
+      "native_item": "TK_SwapMine",
+      "native_cite": "WinTrek/WinTrek.cpp:9634",
+      "port_status": "missing",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no swap bindings",
+      "weight": "2"
+    },
+    "theirs": {
+      "area": "commands",
+      "native_item": "TK_SwapMine",
+      "native_cite": "WinTrek/WinTrek.cpp:9634",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapMine uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    },
+    "resolved": {
+      "area": "commands",
+      "native_item": "TK_SwapMine",
+      "native_cite": "WinTrek/WinTrek.cpp:9634",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs:39; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:145; src/Allegiance.ClientCore.Game/Game1.FlightParts.cs:95; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:180; tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs:260; P720: SwapMine uses native cargo selection, per-socket mask and guaranteed native 10-byte SWAP_PART ordering (src/Allegiance.Core/Wire/SwapPart.cs:53); empty equipment mounts reload matching cargo; authoritative own echo applied once; native_intent=design (WinTrek/WinTrek.cpp:9075-9150; WinTrek/trekigc.cpp:2620-2719; clintlib/clintlib.h:2371-2406; Inc/Messages.h:273-278); unbound port default avoids established Ctrl+digit conflicts, native suggestion preserved",
+      "weight": "2"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "38 MISSIONDEF"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "38 MISSIONDEF",
+      "native_cite": "Inc/Messages.h:294",
+      "port_status": "done",
+      "port_cite_or_reason": "Wire/MissionDef.cs",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "38 MISSIONDEF",
+      "native_cite": "Inc/Messages.h:294-318; FedSrv/fsmission.cpp:3943-3974",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.Core/Wire/MissionDef.cs:73; src/Allegiance.Server/Server.Lobby.cs:3035; tests/Allegiance.Core.Tests/Wire/P713LobbyWireTests.cs:8; P713 native_intent=design: leader short-array codec and explicit empty-role sentinels before roster/role join snapshots; prevents native role handler dereference of unknown old leader",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "38 MISSIONDEF",
+      "native_cite": "Inc/Messages.h:294",
+      "port_status": "done",
+      "port_cite_or_reason": "Wire/MissionDef.cs",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "38 MISSIONDEF",
+      "native_cite": "Inc/Messages.h:294-318; FedSrv/fsmission.cpp:3943-3974",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.Core/Wire/MissionDef.cs:73; src/Allegiance.Server/Server.Lobby.cs:3035; tests/Allegiance.Core.Tests/Wire/P713LobbyWireTests.cs:8; P713 native_intent=design: leader short-array codec and explicit empty-role sentinels before roster/role join snapshots; prevents native role handler dereference of unknown old leader",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "51 CHANGE_TEAM_CIV"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "51 CHANGE_TEAM_CIV",
+      "native_cite": "Inc/Messages.h:407",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/ChangeTeamCiv.cs (server handled; client consumer not found)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "51 CHANGE_TEAM_CIV",
+      "native_cite": "Inc/Messages.h:407-411; clintlib/appmsg.cpp:2530-2539",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Civilization and random-faction state; immutable side-roster update. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Civilization_echo_updates_roster_and_random_choice_without_losing_side_metadata); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "51 CHANGE_TEAM_CIV",
+      "native_cite": "Inc/Messages.h:407",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/ChangeTeamCiv.cs (server handled; client consumer not found)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "51 CHANGE_TEAM_CIV",
+      "native_cite": "Inc/Messages.h:407-411; clintlib/appmsg.cpp:2530-2539",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Civilization and random-faction state; immutable side-roster update. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Civilization_echo_updates_roster_and_random_choice_without_losing_side_metadata); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "86 ASTEROID_DESTROYED"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "86 ASTEROID_DESTROYED",
+      "native_cite": "Inc/Messages.h:613",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/AsteroidDestroyed.cs (server emits; no client handler found)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "86 ASTEROID_DESTROYED",
+      "native_cite": "Inc/Messages.h:613-617; Inc/messagecore.h:77-86,767-774; clintlib/appmsg.cpp:1692-1718",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Native align-2 10-byte codec; rock/health deletion; explosion vs preserved conversion effect. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Asteroid_termination_removes_health_and_preserves_conversion_effect_only); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "86 ASTEROID_DESTROYED",
+      "native_cite": "Inc/Messages.h:613",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/AsteroidDestroyed.cs (server emits; no client handler found)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "86 ASTEROID_DESTROYED",
+      "native_cite": "Inc/Messages.h:613-617; Inc/messagecore.h:77-86,767-774; clintlib/appmsg.cpp:1692-1718",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Native align-2 10-byte codec; rock/health deletion; explosion vs preserved conversion effect. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Asteroid_termination_removes_health_and_preserves_conversion_effect_only); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "92 PROBES_UPDATE"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "92 PROBES_UPDATE",
+      "native_cite": "Inc/Messages.h:644",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/ProbesUpdate.cs (server emits; no client handler found)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "92 PROBES_UPDATE",
+      "native_cite": "Inc/Messages.h:636-646; clintlib/appmsg.cpp:584-606",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; In-game/current-flight-cluster probe health; reverse packed-entry application; ignore absent probes. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Probe_updates_require_enter_game_and_current_flight_sector_and_iterate_backwards); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "92 PROBES_UPDATE",
+      "native_cite": "Inc/Messages.h:644",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/ProbesUpdate.cs (server emits; no client handler found)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "92 PROBES_UPDATE",
+      "native_cite": "Inc/Messages.h:636-646; clintlib/appmsg.cpp:584-606",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; In-game/current-flight-cluster probe health; reverse packed-entry application; ignore absent probes. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Probe_updates_require_enter_game_and_current_flight_sector_and_iterate_backwards); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "106 SET_WINGID"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "106 SET_WINGID",
+      "native_cite": "Inc/Messages.h:705",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/SetWingId.cs; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; tests/Allegiance.ClientCore.Tests/P675MissionDiscoveryTests.cs:100; P675 consumes wing ids for command joining and discovery priority; native assignment notice and roster UI notifications remain absent (clintlib/appmsg.cpp:2129-2147)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "106 SET_WINGID",
+      "native_cite": "Inc/Messages.h:705; clintlib/appmsg.cpp:2129-2147; FedSrv/FedSrv.CPP:5312-5344; FedSrv/fsmission.cpp:697-709; Inc/Messages.h:705-709; clintlib/appmsg.cpp:2129-2147; Igc/common.cpp:23-35",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.Server/Server.ShipCommands.cs:861; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:92; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:22; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: commander teammate assignment with corrected commanded bit; known-side update; critical own-assignment notice; live roster wing names and late-join wing snapshots; self echoes remain server authoritative; P718: design; Same-team known-member wing; commanded-self critical assignment notice; live team-pane wing name (fills remaining P675 gap). src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Wing_echo_notifies_only_commanded_self_and_does_not_create_unknown_or_enemy_roster_members); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "106 SET_WINGID",
+      "native_cite": "Inc/Messages.h:705",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/SetWingId.cs; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; tests/Allegiance.ClientCore.Tests/P675MissionDiscoveryTests.cs:100; P675 consumes wing ids for command joining and discovery priority; native assignment notice and roster UI notifications remain absent (clintlib/appmsg.cpp:2129-2147)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "106 SET_WINGID",
+      "native_cite": "Inc/Messages.h:705; clintlib/appmsg.cpp:2129-2147; FedSrv/FedSrv.CPP:5312-5344; FedSrv/fsmission.cpp:697-709; Inc/Messages.h:705-709; clintlib/appmsg.cpp:2129-2147; Igc/common.cpp:23-35",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.Server/Server.ShipCommands.cs:861; src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs:105; src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:92; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:22; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: commander teammate assignment with corrected commanded bit; known-side update; critical own-assignment notice; live roster wing names and late-join wing snapshots; self echoes remain server authoritative; P718: design; Same-team known-member wing; commanded-self critical assignment notice; live team-pane wing name (fills remaining P675 gap). src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Wing_echo_notifies_only_commanded_self_and_does_not_create_unknown_or_enemy_roster_members); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "124 QUIT_MISSION"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "124 QUIT_MISSION",
+      "native_cite": "Inc/Messages.h:812",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/QuitMission.cs (server handled; client consumer not found)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "124 QUIT_MISSION",
+      "native_cite": "Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Remote_quit_mission_removes_player_requests_and_ready_without_touching_other_players; Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "124 QUIT_MISSION",
+      "native_cite": "Inc/Messages.h:812",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/QuitMission.cs (server handled; client consumer not found)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "124 QUIT_MISSION",
+      "native_cite": "Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Remote_quit_mission_removes_player_requests_and_ready_without_touching_other_players; Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "126 QUIT_SIDE"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "126 QUIT_SIDE",
+      "native_cite": "Inc/Messages.h:825",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/QuitSide.cs (server handled; client consumer not found)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "126 QUIT_SIDE",
+      "native_cite": "Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Quit_side_clears_team_privileges_and_money_preserves_ready_and_join_reseats_identity; Own_quit_side_clears_sector_contents_but_keeps_mission_players_and_can_reenter); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "126 QUIT_SIDE",
+      "native_cite": "Inc/Messages.h:825",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/QuitSide.cs (server handled; client consumer not found)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "126 QUIT_SIDE",
+      "native_cite": "Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Quit_side_clears_team_privileges_and_money_preserves_ready_and_join_reseats_identity; Own_quit_side_clears_sector_contents_but_keeps_mission_players_and_can_reenter); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "128 ENTER_GAME"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "128 ENTER_GAME",
+      "native_cite": "Inc/Messages.h:831",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/EnterGame.cs (server emits; no client handler found)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "128 ENTER_GAME",
+      "native_cite": "Inc/Messages.h:831-835; clintlib/appmsg.cpp:3040-3045; clintlib/clintlib.cpp:3851-3857",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Sync-complete InGame barrier independent of mission stage and live equipment; game-over/reset/next-mission clears. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "128 ENTER_GAME",
+      "native_cite": "Inc/Messages.h:831",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/EnterGame.cs (server emits; no client handler found)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "128 ENTER_GAME",
+      "native_cite": "Inc/Messages.h:831-835; clintlib/appmsg.cpp:3040-3045; clintlib/clintlib.cpp:3851-3857",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Sync-complete InGame barrier independent of mission stage and live equipment; game-over/reset/next-mission clears. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "fedmsg",
+      "155 GAME_STATE"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "fedmsg",
+      "native_item": "155 GAME_STATE",
+      "native_cite": "Inc/Messages.h:854",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/GameState.cs (server emits; no client handler found)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "fedmsg",
+      "native_item": "155 GAME_STATE",
+      "native_cite": "Inc/Messages.h:854-860; clintlib/appmsg.cpp:2392-2407",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Replace all six sides conquest/territory/flag/artifact counters in native array order. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "fedmsg",
+      "native_item": "155 GAME_STATE",
+      "native_cite": "Inc/Messages.h:854",
+      "port_status": "partial",
+      "port_cite_or_reason": "Wire/GameState.cs (server emits; no client handler found)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "fedmsg",
+      "native_item": "155 GAME_STATE",
+      "native_cite": "Inc/Messages.h:854-860; clintlib/appmsg.cpp:2392-2407",
+      "port_status": "done",
+      "port_cite_or_reason": "P718: design; Replace all six sides conquest/territory/flag/artifact counters in native array order. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "screens",
+      "Game-starting (countdown) screen"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "screens",
+      "native_item": "Game-starting (countdown) screen",
+      "native_cite": "WinTrek/gamestartingscreen.cpp",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + ReadyCheckOverlayRenderer (P188/P180)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "screens",
+      "native_item": "Game-starting (countdown) screen",
+      "native_cite": "clintlib/appmsg.cpp:2314-2346; WinTrek/WinTrek.cpp:8129-8137",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Game1.Panes.cs:1047; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:83; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckLayoutTests.cs:94; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: hold through countdown with commander/readiness state intact; release only at Started",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "screens",
+      "native_item": "Game-starting (countdown) screen",
+      "native_cite": "WinTrek/gamestartingscreen.cpp",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs + ReadyCheckOverlayRenderer (P188/P180)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "screens",
+      "native_item": "Game-starting (countdown) screen",
+      "native_cite": "clintlib/appmsg.cpp:2314-2346; WinTrek/WinTrek.cpp:8129-8137",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Game1.Panes.cs:1047; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:83; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckLayoutTests.cs:94; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: hold through countdown with commander/readiness state intact; release only at Started",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "screens",
+      "Selection pane"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "screens",
+      "native_item": "Selection pane",
+      "native_cite": "WinTrek/selpane.cpp",
+      "port_status": "partial",
+      "port_cite_or_reason": "targeting/selection via RadarBracketRenderer + Game1.Targeting",
+      "weight": "3"
+    },
+    "ours": {
+      "area": "screens",
+      "native_item": "Selection pane",
+      "native_cite": "WinTrek/selpane.cpp:17-52; WinTrek/selpane.cpp:71-100",
+      "port_status": "na",
+      "port_cite_or_reason": "P713 native_intent=era constraint: native ValuePane/RowPane framework scaffolding; empty SelectionPane.OnSelChange only returns true and SelectModelPane wraps an externally supplied child; no standalone selection-screen behavior to port. Inventory correction only; actual targeting remains in Game1.Targeting and RadarBracketRenderer",
+      "weight": "3"
+    },
+    "theirs": {
+      "area": "screens",
+      "native_item": "Selection pane",
+      "native_cite": "WinTrek/selpane.cpp",
+      "port_status": "partial",
+      "port_cite_or_reason": "targeting/selection via RadarBracketRenderer + Game1.Targeting",
+      "weight": "3"
+    },
+    "resolved": {
+      "area": "screens",
+      "native_item": "Selection pane",
+      "native_cite": "WinTrek/selpane.cpp:17-52; WinTrek/selpane.cpp:71-100",
+      "port_status": "na",
+      "port_cite_or_reason": "P713 native_intent=era constraint: native ValuePane/RowPane framework scaffolding; empty SelectionPane.OnSelChange only returns true and SelectModelPane wraps an externally supplied child; no standalone selection-screen behavior to port. Inventory correction only; actual targeting remains in Game1.Targeting and RadarBracketRenderer",
+      "weight": "3"
+    }
+  },
+  {
+    "key": [
+      "screens",
+      "Team pane / screen"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "screens",
+      "native_item": "Team pane / screen",
+      "native_cite": "WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:37; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1693; wing assignment/control remains unavailable",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "screens",
+      "native_item": "Team pane / screen",
+      "native_cite": "WinTrek/teampane.cpp:627-638; WinTrek/teamscreen.cpp:452-505",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:49; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1766; tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs:18; P713 native_intent=design: real commander/AFK/wing fields; synchronized roster gathering; manual wing-picker UI remains unavailable",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "screens",
+      "native_item": "Team pane / screen",
+      "native_cite": "WinTrek/teampane.cpp,WinTrek/teamscreen.cpp",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:37; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1693; wing assignment/control remains unavailable",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "screens",
+      "native_item": "Team pane / screen",
+      "native_cite": "WinTrek/teampane.cpp:627-638; WinTrek/teamscreen.cpp:452-505",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:49; src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1766; tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs:18; P713 native_intent=design: real commander/AFK/wing fields; synchronized roster gathering; manual wing-picker UI remains unavailable",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "screens",
+      "Side-select screen"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "screens",
+      "native_item": "Side-select screen",
+      "native_cite": "WinTrek team lobby side select",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs (P281)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "screens",
+      "native_item": "Side-select screen",
+      "native_cite": "WinTrek/teamscreen.cpp:2962-2982",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs:55; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: preserve eliminated-side picker until authoritative active-side join",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "screens",
+      "native_item": "Side-select screen",
+      "native_cite": "WinTrek team lobby side select",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs (P281)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "screens",
+      "native_item": "Side-select screen",
+      "native_cite": "WinTrek/teamscreen.cpp:2962-2982",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs:55; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: preserve eliminated-side picker until authoritative active-side join",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "screens",
+      "Ready-check (pre-flight)"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "screens",
+      "native_item": "Ready-check (pre-flight)",
+      "native_cite": "native ready",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs (P282)",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "screens",
+      "native_item": "Ready-check (pre-flight)",
+      "native_cite": "WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:64; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: display and input use same team-commander authority and forced-state echo",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "screens",
+      "native_item": "Ready-check (pre-flight)",
+      "native_cite": "native ready",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs (P282)",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "screens",
+      "native_item": "Ready-check (pre-flight)",
+      "native_cite": "WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs:64; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: display and input use same team-commander authority and forced-state echo",
+      "weight": "4"
+    }
+  },
+  {
+    "key": [
+      "lobby",
+      "Join game"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "lobby",
+      "native_item": "Join game",
+      "native_cite": "join",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Game1.Session.cs (join flow)",
+      "weight": "5"
+    },
+    "ours": {
+      "area": "lobby",
+      "native_item": "Join game",
+      "native_cite": "FedSrv/fsmission.cpp:3936-3974",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.Server/Server.Lobby.cs:3544; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: join snapshot restores current commanders/owner and non-default ready/force/active state; first commander no longer misses its election",
+      "weight": "5"
+    },
+    "theirs": {
+      "area": "lobby",
+      "native_item": "Join game",
+      "native_cite": "join",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Game1.Session.cs (join flow)",
+      "weight": "5"
+    },
+    "resolved": {
+      "area": "lobby",
+      "native_item": "Join game",
+      "native_cite": "FedSrv/fsmission.cpp:3936-3974",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.Server/Server.Lobby.cs:3544; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: join snapshot restores current commanders/owner and non-default ready/force/active state; first commander no longer misses its election",
+      "weight": "5"
+    }
+  },
+  {
+    "key": [
+      "lobby",
+      "Side select (choose team)"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "lobby",
+      "native_item": "Side select (choose team)",
+      "native_cite": "side select",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs + P281",
+      "weight": "5"
+    },
+    "ours": {
+      "area": "lobby",
+      "native_item": "Side select (choose team)",
+      "native_cite": "WinTrek/teamscreen.cpp:2962-2982",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore/State/LobbyScreenState.cs:10; src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: eliminated ship cannot bypass active-team admission",
+      "weight": "5"
+    },
+    "theirs": {
+      "area": "lobby",
+      "native_item": "Side select (choose team)",
+      "native_cite": "side select",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/SideSelectOverlayRenderer.cs + P281",
+      "weight": "5"
+    },
+    "resolved": {
+      "area": "lobby",
+      "native_item": "Side select (choose team)",
+      "native_cite": "WinTrek/teamscreen.cpp:2962-2982",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore/State/LobbyScreenState.cs:10; src/Allegiance.ClientCore.Game/Game1.Panes.cs:923; tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs:80; P713 native_intent=design: eliminated ship cannot bypass active-team admission",
+      "weight": "5"
+    }
+  },
+  {
+    "key": [
+      "lobby",
+      "Ready / force-ready check"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "lobby",
+      "native_item": "Ready / force-ready check",
+      "native_cite": "ready",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs + P282/P180",
+      "weight": "5"
+    },
+    "ours": {
+      "area": "lobby",
+      "native_item": "Ready / force-ready check",
+      "native_cite": "WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore/State/LobbyScreenState.cs:18; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: every team commander toggles force both ways and clears own AFK",
+      "weight": "5"
+    },
+    "theirs": {
+      "area": "lobby",
+      "native_item": "Ready / force-ready check",
+      "native_cite": "ready",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckOverlayRenderer.cs + P282/P180",
+      "weight": "5"
+    },
+    "resolved": {
+      "area": "lobby",
+      "native_item": "Ready / force-ready check",
+      "native_cite": "WinTrek/teamscreen.cpp:1554-1559; WinTrek/teamscreen.cpp:2773-2793",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore/State/LobbyScreenState.cs:18; src/Allegiance.ClientCore.Game/Game1.Panes.cs:1144; tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs:21; P713 native_intent=design: every team commander toggles force both ways and clears own AFK",
+      "weight": "5"
+    }
+  },
+  {
+    "key": [
+      "lobby",
+      "Team lobby / team pane"
+    ],
+    "decision": "master only",
+    "base": {
+      "area": "lobby",
+      "native_item": "Team lobby / team pane",
+      "native_cite": "team lobby",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Panes + TEAM_LOBBY_P180",
+      "weight": "4"
+    },
+    "ours": {
+      "area": "lobby",
+      "native_item": "Team lobby / team pane",
+      "native_cite": "WinTrek/teamscreen.cpp:452-505; FedSrv/fsmission.cpp:3943-3974",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.Server/Server.Lobby.cs:3544; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs:72; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckRosterTests.cs:84; P713 native_intent=design: current leadership/readiness on join and side-scoped roster after side changes",
+      "weight": "4"
+    },
+    "theirs": {
+      "area": "lobby",
+      "native_item": "Team lobby / team pane",
+      "native_cite": "team lobby",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Panes + TEAM_LOBBY_P180",
+      "weight": "4"
+    },
+    "resolved": {
+      "area": "lobby",
+      "native_item": "Team lobby / team pane",
+      "native_cite": "WinTrek/teamscreen.cpp:452-505; FedSrv/fsmission.cpp:3943-3974",
+      "port_status": "done",
+      "port_cite_or_reason": "src/Allegiance.Server/Server.Lobby.cs:3544; src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs:72; tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckRosterTests.cs:84; P713 native_intent=design: current leadership/readiness on join and side-scoped roster after side changes",
+      "weight": "4"
+    }
+  }
+]

@@ -1,0 +1,28 @@
+[
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+    "suite_invocation": 249,
+    "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   1",
+    "classification": "load flake under the brief rule; underlying cause not established",
+    "isolated_invocations": [
+      253,
+      254,
+      255
+    ],
+    "isolated_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour",
+    "suite_invocation": 249,
+    "message": "never crossed: sectors=[0]",
+    "classification": "load flake under the brief rule; underlying cause not established",
+    "isolated_invocations": [
+      256,
+      257,
+      258
+    ],
+    "isolated_passes": 3
+  }
+]

@@ -1,0 +1,39 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Allegiance.Core -> /home/domingo/allegiance-codex-p720/src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll
+  p605synth -> /home/domingo/allegiance-codex-p720/tools/p605synth/bin/Debug/net10.0/p605synth.dll
+  corpusvalidate -> /home/domingo/allegiance-codex-p720/tools/corpusvalidate/bin/Debug/net10.0/corpusvalidate.dll
+  igcdump -> /home/domingo/allegiance-codex-p720/tools/igcdump/bin/Debug/net10.0/igcdump.dll
+  collision-perf-proof -> /home/domingo/allegiance-codex-p720/tools/collision-perf-proof/bin/Debug/net10.0/collision-perf-proof.dll
+  Allegiance.Lobby -> /home/domingo/allegiance-codex-p720/src/Allegiance.Lobby/bin/Debug/net10.0/Allegiance.Lobby.dll
+  missiondump -> /home/domingo/allegiance-codex-p720/tools/missiondump/bin/Debug/net10.0/missiondump.dll
+  Allegiance.Bot -> /home/domingo/allegiance-codex-p720/src/Allegiance.Bot/bin/Debug/net10.0/Allegiance.Bot.dll
+  fedmsgdump -> /home/domingo/allegiance-codex-p720/tools/fedmsgdump/bin/Debug/net10.0/fedmsgdump.dll
+  Allegiance.ClientCore -> /home/domingo/allegiance-codex-p720/src/Allegiance.ClientCore/bin/Debug/net10.0/Allegiance.ClientCore.dll
+  Allegiance.Server -> /home/domingo/allegiance-codex-p720/src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Server.dll
+  receive-proof -> /home/domingo/allegiance-codex-p720/tools/receive-proof/bin/Debug/net10.0/receive-proof.dll
+  tech-tree -> /home/domingo/allegiance-codex-p720/tools/tech-tree/bin/Debug/net10.0/tech-tree.dll
+  livecombat -> /home/domingo/allegiance-codex-p720/tools/livecombat/bin/Debug/net10.0/livecombat.dll
+  chatdemo -> /home/domingo/allegiance-codex-p720/tools/chatdemo/bin/Debug/net10.0/chatdemo.dll
+  Allegiance.ClientCore.Game -> /home/domingo/allegiance-codex-p720/src/Allegiance.ClientCore.Game/bin/Debug/net10.0/Allegiance.ClientCore.Game.dll
+  Allegiance.ClientCore.Explorer -> /home/domingo/allegiance-codex-p720/src/Allegiance.ClientCore.Explorer/bin/Debug/net10.0/Allegiance.ClientCore.Explorer.dll
+  allegiance-mcp -> /home/domingo/allegiance-codex-p720/tools/allegiance-mcp/bin/Debug/net10.0/allegiance-mcp.dll
+  Allegiance.Lobby.Tests -> /home/domingo/allegiance-codex-p720/tests/Allegiance.Lobby.Tests/bin/Debug/net10.0/Allegiance.Lobby.Tests.dll
+  fsr-proof -> /home/domingo/allegiance-codex-p720/tools/fsr-proof/bin/Debug/net10.0/fsr-proof.dll
+  Allegiance.Core.Tests -> /home/domingo/allegiance-codex-p720/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll
+  Allegiance.ClientCore.MonoGame -> /home/domingo/allegiance-codex-p720/src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.dll
+  shieldflare-proof -> /home/domingo/allegiance-codex-p720/tools/shieldflare-proof/bin/Debug/net10.0/shieldflare-proof.dll
+  Allegiance.ClientCore.Tests -> /home/domingo/allegiance-codex-p720/tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll
+  p629-proof -> /home/domingo/allegiance-codex-p720/tools/p629-proof/bin/Debug/net10.0/p629-proof.dll
+  soft-frame-proof -> /home/domingo/allegiance-codex-p720/tools/soft-frame-proof/bin/Debug/net10.0/soft-frame-proof.dll
+  hullhit-proof -> /home/domingo/allegiance-codex-p720/tools/hullhit-proof/bin/Debug/net10.0/hullhit-proof.dll
+  warp-visual-proof -> /home/domingo/allegiance-codex-p720/tools/warp-visual-proof/bin/Debug/net10.0/warp-visual-proof.dll
+  roster-capture -> /home/domingo/allegiance-codex-p720/tools/roster-capture/bin/Debug/net10.0/roster-capture.dll
+  Allegiance.ClientCore.MonoGame.Tests -> /home/domingo/allegiance-codex-p720/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll
+  hullswap-proof -> /home/domingo/allegiance-codex-p720/tools/hullswap-proof/bin/Debug/net10.0/hullswap-proof.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.69

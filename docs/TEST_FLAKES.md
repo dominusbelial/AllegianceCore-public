@@ -1495,3 +1495,56 @@ See the [merge appendix](reports/P718_INTERFACE_WAVE.md#p738-merge-onto-master),
 [exact invocation ledger](reports/P738_P718_assets/verification.json),
 [case outcomes](reports/P738_P718_assets/case-results.json), and
 [raw logs/TRX archive](reports/P738_P718_assets/validation-logs.tar.gz).
+
+
+## P720 observation (2026-10-16)
+
+P720's final, unfiltered serial sweeps of Core, ClientCore, MonoGame, and Lobby
+reported **16,322 passes / 2 failures / 6 existing private Meshy-pack skips**.
+Core sweep 1 passed all 4,725 tests; the two failures occurred in Core sweep 2.
+After both complete sweeps finished, each failed method passed **3/3 fresh
+exact-method isolated invocations**, satisfying the brief's explicit load-flake
+classification rule.
+
+| Test | Full-suite observation | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | 199/200 pods docked and one oxygen expiry; `Assert.Equal` expected zero expiries, actual one (line 160). | 3/3 pass |
+| `Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour` | `never crossed: sectors=[0]` (line 119). | 3/3 pass |
+
+No assertions, deadlines, quarantine traits, simulation rules, or transport
+behavior were changed for these observations. The isolated passes do not
+establish either underlying cause or a fix. The affected cohort separately
+passed all 78 methods three times alone, and the standalone parking gate passed
+10/10. See the [P720 report](reports/P720_INTERFACE_WAVE.md),
+[complete invocation ledger](reports/P720_assets/verification.json), and
+[failure/isolation index](reports/P720_assets/failure-isolation.json) for raw
+counts, messages, stacks, exact filters, timestamps, and TRX hashes.
+
+
+## P738 / P720 merge observation (2026-10-17)
+
+The serial broad Release gate retained these raw results (passed / failed /
+skipped):
+
+- Core: **4782 / 0 / 0**.
+- ClientCore: **1224 / 1 / 0**.
+- ClientCore.MonoGame: **2411 / 0 / 3**.
+
+After all three broad passes finished, every failing method/case passed
+**3/3 fresh isolated invocations**, with assertions and deadlines unchanged:
+
+- `Allegiance.ClientCore.Tests.SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent`: SessionLost event must fire on the transport thread. Isolated qualification: **3/3 pass**.
+
+These satisfy the brief's load-flake rule and do not establish underlying causes
+or fixes. No product behavior, assertions, deadlines, quarantine traits or
+transport changes were made for these observations. The MonoGame skips are the
+existing optional private Meshy-pack checks. The two Core guards that invoke
+git were excluded to honor the explicit no-git instruction; ordinary live,
+loopback and LiveTiming tests ran, with the local P660 opt-in enabled.
+
+The 82 focused methods passed three times alone (669 case passes / zero
+failures or skips), and the standalone never-parks gate passed 5/5. See the
+[P738 appendix](reports/P720_INTERFACE_WAVE.md#p738-merge-onto-master),
+[invocation ledger](reports/P738_P720_assets/verification.json),
+[case outcomes](reports/P738_P720_assets/case-results.json), and
+[raw logs/TRX archive](reports/P738_P720_assets/validation-logs.tar.gz).

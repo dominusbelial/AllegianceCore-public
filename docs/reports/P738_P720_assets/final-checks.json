@@ -1,0 +1,15 @@
+{
+  "invocations": 257,
+  "archived_raw_invocations_verified": 257,
+  "source_and_test_binary_hashes_unchanged": true,
+  "conflict_markers_removed": true,
+  "flake_conflict_sides_retained": true,
+  "LF_matrices": true,
+  "report_appendix_count": 1,
+  "qualified_flakes": 1,
+  "document_hashes": {
+    "docs/TEST_FLAKES.md": "a56240398eb75e981642c20251d884bee6c0cdcf5e4308e5fffaa34feaf2c386",
+    "docs/parity/parity-matrix.csv": "a29b7a7f5c423e9bc6030d99dcb46863c7f692ebff883f53d9ab902398ae83f5",
+    "docs/reports/P720_INTERFACE_WAVE.md": "13b285cce767aa0cca361708d9b7bdc4421ee2d37cccd41494eed2e433e9ffeb"
+  }
+}

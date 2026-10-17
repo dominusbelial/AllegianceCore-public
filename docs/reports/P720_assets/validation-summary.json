@@ -1,0 +1,264 @@
+{
+  "affected": {
+    "invocations": 234,
+    "exit_failures": 0,
+    "counts": {
+      "passed": 642,
+      "failed": 0,
+      "notExecuted": 0,
+      "total": 642,
+      "skipped": 0
+    }
+  },
+  "showcase": {
+    "invocations": 10,
+    "exit_failures": 0,
+    "counts": {
+      "passed": 10,
+      "failed": 0,
+      "notExecuted": 0,
+      "total": 10,
+      "skipped": 0
+    }
+  },
+  "suites": {
+    "invocations": 8,
+    "exit_failures": 1,
+    "counts": {
+      "passed": 16322,
+      "failed": 2,
+      "notExecuted": 0,
+      "total": 16330,
+      "skipped": 6
+    },
+    "by_project": [
+      {
+        "label": "suite-1-Core",
+        "project": "Core",
+        "counters": {
+          "total": "4725",
+          "executed": "4725",
+          "passed": "4725",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "failures": [],
+        "skips": []
+      },
+      {
+        "label": "suite-1-ClientCore",
+        "project": "ClientCore",
+        "counters": {
+          "total": "1121",
+          "executed": "1121",
+          "passed": "1121",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "failures": [],
+        "skips": []
+      },
+      {
+        "label": "suite-1-ClientCore.MonoGame",
+        "project": "ClientCore.MonoGame",
+        "counters": {
+          "total": "2300",
+          "executed": "2297",
+          "passed": "2297",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "failures": [],
+        "skips": [
+          "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+        ]
+      },
+      {
+        "label": "suite-1-Lobby",
+        "project": "Lobby",
+        "counters": {
+          "total": "19",
+          "executed": "19",
+          "passed": "19",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "failures": [],
+        "skips": []
+      },
+      {
+        "label": "suite-2-Core",
+        "project": "Core",
+        "counters": {
+          "total": "4725",
+          "executed": "4725",
+          "passed": "4723",
+          "failed": "2",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "failures": [
+          {
+            "name": "Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic",
+            "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   1",
+            "stack": "   at Allegiance.Core.Tests.P699bPodLoadTests.Run(Boolean rescueTraffic) in /home/domingo/allegiance-codex-p720/tests/Allegiance.Core.Tests/P699bPodLoadTests.cs:line 160\n   at Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic() in /home/domingo/allegiance-codex-p720/tests/Allegiance.Core.Tests/P699bPodLoadTests.cs:line 16\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour",
+            "message": "never crossed: sectors=[0]",
+            "stack": "   at Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour() in /home/domingo/allegiance-codex-p720/tests/Allegiance.Core.Tests/MapGenLiveProofTests.cs:line 119\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)"
+          }
+        ],
+        "skips": []
+      },
+      {
+        "label": "suite-2-ClientCore",
+        "project": "ClientCore",
+        "counters": {
+          "total": "1121",
+          "executed": "1121",
+          "passed": "1121",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "failures": [],
+        "skips": []
+      },
+      {
+        "label": "suite-2-ClientCore.MonoGame",
+        "project": "ClientCore.MonoGame",
+        "counters": {
+          "total": "2300",
+          "executed": "2297",
+          "passed": "2297",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "failures": [],
+        "skips": [
+          "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+        ]
+      },
+      {
+        "label": "suite-2-Lobby",
+        "project": "Lobby",
+        "counters": {
+          "total": "19",
+          "executed": "19",
+          "passed": "19",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "failures": [],
+        "skips": []
+      }
+    ]
+  },
+  "retries": {
+    "invocations": 6,
+    "exit_failures": 0,
+    "counts": {
+      "passed": 6,
+      "failed": 0,
+      "notExecuted": 0,
+      "total": 6,
+      "skipped": 0
+    }
+  },
+  "certificate": {
+    "methods": 78,
+    "invocations": 234,
+    "case_passes": 642
+  }
+}

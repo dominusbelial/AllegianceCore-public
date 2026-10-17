@@ -1,0 +1,722 @@
+[
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.Reload_NA_terminates_the_cargo_pack",
+    "invocations": [
+      214,
+      215,
+      216
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.Reload_codec_roundtrips_fixed_10_plus_4n_layout",
+    "invocations": [
+      217,
+      218,
+      219
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.Reload_fuel_pack_is_accepted_and_topups_the_fuel_pool",
+    "invocations": [
+      7,
+      8,
+      9
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.Reload_malformed_entry_refuses_rest_without_rollback_or_broadcast",
+    "invocations": [
+      10,
+      11,
+      12
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.Reload_swaps_cargo_launcher_ammo_into_equipped_partially_loaded_launcher",
+    "invocations": [
+      13,
+      14,
+      15
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.Reload_transfers_ammo_updates_ship_ammo_resets_weapon_fraction_and_broadcasts",
+    "invocations": [
+      16,
+      17,
+      18
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.SwapPart_negative_mount_roundtrips_equipped_part_into_and_out_of_cargo",
+    "invocations": [
+      19,
+      20,
+      21
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.SwapPart_out_of_range_negative_mount_is_rejected_cleanly_not_thrown",
+    "invocations": [
+      22,
+      23,
+      24
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.CargoBayReloadTests.SwapPart_wire_out_of_range_negative_mount_is_rejected_no_broadcast_no_change",
+    "invocations": [
+      25,
+      26,
+      27
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.SwapPartTests.SwapPart_codec_roundtrips_fixed_12_byte_layout",
+    "invocations": [
+      28,
+      29,
+      30
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.SwapPartTests.SwapPart_swaps_two_occupied_slots_sectorwide_moves_and_silent_noop",
+    "invocations": [
+      31,
+      32,
+      33
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.EveryExpectedServerSentMessage_IsConsumed_NotUnknownFmid",
+    "invocations": [
+      34,
+      35,
+      36
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.SupportedServerSentSet_IsFullyAccountedFor",
+    "invocations": [
+      37,
+      38,
+      39
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.UnknownFmidDetector_RecordsUnconsumedServerSentMessage",
+    "invocations": [
+      40,
+      41,
+      42
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.P641FlightPartsReceiveTests.Remote_exports_split_cargo_and_same_mount_is_a_noop",
+    "invocations": [
+      43,
+      44,
+      45
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.P641FlightPartsReceiveTests.Swap_echo_updates_exact_equipment_without_touching_pose_or_cookie",
+    "invocations": [
+      46,
+      47,
+      48
+    ],
+    "case_passes": 6
+  },
+  {
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.P641FlightPartsReceiveTests.Unmount_mount_and_drop_follow_server_echo_without_double_swapping",
+    "invocations": [
+      49,
+      50,
+      51
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Conflict_DetectsTakenKey_AndRequiresForce",
+    "invocations": [
+      52,
+      53,
+      54
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Controller_CancelConflict_LeavesBindingsUnchanged",
+    "invocations": [
+      55,
+      56,
+      57
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Controller_CaptureFlow_RebindsWithoutConflict",
+    "invocations": [
+      58,
+      59,
+      60
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Controller_Capture_IgnoresBareModifierKey",
+    "invocations": [
+      61,
+      62,
+      63
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Controller_ConflictFlow_DetectsAndAllowsSwap",
+    "invocations": [
+      64,
+      65,
+      66
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Controller_ResetConfirm_RestoresDefaults",
+    "invocations": [
+      67,
+      68,
+      69
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.FKeyFix_CamerasOwnF4F5F7F10F11",
+    "invocations": [
+      70,
+      71,
+      72
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.FKeyFix_MusicVolumeOffTheFRow_OnFreeCtrlChord",
+    "invocations": [
+      73,
+      74,
+      75
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.FKeyFix_NoBindingSharesF5OrF11ExceptTheirCamera",
+    "invocations": [
+      76,
+      77,
+      78
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.FKeyFix_ScreenshotIsPrintScreen_NotF11",
+    "invocations": [
+      79,
+      80,
+      81
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Help_GroupsMatchNativeCommandCategories",
+    "invocations": [
+      82,
+      83,
+      84
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Help_ReflectsReboundBinding",
+    "invocations": [
+      85,
+      86,
+      87
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Overrides_IgnoreUnknownActionsAndBadCodes",
+    "invocations": [
+      88,
+      89,
+      90
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Overrides_OnlyDifferencesAreSerialized",
+    "invocations": [
+      91,
+      92,
+      93
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Overrides_PersistThroughJsonRoundTrip",
+    "invocations": [
+      94,
+      95,
+      96
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Parser_MatchesNativeDefaultTable",
+    "invocations": [
+      97,
+      98,
+      99
+    ],
+    "case_passes": 69
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Parser_ParsesAllKeyCommandEntries",
+    "invocations": [
+      100,
+      101,
+      102
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Parser_ScrShotIsPrintScreen_NotF11",
+    "invocations": [
+      103,
+      104,
+      105
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Reset_RestoresCatalogueDefaults",
+    "invocations": [
+      106,
+      107,
+      108
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame",
+    "invocations": [
+      109,
+      110,
+      111
+    ],
+    "case_passes": 42
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey",
+    "invocations": [
+      112,
+      113,
+      114
+    ],
+    "case_passes": 42
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld",
+    "invocations": [
+      115,
+      116,
+      117
+    ],
+    "case_passes": 42
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Sanity_OldKeyIsNoLongerBound_ByCatalogueDefault",
+    "invocations": [
+      118,
+      119,
+      120
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+    "invocations": [
+      121,
+      122,
+      123
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.CargoSelector_EmptyHold_ReturnsNone",
+    "invocations": [
+      124,
+      125,
+      126
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.CargoSelector_EncodesAndDecodesNegativeMounts",
+    "invocations": [
+      127,
+      128,
+      129
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.CargoSelector_Next_CyclesForwardThroughOccupiedMounts",
+    "invocations": [
+      130,
+      131,
+      132
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.CargoSelector_OccupiedMounts_SortsAscending",
+    "invocations": [
+      133,
+      134,
+      135
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.CargoSelector_Prev_CyclesBackward",
+    "invocations": [
+      136,
+      137,
+      138
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.Catalogue_NativeWins_KeyChoices",
+    "invocations": [
+      139,
+      140,
+      141
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.Catalogue_NewCommandsAppearInHelpOverlay",
+    "invocations": [
+      142,
+      143,
+      144
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.Catalogue_P626Commands_NoDuplicateKeysWithinAGroup",
+    "invocations": [
+      145,
+      146,
+      147
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.Catalogue_RegistersP626Command_WithKeyAndNativeName",
+    "invocations": [
+      148,
+      149,
+      150
+    ],
+    "case_passes": 33
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.ChatScroll_CanScroll_FalseWhenItAllFits",
+    "invocations": [
+      151,
+      152,
+      153
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.ChatScroll_Clamp_Bounds",
+    "invocations": [
+      154,
+      155,
+      156
+    ],
+    "case_passes": 12
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.ChatScroll_PageNewer_And_StepNewer_ReturnTowardLiveEdge",
+    "invocations": [
+      157,
+      158,
+      159
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.ChatScroll_PageOlder_And_StepOlder_IncrementTowardHistory",
+    "invocations": [
+      160,
+      161,
+      162
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.ChatScroll_StartIndex_WindowSlidesIntoHistory",
+    "invocations": [
+      163,
+      164,
+      165
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsLiveTests.Production_inventory_commands_weapon_selection_and_booster_roundtrip",
+    "invocations": [
+      166,
+      167,
+      168
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsTests.Changing_single_weapon_keeps_single_fire",
+    "invocations": [
+      169,
+      170,
+      171
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsTests.Each_weapon_key_selects_single_then_toggles_back_to_group",
+    "invocations": [
+      172,
+      173,
+      174
+    ],
+    "case_passes": 12
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsTests.Empty_or_nonfixed_mount_is_ignored",
+    "invocations": [
+      175,
+      176,
+      177
+    ],
+    "case_passes": 9
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsTests.Mount_uses_individual_socket_mask_and_empty_slot",
+    "invocations": [
+      178,
+      179,
+      180
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsTests.Native_defaults_are_1_to_4_and_proof_flag_is_parsed",
+    "invocations": [
+      181,
+      182,
+      183
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsTests.New_commands_have_native_identity_help_and_rebindable_actions",
+    "invocations": [
+      184,
+      185,
+      186
+    ],
+    "case_passes": 27
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsTests.Replace_exchanges_selected_cargo_with_occupied_compatible_equipment",
+    "invocations": [
+      187,
+      188,
+      189
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P641FlightPartsTests.Unmount_needs_free_cargo_and_mount_requires_cargo_selection",
+    "invocations": [
+      190,
+      191,
+      192
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Empty_booster_mount_reloads_only_fuel_last_pack_first_and_leaves_replacement_alone",
+    "invocations": [
+      193,
+      194,
+      195
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Empty_launcher_mount_reloads_last_matching_stacks_then_selects_after_consumption",
+    "invocations": [
+      196,
+      197,
+      198
+    ],
+    "case_passes": 9
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Empty_mount_sends_swap_before_exact_reload_and_echo_consumes_cargo",
+    "invocations": [
+      199,
+      200,
+      201
+    ],
+    "case_passes": 12
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Every_action_is_discoverable_persistent_and_edge_triggered",
+    "invocations": [
+      202,
+      203,
+      204
+    ],
+    "case_passes": 42
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Production_handler_sends_exact_native_bytes_over_tcp_and_applies_ordered_own_echo_once",
+    "invocations": [
+      205,
+      206,
+      207
+    ],
+    "case_passes": 42
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Production_swap_reaches_real_server_and_returns_authoritative_inventory",
+    "invocations": [
+      208,
+      209,
+      210
+    ],
+    "case_passes": 42
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Selection_honors_current_slot_masks_different_types_empty_slots_and_full_hold",
+    "invocations": [
+      211,
+      212,
+      213
+    ],
+    "case_passes": 3
+  },
+  {
+    "project": "ClientCore.MonoGame",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Reload_echo_moves_orphan_launchers_and_applies_partial_and_whole_packs_in_wire_order",
+    "invocations": [
+      220,
+      221,
+      222
+    ],
+    "case_passes": 3
+  }
+]
