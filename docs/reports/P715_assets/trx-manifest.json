@@ -1,0 +1,202 @@
+[
+  {
+    "name": "accepted-1-Allegiance.ClientCore.MonoGame.Tests.trx",
+    "sha256": "392b1848bfc0bc0643287cf2a17c587d95dce1190a7a95a405a1fa183aac1ece"
+  },
+  {
+    "name": "accepted-1-Allegiance.Core.Tests.trx",
+    "sha256": "3f1d76ef7b1e5c1ab572beab7add960fb09cbba309c9be87a88487ea294c9143"
+  },
+  {
+    "name": "accepted-1-Allegiance.Lobby.Tests.trx",
+    "sha256": "7b5c831798db9ee134d31afea90cd492f78535764a7bc716602d432222e44b33"
+  },
+  {
+    "name": "accepted-2-Allegiance.ClientCore.MonoGame.Tests.trx",
+    "sha256": "2d69dc4b68309af312ff4e2d46eca238b40e4b1dea39f83f20988b812b40569e"
+  },
+  {
+    "name": "accepted-2-Allegiance.ClientCore.Tests.trx",
+    "sha256": "5ededbad7f90d7bd82530d7596b5e27841a8e64bb3864da8faf53fe2e4250ce2"
+  },
+  {
+    "name": "accepted-2-Allegiance.Core.Tests.trx",
+    "sha256": "e325e8f04c7ec1d9852e9658128b7efa827c4d574b2cb3542517d91d266b73a6"
+  },
+  {
+    "name": "accepted-2-Allegiance.Lobby.Tests.trx",
+    "sha256": "f4862da77a18d72aeec78345f5985c30bec5a5b205d2fd2458a3eaa6371d4298"
+  },
+  {
+    "name": "diagnostic-isolation-1-1.trx",
+    "sha256": "1bed1af70670614ae8f073ab5b2491c838b0d8b5d245d32243ad54961b36c53d"
+  },
+  {
+    "name": "diagnostic-isolation-1-2.trx",
+    "sha256": "0da5074d4ee7387743aec5cd61c34ee33cdf22a48d24113a4add76ab8b492395"
+  },
+  {
+    "name": "diagnostic-isolation-1-3.trx",
+    "sha256": "c0c0d26ac413c66fc09f28c4a6b02f0466725e31cb4505a5bae67cc82571e223"
+  },
+  {
+    "name": "diagnostic-isolation-2-1.trx",
+    "sha256": "376d327c7a28b80f68f76c02941e3ef40aec04a5b13f79424bd2ab42d8db50aa"
+  },
+  {
+    "name": "diagnostic-isolation-2-2.trx",
+    "sha256": "15db504b9dbb818a11b4f894b0290556c4cbc806152171539637a55e3ef5f0fd"
+  },
+  {
+    "name": "diagnostic-isolation-2-3.trx",
+    "sha256": "969dff069fe4519e5993239b3544ce3eb0611f2d326b97253bc8c8035007f5b4"
+  },
+  {
+    "name": "diagnostic-isolation-3-1.trx",
+    "sha256": "33e6cf214eb5d6edf382143b2d9b20b9fcf73b8b4bc39f565ae7d4c518a99b62"
+  },
+  {
+    "name": "diagnostic-isolation-3-2.trx",
+    "sha256": "17f29c672b4ecf02a7376dc856d53d0a8a0037a8df7e3df066b3ceedd1f0d7b1"
+  },
+  {
+    "name": "diagnostic-isolation-3-3.trx",
+    "sha256": "3ac0b9bd5d1f4a7f32f31c1c18bf14576722e6b0c07f07fe16dfaf8689ca4f11"
+  },
+  {
+    "name": "focused-1-1.trx",
+    "sha256": "6080defa5f97f683922a7b1debca10e5bca479279b394c9099f35b2b6378217d"
+  },
+  {
+    "name": "focused-1-2.trx",
+    "sha256": "1d2fc8976931c939c9f83b9b58b518c644e7b4e889415b0864090e7b4c7490a3"
+  },
+  {
+    "name": "focused-1-3.trx",
+    "sha256": "910aef3ffe961f2e58bc8d53d00e09e6e675a0a4a4d55e35871e57357331fe1c"
+  },
+  {
+    "name": "focused-2-1.trx",
+    "sha256": "f1ee2f5b6fff381660d28f987a3513ca7558167d3358b0190e8d57d12af5c53b"
+  },
+  {
+    "name": "focused-2-2.trx",
+    "sha256": "f7ac3e4e98b1327dca5fdcdd24fee8db8ec813edeade92b49e552dc5086ae059"
+  },
+  {
+    "name": "focused-2-3.trx",
+    "sha256": "fab6c7395ae15ecbe18f43e1fbc36c158915055a641c68c8917b3bd7fc8b261b"
+  },
+  {
+    "name": "focused-3-1.trx",
+    "sha256": "8f06dd51475978b762d237ac4ca147e1d7a477c3b5077433bbf689f66d1ee4e9"
+  },
+  {
+    "name": "focused-3-2.trx",
+    "sha256": "3ac2341c50bab9075a280dfcd0931b2c157ec0e8093eb829043fb81f50f24313"
+  },
+  {
+    "name": "focused-3-3.trx",
+    "sha256": "df0c2fde5086bddee7bb72550ad91c45c14abd57ce85cf7c51db489643744e3f"
+  },
+  {
+    "name": "focused-4-1.trx",
+    "sha256": "4e384d71dde6272a162f25245a6662ac5959ded7d04f02bda7a16353f48db3e5"
+  },
+  {
+    "name": "focused-4-2.trx",
+    "sha256": "e5c1e1095c4bf2edc648e9f3cf02348256963cd4e780e53ef7871474fd029cc3"
+  },
+  {
+    "name": "focused-4-3.trx",
+    "sha256": "2ddc83143ad2c7711aa5223dbc48d1ceba477d9aab6e81199893c4861599c44e"
+  },
+  {
+    "name": "input-focused-1-1.trx",
+    "sha256": "2aede2ff0dd1e046ab3e01e3b27617d46d4811647fd3622bd0f5bd78d202b42d"
+  },
+  {
+    "name": "input-focused-1-2.trx",
+    "sha256": "23f10cad6a5b6a22bbc2dba840ff91fc860ad2becf153e843956136c120cbac4"
+  },
+  {
+    "name": "input-focused-1-3.trx",
+    "sha256": "14eaabc64a351dbe3f085a160d56867f93eda96878fb205bec86defa83e90186"
+  },
+  {
+    "name": "input-focused-2-1.trx",
+    "sha256": "4acda14244d03f8dbf54087d5ead10c1ae1dd2ddd890553df837a44acba08333"
+  },
+  {
+    "name": "input-focused-2-2.trx",
+    "sha256": "b685b385780aefa571c8b60e5b90629ed5a4ce18fb57d86e247ddaba1e5a40f0"
+  },
+  {
+    "name": "input-focused-2-3.trx",
+    "sha256": "673d1e6aac44079c03d552f48afe454956a203ab16394b3ef10ddd46a65d7e1f"
+  },
+  {
+    "name": "input-focused-3-1.trx",
+    "sha256": "ae71f71926d204dd11ba91f1cc44fdf963df468df42d0eddf3e769dc003054e8"
+  },
+  {
+    "name": "input-focused-3-2.trx",
+    "sha256": "c5843dcd2b870a24e10915a6393665b494d920a4c4c2a5a1d1726ec103f2b178"
+  },
+  {
+    "name": "input-focused-3-3.trx",
+    "sha256": "bbf071ee991a88f0ee3e238b45eb9c8f5fd777beb251c58ecf3a1d1d6e978ed8"
+  },
+  {
+    "name": "input-focused-4-1.trx",
+    "sha256": "1f0f42bb7447409fbe157028bb6f0081f7902e4b7f1deec30a27fce4c2f07439"
+  },
+  {
+    "name": "input-focused-4-2.trx",
+    "sha256": "73179a576ab7848df9d0b2e971263bd2976db0d5088fb308ecd66e82b8447a83"
+  },
+  {
+    "name": "input-focused-4-3.trx",
+    "sha256": "e42360dd7ef6c67193bda0b313b9bec00afa3b9e30e7bb619f0a82448777e5df"
+  },
+  {
+    "name": "input-focused-5-1.trx",
+    "sha256": "e52f2a29e4fbf4d154dad8b6d99e60d939d52cd6f0c4882272bd98023c4dca94"
+  },
+  {
+    "name": "input-focused-5-2.trx",
+    "sha256": "6ed04ad67190f89fab7be48cbcc4acb25f57298b708734f347df98775eceacbb"
+  },
+  {
+    "name": "input-focused-5-3.trx",
+    "sha256": "57da5b661027793aa42653430c6ade1736974828a1232a4f238e9acc28cd1c66"
+  },
+  {
+    "name": "input-focused-6-1.trx",
+    "sha256": "fceb6d0fb827d80d56d9efb22750644f70e3a7667d33bd246befd5a44e19e129"
+  },
+  {
+    "name": "input-focused-6-2.trx",
+    "sha256": "eeb984d27fba29f2b88d24bf2dc5c3b91cf7c98ca35d737755faf93a1eb10462"
+  },
+  {
+    "name": "input-focused-6-3.trx",
+    "sha256": "e6582567871b495f3f56b184717b15208eda3e3c9da0a46f0b8b4499f96577ed"
+  },
+  {
+    "name": "input-focused-7-1.trx",
+    "sha256": "e28ae6e0e88d4bd601fff7773aaf6a558ffa23594cc8d4ae104ab38128c1edcd"
+  },
+  {
+    "name": "input-focused-7-2.trx",
+    "sha256": "c315b3a767a5710b35a4cbc304b3ae623848e83f39f04f19970b290be6c82aa3"
+  },
+  {
+    "name": "input-focused-7-3.trx",
+    "sha256": "b2a59ad89d99d8b157e9dcbd51a38059c747972d9652c2c9db21786a11c7458d"
+  },
+  {
+    "name": "regression-before-final.trx",
+    "sha256": "8e5a0f2e0302fae2695e43907c4b02b3f7ea0436e1406ebf5679db08eb18c7fa"
+  }
+]

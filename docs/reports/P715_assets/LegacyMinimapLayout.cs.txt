@@ -1,0 +1,79 @@
+// Test-only baseline extraction of original DrawMini placement. Not production code.
+using System.Numerics;
+using Allegiance.Core.Wire;
+
+namespace Allegiance.ClientCore.MonoGame.Rendering;
+
+/// <summary>
+/// Measured compact-map text and geometry, shared by DrawMini and headless tests.
+/// Port extension: native WinTrek/sectormap.cpp:404-422 places the expand image
+/// and selected-sector caption separately; it has no combined keyboard footer.
+/// </summary>
+public sealed class LegacyMinimapLayout
+{
+    /// <summary>Inset between the panel outline and its contents, in pixels.</summary>
+    public const float Border = 8f;
+
+    /// <summary>A screen-space rectangle in viewport pixels.</summary>
+    public readonly record struct Bounds(float X, float Y, float Width, float Height)
+    {
+        /// <summary>Right edge in viewport pixels.</summary>
+        public float Right => X + Width;
+        /// <summary>Bottom edge in viewport pixels.</summary>
+        public float Bottom => Y + Height;
+    }
+
+    /// <summary>A measured string with its draw position and current-sector tint.</summary>
+    public readonly record struct Label(string Text, Bounds Rectangle, bool IsCurrent = false);
+
+    /// <summary>The outer corner panel.</summary>
+    public Bounds Panel { get; private init; }
+    /// <summary>The region reserved for map icons and sector names.</summary>
+    public Bounds MapArea { get; private init; }
+    /// <summary>The bottom band reserved exclusively for the caption.</summary>
+    public Bounds FooterArea { get; private init; }
+    /// <summary>Authored sector coordinates fitted into the map area.</summary>
+    public StarmapLayout Map { get; private init; } = null!;
+    /// <summary>Current and directly warp-connected sector names.</summary>
+    public IReadOnlyList<Label> SectorLabels { get; private init; } = [];
+    /// <summary>Measured caption lines.</summary>
+    public IReadOnlyList<Label> FooterLabels { get; private init; } = [];
+
+    /// <summary>
+    /// Build compact-map geometry using the renderer's actual font measurement.
+    /// Names above/below sector dots and the Tab caption are port UI conventions.
+    /// </summary>
+    public static LegacyMinimapLayout Build(IReadOnlyList<StarmapLayout.ClusterSite> sites,
+        IReadOnlyList<ClusterInfo.WarpEdge> edges, short? currentSectorId,
+        float viewportWidth, float viewportHeight, Func<string, Vector2> measure)
+    {
+        var (px, py, pw, ph) = MinimapGeometry.CornerPanel(viewportWidth, viewportHeight);
+        var map = StarmapLayout.Fit(sites, px, py, pw, ph, Border);
+        var neighbours = new HashSet<short>();
+        foreach (var edge in edges)
+        {
+            if (edge.SourceClusterId == currentSectorId) neighbours.Add(edge.DestClusterId);
+            if (edge.DestClusterId == currentSectorId) neighbours.Add(edge.SourceClusterId);
+        }
+        var labels = new List<Label>();
+        foreach (var site in sites)
+        {
+            bool isCurrent = site.Id == currentSectorId;
+            if ((!isCurrent && !neighbours.Contains(site.Id)) || string.IsNullOrEmpty(site.Name)) continue;
+            if (!map.TryGetPoint(site.Id, out var point)) continue;
+            var size = measure(site.Name);
+            labels.Add(new(site.Name, new(point.X - size.X / 2f,
+                point.Y + (isCurrent ? -14f : 8f), size.X, size.Y), isCurrent));
+        }
+        string name = currentSectorId is { } id && map.TryGetName(id, out var n) && n.Length > 0 ? n : "?";
+        string footer = $"MINIMAP  YOU: {name}   [TAB] EXPAND";
+        var footerSize = measure(footer);
+        var footerRect = new Bounds(px + Border, py + ph - footerSize.Y - 4f, footerSize.X, footerSize.Y);
+        return new()
+        {
+            Panel = new(px, py, pw, ph), MapArea = new(px, py, pw, ph),
+            FooterArea = new(px, footerRect.Y - 4f, pw, footerSize.Y + 8f), Map = map,
+            SectorLabels = labels, FooterLabels = [new(footer, footerRect)],
+        };
+    }
+}

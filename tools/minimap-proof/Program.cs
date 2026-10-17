@@ -26,22 +26,34 @@ using Allegiance.Core;
 var options = ProofOptions.Parse(args);
 using var game = new ProofRunner(options);
 game.Run();
-return 0;
+return game.Failed ? 1 : 0;
 
 sealed class ProofOptions
 {
     public string ArtRoot = "";
     public string ContentRoot = "";
     public string OutDir = "";
+    public bool FooterRegression;
+    public int Width = 1280, Height = 800;
+    public string Tag = "after";
 
     public static ProofOptions Parse(string[] args)
     {
         string art = "", content = "", outDir = "";
+        bool footer = false;
+        int width = 1280, height = 800;
+        string tag = "after";
         int i = 0;
         while (i < args.Length)
         {
             switch (args[i])
             {
+                case "--footer-regression": footer = true; break;
+                case "--window":
+                    var size = args[++i].Split('x');
+                    width = int.Parse(size[0]); height = int.Parse(size[1]);
+                    break;
+                case "--tag": tag = args[++i]; break;
                 case "--art": art = args[++i]; break;
                 case "--content": content = args[++i]; break;
                 case "--out": outDir = args[++i]; break;
@@ -52,6 +64,7 @@ sealed class ProofOptions
         string repo = RepoRoot();
         return new ProofOptions
         {
+            FooterRegression = footer, Width = width, Height = height, Tag = tag,
             ArtRoot = art.Length > 0 ? art : Path.Combine(repo, "docs", "artwork"),
             ContentRoot = content.Length > 0 ? content : Path.Combine(repo, "src", "Allegiance.ClientCore.MonoGame", "Content", "bin", "DesktopGL", "Content"),
             OutDir = outDir.Length > 0 ? outDir : Path.Combine(repo, ".verify_p360"),
@@ -80,7 +93,11 @@ sealed class ProofRunner : Game
     private StarmapRenderer _starmap = null!;
     private SectorInfoPaneRenderer _infoPane = null!;
 
-    private const int Width = 1280, Height = 800;
+    private int Width => _o.Width;
+    private int Height => _o.Height;
+    public bool Failed { get; private set; }
+    private bool _captured;
+    private int _frames;
 
     public ProofRunner(ProofOptions o)
     {
@@ -94,6 +111,7 @@ sealed class ProofRunner : Game
 
     protected override void Initialize()
     {
+        _gdm.ApplyChanges();
         base.Initialize();
         _sb = new SpriteBatch(GraphicsDevice);
         _white = new Texture2D(GraphicsDevice, 1, 1);
@@ -101,8 +119,67 @@ sealed class ProofRunner : Game
         _font = Content.Load<SpriteFont>("HUD");
         _starmap = new StarmapRenderer(_sb, _white, _font);
         _infoPane = new SectorInfoPaneRenderer(_sb, _white, _font);
-        try { RunProof(GraphicsDevice); }
-        catch (Exception ex) { Console.WriteLine($"[proof] FATAL: {ex}"); }
+        if (!_o.FooterRegression)
+        {
+            try { RunProof(GraphicsDevice); }
+            catch (Exception ex) { Failed = true; Console.WriteLine($"[proof] FATAL: {ex}"); }
+            Exit();
+        }
+    }
+
+    // P715: deterministic bottom-row fixture on a real window backbuffer,
+    // using the same DrawMini and compiled HUD font as the flight client.
+    protected override void Draw(GameTime gameTime)
+    {
+        if (!_o.FooterRegression || _captured) return;
+        try
+        {
+            StarmapLayout.ClusterSite[] sites =
+            [
+                new(1, "Omega", 0, 0), new(2, "Bug Nebula", -125, 100),
+                new(3, "Tellus", 125, 100), new(4, "Alpha", 0, -100),
+            ];
+            ClusterInfo.WarpEdge[] edges = [new(1, 2), new(3, 1), new(1, 4)];
+            GraphicsDevice.Clear(new Color(0.015f, 0.019f, 0.025f));
+            _starmap.DrawMini(sites, edges, 1, null, true, GraphicsDevice.Viewport);
+            if (++_frames < 5) return; // Let SDL process the initial window resize before readback.
+            _captured = true;
+            var mini = MinimapLayout.Build(sites, edges, 1, Width, Height, text =>
+            {
+                var size = _font.MeasureString(text);
+                return new System.Numerics.Vector2(size.X, size.Y);
+            });
+            string stem = Path.Combine(_o.OutDir, $"{_o.Tag}_{Width}x{Height}");
+            if (_o.Tag != "before") File.WriteAllText(stem + ".json", System.Text.Json.JsonSerializer.Serialize(mini,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            Console.WriteLine($"[P715] viewport={GraphicsDevice.Viewport}; backbuffer={GraphicsDevice.PresentationParameters.BackBufferWidth}x{GraphicsDevice.PresentationParameters.BackBufferHeight}");
+            var pixels = new Color[Width * Height];
+            GraphicsDevice.GetBackBufferData(pixels);
+            using var texture = new Texture2D(GraphicsDevice, Width, Height);
+            texture.SetData(pixels);
+            using (var stream = File.Create(stem + ".png")) texture.SaveAsPng(stream, Width, Height);
+            // Also retain a lossless close-up of the actual captured backbuffer.
+            var panel = mini.Panel;
+            var region = new Rectangle((int)panel.X - 2, (int)panel.Y - 2,
+                (int)MathF.Ceiling(panel.Width) + 4, (int)MathF.Ceiling(panel.Height) + 4);
+            var crop = new Color[region.Width * region.Height];
+            texture.GetData(0, region, crop, 0, crop.Length);
+            using var closeup = new Texture2D(GraphicsDevice, region.Width, region.Height);
+            closeup.SetData(crop);
+            using (var stream = File.Create(stem + "_pane.png")) closeup.SaveAsPng(stream, region.Width, region.Height);
+            Console.WriteLine($"[P715] captured {stem}");
+            if (_o.Tag == "after")
+            {
+                if (mini.SectorLabels.Any(l => l.Rectangle.Bottom > mini.FooterArea.Y
+                    || l.Rectangle.Y < mini.MapArea.Y
+                    || l.Rectangle.X < panel.X + MinimapLayout.Border
+                    || l.Rectangle.Right > panel.Right - MinimapLayout.Border)
+                    || mini.FooterLabels.Any(l => l.Rectangle.Width > panel.Width - 2 * MinimapLayout.Border
+                        || l.Rectangle.Y < mini.FooterArea.Y || l.Rectangle.Bottom > panel.Bottom))
+                    throw new InvalidOperationException("Measured HUD-font text exceeds its reserved region");
+            }
+        }
+        catch (Exception ex) { Failed = true; Console.WriteLine($"[P715] FATAL: {ex}"); }
         Exit();
     }
 

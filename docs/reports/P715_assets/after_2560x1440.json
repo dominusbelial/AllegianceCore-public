@@ -1,0 +1,103 @@
+{
+  "Panel": {
+    "X": 2186,
+    "Y": 1186,
+    "Width": 360,
+    "Height": 240,
+    "Right": 2546,
+    "Bottom": 1426
+  },
+  "MapArea": {
+    "X": 2186,
+    "Y": 1186,
+    "Width": 360,
+    "Height": 206,
+    "Right": 2546,
+    "Bottom": 1392
+  },
+  "FooterArea": {
+    "X": 2186,
+    "Y": 1392,
+    "Width": 360,
+    "Height": 34,
+    "Right": 2546,
+    "Bottom": 1426
+  },
+  "Map": {
+    "MinX": -330.76923,
+    "MaxX": 330.76923,
+    "MinY": -125,
+    "MaxY": 125,
+    "Count": 4,
+    "Ids": [
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "SectorLabels": [
+    {
+      "Text": "Omega",
+      "Rectangle": {
+        "X": 2338.5,
+        "Y": 1259,
+        "Width": 55,
+        "Height": 22,
+        "Right": 2393.5,
+        "Bottom": 1281
+      },
+      "IsCurrent": true
+    },
+    {
+      "Text": "Bug Nebula",
+      "Rectangle": {
+        "X": 2246,
+        "Y": 1349,
+        "Width": 110,
+        "Height": 22,
+        "Right": 2356,
+        "Bottom": 1371
+      },
+      "IsCurrent": false
+    },
+    {
+      "Text": "Tellus",
+      "Rectangle": {
+        "X": 2398,
+        "Y": 1349,
+        "Width": 66,
+        "Height": 22,
+        "Right": 2464,
+        "Bottom": 1371
+      },
+      "IsCurrent": false
+    },
+    {
+      "Text": "Alpha",
+      "Rectangle": {
+        "X": 2338.5,
+        "Y": 1245,
+        "Width": 55,
+        "Height": 22,
+        "Right": 2393.5,
+        "Bottom": 1267
+      },
+      "IsCurrent": false
+    }
+  ],
+  "FooterLabels": [
+    {
+      "Text": "YOU: Omega   [TAB] EXPAND",
+      "Rectangle": {
+        "X": 2194,
+        "Y": 1400,
+        "Width": 275,
+        "Height": 22,
+        "Right": 2469,
+        "Bottom": 1422
+      },
+      "IsCurrent": false
+    }
+  ]
+}

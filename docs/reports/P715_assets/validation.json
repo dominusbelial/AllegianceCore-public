@@ -1,0 +1,54 @@
+{
+  "base_revision": "477513e201a46ac3c7d01da6c83f1d2cf85c075f",
+  "branch": "codex/p715",
+  "source_sha256": {
+    "src/Allegiance.ClientCore.Game/Game1.StarmapClick.cs": "6561f6cd81d7d9ab05cc1e9a5bac5e58faaab1ad2af669caf3ddb54a9f3dadfe",
+    "src/Allegiance.ClientCore.Game/Rendering/MinimapLayout.cs": "3134820102df9f3fb4d98252faf70b1103f0470ed33ed17c36b6822949cfe310",
+    "src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs": "4b6ffa6efc231e75fccb89e714f3b120b3091edfbf35e88b6987a6272baa3de3",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/MinimapLayoutTests.cs": "3e6e11af08a412f000f2db8440039d6118e3428eaa7c8b9fff09fb1ef40c9a56",
+    "tools/minimap-proof/Program.cs": "a7ee34baf034ee8b382dd6eb37157c4717ca96a0760fcf7b070c97474a98291e"
+  },
+  "builds": [
+    {
+      "label": "solution",
+      "command": "dotnet build AllegianceCore.slnx -m:8 -v:minimal",
+      "succeeded": true,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "label": "all tools",
+      "command": "dotnet build .verify_p715/all-tools.proj -m:8 -v:minimal",
+      "succeeded": true,
+      "warnings": 0,
+      "errors": 0
+    }
+  ],
+  "proofs": [
+    {
+      "viewport": "1280x720",
+      "exit_code": 0,
+      "measured_layout": "after_1280x720.json",
+      "screenshot": "after_1280x720.png"
+    },
+    {
+      "viewport": "1920x1080",
+      "exit_code": 0,
+      "measured_layout": "after_1920x1080.json",
+      "screenshot": "after_1920x1080.png"
+    },
+    {
+      "viewport": "2560x1440",
+      "exit_code": 0,
+      "measured_layout": "after_2560x1440.json",
+      "screenshot": "after_2560x1440.png"
+    }
+  ],
+  "real_client": {
+    "map": "XXV_simple.igc",
+    "viewport": "1920x1080",
+    "exit_code": 0,
+    "auto_flags": "--auto-side 0 --auto-ready --auto-launch 13 --autoshots 3 --exit-after 6 --window 1920x1080",
+    "screenshot": "live/proof_t003.0_sCeto_ccockpit.png"
+  }
+}
