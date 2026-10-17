@@ -646,6 +646,29 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public void ProbeCreatedEvent(Probe p) => ProbeCreated?.Invoke(p);
 
     /// <summary>
+    /// P725 — optional hook the owning <see cref="Server"/> subscribes to receive
+    /// every <see cref="IIgcSite.DroneChatEvent"/> the world missions raise when
+    /// a drone/constructor emits an in-flight team-chatter line
+    /// (<c>Ship.SendDroneChat</c>, the concrete-Ship analogue of native
+    /// <c>GetIgcSite()->SendChat(this, CHAT_TEAM, ...)</c>,
+    /// <c>shipIGC.cpp:1895-1901,2171,2199</c>). Null by default, matching the
+    /// IIgcSite no-op — a headless host that has not installed a broadcaster
+    /// behaves exactly as before. <see cref="Server"/> sets this once at boot;
+    /// the delegate runs on the simulation thread (inside the mission tick that
+    /// emitted the chatter), so it can reach <see cref="Server"/>'s sim-thread-
+    /// owned peer map without a lock. The <see cref="Ship"/> (its
+    /// <c>Mission</c>/<c>SideId</c>) plus the resolved <paramref name="sideId"/>
+    /// and the native SoundID verbatim supply everything the team-chat broadcast
+    /// (as the wire <c>VoiceOver</c>) needs.
+    /// </summary>
+    public Action<Ship, short, short, string>? DroneChat;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.DroneChatEvent"/>: raise the <see cref="DroneChat"/>
+    /// hook so the owning <see cref="Server"/> can broadcast the team chat.</summary>
+    public void DroneChatEvent(Ship ship, short sideId, short soundId, string text)
+        => DroneChat?.Invoke(ship, sideId, soundId, text);
+
+    /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.ProbeDestroyedEvent"/> the missions raise from a
     /// probe's own expiry path (<c>Sim/Probe.cs</c> <c>OnUpdate</c>, alongside

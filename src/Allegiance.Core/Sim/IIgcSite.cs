@@ -118,6 +118,21 @@ public interface IIgcSite
         IModelIgc? pmodelTarget = null,
         bool bObjectModel = false) { }
 
+    /// <summary>
+    /// C#-only (no igc.h member): a drone/constructor emitted an in-flight
+    /// chatter line to its side's team. Raised by <c>Ship.SendDroneChat</c>
+    /// (the concrete-Ship analogue of native
+    /// <c>GetIgcSite()->SendChat(this, CHAT_TEAM, pside, sound, text)</c>,
+    /// <c>shipIGC.cpp:1895-1901,2171,2199</c>). The concrete <see cref="Ship"/>
+    /// is passed (there is no empty marker exposing the mission/side), the
+    /// same pattern as <see cref="ProjectileCreatedEvent"/> and kin, plus the
+    /// resolved <paramref name="sideId"/> and the native SoundID verbatim. A
+    /// host converts it into a team-chat broadcast carrying the SoundID as the
+    /// wire <c>VoiceOver</c> (the same pipe P723's where-to pleas use). No-op
+    /// default; a host that has not installed a handler behaves as before.
+    /// </summary>
+    void DroneChatEvent(Ship ship, short sideId, short soundId, string text) { }
+
     // ── economy ───────────────────────────────────────────────────────────
     // igc.h:4828. Money is int, HullID is short (both igc.h:477,483,840).
     void GetMoneyRequest(IShipIgc pshipSender, int amount, short hidFor) { }

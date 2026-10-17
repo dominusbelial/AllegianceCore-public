@@ -787,6 +787,7 @@ public sealed partial class Server
         _host.WeaponReadyNotification = BroadcastWeaponReady;
         _host.LoadoutChange = BroadcastLoadoutChange;          // P173: wire the site's LoadoutChangeEvent to the wire broadcast
         _host.AutoReload = BroadcastAutoReload;                // P361: wire the site's AutoReloadTriggered to the wire broadcast
+        _host.DroneChat = BroadcastDroneChat;                  // P725: wire the site's DroneChatEvent to the team-chat broadcast
         _host.MineCreated = BroadcastExportMine;                // P94: wire the site's MineCreatedEvent to the wire broadcast
         _host.MineDestroyed = BroadcastMineDestroyed;           // P94: wire the site's MineDestroyedEvent to the wire broadcast
         _host.MineHit = BroadcastMineHit;                       // P574: wire the site's MineHitEvent (per-hit pop at P2) to the wire broadcast

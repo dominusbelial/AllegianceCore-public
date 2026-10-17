@@ -885,6 +885,26 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// P725 — the wire target of the host's <see cref="ServerHost.DroneChat"/>
+    /// hook: forward a drone/constructor's in-flight chatter line
+    /// (<c>Ship.SendDroneChat</c> → <c>IIgcSite.DroneChatEvent</c>) to the
+    /// side's team as a <c>CHAT_TEAM</c> chat carrying the native SoundID as
+    /// the wire <c>VoiceOver</c> — the exact pipe the where-to pleas
+    /// (P723/P459) use, and the direct port of native
+    /// <c>GetIgcSite()->SendChat(this, CHAT_TEAM, pside, sound, text)</c>
+    /// (<c>shipIGC.cpp:1895-1901,2171,2199</c>). The client resolves the
+    /// SoundID back to a clip via <c>DroneChatterCue</c>
+    /// (<c>Game1.Session.ProcessIncomingQuickChatVoices</c>). The delegate runs
+    /// on the simulation thread so <see cref="_peerShips"/> is sim-thread-owned
+    /// (no lock), matching every other broadcast hook.
+    /// </summary>
+    private void BroadcastDroneChat(Ship ship, short sideId, short soundId, string text)
+    {
+        if (ship.Mission is { } mission)
+            BroadcastTeamChat(mission, sideId, soundId, text);
+    }
+
+    /// <summary>
     /// P459 — the native SoundIDs for the drone where-to-go pleas. These are
     /// <b>compile-time enum constants</b> in native (<c>DEFSOUND(...)</c> entries
     /// in <c>src/Igc/sounds.h</c> expanded by the <c>enum { ... }</c> in

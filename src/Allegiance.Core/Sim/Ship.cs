@@ -7219,17 +7219,31 @@ public sealed partial class Ship : Model, IShipIgc
             SendDroneChat(DroneComingHomeEmptySound, "Coming home empty");
     }
 
-    // DEFSOUND ordinal values from Igc/sounds.h, included by igc.h:456-464.
-    private const short DroneTooMuchDamageSound = 1327;
-    private const short DroneComingHomeEmptySound = 1329;
-    private const short DroneTooCrowdedSound = 1342;
-    private const short ConstructorRunningSound = 1343;
+    // DEFSOUND ordinal values from Igc/sounds.h, included by igc.h:456-464 —
+    // aliased to P723's verified DroneChatterCue constants (the previous local
+    // literals 1327/1329/1342/1343 were systematically +1001 off the true
+    // ordinals, so these chats were broadcasting unresolvable SoundIDs and were
+    // silent in the client; DroneChatterCue was recomputed rigorously in P723).
+    private const short DroneTooMuchDamageSound = DroneChatterCue.DroneTooMuchDamageSound;   // 326, sounds.h:380
+    private const short DroneComingHomeEmptySound = DroneChatterCue.DroneComingHomeEmptySound; // 328, sounds.h:382
+    private const short DroneTooCrowdedSound = DroneChatterCue.DroneTooCrowdedSound;         // 341, sounds.h:395
+    private const short ConstructorRunningSound = DroneChatterCue.ConstructorRunningSound;   // 342, sounds.h:396
     private double _lastMiningComplaint;
     private float _miningComplaintInterval = 30f; // shipIGC.cpp:25
 
+    /// <summary>
+    /// Emit a drone/constructor chatter line to the side's team. Routes
+    /// through the host's <see cref="IIgcSite.DroneChatEvent"/> seam (the
+    /// C#-only, concrete-Ship analogue of native
+    /// <c>GetIgcSite()->SendChat(this, CHAT_TEAM, ..., sound, text)</c>,
+    /// <c>shipIGC.cpp:1895-1901,2171,2199</c>), which the server host converts
+    /// into a team-chat broadcast carrying the SoundID as the wire
+    /// <c>VoiceOver</c> (the same pipe P723's where-to pleas use). Default no-op
+    /// — a host that has not installed a broadcaster behaves as before.
+    /// </summary>
     private void SendDroneChat(short sound, string message)
     {
-        if (SideId is { } side) Mission?.Site.SendChat(this, ChatTarget.Team, side, sound, message);
+        if (SideId is { } side) Mission?.Site.DroneChatEvent(this, side, sound, message);
     }
 
     internal void ComplainMiningCrowded(double now)

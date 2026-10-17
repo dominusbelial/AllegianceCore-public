@@ -137,6 +137,11 @@ public sealed class RecordingIgcSite : IIgcSite
             szText is null ? "null" : $"\"{szText}\"", cid, otTarget, oidTarget,
             pmodelTarget, bObjectModel);
 
+    // ── drone/constructor chatter (P725) ───────────────────────────────────
+    public void DroneChatEvent(Ship ship, short sideId, short soundId, string text) =>
+        Wrap(nameof(DroneChatEvent), () => { },
+            ship, sideId, soundId, text is null ? "null" : $"\"{text}\"");
+
     // ── economy ───────────────────────────────────────────────────────────
     public void GetMoneyRequest(IShipIgc pshipSender, int amount, short hidFor) =>
         Wrap(nameof(GetMoneyRequest), () => { }, pshipSender, amount, hidFor);
