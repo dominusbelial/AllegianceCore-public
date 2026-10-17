@@ -120,7 +120,15 @@ internal sealed partial class BotManager
             .ThenByDescending(s => core.StationTypes[s.StationTypeId].HasCapability(DataStationTypeIGC.SabmRestart))
             .ThenBy(s => s.StationId).Select(s => (DataStationTypeIGC?)core.StationTypes[s.StationTypeId]).FirstOrDefault();
         if (shop is null) return Failed("no shop: no owned station type resolves for the current dock/home");
-        var selected = ShowcaseFinale.SelectLoadout(core, target, techs, shop.Value.TtbmLocal);
+        short civ = core.Civilizations.Keys.Min();
+        if (bot.Cs is { } client)
+            lock (client.Gate)
+            {
+                var observedCiv = client.World.SideRoster?.Sides.FirstOrDefault(s => s.SideId == bot.Side).CivId;
+                if (observedCiv is { } id && core.Civilizations.ContainsKey(id)) civ = id;
+            }
+        var selected = TechLoadoutSelector.Select(core, civ, Showcase.HullRole.Bomber,
+            techs, shop.Value.StationTypeId, target)?.Strike;
         if (selected is not null) return selected;
         var bombers = core.HullTypes.Values.Where(h => Showcase.IsPlayerBuyable(core, h)
             && Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber).ToArray();

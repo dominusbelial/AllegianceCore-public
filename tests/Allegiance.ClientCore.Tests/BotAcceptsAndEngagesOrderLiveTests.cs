@@ -190,13 +190,23 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
                 .GetField("_bots", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(mgr)!)
                 .Cast<object>().Single(b => (short)b.GetType().GetField("ShipId")!.GetValue(b)! == spawn.ShipId);
             var client = (ConnectionSession)active.GetType().GetField("Cs")!.GetValue(active)!;
+            var side = mission.Sides.Single(s => s.Id == fighter.SideId);
+            var shop = mission.Sectors.SelectMany(s => s.StationRuntimes).First(s => s.SideId == side.Id);
+            var expected = BotManager.PickTechLoadout(new(side.Civilization.CivilizationId,
+                shop.Type.StationTypeId, side.Techs, server.Ships.Single(l => l.Ship.Id == fighter.Id).Wallet.Money),
+                Showcase.ClassifyHull(hull));
+            Assert.NotNull(expected);
+            Assert.True(TechLoadoutSelector.Legal(Catalog.RepresentativeCore(), side.Civilization.CivilizationId,
+                side.Techs, shop.Type.StationTypeId, expected.HullId, expected.Parts));
             client.ResetBuyLoadoutAcks();
             Interlocked.Exchange(ref killRequested, 1);
             Assert.True(Wait(() => Volatile.Read(ref killHandled) == 1, 5000));
-            Assert.True(Wait(() => fighter.StationId is null && fighter.HullType.HullId == hull.HullId
-                && fighter.Parts.Any(p => p.PartId == gun.PartId), 20000), "MCP bot must buy and relaunch after pod docking");
-            Assert.True(Wait(() => client.BuyLoadoutAcks.Any(a => a.HullId == hull.HullId
-                && a.FBoughtEverything && a.FLaunch), 5000), "MCP relaunch ACK must grant the whole loadout and launch");
+            Assert.True(Wait(() => fighter.StationId is null && fighter.HullType.HullId == expected.HullId
+                && expected.Parts.All(p => fighter.Parts.Any(a => a.PartId == p.PartId && a.MountId == p.MountId && a.Amount == p.Amount)),
+                20000), "MCP bot must buy and relaunch with its current legal role loadout after pod docking");
+            Assert.True(Wait(() => client.BuyLoadoutAcks.Any(a => a.HullId == expected.HullId
+                && a.FBoughtEverything && a.FLaunch && expected.Parts.All(p => a.Parts.Contains(p))), 5000),
+                "MCP relaunch ACK must grant the whole current loadout and launch");
             Assert.False(fighter.Dead);
             Assert.Null(fighter.ParentShip);
             int afterRelaunch = Volatile.Read(ref hits);

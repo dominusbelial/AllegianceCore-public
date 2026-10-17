@@ -1,0 +1,72 @@
+  Determining projects to restore...
+  Restored /home/domingo/allegiance-codex-p712/src/Allegiance.Core/Allegiance.Core.csproj (in 68 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/livecombat/livecombat.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/fedmsgdump/fedmsgdump.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/missiondump/missiondump.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/igcdump/igcdump.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/tech-tree/tech-tree.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/src/Allegiance.Bot/Allegiance.Bot.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/chatdemo/chatdemo.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/src/Allegiance.ClientCore.Explorer/Allegiance.ClientCore.Explorer.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/src/Allegiance.ClientCore/Allegiance.ClientCore.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/corpusvalidate/corpusvalidate.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/collision-perf-proof/collision-perf-proof.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/p605synth/p605synth.csproj (in 73 ms).
+  Restored /home/domingo/allegiance-codex-p712/src/Allegiance.Lobby/Allegiance.Lobby.csproj (in 1 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/receive-proof/receive-proof.csproj (in 2 ms).
+  Restored /home/domingo/allegiance-codex-p712/src/Allegiance.Server/Allegiance.Server.csproj (in 743 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/fsr-proof/fsr-proof.csproj (in 827 ms).
+  Restored /home/domingo/allegiance-codex-p712/src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj (in 827 ms).
+  Restored /home/domingo/allegiance-codex-p712/src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj (in 827 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/soft-frame-proof/soft-frame-proof.csproj (in 828 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/allegiance-mcp/allegiance-mcp.csproj (in 829 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/hullswap-proof/hullswap-proof.csproj (in 828 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/roster-capture/roster-capture.csproj (in 744 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/warp-visual-proof/warp-visual-proof.csproj (in 827 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/hullhit-proof/hullhit-proof.csproj (in 744 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/p629-proof/p629-proof.csproj (in 744 ms).
+  Restored /home/domingo/allegiance-codex-p712/tools/shieldflare-proof/shieldflare-proof.csproj (in 827 ms).
+  Restored /home/domingo/allegiance-codex-p712/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj (in 748 ms).
+  Restored /home/domingo/allegiance-codex-p712/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj (in 832 ms).
+  Restored /home/domingo/allegiance-codex-p712/tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj (in 835 ms).
+  Restored /home/domingo/allegiance-codex-p712/tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj (in 835 ms).
+  Allegiance.Core -> /tmp/p712-fixed-artifacts/bin/Allegiance.Core/debug/Allegiance.Core.dll
+  Allegiance.Bot -> /tmp/p712-fixed-artifacts/bin/Allegiance.Bot/debug/Allegiance.Bot.dll
+  Allegiance.ClientCore -> /tmp/p712-fixed-artifacts/bin/Allegiance.ClientCore/debug/Allegiance.ClientCore.dll
+  Allegiance.Server -> /tmp/p712-fixed-artifacts/bin/Allegiance.Server/debug/Allegiance.Server.dll
+  Allegiance.ClientCore.Explorer -> /tmp/p712-fixed-artifacts/bin/Allegiance.ClientCore.Explorer/debug/Allegiance.ClientCore.Explorer.dll
+  Allegiance.ClientCore.Game -> /tmp/p712-fixed-artifacts/bin/Allegiance.ClientCore.Game/debug/Allegiance.ClientCore.Game.dll
+  Tool 'dotnet-mgcb' (version '3.8.5.1') was restored. Available commands: mgcb
+  
+  Restore was successful.
+  Allegiance.ClientCore.MonoGame -> /tmp/p712-fixed-artifacts/bin/Allegiance.ClientCore.MonoGame/debug/Allegiance.ClientCore.MonoGame.dll
+  Allegiance.Lobby -> /tmp/p712-fixed-artifacts/bin/Allegiance.Lobby/debug/Allegiance.Lobby.dll
+  fsr-proof -> /tmp/p712-fixed-artifacts/bin/fsr-proof/debug/fsr-proof.dll
+  Allegiance.ClientCore.MonoGame.Tests -> /tmp/p712-fixed-artifacts/bin/Allegiance.ClientCore.MonoGame.Tests/debug/Allegiance.ClientCore.MonoGame.Tests.dll
+  allegiance-mcp -> /tmp/p712-fixed-artifacts/bin/allegiance-mcp/debug/allegiance-mcp.dll
+  Allegiance.ClientCore.Tests -> /tmp/p712-fixed-artifacts/bin/Allegiance.ClientCore.Tests/debug/Allegiance.ClientCore.Tests.dll
+  Allegiance.Core.Tests -> /tmp/p712-fixed-artifacts/bin/Allegiance.Core.Tests/debug/Allegiance.Core.Tests.dll
+  Allegiance.Lobby.Tests -> /tmp/p712-fixed-artifacts/bin/Allegiance.Lobby.Tests/debug/Allegiance.Lobby.Tests.dll
+  chatdemo -> /tmp/p712-fixed-artifacts/bin/chatdemo/debug/chatdemo.dll
+  collision-perf-proof -> /tmp/p712-fixed-artifacts/bin/collision-perf-proof/debug/collision-perf-proof.dll
+  corpusvalidate -> /tmp/p712-fixed-artifacts/bin/corpusvalidate/debug/corpusvalidate.dll
+  fedmsgdump -> /tmp/p712-fixed-artifacts/bin/fedmsgdump/debug/fedmsgdump.dll
+  hullhit-proof -> /tmp/p712-fixed-artifacts/bin/hullhit-proof/debug/hullhit-proof.dll
+  hullswap-proof -> /tmp/p712-fixed-artifacts/bin/hullswap-proof/debug/hullswap-proof.dll
+  igcdump -> /tmp/p712-fixed-artifacts/bin/igcdump/debug/igcdump.dll
+  livecombat -> /tmp/p712-fixed-artifacts/bin/livecombat/debug/livecombat.dll
+  missiondump -> /tmp/p712-fixed-artifacts/bin/missiondump/debug/missiondump.dll
+  p605synth -> /tmp/p712-fixed-artifacts/bin/p605synth/debug/p605synth.dll
+  p629-proof -> /tmp/p712-fixed-artifacts/bin/p629-proof/debug/p629-proof.dll
+  receive-proof -> /tmp/p712-fixed-artifacts/bin/receive-proof/debug/receive-proof.dll
+  roster-capture -> /tmp/p712-fixed-artifacts/bin/roster-capture/debug/roster-capture.dll
+  shieldflare-proof -> /tmp/p712-fixed-artifacts/bin/shieldflare-proof/debug/shieldflare-proof.dll
+  soft-frame-proof -> /tmp/p712-fixed-artifacts/bin/soft-frame-proof/debug/soft-frame-proof.dll
+  tech-tree -> /tmp/p712-fixed-artifacts/bin/tech-tree/debug/tech-tree.dll
+  warp-visual-proof -> /tmp/p712-fixed-artifacts/bin/warp-visual-proof/debug/warp-visual-proof.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:13.84

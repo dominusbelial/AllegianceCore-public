@@ -1,0 +1,911 @@
+{
+  "wall": 290.8557807,
+  "epoch": "dc86fdfca13d4a3589fa201268e58db1",
+  "sim": 11633.999999970949,
+  "research": [
+    {
+      "Side": 0,
+      "Plan": "generated",
+      "Step": 61,
+      "TotalSteps": 186,
+      "Action": "develop",
+      "Name": "GA: Missile Damage 1",
+      "Status": "building bucket",
+      "ProgressPercent": 32.43559438470729,
+      "StepProgressPercent": 33.02055555555555,
+      "Money": 11395504,
+      "EtaSeconds": 120.563,
+      "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+      "CompletedTechs": [
+        "Enh Fighter",
+        "Interceptor",
+        "Bomber",
+        "Afterburner 2",
+        "Cruise Booster",
+        "Retro Booster",
+        "Enh Constructor",
+        "Enh Miner",
+        "PW Gattling Gun 2",
+        "EW Disruptor 2",
+        "PW Mini-Gun 2",
+        "PW EMP Cannon 1",
+        "PW Auto-Cannon 2",
+        "ER Nanite 2",
+        "SRM Dumbfire 2",
+        "MRM Seeker 2",
+        "SRM Anti-Base 2",
+        "SRM Seismic",
+        "SRM EMP Missile",
+        "Sm Shield 2",
+        "Med Shield 2",
+        "Booster 2",
+        "Lt Booster 1",
+        "Hvy Sig Cloak 1",
+        "EWS Probe 2",
+        "Pulse Probe",
+        "Prox Mine 2",
+        "Mine Pack 1",
+        "Counter 2",
+        "GA: Ship Acceleration 1",
+        "GA: Ship Agility 1",
+        "GA: Ship Energy 1",
+        "GA: EW Range 1",
+        "GA: PW\u0026EW Damage 1",
+        "GA: Faster He3 1",
+        "GA: He3 Yield 1",
+        "GA: Missile Track 1",
+        "GA: PW Range 1",
+        "GA: Ripcord 1",
+        "GA: Ship Sensors 1",
+        "GA: Ship Hull 1",
+        "GA: Ship Shield 1",
+        "GA: Ship Signature 1",
+        "GA: Station Hull 1",
+        "GA: Station Shield 1",
+        "Upgrade Garrison",
+        "Weedcore 03",
+        "Enh Carrier Drone",
+        "MRM Quickfire 2",
+        "XRM Anti-Base 1"
+      ],
+      "Stations": [
+        "Garrison",
+        "Refinery",
+        "Teleport",
+        "Outpost",
+        "Supremacy",
+        "Expansion",
+        "Tactical"
+      ],
+      "Constructor": null,
+      "ReservedRock": null,
+      "Cycles": 0
+    },
+    {
+      "Side": 1,
+      "Plan": "generated",
+      "Step": 22,
+      "TotalSteps": 152,
+      "Action": "develop",
+      "Name": "Hvy Sig Cloak 2",
+      "Status": "building bucket",
+      "ProgressPercent": 13.993468201754386,
+      "StepProgressPercent": 27.007166666666667,
+      "Money": 14485598,
+      "EtaSeconds": 437.957,
+      "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+      "CompletedTechs": [
+        "Retro Booster",
+        "Enh Constructor",
+        "Enh Miner",
+        "ER Nanite 2",
+        "MRM Seeker 2",
+        "MRM Seeker 3",
+        "SRM Seismic",
+        "Med Shield 3",
+        "Med Shield 2",
+        "Lt Booster 2",
+        "Lt Booster 1",
+        "Counter 3",
+        "Counter 2",
+        "LRM Aleph Res 1",
+        "Weedcore 03",
+        "LRM Aleph Res 2",
+        "LRM Aleph Res 3",
+        "MRM Quickfire 2",
+        "MRM Quickfire 3"
+      ],
+      "Stations": [
+        "Garrison (Str)"
+      ],
+      "Constructor": null,
+      "ReservedRock": null,
+      "Cycles": 0
+    }
+  ],
+  "bots": [
+    {
+      "id": 8101,
+      "side": 0,
+      "role": "Bomber",
+      "hull": 195,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 195,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 195,
+        "HullName": "Bomber",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 157,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 43,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 85,
+            "Amount": 8,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 500,
+        "Reason": "role=Bomber; techBits=47; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget; stable ID ties; legal nonobsolete human hull 195 \u0027Bomber\u0027; cost=500; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Weapon@1=33 \u0027PW Gat Gun 1\u0027 x1, Magazine@0=157 \u0027SRM Anti-Base 1\u0027 x4, Shield@0=43 \u0027Med Shield 2\u0027 x1, ChaffLauncher@0=85 \u0027Counter 2\u0027 x8",
+        "Strike": {
+          "HullId": 195,
+          "HullName": "Bomber",
+          "TargetTypeId": 210,
+          "TargetName": "Garrison (Str)",
+          "Parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ],
+          "Volley": {
+            "Hull": 4000,
+            "Shield": 4000
+          },
+          "PerSecond": {
+            "Hull": 16000,
+            "Shield": 16000
+          },
+          "Price": 500,
+          "PartNames": [
+            "33: PW Gat Gun 1 (mount 0, amount 1)",
+            "33: PW Gat Gun 1 (mount 1, amount 1)",
+            "157: SRM Anti-Base 1 (mount 0, amount 4)",
+            "43: Med Shield 2 (mount 0, amount 1)",
+            "85: Counter 2 (mount 0, amount 8)"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8102,
+      "side": 1,
+      "role": "Bomber",
+      "hull": 315,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 315,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 21,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 23,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 150,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 59,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 80,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 41,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 315,
+        "HullName": "Fighter",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 21,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 23,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 150,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 59,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 80,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 41,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 0,
+        "Reason": "initial accepted loadout",
+        "Strike": null
+      }
+    },
+    {
+      "id": 8103,
+      "side": 0,
+      "role": "Bomber",
+      "hull": 195,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 195,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 195,
+        "HullName": "Bomber",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 157,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 43,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 85,
+            "Amount": 8,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 500,
+        "Reason": "role=Bomber; techBits=47; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget; stable ID ties; legal nonobsolete human hull 195 \u0027Bomber\u0027; cost=500; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Weapon@1=33 \u0027PW Gat Gun 1\u0027 x1, Magazine@0=157 \u0027SRM Anti-Base 1\u0027 x4, Shield@0=43 \u0027Med Shield 2\u0027 x1, ChaffLauncher@0=85 \u0027Counter 2\u0027 x8",
+        "Strike": {
+          "HullId": 195,
+          "HullName": "Bomber",
+          "TargetTypeId": 210,
+          "TargetName": "Garrison (Str)",
+          "Parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ],
+          "Volley": {
+            "Hull": 4000,
+            "Shield": 4000
+          },
+          "PerSecond": {
+            "Hull": 16000,
+            "Shield": 16000
+          },
+          "Price": 500,
+          "PartNames": [
+            "33: PW Gat Gun 1 (mount 0, amount 1)",
+            "33: PW Gat Gun 1 (mount 1, amount 1)",
+            "157: SRM Anti-Base 1 (mount 0, amount 4)",
+            "43: Med Shield 2 (mount 0, amount 1)",
+            "85: Counter 2 (mount 0, amount 8)"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8104,
+      "side": 1,
+      "role": "Bomber",
+      "hull": 315,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 315,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 21,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 23,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 150,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 59,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 80,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 41,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 315,
+        "HullName": "Fighter",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 21,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 23,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 150,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 59,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 80,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 41,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 0,
+        "Reason": "initial accepted loadout",
+        "Strike": null
+      }
+    },
+    {
+      "id": 8105,
+      "side": 0,
+      "role": "Bomber",
+      "hull": 195,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 195,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 195,
+        "HullName": "Bomber",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 157,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 43,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 85,
+            "Amount": 8,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 500,
+        "Reason": "role=Bomber; techBits=47; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget; stable ID ties; legal nonobsolete human hull 195 \u0027Bomber\u0027; cost=500; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Weapon@1=33 \u0027PW Gat Gun 1\u0027 x1, Magazine@0=157 \u0027SRM Anti-Base 1\u0027 x4, Shield@0=43 \u0027Med Shield 2\u0027 x1, ChaffLauncher@0=85 \u0027Counter 2\u0027 x8",
+        "Strike": {
+          "HullId": 195,
+          "HullName": "Bomber",
+          "TargetTypeId": 210,
+          "TargetName": "Garrison (Str)",
+          "Parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ],
+          "Volley": {
+            "Hull": 4000,
+            "Shield": 4000
+          },
+          "PerSecond": {
+            "Hull": 16000,
+            "Shield": 16000
+          },
+          "Price": 500,
+          "PartNames": [
+            "33: PW Gat Gun 1 (mount 0, amount 1)",
+            "33: PW Gat Gun 1 (mount 1, amount 1)",
+            "157: SRM Anti-Base 1 (mount 0, amount 4)",
+            "43: Med Shield 2 (mount 0, amount 1)",
+            "85: Counter 2 (mount 0, amount 8)"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8106,
+      "side": 1,
+      "role": "Bomber",
+      "hull": 315,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 315,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 21,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 23,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 150,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 59,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 80,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 41,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 315,
+        "HullName": "Fighter",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 21,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 23,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 150,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 59,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 80,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 41,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 0,
+        "Reason": "initial accepted loadout",
+        "Strike": null
+      }
+    }
+  ]
+}

@@ -25,6 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="../../data/showcase-plans/**/*.json" Link="showcase-plans/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <ProjectReference Include="..\Allegiance.Core\Allegiance.Core.csproj" />
   </ItemGroup>
 

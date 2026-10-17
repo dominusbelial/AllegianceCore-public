@@ -482,6 +482,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Native AUTODONATE request (FedSrv.CPP:5516-5550): keep the sender's
+    /// payday share with target NA, or choose a same-side player and optional gift.</summary>
+    public void SendAutoDonate(short shipId, int amount = 0) =>
+        Send(FedPacket.Pack(new AutoDonate { SidDonateTo = shipId, Amount = amount }.Encode()));
+
     /// <summary>P442 — send a real <c>FM_C_BUCKET_DONATE(64)</c>: donate
     /// <paramref name="moneyGiven"/> into the side's bucket
     /// <paramref name="iBucket"/> (P119, Messages.h:488-491). The server
@@ -1074,6 +1079,16 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case ChatBuoy.Fmid:
                         _world.Apply(ChatBuoy.Decode(m));
+                        break;
+                    case AsteroidDestroyed.Fmid:
+                        _world.Apply(AsteroidDestroyed.Decode(m));
+                        break;
+                    case ResearchProduction.Fmid:
+                        _world.Apply(ResearchProduction.Decode(m));
+                        break;
+                    case ResearchBriefing.Fmid:
+                        try { _world.Apply(ResearchBriefing.Decode(m)); }
+                        catch (Exception ex) { Console.WriteLine($"[research] invalid briefing ignored: {ex.Message}"); }
                         break;
                     case Payday.Fmid:
                         _world.Apply(Payday.Decode(m));

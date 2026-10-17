@@ -221,6 +221,8 @@ internal sealed partial class BotManager : IDisposable
         // allow-listed) it returns false and the arena path throws a clear error.
         Relocator = CreateNetworkedRelocator();
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
+        _researchThread = new Thread(ResearchLoop) { IsBackground = true, Name = "allegiance-mcp-research" };
+        if (Partition is null || Partition.Index == 0) _researchThread.Start();
         ownership.Transfer();
         telemetryOwnership.Transfer();
     }
@@ -524,12 +526,16 @@ internal sealed partial class BotManager : IDisposable
             // A combat bot is driven as its own ConnectionSession (mirrors vizfight's
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
-            var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning));
+            Showcase.HullRole? techRole = Enum.TryParse<Showcase.HullRole>(role, true, out var parsedRole) ? parsedRole : null;
+            var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning,
+                techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }));
             DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
                 Cs = cs,
+                TechLoadouts = true,
+                PurchasePacer = _loadoutPurchasePacer,
                 ShipId = shipId,
                 Launched = true,
                 TargetSector = targetSector,
@@ -587,8 +593,17 @@ internal sealed partial class BotManager : IDisposable
         // the loadout carries one (detected from the parts actually requested).
         bot.WingmanBehaviour = wingmanBehaviour;
         bot.MineDispenserPartId = FindMineDispenser(finalParts);
+        if (bot.TechLoadouts)
+        {
+            var selected = new TechLoadoutSelector.Selection(hullId, hullName, finalParts,
+                Math.Max(0, Catalog.RepresentativeCore().HullTypes[hullId].Price)
+                    + finalParts.Sum(p => TechLoadoutSelector.PartPrice(TechLoadoutSelector.Part(Catalog.RepresentativeCore(), p.PartId), p.Amount)), "initial accepted loadout");
+            ApplyTechLoadout(bot, selected);
+            if (grantWarning is null) bot.PreviousLegalLoadout = selected;
+        }
         // P637 — the bot's showcase role (drives its OWN target sector + route).
-        if (role is { Length: > 0 }) bot.Role = role;
+        bot.Role = role is { Length: > 0 } ? role
+            : Showcase.ClassifyHull(Catalog.RepresentativeCore().HullTypes[hullId]).ToString();
 
         // P635 — multi-route wing assignment (route path + wing index).
         if (routePath is { Count: > 0 } rp)
@@ -722,7 +737,8 @@ internal sealed partial class BotManager : IDisposable
     /// requested loadout (refusal throws, partial grant is a warning), so a
     /// combat spawn can never silently fly a refused default ship.
     /// </summary>
-    private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning)
+    private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning,
+        Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null)
     {
         using var ownership = new PendingOwnership(DisposePeer);
         var cs = ownership.Own(new ConnectionSession());
@@ -743,6 +759,21 @@ internal sealed partial class BotManager : IDisposable
         cs.SendPlayerReady(true, shipId);
         // P473 — reset the ack accumulator so the only ack considered is the one
         // answering THIS purchase (not the seat's join-burst default-hull ack).
+        if (techRole is { } requestedRole)
+        {
+            short ownId = shipId, ownSide = actualSide;
+            TechLoadoutSelector.Selection? selected = null;
+            if (!WaitUntil(() =>
+            {
+                lock (cs.Gate)
+                    if (CurrentLoadoutShop(cs, ownSide, ownId) is { } shop)
+                        selected = PickTechLoadout(shop, requestedRole);
+                return selected is not null;
+            }, 15000)) throw new InvalidOperationException($"spawn_bot: '{name}' has no observed legal affordable loadout for role {requestedRole}");
+            hullId = selected!.HullId; parts = selected.Parts;
+            Console.WriteLine($"[loadout] {name} initial: {selected.Reason}");
+            onSelected?.Invoke(selected);
+        }
         var ownLaunched = SpawnLaunch.Observe(cs, shipId);
         cs.ResetBuyLoadoutAcks();
         granted = BuyAndConfirmLaunch(name, hullId, parts, () => cs.Connected && !cs.Lost, ownLaunched,
@@ -1088,9 +1119,9 @@ internal sealed partial class BotManager : IDisposable
     /// P486 — get (or lazily seat) the cached commander peer for
     /// <paramref name="side"/>: connect, logon, request that side, wait for the
     /// ship assignment, and ready the seat (P485, so a normal-map mission can
-    /// auto-start). Deliberately does NOT buy a loadout — a seated `mcp-` peer
-    /// already carries the P473 grant money in its wallet, which is all invest
-    /// needs, and the default spawned hull is a valid sender. Registered only in
+    /// auto-start). Does not buy a loadout. The research-cmd name avoids the usual
+    /// mcp- test-harness grant prefix; the commander spends its real player wallet.
+    /// Registered only in
     /// the commander cache (not the behavior loop), so it never fights.
     /// </summary>
     private ConnectionSession EnsureCommander(short side)
@@ -1100,20 +1131,20 @@ internal sealed partial class BotManager : IDisposable
             if (_commanders.TryGetValue(side, out var existing) && existing.Connected)
                 return existing;
             DisposePeer(existing);
-            string name = $"mcp-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
+            string name = $"research-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
             using var ownership = new PendingOwnership(DisposePeer);
             var cs = ownership.Own(new ConnectionSession());
             cs.World.CountOnlyProjectiles = true;
             cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
             _stallTelemetry.Connect(cs, name, _host, _port);
             cs.SendLogonRequest(Request(name));
-            if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
+            if (!WaitUntil(() => _loopCts.IsCancellationRequested || cs.Ack is { FValidated: true }, 12000))
                 throw new InvalidOperationException($"commander: side {side} peer '{name}' never got a validated LOGONACK from {_host}:{_port}");
             // A commander must retain the side whose wallet it will manage.
             SeatWithRetry(name, side, () => cs.World.MyShipId is not null, () => cs.Connected && !cs.Lost,
                 () => cs.LastPositionRefusal, cs.SendPositionReq, allowAutoPick: false);
             cs.SendPlayerReady(true, cs.World.MyShipId!.Value);
-            Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — P473 grant money in wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
+            Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — native player wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
             _commanders[side] = cs;
             ownership.Transfer();
             return cs;
@@ -1173,8 +1204,8 @@ internal sealed partial class BotManager : IDisposable
     }
 
     /// <summary>P486 — invest into a real side bucket. Funds through
-    /// <see cref="ConnectionSession.SendBucketDonate"/> (the P473-granted
-    /// commander's wallet), then observes the real BUCKET_STATUS progress and,
+    /// <see cref="ConnectionSession.SendBucketDonate"/> (the commander's real
+    /// player wallet), then observes the real BUCKET_STATUS progress and,
     /// when the bucket completes within the window (money full AND build time
     /// elapsed), the drone that appears on the wire (a NEW same-side NPC with
     /// the completed bucket's drone hull). Returns observed progress otherwise.
@@ -1197,11 +1228,6 @@ internal sealed partial class BotManager : IDisposable
         var ga = commander.World.GlobalAttributesFor(side);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         var view = ResolveBucket(views, bucketQuery);
-        if (view.ItemType == Allegiance.Core.Model.BucketItemType.BitDevelopment)
-            // Funding a development is a real invest too, but it completes a
-            // research tech, not a drone — P486 is about drone production.
-            throw new ArgumentException(
-                $"invest: bucket '{view.Name}' (id {view.Id}) is a DEVELOPMENT bucket (research), not a drone/station production bucket; this tool invests in drone-type and station-type buckets that spawn drones.");
 
         long already = 0;
         var preFund = commander.World.BucketFundingOf(side, view.Id);
@@ -1212,7 +1238,7 @@ internal sealed partial class BotManager : IDisposable
         int? walletBefore = commander.World.MyMoney;
         if (walletBefore is { } wb && donate > wb)
             throw new InvalidOperationException(
-                $"invest: commander wallet {wb} < requested donation {donate} for bucket '{view.Name}' (price {view.Price}, already invested {already}) — donate less or raise the P473 grant money");
+                $"invest: commander wallet {wb} < requested donation {donate} for bucket '{view.Name}' (price {view.Price}, already invested {already}) — donate less or wait for payday");
 
         // Snapshot the side's ship ids BEFORE the donation so the spawned drone
         // is recognized as genuinely NEW (the side may already have an initial
@@ -1258,6 +1284,12 @@ internal sealed partial class BotManager : IDisposable
         {
             while (Now() < deadline)
             {
+                if (view.ItemType == BucketItemType.BitDevelopment)
+                {
+                    lock (commander.Gate)
+                        completed = commander.World.CompletedDevelopments.Contains(view.DevelopmentId);
+                    if (completed) break;
+                }
                 drone = FindNewDrone(commander, side, beforeIds, view);
                 if (drone is not null) { completed = true; break; }
                 long it; int? mw2;
@@ -1283,9 +1315,11 @@ internal sealed partial class BotManager : IDisposable
     /// hull (view.HullIdDrone when set) but reports any newly-appeared NPC so a
     /// station-type bucket (whose constructor hull the view doesn't carry) is
     /// still captured.</summary>
-    private DroneRow? FindNewDrone(ConnectionSession commander, short side,
+    internal static DroneRow? FindNewDrone(ConnectionSession commander, short side,
         HashSet<short> beforeIds, Allegiance.Core.Model.BucketCatalog.BucketView view)
     {
+        // A concurrent drone purchase is never evidence that research completed.
+        if (view.ItemType == BucketItemType.BitDevelopment) return null;
         List<(short Id, Allegiance.ClientCore.State.ShipEntity s)> news = new();
         lock (commander.Gate)
         {
@@ -2134,6 +2168,8 @@ bool isThreat =
             try { DisposePeer(old); } catch { }   // free the old plain-client peer now that the combat one is real
             bot.Bot = null;
             bot.Cs = cs;
+            bot.TechLoadouts = true;
+            bot.PurchasePacer = _loadoutPurchasePacer;
             bot.ShipId = shipId;
             bot.Side = actualSide;
             bot.Launched = true;
@@ -2656,7 +2692,11 @@ bool isThreat =
             return;
         }
 
+        // The requested role can be locked while this life flies a temporary
+        // fighter/scout. Only a real bomber hull takes the station-attack duty.
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
+            && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(bot), out var flyingHull)
+            && Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
             && (bot.Arena || bot.TargetSector is null || bot.TargetSector == myCluster))
         {
             short? station;
@@ -5583,6 +5623,7 @@ bool isThreat =
     {
         _loopCts.Cancel();
         if (_loopThread.IsAlive) _loopThread.Join(500);
+        if (_researchThread?.IsAlive == true) _researchThread.Join(1500);
         ActiveBot[] bots;
         lock (_gate) { bots = _bots.ToArray(); _bots.Clear(); }
         foreach (var bot in bots)
@@ -5740,6 +5781,11 @@ bool isThreat =
         /// see <see cref="Showcase.HullRole"/>). Determines its OWN target sector
         /// (bombers → enemy home) and its route/staging group.</summary>
         public string Role = "fighter";
+        public bool TechLoadouts;
+        public LoadoutPurchasePacer? PurchasePacer;
+        public double PurchaseScheduledAt = double.NegativeInfinity;
+        public bool LoadoutRefused;
+        public TechLoadoutSelector.Selection? PendingTechLoadout, PreviousLegalLoadout;
         public int CompletedPodCycles;
         public FinaleRun? Finale;
         public FinaleOriginal? FinaleOriginal;

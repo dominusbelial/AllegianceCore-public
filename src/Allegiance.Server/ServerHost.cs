@@ -287,6 +287,12 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// Server's handler is pure observation.
     /// </summary>
     public Action<IBucketIgc, double>? BucketCompletedHook;
+    /// <summary>P703 native construction wire completion (FedSrv.CPP:11431-11462,12025).</summary>
+    public Action<Asteroid, Ship, Station>? StationBuilt;
+    public void StationBuiltEvent(IAsteroidIgc asteroid, IShipIgc builder, IStationIgc station)
+    {
+        if (asteroid is Asteroid a && builder is Ship b && station is Station s) StationBuilt?.Invoke(a, b, s);
+    }
 
     /// <summary>
     /// The world-mission site implementation of <c>BucketCompleted</c>: raise

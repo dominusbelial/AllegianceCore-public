@@ -1,0 +1,35 @@
+{
+  "ticks": 2000,
+  "sides": 2,
+  "buckets": 622,
+  "initial": [
+    {
+      "milliseconds": 645.6715,
+      "allocatedBytes": 758928168
+    },
+    {
+      "milliseconds": 641.7322,
+      "allocatedBytes": 758928168
+    },
+    {
+      "milliseconds": 636.2159,
+      "allocatedBytes": 758928168
+    }
+  ],
+  "fixed": [
+    {
+      "milliseconds": 15.3711,
+      "allocatedBytes": 12528168
+    },
+    {
+      "milliseconds": 15.6618,
+      "allocatedBytes": 12528168
+    },
+    {
+      "milliseconds": 15.7864,
+      "allocatedBytes": 12528168
+    }
+  ],
+  "initialCoreSha256": "5f05d4f0fc1823a2625a341fc9cab87e1b1063f027558bf7877afdf3fa7eda7d",
+  "fixedCoreSha256": "b491bb1ed4ab74b0fc08b69a6b091658b4617beca7eeb595dc0729bde427a0d0"
+}

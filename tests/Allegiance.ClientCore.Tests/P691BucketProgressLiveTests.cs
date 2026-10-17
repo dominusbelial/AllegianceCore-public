@@ -31,6 +31,16 @@ public sealed class P691BucketProgressLiveTests
         var funded = owner.World.BucketFundingOf(sideId, bucket.Id)!.Value;
         Assert.Equal(bucket.Price, funded.InvestedMoney);
         Assert.InRange(funded.InvestedTimeMs, 1000, bucket.TimeToBuild * 1000);
+        // Authoritative snapshots outside the donation transaction still travel
+        // over the single event handler, with no completion effects.
+        bucket.SetTimeAndMoney((long)bucket.TimeToBuild * 1000, bucket.Price);
+        P660NextMatchLiveTests.Pump(server, () => P660NextMatchLiveTests.Read(owner,
+            () => owner.World.BucketFundingOf(sideId, bucket.Id) is { } snapshot
+                && snapshot.InvestedTimeMs == bucket.TimeToBuild * 1000));
+        if (prosperity)
+            P660NextMatchLiveTests.Pump(server, () => P660NextMatchLiveTests.Read(enemy,
+                () => enemy.World.BucketFundingOf(sideId, bucket.Id) is { } snapshot
+                    && snapshot.InvestedTimeMs == bucket.TimeToBuild * 1000));
         bucket.SetEmpty();
         P660NextMatchLiveTests.Pump(server, () => P660NextMatchLiveTests.Read(owner,
             () => owner.World.BucketFundingOf(sideId, bucket.Id) is { InvestedMoney: 0, InvestedTimeMs: 0 }));

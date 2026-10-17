@@ -1200,6 +1200,10 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     public byte PilotType { get; init; } = PilotTypePlayer;
 
+    /// <summary>P703 retained loaded-core drone identity for read-only commander telemetry.
+    /// Native CFSDrone retains its drone type (FedSrv.CPP:2220-2236).</summary>
+    public short DroneTypeId { get; init; } = -1;
+
     /// <summary>
     /// P148 — the commanded "stay docked" latch. Port of native's
     /// <c>m_stayDocked</c> (<c>shipIGC.h</c>) written by

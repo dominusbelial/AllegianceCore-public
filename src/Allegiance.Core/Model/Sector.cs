@@ -318,7 +318,11 @@ public sealed class Sector : IClusterIgc
     /// <summary>Register a runtime asteroid for the mining pass (assembly wraps
     /// static ones; <see cref="Mission.PlaceAsteroid"/> uses this for synthetic
     /// injection in the loopback mining tests).</summary>
-    internal void AttachAsteroid(Asteroid asteroid) => _mineable.Add(asteroid);
+    internal void AttachAsteroid(Asteroid asteroid)
+    {
+        _asteroids.Add(asteroid.Data);
+        _mineable.Add(asteroid);
+    }
     internal void AttachWarp(ResolvedWarp warp) => _warps.Add(warp);
 
     /// <summary>The models that live in this sector and tick with it, in insertion order.</summary>
@@ -396,7 +400,13 @@ public sealed class Sector : IClusterIgc
     /// <c>FedSrv.CPP:12420</c>): a destroyed rock stops being minable and stops
     /// appearing in future combat/mining passes. Returns whether it was present.
     /// </summary>
-    public bool RemoveAsteroid(Asteroid asteroid) => _mineable.Remove(asteroid);
+    public bool RemoveAsteroid(Asteroid asteroid)
+    {
+        // Native Terminate removes the rock from the cluster, including future join exports
+        // (FedSrv.CPP:11459-11462). Keep the port's record and runtime lists in agreement.
+        _asteroids.RemoveAll(a => a.AsteroidId == asteroid.Data.AsteroidId);
+        return _mineable.Remove(asteroid);
+    }
 
     /// <summary>
     /// P163 — the sector's in-progress building effects (a Builder committed to
@@ -4507,7 +4517,8 @@ public sealed class Sector : IClusterIgc
 
         // 2. Transform: build the new station at the asteroid's position.
         var data = BuildStationRecord(asteroid, effect.SideId, stationType, mission);
-        mission.PlaceStation(new Station(data, stationType), this);
+        var builtStation = new Station(data, stationType);
+        mission.PlaceStation(builtStation, this);
 
         // 3. Consume the Builder (the established ship-removal mechanism).
         //    P165 — clear the builder's committed flag first. Ordering is safe
@@ -4518,6 +4529,7 @@ public sealed class Sector : IClusterIgc
         //    the interruption path's clear.
         builder.IsBuilding = false;
         Remove(builder);
+        mission.Site.StationBuiltEvent(asteroid, builder, builtStation);
     }
 
     /// <summary>

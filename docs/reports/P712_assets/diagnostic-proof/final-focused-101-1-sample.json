@@ -1,0 +1,1250 @@
+{
+  "wall": 371.2186647,
+  "epoch": "f4f6c77908f04a34bc056214a8cc02cf",
+  "sim": 18384.99999987271,
+  "research": [
+    {
+      "Side": 0,
+      "Plan": "generated",
+      "Step": 60,
+      "TotalSteps": 163,
+      "Action": "develop",
+      "Name": "GA: Missile Damage 1",
+      "Status": "building bucket",
+      "ProgressPercent": 36.34975715746421,
+      "StepProgressPercent": 25.010416666666668,
+      "Money": 7662870,
+      "EtaSeconds": 179.975,
+      "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+      "CompletedTechs": [
+        "Enh Fighter",
+        "Interceptor",
+        "Bomber",
+        "Afterburner 2",
+        "Cruise Booster",
+        "Retro Booster",
+        "Enh Constructor",
+        "Enh Miner",
+        "PW Gattling Gun 2",
+        "EW Disruptor 2",
+        "PW Mini-Gun 2",
+        "PW EMP Cannon 1",
+        "PW Auto-Cannon 2",
+        "ER Nanite 2",
+        "SRM Dumbfire 2",
+        "MRM Seeker 2",
+        "SRM Anti-Base 2",
+        "SRM Seismic",
+        "SRM EMP Missile",
+        "Med Shield 2",
+        "Booster 2",
+        "Lt Booster 1",
+        "Hvy Sig Cloak 1",
+        "EWS Probe 2",
+        "Pulse Probe",
+        "Prox Mine 2",
+        "Mine Pack 1",
+        "Counter 2",
+        "GA: Ship Acceleration 1",
+        "GA: Ship Agility 1",
+        "GA: Ship Energy 1",
+        "GA: EW Range 1",
+        "GA: PW\u0026EW Damage 1",
+        "GA: Faster He3 1",
+        "GA: He3 Yield 1",
+        "GA: Missile Track 1",
+        "GA: PW Range 1",
+        "GA: Ripcord 1",
+        "GA: Ship Sensors 1",
+        "GA: Ship Hull 1",
+        "GA: Ship Shield 1",
+        "GA: Ship Signature 1",
+        "GA: Station Hull 1",
+        "GA: Station Shield 1",
+        "Upgrade Garrison",
+        "Weedcore 03",
+        "Enh Carrier Drone",
+        "MRM Quickfire 2",
+        "XRM Anti-Base 1"
+      ],
+      "Stations": [
+        "Garrison",
+        "Refinery",
+        "Teleport",
+        "Outpost",
+        "Supremacy",
+        "Expansion",
+        "Tactical"
+      ],
+      "Constructor": null,
+      "ReservedRock": null,
+      "Cycles": 0
+    },
+    {
+      "Side": 1,
+      "Plan": "generated",
+      "Step": 22,
+      "TotalSteps": 167,
+      "Action": "station",
+      "Name": "SpecMine (He)",
+      "Status": "constructor travelling/building",
+      "ProgressPercent": 12.874251497005988,
+      "StepProgressPercent": 50,
+      "Money": 13643258,
+      "EtaSeconds": null,
+      "EtaBasis": "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+      "CompletedTechs": [
+        "SpecMine (He)",
+        "Retro Booster",
+        "Enh Constructor",
+        "Enh Miner",
+        "ER Nanite 2",
+        "MRM Seeker 2",
+        "SRM Seismic",
+        "Med Shield 2",
+        "Lt Booster 1",
+        "Hvy Sig Cloak 1",
+        "Counter 2",
+        "Weedcore 03",
+        "Enh Carrier Drone",
+        "MRM Quickfire 2"
+      ],
+      "Stations": [
+        "Garrison",
+        "Refinery",
+        "Teleport",
+        "Outpost"
+      ],
+      "Constructor": 8154,
+      "ReservedRock": 56,
+      "Cycles": 0
+    }
+  ],
+  "bots": [
+    {
+      "id": 8132,
+      "side": 0,
+      "role": "Bomber",
+      "hull": 504,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 504,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 504,
+        "HullName": "Bomber",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 157,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 43,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 85,
+            "Amount": 8,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 500,
+        "Reason": "role=Bomber; techBits=49; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget; stable ID ties; legal nonobsolete human hull 504 \u0027Bomber\u0027; cost=500; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Weapon@1=33 \u0027PW Gat Gun 1\u0027 x1, Magazine@0=157 \u0027SRM Anti-Base 1\u0027 x4, Shield@0=43 \u0027Med Shield 2\u0027 x1, ChaffLauncher@0=85 \u0027Counter 2\u0027 x8",
+        "Strike": {
+          "HullId": 504,
+          "HullName": "Bomber",
+          "TargetTypeId": 26,
+          "TargetName": "Garrison",
+          "Parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ],
+          "Volley": {
+            "Hull": 4000,
+            "Shield": 4000
+          },
+          "PerSecond": {
+            "Hull": 16000,
+            "Shield": 16000
+          },
+          "Price": 500,
+          "PartNames": [
+            "33: PW Gat Gun 1 (mount 0, amount 1)",
+            "33: PW Gat Gun 1 (mount 1, amount 1)",
+            "157: SRM Anti-Base 1 (mount 0, amount 4)",
+            "43: Med Shield 2 (mount 0, amount 1)",
+            "85: Counter 2 (mount 0, amount 8)"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8133,
+      "side": 1,
+      "role": "Bomber",
+      "hull": 14,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 14,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 21,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 150,
+              "Amount": 2,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 81,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 80,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 14,
+        "HullName": "Scout",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 21,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 150,
+            "Amount": 2,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 81,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 80,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 0,
+        "Reason": "requested role=Bomber unavailable/over budget; temporary Scout; role=Scout; techBits=33; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 14 \u0027Scout\u0027; cost=0; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Shield@0=21 \u0027Sm Shield 1\u0027 x1, Magazine@0=150 \u0027SRM Dumbfire 1\u0027 x2, Dispenser@0=81 \u0027EWS Probe 1\u0027 x1, ChaffLauncher@0=80 \u0027Counter 1\u0027 x4",
+        "Strike": null
+      }
+    },
+    {
+      "id": 8134,
+      "side": 0,
+      "role": "Bomber",
+      "hull": 504,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 504,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 504,
+        "HullName": "Bomber",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 157,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 43,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 85,
+            "Amount": 8,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 500,
+        "Reason": "role=Bomber; techBits=49; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget; stable ID ties; legal nonobsolete human hull 504 \u0027Bomber\u0027; cost=500; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Weapon@1=33 \u0027PW Gat Gun 1\u0027 x1, Magazine@0=157 \u0027SRM Anti-Base 1\u0027 x4, Shield@0=43 \u0027Med Shield 2\u0027 x1, ChaffLauncher@0=85 \u0027Counter 2\u0027 x8",
+        "Strike": {
+          "HullId": 504,
+          "HullName": "Bomber",
+          "TargetTypeId": 26,
+          "TargetName": "Garrison",
+          "Parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ],
+          "Volley": {
+            "Hull": 4000,
+            "Shield": 4000
+          },
+          "PerSecond": {
+            "Hull": 16000,
+            "Shield": 16000
+          },
+          "Price": 500,
+          "PartNames": [
+            "33: PW Gat Gun 1 (mount 0, amount 1)",
+            "33: PW Gat Gun 1 (mount 1, amount 1)",
+            "157: SRM Anti-Base 1 (mount 0, amount 4)",
+            "43: Med Shield 2 (mount 0, amount 1)",
+            "85: Counter 2 (mount 0, amount 8)"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8135,
+      "side": 1,
+      "role": "Bomber",
+      "hull": 14,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 14,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 21,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 150,
+              "Amount": 2,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 81,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 80,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 14,
+        "HullName": "Scout",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 21,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 150,
+            "Amount": 2,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 81,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 80,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 0,
+        "Reason": "requested role=Bomber unavailable/over budget; temporary Scout; role=Scout; techBits=34; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 14 \u0027Scout\u0027; cost=0; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Shield@0=21 \u0027Sm Shield 1\u0027 x1, Magazine@0=150 \u0027SRM Dumbfire 1\u0027 x2, Dispenser@0=81 \u0027EWS Probe 1\u0027 x1, ChaffLauncher@0=80 \u0027Counter 1\u0027 x4",
+        "Strike": null
+      }
+    },
+    {
+      "id": 8136,
+      "side": 0,
+      "role": "Bomber",
+      "hull": 504,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 504,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 504,
+        "HullName": "Bomber",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 157,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 43,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 85,
+            "Amount": 8,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 500,
+        "Reason": "role=Bomber; techBits=49; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget; stable ID ties; legal nonobsolete human hull 504 \u0027Bomber\u0027; cost=500; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Weapon@1=33 \u0027PW Gat Gun 1\u0027 x1, Magazine@0=157 \u0027SRM Anti-Base 1\u0027 x4, Shield@0=43 \u0027Med Shield 2\u0027 x1, ChaffLauncher@0=85 \u0027Counter 2\u0027 x8",
+        "Strike": {
+          "HullId": 504,
+          "HullName": "Bomber",
+          "TargetTypeId": 26,
+          "TargetName": "Garrison",
+          "Parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ],
+          "Volley": {
+            "Hull": 4000,
+            "Shield": 4000
+          },
+          "PerSecond": {
+            "Hull": 16000,
+            "Shield": 16000
+          },
+          "Price": 500,
+          "PartNames": [
+            "33: PW Gat Gun 1 (mount 0, amount 1)",
+            "33: PW Gat Gun 1 (mount 1, amount 1)",
+            "157: SRM Anti-Base 1 (mount 0, amount 4)",
+            "43: Med Shield 2 (mount 0, amount 1)",
+            "85: Counter 2 (mount 0, amount 8)"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8137,
+      "side": 1,
+      "role": "Bomber",
+      "hull": 14,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 14,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 21,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 150,
+              "Amount": 2,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 81,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 80,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 14,
+        "HullName": "Scout",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 21,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 150,
+            "Amount": 2,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 81,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 80,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 0,
+        "Reason": "requested role=Bomber unavailable/over budget; temporary Scout; role=Scout; techBits=34; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 14 \u0027Scout\u0027; cost=0; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Shield@0=21 \u0027Sm Shield 1\u0027 x1, Magazine@0=150 \u0027SRM Dumbfire 1\u0027 x2, Dispenser@0=81 \u0027EWS Probe 1\u0027 x1, ChaffLauncher@0=80 \u0027Counter 1\u0027 x4",
+        "Strike": null
+      }
+    },
+    {
+      "id": 8138,
+      "side": 0,
+      "role": "Bomber",
+      "hull": 504,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 504,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 504,
+        "HullName": "Bomber",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 157,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 43,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 85,
+            "Amount": 8,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 500,
+        "Reason": "role=Bomber; techBits=49; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget; stable ID ties; legal nonobsolete human hull 504 \u0027Bomber\u0027; cost=500; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Weapon@1=33 \u0027PW Gat Gun 1\u0027 x1, Magazine@0=157 \u0027SRM Anti-Base 1\u0027 x4, Shield@0=43 \u0027Med Shield 2\u0027 x1, ChaffLauncher@0=85 \u0027Counter 2\u0027 x8",
+        "Strike": {
+          "HullId": 504,
+          "HullName": "Bomber",
+          "TargetTypeId": 26,
+          "TargetName": "Garrison",
+          "Parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ],
+          "Volley": {
+            "Hull": 4000,
+            "Shield": 4000
+          },
+          "PerSecond": {
+            "Hull": 16000,
+            "Shield": 16000
+          },
+          "Price": 500,
+          "PartNames": [
+            "33: PW Gat Gun 1 (mount 0, amount 1)",
+            "33: PW Gat Gun 1 (mount 1, amount 1)",
+            "157: SRM Anti-Base 1 (mount 0, amount 4)",
+            "43: Med Shield 2 (mount 0, amount 1)",
+            "85: Counter 2 (mount 0, amount 8)"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8139,
+      "side": 1,
+      "role": "Bomber",
+      "hull": 14,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 14,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 21,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 150,
+              "Amount": 2,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 81,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 80,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 14,
+        "HullName": "Scout",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 21,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 150,
+            "Amount": 2,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 81,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 80,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 0,
+        "Reason": "requested role=Bomber unavailable/over budget; temporary Scout; role=Scout; techBits=34; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 14 \u0027Scout\u0027; cost=0; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Shield@0=21 \u0027Sm Shield 1\u0027 x1, Magazine@0=150 \u0027SRM Dumbfire 1\u0027 x2, Dispenser@0=81 \u0027EWS Probe 1\u0027 x1, ChaffLauncher@0=80 \u0027Counter 1\u0027 x4",
+        "Strike": null
+      }
+    },
+    {
+      "id": 8140,
+      "side": 0,
+      "role": "Bomber",
+      "hull": 504,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 504,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 504,
+        "HullName": "Bomber",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 1,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 157,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 43,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 85,
+            "Amount": 8,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 500,
+        "Reason": "role=Bomber; techBits=49; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget; stable ID ties; legal nonobsolete human hull 504 \u0027Bomber\u0027; cost=500; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Weapon@1=33 \u0027PW Gat Gun 1\u0027 x1, Magazine@0=157 \u0027SRM Anti-Base 1\u0027 x4, Shield@0=43 \u0027Med Shield 2\u0027 x1, ChaffLauncher@0=85 \u0027Counter 2\u0027 x8",
+        "Strike": {
+          "HullId": 504,
+          "HullName": "Bomber",
+          "TargetTypeId": 26,
+          "TargetName": "Garrison",
+          "Parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 1,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 157,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 43,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 85,
+              "Amount": 8,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ],
+          "Volley": {
+            "Hull": 4000,
+            "Shield": 4000
+          },
+          "PerSecond": {
+            "Hull": 16000,
+            "Shield": 16000
+          },
+          "Price": 500,
+          "PartNames": [
+            "33: PW Gat Gun 1 (mount 0, amount 1)",
+            "33: PW Gat Gun 1 (mount 1, amount 1)",
+            "157: SRM Anti-Base 1 (mount 0, amount 4)",
+            "43: Med Shield 2 (mount 0, amount 1)",
+            "85: Counter 2 (mount 0, amount 8)"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8141,
+      "side": 1,
+      "role": "Bomber",
+      "hull": 14,
+      "pod": false,
+      "dock": false,
+      "warning": null,
+      "actual": [
+        {
+          "hull": 14,
+          "dock": null,
+          "parts": [
+            {
+              "PartId": 33,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 21,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 150,
+              "Amount": 2,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 81,
+              "Amount": 1,
+              "MountId": 0,
+              "FractionMounted": 240
+            },
+            {
+              "PartId": 80,
+              "Amount": 4,
+              "MountId": 0,
+              "FractionMounted": 240
+            }
+          ]
+        }
+      ],
+      "loadout": {
+        "HullId": 14,
+        "HullName": "Scout",
+        "Parts": [
+          {
+            "PartId": 33,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 21,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 150,
+            "Amount": 2,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 81,
+            "Amount": 1,
+            "MountId": 0,
+            "FractionMounted": 240
+          },
+          {
+            "PartId": 80,
+            "Amount": 4,
+            "MountId": 0,
+            "FractionMounted": 240
+          }
+        ],
+        "Price": 0,
+        "Reason": "requested role=Bomber unavailable/over budget; temporary Scout; role=Scout; techBits=34; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 14 \u0027Scout\u0027; cost=0; Weapon@0=33 \u0027PW Gat Gun 1\u0027 x1, Shield@0=21 \u0027Sm Shield 1\u0027 x1, Magazine@0=150 \u0027SRM Dumbfire 1\u0027 x2, Dispenser@0=81 \u0027EWS Probe 1\u0027 x1, ChaffLauncher@0=80 \u0027Counter 1\u0027 x4",
+        "Strike": null
+      }
+    }
+  ]
+}

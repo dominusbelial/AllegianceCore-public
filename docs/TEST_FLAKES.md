@@ -75,6 +75,40 @@ underlying transport/ripcord fix.
 See the [P715 report](reports/P715_MINIMAP_FOOTER.md),
 [full-suite ledger](reports/P715_assets/verification.json), and
 [nine isolated passes](reports/P715_assets/diagnostic-isolation.json).
+## P712 observation (2026-10-16)
+
+The third scheduled final-build invocation of
+`P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches`
+had one 101/1, 5v5 timeout in match two. Match one completed normally. In
+match two, side 0 obtained its upgraded launch; side 1's five combat bots
+remained in hull 14 while research continued. The unchanged 300-second
+condition deadline expired at simulation time 18,609.25. This was an
+older-loadout observation; its cause is not established.
+
+Three additional **exact-case isolated reruns passed 3/3**, with both full
+matches in each rerun. They used the same binaries, assertions, deadlines,
+tick batching, map parameters and movement/economy rules. The filter was the
+same method plus `DisplayName~civA: 101,`, matching exactly one data case.
+Under P712's lane rule this is a load flake.
+
+See the [failed timeline](reports/P712_assets/diagnostic-proof/final-focused-101-1.json),
+[last sample](reports/P712_assets/diagnostic-proof/final-focused-101-1-sample.json),
+[isolated triplet](reports/P712_assets/isolation-101-summary.json), and
+[final invocation ledger](reports/P712_assets/final/verification.json)
+(`focused-Research_upgrades_and_resets_through_two_complete_local_matches-3`,
+then `isolation-P705-101-1` through `isolation-P705-101-3`).
+The first full Core suite reported **4,760 pass / 1 fail / 0 skip**.
+`CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate`
+observed an exported hull ID of 92 while the current server ship had hull 33.
+That exact method passed **3/3 unchanged isolated reruns**, recorded as
+`isolation-574-0-1`, `isolation-575-0-2` and `isolation-576-0-3` in the same
+[final ledger](reports/P712_assets/final/verification.json). Under the lane
+rule this is a load flake. See the [isolated triplet](reports/P712_assets/core-export-isolation.json).
+No export assertion, receipt deadline or seating/transport source was changed.
+
+The initial side-pass overhead timeout and deterministic duplicate funding
+status were corrected and are **not** classified as flakes; see the
+[P712 report](reports/P712_P705_MERGE.md).
 
 ## P699c observation (2026-10-16)
 
@@ -97,6 +131,84 @@ JSON-default regression and repository path-guard failures were deterministic
 and corrected; they are not classified as flakes. The earlier complete passing
 sequence before the human simulation-time correction is superseded by these
 final results.
+
+## P705 observation (2026-10-15)
+
+`P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches`
+had one timeout in the 101/1, 5v5 case. Match one completed normally. In match
+two, side 0's paid Refinery constructor (8146, reserved asteroid 18) remained in
+native physical approach/building at the unchanged 300-second condition deadline.
+That side had completed Weedcore 03; the other side had researched and launched
+its upgraded bomber. Wallet funding and the tech-mode configuration were working.
+The approach/steering cause is not established; this is the same symptom family
+as the P703 observation below.
+
+The next two scheduled repetitions passed. Three **additional exact-case isolated
+reruns passed 3/3**, including both full matches each time. No assertions,
+deadlines, driver pacing, map parameters or movement rules changed between the
+failure and these retries. Under P705's lane rule this is a load flake.
+
+See the [timeout snapshot](reports/P705_assets/constructor-approach-timeout.json),
+[partial timeline](reports/P705_assets/101-1-timeout-timeline.json),
+[three isolated results](reports/P705_assets/focused-isolation-summary.json), and
+[invocation ledger](reports/P705_assets/verification.json). The failed invocation
+is `focused-P705-101-1-1`; clean follow-up invocations are
+`isolation-focused-1-1`, `isolation-focused-1-2`, and `isolation-focused-1-3`.
+
+The first P705 diagnostic Core suite also observed
+`Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join`
+throwing `ThreadStateException: Thread has not been started` in
+`TcpTransport.Shutdown` while joining a worker. The exact method passed **3/3
+isolated reruns** (`isolation-core-2-1` through `isolation-core-2-3`), without
+source/assertion/deadline changes. This is recorded as a load flake. See the
+[Core isolation results](reports/P705_assets/core-isolation-summary.json).
+
+Four diagnostic profiler failures were traced to P705's rejected-plan boot path
+registering callbacks before its host existed. That ordering bug was fixed and
+has a direct rejection-then-ForceReport regression; it is **not classified as a
+load flake**. The diagnostic private-path guard failure was an artifact-root Git
+link setup issue; the corrected guard passed 3/3. Both are explained in the
+[P705 report](reports/P705_SHOWCASE_TECH_MODE.md).
+
+The corrected-build Core run completed **4,605 pass / 1 fail / 0 skip**. Its
+`MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction`
+failed waiting for B's mine EXPORT. The exact test then passed **3/3 isolated
+reruns** (`fixed-isolation-mine-1` through `fixed-isolation-mine-3`) with unchanged
+source and receipt deadline. This is a load flake under the P705 lane rule.
+See [isolated results](reports/P705_assets/fixed-core-isolation-summary.json).
+The profiler regression and checkout guard passed in this full run.
+
+## P703 observation (2026-10-15)
+
+The new
+`P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates`
+had one authored 25/3 timeout: one constructor remained in physical approach to
+its assigned rock at the unchanged 300-second deadline. Money and prerequisite
+research had succeeded. The generated 1/2 case passed in that invocation.
+The exact method then passed **3/3 isolated reruns**, both matchup cases each
+time. Under P703's lane rule this is recorded as a load flake; its underlying
+approach/steering cause is not established. No assertions, deadlines, map
+geometry or movement rules were relaxed between the failure and retries.
+
+See [preserved approach samples](reports/P703_assets/constructor-approach-timeout.json),
+[loopback evidence](reports/P703_assets/loopback-proofs.json), and
+[invocation ledger](reports/P703_assets/verification.json) (failed invocation
+232; clean isolated invocations 233, 234 and 292).
+
+The unfiltered Core suite reported **4,581 pass / 2 fail / 0 skip**. Both failures
+passed **3/3 exact-method isolated reruns**:
+
+- `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts`: empty notification collection (invocations 372–374).
+- `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`: no raw-peer `OnPeerJoined` before timeout (invocations 375–377).
+
+These repeat the P702 observations below. No deadlines or receipt assertions
+were relaxed. The same P703 invocation ledger records the full run and retries.
+
+The unfiltered ClientCore run completed **1,073 pass / 0 fail / 0 skip**,
+including both P703 research matchups again. MonoGame completed **2,208 pass /
+0 fail / 3 existing optional Meshy-pack skips**, including the 605-second
+human-flight soak. Lobby completed **19 pass / 0 fail / 0 skip**. No additional
+failures required classification. See the [P703 report](reports/P703_RESEARCH_COMMANDER.md).
 
 ## P702 observation (2026-10-15)
 

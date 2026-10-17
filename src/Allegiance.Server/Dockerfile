@@ -70,6 +70,7 @@ RUN dotnet restore src/Allegiance.Server/Allegiance.Server.csproj \
 # only, matching the existing single-arch build.
 COPY src/Allegiance.Server/ src/Allegiance.Server/
 COPY src/Allegiance.Core/ src/Allegiance.Core/
+COPY data/showcase-plans/ data/showcase-plans/
 RUN dotnet publish src/Allegiance.Server/Allegiance.Server.csproj \
     -c Release -r linux-x64 --self-contained -p:PublishAot=true -o /app --no-restore
 
