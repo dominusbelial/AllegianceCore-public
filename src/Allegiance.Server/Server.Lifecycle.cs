@@ -823,6 +823,67 @@ public sealed partial class Server
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
+
+        StartDiscoveryResponder();
+    }
+
+    /// <summary>
+    /// P731 — start the UDP discovery responder if enabled (the default). The
+    /// snapshot is sampled lazily at reply time, so it reads the live mission
+    /// state (<see cref="_missions"/>, assigned AFTER BindHostAndTransport runs
+    /// in Boot) even though this starts before the missions exist.
+    /// </summary>
+    private void StartDiscoveryResponder()
+    {
+        var disc = _config.Discovery;
+        bool enabled = disc?.Enabled ?? true;          // absent section ⇒ enabled
+        if (!enabled)
+        {
+            Console.WriteLine("[discovery] responder DISABLED (server.json discovery.enabled=false)");
+            return;
+        }
+        // A real server always runs on a real port (default 6073). Port 0 means
+        // "bind an ephemeral test port" — there is no meaningful discovery port
+        // (0 + 1 = 1 is privileged), so skip the responder for ephemeral test
+        // hosts rather than breaking boot with a bind failure.
+        if (_config.Port <= 0)
+        {
+            Console.WriteLine("[discovery] responder skipped (ephemeral/test game port; set a real port to advertise)");
+            return;
+        }
+        try
+        {
+            int port = disc?.Port ?? (_config.Port + 1);
+            int rate = Math.Max(0, disc?.RateLimitPerSecond ?? 20);
+            string mgroup = string.IsNullOrWhiteSpace(disc?.MulticastGroup)
+                ? "239.255.7.31" : disc!.MulticastGroup;
+
+            var firstGame = _config.Games.FirstOrDefault();
+            _discoveryResponder = new DiscoveryResponder(
+                () =>
+                {
+                    var game = firstGame;
+                    var mission = _missions?.FirstOrDefault();
+                    return new DiscoverySnapshot(
+                        Name: game?.Name ?? "",
+                        Map: game?.Map ?? "",
+                        Players: LivePlayerCount,
+                        MaxPlayers: 0,
+                        Version: _core?.Version.ToString() ?? "",
+                        GamePort: _config.Port);
+                },
+                port, rate, mgroup);
+            _discoveryResponder.Start();
+            Console.WriteLine($"[discovery] responder on udp 0.0.0.0:{_discoveryResponder.BoundPort}" +
+                              $" (rate {rate}/s, multicast {mgroup}; Find Server broadcast/unicast/multicast)");
+        }
+        catch (Exception ex)
+        {
+            // A discovery bind failure must never take down the game server.
+            Console.WriteLine($"[discovery] responder could not start: {ex.Message}");
+            _discoveryResponder?.Dispose();
+            _discoveryResponder = null;
+        }
     }
 
     /// <summary>Open the capture file (truncating any prior capture) when
@@ -1886,6 +1947,8 @@ public sealed partial class Server
         // transport shutdown (either order is fine) — kept first for reverse-of-boot clarity.
         _heartbeat?.Dispose();
         _heartbeat = null;
+        _discoveryResponder?.Dispose();
+        _discoveryResponder = null;
         CompleteBroadcastSnapshot();
         _broadcastPublisher?.Dispose();
         _broadcastPublisher = null;

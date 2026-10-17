@@ -51,6 +51,15 @@ public sealed partial class Game1
         /// <see cref="ServerListing.LobbyUrlDefault"/>.</summary>
         public string LobbyUrl = ServerListing.LobbyUrlDefault;
 
+        /// <summary>
+        /// P731 — when true (no game-starting positional args, no capture, no
+        /// inspect), boot into the intro screen ("choose single player or
+        /// multiplayer at start", native's introscreen.cpp) instead of the
+        /// lobby. Command-line args (<c>[host] [port] [name]</c>, capture,
+        /// inspect) still bypass the intro entirely.
+        /// </summary>
+        public bool Intro = false;
+
         /// <summary>P306 — when non-null, this launch is a HEADLESS video
         /// capture: connect to the given host:port, render the whole fleet
         /// from an automatic overview camera into an offscreen
@@ -364,7 +373,7 @@ public sealed partial class Game1
     /// logging on and being seated; ReadyCheck (P282) is the pre-flight ready
     /// screen between seating and the mission actually starting; Flying is the
     /// joined-in-flight mode (existing behaviour).</summary>
-    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying, Disconnected, Inspecting }
+    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying, Disconnected, Inspecting, Intro }
 
     private ClientState _state;
 
@@ -724,7 +733,13 @@ public sealed partial class Game1
         catch (Exception ex)
         {
             Console.WriteLine($"[monogame] FAILED to connect/log on: {ex.Message}");
-            if (_returnToLobbyOnFailure)
+            if (_returnToIntroOnFailure)
+            {
+                _returnToIntroOnFailure = false;
+                _state = ClientState.Intro;
+                _introFindError = $"Could not join {host}:{port} - {ex.Message}";
+            }
+            else if (_returnToLobbyOnFailure)
             {
                 _returnToLobbyOnFailure = false;
                 _state = ClientState.Lobby;
@@ -817,6 +832,15 @@ public sealed partial class Game1
                 _filterBuffer.Append(c);
                 RebuildVisibleRows();   // narrow the visible list live as you type
             }
+            return;
+        }
+
+        if (_state == ClientState.Intro)
+        {
+            if (_introView == IntroView.Main && _introEditingPilot && _pilotBuf.Length < 24)
+                _pilotBuf.Append(c);
+            else if (_introView == IntroView.DirectConnect && _introEditingDirect && _directBuf.Length < 128)
+                _directBuf.Append(c);
             return;
         }
 

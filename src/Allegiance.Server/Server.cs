@@ -555,7 +555,14 @@ public sealed partial class Server : IDisposable
     // no HTTP calls at all. Runs entirely off the sim thread and reads only the
     // cross-thread-safe LivePlayerCount snapshot — never Ships/_peerShips.
     private LobbyHeartbeat? _heartbeat;
-
+    /// <summary>
+    /// P731 — the optional UDP discovery responder (answers the client's
+    /// "Find Server" queries). Non-null only when discovery is enabled (the
+    /// default; see <see cref="DiscoveryConfig"/>). Started in
+    /// <see cref="BindHostAndTransport"/> after the TCP transport, torn down in
+    /// <see cref="Shutdown"/>.
+    /// </summary>
+    private DiscoveryResponder? _discoveryResponder;
     /// <summary>
     /// Raised once per notable gameplay moment (dock, undock, mine-start,
     /// mine-sell, payday, warp crossing) on the simulation thread. The payload

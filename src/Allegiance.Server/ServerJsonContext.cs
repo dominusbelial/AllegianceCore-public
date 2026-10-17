@@ -38,6 +38,7 @@ namespace Allegiance.Server;
 [JsonSerializable(typeof(TestHarnessConfig))]
 [JsonSerializable(typeof(TestUnlockConfig))]
 [JsonSerializable(typeof(AdminCheatsConfig))]
+[JsonSerializable(typeof(DiscoveryConfig))]
 [JsonSerializable(typeof(MapGenConfig))]
 [JsonSerializable(typeof(LobbyRegisterRequest))]
 [JsonSerializable(typeof(LobbyRegisterResponse))]
