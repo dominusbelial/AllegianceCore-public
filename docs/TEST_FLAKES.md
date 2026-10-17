@@ -4,6 +4,33 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P734b observation (2026-10-17)
+
+The 2026-10-17 light gate ran **one** unfiltered sweep: **8,284 pass /
+1 fail / 3 existing optional private Meshy-pack skips**. Project counts are recorded in the linked report and invocation ledger.
+After all projects finished, each failed method passed **3/3 fresh exact-method
+isolated invocations**:
+
+| Method | Full-suite observation | Isolated evidence |
+| --- | --- | --- |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | System.TimeoutException : no OnPeerJoined for raw peer | 3/3 pass: [1](reports/P734b_assets/suite-retry-000-1.trx.gz), [2](reports/P734b_assets/suite-retry-000-2.trx.gz), [3](reports/P734b_assets/suite-retry-000-3.trx.gz) |
+
+This meets the brief's explicit load/timing-flake rule. No assertion, timeout,
+transport behavior or quarantine setting was changed. The isolated passes
+do not establish an underlying fix.
+
+Separately, all **208 methods × 3** focused invocations passed (978 cases,
+zero skips), the unchanged never-parks test passed **5/5** (maximum stopped
+with target 2.014 seconds), and the local civ25/3 unlocked mixed-fleet Brawl
+showcase reached **two natural Stage Over events** with automatic rotation
+and zero simulation-stage failures. Earlier incomplete scene attempts are
+retained as diagnostics rather than passing proof. P733 is absent, so the
+brief's unlocked fallback was used. No second full sweep was run in this lane.
+
+See the [P734b merge report](reports/P709_PARITY_WAVE12.md#p734b-merge),
+[invocation ledger](reports/P734b_assets/verification.json), and
+[summary](reports/P734b_assets/summary.json).
+
 ## P734 observation (2026-10-17)
 
 Both complete final suite sweeps were clean: **16,520 pass / 0 fail / 6
@@ -280,6 +307,31 @@ a cause or replace the required ten-run gate; no P707 attribution is claimed.
 See [P708 report](reports/P708_PARITY_WAVE11.md),
 [invocation ledger](reports/P708_assets/verification.json), and
 [scope audit](reports/P708_assets/scope-audit.json).
+
+## P709 observation (2026-10-16)
+
+The unfiltered sequential suites reported Core **4,691 pass / 2 fail / 0 skip**,
+ClientCore **1,087 pass / 0 fail / 0 skip** (local P660 showcase enabled), and
+MonoGame **2,237 pass / 0 fail / 3 existing optional private Meshy-pack skips**.
+After all three suites finished, both failed Core methods passed **3/3
+exact-method isolated invocations**:
+
+| Full-suite method | Symptom | Isolated result |
+| --- | --- | --- |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Owner/teammate loadout-change receipt collection empty at `Assert.Contains`. | 3/3 pass |
+| `LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission` | Countdown receipt collection empty at `Assert.Single`. | 3/3 pass |
+
+These satisfy P709's explicit load-flake rule. No assertions, timeouts,
+quarantine settings, or transport/receipt behavior were changed. Isolated
+passes do not establish an underlying fix. See the [P709 report](reports/P709_PARITY_WAVE12.md)
+and [invocation ledger](reports/P709_assets/verification.json) for commands,
+raw counters, messages/stacks, and individual TRX/log locations.
+
+The separate mandatory P700 parking gate was **8 pass / 2 fail** across ten
+isolated runs. That zero-failure gate remains **failed**; it is not waived by
+this receipt-flake classification. Parking/dispenser/readiness fixes are
+explicitly assigned to P707 by the brief. The report separately records the
+untouched-base comparison.
 
 ## P702 observation (2026-10-15)
 

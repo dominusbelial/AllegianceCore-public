@@ -1,0 +1,190 @@
+--- P734/src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs
++++ P734b/src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs
+@@ -12,7 +12,7 @@
+     private readonly ActionPressEdges _edges = new();
+     private static readonly string[] Actions = ["AcceptCommand", "ExecuteCommand", "RejectCommand", "ClearCommand", "TargetCommand"];
+     internal readonly record struct Result(OrderChange? Request = null, bool ChangeSelection = false,
+-        QueuedCommandState? Selection = null, bool Engage = false, short? JoinWing = null);
++        QueuedCommandState? Selection = null, bool Engage = false, short? JoinWing = null, PlayerDonate? Donation = null);
+ 
+     internal void Prime(KeyboardState keys, ActionMap map) =>
+         _edges.Prime(Actions.Select(a => (a, map.IsDownMostSpecific(keys, a))));
+@@ -23,6 +23,11 @@
+             clear = Edge("ClearCommand"), target = Edge("TargetCommand");
+         bool Edge(string action) => _edges.Observe(action, map.IsDownMostSpecific(keys, action), suppressed);
+         if (world.MyShipId is not { } me) return default;
++        if (world.PendingMoneyRequest is not null)
++        {
++            if (accept || execute) return new(Donation: world.AcceptMoneyRequest());
++            if (reject) { world.RejectMoneyRequest(); return default; }
++        }
+         if ((accept || execute) && world.AcceptQueuedCommand() is { } command)
+         {
+             short? wing = command.CommandId == OrderChange.CidJoin ? world.Ships[me].WingId : null;
+--- P734/src/Allegiance.ClientCore.Game/Game1.Orders.cs
++++ P734b/src/Allegiance.ClientCore.Game/Game1.Orders.cs
+@@ -56,6 +56,7 @@
+                 _session.SendChat("", Allegiance.Core.Sim.ChatTarget.Individual, pickup.TargetId,
+                     commandId: OrderChange.CidPickup, objectModel: true, oidTarget: rescuer, otTarget: (short)IgcObjectType.Ship);
+         }
++        if (result.Donation is { } donation) _session.SendPlayerDonation(donation);
+         if (result.Request is { CommandId: not OrderChange.CidNone }) _sound?.PlayCommandAccepted();
+         if (result.Request is { } request)
+             _session.SendOrderChange(request.ShipID, request.CommandId, request.Command, request.ObjectType, request.ObjectID);
+--- P734/src/Allegiance.ClientCore/Session/ConnectionSession.cs
++++ P734b/src/Allegiance.ClientCore/Session/ConnectionSession.cs
+@@ -407,7 +407,7 @@
+         ChatTarget target = ChatTarget.Everyone,
+         short oidRecipient = 0,
+         short voiceOver = 0,
+-        short commandId = 0,
++        short commandId = -1,
+         bool objectModel = false,
+         short oidTarget = -1,
+         short otTarget = -1)
+@@ -426,6 +426,18 @@
+         };
+         Send(FedPacket.Pack(new[] { msg.Encode() }));
+     }
++
++    /// <summary>Igc/igc.h:4812-4825: formatted chat uses the same wire path.</summary>
++    public void SendChatf(ChatTarget target, short recipient, short voice, string format, params object?[] args) =>
++        SendChat(CallbackText.Format(format, args), target, recipient, voice);
++
++    /// <summary>WinTrek.cpp:10627-10652; clintlib.cpp:2564-2574.</summary>
++    public void SendPlayerDonation(PlayerDonate donation) => Send(FedPacket.Pack(new[] { donation.Encode() }));
++
++    public void SendMoneyRequest(int amount, short hullId) => Send(FedPacket.Pack(new[]
++    {
++        new RequestMoney { Amount = amount, HidFor = hullId, ShipIdRequest = -1 }.Encode(),
++    }));
+ 
+     /// <summary>Send a real <c>FM_CS_CHATBUOY(108)</c> — the message the native
+     /// <c>BaseClient::SendChat</c> actually uses when the chat targets a buoy
+@@ -447,7 +459,7 @@
+         short oidRecipient,
+         DataBuoyIGC db,
+         short voiceOver = 0,
+-        short commandId = 0,
++        short commandId = -1,
+         bool objectModel = false)
+     {
+         var msg = new ChatBuoy
+@@ -1102,6 +1114,9 @@
+                         // refund, player donation).
+                         _world.Apply(MoneyChange.Decode(m));
+                         break;
++                    case RequestMoney.Fmid:
++                        _world.Apply(RequestMoney.Decode(m));
++                        break;
+                     case AutoDonateUpdate.Fmid:
+                         // P442 — a player's auto-donate relationship (payday
+                         // routing) + any one-time gift.
+--- P734/src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs
++++ P734b/src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs
+@@ -45,6 +45,7 @@
+         _roster.Clear();
+         MyAcceptedCommand = null;
+         _myQueuedCommand = null;
++        _moneyRequest = null;
+         MarkSnapshotDirty();
+     }
+ 
+--- P734/src/Allegiance.Core/Sim/IIgcSite.cs
++++ P734b/src/Allegiance.Core/Sim/IIgcSite.cs
+@@ -18,8 +18,8 @@
+ /// global clock source here.</item>
+ /// <item>IGC object pointers → the empty marker interfaces in
+ /// <c>Sim/IgcMarkers.cs</c>.</item>
+-/// <item>Client/UI-only methods and variadic printf-style text helpers are
+-/// omitted; see README for the full skip list and rationale.</item>
++/// <item>Formatting helpers use invariant .NET composite formats in place of
++/// C varargs. Client-only text consumers live in ClientWorld.</item>
+ /// </list>
+ /// Where a C++ default body needs a member the empty markers cannot provide
+ /// (<c>KillTreasureEvent</c>, <c>GetCluster</c>, <c>GetRipcordCluster</c>), the
+@@ -92,8 +92,7 @@
+ 
+     // ── chat ───────────────────────────────────────────────────────────────
+     // igc.h:4792-4800. ReceiveChat is server-side host handling of incoming
+-    // chat; no-op default. (SendChatf, the variadic printf helper, is skipped —
+-    // see README.)
++    // chat; no-op default.
+     void ReceiveChat(
+         IShipIgc pshipSender,
+         ChatTarget ctRecipient,
+@@ -113,10 +112,16 @@
+         short soVoiceOver,
+         string szText,
+         short cid = -1,            // c_cidNone
+-        IgcObjectType otTarget = IgcObjectType.Ship,  // NA maps to Ship (0) — see README
++        IgcObjectType otTarget = (IgcObjectType)(-1), // native NA
+         short oidTarget = -1,      // NA
+         IModelIgc? pmodelTarget = null,
+         bool bObjectModel = false) { }
++
++    /// <summary>igc.h:4812-4825: format once, then dispatch the virtual SendChat.
++    /// Managed call sites use invariant .NET composite formatting.</summary>
++    void SendChatf(IShipIgc pshipSender, ChatTarget ctRecipient, short oidRecipient,
++        short soVoiceOver, string format, params object?[] args) =>
++        SendChat(pshipSender, ctRecipient, oidRecipient, soVoiceOver, CallbackText.Format(format, args));
+ 
+     // ── economy ───────────────────────────────────────────────────────────
+     // igc.h:4828. Money is int, HullID is short (both igc.h:477,483,840).
+@@ -163,8 +168,15 @@
+     void TreasureGeneratedEvent(Treasure t) { }
+ 
+     // ── text (console messages to clients) ────────────────────────────────
+-    // igc.h:4847. (PostText / PostNotificationText variadic wrappers skipped.)
++    // igc.h:4847-4849.
+     void PostPlainText(bool bCritical, string pszText) { }
++
++    /// <summary>WinTrek/trekigc.cpp:3086-3102: format then call PostPlainText.</summary>
++    void PostText(bool bCritical, string format, params object?[] args) =>
++        PostPlainText(bCritical, CallbackText.Format(format, args));
++
++    // The base site has no local player/console (igc.h:4849).
++    void PostNotificationText(IModelIgc pmodel, bool bCritical, string format, params object?[] args) { }
+ 
+     /// <summary>Mounted sound and owner ready text: weaponIGC.h:44-46,
+     /// cloakigc.cpp:75-76, shieldIGC.cpp:82-83, afterburnerIGC.cpp:119-120.
+--- P734/src/Allegiance.Server/Server.Lifecycle.cs
++++ P734b/src/Allegiance.Server/Server.Lifecycle.cs
+@@ -812,6 +812,7 @@
+         _host.SideLostRestartStationHook = OnSideLostRestartStation;   // P455: wire the site's restart-station-loss seam to the station-elimination win (DeactivateSide)
+         _host.ProsperityArtifactComputedHook = OnProsperityArtifactComputed;  // P302: wire the prosperity/artifact recompute to GAME_STATE(155) + P178 GameOver
+         _host.FlagsKillsComputedHook = OnFlagsKillsComputed;  // P303: wire the flags/kills recompute to GAME_STATE(155) + P178 GameOver
++        _host.ChatRequested = SendSiteChat;
+         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
+         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
+         var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers)
+--- P734/src/Allegiance.Server/ServerHost.cs
++++ P734b/src/Allegiance.Server/ServerHost.cs
+@@ -4,6 +4,7 @@
+ using Allegiance.Core.Model;
+ using Allegiance.Core.Sim;
+ using Allegiance.Core.Transport;
++using ChatMessage = Allegiance.Core.Wire.ChatMessage;
+ 
+ namespace Allegiance.Server;
+ 
+@@ -506,6 +507,19 @@
+     public bool QueueRipcordUse => true;
+     public Action<Ship, string>? WeaponReadyNotification;
+     public void WeaponReady(Ship ship, string partName) => WeaponReadyNotification?.Invoke(ship, partName);
++
++    public Action<Ship?, ChatMessage>? ChatRequested;
++    // Igc/igc.h:4801-4825; FedSrv/FedSrv.CPP:13652-13693.
++    public void SendChat(IShipIgc pshipSender, ChatTarget chatTarget, short oidRecipient,
++        short soVoiceOver, string szText, short cid = -1,
++        IgcObjectType otTarget = (IgcObjectType)(-1), short oidTarget = -1,
++        IModelIgc? pmodelTarget = null, bool bObjectModel = false) =>
++        ChatRequested?.Invoke(pshipSender as Ship, new ChatMessage
++        {
++            Message = szText, SidSender = pshipSender is Ship sender ? sender.Id : (short)-1,
++            ChatTarget = (int)chatTarget, OidRecipient = oidRecipient, VoiceOver = soVoiceOver,
++            CommandID = cid, OtTarget = (short)otTarget, OidTarget = oidTarget, BObjectModel = bObjectModel,
++        });
+     /// <summary>The world-mission site implementation of
+     /// <see cref="IIgcSite.LoadoutChangeEvent"/>: raise the
+     /// <see cref="LoadoutChange"/> hook so the owning <see cref="Server"/> can

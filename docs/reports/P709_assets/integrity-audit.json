@@ -1,0 +1,59 @@
+{
+  "head": "5556eb0f459095fe18e6fcf3b919c1786331c877",
+  "branch": "codex/p709",
+  "changed_rows": [
+    {
+      "row_id": "SIM-0172",
+      "before": "partial",
+      "after": "partial",
+      "weight": "3"
+    },
+    {
+      "row_id": "SIM-0173",
+      "before": "partial",
+      "after": "partial",
+      "weight": "3"
+    },
+    {
+      "row_id": "SIM-0174",
+      "before": "partial",
+      "after": "implemented",
+      "weight": "3"
+    },
+    {
+      "row_id": "SIM-0175",
+      "before": "partial",
+      "after": "implemented",
+      "weight": "3"
+    },
+    {
+      "row_id": "SIM-0193",
+      "before": "partial",
+      "after": "implemented",
+      "weight": "3"
+    },
+    {
+      "row_id": "SIM-0194",
+      "before": "partial",
+      "after": "implemented",
+      "weight": "3"
+    },
+    {
+      "row_id": "SIM-0195",
+      "before": "partial",
+      "after": "partial",
+      "weight": "3"
+    },
+    {
+      "row_id": "SIM-0228",
+      "before": "partial",
+      "after": "implemented",
+      "weight": "3"
+    }
+  ],
+  "native_fields_and_weights_preserved": true,
+  "interface_matrix_unchanged": true,
+  "diff_check_clean": true,
+  "build_log": "/tmp/p709/build-final.log",
+  "build_log_sha256": "86df74c8a7392e9d57b6a0f38b2ac45ca9b00223c91fa88f438a8cab7614279c"
+}

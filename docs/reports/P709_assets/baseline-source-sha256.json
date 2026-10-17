@@ -1,0 +1,10 @@
+{
+  "src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs": "6cc98b9b4aee0fb3502b8677d6575d27cf05f997ecf42522159749900a70480f",
+  "src/Allegiance.ClientCore.Game/Game1.Orders.cs": "6cfee5abc4db85c9788d6825899eb88ff4f95b05379822adb6d2b0e9a498345b",
+  "src/Allegiance.ClientCore/Session/ConnectionSession.cs": "71d976f1b3416c10f32051479302a58ec1db6c71c949aad5f79df71e5a95ff5a",
+  "src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs": "25df61554b2ac78d40cca1a69b3f3df5307319ac35e0c19f091ee0bbc948569b",
+  "src/Allegiance.ClientCore/State/ClientWorld.cs": "0b9f008ffc63d7910e5730570cf4956188a2b4eeaed3b8a6b477a86832f9e48a",
+  "src/Allegiance.Core/Sim/IIgcSite.cs": "cf8ea9beb6b7a26b935501ac94a6cd3340d9b687d51b90f74bf369db1c9890e4",
+  "src/Allegiance.Server/Server.Lifecycle.cs": "df11d1d9da67705d80a80dd07896044e5eb1e4047a53986a938c3e5b5b9908bb",
+  "src/Allegiance.Server/ServerHost.cs": "001c921f6b6e12d676249e094c32593e2f9a165766aed6988b5525c6a536252c"
+}

@@ -1,0 +1,18 @@
+parity-matrix.csv: validated 438 rows
+area | weighted (credit/weight) | unweighted (complete/eligible)
+commander | 100.00% (81/81) | 100.00% (19/19)
+commands | 90.19% (533/591) | 85.26% (162/190)
+fedmsg | 86.80% (447/515) | 86.40% (108/125)
+lobby | 76.47% (39/51) | 75.00% (9/12)
+parts | 88.24% (135/153) | 85.00% (34/40)
+screens | 89.77% (79/88) | 82.61% (19/23)
+TOTAL | 88.84% (1314/1479) | 85.82% (351/409)
+sim-rules-matrix.csv: validated 473 rows
+area | weighted (credit/weight) | unweighted (complete/eligible)
+callbacks | 53.03% (105/198) | 53.03% (35/66)
+constants | 95.56% (129/135) | 94.87% (37/39)
+periodic | 25.53% (12/47) | 20.00% (3/15)
+sounds | 50.34% (299/594) | 46.49% (106/228)
+updates | 79.08% (276/349) | 77.01% (67/87)
+warnings | 100.00% (10/10) | 100.00% (2/2)
+TOTAL | 62.34% (831/1333) | 57.21% (250/437)

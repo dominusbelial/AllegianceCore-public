@@ -1,0 +1,1 @@
+RESULT_P632 p709 model=port debug=1 size=15/side window=90s botsReached=30/30 killsA=2 killsB=1 killsTotal=3 deathsA=1 deathsB=2 shots=15827 hits=8586 hitRate=54.2 % friendly=0 shieldHits=5513 hullHits=3073 maxTargeted=30 maxVisibleEnemies=15

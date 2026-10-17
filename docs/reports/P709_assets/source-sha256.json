@@ -1,0 +1,17 @@
+{
+  "src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs": "f7a093e1c928918a0919456bf6a57728a7c1f9a0443f4123fd69f94b700f25f7",
+  "src/Allegiance.ClientCore.Game/Game1.Orders.cs": "d10c267939fd6b83a98e4fc589e151a34b9d0e7a6275dab1639ca4e18bb05be2",
+  "src/Allegiance.ClientCore/Session/ConnectionSession.cs": "48854935708e282cb44201ffb6486cf425883533bbad72cecb891aee400ce366",
+  "src/Allegiance.ClientCore/State/ClientWorld.Callbacks.cs": "075f959bbf45573f6fde4f3c9f88eaf7cc7a2e72b5c54ab5b34e8eff2adc1996",
+  "src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs": "0d9481b0a159bd6a11c1610ff7b5b0dfd2f20cc56af2c375ed68975cc900e55a",
+  "src/Allegiance.ClientCore/State/ClientWorld.cs": "8e45012b1de77b6b35874dc3d5bd39766ba0c0cbd911b9ca369e1219cb9e8e73",
+  "src/Allegiance.Core/Sim/CallbackText.cs": "afdf64fc389a52b23ecb8d5080b7316cd30458bac05422bfe35caca0f714f29e",
+  "src/Allegiance.Core/Sim/IIgcSite.cs": "fa0780ff03a9a28858ee7173fafc29edca1c6fb0f0ac5fc576e964f6ea75a244",
+  "src/Allegiance.Server/Server.Callbacks.cs": "951ae15a3e15112f39437c4c2198027d94f5587cb00c30ae45e73a868cd9c364",
+  "src/Allegiance.Server/Server.Lifecycle.cs": "e28f0fd34fd33cad16650744ecad4024ad0433c95b30f95281ec32d44774bdf1",
+  "src/Allegiance.Server/ServerHost.cs": "177d48ea308cdff1ccde670dc15cbb105ec4b1324b7b9cfe25327ff60eccf111",
+  "tests/Allegiance.ClientCore.MonoGame.Tests/P709MoneyRequestInputTests.cs": "05f826c71285c96808fa73d12862e4a1211fafaeb603340f8bf2e7bb24b53bf0",
+  "tests/Allegiance.ClientCore.Tests/P709CallbacksLiveTests.cs": "0c94daa666f6019da2b281bd5f8435e65549cf1c51f83428ac70ccfd050a3f4e",
+  "tests/Allegiance.ClientCore.Tests/P709ClientCallbacksTests.cs": "7e17622effcf60cdfc0649f5e941faa02393613e254018452cf81e63c6832f11",
+  "tests/Allegiance.Core.Tests/P709CallbackTextTests.cs": "c81b5ef7db1e2c182313662786ba4f5fac2309ebff5de8a5f23947e7e69306da"
+}

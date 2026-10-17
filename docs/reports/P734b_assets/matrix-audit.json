@@ -1,0 +1,119 @@
+{
+  "rows": 473,
+  "LF_only": true,
+  "sha256": "e391458530bb376491870cc420c53a1fc73d0a5cc6c557a21a365d694636f4ed",
+  "changed_from_master": [
+    "SIM-0104",
+    "SIM-0108",
+    "SIM-0112",
+    "SIM-0113",
+    "SIM-0114",
+    "SIM-0115",
+    "SIM-0117",
+    "SIM-0118",
+    "SIM-0172",
+    "SIM-0173",
+    "SIM-0174",
+    "SIM-0175",
+    "SIM-0193",
+    "SIM-0194",
+    "SIM-0195",
+    "SIM-0228"
+  ],
+  "changed_from_P734": [
+    "SIM-0172",
+    "SIM-0173",
+    "SIM-0174",
+    "SIM-0175",
+    "SIM-0193",
+    "SIM-0194",
+    "SIM-0195",
+    "SIM-0228"
+  ],
+  "P708_rows": [
+    {
+      "row": "SIM-0104",
+      "status": "implemented",
+      "matches_P734": true
+    },
+    {
+      "row": "SIM-0108",
+      "status": "implemented",
+      "matches_P734": true
+    },
+    {
+      "row": "SIM-0112",
+      "status": "implemented",
+      "matches_P734": true
+    },
+    {
+      "row": "SIM-0113",
+      "status": "implemented",
+      "matches_P734": true
+    },
+    {
+      "row": "SIM-0114",
+      "status": "implemented",
+      "matches_P734": true
+    },
+    {
+      "row": "SIM-0115",
+      "status": "implemented",
+      "matches_P734": true
+    },
+    {
+      "row": "SIM-0117",
+      "status": "implemented",
+      "matches_P734": true
+    },
+    {
+      "row": "SIM-0118",
+      "status": "implemented",
+      "matches_P734": true
+    }
+  ],
+  "P709_rows": [
+    {
+      "row": "SIM-0172",
+      "status": "partial",
+      "matches_P709": true
+    },
+    {
+      "row": "SIM-0173",
+      "status": "partial",
+      "matches_P709": true
+    },
+    {
+      "row": "SIM-0174",
+      "status": "implemented",
+      "matches_P709": true
+    },
+    {
+      "row": "SIM-0175",
+      "status": "implemented",
+      "matches_P709": true
+    },
+    {
+      "row": "SIM-0193",
+      "status": "implemented",
+      "matches_P709": true
+    },
+    {
+      "row": "SIM-0194",
+      "status": "implemented",
+      "matches_P709": true
+    },
+    {
+      "row": "SIM-0195",
+      "status": "partial",
+      "matches_P709": true
+    },
+    {
+      "row": "SIM-0228",
+      "status": "implemented",
+      "matches_P709": true
+    }
+  ],
+  "all_other_master_rows_preserved": true,
+  "periodic_rows_unchanged": true
+}

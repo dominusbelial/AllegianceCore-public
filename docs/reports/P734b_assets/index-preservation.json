@@ -1,0 +1,15 @@
+{
+  "stage_zero_unchanged": 18736,
+  "stage_zero_modified": [
+    "docs/reports/P709_PARITY_WAVE12.md",
+    "src/Allegiance.ClientCore/State/ClientWorld.Callbacks.cs",
+    "tests/Allegiance.ClientCore.Tests/P709ClientCallbacksTests.cs"
+  ],
+  "missing": [],
+  "unmerged_index_entries": [
+    "docs/TEST_FLAKES.md",
+    "src/Allegiance.ClientCore/State/ClientWorld.cs"
+  ],
+  "only_expected_stage_zero_modifications": true,
+  "index_bytes_unchanged": true
+}

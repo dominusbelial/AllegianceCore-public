@@ -12,7 +12,7 @@ internal sealed class CommandActionInput
     private readonly ActionPressEdges _edges = new();
     private static readonly string[] Actions = ["AcceptCommand", "ExecuteCommand", "RejectCommand", "ClearCommand", "TargetCommand"];
     internal readonly record struct Result(OrderChange? Request = null, bool ChangeSelection = false,
-        QueuedCommandState? Selection = null, bool Engage = false, short? JoinWing = null);
+        QueuedCommandState? Selection = null, bool Engage = false, short? JoinWing = null, PlayerDonate? Donation = null);
 
     internal void Prime(KeyboardState keys, ActionMap map) =>
         _edges.Prime(Actions.Select(a => (a, map.IsDownMostSpecific(keys, a))));
@@ -23,6 +23,11 @@ internal sealed class CommandActionInput
             clear = Edge("ClearCommand"), target = Edge("TargetCommand");
         bool Edge(string action) => _edges.Observe(action, map.IsDownMostSpecific(keys, action), suppressed);
         if (world.MyShipId is not { } me) return default;
+        if (world.PendingMoneyRequest is not null)
+        {
+            if (accept || execute) return new(Donation: world.AcceptMoneyRequest());
+            if (reject) { world.RejectMoneyRequest(); return default; }
+        }
         if ((accept || execute) && world.AcceptQueuedCommand() is { } command)
         {
             short? wing = command.CommandId == OrderChange.CidJoin ? world.Ships[me].WingId : null;

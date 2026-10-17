@@ -45,6 +45,7 @@ public sealed partial class ClientWorld
         _roster.Clear();
         MyAcceptedCommand = null;
         _myQueuedCommand = null;
+        _moneyRequest = null;
         MarkSnapshotDirty();
     }
 

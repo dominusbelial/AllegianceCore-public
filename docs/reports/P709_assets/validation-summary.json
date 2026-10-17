@@ -1,0 +1,76 @@
+{
+  "head": "5556eb0f459095fe18e6fcf3b919c1786331c877",
+  "gate_satisfied": false,
+  "gate_counts": {
+    "passed": 8,
+    "failed": 2,
+    "skipped": 0
+  },
+  "baseline_parking_reproduced": true,
+  "baseline_counts": {
+    "passed": 2,
+    "failed": 1,
+    "skipped": 0
+  },
+  "focused_methods": 79,
+  "focused_invocations": 237,
+  "focused_case_executions": 315,
+  "new_methods": 16,
+  "new_cases": 23,
+  "completed_rows": 5,
+  "improved_partial_rows": 3,
+  "suites": {
+    "Core": {
+      "passed": 4691,
+      "failed": 2,
+      "skipped": 0,
+      "seconds": 780.341
+    },
+    "ClientCore": {
+      "passed": 1087,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 665.799
+    },
+    "ClientCore.MonoGame": {
+      "passed": 2237,
+      "failed": 0,
+      "skipped": 3,
+      "seconds": 935.245
+    }
+  },
+  "confirmed_load_flakes": [
+    "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+    "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy"
+  ],
+  "source_matches_final_build": true,
+  "native_fields_and_weights_preserved": true,
+  "interface_matrix_unchanged": true,
+  "diff_check_clean": true,
+  "trx_sha256": {
+    "/tmp/p709/verification/0238-gate-ClientCore-1.trx": "a38ab547a85b797b963c0669d3ac98655fc2c746884f995b49a6b51656894e0b",
+    "/tmp/p709/verification/0239-gate-ClientCore-2.trx": "a57e0940a75193e0fdab88d6e179f943a40b77a3dfbe84e268ab7ba19a14472b",
+    "/tmp/p709/verification/0240-gate-ClientCore-3.trx": "ca3d04849e8de5f1ed73eb3a2d9cc950a1e7bc8ac784278e93bf01ef2cccba4b",
+    "/tmp/p709/verification/0241-gate-ClientCore-4.trx": "f7cd012b657553a3d78c32d0fb6ea7ed278bad9fbc7edd104e2d0b597c589e0b",
+    "/tmp/p709/verification/0242-gate-ClientCore-5.trx": "54600c4756e17c1e7f4db153575608ea3b9017cefa46f0f4077ecbd59713841f",
+    "/tmp/p709/verification/0243-gate-ClientCore-6.trx": "66fa207c5e98fe46ec79d9a2862354720a5685ffbc5c9e5f6a0c00c40d738955",
+    "/tmp/p709/verification/0244-gate-ClientCore-7.trx": "e9f6e80b946aa202498734075f551f1db22bb253f3e7529fc80a88fea8018479",
+    "/tmp/p709/verification/0245-gate-ClientCore-8.trx": "4d9fb2212c47c0fb201ee9068b70f8847c2e5772203cec99bdd652e40397e855",
+    "/tmp/p709/verification/0246-gate-ClientCore-9.trx": "acc0b5e83e8f7222d5beb614f07e816cbb4f12c8076fc4cb94371473cd4e28db",
+    "/tmp/p709/verification/0247-gate-ClientCore-10.trx": "622b993e1b79826265b45eebb8c6bc0d27382ec29ea1adc382228d1d1bb14e20",
+    "/tmp/p709/verification/0255-suite-Core-1.trx": "73bc41fa0e4bd6b2b821a65e6b2100382239b5c8351fa61a9ae5624ab4e226a0",
+    "/tmp/p709/verification/0256-suite-ClientCore-1.trx": "2de308f5d8b764e4bade07080aad5d646711dcd0fbc46c9200e3e4be3d11b96d",
+    "/tmp/p709/verification/0257-suite-ClientCore.MonoGame-1.trx": "e01c97cfdffd17982190c5338415001631a44019c1bc8837dbf9c9607dcc62c9",
+    "/tmp/p709/verification/0258-suite-retry-Core-1.trx": "9d16f139e0c4d082c62391b3f0ac8b3d0a97e73d4cacc17d0c042e522967c669",
+    "/tmp/p709/verification/0259-suite-retry-Core-2.trx": "be01aae1a330302b482a787c2191db292032ed7c00cc5993af0050b506259f2c",
+    "/tmp/p709/verification/0260-suite-retry-Core-3.trx": "9ca2854872b0391051f236a84d060dcdf847d038dc7c347de5f04c2267581a16",
+    "/tmp/p709/verification/0261-suite-retry-Core-1.trx": "b25f65ebc3b59e525489f8300b349709a81136883241927ba61e87da652a6a61",
+    "/tmp/p709/verification/0262-suite-retry-Core-2.trx": "80e452a0526177174bed016c8ddaf96fee28d018e7feca9f1a1a5d7b60f26b2e",
+    "/tmp/p709/verification/0263-suite-retry-Core-3.trx": "40c016eb1bc434cc7b5fba5592344fc08d5397ef8d7c1483942212b5cfa7eda3"
+  },
+  "baseline_trx_sha256": {
+    "/tmp/p709/baseline-certified/baseline-gate-1.trx": "190c3c3d0a5cae8541be9735627a955dae9423d99e5793a53d24d6f3c0d79690",
+    "/tmp/p709/baseline-certified/baseline-gate-2.trx": "1b3e28fc5176fd6a61ccef22ca72d9e68e63c902114c9f01e7400b512ce45c72",
+    "/tmp/p709/baseline-certified/baseline-gate-3.trx": "c27b16c5ddd1ca28ccbcf2653a677e457759d7668149d28e9923c977a5fba586"
+  }
+}
