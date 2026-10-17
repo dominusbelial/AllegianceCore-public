@@ -73,7 +73,8 @@ def run(label, project, test_filter=None):
     records.append(result)
     temporary = LEDGER.with_suffix('.tmp')
     temporary.write_text(json.dumps(records, indent=2)+'\n'); temporary.replace(LEDGER)
-    print(label, code, result.get('counters',{}), flush=True)
+    counts = result.get('counters', {})
+    print(label, 'exit=', code, 'passed=', counts.get('passed'), 'failed=', counts.get('failed'), 'skipped=', counts.get('notExecuted'), flush=True)
     if code == 130: raise SystemExit('verification stopped; child process group terminated')
     return code
 
@@ -105,8 +106,18 @@ def showcase():
     return sum(bool(run(f'showcase-{i}','ClientCore','FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds')) for i in range(1,11))
 
 def suites():
-    if any(r['label'].startswith('suite-') for r in records): raise RuntimeError('two-sweep gate already started; do not repeat it')
-    return sum(bool(run(f'suite-{sweep}-{project}',project)) for sweep in (1,2) for project in PROJECTS)
+    errors = 0
+    for sweep in (1, 2):
+        for project in PROJECTS:
+            label = f'suite-{sweep}-{project}'
+            completed = [r for r in records if r['label'] == label]
+            if completed:
+                if len(completed) != 1 or not completed[0].get('counters'):
+                    raise RuntimeError(f'ambiguous/incomplete suite evidence: {label}')
+                errors += bool(completed[0]['exit_code'])
+                continue
+            errors += bool(run(label, project))
+    return errors
 
 if __name__=='__main__':
     acquire_lock()

@@ -1097,3 +1097,27 @@ See the [P707 report](reports/P707_WAVES_PARKING.md) and
 [complete invocation ledger](reports/P707_assets/results.json) for every
 command, raw counter, failure message/stack, source fingerprint and artifact
 path. No failed attempt was discarded or assertion relaxed.
+
+
+## P720 observation (2026-10-16)
+
+P720's final, unfiltered serial sweeps of Core, ClientCore, MonoGame, and Lobby
+reported **16,322 passes / 2 failures / 6 existing private Meshy-pack skips**.
+Core sweep 1 passed all 4,725 tests; the two failures occurred in Core sweep 2.
+After both complete sweeps finished, each failed method passed **3/3 fresh
+exact-method isolated invocations**, satisfying the brief's explicit load-flake
+classification rule.
+
+| Test | Full-suite observation | Final isolation |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | 199/200 pods docked and one oxygen expiry; `Assert.Equal` expected zero expiries, actual one (line 160). | 3/3 pass |
+| `Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour` | `never crossed: sectors=[0]` (line 119). | 3/3 pass |
+
+No assertions, deadlines, quarantine traits, simulation rules, or transport
+behavior were changed for these observations. The isolated passes do not
+establish either underlying cause or a fix. The affected cohort separately
+passed all 78 methods three times alone, and the standalone parking gate passed
+10/10. See the [P720 report](reports/P720_INTERFACE_WAVE.md),
+[complete invocation ledger](reports/P720_assets/verification.json), and
+[failure/isolation index](reports/P720_assets/failure-isolation.json) for raw
+counts, messages, stacks, exact filters, timestamps, and TRX hashes.

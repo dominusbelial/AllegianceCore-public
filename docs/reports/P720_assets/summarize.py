@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 import collections, json
 from pathlib import Path
+import xml.etree.ElementTree as ET
 assets=Path(__file__).resolve().parent
+root=assets.parents[2]
+ns={'t':'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'}
 records=json.loads((assets/'verification.json').read_text())
+def skipped(row):
+    return [t.attrib['testName'] for t in ET.parse(root/row['trx']).findall('.//t:UnitTestResult',ns)
+            if t.attrib['outcome']=='NotExecuted']
 summary={}
 for label,predicate in [('affected',lambda r:r['label'].startswith(('affected-','finalisolated-'))),
                         ('showcase',lambda r:r['label'].startswith('showcase-')),
@@ -13,8 +19,9 @@ for label,predicate in [('affected',lambda r:r['label'].startswith(('affected-',
     for r in rows:
         for key in ['passed','failed','notExecuted','total']:
             counts[key]+=int(r.get('counters',{}).get(key,0))
+        counts['skipped']+=len(skipped(r))
     summary[label]=dict(invocations=len(rows),exit_failures=sum(r['exit_code']!=0 for r in rows),counts=dict(counts))
-summary['suites']['by_project']=[dict(label=r['label'],project=r['project'],counters=r.get('counters'),failures=r.get('failures'))
+summary['suites']['by_project']=[dict(label=r['label'],project=r['project'],counters=r.get('counters'),failures=r.get('failures'),skips=skipped(r))
                                for r in records if r['label'].startswith('suite-')]
 cert=assets/'affected-certificate.json'
 if cert.exists():

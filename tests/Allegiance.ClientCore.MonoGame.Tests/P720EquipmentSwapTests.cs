@@ -90,6 +90,21 @@ public class P720EquipmentSwapTests
 
     [Theory]
     [InlineData("SwapMissile", 2)] [InlineData("SwapChaff", 0)] [InlineData("SwapMine", 3)]
+    public void Selected_duplicate_launcher_stack_normalizes_to_first_group_representative(string action, int kind)
+    {
+        // trekigc.cpp:2603-2655 skips duplicate OT_magazine/OT_dispenser stacks,
+        // including chaff (dispenserigc.cpp:45-47, dispenserigc.h:34-37).
+        DataPartTypeIGC? Resolve(short id) => Part(id, kind);
+        var decision = EquipmentSwapInput.Plan(action, Hull,
+            [Entry(10, 0), Entry(11, -1), Entry(11, -3)], Resolve, -3)!.Value;
+        Assert.Equal(0, decision.Request.MountOld);
+        Assert.Equal(-1, decision.Request.MountNew);
+        Assert.Equal(-2, decision.SelectedCargoMount);
+        Assert.Empty(decision.Reloads);
+    }
+
+    [Theory]
+    [InlineData("SwapMissile", 2)] [InlineData("SwapChaff", 0)] [InlineData("SwapMine", 3)]
     public void Empty_launcher_mount_reloads_last_matching_stacks_then_selects_after_consumption(string action, int kind)
     {
         DataPartTypeIGC? Resolve(short id) => Part(id, kind);

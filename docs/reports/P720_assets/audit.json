@@ -1,0 +1,17 @@
+{
+  "source_files": 1656,
+  "binary_files": 107,
+  "affected_methods": 78,
+  "affected_invocations": 234,
+  "affected_case_passes": 642,
+  "parking_passes": 10,
+  "suite_sweeps": 2,
+  "suite_projects_per_sweep": 4,
+  "raw_trx_verified": 258,
+  "suite_case_passes": 16322,
+  "suite_case_failures": 2,
+  "suite_case_skips": 6,
+  "csv_semantic_changes": 14,
+  "csv_cr_bytes": 0,
+  "source_unchanged_since_build": true
+}

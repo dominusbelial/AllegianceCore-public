@@ -64,7 +64,9 @@ public sealed class EquipmentSwapInput
             {
                 var entry = At(m);
                 var type = entry is { } e ? resolve(e.PartId) : null;
-                bool grouped = entry is null || type?.EquipmentType is EquipmentType.Pack or EquipmentType.Magazine or EquipmentType.Dispenser;
+                // Native chaff launchers are OT_dispenser too (dispenserigc.h:34-37).
+                bool grouped = entry is null || type?.EquipmentType is EquipmentType.Pack or EquipmentType.Magazine
+                    or EquipmentType.ChaffLauncher or EquipmentType.Dispenser;
                 if (!grouped || seen.Add(entry?.PartId)) slots.Add(m);
             }
             return slots;

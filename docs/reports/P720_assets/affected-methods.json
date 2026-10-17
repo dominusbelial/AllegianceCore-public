@@ -285,6 +285,10 @@
   ],
   [
     "ClientCore.MonoGame",
+    "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Selected_duplicate_launcher_stack_normalizes_to_first_group_representative"
+  ],
+  [
+    "ClientCore.MonoGame",
     "Allegiance.ClientCore.MonoGame.Tests.P720EquipmentSwapTests.Selection_honors_current_slot_masks_different_types_empty_slots_and_full_hold"
   ],
   [

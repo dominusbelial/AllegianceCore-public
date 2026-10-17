@@ -1,6 +1,6 @@
 # P720 — commands interface parity wave 3
 
-Implemented the 14 native equipment-swap commands (weight **28**) through the shared flight input, cargo-selection model, and existing guaranteed SWAP_PART/RELOAD path. Base: `bae444b0`, branch `codex/p720`. Changes remain in the working tree; no commits or pushes.
+Implemented the 14 native equipment-swap commands (weight **28**) through the shared flight input, cargo-selection model, and existing guaranteed SWAP_PART/RELOAD path. Base: `bae444b0`, branch `codex/p720`. The interrupted implementation is preserved in dispatcher WIP `52651ffd`. This continuation leaves its changes uncommitted in the working tree; no commits or pushes were made by this run.
 
 ## Scorecard before → after
 
@@ -16,7 +16,7 @@ The actual branch baseline was 88.39%, rather than the brief's approximate 88.8%
 | screens | 79/91 (86.81%) → unchanged | 19/24 → unchanged |
 | **Interface total** | **1310/1482 (88.39%) → 1338/1482 (90.28%)** | **350/410 (85.37%) → 364/410 (88.78%)** |
 
-Simulation score remains 772/1333 (57.91%), 231/437 eligible rows complete. Raw [before](P720_assets/scorecard-before.txt) and [after](P720_assets/scorecard-after.txt) outputs are included. The edited parity CSV has Unix LF endings (zero CR bytes), normalizing its pre-existing mixed endings. Parsed comparison against HEAD confirms exactly fourteen semantic row changes, limited to status/evidence.
+Simulation score remains 772/1333 (57.91%), 231/437 eligible rows complete. Raw [before](P720_assets/scorecard-before.txt) and [after](P720_assets/scorecard-after.txt) outputs are included. The edited parity CSV has Unix LF endings (zero CR bytes), normalizing its pre-existing mixed endings. Parsed comparison against base `bae444b0` confirms exactly fourteen semantic row changes, limited to status/evidence.
 
 ## Initial open commands, descending weight
 
@@ -83,7 +83,7 @@ Native C++ citations are relative to **`~/Development/Allegiance/src/`**. The se
 Shared native rules:
 
 - `WinTrek/WinTrek.cpp:9075-9150`: flying and unparented only; fixed index must be below `MaxFixedWeapons`, turret index below `MaxWeapons - MaxFixedWeapons`; use the individual destination socket mask. The production `CanChangeFlightParts` gate also rejects docked/dead ships.
-- `WinTrek/trekigc.cpp:2603-2719`: begin at current selected cargo, descend through -1…-5 and wrap; group duplicate packs/magazines/dispensers, and represent empty slots by the first empty mount. Choose different compatible cargo, or an empty slot when equipment is mounted. Full cargo with no different compatible part is a no-op. After a successful swap/reload, advance and select the next eligible cargo item.
+- `WinTrek/trekigc.cpp:2603-2719`: begin at current selected cargo, descend through -1…-5 and wrap; group duplicate packs/magazines/dispensers, and represent empty slots by the first empty mount. Choose different compatible cargo, or an empty slot when equipment is mounted. Full cargo with no different compatible part is a no-op. After a successful swap/reload, advance and select the next eligible cargo item. Native chaff uses `OT_dispenser` too (`Igc/dispenserigc.h:34-37`, `Igc/dispenserigc.cpp:45-47`), so duplicate chaff stacks share the same grouping; the continuation corrects that missed case and adds a three-launcher regression.
 - `WinTrek/WinTrek.cpp:9089-9094`: when equipment exists send equipment → cargo; when the equipment slot is empty send cargo → equipment. This direction matters for the reload hook.
 - `Inc/Messages.h:273-278`; `clintlib/clintlib.h:2371-2406`: guaranteed SWAP_PART(34), **10 bytes**, equipment short and signed source/destination mounts, with **no tail padding**. `Inc/messagecore.h:43,59,77-87,767-774` declares a four-byte, two-aligned base; the derived fields end at byte 10. An independent [C++ layout probe](P720_assets/native-swap-layout.cpp) [prints size=10, align=2, offsets=4/6/8/9](P720_assets/native-swap-layout.txt). Corrected the pre-existing port-only 12-byte encoder and its old test; this is a **port bug**, while native intent is **design**. The decoder retains its existing acceptance of extra framed bytes; older port receivers that require twelve bytes need upgrading before receiving the corrected ten-byte frames. Server fills the authoritative ship ID and relays sector-wide (`FedSrv/FedSrv.CPP:6459-6501`). Existing server handling is reused with the corrected shared codec.
 - `clintlib/clintlib.h:2401-2406`; `clintlib/clintlib.cpp:3425-3678`: mounting into empty launcher/afterburner equipment follows SWAP_PART with RELOAD, scanning matching cargo from the last slot, respecting capacity and partial transfers. Replacement/unmount direction does not invoke that hook. Launcher capacity uses the existing native hull-capacity/expendable-size calculation (`Igc/launchertypeigc.h:130-145`).
@@ -103,12 +103,43 @@ Each command has two network proofs: the actual headless `Game1.SwapFlightEquipm
 
 ## Verification
 
-The corrected-layout whole-solution build passed with **0 warnings / 0 errors**. The initial corrected-layout cohort passed 77 methods / 633 cases, but overlapped a stale verification driver and is excluded from certification. A fresh serial certificate, ten parking runs, and exactly two complete suite sweeps will be recorded here when complete. The serial [runner](P720_assets/verify.py), [invocation ledger](P720_assets/verification.json), [affected cohort](P720_assets/affected-methods.json), [build log](P720_assets/build.log), and [source fingerprints](P720_assets/source-fingerprint.json) are included. Full TRX/log files remain under `.verify-p720/`.
+The final whole-solution build passed with **0 warnings / 0 errors** (7.07 seconds). The final affected cohort passed **78 methods × 3 isolated runs = 234 invocations / 642 passing cases**, with **zero failures and zero skips**. The standalone showcase never-parks gate passed **10/10**; no base-rate comparison was needed.
+
+Exactly **two complete, unfiltered suite sweeps** ran serially after that build:
+
+| Sweep | Project | Passed | Failed | Skipped |
+| ---: | --- | ---: | ---: | ---: |
+| 1 | Core | 4725 | 0 | 0 |
+| 1 | ClientCore | 1121 | 0 | 0 |
+| 1 | MonoGame | 2297 | 0 | 3 |
+| 1 | Lobby | 19 | 0 | 0 |
+| 2 | Core | 4723 | 2 | 0 |
+| 2 | ClientCore | 1121 | 0 | 0 |
+| 2 | MonoGame | 2297 | 0 | 3 |
+| 2 | Lobby | 19 | 0 | 0 |
+| **Total** | | **16,322** | **2** | **6** |
+
+Both full-suite failures occurred in Core sweep 2. **Each passed 3/3 fresh exact-method isolated runs after all eight suite invocations finished**, with unchanged assertions and deadlines:
+
+| Method | Full-suite observation | Final isolation |
+| --- | --- | --- |
+| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | 199/200 pods docked; one oxygen expiry (`Expected: 0`, `Actual: 1`, test line 160). | **3/3 pass** |
+| `MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour` | `never crossed: sectors=[0]` (test line 119). | **3/3 pass** |
+
+These meet the brief's explicit **load-flake** rule; the isolated passes do not establish either failure's underlying cause or a fix. Both are recorded in `docs/TEST_FLAKES.md` and the [failure/isolation index](P720_assets/failure-isolation.json). No test assertion, deadline, quarantine, simulation, or transport change was made for these observations. The six skips are the same three unavailable private Meshy-pack checks in each MonoGame sweep. Skips are counted from TRX `UnitTestResult` outcomes because its aggregate `notExecuted` counter reports zero despite those three `NotExecuted` results.
+
+Both sweeps enable `ALLEGIANCE_LIVE_P660_SHOWCASE`, `ALLEGIANCE_LIVE_P542_PROOF`, `ALLEGIANCE_LIVE_CAPTURE_PROOF`, and `ALLEGIANCE_LIVE_P539_BASELINE`. The latter two include two capture windows of up to 300 seconds and two 240-second baseline recordings per sweep; these local live proofs were executed. No rig/221 or remote 200v200 run was performed.
+
+The [final audit](P720_assets/audit.json) verifies **258 raw TRX hashes**, all **1,656 source fingerprints**, **107 test DLL hashes**, exactly two sweeps of all four test projects, all affected-method triplets, all ten standalone parking passes, both failure isolations, and the fourteen semantic CSV changes with **zero CR bytes**. Source and binaries are unchanged since the final build. The [audit script](P720_assets/audit.py), [build metadata](P720_assets/certification-build.json), [build log](P720_assets/build.log), [validation summary](P720_assets/validation-summary.json), [invocation ledger](P720_assets/verification.json), [affected certificate](P720_assets/affected-certificate.json), [affected cohort](P720_assets/affected-methods.json), and [serial runner](P720_assets/verify.py) are included. Full final TRX/log files remain under `.verify-p720/final/`.
+
+The inherited overlapping attempts are excluded from certification and preserved in the [raw-TRX diagnostic inventory](P720_assets/development-verification.json), [inherited ledger](P720_assets/inherited-verification.json), and [inherited certificate](P720_assets/inherited-affected-certificate.json).
 
 Development checks: the initial restore failed because NuGet's HTTP cache was read-only. Setting `NUGET_HTTP_CACHE_PATH=/tmp/p720-nuget-cache` allowed the unchanged package audit/restore to run. Early compile failures were fixture API/nullability mistakes, corrected before certification. The first new-test run failed 17/33 cases: status fixtures omitted hull IDs and three next-selection expectations did not account for empty-slot preference. Corrected the fixtures/expectations against native source and hardened the new handler's missing-hull lookup. The second exploratory new-test run passed 51/51. Its raw logs/TRX are under `/tmp/p720-dev/`; development build logs are `/tmp/p720-build-dev*.log`.
 
-No assertions, deadlines, quarantine settings, transport/broadcast pipeline, simulation rules, economy/research, sounds, minimap/3D renderer/FSR, security, Android, or installer behavior was changed. No remote rig/221 or 200v200 run was performed.
+No assertions or deadlines were relaxed. Quarantine settings, transport/broadcast pipeline, simulation rules, economy/research, sounds, minimap/3D renderer/FSR, security, Android, and installer behavior are unchanged. No remote rig/221 or 200v200 run was performed.
 
 The first candidate used the existing 12-byte SWAP_PART codec. A subsequent native struct-layout audit exposed its two unnecessary tail bytes. Its isolated certificate (72 methods, 216 invocations, 612 passes) and five completed passing parking runs are retained as **pre-layout exploratory evidence**, excluded from final certification. A sixth parking run was interrupted to correct the codec before any full-suite sweep began. This interruption is not a failed assertion or a load flake. The final build/cohort includes the corrected ten-byte layout and additional affected swap/receive-path regressions.
 
-Verification-driver correction: interrupting the outer execution session did not stop its child Python driver. That stale driver overlapped the corrected-code triplets/parking and entered a Core sweep before its next-project start was blocked. These attempts are retained as diagnostic evidence and excluded from final certification. The runner now has a per-workspace exclusive lock, an explicit stop file, child process-group shutdown, and atomic ledger replacement. Final certification uses a separate raw-results directory and begins only after both earlier drivers have exited.
+Verification-driver correction: interrupting the outer execution session did not stop its child Python driver. That stale driver overlapped the corrected-code triplets/parking and entered a Core sweep before its next-project start was blocked. These attempts are retained as diagnostic evidence and excluded from final certification. The runner now has a per-workspace exclusive lock, an explicit stop file, child process-group shutdown, and atomic ledger replacement. Final certification uses `.verify-p720/final/`, starts from an empty ledger after both earlier drivers have exited, and never shares result filenames with the inherited attempts. It includes all four solution test projects (Core, ClientCore, MonoGame, Lobby) in each of its two sweeps. The suite runner resumes by label, refusing ambiguous or incomplete saved results instead of repeating completed sweeps.
+
+Continuation review: corrected duplicate chaff grouping against the native dispenser object type and added `Selected_duplicate_launcher_stack_normalizes_to_first_group_representative` for missiles, chaff, and mines. The first continuation verifier was stopped before any parking or suite gate (26 completed invocations plus one deliberately terminated invocation; no failed assertion). Its [ledger](P720_assets/pre-chaff-verification.json), [build](P720_assets/pre-chaff-build.log), and [DLL hashes](P720_assets/pre-chaff-certification-build.json) remain separate; raw artifacts are under `.verify-p720/pre-chaff/`. Final certification was restarted after the corrected build and completed as recorded above.
