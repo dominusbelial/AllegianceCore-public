@@ -96,7 +96,6 @@ beltambient_8b.ogg
 beltambient_9.ogg
 bgrnd03.cvh
 bgrnd03.mdl
-bgrnd03bmp.mdl
 bgrnd05.cvh
 bgrnd05.mdl
 bgrnd05bmp.mdl
@@ -927,7 +926,6 @@ ss100.png
 ss101.cvh
 ss101.mdl
 ss101.png
-ss101bmp.mdl
 ss102.cvh
 ss102.mdl
 ss102.png
@@ -956,18 +954,15 @@ ss23.cvh
 ss23.mdl
 ss24a.cvh
 ss24a.mdl
-ss24abmp.mdl
 ss27.cvh
 ss27.mdl
 ss27.png
-ss27bmp.mdl
 ss28.cvh
 ss28.mdl
 ss28.png
 ss300.cvh
 ss300.mdl
 ss300.png
-ss300bmp.mdl
 ss301.cvh
 ss301.mdl
 ss301.png
@@ -1006,7 +1001,6 @@ ss90.mdl
 ss90.png
 ss92.cvh
 ss92.mdl
-ss92bmp.mdl
 ss93.cvh
 ss93.mdl
 ss94.cvh

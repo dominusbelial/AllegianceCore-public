@@ -1108,3 +1108,25 @@ See the [P707 report](reports/P707_WAVES_PARKING.md) and
 [complete invocation ledger](reports/P707_assets/results.json) for every
 command, raw counter, failure message/stack, source fingerprint and artifact
 path. No failed attempt was discarded or assertion relaxed.
+
+
+## 2026-10-17 — P726 player-bundle verification
+
+Exactly two unfiltered sequential sweeps produced 16,274 passes / 2 failures /
+8 skips (six optional private Meshy-pack cases and two P660 opt-in guards; the
+P660 proof passed 3/3 separately with its opt-in enabled). Both full ClientCore
+never-parks cases and all ten fresh standalone never-parks runs passed.
+
+After all sweeps and standalone showcase runs finished, each failed method passed
+**3/3 fresh exact-method isolated invocations**, satisfying the brief's load-flake
+rule:
+
+| Method | Full-sweep symptom | Isolation |
+| --- | --- | --- |
+| `Allegiance.ClientCore.MonoGame.Tests.RadarTargetHighlightLiveTests.LiveOffScreenEnemy_IsTheFlaggedRadarTargetHighlight` | First MonoGame sweep: null position update at line 138 after waiting for identity. Second sweep passed. | 3/3 pass |
+| `Allegiance.Core.Tests.AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide` | Second Core sweep: `SeatThree` found no same-side observer at line 369; failure occurred in setup. First sweep passed. | 3/3 pass |
+
+Raw failures, exact commands, isolated outcomes and source fingerprints are in the
+[P726 report](reports/P726_PLAYER_BUNDLES_2.md) and
+[validation ledger](reports/P726_assets/validation.json). Assertions, deadlines,
+quarantine traits and transport/gameplay code were not changed for these observations.

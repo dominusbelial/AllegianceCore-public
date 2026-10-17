@@ -1416,9 +1416,9 @@ public sealed partial class Game1 : Game
         // run without the pack is obviously going to render native.
         bool meshyPackHere = MeshyPack.IsAvailable();
         Console.WriteLine((_shipsNative
-            ? "[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models)"
+            ? "[client] ships: NATIVE .mdl meshes + native textures"
             : "[client] ships: MESHY content models (--ships native to use the original .mdl meshes)")
-            + (meshyPackHere ? $" (Meshy pack: {MeshyPack.ResolveRoot()})"
+            + (_shipsNative ? "" : meshyPackHere ? $" (Meshy pack: {MeshyPack.ResolveRoot()})"
                              : " (NO Meshy pack — native only; see ALLEGIANCE_MESHY_PACK_PATH)"));
         // P567 — the asteroid renderer: each rock's own native .mdl mesh (default)
         // vs the shared imported/procedural variants. Log so a bare --asteroids

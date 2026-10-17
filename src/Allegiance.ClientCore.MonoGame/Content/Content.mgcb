@@ -2935,3 +2935,39 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_time_30sec.ogg
+
+#begin Sounds/payday.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/payday.ogg
+
+#begin Sounds/powerupdevelopment.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/powerupdevelopment.ogg
+
+#begin Sounds/powerupshield.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/powerupshield.ogg
+
+#begin Sounds/receivechat.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/receivechat.ogg
+
+#begin Sounds/receivedcomchat.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/receivedcomchat.ogg
+
+#begin Sounds/receivepersonalchat.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/receivepersonalchat.ogg

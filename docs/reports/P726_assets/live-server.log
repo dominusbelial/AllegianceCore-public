@@ -1,0 +1,153 @@
+[boot] broadcast.interestTiers = False
+[boot] broadcast.immutableSnapshot = False
+[boot] broadcast.encodeOnce = False
+[boot] broadcast.minUpdateHz = 2 (requested 2); 0 = ranked budget only
+[boot] sim.crowdingPenalty = native
+[boot] sim.timeDilation = auto — load-driven EVE-style time dilation active (engages when smoothed tick cost > 1.005× period, releases < 0.965×; scale slews toward nominal/cost in [0.1,1] rate-limited to 0.04/s every 0.5s); admin `timescale` cheat overrides auto
+[boot] broadcast.parallelBuild = false — serial broadcast building (today's byte-for-byte behaviour)
+[boot] transport mode = thread-per-peer
+[boot] broadcast.shipUpdateModel = port — port per-tick teammate SingleShipUpdate posBatch stream (today's byte-for-byte behaviour)
+[boot] sim.parallelSectorCells = false — serial sector simulation (today's byte-for-byte behaviour)
+[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)
+[boot] static core 'PCore001.igc' loaded: version=990051329, 10 civilizations, 447 hulls, 143 station types
+[boot]   civ    1  'Dreghklar'
+[boot]   civ    2  'Technoflux'
+[boot]   civ    3  'Ga'Taraan'
+[boot]   civ    4  'Phoenix'
+[boot]   civ    5  'Omicron'
+[boot]   civ   18  'Gigacorp'
+[boot]   civ   25  'Iron Coalition'
+[boot]   civ   35  'Bios'
+[boot]   civ  101  'Belters'
+[boot]   civ  201  'Rixian'
+[boot] (stub) cores.txt / maps.txt NOT loaded — download list out of scope (rank list IS loaded from ranks.txt, see above)
+[boot] rank list loaded: 0 ranks from '/tmp/p726-live-j8p9u8c3/unpack/Allegiance-linux-x64/artwork/ranks.txt' (standalone: civ=-1, requiredRanking=0)
+[boot] receive.decouple = false (receive-worker decode; tick-boundary apply)
+[boot] transport listening on 0.0.0.0:34117 (all interfaces)
+[boot] game 'P726 loopback' ready: map=m2xspiderw.igc, 13 sectors, 2 sides [Alpha, Bravo], 44 warps, 2 stations, 134 asteroids
+[npc] spawned ownerless NPC ship 8096 side 0 at Vector3 { X = 1120, Y = 1560, Z = 0 } (pilotType 0)
+[initial-miner] side 0 spawned initial miner #1/1 ship 8096 (hull 'Miner', droneType 432) docked at station 4328 'Garrison' in 'Ganymede'
+[npc] spawned ownerless NPC ship 8097 side 1 at Vector3 { X = -1840, Y = -1800, Z = 0 } (pilotType 0)
+[initial-miner] side 1 spawned initial miner #1/1 ship 8097 (hull 'Miner', droneType 13) docked at station 4329 'Garrison' in 'Organia'
+[boot] server ready: 1 mission(s), 20 upd/s (period 50 ms). Ctrl-C to stop.
+[conn-drop] (pre-join) greeting failed (ReadErrorOrEof) reason=ReadErrorOrEof
+[conn] peer 1 'P726Smoke' joined
+[launch] peer 1 'P726Smoke' pending side-select (ship id 8098 reserved; launch deferred to side choice)
+[logon] 1 'P726Smoke' validated=True -> 'Welcome P726Smoke' (server time 1235, ship 8098)
+[sideselect] -> peer 1 SIDE_ROSTER(211): 2 side(s) [Alpha(0)=0, Bravo(1)=0]
+[ping] 1 <- echo (client 0, server 1800)
+[posreq] 1: POSITIONREQ side 0 recorded for pending side-select peer
+[sideselect] draining peer 1 'P726Smoke' -> chosen side 0
+[spawn] ship 8098 seated on side 0 (Alpha) in its home sector 'Ganymede' (id 1050)
+[combat]   mount 0: 'PE Gat Gun 3' (PartMask 1, 3.672/shot)
+[combat] ship 8098 armed 1 of 1 fixed hardpoints (per-hardpoint PartMask-compatible cheapest; 0 fixed slot(s) with no compatible weapon left unmounted; hull 1 fixed/1 total, 0 non-fixed skipped)
+[join] ship 8098 -> side 0: JOIN_SIDE(125) whole-mission to 0 peer(s)
+[lead] side 0 new team leader ship 8098: SET_TEAM_LEADER(121) whole-mission to 0 peer(s)
+[own] side 0 new mission owner ship 8098: SET_MISSION_OWNER(123) whole-mission to 0 peer(s)
+[sideselect] 1 'P726Smoke' chose side 0 (ship 8098)
+[join] peer 1 'P726Smoke' -> MISSIONDEF core 'PCore001' v990051329 + JOINED_MISSION ship 8098 (static core load + hull-table hydration)
+[sides] peer 1 'P726Smoke' -> MISSIONDEF(38) nTeams 2 civIds [25, 3] (create SIDE_TEAMLOBBY + real sides via UpdateSides)
+[create] peer 1 'P726Smoke' -> EXPORT hull 13 ship NA(real=8098) side 0
+[playerinfo] peer 1 'P726Smoke' -> PLAYERINFO(10) ship 8098 iSide 0 (side assignment for the direct-connect ship)
+[setmoney] peer 1 'P726Smoke' -> SET_MONEY(115) money=0 shipID=8098
+[createbuckets] peer 1 -> CREATE_BUCKETS(191) ttbmDevelopments=37 bits ttbmInitial=37 bits (side 0)
+[bucketstatus] peer 1 -> BUCKET_STATUS(65) x308 for side 0
+[briefing] peer 1 'P726Smoke' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='Ganymede' (friendly station 4328 side 0)
+[rankinfo] peer 1 'P726Smoke' -> RANK_INFO(13) 0 rank(s) (civ=-1, requiredRanking=0, standalone)
+[treasuresets] peer 1 'P726Smoke' -> TREASURE_SETS(89) 1 set(s)
+[clusterinfo] peer 1 'P726Smoke' -> CLUSTERINFO(200) 13 cluster(s), 44 warp(s)
+[export] peer 1 'P726Smoke' -> 13 cluster(s): 1050:'Ganymede'*, 1051:'Organia'*, 1052:'Alderan', 1053:'Omega', 1054:'Bug Nebula', 1055:'Tellus', 1056:'Cirrus', 1057:'Terra', 1058:'Aurora', 1059:'Rigel', 1060:'Plato', 1061:'Juniper', 1062:'Gaia'
+[export] peer 1 'P726Smoke' -> 44 warp(s), 2 station(s), 134 asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)
+[stage] peer 1 'P726Smoke' -> MISSION_STAGE(37) NotStarted
+[entergame] peer 1 'P726Smoke' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)
+[overrun] tick cost 61.25 ms exceeded period 50 ms by 11.25 ms (sim continues at full rate)
+[ready] 1 ship 8098 side 0 fReady=True -> 1 peer(s)
+[ready] side 0 aggregate readiness True -> TEAM_READY(46) whole-mission to 1 peer(s)
+[ready] ALL occupied sides ready — mission auto-start begins countdown
+[stage] mission #0 -> MISSION_STAGE(37) Starting whole-mission to 1 peer(s)
+[start] mission #0 countdown begun (15s) -> STAGE_STARTING, SET_START_TIME(14) whole-mission to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[disconnect-summary] window: ReadErrorOrEof=1
+[egress] window: payloadOfferedBytes=51123 enqueuedBytes=55698 writtenBytes=55698 peers=1 windowSecs=5.017 enqueued-per-peer-bps=11101.7 written-per-peer-bps=11101.7 gc={gen0=2,gen1=1,gen2=0} allocMB=8.09 logDrops=0
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 6299)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[npc-autolaunch] ship 8096 side 0 auto-undocked from station 4328 after 10.0s docked
+[npc-autolaunch] ship 8097 side 1 auto-undocked from station 4329 after 10.0s docked
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=13059 enqueuedBytes=16169 writtenBytes=16169 peers=1 windowSecs=4.938 enqueued-per-peer-bps=3274.4 written-per-peer-bps=3274.4 gc={gen0=0,gen1=0,gen2=0} allocMB=1.67 logDrops=0
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 12350)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=21072 enqueuedBytes=24172 writtenBytes=23956 peers=1 windowSecs=4.932 enqueued-per-peer-bps=4900.9 written-per-peer-bps=4857.1 gc={gen0=1,gen1=0,gen2=0} allocMB=2.16 logDrops=0
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[payday] side 0 'Alpha' -> PAYDAY(114) delta=14000 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 16000 kept in treasury (balance 16000)
+[start] mission #0 countdown elapsed -> STAGE_STARTED, broadcasting ENTER_GAME
+[entergame] mission start -> ENTER_GAME(128) whole-mission to 1 peer(s)
+[stage] mission #0 -> MISSION_STAGE(37) Started whole-mission to 1 peer(s)
+[loadout] 1 ship 8098: cost 0 — no money movement
+[loadout] 1 ship 8098 <- BUY_LOADOUT_ACK hull 13 nParts 0 fbought False fLaunch True
+[loadout] ship 8098: saved desired loadout = []
+[undock] ship 8098 undocked from station 4328 — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying
+[loadout] ship 8098 Mounted -> LOADOUT_CHANGE(96) hull 13 0 part(s) 0 passenger(s) -> 1 same-side peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 18450)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[egress] window: payloadOfferedBytes=20759 enqueuedBytes=24194 writtenBytes=24129 peers=1 windowSecs=4.945 enqueued-per-peer-bps=4892.6 written-per-peer-bps=4879.4 gc={gen0=1,gen1=0,gen2=0} allocMB=2.43 logDrops=0
+[ctrlak] peer 1 ship-update summary: corrections-total=0 replay=0 same-tick=3 accepted=15 rejected=0 out-of-date=0 invalid=0 mean-reject-dist=n/am (cookie 0x02) reject-reasons[speed=0 envelope=0 travel=0]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 24500)
+[conn-drop] peer 1 left reason=ReadErrorOrEof
+[logoff] ship 8098 — SHIP_DELETE(20) SDR_LOGGEDOFF -> 0 peer(s)
+[quit] ship 8098 left mission (reason LinkDead): QUIT_MISSION(124) whole-mission to 0 peer(s)
+[sideinactive] side 0 deactivated (last player departed) => SIDE_INACTIVE(68) bActive=false -> 0 peer(s)
+[sideinactive] side 0 departure elimination chat "Alpha is no more." -> 0 peer(s)
+[gameover-players] mission #0 -> 0 player(s) queued with GAME_OVER
+[gameover] mission #0 -> Stage Over, iSideWinner=NA(draw), 0 peer(s)
+[stage] mission #0 -> MISSION_STAGE(37) Over whole-mission to 0 peer(s)
+[gameover] P439: mission #0 finished -> rebuilt fresh STAGE_NOTSTARTED (13 sectors, 2 sides, 44 warps, 2 stations, 134 asteroids); new joiners land here NotStarted
+[npc] spawned ownerless NPC ship 8099 side 0 at Vector3 { X = 1120, Y = 1560, Z = 0 } (pilotType 0)
+[initial-miner] side 0 spawned initial miner #1/1 ship 8099 (hull 'Miner', droneType 432) docked at station 4328 'Garrison' in 'Ganymede'
+[npc] spawned ownerless NPC ship 8100 side 1 at Vector3 { X = -1840, Y = -1800, Z = 0 } (pilotType 0)
+[initial-miner] side 1 spawned initial miner #1/1 ship 8100 (hull 'Miner', droneType 13) docked at station 4329 'Garrison' in 'Organia'
+[reseat] P480: no connected peers to migrate (all had disconnected)
+[intermission] mission #0 next match in 30 sim seconds; connected players carried forward
+[conn] peer 1 left
+[shutdown] clean: 497 ticks, 1 overruns

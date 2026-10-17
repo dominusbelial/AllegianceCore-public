@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Build a self-contained Linux/Windows DesktopGL player bundle (Python 3.11+)."""
+"""Build a self-contained Linux/Windows/macOS DesktopGL player bundle (Python 3.11+)."""
 import argparse
 import hashlib
 import json
-import os
+import plistlib
+import re
 from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
@@ -15,6 +16,67 @@ import zipfile
 REPO = Path(__file__).resolve().parents[1]
 PROJECT = REPO / 'src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj'
 LIMIT = 2 * 1024**3
+
+
+def mac_app(bundle):
+    """Keep runtime and assets together in Resources for executable-relative lookup."""
+    contents = bundle / 'AllegianceCore.app/Contents'
+    resources = contents / 'Resources'
+    resources.mkdir(parents=True)
+    for path in list(bundle.iterdir()):
+        if path.name != 'AllegianceCore.app':
+            shutil.move(str(path), resources / path.name)
+    macos = contents / 'MacOS'
+    macos.mkdir()
+    launcher = macos / 'Allegiance'
+    launcher.write_text('#!/bin/sh\nset -eu\n'
+                        'cd -- "$(dirname -- "$0")/../Resources"\n'
+                        'exec ./Allegiance "$@"\n')
+    launcher.chmod(0o755)
+    (resources / 'Allegiance').chmod(0o755)
+    shutil.copyfile(REPO / 'packaging/allegiance.icns', resources / 'allegiance.icns')
+    with (contents / 'Info.plist').open('wb') as stream:
+        plistlib.dump({
+            'CFBundleName': 'AllegianceCore',
+            'CFBundleDisplayName': 'AllegianceCore',
+            'CFBundleIdentifier': 'org.allegiancecore.client',
+            'CFBundleExecutable': 'Allegiance',
+            'CFBundlePackageType': 'APPL',
+            'CFBundleIconFile': 'allegiance.icns',
+            'CFBundleShortVersionString': '1.0',
+            'CFBundleVersion': '1',
+            'LSMinimumSystemVersion': '14.0',
+            'NSHighResolutionCapable': True,
+        }, stream)
+    # Instructions are also visible without opening the application package.
+    shutil.copyfile(resources / 'README-PLAYERS.txt', bundle / 'README-PLAYERS.txt')
+
+
+def archive_bundle(bundle, archive, rid):
+    if rid in ('win-x64', 'osx-arm64'):
+        # Unix modes in external_attr survive Finder/ditto/unzip extraction.
+        with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+            for path in sorted(bundle.rglob('*')):
+                z.write(path, path.relative_to(bundle.parent))
+    else:
+        with tarfile.open(archive, 'w:gz', compresslevel=9) as tar:
+            tar.add(bundle, arcname=bundle.name)
+
+
+def required_content():
+    # Fixed SoundManager beds/cues must all load: one missing XNB prevents its
+    # remaining initialization. Music's optional real beds are intentionally
+    # excluded. Scanning the live manager catches new references after merges.
+    sound_manager = REPO / 'src/Allegiance.ClientCore.Game/Audio/SoundManager.cs'
+    sounds = set(re.findall(r'"Sounds/([A-Za-z0-9_]+)"', sound_manager.read_text()))
+    return ['HUD.xnb', 'HUDLarge.xnb', 'quickchat.mdl', 'sounddef.mdl'] + [
+        f'Sounds/{name}.xnb' for name in sorted(sounds)]
+
+
+def validate_content(bundle):
+    for name in required_content():
+        if not (bundle / 'Content' / name).is_file():
+            raise ValueError(f'Compiled content missing: Content/{name}')
 
 
 def run(*args, **kwargs):
@@ -77,7 +139,7 @@ def build(args):
     sky, sky_files = source('sky', args.sky_path, output / 'sources', pins)
     run(sys.executable, REPO / 'packaging/generate-manifest.py', '--artwork', art, '--check')
     manifest = paths(REPO / 'packaging/artwork-manifest.txt')
-    with tempfile.TemporaryDirectory(prefix='p644-', dir=output) as staging:
+    with tempfile.TemporaryDirectory(prefix='player-bundle-', dir=output) as staging:
         bundle = Path(staging) / f'Allegiance-{args.rid}'
         publish = ['dotnet', 'publish', str(PROJECT), '-c', 'Release', '-r', args.rid,
                    '--self-contained', 'true', '-o', str(bundle), '-m:1',
@@ -106,7 +168,9 @@ def build(args):
             target = bundle / 'assets/ships' / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(REPO / 'assets/ships' / name, target)
-        files = ['play.bat', 'play.ps1'] if args.rid == 'win-x64' else ['allegiance.sh', 'install-desktop.sh', 'allegiance.desktop', 'allegiance.svg']
+        files = {'win-x64': ['play.bat', 'play.ps1'],
+                 'linux-x64': ['allegiance.sh', 'install-desktop.sh', 'allegiance.desktop', 'allegiance.svg'],
+                 'osx-arm64': []}[args.rid]
         for name in files:
             shutil.copyfile(REPO / 'packaging' / name, bundle / name)
         if args.rid == 'linux-x64':
@@ -114,26 +178,19 @@ def build(args):
             (bundle / 'install-desktop.sh').chmod(0o755)
             (bundle / 'Allegiance').chmod(0o755)
         # Validate that compiled content actually made it through dotnet publish.
-        for name in ('HUD.xnb', 'HUDLarge.xnb', 'quickchat.mdl', 'sounddef.mdl'):
-            if not (bundle / 'Content' / name).is_file():
-                raise ValueError(f'Compiled content missing: Content/{name}')
+        validate_content(bundle)
         inventory = []
         for folder in ('artwork', 'sky', 'Content'):
             for p in sorted((bundle / folder).rglob('*')):
                 if p.is_file():
                     inventory.append(f'{checksum(p)}  {p.relative_to(bundle).as_posix()}\n')
         (bundle / 'bundle-files.sha256').write_text(''.join(inventory))
+        if args.rid == 'osx-arm64':
+            mac_app(bundle)
         unpacked = sum(p.stat().st_size for p in bundle.rglob('*') if p.is_file())
-        archive = output / (bundle.name + ('.zip' if args.rid == 'win-x64' else '.tar.gz'))
+        archive = output / (bundle.name + ('.tar.gz' if args.rid == 'linux-x64' else '.zip'))
         pending_archive = Path(staging) / archive.name
-        if args.rid == 'win-x64':
-            with zipfile.ZipFile(pending_archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-                for p in sorted(bundle.rglob('*')):
-                    if p.is_file():
-                        z.write(p, p.relative_to(bundle.parent))
-        else:
-            with tarfile.open(pending_archive, 'w:gz', compresslevel=9) as tar:
-                tar.add(bundle, arcname=bundle.name)
+        archive_bundle(bundle, pending_archive, args.rid)
         if pending_archive.stat().st_size >= LIMIT:
             pending_archive.unlink()
             raise ValueError('Archive exceeds GitHub 2 GiB limit; split before publishing')
@@ -147,7 +204,7 @@ def build(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--rid', choices=['linux-x64', 'win-x64'], required=True)
+    parser.add_argument('--rid', choices=['linux-x64', 'win-x64', 'osx-arm64'], required=True)
     parser.add_argument('--output', type=Path, default=REPO / 'dist')
     parser.add_argument('--artwork-path', type=Path)
     parser.add_argument('--sky-path', type=Path)
