@@ -1,0 +1,60 @@
+{
+  "mgcb": {
+    "master": 510,
+    "incoming": 606,
+    "merged": 621,
+    "exact_parent_union": true,
+    "duplicate_build_entries": 0,
+    "missing_source_assets": []
+  },
+  "events": {
+    "count": 37,
+    "exact_parent_union": true,
+    "missing_handlers": [],
+    "duplicate_handlers": 0
+  },
+  "fixed_sound_assets": {
+    "count": 67,
+    "missing_parent_assets": []
+  },
+  "intro_master_preserved": true,
+  "changed_existing_master_reports": [],
+  "flake_log_union": true,
+  "resolved_paths": [
+    "docs/TEST_FLAKES.md",
+    "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs",
+    "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs",
+    "src/Allegiance.ClientCore.Game/Game1.Session.cs",
+    "src/Allegiance.ClientCore.MonoGame/Content/Content.mgcb"
+  ],
+  "resolution_sha256": {
+    "docs/TEST_FLAKES.md": "2af100d7d50afe29e1b60cb8ff5540be808366c758e76e0a1f7a9865ccc8678e",
+    "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs": "2c9c663699408320d84a54838c2573cc5989a8f3d190dd25bbf11b2f59045549",
+    "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs": "f89b71a59477a1658f7fe5808aca15da6461299d1e132f3503cf21f0871b5dd6",
+    "src/Allegiance.ClientCore.Game/Game1.Session.cs": "68c68c4f9d4f92e9d36be4af5ef0ec6b63ed830e611e3145a8c6f3f8314651d9",
+    "src/Allegiance.ClientCore.MonoGame/Content/Content.mgcb": "d54b0d69bcc67af05236d83ae8b1a5ec67a81f3bd67f6ba9728801e369096eb5"
+  },
+  "flake_log_union_basis": "Every source line from both parents retained; master adds evidence inside two existing paragraphs/tables.",
+  "compiled_voice_manifest": {
+    "available_waves": 509,
+    "missing_compiled": []
+  },
+  "remaining_conflict_markers": [],
+  "incoming_report_prefix_preserved": true,
+  "final_build": {
+    "command": [
+      "dotnet",
+      "build",
+      "AllegianceCore.slnx",
+      "-c",
+      "Release",
+      "-m:8",
+      "--nologo",
+      "-v:m"
+    ],
+    "exit_code": 0,
+    "seconds": 9.819,
+    "completed_utc": "2026-10-17T20:32:22.748610+00:00"
+  },
+  "all_resolutions_and_semantic_integration_verified": true
+}

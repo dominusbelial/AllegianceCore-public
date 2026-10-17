@@ -1,0 +1,2954 @@
+[
+  {
+    "label": "isolate-P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues"
+    ],
+    "exit_code": 0,
+    "seconds": 0.922,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues"
+    ],
+    "exit_code": 0,
+    "seconds": 0.917,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues"
+    ],
+    "exit_code": 0,
+    "seconds": 0.873,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues-3.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template"
+    ],
+    "exit_code": 0,
+    "seconds": 0.915,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 3,
+        "skipped": 0,
+        "total": 3
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template"
+    ],
+    "exit_code": 0,
+    "seconds": 0.895,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 3,
+        "skipped": 0,
+        "total": 3
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template"
+    ],
+    "exit_code": 0,
+    "seconds": 0.893,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 3,
+        "skipped": 0,
+        "total": 3
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template-3.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero"
+    ],
+    "exit_code": 0,
+    "seconds": 0.89,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero"
+    ],
+    "exit_code": 0,
+    "seconds": 0.869,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero"
+    ],
+    "exit_code": 0,
+    "seconds": 0.941,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero-3.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Na_preserves_plain_command_cue-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Na_preserves_plain_command_cue"
+    ],
+    "exit_code": 0,
+    "seconds": 0.856,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Na_preserves_plain_command_cue-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Na_preserves_plain_command_cue-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Na_preserves_plain_command_cue"
+    ],
+    "exit_code": 0,
+    "seconds": 0.902,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Na_preserves_plain_command_cue-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Na_preserves_plain_command_cue-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Na_preserves_plain_command_cue"
+    ],
+    "exit_code": 0,
+    "seconds": 0.906,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Na_preserves_plain_command_cue-3.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback"
+    ],
+    "exit_code": 0,
+    "seconds": 0.905,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback"
+    ],
+    "exit_code": 0,
+    "seconds": 0.918,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback"
+    ],
+    "exit_code": 0,
+    "seconds": 0.922,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback-3.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once"
+    ],
+    "exit_code": 0,
+    "seconds": 0.853,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once"
+    ],
+    "exit_code": 0,
+    "seconds": 0.89,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once"
+    ],
+    "exit_code": 0,
+    "seconds": 0.887,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once-3.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template"
+    ],
+    "exit_code": 0,
+    "seconds": 0.909,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template"
+    ],
+    "exit_code": 0,
+    "seconds": 0.905,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template"
+    ],
+    "exit_code": 0,
+    "seconds": 0.887,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template-3.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption"
+    ],
+    "exit_code": 0,
+    "seconds": 0.877,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption"
+    ],
+    "exit_code": 0,
+    "seconds": 0.932,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption"
+    ],
+    "exit_code": 0,
+    "seconds": 0.902,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption-3.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption"
+    ],
+    "exit_code": 0,
+    "seconds": 0.883,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption-1.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption"
+    ],
+    "exit_code": 0,
+    "seconds": 0.895,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption-2.log"
+  },
+  {
+    "label": "isolate-P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption"
+    ],
+    "exit_code": 0,
+    "seconds": 0.905,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.871,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.879,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.882,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation"
+    ],
+    "exit_code": 0,
+    "seconds": 0.918,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation"
+    ],
+    "exit_code": 0,
+    "seconds": 0.912,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation"
+    ],
+    "exit_code": 0,
+    "seconds": 0.879,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed"
+    ],
+    "exit_code": 0,
+    "seconds": 0.881,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed"
+    ],
+    "exit_code": 0,
+    "seconds": 0.862,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed"
+    ],
+    "exit_code": 0,
+    "seconds": 0.844,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides"
+    ],
+    "exit_code": 0,
+    "seconds": 0.879,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides"
+    ],
+    "exit_code": 0,
+    "seconds": 0.882,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides"
+    ],
+    "exit_code": 0,
+    "seconds": 0.887,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured"
+    ],
+    "exit_code": 0,
+    "seconds": 0.867,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured"
+    ],
+    "exit_code": 0,
+    "seconds": 0.882,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured"
+    ],
+    "exit_code": 0,
+    "seconds": 0.886,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic"
+    ],
+    "exit_code": 0,
+    "seconds": 0.847,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic"
+    ],
+    "exit_code": 0,
+    "seconds": 0.875,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic"
+    ],
+    "exit_code": 0,
+    "seconds": 0.888,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.909,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.893,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.893,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.879,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.886,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.921,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.847,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.893,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.916,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular"
+    ],
+    "exit_code": 0,
+    "seconds": 0.941,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular"
+    ],
+    "exit_code": 0,
+    "seconds": 0.905,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular"
+    ],
+    "exit_code": 0,
+    "seconds": 0.906,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand"
+    ],
+    "exit_code": 0,
+    "seconds": 0.891,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand"
+    ],
+    "exit_code": 0,
+    "seconds": 0.892,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand"
+    ],
+    "exit_code": 0,
+    "seconds": 0.85,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal"
+    ],
+    "exit_code": 0,
+    "seconds": 0.896,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal"
+    ],
+    "exit_code": 0,
+    "seconds": 0.863,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal"
+    ],
+    "exit_code": 0,
+    "seconds": 0.926,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander"
+    ],
+    "exit_code": 0,
+    "seconds": 0.876,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander"
+    ],
+    "exit_code": 0,
+    "seconds": 0.882,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander"
+    ],
+    "exit_code": 0,
+    "seconds": 0.898,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander"
+    ],
+    "exit_code": 0,
+    "seconds": 0.847,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander"
+    ],
+    "exit_code": 0,
+    "seconds": 0.896,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander"
+    ],
+    "exit_code": 0,
+    "seconds": 0.963,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline"
+    ],
+    "exit_code": 0,
+    "seconds": 0.911,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline"
+    ],
+    "exit_code": 0,
+    "seconds": 0.95,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline"
+    ],
+    "exit_code": 0,
+    "seconds": 0.935,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.927,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.888,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent"
+    ],
+    "exit_code": 0,
+    "seconds": 0.931,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat"
+    ],
+    "exit_code": 0,
+    "seconds": 0.904,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat"
+    ],
+    "exit_code": 0,
+    "seconds": 0.92,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat"
+    ],
+    "exit_code": 0,
+    "seconds": 0.884,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular"
+    ],
+    "exit_code": 0,
+    "seconds": 0.877,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular"
+    ],
+    "exit_code": 0,
+    "seconds": 0.906,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular"
+    ],
+    "exit_code": 0,
+    "seconds": 0.931,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected"
+    ],
+    "exit_code": 0,
+    "seconds": 0.867,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected"
+    ],
+    "exit_code": 0,
+    "seconds": 0.904,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected"
+    ],
+    "exit_code": 0,
+    "seconds": 0.859,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.889,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.886,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.91,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.945,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.983,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 1.008,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 1.003,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 1.043,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.956,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.DonatingMyself_NoInvestor-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DonatingMyself_NoInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 1.009,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.DonatingMyself_NoInvestor-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.DonatingMyself_NoInvestor-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DonatingMyself_NoInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.968,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.DonatingMyself_NoInvestor-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.DonatingMyself_NoInvestor-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DonatingMyself_NoInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 1.049,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.DonatingMyself_NoInvestor-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.StoppingDonation_NoInvestor-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.StoppingDonation_NoInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.977,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.StoppingDonation_NoInvestor-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.StoppingDonation_NoInvestor-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.StoppingDonation_NoInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 1.054,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.StoppingDonation_NoInvestor-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.StoppingDonation_NoInvestor-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.StoppingDonation_NoInvestor"
+    ],
+    "exit_code": 0,
+    "seconds": 1.007,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.StoppingDonation_NoInvestor-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen"
+    ],
+    "exit_code": 0,
+    "seconds": 1.083,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen"
+    ],
+    "exit_code": 0,
+    "seconds": 1.113,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen"
+    ],
+    "exit_code": 0,
+    "seconds": 1.297,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound"
+    ],
+    "exit_code": 0,
+    "seconds": 1.068,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound"
+    ],
+    "exit_code": 0,
+    "seconds": 1.003,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound"
+    ],
+    "exit_code": 0,
+    "seconds": 1.017,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen"
+    ],
+    "exit_code": 0,
+    "seconds": 0.971,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen"
+    ],
+    "exit_code": 0,
+    "seconds": 0.982,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen"
+    ],
+    "exit_code": 0,
+    "seconds": 0.955,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.945,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.953,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound"
+    ],
+    "exit_code": 0,
+    "seconds": 0.935,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.927,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.935,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.965,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.943,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.968,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.948,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.906,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.871,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump"
+    ],
+    "exit_code": 0,
+    "seconds": 0.903,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump-3.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass-1",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass"
+    ],
+    "exit_code": 0,
+    "seconds": 0.886,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass-1.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass-2",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass"
+    ],
+    "exit_code": 0,
+    "seconds": 0.85,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass-2.log"
+  },
+  {
+    "label": "isolate-ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass-3",
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass"
+    ],
+    "exit_code": 0,
+    "seconds": 0.917,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "/tmp/p732-validation/isolate-ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass-3.log"
+  }
+]

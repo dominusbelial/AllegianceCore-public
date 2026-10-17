@@ -18,11 +18,10 @@ namespace Allegiance.Core.Tests;
 /// <see cref="IIgcSite.DroneChatEvent"/> seam: <c>Ship.SendDroneChat</c> →
 /// <c>Mission.Site.DroneChatEvent</c> → <c>ServerHost.DroneChat</c> →
 /// <c>Server.BroadcastDroneChat</c> → <c>BroadcastTeamChat</c>. The renderer
-/// resolves the <c>VoiceOver</c> back to a clip via <c>DroneChatterCue</c>
-/// (<c>Game1.Session.ProcessIncomingQuickChatVoices</c>), so a correct id here
-/// means the chatter is audibly player-facing. Failing-first: pre-P725 the
-/// chatter routed through the un-overridden <c>IIgcSite.SendChat</c> no-op with
-/// the buggy +1001 SoundID, so no <c>VoiceOver==341</c> chat ever arrived.
+/// resolves the <c>VoiceOver</c> through ClientWorld and P732's native catalog,
+/// so a correct id here means the chatter is audibly player-facing.
+/// Failing-first: pre-P725 the chatter routed through the un-overridden
+/// <c>IIgcSite.SendChat</c> no-op, so no chatter reached the receiver.
 /// </summary>
 [Collection("LiveNetwork")]
 public sealed class P725DroneChatterWireLiveTests
@@ -101,7 +100,7 @@ public sealed class P725DroneChatterWireLiveTests
     /// <summary>
     /// A real miner's in-flight chatter edge (droneTooCrowdedSound, native
     /// shipIGC.cpp:2199) is heard by a seated teammate as a TEAM chat whose
-    /// <c>VoiceOver</c> is the corrected SoundID 341 — the exact id the
+    /// <c>VoiceOver</c> is the corrected SoundID 1342 — the exact id the
     /// renderer's <c>DroneChatterCue.Resolve</c> maps to a real clip
     /// (<c>vo_request_miner</c>).
     /// </summary>
@@ -122,11 +121,17 @@ public sealed class P725DroneChatterWireLiveTests
             // pump for the wire broadcast to reach the seated peer.
             miner.ComplainMiningCrowded(30.0);
             int rx = PumpUntil(server, () => bot.Chats.Any(c => c.VoiceOver == DroneChatterCue.DroneTooCrowdedSound), 800);
-            Assert.True(rx < 800, "seated teammate never received the too-crowded drone chatter (VoiceOver==341)");
+            Assert.True(rx < 800, "seated teammate never received the too-crowded drone chatter (VoiceOver==1342)");
 
             var chat = bot.Chats.Single(c => c.VoiceOver == DroneChatterCue.DroneTooCrowdedSound);
             Assert.Equal((int)ChatTarget.Team, chat.ChatTarget);
             Assert.Contains("Miner requesting unoccupied He3 asteriod.", chat.Message);
+            var world = new Allegiance.ClientCore.State.ClientWorld();
+            world.Apply(ChatMessage.Decode(chat.Encode()));
+            var sound = Assert.Single(world.TakeSoundEvents());
+            Assert.Equal(Allegiance.ClientCore.State.ClientSoundEventKind.ChatVoiceOver, sound.Kind);
+            Assert.Equal("vo_request_miner", sound.Voice!.Stem);
+            Assert.Empty(world.TakeSoundEvents());
             Assert.NotNull(DroneChatterCue.Resolve(chat.VoiceOver));   // the renderer can play it
             Console.WriteLine($"[P725] seated teammate heard drone chatter '{chat.Message}' (voice {chat.VoiceOver})");
         }

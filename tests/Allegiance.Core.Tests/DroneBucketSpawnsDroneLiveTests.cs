@@ -269,7 +269,7 @@ public sealed class DroneBucketSpawnsDroneLiveTests
             Assert.True(cx < 800, "team did not receive the 'New tower requesting location.' chat");
             var chat = bot.Chats.Single(c => c.Message.Contains("New tower requesting location."));
             Assert.Equal((int)ChatTarget.Team, chat.ChatTarget);
-            Assert.Equal(331, chat.VoiceOver);   // droneWhereToLayTowerSound
+            Assert.Equal(1332, chat.VoiceOver);   // droneWhereToLayTowerSound (igc.h:456-464 starts at 1001)
             Console.WriteLine($"[P459] team chat '{chat.Message}' (voice {chat.VoiceOver}) received");
 
             // A neutral asteroid in its sector → it parks at a rock (P161).

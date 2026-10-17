@@ -9,16 +9,10 @@ namespace Allegiance.Core.Tests;
 
 /// <summary>
 /// P725 — the drone/constructor in-flight chatter seam. The server-side AI
-/// edges already existed in <see cref="Ship"/> (<c>SendDroneChat</c> at the
-/// native runaway / coming-home-empty / too-crowded moments), but broadcast
-/// SoundIDs that were silently wrong (+1001 off the true sounds.h ordinals)
-/// and routed through the un-overridden <c>IIgcSite.SendChat</c> no-op, so the
-/// chatter never reached a client audibly. P725 fixes the ordinals to P723's
-/// verified <see cref="DroneChatterCue"/> values and routes the chatter through
-/// a new <see cref="IIgcSite.DroneChatEvent"/> seam that the server host turns
-/// into a team-chat broadcast carrying the SoundID as the wire
-/// <c>VoiceOver</c> (which the client resolves via
-/// <c>Game1.Session.ProcessIncomingQuickChatVoices</c> → <c>DroneChatterCue</c>).
+/// edges route through IIgcSite.DroneChatEvent to a team-chat broadcast.
+/// P738 aligns these IDs with P732's recorded voice receiver, preserving P725's
+/// delivery seam. Native ordinals start at 1001, including removed entries:
+/// ~/Development/Allegiance/src/Igc/igc.h:456-464.
 /// </summary>
 /// <remarks>
 /// The tests are deliberately deterministic (no live server): they pin the
@@ -56,38 +50,35 @@ public sealed class P725DroneChatterSeamTests
     }
 
     /// <summary>
-    /// The four drone-chatter SoundIDs P725 fixes (constructor-running 342,
-    /// too-much-damage 326, coming-home-empty 328, too-crowded 341) must be
-    /// P723's verified native ordinals — NOT the previous Ship.cs literals that
-    /// were +1001 higher (1327/1329/1342/1343) and therefore unresolvable by the
-    /// client (silent chatter). Guards the regression if anyone reintroduces the
-    /// off-by-thousand values.
+    /// The four producer IDs must agree with the native enum and the shared
+    /// voice catalog, so the receiver can play every emitted chatter.
     /// </summary>
     [Fact]
     public void Four_native_chatter_sound_ids_are_the_verified_ordinals_and_resolve()
     {
-        Assert.Equal(326, DroneChatterCue.DroneTooMuchDamageSound);      // sounds.h:380
-        Assert.Equal(328, DroneChatterCue.DroneComingHomeEmptySound);    // sounds.h:382
-        Assert.Equal(341, DroneChatterCue.DroneTooCrowdedSound);         // sounds.h:395
-        Assert.Equal(342, DroneChatterCue.ConstructorRunningSound);      // sounds.h:396
+        Assert.Equal(1327, DroneChatterCue.DroneTooMuchDamageSound);      // sounds.h:380
+        Assert.Equal(1329, DroneChatterCue.DroneComingHomeEmptySound);    // sounds.h:382
+        Assert.Equal(1342, DroneChatterCue.DroneTooCrowdedSound);         // sounds.h:395
+        Assert.Equal(1343, DroneChatterCue.ConstructorRunningSound);      // sounds.h:396
 
-        // Every one of the four must resolve to a real client-playable clip —
-        // if it returned null the client would ignore the broadcast (the bug
-        // the +1001 values caused).
-        foreach (var id in new short[] { 326, 328, 341, 342 })
+        // Both resolver surfaces must select the same recorded wave.
+        foreach (var id in new short[] { 1327, 1329, 1342, 1343 })
+        {
             Assert.NotNull(DroneChatterCue.Resolve(id));
+            Assert.Equal(DroneChatterCue.Resolve(id), Allegiance.Core.Audio.NativeVoiceCatalog.Sounds[id].Stem);
+        }
     }
 
     /// <summary>
     /// A real chatter edge — <see cref="Ship.ComplainMiningCrowded"/> (native
     /// droneTooCrowdedSound, shipIGC.cpp:2199) — routes through the new
     /// <see cref="IIgcSite.DroneChatEvent"/> seam carrying the corrected
-    /// SoundID (341). Failing-first: pre-P725 this routed through the no-op
-    /// <c>SendChat</c> with the buggy 1342, so the site recorded no
+    /// SoundID (1342). Failing-first: pre-P725 this routed through the no-op
+    /// <c>SendChat</c> so the site recorded no
     /// <c>DroneChatEvent</c>.
     /// </summary>
     [Fact]
-    public void Crowded_miner_routes_droneTooCrowdedSound_341_through_DroneChatEvent()
+    public void Crowded_miner_routes_droneTooCrowdedSound_1342_through_DroneChatEvent()
     {
         var site = new RecordingIgcSite();
         var m = Domain(site);
@@ -96,7 +87,7 @@ public sealed class P725DroneChatterSeamTests
         s.ComplainMiningCrowded(now: 30.0);   // past the 30 s cooldown
 
         var call = Assert.Single(site.Calls, c => c.StartsWith("DroneChatEvent("));
-        Assert.Contains("341", call);                                   // DroneTooCrowdedSound
+        Assert.Contains("1342", call);                                   // DroneTooCrowdedSound
         Assert.Contains("\"Miner requesting unoccupied He3 asteriod.\"", call);
     }
 
@@ -111,10 +102,10 @@ public sealed class P725DroneChatterSeamTests
         var m = Domain();
         var s = Place(m, side: 1);
 
-        site.DroneChatEvent(s, (short)1, (short)328, "Coming home empty");
+        site.DroneChatEvent(s, (short)1, (short)1329, "Coming home empty");
 
         var call = Assert.Single(site.Calls, c => c.StartsWith("DroneChatEvent("));
-        Assert.Contains("1,328", call.Replace(" ", ""));           // sideId 1, soundId 328
+        Assert.Contains("1,1329", call.Replace(" ", ""));           // sideId 1, soundId 1329
         Assert.Contains("\"Coming home empty\"", call);
     }
 }

@@ -402,6 +402,9 @@ public sealed partial class Game1
         {
             switch (ev.Kind)
             {
+                case ClientSoundEventKind.ChatVoiceOver:
+                    if (ev.Voice is { } voice) snd.PlayVoice(voice);
+                    break;
                 case ClientSoundEventKind.StationDestroyed:
                 case ClientSoundEventKind.StationEnemyDestroyed:
                 case ClientSoundEventKind.StationCaptured:

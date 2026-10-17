@@ -948,25 +948,26 @@ public sealed partial class Game1
     }
 
     /// <summary>Send a leaf quick-chat command: a real <c>CHATMESSAGE</c> whose
-    /// <c>voiceOver</c> is the command's sonic-chat index, whose text is the
-    /// spoken caption (the same text the receiving side displays), and — P457 —
+    /// <c>voiceOver</c> is the command's sonic-chat index, with native null text
+    /// (the receiver derives the spoken caption), and — P457 —
     /// whose <c>CommandID</c> + <c>OidTarget</c>/<c>OtTarget</c> carry the
     /// command's resolved order and target (native <c>SendQuickChat</c> →
     /// <c>SendChatInternal</c>, console.cpp:1592-1596). A voice-only line (no
     /// resolvable target / <c>cidNone</c>) sends <c>CommandID = c_cidNone</c>,
     /// exactly as today. The voice is NOT played locally here — the server relays
     /// the sender's own echo back into <see cref="Events.Chats"/>, and
-    /// <see cref="ProcessIncomingQuickChatVoices"/> voices that single copy.
+    /// the ClientWorld sound-event path voices that single copy.
     /// Closes the menu.</summary>
     private void SendQuickChatLeaf(QuickChatSendAction send)
     {
         CloseQuickChat();
         var order = ResolveQuickChatOrder(send);
-        _session.SendChat(send.Entry.Caption, send.Target,
+        _session.SendChat("", send.Target,
             voiceOver: (short)send.Entry.Index,
             commandId: order.CommandId,
             oidTarget: order.OidTarget,
-            otTarget: (short)order.OtTarget);
+            otTarget: (short)order.OtTarget,
+            absentMessage: true); // console.cpp:1593 sends NULL text + sonic index
         Console.WriteLine($"[monogame] quick-chat >> #{send.Entry.Index} \"{send.Entry.Caption}\" ({send.Target}) " +
                           $"cmd={(order.CarriesOrder ? order.CommandId : (short)OrderChange.CidNone)} target=({order.OtTarget}, {order.OidTarget})");
     }
@@ -1026,109 +1027,6 @@ public sealed partial class Game1
         if (c >= 'A' && c <= 'Z') return Keys.A + (c - 'A');
         if (c >= 'a' && c <= 'z') return Keys.A + (c - 'a');   // physical key, not shifted
         return null;
-    }
-
-    /// <summary>
-    /// P217 receive path — play the real voice for each newly-arrived quick-chat.
-    /// Walks <see cref="Events.Chats"/> forward from the last processed message
-    /// (a watermark reference; if that message has been evicted from the bounded
-    /// 500-entry log, it re-anchors on the newest to avoid a re-play burst).
-    /// A chat is voiced only when its <c>voiceOver</c> index resolves to a real
-    /// entry whose caption matches the message text — which is what
-    /// distinguishes an actual quick-chat (index + spoken caption) from a typed
-    /// chat (index 0, arbitrary text that never equals a caption). This same
-    /// path voices the sender's own server-echoed macro exactly once.
-    /// </summary>
-    private void ProcessIncomingQuickChatVoices()
-    {
-        if (_quickChatDb is null || _sound is null)
-            return;
-        var chats = _session.World.Events.Chats;
-        if (chats.Count == 0)
-            return;
-
-        // P319 (finding H-2) — the watermark scan + forward walk index into the
-        // same bounded 500-entry list the receive thread appends/evicts under
-        // _session.Gate (EventLog.Record -> Append, driven from OnReceive).
-        // Enumerating it unlocked during busy chat traffic threw
-        // InvalidOperationException ("Collection was modified") on the render
-        // thread, or could skip/duplicate a voice. Following the P306
-        // ReadyCheckRoster.Gather precedent: snapshot the new arrivals and
-        // advance the watermark under the lock, then play voices outside it
-        // (playback touches only _sound / the static core db, never the shared
-        // list). _lastVoiceProcessed is render-thread-only, so advancing it
-        // inside the lock is safe and keeps behavior identical to before.
-        var toVoice = new List<ChatMessage>();
-        lock (_session.Gate)
-        {
-            int start = 0;
-            if (_lastVoiceProcessed is not null)
-            {
-                bool found = false;
-                for (int i = 0; i < chats.Count; i++)
-                {
-                    if (ReferenceEquals(chats[i], _lastVoiceProcessed))
-                    {
-                        start = i + 1;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    // Evicted from the window: anchor on the newest only.
-                    _lastVoiceProcessed = chats[^1];
-                    return;
-                }
-            }
-
-            for (int i = start; i < chats.Count; i++)
-                toVoice.Add(chats[i]);
-            if (toVoice.Count > 0)
-                _lastVoiceProcessed = toVoice[^1];
-        }
-
-        foreach (var m in toVoice)
-        {
-            if (Allegiance.Core.Sim.WeaponReadyCue.Resolve(m.VoiceOver) is { } readyStem)
-            {
-                _sound.PlayVoice(readyStem);
-                continue;
-            }
-            // P723 — a team chat whose VoiceOver is one of the native drone /
-            // constructor chatter SoundIDs (server broadcasts these verbatim,
-            // see Server.Economy.BroadcastTeamChat) plays the matching clip —
-            // e.g. "New miner requesting He3 asteroid." (327 → vo_request_miner),
-            // "New minefield requesting location." (330 → vo_request_minefield),
-            // "New tower requesting location." (331 → vo_request_tower). This
-            // closes the gap where those chats were previously silent.
-            if (Allegiance.Core.Sim.DroneChatterCue.Resolve(m.VoiceOver) is { } chatterStem)
-            {
-                _sound.PlayVoice(chatterStem);
-                Console.WriteLine($"[monogame] audio: drone/constructor chatter voice \"{chatterStem}\" (\"{m.Message}\")");
-                continue;
-            }
-            // P451 — a chat whose VoiceOver is one of the real station types'
-            // under-attack / critical ids (sent by the defending-team alert in
-            // FedSrvSiteBase::DamageStationEvent) plays the matching clip. Unlike
-            // quick-chat, the caption NEED NOT equal the text: the server's alert
-            // message ("<base> in <sector> under attack by <pilot>") is never a
-            // quick-chat caption, so the match is purely on the sound id.
-            if (SoundManager.TryGetStationAttackStem(m.VoiceOver, out var attackStem))
-            {
-                _sound.PlayVoice(attackStem);
-                Console.WriteLine($"[monogame] audio: station under-attack/critical voice \"{attackStem}\" (\"{m.Message}\")");
-                continue;
-            }
-
-            var e = _quickChatDb.ByVoiceOver(m.VoiceOver);
-            if (e is not null && e.SoundStem.Length > 0
-                && string.Equals(m.Message, e.Caption, StringComparison.Ordinal))
-            {
-                _sound.PlayVoice(e.SoundStem);
-                Console.WriteLine($"[monogame] audio: quick-chat voice \"{e.SoundStem}\" (\"{m.Message}\")");
-            }
-        }
     }
 
     private static LogonRequest Request(string name) => new()

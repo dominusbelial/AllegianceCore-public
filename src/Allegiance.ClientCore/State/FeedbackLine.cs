@@ -29,7 +29,8 @@ public readonly record struct FeedbackLine(
     string Text,
     bool IsCritical,
     double AtSeconds,
-    FeedbackExtraSound Extra = FeedbackExtraSound.None);
+    FeedbackExtraSound Extra = FeedbackExtraSound.None,
+    bool SoundAlreadyQueued = false);
 
 /// <summary>
 /// P578 — a request to swing the camera to a ship for native's eject/kill

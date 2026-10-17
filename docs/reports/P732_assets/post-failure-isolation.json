@@ -1,0 +1,227 @@
+[
+  {
+    "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+    "iteration": 1,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback"
+    ],
+    "exit_code": 0,
+    "seconds": 1.532,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback-1.log"
+  },
+  {
+    "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+    "iteration": 2,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback"
+    ],
+    "exit_code": 0,
+    "seconds": 1.53,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback-2.log"
+  },
+  {
+    "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+    "iteration": 3,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback"
+    ],
+    "exit_code": 0,
+    "seconds": 1.539,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback-3.log"
+  },
+  {
+    "test": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+    "iteration": 1,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events"
+    ],
+    "exit_code": 0,
+    "seconds": 1.406,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events-1.log"
+  },
+  {
+    "test": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+    "iteration": 2,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events"
+    ],
+    "exit_code": 0,
+    "seconds": 1.46,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events-2.log"
+  },
+  {
+    "test": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+    "iteration": 3,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events"
+    ],
+    "exit_code": 0,
+    "seconds": 1.396,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events-3.log"
+  },
+  {
+    "test": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "iteration": 1,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+    ],
+    "exit_code": 0,
+    "seconds": 1.563,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn-1.log"
+  },
+  {
+    "test": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "iteration": 2,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+    ],
+    "exit_code": 0,
+    "seconds": 1.563,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn-2.log"
+  },
+  {
+    "test": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "iteration": 3,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "-v:q",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+    ],
+    "exit_code": 0,
+    "seconds": 1.556,
+    "summaries": [
+      {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "log": "post-isolate-Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn-3.log"
+  }
+]

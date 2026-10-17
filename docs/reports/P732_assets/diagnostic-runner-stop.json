@@ -1,0 +1,33 @@
+{
+  "reason": "Interrupted shell wrappers left child diagnostics running. All were stopped using missing-test-assembly admission barriers, before any real full suite. These invocations are not the final isolated evidence.",
+  "runners": [
+    {
+      "log": "/tmp/p732-verification-progress-accepted.log",
+      "final_line": [
+        "STOP: affected isolation failed Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat"
+      ],
+      "last_modified": 1792213240.2778783
+    },
+    {
+      "log": "/tmp/p732-verification-progress-final-resumed.log",
+      "final_line": [
+        "STOP: affected isolation failed Allegiance.ClientCore.Tests.P638FeedbackWireTests.EndSpoofing_ForgetsLastChaff_SoLaterSpoofDoesNotRetarget"
+      ],
+      "last_modified": 1792213240.2234654
+    },
+    {
+      "log": "/tmp/p732-verification-progress-final.log",
+      "final_line": [
+        "STOP: affected isolation failed Allegiance.Core.Tests.Wire.ChatMessageWireTests.ChatMessage_FixedSize_IsTwentyEight"
+      ],
+      "last_modified": 1792213240.7994282
+    },
+    {
+      "log": "/tmp/p732-verification-progress.log",
+      "final_line": [
+        "suite-2 75 []"
+      ],
+      "last_modified": 1792213269.3563535
+    }
+  ]
+}

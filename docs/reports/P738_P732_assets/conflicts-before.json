@@ -1,0 +1,26 @@
+{
+  "docs/TEST_FLAKES.md": {
+    "1": "7c83c8c4c2102107615901171aff8e25e72de96d",
+    "2": "00750ae6127e8535dbf835c8297680157d9d5c81",
+    "3": "3c94fc422120d0ed6a5111549985ddec5d7ae173"
+  },
+  "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs": {
+    "1": "f9b012631eb88447f4616818dd435ae1fe7fd8e9",
+    "2": "a0b59d5883bbdd1fb379619ab34c8f2c39fda235",
+    "3": "eedb5403c558b061a7e2fa4f699ddea09e4345bc"
+  },
+  "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs": {
+    "2": "8cb14a8657d18198a0570ae1e8d80bff841c4337",
+    "3": "8c3534911106f1463a4ef48f079107780e25761f"
+  },
+  "src/Allegiance.ClientCore.Game/Game1.Session.cs": {
+    "1": "1ee8607f06ef55329a237e58093bdcc05d5cb72d",
+    "2": "5bbc35800143a706eaa78745e8767f4c78261745",
+    "3": "22a4bc843581f9a33beaaa898e20504ba3ee722e"
+  },
+  "src/Allegiance.ClientCore.MonoGame/Content/Content.mgcb": {
+    "1": "61dd818da609c032b4e966ae5af1cbacabb60eda",
+    "2": "6af76f27a43246cb9807e3d0b02eed156f4b5bcf",
+    "3": "4a650684d25352122b7279a2d97af1c75635662d"
+  }
+}

@@ -955,7 +955,7 @@ public sealed partial class Server
     /// so no extra locking.</para>
     /// </summary>
     private const byte DmgIdNoWarn = 0x20;                 // c_dmgidNoWarn (igc.h:559)
-    private const short DroneWatchFireSound = 1325;        // droneWatchFireSound (sounds.h:377; igc.h enum from 1000, 325th entry)
+    private const short DroneWatchFireSound = 1324;        // Igc/sounds.h:377; igc.h:456-464 (1001 + ordinal)
 
     private void BroadcastStationDamaged(Station station, Model? launcher, byte type, float amount)
     {
@@ -1018,7 +1018,7 @@ public sealed partial class Server
                 var msg = new ChatMessage
                 {
                     Message = "Watch your fire",
-                    SidSender = ls.Id,
+                    SidSender = -1, // native station warning has NULL sender (FedSrv.CPP:12226)
                     ChatTarget = (int)ChatTarget.Individual,
                     OidRecipient = ls.Id,
                     VoiceOver = DroneWatchFireSound,

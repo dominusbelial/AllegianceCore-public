@@ -1,0 +1,14 @@
+{
+  "methods": 139,
+  "invocations": 417,
+  "case_passes": 528,
+  "failed": 0,
+  "skipped": 0,
+  "runs_per_method": 3,
+  "source_hashes_verified": true,
+  "excluded_empty_discovery_commands": [
+    "isolate-StationUnderAttackAlertLiveTests.Dispose-1",
+    "isolate-StationUnderAttackAlertLiveTests.Dispose-2",
+    "isolate-StationUnderAttackAlertLiveTests.Dispose-3"
+  ]
+}

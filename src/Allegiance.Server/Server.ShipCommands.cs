@@ -2075,6 +2075,7 @@ public sealed partial class Server
         var msg = new ChatMessage
         {
             Message = "Affirmative.",
+            VoiceOver = 1178, // voAffirmativeSound: Igc/sounds.h:218; FedSrv.CPP:3256-3257
             SidSender = drone.Id,
             ChatTarget = (int)ChatTarget.Individual,
             OidRecipient = sender.Id,

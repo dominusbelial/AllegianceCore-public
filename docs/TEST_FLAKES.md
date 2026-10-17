@@ -1381,3 +1381,68 @@ See the [P738 appendix](reports/P726_PLAYER_BUNDLES_2.md#p738-merge-onto-master)
 [invocation ledger](reports/P738_P726_assets/verification.json),
 [case qualification](reports/P738_P726_assets/case-results.json), and
 [raw TRX/logs and snapshots](reports/P738_P726_assets/validation-logs.tar.gz).
+
+
+## P732 observation (2026-10-17)
+
+Exactly two final full-suite passes ran with real live/loopback tests and the
+local P660 showcase opt-in enabled. Each main pass recorded Lobby **19/0/0**,
+MonoGame **2,299/0/3**, ClientCore **1,187/0/0**, and Core **4,752/1/0**
+(passed/failed/skipped); both scripts exited 1. The three MonoGame skips per
+pass are the existing private Meshy-pack checks.
+
+After both suites completed, every reported failing method passed **3/3 fresh
+exact-method isolated Debug reruns**, satisfying P732's explicit load-flake rule:
+
+| Test (under `Allegiance.Core.Tests`) | Full-suite symptom | Final isolation |
+| --- | --- | --- |
+| `Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events` | Run 1: expected 0 allocated bytes; observed 7,768. | 3/3 pass |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | Run 2: `TimeoutException: no OnPeerJoined for raw peer`. | 3/3 pass |
+| `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback` | Run 2 quarantine: failed the batch, passed the runner's isolated retry. The existing runner suppresses the original assertion output. | 3/3 pass |
+
+No assertions, deadlines, quarantine traits or product behavior were changed for
+these observations. Isolated passes do not establish the underlying causes or
+fixes. See the [P732 report](reports/P732_VOICE_OVER.md),
+[full invocation ledger](reports/P732_assets/verification.json), and
+[post-suite isolation ledger](reports/P732_assets/post-failure-isolation.json)
+for raw counts, commands, main-lane failure stacks and per-attempt transcripts.
+
+
+## P738 / P732 merge observation (2026-10-17)
+
+The once-per-assembly broad Release gate recorded Core **4,779 pass / 3 fail /
+0 skip**, ClientCore **1,203 pass / 2 fail / 0 skip**, and MonoGame **2,353 pass /
+0 fail / 3 optional private Meshy-pack skips**. Core excluded the two guards
+that invoke git, honoring this lane's explicit no-git rule. Ordinary
+live/loopback and LiveTiming tests ran; the local P660 opt-in ran. The focused
+235 methods passed 3/3 (1,044 case passes), and never-parks passed 5/5.
+
+| Case | Symptom | Fresh isolated qualification |
+|---|---|---|
+| Core `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | No `OnPeerJoined` for raw peer. | 3/3 exact-method passes |
+| Core `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Empty notification collection at line 155. | 3/3 exact-method passes |
+| Core `LiveRipcordTests.Re_target_activates_to_requester_only` | Empty response collection at line 238. | 3/3 exact-method passes |
+| ClientCore `ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target` | Expected final sector 1060; observed 1053. | 3/3 exact-method passes |
+| ClientCore `P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates` (authored 25/3) | Only one side finished; Supremacy constructor travelling/building at the unchanged 300 s deadline. | Authored case passed in all 3 fresh exact-method invocations |
+| Same P703 method (generated 1/2) | Third isolated method invocation timed out with only one side finished. | 3/3 additional fresh exact-case passes after this failure |
+
+P703's raw isolated method counts were **2/0**, **2/0**, **1/1** (pass/fail),
+followed by **1/0**, **1/0**, **1/0** for the exact generated case. Its first
+triplet was not wholly green. Across all post-suite isolation there were
+**20 case passes / 1 failure / 0 skips** in 18 processes. These satisfy the
+brief's case-level load-flake rule without establishing underlying receipt,
+constructor approach or steering causes. No assertions, deadlines, traits,
+map geometry or movement rules were changed for these failures.
+
+The deterministic drone-voice integration correction is not a flake. It
+supersedes the zero-based ID interpretation in the earlier P738/P726 entry:
+`~/Development/Allegiance/src/Igc/igc.h:456-464` starts the enum at 1001, so
+`droneTooCrowdedSound` (`~/Development/Allegiance/src/Igc/sounds.h:395`) is
+1342. P725's delivery seam remains, and its received wire chat now queues one
+voice through P732's native catalog. The nine-case receive regression failed
+9/9 before correction and passed 3/3 afterwards.
+
+See the [P738 appendix](reports/P732_VOICE_OVER.md#p738-merge-onto-master),
+[invocation ledger](reports/P738_P732_assets/verification.json),
+[case outcomes](reports/P738_P732_assets/case-results.json), and
+[raw logs/TRX](reports/P738_P732_assets/validation-logs.tar.gz).

@@ -1,0 +1,125 @@
+{
+  "source_files_unchanged_since_verification": 29,
+  "solution_build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "affected_isolation": {
+    "methods": 139,
+    "invocations": 417,
+    "case_passes": 528,
+    "failed": 0,
+    "skipped": 0,
+    "runs_per_method": 3,
+    "source_hashes_verified": true,
+    "excluded_empty_discovery_commands": [
+      "isolate-StationUnderAttackAlertLiveTests.Dispose-1",
+      "isolate-StationUnderAttackAlertLiveTests.Dispose-2",
+      "isolate-StationUnderAttackAlertLiveTests.Dispose-3"
+    ]
+  },
+  "showcase": {
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0
+  },
+  "full_suite_runs": 2,
+  "suite_results": [
+    {
+      "label": "suite-1",
+      "exit_code": 1,
+      "seconds": 3929.508,
+      "summaries": [
+        {
+          "failed": 0,
+          "passed": 19,
+          "skipped": 0,
+          "total": 19
+        },
+        {
+          "failed": 0,
+          "passed": 2299,
+          "skipped": 3,
+          "total": 2302
+        },
+        {
+          "failed": 0,
+          "passed": 1187,
+          "skipped": 0,
+          "total": 1187
+        },
+        {
+          "failed": 1,
+          "passed": 4752,
+          "skipped": 0,
+          "total": 4753
+        },
+        {
+          "failed": 0,
+          "passed": 3,
+          "skipped": 0,
+          "total": 3
+        },
+        {
+          "failed": 0,
+          "passed": 18,
+          "skipped": 0,
+          "total": 18
+        }
+      ]
+    },
+    {
+      "label": "suite-2",
+      "exit_code": 1,
+      "seconds": 3938.356,
+      "summaries": [
+        {
+          "failed": 0,
+          "passed": 19,
+          "skipped": 0,
+          "total": 19
+        },
+        {
+          "failed": 0,
+          "passed": 2299,
+          "skipped": 3,
+          "total": 2302
+        },
+        {
+          "failed": 0,
+          "passed": 1187,
+          "skipped": 0,
+          "total": 1187
+        },
+        {
+          "failed": 1,
+          "passed": 4752,
+          "skipped": 0,
+          "total": 4753
+        },
+        {
+          "failed": 0,
+          "passed": 3,
+          "skipped": 0,
+          "total": 3
+        }
+      ]
+    }
+  ],
+  "load_flakes_post_suite": {
+    "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback": 3,
+    "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events": 3,
+    "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn": 3
+  },
+  "post_suite_isolation": {
+    "invocations": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
+  },
+  "new_asset_hashes_verified": 119,
+  "compiled_voice_waves": 509,
+  "simulation_csv_lf": true,
+  "no_third_full_suite": true,
+  "report_finalized": true
+}

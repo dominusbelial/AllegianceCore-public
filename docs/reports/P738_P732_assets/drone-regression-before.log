@@ -1,0 +1,84 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Allegiance.Core -> /home/domingo/allegiance-integ-b2/src/Allegiance.Core/bin/Release/net10.0/Allegiance.Core.dll
+  Allegiance.Bot -> /home/domingo/allegiance-integ-b2/src/Allegiance.Bot/bin/Release/net10.0/Allegiance.Bot.dll
+  Allegiance.ClientCore -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/bin/Release/net10.0/Allegiance.ClientCore.dll
+  Allegiance.Server -> /home/domingo/allegiance-integ-b2/src/Allegiance.Server/bin/Release/net10.0/Allegiance.Server.dll
+  allegiance-mcp -> /home/domingo/allegiance-integ-b2/tools/allegiance-mcp/bin/Release/net10.0/allegiance-mcp.dll
+  Allegiance.ClientCore.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll
+Test run for /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.24]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 341, wave: "vo_request_miner") [FAIL]
+[xUnit.net 00:00:00.24]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 326, wave: "vo_miner_dontgetpaid") [FAIL]
+[xUnit.net 00:00:00.25]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 322, wave: "vo_miner_enemyonscope") [FAIL]
+[xUnit.net 00:00:00.25]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 327, wave: "vo_request_miner") [FAIL]
+[xUnit.net 00:00:00.25]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 331, wave: "vo_request_tower") [FAIL]
+[xUnit.net 00:00:00.25]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 328, wave: "vo_sal_minerpartial") [FAIL]
+[xUnit.net 00:00:00.25]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 336, wave: "vo_miner_intransit") [FAIL]
+[xUnit.net 00:00:00.25]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 342, wave: "vo_cover_builder") [FAIL]
+[xUnit.net 00:00:00.25]     Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 330, wave: "vo_request_minefield") [FAIL]
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 341, wave: "vo_request_miner") [27 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 326, wave: "vo_miner_dontgetpaid") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at InvokeStub_P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 322, wave: "vo_miner_enemyonscope") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at InvokeStub_P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 327, wave: "vo_request_miner") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at InvokeStub_P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 331, wave: "vo_request_tower") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at InvokeStub_P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 328, wave: "vo_sal_minerpartial") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at InvokeStub_P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 336, wave: "vo_miner_intransit") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at InvokeStub_P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 342, wave: "vo_cover_builder") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at InvokeStub_P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 330, wave: "vo_request_minefield") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Int16 id, String wave) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P732VoiceOverTests.cs:line 51
+   at InvokeStub_P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     9, Passed:     0, Skipped:     0, Total:     9, Duration: 44 ms - Allegiance.ClientCore.Tests.dll (net10.0)

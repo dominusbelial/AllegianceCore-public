@@ -406,15 +406,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         string message,
         ChatTarget target = ChatTarget.Everyone,
         short oidRecipient = 0,
-        short voiceOver = 0,
+        short voiceOver = -1,
         short commandId = 0,
         bool objectModel = false,
         short oidTarget = -1,
-        short otTarget = -1)
+        short otTarget = -1,
+        bool absentMessage = false)
     {
         var msg = new ChatMessage
         {
             Message = message,
+            MessageIsAbsent = absentMessage,
             SidSender = (short)(World.MyShipId ?? -1),
             ChatTarget = (int)target,
             OidRecipient = oidRecipient,
@@ -446,7 +448,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         ChatTarget target,
         short oidRecipient,
         DataBuoyIGC db,
-        short voiceOver = 0,
+        short voiceOver = -1,
         short commandId = 0,
         bool objectModel = false)
     {

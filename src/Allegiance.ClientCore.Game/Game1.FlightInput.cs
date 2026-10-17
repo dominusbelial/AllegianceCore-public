@@ -250,6 +250,8 @@ public sealed partial class Game1
     protected override void Update(GameTime gameTime)
     {
         using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
+        _sound?.UpdateAudioFrame((float)gameTime.ElapsedGameTime.TotalSeconds);
+        UpdateSoundEvents();
         _flightGc.SetFlying(_state == ClientState.Flying && !_dockedActive
             && !_graphicsSettingsVisible && !_keyBindVisible);
         // Also runs in dock/lobby/disconnect states, so the loop cannot linger.
@@ -2158,10 +2160,6 @@ public sealed partial class Game1
         // below and replays the two loop gates against the audio manager.
         UpdateShipStatusAlarms();
 
-        // P267 — the station destroyed/captured one-shots and the tech-completion
-        // chime, drained from the wire events the world observed this frame.
-        UpdateSoundEvents();
-
         // P623 — VICTIM_DAMAGED(217) attributions drained into the local ship's
         // TK_TargetHostile damage window (who hurt me and by how much).
         UpdateHostileTracking();
@@ -2215,12 +2213,6 @@ public sealed partial class Game1
             _sound?.PlayGameOver();
             Console.WriteLine("[monogame] audio: game-over");
         }
-
-        // P217 — receive-side quick-chat voices: play the real voice for any
-        // newly-arrived quick-chat (which includes the sender's own server
-        // relay echo, so a locally-sent macro is voiced exactly once by this
-        // path — never doubled locally at the send site).
-        ProcessIncomingQuickChatVoices();
 
         base.Update(gameTime);
     }

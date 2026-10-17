@@ -1,0 +1,614 @@
+{
+  "base": "5b254a909c587befa46ae883eaa3682c1787647b",
+  "inputs": {
+    "native/Igc/sounds.h": "ab25367b3f1fe8e9ad69314986885c5d5498e39e8c4b0bc12190507435b5a00b",
+    "Content/sounddef.mdl": "d3e9543ee65922ce789d2399bcf7d58b1c3f921a671ed84b4155025d9d81e81a",
+    "Content/quickchat.mdl": "f0030758d81e8940b3f74c37a12afdc91baa309d71314eb0fa1b45fcc5490252"
+  },
+  "definitions": 536,
+  "direct_sound_ids": 449,
+  "sonic_indices": 310,
+  "available_waves": 509,
+  "vo_prefixed_available_waves": 484,
+  "missing_waves": [
+    "vo_ma_noimeanit",
+    "vo_ma_woopie"
+  ],
+  "new_bundled_waves": [
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_vo_attack_transeiverbuilder.ogg",
+      "bytes": 23412,
+      "sha256": "2874a89e6e31d5087b3a4e3cc92cccc0ffd84835025c559398c558a63d4d8833"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/dn_vo_builder_transeiver.ogg",
+      "bytes": 16308,
+      "sha256": "edf1bfb028977c55e7756938b4c62b004c8506ff7b6505c974eb3ca6a38ca7f4"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/oink1.ogg",
+      "bytes": 11009,
+      "sha256": "188d10c6a2f96dcc643a82600669da2baaa90ac29022837fd6e2022cdd7d8307"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/oink2.ogg",
+      "bytes": 7637,
+      "sha256": "52d003805c03f37f6534dbdca596f2f0fc9142d3b69bf802300321242e7e2a9a"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/oink3.ogg",
+      "bytes": 6383,
+      "sha256": "37201924e33bd81c69c1e1529283a8324e7ccd5313443ebe9d7b95f2d12fc69a"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/oink4.ogg",
+      "bytes": 9091,
+      "sha256": "14198533adda09f3331cdd122279f2a6531a0f3bf306fe20313d168e31664896"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/oink5.ogg",
+      "bytes": 8298,
+      "sha256": "137623021dbfc14124f19db79217ef7146cc7cca9c21a12fde6de9a7aaa519cf"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_expansionbuilder.ogg",
+      "bytes": 24380,
+      "sha256": "b2a256eabb5a2bad5e0028e592d71eb49996ea0d612844a7d2ba5ea0b4b34102"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_garrisonbuilder.ogg",
+      "bytes": 18721,
+      "sha256": "7b4122345d8fd29c3470b6ab3a4fe85f88b31b1ed7f4f26e59cf0a455fbe180b"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_minebuilder.ogg",
+      "bytes": 15243,
+      "sha256": "00b59d8a3d2a4cc2beb2f2c1c37ca78357b636338b647bb95478ce458c493db8"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_miner.ogg",
+      "bytes": 12862,
+      "sha256": "86ca50cfdc95ee3e2c5e12fb1395dd36997046ae998277527f57799f016351c2"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_outpostbuilder.ogg",
+      "bytes": 18595,
+      "sha256": "26b4916eee4c3dee8a8803b3fadc029130209aa7bece6edb3b77d9460579d0e4"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_palisadebuilder.ogg",
+      "bytes": 23535,
+      "sha256": "bfc8b195a3d7720d8f44aa5fb887ffe0e09cf387d6364f091c100a3e2c966f2f"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_refinerybuilder.ogg",
+      "bytes": 19119,
+      "sha256": "03e82e9d991d45e126b47a65436ddcb72120dae378afa8e7a475004886bb49c8"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_researchbuilder.ogg",
+      "bytes": 26774,
+      "sha256": "9d7ff164d9cb0850d4d98156d081336e6f6fc2403b19aea73f85154742877f51"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_shipyardbuilder.ogg",
+      "bytes": 19429,
+      "sha256": "934ec47512eabbbf369e8e1794e83dfe8f24d34daaf2b661dca10300f4712bd4"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_supremecybuilder.ogg",
+      "bytes": 23508,
+      "sha256": "cf47f0ebea7a12c984f25c13fb89a1548497c10efaa6690687c57ef9ba40843d"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_tacticalbuilder.ogg",
+      "bytes": 23777,
+      "sha256": "3a4a2594eaa4fdd6ecb30b2e30c9285289f5a13d7d192f8130f9b9db6c306b2a"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_attack_teleportbuilder.ogg",
+      "bytes": 25590,
+      "sha256": "86689c8d2ad66d01a94684d493bde702bb8810afcb2cd6d2cbf80b80c4fd49a8"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_aintgonnawork.ogg",
+      "bytes": 16666,
+      "sha256": "5f0bf70d697800637e2f3fa6635288ef8c720e29ab8ea91fbb155924fdc3dfbe"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_expansion.ogg",
+      "bytes": 18012,
+      "sha256": "f7e6528f8dd99ccb897e7c9248bb2aeaa7c2a7b9c5653e12f2d649f38fd9d54e"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_garrison.ogg",
+      "bytes": 12709,
+      "sha256": "554957189ea7c8f88aa48d3e47b85c9c35c900d6cf75df74c419764d8c1573a4"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_mine.ogg",
+      "bytes": 10631,
+      "sha256": "1965d1b16c3d9684d5e890ed5a0ddde0b4c1912e505ecfeed89fccb6657567dd"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_nobuild.ogg",
+      "bytes": 11506,
+      "sha256": "b22dffe793c045a1ce4fe7eaad83628809498355001b450dd8aac73cf7d4df00"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_outpost.ogg",
+      "bytes": 14882,
+      "sha256": "e0988ee3391bb91cbf572d739c0d2ba239235894dfd8f68432450e665fae5f49"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_palisade.ogg",
+      "bytes": 23577,
+      "sha256": "1a47b009feda6fe6d6773f0d9df32ed441ca3ca7459968d36e49d3d9c1a87ca8"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_refinery.ogg",
+      "bytes": 13431,
+      "sha256": "0a7bd9ab8ea2908be0e739a0616023fc0149c1fde1c95af11aca25661df77351"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_research.ogg",
+      "bytes": 22956,
+      "sha256": "a5c8fdf5c7a0c70823ebc9cf0edc7cfecb69f173d0af3262e6ae2459e269234f"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_shipyard.ogg",
+      "bytes": 14115,
+      "sha256": "f242c507956fa416f56862476900dc4eca31dc8bb77cf54dfe5c003dda4652c3"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_supremecy.ogg",
+      "bytes": 17736,
+      "sha256": "52848030d3c539b564d4f782f818f3fe6246c36dc700be70a1a5d6f3cc6f9a97"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_tactical.ogg",
+      "bytes": 17767,
+      "sha256": "b4e2850c995026dd06b23deb362e599b377fa601db2055dfda78e0cc520ead35"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_teleport.ogg",
+      "bytes": 17780,
+      "sha256": "0af6fa16cd4c09e0cc6403a71202837acd9799b5f162f29fbc4aeee1d30955ab"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_teleportenemy.ogg",
+      "bytes": 19083,
+      "sha256": "78daf8050b440389a63db2d00b6c7738513d718dbcddedbe09c85cb4018db14d"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_builder_teleportprobe.ogg",
+      "bytes": 18134,
+      "sha256": "c8ec32969911f0d260fa52cce8192bced17c53645ed1f5cd6f99285161d72a0b"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_cover_builder.ogg",
+      "bytes": 15299,
+      "sha256": "278bbe434d2caad5123d3c13ef4b9833569a6cd00311a073c88d6eb176712851"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_carrier.ogg",
+      "bytes": 9976,
+      "sha256": "784156e1d0c3caa7921cf89636b2c529cb8e190b307e95d65537c81d3220cae6"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_minebuilder.ogg",
+      "bytes": 12011,
+      "sha256": "de6867131b1f35a5c6d6ed52d50e657f197cc18a8c30969ed2663c83fdd6333d"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_destroy_miner.ogg",
+      "bytes": 13050,
+      "sha256": "aaecd723fecbdd2bf82257e5711c40b16bc80021344cd2ad612bbd6143984149"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_miner_cantdothat.ogg",
+      "bytes": 14010,
+      "sha256": "18dba275266c13a03d66c6f12cdded16b9270624df3f4834845f00371206ca8a"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_miner_dontgetpaid.ogg",
+      "bytes": 26762,
+      "sha256": "5b4ac2b2b60bdb7183d892e3ba9a46c8335ce06ca598ad9f9f6d035e3c515e39"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_miner_enemyonscope.ogg",
+      "bytes": 19903,
+      "sha256": "8b9e402840fd5ba036f492787146e52a169ddfd850eddd4dedbb233ecd045173"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_miner_intransit.ogg",
+      "bytes": 12246,
+      "sha256": "c8e92b96425924e883a7cf2591551b2f3f05b9f75d3de0798be7093bd9518dbe"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_miner_mining.ogg",
+      "bytes": 9503,
+      "sha256": "009343d2dafc4c72bbc491f0af28e413693bcebca68b763c9875cbb70b7fc5d6"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_miner_report4duty.ogg",
+      "bytes": 15901,
+      "sha256": "bd6fc8885e1e81633ffc54bba892d12318cc08e8ef76fa5723bdb470135a910c"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_miner_underattack.ogg",
+      "bytes": 13085,
+      "sha256": "8f9db5ac353ded30d8b9cd1cf854f3eff3d0dc231bf53438a84d8bb6ff08c7f6"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_miner_yougotit.ogg",
+      "bytes": 9576,
+      "sha256": "b2380086be5586a582e9552880294948358ccffd84206c64e11b2dee5622bc73"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findiron.ogg",
+      "bytes": 12569,
+      "sha256": "3e4e6c343254f6fab34a1ac9dbaea84baa9b7d57857bba4b17df3dd270b2aef8"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_findlava.ogg",
+      "bytes": 11628,
+      "sha256": "727caa631f7d94ae9ba606a50aa2df6c68a3c2c66066a7a212f76a9240f383de"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundcarbonacous.ogg",
+      "bytes": 13222,
+      "sha256": "e010c45c4ad7a9c78cca998d9b0b403e9f507ca364a36af714804f79a34f6563"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundiron.ogg",
+      "bytes": 12151,
+      "sha256": "a4c626cbc98abf83bce74d8d561adc9fd62f03b3f7baa400b7c4650b2b0906e1"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_foundlava.ogg",
+      "bytes": 9998,
+      "sha256": "5e4d344d3fe4d4b77a46d95945b87b361ba1323900ffac1dfd4a742308aca171"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_haveanartifact.ogg",
+      "bytes": 13123,
+      "sha256": "76e6145bc1d69c48edd7b1d6db1ac09dea84ec2d45ac7305549ba3bc5bcd3277"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_ispdrop.ogg",
+      "bytes": 17296,
+      "sha256": "780199001f3b8f8a9aa446066b6cf63a7831f15792965e2005809be3baff125f"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_pursuingelectron.ogg",
+      "bytes": 15398,
+      "sha256": "b89497050ed761fbe814bd46df7d065d470ac153584adf977be2befe32983274"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_pursuingenergy.ogg",
+      "bytes": 14092,
+      "sha256": "6ff2d3cb812f9f9b85414df140edb53d969078264368c399faf7aec02c15a75f"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_pursuingordinance.ogg",
+      "bytes": 13629,
+      "sha256": "847cbbbe050ddab9db4b8735bb456487fabc9254900669e3b03404757dc013b4"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_player_stationrepair.ogg",
+      "bytes": 10481,
+      "sha256": "dc34b40ae8c77986bdbcf4b95f34c8e48b992c12ce48a02374151736ccf72219"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_buildercarbon.ogg",
+      "bytes": 20595,
+      "sha256": "85d5b6ab3968eecbddda72c8dc1446528b7e89064cc637cd9c43ffac80eece1a"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_buildergeneric.ogg",
+      "bytes": 18537,
+      "sha256": "31d8cdbf343395d098efc8a8e157a6c6628088dedba41494be28391076459df8"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_builderhelium.ogg",
+      "bytes": 22317,
+      "sha256": "3e4a6e507bb40f87929df5072e67486316f7c90cf1087e9062d0d3d0f04cd841"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_buildersilicon.ogg",
+      "bytes": 20081,
+      "sha256": "daa883abdfbc864eb0c38857fb50124f5c0db52472f47f9dbd98a3afd0919c4d"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_builderuranium.ogg",
+      "bytes": 19008,
+      "sha256": "ad033ea2668b3d609287d09ecfe547aea73135e2f081dcc6affff88dd954db5e"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_minefield.ogg",
+      "bytes": 17133,
+      "sha256": "b9d537bb976b188c7c01bc2d95e2ad55e50deea6d59c49cf9ca5ce1f8d810b3e"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_miner.ogg",
+      "bytes": 19644,
+      "sha256": "6518200ec16ecec160c8cbc3595008f58dddff804d4764fe1c2443c3e75147b9"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_special.ogg",
+      "bytes": 27575,
+      "sha256": "41c34f7a33149a6b2b00ea394f8a0cfdada67ea7d98dc3f49eded1a9e719a23e"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_request_tower.ogg",
+      "bytes": 15659,
+      "sha256": "1f0b66ae646e01116d7e4bd038e329de36e4ea3134ddf3793da350edf4d8b6f8"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_booted.ogg",
+      "bytes": 18428,
+      "sha256": "1861b885d2ddf152f5dc768d2382e054611c56e5bf203f865cbf5b4465e86add"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_cargofull.ogg",
+      "bytes": 12014,
+      "sha256": "9a8999254359fae10c7077be4870d6bbacc8705aabff73712f90cb8a94e4069d"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_carrierattack.ogg",
+      "bytes": 10777,
+      "sha256": "c6a1d73bc4ee4be8afdb8b7d2be61a916bda647fde98f49b3039a43b7cb97a8f"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_chaffdepleted.ogg",
+      "bytes": 12726,
+      "sha256": "3559af076488e77a232aedcaa93016b78e2fca6889fc10355c0f82e4d4b21ca7"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_clearedwall.ogg",
+      "bytes": 13985,
+      "sha256": "6d9bf94db46f9a88821bfb52c26ec3f3958b44e32b2d5b06ba1fe82237820755"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_cloakdisengage.ogg",
+      "bytes": 15136,
+      "sha256": "c7db5e8051dc402a4ff08bf5ccef5488f86f37175530d51a7604cf2435cee412"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_cloakengage.ogg",
+      "bytes": 13137,
+      "sha256": "5083d3024692d6126096cbfdc1a1303e312a066a6ef85f24466e0db4c8dc8078"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_commencescan.ogg",
+      "bytes": 21396,
+      "sha256": "0f91d20fabe8ee9ae7f3ae56a9c208a5383f23825cd5681d4f4afdbc5387fb85"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_completeddev.ogg",
+      "bytes": 22521,
+      "sha256": "8bb7551cdf1879b7b83384058ec63ce539207eb755f991e29dbbf22b175acd9f"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_completeddramatic.ogg",
+      "bytes": 25122,
+      "sha256": "eab6597c2eef3077ce96f9ddb0c911a777c44fb1096f0dc7aa3cdc2cdfdb8b6c"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_completedfabrication.ogg",
+      "bytes": 26617,
+      "sha256": "4a9fc5d036b1141f26f8e054158a1e6cb9e5f85c161cc8484d2b06f145978b05"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_completedmod.ogg",
+      "bytes": 31539,
+      "sha256": "b280c62683d5d79967063d0b09c860e720c84219bc5c93673f13d9e1e0e7c076"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_completedradical.ogg",
+      "bytes": 24113,
+      "sha256": "83d2f5d33d3dc2fe6e59a008cdf7ff461717e2db411ae734b40db1ef1ede83c3"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_contactsinrange.ogg",
+      "bytes": 17299,
+      "sha256": "6ff94f3ac4ef6aa8e979240d254ae1a839b519491cb41c1560bb1a58a5a14fed"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_coremeltdown.ogg",
+      "bytes": 29615,
+      "sha256": "1e632bade8db3d5d0bc05f7971886f003e6d528a9d31b383382cb3a2c8696890"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_crimsonsighted.ogg",
+      "bytes": 18654,
+      "sha256": "29333b7d071a7eb76f16892d9ed963dfc768c837be3b4d5c1b639d75665f1c32"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_dispenserempty.ogg",
+      "bytes": 22991,
+      "sha256": "a60e3392452a053a8e9680fe8dc69a3f40effb6cc74b92930fabc03856545365"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_enemyjoiners.ogg",
+      "bytes": 13650,
+      "sha256": "13cb88c8470e80e57f0238d664a0e96f5d0b9413561633dda05906a08b4ea70a"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_enemyleaves.ogg",
+      "bytes": 16642,
+      "sha256": "b28a54461074a06a3aa844158afb35d3d248bd91642354275bbbe44d60456b31"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_enemytroops.ogg",
+      "bytes": 39190,
+      "sha256": "05b78bfeaf59b7211e92bd3935cb9bfeeae960ef82326057b5025c7a8168a3ed"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_enteredwall.ogg",
+      "bytes": 15213,
+      "sha256": "f370d9cd5bfeac10038e06b23d3538881a00cc0a91bd88023c1551c3d0892335"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_ironsighted.ogg",
+      "bytes": 20106,
+      "sha256": "653cbfc9412f561f2603c88cc1232abcd59931e2260912291623418b87ac8ae0"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_mia.ogg",
+      "bytes": 20753,
+      "sha256": "754dd68fb49ccb9119944cce6e7b738e29c898ef388eeac890fc739ca567f9dd"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_minercritical.ogg",
+      "bytes": 7837,
+      "sha256": "56ff9536bde313c98c14bc9f6052351989cef74a67e1a89fa9c84614131ef101"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_minerpartial.ogg",
+      "bytes": 16881,
+      "sha256": "6b8c20a6fce0f608e6cb25006f8cca705f468fbb31f264c3ef6cc4a0ab6814f6"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_missilesdepleted.ogg",
+      "bytes": 12220,
+      "sha256": "fc5e32ab02c427159bd604b8480376bb244a660cd1cfc7b4fa59b0460a254bbd"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_missiletech.ogg",
+      "bytes": 13261,
+      "sha256": "6cf18736dc930f76b813a933ca268c5ad9ca1b5ddd0cfb88beddd1a2a96b3368"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_mustbeatstation.ogg",
+      "bytes": 28355,
+      "sha256": "a1fafd29da0c8840ca78a00c5fb7b9f7ce338a1f589e849afb633deefe3ebc66"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_newequip.ogg",
+      "bytes": 14204,
+      "sha256": "a939bb12d74bd416165fdd8f5e99845442a42e8c1b0994bde3edd65608dd2bf7"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_noturrets.ogg",
+      "bytes": 16991,
+      "sha256": "dd502b824f7af0c237e22ed993f5d3c7384dad6c8ef674aa013a0657aaa17861"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_playerboarded.ogg",
+      "bytes": 14480,
+      "sha256": "c23d1780988ce47db5db7153c89cd25c8787e6cf5b0d6632527c5a54b495692b"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_recruitsarrived.ogg",
+      "bytes": 17303,
+      "sha256": "fa5644e2911535f3ef49ac82c5aa9c9d7b13d3aeef8805c88b4c40966fca9425"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_redalert.ogg",
+      "bytes": 18609,
+      "sha256": "9ca263e35c369a3c18dea5f7c4932094a8e5fae2d4131c4da8fc1404b088583d"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_reloading.ogg",
+      "bytes": 8124,
+      "sha256": "f353a7bb3f8c51a6e142c051b7be21ebab8cfbd9b6111ecaeaf8751c1a228d7f"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_reloadingammo.ogg",
+      "bytes": 10884,
+      "sha256": "000805d76c9cb9cddf0f05f4fc3a2766729b61a8306ad69178b2db523890f3a9"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_reloadingchaff.ogg",
+      "bytes": 11874,
+      "sha256": "b063f04bbd9fbc98239109efe9720fda441f070df4615a7620802ce71aab304e"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_reloadingdispenser.ogg",
+      "bytes": 13429,
+      "sha256": "ee7e51f9b48edacfaf5648bdabeda4328c895ad8490c829d34d2e5c8ff0909da"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_reloadingfuel.ogg",
+      "bytes": 11531,
+      "sha256": "1e07e1f3b01a88d37a1bfb6774c90a95a56b5cb3d200a9aa9f0942a8632b8fad"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_reloadingmissiles.ogg",
+      "bytes": 12431,
+      "sha256": "38ae3d7f038601fd539d560001543d4d9f42ce957e05316966bb5ced1a06b81a"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_rixsighted.ogg",
+      "bytes": 17976,
+      "sha256": "beeeffa1b06b9aba91aeb4c88981df56983340179f3c7daa25a83f6551a631de"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_shieldsdown.ogg",
+      "bytes": 13557,
+      "sha256": "37f272b06b23cf9f4ddbfb7a46482a7a8f33f526578a202f05c6c5b62aedc432"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_shipcantripcord.ogg",
+      "bytes": 16869,
+      "sha256": "295bee0cecf6b003dcd1b3912df00faf7442cd96ba490b22ae7ecab847d260ad"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_shipisrepaired.ogg",
+      "bytes": 20653,
+      "sha256": "c96d44346298771abb5deab494b8c52a389b152e2a115b8c61790d9214be4a6b"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_shiptech.ogg",
+      "bytes": 14888,
+      "sha256": "9c06677cf57296490c97ff24e65633f1d8abd47590fac7c6d07885f5eef64f22"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_stationupgrade.ogg",
+      "bytes": 18245,
+      "sha256": "9ac09c972fa4ef0296e283472f26153dfda0acb118cb0680db7704ca594c8713"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_traitor.ogg",
+      "bytes": 16409,
+      "sha256": "74fa6f755ea37abc4a876770859c1c2dc33b79426368917a77be103f5719ce7d"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_watchfire.ogg",
+      "bytes": 9661,
+      "sha256": "5b9a78fbda027af626caede604c50bc043aab14cdcf8347267daef25e54b4052"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_welcomehome.ogg",
+      "bytes": 31739,
+      "sha256": "0b91716d3d944b83e7d774a8a4f5a6d402a6a05480e72af082111bb7c46d8d43"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_sal_weptech.ogg",
+      "bytes": 14711,
+      "sha256": "34254a4df3923e29e03183eb3403f18ba652430ef189eaaa5b48d6d1ecec8b89"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_secured_artifact.ogg",
+      "bytes": 12523,
+      "sha256": "690c488df6bcb019a6f4474ffd8ffac178c559f58f6663b82b44003f9ab13d95"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_secured_enemyflag.ogg",
+      "bytes": 19262,
+      "sha256": "556e446dbfdbc8019f4fff7941ad98090e61bc7b16ebc64024b7cec9331eaadf"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_secured_flag.ogg",
+      "bytes": 17946,
+      "sha256": "0ffae8d72986c23907fb1095b2765daed1505ab1fb809d0c8faa5e95343bda3e"
+    },
+    {
+      "file": "src/Allegiance.ClientCore.MonoGame/Content/Sounds/vo_time_15sec.ogg",
+      "bytes": 17476,
+      "sha256": "e6219aced2cb412807e6bc59e027dafa4927dc1073fcb35c5acaa59d34038e4d"
+    }
+  ]
+}

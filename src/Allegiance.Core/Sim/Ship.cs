@@ -7219,15 +7219,12 @@ public sealed partial class Ship : Model, IShipIgc
             SendDroneChat(DroneComingHomeEmptySound, "Coming home empty");
     }
 
-    // DEFSOUND ordinal values from Igc/sounds.h, included by igc.h:456-464 —
-    // aliased to P723's verified DroneChatterCue constants (the previous local
-    // literals 1327/1329/1342/1343 were systematically +1001 off the true
-    // ordinals, so these chats were broadcasting unresolvable SoundIDs and were
-    // silent in the client; DroneChatterCue was recomputed rigorously in P723).
-    private const short DroneTooMuchDamageSound = DroneChatterCue.DroneTooMuchDamageSound;   // 326, sounds.h:380
-    private const short DroneComingHomeEmptySound = DroneChatterCue.DroneComingHomeEmptySound; // 328, sounds.h:382
-    private const short DroneTooCrowdedSound = DroneChatterCue.DroneTooCrowdedSound;         // 341, sounds.h:395
-    private const short ConstructorRunningSound = DroneChatterCue.ConstructorRunningSound;   // 342, sounds.h:396
+    // Shared with the receiver's native voice catalog. The enum starts at
+    // 1001, including removed slots (~/Development/Allegiance/src/Igc/igc.h:456-464).
+    private const short DroneTooMuchDamageSound = DroneChatterCue.DroneTooMuchDamageSound;
+    private const short DroneComingHomeEmptySound = DroneChatterCue.DroneComingHomeEmptySound;
+    private const short DroneTooCrowdedSound = DroneChatterCue.DroneTooCrowdedSound;
+    private const short ConstructorRunningSound = DroneChatterCue.ConstructorRunningSound;
     private double _lastMiningComplaint;
     private float _miningComplaintInterval = 30f; // shipIGC.cpp:25
 

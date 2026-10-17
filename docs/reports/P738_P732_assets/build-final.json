@@ -1,0 +1,15 @@
+{
+  "command": [
+    "dotnet",
+    "build",
+    "AllegianceCore.slnx",
+    "-c",
+    "Release",
+    "-m:8",
+    "--nologo",
+    "-v:m"
+  ],
+  "exit_code": 0,
+  "seconds": 9.819,
+  "completed_utc": "2026-10-17T20:32:22.748610+00:00"
+}

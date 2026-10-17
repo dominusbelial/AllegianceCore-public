@@ -77,7 +77,7 @@ public sealed class LiveQuickChatToDroneCommandTests
     private static short ShipId(FltBot bot) => bot.ShipAssignment!.Ship.ShipId;
 
     private static bool GotAffirmative(FltBot bot, short droneId) =>
-        bot.Chats.Any(c => c.Message == "Affirmative." && c.SidSender == droneId);
+        bot.Chats.Any(c => c.Message == "Affirmative." && c.SidSender == droneId && c.VoiceOver == 1178);
 
     /// <summary>Boot an in-process server; seats <paramref name="peerCount"/>
     /// bots round-robin onto the two sides (peer k → <c>Sides[k % 2]</c>). Returns

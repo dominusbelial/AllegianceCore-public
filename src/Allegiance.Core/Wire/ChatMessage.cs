@@ -47,6 +47,9 @@ public sealed class ChatMessage : IFedMessage, IChatRoutingTarget
     /// trimmed, one trailing NUL, <c>cb</c> includes the NUL) exactly as the
     /// client's <c>FM_VAR_PARM(pszText, CB_ZTS)</c> does.</summary>
     public string Message = "";
+    /// <summary>Native null pszText: cbMessage=0 selects a sonic-chat index
+    /// instead of a direct SoundID (trekigc.cpp:4507-4536).</summary>
+    public bool MessageIsAbsent;
 
     // The ChatData block (Messages.h:204-214), factored into ChatData.cs so it
     // is shared with ChatBuoy(108) (Messages.h:716-722) rather than duplicated
@@ -56,7 +59,7 @@ public sealed class ChatMessage : IFedMessage, IChatRoutingTarget
     // onto Cd, preserving the exact API Bot.SendChat, tools/chatdemo and the
     // wire tests use (they set/read them via object initializer or property
     // access, so the property-vs-field change is invisible to them).
-    public ChatData Cd;
+    public ChatData Cd = new() { SidSender = -1, VoiceOver = -1 };
 
     public short SidSender { get => Cd.SidSender; set => Cd.SidSender = value; }
     /// <summary>Raw wire value of <c>chatTarget</c> (a 4-byte C++ enum; see
@@ -78,7 +81,7 @@ public sealed class ChatMessage : IFedMessage, IChatRoutingTarget
 
     public byte[] Encode()
     {
-        int blobLen = ZtsBlob.BlobSize(Message);
+        int blobLen = MessageIsAbsent ? 0 : ZtsBlob.BlobSize(Message);
         var buf = new byte[FixedSize + blobLen];
         WireWriter w = new(buf);
 
@@ -95,7 +98,9 @@ public sealed class ChatMessage : IFedMessage, IChatRoutingTarget
             throw new InvalidOperationException($"CHATMESSAGE internal layout drift: {w.Position} != {FixedSize}");
 
         // blob: CB_ZTS, at the fixed-region end (ib = offset from byte 0)
-        var (ib, cb) = ZtsBlob.Write(ref w, Message);
+        // PFedMsgCreate always writes the blob boundary, including NULL blobs
+        // (_Utility/Messages.cpp:403-413; FedSrv.CPP:4922 validates this offset).
+        var (ib, cb) = MessageIsAbsent ? ((ushort)FixedSize, (ushort)0) : ZtsBlob.Write(ref w, Message);
         w.WriteU16At(slotIb, ib);
         w.WriteU16At(slotCb, cb);
         w.WriteU16At(0, (ushort)w.Position);   // cbmsg = total length
@@ -115,6 +120,7 @@ public sealed class ChatMessage : IFedMessage, IChatRoutingTarget
         return new ChatMessage
         {
             Message = it.IsPresent ? ZtsBlob.Read(buf, it) : "",
+            MessageIsAbsent = !it.IsPresent,
             Cd = ChatData.Decode(buf.Slice(8)),
             OidTarget = BitConverter.ToInt16(buf.Slice(24)),
             OtTarget  = BitConverter.ToInt16(buf.Slice(26)),

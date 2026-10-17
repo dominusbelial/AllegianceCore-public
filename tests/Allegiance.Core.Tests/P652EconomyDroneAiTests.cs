@@ -580,12 +580,12 @@ public sealed class P652EconomyDroneAiTests
         m.Sectors[0].Update(30);
         // P725 forwards native droneTooCrowdedSound through the typed host seam.
         // Native: ~/Development/Allegiance/src/Igc/shipIGC.cpp:2199 and
-        // ~/Development/Allegiance/src/Igc/sounds.h:395 (SoundID 341).
+        // ~/Development/Allegiance/src/Igc/sounds.h:395 (SoundID 1342).
         var chatter = site.Calls.Where(c => c.StartsWith("DroneChatEvent(")).ToArray();
         Assert.Equal(2, chatter.Length);
         Assert.All(chatter, call =>
         {
-            Assert.Contains(",341,", call.Replace(" ", ""));
+            Assert.Contains(",1342,", call.Replace(" ", ""));
             Assert.Contains("Miner requesting unoccupied", call);
         });
         m.Sectors[0].Update(30.1);

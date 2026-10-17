@@ -1,0 +1,203 @@
+{
+  "focused": {
+    "methods": 235,
+    "invocations": 705,
+    "total": 1044,
+    "passed": 1044,
+    "failed": 0,
+    "notExecuted": 0,
+    "skipped": 0
+  },
+  "showcase": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "notExecuted": 0,
+    "skipped": 0
+  },
+  "suites": {
+    "suite-Core": {
+      "total": "4782",
+      "executed": "4782",
+      "passed": "4779",
+      "failed": "3",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0",
+      "outcome_skipped": 0
+    },
+    "suite-ClientCore": {
+      "total": "1205",
+      "executed": "1205",
+      "passed": "1203",
+      "failed": "2",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0",
+      "outcome_skipped": 0
+    },
+    "suite-ClientCore.MonoGame": {
+      "total": "2356",
+      "executed": "2353",
+      "passed": "2353",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0",
+      "outcome_skipped": 3
+    }
+  },
+  "suite_failures": [
+    {
+      "method": "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy",
+      "name": "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy",
+      "message": "\n      \n        \n          Assert.Contains() Failure: Filter not matched in collection\nCollection: []\n             at Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/LoadoutChangeLiveTests.cs:line 155\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "name": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "message": "\n      \n        \n          Assert.Single() Failure: The collection was empty\n             at Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/LiveRipcordTests.cs:line 238\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "message": "\n      \n        \n          System.TimeoutException : no OnPeerJoined for raw peer\n             at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.ConnectRawPeer(TcpTransport host, Site site, String name, Boolean tinyReceiveWindow) in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 119\n   at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 346\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: 1060\nActual:   1053\n             at Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/ClientWarpApproachLiveTests.cs:line 257\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+      "message": "\n      \n        [{\"Side\":0,\"Plan\":\"plan_a\",\"Step\":21,\"TotalSteps\":157,\"Action\":\"station\",\"Name\":\"Supremacy\",\"Status\":\"constructor travelling/building\",\"ProgressPercent\":13.05732484076433,\"StepProgressPercent\":50,\"Money\":27258341,\"EtaSeconds\":null,\"EtaBasis\":\"current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null\",\"CompletedTechs\":[\"Bomber\",\"Retro Booster\",\"Enh Constructor\",\"Enh Miner\",\"ER Nanite 2\",\"MRM Seeker 2\",\"SRM Seismic\",\"Med Shield 2\",\"Lt Booster 1\",\"Hvy Sig Cloak 1\",\"Counter 2\",\"Weedcore 03\",\"Enh Carrier Drone\",\"MRM Quickfire 2\"],\"Stations\":[\"Garrison\",\"Teleport (Hvy)\",\"Outpost (Hvy)\"],\"Constructor\":8116,\"ReservedRock\":10003,\"Cycles\":0},{\"Side\":1,\"Plan\":\"plan_b\",\"Step\":82,\"TotalSteps\":181,\"Action\":\"develop\",\"Name\":\"Hvy Counter 3\",\"Status\":\"building bucket\",\"ProgressPercent\":45.21002302025782,\"StepProgressPercent\":83.01416666666667,\"Money\":61935654,\"EtaSeconds\":20.382999999999996,\"EtaBasis\":\"current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null\",\"CompletedTechs\":[\"Adv Scout\",\"Adv Fighter\",\"Enh Fighter\",\"Adv Stl Fighter\",\"Stealth Fighter\",\"Hvy Interceptor\",\"Interceptor\",\"Stealth Bomber\",\"Hvy Bomber\",\"Bomber\",\"Hvy Troop Transport\",\"Troop Transport\",\"Afterburner 2\",\"Afterburner 3\",\"XRM Torpedo 1\",\"XRM Torpedo 2\",\"Enh Constructor\",\"Adv Constructor\",\"Adv Miner\",\"Enh Miner\",\"EW Utl Cannon 3\",\"EW Utl Cannon 2\",\"EW Sniper Rifle 1\",\"EW Sniper Rifle 2\",\"PW Mini-Gun 3\",\"PW Mini-Gun 2\",\"PW EMP Cannon 2\",\"PW EMP Cannon 1\",\"PW SkyCap 3\",\"PW SkyCap 2\",\"ER Nanite 2\",\"LRM Hunter 3\",\"LRM Hunter 2\",\"LRM Killer 2\",\"LRM Killer 1\",\"SRM Seismic\",\"SRM EMP Missile\",\"XRM Hunter Killer 3\",\"XRM Hunter Killer 2\",\"SRM Tactical Nuke 2\",\"XRM Cruise 2\",\"XRM Cruise 1\",\"MRM Seismic\",\"Large Shield 3\",\"Large Shield 2\",\"Sig Cloak 3\",\"Sig Cloak 2\",\"Hvy Sig Cloak 2\",\"Hvy Sig Cloak 1\",\"EWS Probe 3\",\"EWS Probe 2\",\"Pulse Probe\",\"Teleport Probe 1\",\"Prox Mine 3\",\"Prox Mine 2\",\"Hvy Counter 2\",\"Enh Carrier Drone\",\"Upgrade Medium Class\",\"Hvy Scout\",\"Upgrade Light Class\",\"[P\\u002BR] PT Bomber\",\"[R] Guardian\",\"[P\\u002BR] Mustang\",\"[P\\u002BR] Rocket Targeting\",\"Upgrade Garrison\",\"Upgrade Supremacy\",\"Upgrade Tactical Lab\",\"Upgrade Expansion\",\"Upgrade Heavy Class\"],\"Stations\":[\"Garrison\",\"Garrison (Str)\",\"[P]alisade\",\"[R]esearch\",\"Supremacy\",\"Shipyard\",\"Shipyard (Dry)\",\"Supremacy (Adv)\",\"Expansion\",\"Expansion (Adv)\",\"Tactical\",\"Tactical (Adv)\",\"Outpost\"],\"Constructor\":null,\"ReservedRock\":null,\"Cycles\":0}]\ncivs=25/3 generated=False wall=300.0s sim=12504.6s completed=1\nside 0: Garrison,Teleport (Hvy),Outpost (Hvy)\nside 1: Garrison,Garrison (Str),[P]alisade,[R]esearch,Supremacy,Shipyard,Shipyard (Dry),Supremacy (Adv),Expansion,Expansion (Adv),Tactical,Tactical (Adv),Outpost\n        \n          Assert.Equal() Failure: Values differ\nExpected: 2\nActual:   1\n             at Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(Int32 civA, Int32 civB, Boolean generated) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P703ResearchCommanderLiveTests.cs:line 177\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)\n        \n      \n    "
+    }
+  ],
+  "post_suite_isolation": {
+    "total": 21,
+    "passed": 20,
+    "failed": 1,
+    "notExecuted": 0,
+    "skipped": 0
+  },
+  "failure_qualification": {
+    "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    },
+    "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates": {
+      "all_passed": true,
+      "qualification": "Each parameter case has three isolated passes after its own failure.",
+      "authored_cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+          "outcome": "Passed"
+        }
+      ],
+      "generated_followup_cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+          "outcome": "Passed"
+        }
+      ],
+      "initial_triplet_counts": {
+        "total": 6,
+        "passed": 5,
+        "failed": 1,
+        "notExecuted": 0,
+        "skipped": 0
+      },
+      "generated_followup_counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    },
+    "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    },
+    "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    },
+    "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    }
+  }
+}

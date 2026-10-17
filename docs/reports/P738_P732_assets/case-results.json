@@ -1,0 +1,140 @@
+[
+  {
+    "label": "post-isolate-01-1",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=post-isolate-01-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P732_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates"
+    ],
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "post-isolate-01-2",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=post-isolate-01-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P732_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates"
+    ],
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "post-isolate-01-3",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=post-isolate-01-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P732_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates"
+    ],
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+        "outcome": "Passed"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+        "outcome": "Failed"
+      }
+    ]
+  },
+  {
+    "label": "post-isolate-P703-generated-1",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=post-isolate-P703-generated-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P732_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 1,"
+    ],
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "post-isolate-P703-generated-2",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=post-isolate-P703-generated-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P732_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 1,"
+    ],
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+        "outcome": "Passed"
+      }
+    ]
+  },
+  {
+    "label": "post-isolate-P703-generated-3",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=post-isolate-P703-generated-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P732_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 1,"
+    ],
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+        "outcome": "Passed"
+      }
+    ]
+  }
+]

@@ -89,12 +89,12 @@ public sealed partial class Game1
         {
             if (line.IsCritical)
             {
-                _sound?.PlayCriticalMessage();
+                if (!line.SoundAlreadyQueued) _sound?.PlayCriticalMessage();
                 Console.WriteLine($"[eject] CRITICAL: {line.Text}");
             }
             else
             {
-                _sound?.PlayNonCriticalMessage();
+                if (!line.SoundAlreadyQueued) _sound?.PlayNonCriticalMessage();
                 Console.WriteLine($"[eject] tip: {line.Text}");
             }
             // P578 — rescue lines carry a second native cue (rescuer →
