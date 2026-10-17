@@ -1095,6 +1095,19 @@ public sealed partial class Game1
                 _sound.PlayVoice(readyStem);
                 continue;
             }
+            // P723 — a team chat whose VoiceOver is one of the native drone /
+            // constructor chatter SoundIDs (server broadcasts these verbatim,
+            // see Server.Economy.BroadcastTeamChat) plays the matching clip —
+            // e.g. "New miner requesting He3 asteroid." (327 → vo_request_miner),
+            // "New minefield requesting location." (330 → vo_request_minefield),
+            // "New tower requesting location." (331 → vo_request_tower). This
+            // closes the gap where those chats were previously silent.
+            if (Allegiance.Core.Sim.DroneChatterCue.Resolve(m.VoiceOver) is { } chatterStem)
+            {
+                _sound.PlayVoice(chatterStem);
+                Console.WriteLine($"[monogame] audio: drone/constructor chatter voice \"{chatterStem}\" (\"{m.Message}\")");
+                continue;
+            }
             // P451 — a chat whose VoiceOver is one of the real station types'
             // under-attack / critical ids (sent by the defending-team alert in
             // FedSrvSiteBase::DamageStationEvent) plays the matching clip. Unlike

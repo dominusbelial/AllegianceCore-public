@@ -1114,19 +1114,38 @@ public sealed partial class Game1
                 ripcordActive = _session.World.RipcordActive;
                 selected = _selectedSectorId;
             }
-            short? target = Flight.RipcordKey.RequestFor(ripcordActive, selected);
-            if (target is { } sid)
+            // P723 — SIM-0287: native plays salShipCantRipcordSound and REFUSES
+            // to ripcord when the local hull structurally cannot (TK_Ripcord,
+            // WinTrek.cpp:9484 — GetBaseHullType()->HasCapability(c_habmNoRipcord)).
+            // Mirror that gate before sending anything, so an incapable hull gets
+            // its dedicated VO instead of a doomed server request.
+            bool cantRipcord;
+            lock (_session.Gate)
+                cantRipcord = _session.World.MyShipId is { } rme
+                    && _session.World.Ships.TryGetValue(rme, out var rship)
+                    && _shopCatalog?.Hulls.FirstOrDefault(h => h.HullId == rship.HullId) is { } rhull
+                    && rhull.HasCapability(DataHullTypeIGC.HabmNoRipcord);
+            if (cantRipcord)
             {
-                _session.SendRipcordRequest(sid);
-                Console.WriteLine(sid == Allegiance.Core.Wire.RipcordRequest.NA
-                    ? "[monogame] ripcord cancel (NA)"
-                    : $"[monogame] ripcord request -> sector {sid}");
+                _sound?.PlayShipCantRipcord();
+                Console.WriteLine("[monogame] ripcord: hull cannot ripcord (c_habmNoRipcord)");
             }
             else
             {
-                lock (_session.Gate)
-                    _session.World.PostSystemLine("Ripcord: select a sector on the starmap (, / .) first.");
-                Console.WriteLine("[monogame] ripcord: no sector selected, nothing to cancel");
+                short? target = Flight.RipcordKey.RequestFor(ripcordActive, selected);
+                if (target is { } sid)
+                {
+                    _session.SendRipcordRequest(sid);
+                    Console.WriteLine(sid == Allegiance.Core.Wire.RipcordRequest.NA
+                        ? "[monogame] ripcord cancel (NA)"
+                        : $"[monogame] ripcord request -> sector {sid}");
+                }
+                else
+                {
+                    lock (_session.Gate)
+                        _session.World.PostSystemLine("Ripcord: select a sector on the starmap (, / .) first.");
+                    Console.WriteLine("[monogame] ripcord: no sector selected, nothing to cancel");
+                }
             }
         }
         _lKeyWasDown = lRipcord;
@@ -1351,6 +1370,9 @@ public sealed partial class Game1
         if (!composing && lockVec && !_lockVectorKeyWasDown)
         {
             _coastToggled = !_coastToggled;
+            // P723 — SIM-0286: native plays vectorLockSound on every LockVector
+            // key press (TK_LockVector, WinTrek.cpp:9463; wave "vector").
+            _sound?.PlayVectorLock();
             Console.WriteLine(_coastToggled
                 ? "[monogame] vector lock ON (coast)"
                 : "[monogame] vector lock OFF");

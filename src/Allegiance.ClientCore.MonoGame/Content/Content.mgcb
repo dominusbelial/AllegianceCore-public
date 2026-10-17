@@ -3001,3 +3001,39 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/ungroupweapons.ogg
+
+#begin Sounds/vo_request_miner.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_miner.ogg
+
+#begin Sounds/vo_request_minefield.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_minefield.ogg
+
+#begin Sounds/vo_request_tower.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_request_tower.ogg
+
+#begin Sounds/newtargetneutral.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/newtargetneutral.ogg
+
+#begin Sounds/vector.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vector.ogg
+
+#begin Sounds/vo_sal_shipcantripcord.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_shipcantripcord.ogg

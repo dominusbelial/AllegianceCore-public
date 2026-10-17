@@ -259,6 +259,11 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _cargoFull = null!;       // vo_sal_cargofull — salCargoFullSound (:810)
     private SoundEffect _drop = null!;            // drop — dropSound (:290)
     private SoundEffect _reloading = null!;       // vo_sal_reloading — salReloadingSound (:819)
+    // P723 — in-flight command/targeting one-shots. Real waves from
+    // sounddef.mdl:295,311,350.
+    private SoundEffect _newTarget = null!;       // newtargetneutral — newTargetSound (:311)
+    private SoundEffect _vectorLock = null!;      // vector — vectorLockSound (:295)
+    private SoundEffect _shipCantRipcord = null!; // vo_sal_shipcantripcord — salShipCantRipcordSound (:350)
     // P711 — the ripcord-active loop (SIM-0368) and the mining loop (SIM-0370).
     // ripcordOnLoopSound = ImportWave("countdownStart") (sounddef.mdl:347), the
     // same countdown-tick wave native loops while a ripcord countdown runs;
@@ -717,6 +722,9 @@ public sealed class SoundManager : IDisposable
             _cargoFull = _content.Load<SoundEffect>("Sounds/vo_sal_cargofull");
             _drop = _content.Load<SoundEffect>("Sounds/drop");
             _reloading = _content.Load<SoundEffect>("Sounds/vo_sal_reloading");
+            _newTarget = _content.Load<SoundEffect>("Sounds/newtargetneutral");
+            _vectorLock = _content.Load<SoundEffect>("Sounds/vector");
+            _shipCantRipcord = _content.Load<SoundEffect>("Sounds/vo_sal_shipcantripcord");
             // P711 — ripcord-active + mining loops (two looped instances created
             // here, gated on/off by Game1's per-frame drivers; see
             // UpdateRipcordLoop / UpdateMiningLoop).
@@ -1127,6 +1135,29 @@ public sealed class SoundManager : IDisposable
     /// <summary>P719 — play the reload VO (<c>vo_sal_reloading</c>, native
     /// <c>salReloadingSound</c>, WinTrek.cpp:9693). No-op when not loaded.</summary>
     public void PlayReloading() => PlayWarnOneShot(_reloading);
+
+    /// <summary>P723 — play the one-shot \"new target\" cue (native
+    /// <c>newTargetSound</c> = ImportWave(\"newtargetneutral\"),
+    /// sounddef.mdl:311) whenever the pilot selects a NEW target
+    /// (native SetTarget, WinTrek.cpp:8827 — <c>GetCommandTarget(c_cmdCurrent)
+    /// != pmodel</c>). Distinct from the P373 first-sighting new-contact cue
+    /// (newtarget/newtargetenemy); this is the neutral \"you retargeted\" blip.
+    /// No-op when audio is not loaded.</summary>
+    public void PlayNewTarget() => PlayWarnOneShot(_newTarget);
+
+    /// <summary>P723 — play the one-shot vector-lock cue (native
+    /// <c>vectorLockSound</c> = ImportWave(\"vector\"), sounddef.mdl:295) on the
+    /// LockVector key press, native TK_LockVector (WinTrek.cpp:9463). No-op when
+    /// audio is not loaded.</summary>
+    public void PlayVectorLock() => PlayWarnOneShot(_vectorLock);
+
+    /// <summary>P723 — play the one-shot \"can't ripcord\" VO (native
+    /// <c>salShipCantRipcordSound</c> = ImportWave(\"vo_sal_shipcantripcord\"),
+    /// sounddef.mdl:350) when the ripcord key is pressed on a hull that
+    /// structurally cannot ripcord (native TK_Ripcord,
+    /// WinTrek.cpp:9484 — <c>GetBaseHullType()->HasCapability(c_habmNoRipcord)</c>).
+    /// No-op when audio is not loaded.</summary>
+    public void PlayShipCantRipcord() => PlayWarnOneShot(_shipCantRipcord);
 
     /// <summary>P711 — gate the ripcord-active loop (<c>countdownstart</c>,
     /// native <c>ripcordOnLoopSound</c>, trekigc.cpp:1287): a looping one-shot

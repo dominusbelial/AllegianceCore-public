@@ -810,7 +810,7 @@ public sealed partial class Game1
         var picked = SelectFilteredTarget(pos, orient, spec, dir);
         if (picked is { } p)
         {
-            _autoTarget = picked;
+            CommitTargetForPlayer(p);
             // P436 — a candidate WAS found: clear any lingering no-match line.
             _targetNoMatchNoun = null;
             Console.WriteLine($"[monogame] target {noun}: {p.Name} (#{p.Id})");
@@ -824,6 +824,19 @@ public sealed partial class Game1
             _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
             Console.WriteLine($"[monogame] no {noun} in sector");
         }
+    }
+
+    /// <summary>P723 — SIM-0279: commit a PLAYER-selected target and play the
+    /// native <c>newTargetSound</c> when the selection actually changed (native
+    /// SetTarget, WinTrek.cpp:8827 — <c>GetCommandTarget(c_cmdCurrent) != pmodel</c>;
+    /// wave <c>newtargetneutral</c>, sounddef.mdl:311). Programmatic autopilot /
+    /// dock commits that don't originate from a player targeting key do NOT
+    /// route here, matching native's SetTarget-only chime.</summary>
+    private void CommitTargetForPlayer(AutopilotTarget picked)
+    {
+        bool changed = !(_autoTarget is { } cur && cur.Kind == picked.Kind && cur.Id == picked.Id);
+        _autoTarget = picked;
+        if (changed) _sound?.PlayNewTarget();
     }
 
     /// <summary>P623 — the live CLASS-FILTER target key (TK_Target{Friendly|Enemy}
@@ -969,7 +982,7 @@ public sealed partial class Game1
             return;
         }
         var picked = StepCycle(filtered, _autoTarget);
-        _autoTarget = picked;
+        CommitTargetForPlayer(picked);
         _targetNoMatchNoun = null;
         Console.WriteLine($"[monogame] target friendly base: {picked.Name} (#{picked.Id})");
         RefreshWindowTitle();
@@ -997,7 +1010,7 @@ public sealed partial class Game1
             return;
         }
         var picked = StepCycle(filtered, _autoTarget);
-        _autoTarget = picked;
+        CommitTargetForPlayer(picked);
         _targetNoMatchNoun = null;
         Console.WriteLine($"[monogame] target enemy base: {picked.Name} (#{picked.Id})");
         RefreshWindowTitle();
@@ -1185,7 +1198,7 @@ public sealed partial class Game1
                 !string.IsNullOrEmpty(ent.CharacterName))
                 name = ent.CharacterName;
         }
-        _autoTarget = new AutopilotTarget(TargetKind.Ship, myId, name);
+        CommitTargetForPlayer(new AutopilotTarget(TargetKind.Ship, myId, name));
         Console.WriteLine($"[monogame] target: self ({name} #{myId})");
         RefreshWindowTitle();
     }
@@ -1211,7 +1224,7 @@ public sealed partial class Game1
         var picked = PickNearestTarget(pos, orient);
         if (picked is { } p)
         {
-            _autoTarget = p;
+            CommitTargetForPlayer(p);
             Console.WriteLine($"[monogame] target center: {p.Name} ({p.Kind}#{p.Id})");
             RefreshWindowTitle();
         }
@@ -1374,7 +1387,7 @@ public sealed partial class Game1
                 if (world.Ships.TryGetValue(top, out var ent) && !ent.IsNotVisible)
                 {
                     string name = string.IsNullOrEmpty(ent.CharacterName) ? $"ship {top}" : ent.CharacterName;
-                    _autoTarget = new AutopilotTarget(TargetKind.Ship, top, name);
+                    CommitTargetForPlayer(new AutopilotTarget(TargetKind.Ship, top, name));
                     _targetNoMatchNoun = null;
                     Console.WriteLine($"[monogame] target hostile: {name} (#{top}) (in-window damage {damagers[0].Total:0.##})");
                     RefreshWindowTitle();
@@ -1393,7 +1406,7 @@ public sealed partial class Game1
             new TargetFilterSpec(TargetRelation.Enemy), StepDirection.Nearest);
         if (filtered is { } f)
         {
-            _autoTarget = f;
+            CommitTargetForPlayer(f);
             _targetNoMatchNoun = null;
             Console.WriteLine($"[monogame] target hostile: no recent damager — nearest enemy {f.Name} (#{f.Id})");
             RefreshWindowTitle();
